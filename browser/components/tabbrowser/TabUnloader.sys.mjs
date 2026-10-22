@@ -8,9 +8,9 @@
  * accounts for when the tab was last used, how many resources the tab uses,
  * and whether the tab is likely to affect the user if it is closed.
  */
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
 });

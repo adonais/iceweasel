@@ -7,6 +7,7 @@
 #include "js/JSON.h"
 #include "mozilla/dom/dom_push_rust_generated.h"
 #include "mozilla/dom/notification/NotificationUtils.h"
+#include "mozilla/glean/DomPushMetrics.h"
 #include "nsNetUtil.h"
 
 namespace mozilla::dom {
@@ -49,6 +50,13 @@ class DWPNotificationCallbacks final : public NotificationCallbacksCommon {
   virtual ~DWPNotificationCallbacks() = default;
 };
 
+static void RecordTelemetry(const DeclarativePushData& aData) {
+  glean::web_push::declarative.Add();
+  if (aData.mutable_) {
+    glean::web_push::declarative_mutable.Add();
+  }
+}
+
 static NotificationDirection ConvertNotificationDirection(
     DeclarativePushDir aDir) {
   switch (aDir) {
@@ -89,16 +97,10 @@ static nsString ConvertJSONToStructuredCloneBase64(const nsAString& aJSON) {
   return serialized;
 }
 
-static Maybe<IPCNotificationOptions> GetNotificationOptionsForDeclarativePush(
-    DeclarativePushData&& aPush, nsIURI* aBaseURI) {
+static Result<IPCNotificationOptions, nsresult>
+GetNotificationOptionsForDeclarativePush(DeclarativePushData&& aPush) {
   IPCNotificationOptions options;
-  nsresult rv = NS_NewURI(getter_AddRefs(options.navigate()), aPush.navigate,
-                          nullptr, aBaseURI);
-  // https://w3c.github.io/push-api/#dfn-declarative-push-message-parser
-  // Step 27: If notification's navigation URL is null, then return failure.
-  if (NS_FAILED(rv)) {
-    return Nothing();
-  }
+  MOZ_TRY(NS_NewURI(getter_AddRefs(options.navigate()), aPush.navigate));
   options.title() = std::move(aPush.title);
   options.body() = std::move(aPush.body);
   options.dir() = ConvertNotificationDirection(aPush.dir);
@@ -111,12 +113,7 @@ static Maybe<IPCNotificationOptions> GetNotificationOptionsForDeclarativePush(
   options.dataSerialized() = ConvertJSONToStructuredCloneBase64(aPush.data);
   for (DeclarativePushAction& action : aPush.actions) {
     IPCNotificationAction ipcAction;
-    if (NS_FAILED(NS_NewURI(getter_AddRefs(ipcAction.navigate()),
-                            action.navigate, nullptr, aBaseURI))) {
-      // Step 28: If the navigation URL of any notification action of
-      // notification's actions is null, then return failure.
-      return Nothing();
-    }
+    MOZ_TRY(NS_NewURI(getter_AddRefs(ipcAction.navigate()), action.navigate));
     // We still need to do the check above, even if there are more
     // than kMaxActions actions. So we can't break out of the loop.
     if (options.actions().Length() < notification::kMaxActions) {
@@ -125,37 +122,31 @@ static Maybe<IPCNotificationOptions> GetNotificationOptionsForDeclarativePush(
       options.actions().AppendElement(std::move(ipcAction));
     }
   }
-  nsCOMPtr<nsIURI> icon;
-  if (NS_SUCCEEDED(
-          NS_NewURI(getter_AddRefs(icon), aPush.icon, nullptr, aBaseURI))) {
-    options.icon() = icon.forget();
+  if (!aPush.icon.IsEmpty()) {
+    MOZ_TRY(NS_NewURI(getter_AddRefs(options.icon()), aPush.icon));
   }
-  return Some(std::move(options));
+  return std::move(options);
 }
 
 bool ParseDeclarativePushAndShowNotification(Span<const uint8_t> aData,
                                              nsIPrincipal* aPrincipal,
                                              const nsACString& aScope) {
   DeclarativePushData declarativePush;
-  if (!parse_declarative_push(aData.Elements(), aData.Length(),
+  if (!parse_declarative_push(aData.Elements(), aData.Length(), &aScope,
                               &declarativePush)) {
     return false;
   }
-  RefPtr<nsIURI> baseURI;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(baseURI), aScope))) {
+  Result options =
+      GetNotificationOptionsForDeclarativePush(std::move(declarativePush));
+  if (NS_WARN_IF(options.isErr())) {
     return false;
   }
-  Maybe<IPCNotificationOptions> options =
-      GetNotificationOptionsForDeclarativePush(std::move(declarativePush),
-                                               baseURI);
-  if (!options) {
-    return false;
-  }
+  RecordTelemetry(declarativePush);
   RefPtr permissionPromise = notification::EnsureValidNotificationPermission(
       aPrincipal, aPrincipal, aPrincipal->GetIsOriginPotentiallyTrustworthy());
   permissionPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [options = options.extract(), scope = NS_ConvertUTF8toUTF16(aScope),
+      [options = options.unwrap(), scope = NS_ConvertUTF8toUTF16(aScope),
        principal = RefPtr(aPrincipal)](
           const notification::NotificationPermissionPromise::
               ResolveOrRejectValue& aResult) {

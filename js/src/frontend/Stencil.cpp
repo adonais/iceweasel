@@ -68,7 +68,7 @@
 #include "vm/StencilEnums.h"  // ImmutableScriptFlagsEnum
 #include "vm/StringType.h"    // JSAtom, js::CopyChars
 
-#include "jit/JitHints-inl.h"          // JitHints::mightHaveEagerBaselineHint
+#include "jit/JitHints-inl.h"  // JitHints::mightHaveEagerBaselineHint, JitHints::mightHaveEagerBaselineInterpreterHint
 #include "jit/JitScript-inl.h"         // AutoKeepJitScripts constructor
 #include "vm/EnvironmentObject-inl.h"  // JSObject::enclosingEnvironment
 #include "vm/JSFunction-inl.h"         // JSFunction::create
@@ -2728,6 +2728,15 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
     // strategy is set.
     if (!doAggressive) {
       if (!jitHints->mightHaveEagerBaselineHint(script)) {
+        if (!jitHints->mightHaveEagerBaselineInterpreterHint(script)) {
+          continue;
+        }
+        if (!jit::CanBaselineInterpretScript(script)) {
+          continue;
+        }
+        if (!script->ensureHasJitScript(cx, keepJitScript)) {
+          return false;
+        }
         continue;
       }
     }

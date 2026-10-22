@@ -58,7 +58,6 @@ impl CompositorSurfaceKind {
 pub enum NativeSurfaceOperationDetails {
     CreateSurface {
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     },
@@ -260,7 +259,7 @@ impl ExternalSurfaceDescriptor {
 /// Information about a plane in a YUV or RGB surface.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ExternalPlaneDescriptor {
     pub texture: TextureSource,
     pub uv_rect: TexelRect,
@@ -286,6 +285,7 @@ impl ResolvedExternalSurfaceIndex {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, PartialEq)]
 pub enum ResolvedExternalSurfaceColorData {
     Yuv {
         // YUV specific information
@@ -436,13 +436,6 @@ impl Default for CompositorKind {
 }
 
 impl CompositorKind {
-    pub fn get_virtual_surface_size(&self) -> i32 {
-        match self {
-            CompositorKind::Draw { .. } | CompositorKind::Layer {  .. }=> 0,
-            CompositorKind::Native { capabilities, .. } => capabilities.virtual_surface_size,
-        }
-    }
-
     pub fn should_redraw_on_invalidation(&self) -> bool {
         match self {
             CompositorKind::Draw { max_partial_present_rects, .. } => {
@@ -1420,8 +1413,6 @@ impl Default for WindowProperties {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositorCapabilities {
-    /// The virtual surface size used by the underlying platform.
-    pub virtual_surface_size: i32,
     /// Whether the compositor requires redrawing on invalidation.
     pub redraw_on_invalidation: bool,
     /// The maximum number of dirty rects that can be provided per compositor
@@ -1430,8 +1421,6 @@ pub struct CompositorCapabilities {
     pub max_update_rects: usize,
     /// Whether or not this compositor will create surfaces for backdrops.
     pub supports_surface_for_backdrop: bool,
-    /// Whether external compositor surface supports negative scaling.
-    pub supports_external_compositor_surface_negative_scaling: bool,
 }
 
 impl Default for CompositorCapabilities {
@@ -1441,13 +1430,11 @@ impl Default for CompositorCapabilities {
         // from the default behavior so that compositors don't have to track
         // which changes to this structure unless necessary.
         CompositorCapabilities {
-            virtual_surface_size: 0,
             redraw_on_invalidation: false,
             // Assume compositors can do at least partial update of surfaces. If not,
             // the native compositor should override this to be 0.
             max_update_rects: 1,
             supports_surface_for_backdrop: false,
-            supports_external_compositor_surface_negative_scaling: true,
         }
     }
 }
@@ -1497,7 +1484,6 @@ pub trait Compositor {
     fn create_surface(
         &mut self,
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     );
@@ -1625,9 +1611,6 @@ pub trait Compositor {
     /// this once when all surface and visual updates are complete, to signal
     /// that the OS composite transaction should be applied.
     fn end_frame(&mut self);
-
-    /// Enable/disable native compositor usage
-    fn enable_native_compositor(&mut self, enable: bool);
 
     /// Safely deinitialize any remaining resources owned by the compositor.
     fn deinit(&mut self);

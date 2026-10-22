@@ -31,8 +31,6 @@ private fun reducer(state: ShortcutsState, action: ShortcutsAction): ShortcutsSt
 
         is ShortcutsAction.UpdatePopularSites -> state.copy(popularSites = action.popularSites)
 
-        is ShortcutsAction.UpdateShowAddShortcut -> state.copy(showAddShortcut = action.showAddShortcut)
-
         is ShortcutsAction.ShowAddShortcutBottomSheet -> state.copy(dialogState = DialogState.AddShortcutBottomSheet)
 
         is ShortcutsAction.ShowAddShortcutDialog -> state.copy(dialogState = DialogState.AddShortcut)

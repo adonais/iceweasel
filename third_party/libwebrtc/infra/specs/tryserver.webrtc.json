@@ -95,6 +95,28 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "enable": true,
+          "has_native_resultdb_integration": true
+        },
+        "swarming": {
+          "dimensions": {
+            "android_devices": "1",
+            "device_os": "AP2A.240705.004",
+            "device_type": "panther",
+            "os": "Android"
+          },
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -845,6 +867,28 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "enable": true,
+          "has_native_resultdb_integration": true
+        },
+        "swarming": {
+          "dimensions": {
+            "android_devices": "1",
+            "device_os": "AP2A.240705.004",
+            "device_type": "panther",
+            "os": "Android"
+          },
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -2169,6 +2213,104 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/",
+        "variant_id": "iPhone 15 18.2"
+      },
+      {
+        "args": [
+          "--platform",
+          "iPhone 14",
+          "--version",
+          "17.5",
+          "--xcode-build-version",
+          "17f42",
+          "--out-dir",
+          "${ISOLATED_OUTDIR}",
+          "--xctest"
+        ],
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests iPhone 14 17.5",
+        "resultdb": {
+          "enable": true,
+          "has_native_resultdb_integration": true
+        },
+        "swarming": {
+          "cipd_packages": [
+            {
+              "cipd_package": "infra/tools/mac_toolchain/${platform}",
+              "location": ".",
+              "revision": "git_revision:07e67ff89ff11ed0e3071867ed6bb49319a91b05"
+            }
+          ],
+          "dimensions": {
+            "cpu": "arm64",
+            "os": "Mac-26"
+          },
+          "named_caches": [
+            {
+              "name": "runtime_ios_17_5",
+              "path": "Runtime-ios-17.5"
+            },
+            {
+              "name": "xcode_ios_17f42",
+              "path": "Xcode.app"
+            }
+          ],
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/",
+        "variant_id": "iPhone 14 17.5"
+      },
+      {
+        "args": [
+          "--platform",
+          "iPhone 15",
+          "--version",
+          "18.2",
+          "--xcode-build-version",
+          "17f42",
+          "--out-dir",
+          "${ISOLATED_OUTDIR}",
+          "--xctest"
+        ],
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests iPhone 15 18.2",
+        "resultdb": {
+          "enable": true,
+          "has_native_resultdb_integration": true
+        },
+        "swarming": {
+          "cipd_packages": [
+            {
+              "cipd_package": "infra/tools/mac_toolchain/${platform}",
+              "location": ".",
+              "revision": "git_revision:07e67ff89ff11ed0e3071867ed6bb49319a91b05"
+            }
+          ],
+          "dimensions": {
+            "cpu": "arm64",
+            "os": "Mac-26"
+          },
+          "named_caches": [
+            {
+              "name": "runtime_ios_18_2",
+              "path": "Runtime-ios-18.2"
+            },
+            {
+              "name": "xcode_ios_17f42",
+              "path": "Xcode.app"
+            }
+          ],
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/",
         "variant_id": "iPhone 15 18.2"
       },
       {
@@ -4384,6 +4526,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -4937,6 +5097,25 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "isolate_profile_data": true,
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "isolate_profile_data": true,
@@ -5570,6 +5749,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -6144,6 +6341,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -6689,6 +6904,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -7292,6 +7525,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -7837,6 +8088,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -8392,6 +8661,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -8942,6 +9229,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -9474,6 +9779,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Ubuntu-22.04"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -10001,6 +10324,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "arm64",
+            "os": "Mac-26"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -10558,6 +10899,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "arm64",
+            "os": "Mac-26"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -11108,6 +11467,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "arm64-64-Apple_M1",
+            "os": "Mac-26"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -11653,6 +12030,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "arm64",
+            "os": "Mac-26"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -12256,6 +12651,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "arm64-64-Apple_M1",
+            "os": "Mac-26"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -12806,6 +13219,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-11-22000"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -13351,6 +13782,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-11-22000"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -13954,6 +14403,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-10-19045"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -14503,6 +14970,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-10-19045"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {
@@ -15058,6 +15543,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-10-19045"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -15608,6 +16111,24 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
         },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-10-19045"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
         "module_name": "//call:call_tests",
         "name": "call_tests",
         "resultdb": {
@@ -16153,6 +16674,24 @@
         },
         "test": "audio_engine_tests",
         "test_id_prefix": "ninja://:audio_engine_tests/"
+      },
+      {
+        "merge": {
+          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+        },
+        "module_name": "//modules/audio_processing:audio_processing_unittests",
+        "name": "audio_processing_unittests",
+        "resultdb": {
+          "result_format": "json"
+        },
+        "swarming": {
+          "dimensions": {
+            "cpu": "x86-64",
+            "os": "Windows-10-19045"
+          }
+        },
+        "test": "audio_processing_unittests",
+        "test_id_prefix": "ninja://modules/audio_processing:audio_processing_unittests/"
       },
       {
         "merge": {

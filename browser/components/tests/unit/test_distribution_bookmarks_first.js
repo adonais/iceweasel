@@ -11,7 +11,7 @@ const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
 const { DistributionManagement } = ChromeUtils.importESModule(
-  "resource:///modules/distribution.sys.mjs"
+  "moz-src:///browser/components/distribution.sys.mjs"
 );
 
 const TOPIC_CUSTOMIZATION_COMPLETE = "distribution-customization-complete";
@@ -28,8 +28,7 @@ add_setup(async function setup() {
   Services.prefs.setBoolPref("distribution.testing.loadFromProfile", true);
 
   // Copy distribution.ini file to the profile dir.
-  let distroDir = gProfD.clone();
-  distroDir.leafName = "distribution";
+  let distroDir = ensureDistributionDir();
   let iniFile = distroDir.clone();
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {

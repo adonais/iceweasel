@@ -685,12 +685,28 @@ const MR_ABOUT_WELCOME_DEFAULT = {
             raw: "Explore staff recommended extensions",
           },
           action: {
-            type: "OPEN_URL",
+            type: "MULTI_ACTION",
             data: {
-              args: "https://addons.mozilla.org/en-US/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/?page=1&collection_sort=-popularity",
-              where: "tabshifted",
+              actions: [
+                {
+                  type: "OPEN_URL",
+                  data: {
+                    args: "https://addons.mozilla.org/en-US/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/?page=1&collection_sort=-popularity",
+                    where: "tabshifted",
+                  },
+                  navigate: true,
+                },
+                {
+                  type: "SET_PREF",
+                  data: {
+                    pref: {
+                      name: "messaging-system-action.hasOpenedExtensions",
+                      value: "true",
+                    },
+                  },
+                },
+              ],
             },
-            navigate: true,
           },
         },
         secondary_button: {

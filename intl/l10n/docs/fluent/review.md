@@ -331,7 +331,7 @@ sans-serif fonts.
 
 ## Linter
 
-{bash}`mach lint` includes a {ref}`l10n linter <L10n>`, called {bash}`moz-l10n-lint`. It
+{bash}`mach lint` includes a {doc}`l10n linter </code-quality/lint/linters/l10n>`, called {bash}`moz-l10n-lint`. It
 can be run locally by developers but also runs on Treeherder: in the Build
 Status section of the diff on Phabricator, open the Treeherder Jobs link and
 look for the {js}`l1nt` job.

@@ -91,11 +91,6 @@ nimbus {
     // The path to the Nimbus feature manifest file
     manifestFile = "geckoview.fml.yaml"
 
-    channels = [
-            debug: "debug",
-            release: "release",
-    ]
-
     // This is an optional value, and updates the plugin to use a copy of application
     // services. The path should be relative to the root project directory.
     // *NOTE*: This example will not work for all projects, but should work for Fenix, Focus, and Android Components

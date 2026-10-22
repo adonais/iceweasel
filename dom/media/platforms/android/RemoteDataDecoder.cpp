@@ -19,6 +19,8 @@
 #include "SimpleMap.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
+#include "XiphExtradata.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/fallible.h"
@@ -638,6 +640,93 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
 };
 
+/* static */
+nsTArray<RefPtr<MediaByteBuffer>> RemoteDataDecoder::GetAudioCodecSpecificData(
+    const AudioInfo& aConfig) {
+  nsTArray<RefPtr<MediaByteBuffer>> csd;
+  const AudioCodecSpecificVariant& config = aConfig.mCodecSpecificConfig;
+
+  if (config.is<FlacCodecSpecificData>()) {
+    // MediaCodec expects the fLaC marker followed by the STREAMINFO block.
+    static constexpr size_t kStreamInfoSize = 34;
+    const MediaByteBuffer& streamInfo =
+        *config.as<FlacCodecSpecificData>().mStreamInfoBinaryBlob;
+    if (streamInfo.Length() < kStreamInfoSize) {
+      return csd;
+    }
+    RefPtr<MediaByteBuffer> buffer = new MediaByteBuffer();
+    if (streamInfo.Length() >= 4 && !memcmp(streamInfo.Elements(), "fLaC", 4)) {
+      buffer->AppendElements(streamInfo);
+    } else {
+      static constexpr uint8_t kHeader[] = {'f',
+                                            'L',
+                                            'a',
+                                            'C',
+                                            0x80 /* last block, STREAMINFO */,
+                                            0x00,
+                                            0x00,
+                                            kStreamInfoSize};
+      buffer->AppendElements(kHeader, std::size(kHeader));
+      buffer->AppendElements(streamInfo.Elements(), kStreamInfoSize);
+    }
+    csd.AppendElement(std::move(buffer));
+    return csd;
+  }
+
+  if (config.is<VorbisCodecSpecificData>()) {
+    // MediaCodec expects the identification header followed by the setup
+    // header.
+    MediaByteBuffer& headersBlob =
+        *config.as<VorbisCodecSpecificData>().mHeadersBinaryBlob;
+    AutoTArray<unsigned char*, 3> headers;
+    AutoTArray<size_t, 3> headerLens;
+    if (!XiphExtradataToHeaders(headers, headerLens, headersBlob.Elements(),
+                                headersBlob.Length()) ||
+        headers.Length() != 3) {
+      return csd;
+    }
+    for (size_t i : {0, 2}) {
+      RefPtr<MediaByteBuffer> buffer = new MediaByteBuffer();
+      buffer->AppendElements(headers[i], headerLens[i]);
+      csd.AppendElement(std::move(buffer));
+    }
+    return csd;
+  }
+
+  if (config.is<OpusCodecSpecificData>()) {
+    // MediaCodec expects the identification header, followed by the codec
+    // delay and the seek pre-roll in nanoseconds.
+    static constexpr size_t kIdentificationHeaderMinSize = 19;
+    static constexpr int64_t kSeekPreRollNs = 80000000;
+    const MediaByteBuffer& header =
+        *config.as<OpusCodecSpecificData>().mHeadersBinaryBlob;
+    if (header.Length() < kIdentificationHeaderMinSize) {
+      return csd;
+    }
+    RefPtr<MediaByteBuffer> headerBuffer = new MediaByteBuffer();
+    headerBuffer->AppendElements(header);
+    csd.AppendElement(std::move(headerBuffer));
+    // Round the codec delay up so that MediaCodec's conversion back to frames,
+    // which truncates, yields the exact pre-skip.
+    const int64_t preSkip = LittleEndian::readUint16(header.Elements() + 10);
+    const int64_t codecDelayNs = (preSkip * 1000000000 + 47999) / 48000;
+    for (int64_t value : {codecDelayNs, kSeekPreRollNs}) {
+      RefPtr<MediaByteBuffer> buffer = new MediaByteBuffer(sizeof(value));
+      buffer->SetLength(sizeof(value));
+      LittleEndian::writeInt64(buffer->Elements(), value);
+      csd.AppendElement(std::move(buffer));
+    }
+    return csd;
+  }
+
+  // TODO(bug 1768564): implement further type checking for codec data.
+  RefPtr<MediaByteBuffer> blob = ForceGetAudioCodecSpecificBlob(config);
+  if (blob->Length() >= 2) {
+    csd.AppendElement(std::move(blob));
+  }
+  return csd;
+}
+
 class RemoteAudioDecoder final : public RemoteDataDecoder {
  public:
   RemoteAudioDecoder(const AudioInfo& aConfig,
@@ -651,17 +740,18 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
 
     bool formatHasCSD = false;
     NS_ENSURE_SUCCESS_VOID(aFormat->ContainsKey(u"csd-0"_ns, &formatHasCSD));
+    if (formatHasCSD) {
+      return;
+    }
 
-    // It would be nice to instead use more specific information here, but
-    // we force a byte buffer for now since this handles arbitrary codecs.
-    // TODO(bug 1768564): implement further type checking for codec data.
-    RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
-        ForceGetAudioCodecSpecificBlob(aConfig.mCodecSpecificConfig);
-    if (!formatHasCSD && audioCodecSpecificBinaryBlob->Length() >= 2) {
+    mCodecSpecificData = GetAudioCodecSpecificData(aConfig);
+    for (size_t i = 0; i < mCodecSpecificData.Length(); ++i) {
       jni::ByteBuffer::LocalRef buffer(env);
-      buffer = jni::ByteBuffer::New(audioCodecSpecificBinaryBlob->Elements(),
-                                    audioCodecSpecificBinaryBlob->Length());
-      NS_ENSURE_SUCCESS_VOID(aFormat->SetByteBuffer(u"csd-0"_ns, buffer));
+      buffer = jni::ByteBuffer::New(mCodecSpecificData[i]->Elements(),
+                                    mCodecSpecificData[i]->Length());
+      nsAutoString name(u"csd-"_ns);
+      name.AppendInt(uint32_t(i));
+      NS_ENSURE_SUCCESS_VOID(aFormat->SetByteBuffer(name, buffer));
     }
   }
 
@@ -892,6 +982,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
   int32_t mOutputChannels{};
   int32_t mOutputSampleRate{};
   Maybe<TimeUnit> mFirstDemuxedSampleTime;
+  nsTArray<RefPtr<MediaByteBuffer>> mCodecSpecificData;
 };
 
 already_AddRefed<MediaDataDecoder> RemoteDataDecoder::CreateAudioDecoder(

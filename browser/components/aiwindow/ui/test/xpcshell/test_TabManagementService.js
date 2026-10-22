@@ -7,6 +7,10 @@ const { TabManagementService } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/TabManagementService.sys.mjs"
 );
 
+const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
+);
+
 // Mock SessionStore for testing
 const mockSessionStore = {
   closedTabs: [],
@@ -1390,5 +1394,179 @@ add_task(async function test_resolve_or_open_tabs_invalid_window() {
     }),
     /Invalid browser window/,
     "Should throw for null window"
+  );
+});
+
+/**
+ * getTabGroups returns each open group in the {id, label, color, tabCount,
+ * tabs } shape, with sanitized tab titles.
+ */
+add_task(async function test_get_tab_groups_returns_shape() {
+  const mockWindow = createMockWindow();
+  const tab1 = createMockTab("https://example.com", "Example");
+  const tab2 = createMockTab("https://mozilla.org", "Mozilla");
+  tab1.lastAccessed = 100;
+  tab2.lastAccessed = 200;
+
+  mockWindow.gBrowser.addTabGroup([tab1, tab2], {
+    id: "group-1",
+    label: "My Group",
+    color: "blue",
+  });
+
+  const groups = tabManagementService.getTabGroups({ window: mockWindow });
+
+  Assert.equal(groups.length, 1, "should return one group");
+  const [group] = groups;
+  Assert.equal(group.id, "group-1", "Group id");
+  Assert.equal(group.label, "My Group", "Group label");
+  Assert.equal(group.color, "blue", "Group color");
+  Assert.equal(group.tabCount, 2, "tabCount reflects visible tabs");
+  Assert.equal(group.tabs.length, 2, "Two tabs returned");
+  Assert.equal(group.tabs[0].url, "https://example.com", "First tab url");
+  Assert.equal(
+    group.tabs[0].title,
+    sanitizeUntrustedContent("Example"),
+    "Title is sanitized the same way getTabList sanitizes it"
+  );
+  Assert.equal(group.tabs[0].lastAccessed, 100, "lastAccessed passed through");
+});
+
+/**
+ * getTabGroups drops internal (about:/chrome) and new-page URLs, matching
+ * getTabList's isAllowedURLProtocol + isNewPageURl filtering.
+ */
+add_task(async function test_get_tab_groups_filters_internal_urls() {
+  const mockWindow = createMockWindow();
+  const httpTab = createMockTab("https://example.com", "Example");
+  const aboutTab = createMockTab("about:config", "Config");
+  const newPageTab = createMockTab(
+    "chrome://browser/content/aiwindow/aiWindow.html",
+    "New Page"
+  );
+
+  mockWindow.gBrowser.addTabGroup([httpTab, aboutTab, newPageTab], {
+    id: "group-1",
+    label: "Mixed",
+    color: "red",
+  });
+
+  const [group] = tabManagementService.getTabGroups({ window: mockWindow });
+
+  Assert.equal(group.tabCount, 1, "Only the http tab survives filtering");
+  Assert.equal(group.tabs.length, 1, "One visible tab");
+  Assert.equal(group.tabs[0].url, "https://example.com", "Kept the http tab");
+});
+
+/**
+ * A group whose tabs are all filtered out is omitted entirely, so consumers
+ * never have to skip empty groups themselves.
+ */
+add_task(async function test_get_tab_groups_group_all_filtered() {
+  const mockWindow = createMockWindow();
+  const aboutTab = createMockTab("about:blank", "Blank");
+
+  mockWindow.gBrowser.addTabGroup([aboutTab], {
+    id: "group-1",
+    label: "Internal Only",
+    color: "gray",
+  });
+
+  Assert.deepEqual(
+    tabManagementService.getTabGroups({ window: mockWindow }),
+    [],
+    "Group with no visible tabs is excluded"
+  );
+});
+
+/**
+ * getTabGroups degrades to an empty array for an invalid window, rather than
+ * throwing (read APIs fail soft).
+ */
+add_task(async function test_get_tab_groups_invalid_window() {
+  Assert.deepEqual(
+    tabManagementService.getTabGroups({ window: null }),
+    [],
+    "null window -> empty array"
+  );
+  Assert.deepEqual(
+    tabManagementService.getTabGroups({ window: {} }),
+    [],
+    "window without gBrowser -> empty array"
+  );
+});
+
+/**
+ * getTabGroupById returns the group whose id matches.
+ */
+add_task(async function test_get_tab_group_by_id_returns_group() {
+  const mockWindow = createMockWindow();
+  const tab = createMockTab("https://example.com", "Example");
+
+  mockWindow.gBrowser.addTabGroup([tab], {
+    id: "group-42",
+    label: "Findable",
+    color: "green",
+  });
+
+  const group = tabManagementService.getTabGroupById({
+    groupId: "group-42",
+    window: mockWindow,
+  });
+
+  Assert.equal(group?.id, "group-42", "Returns the group matching the id");
+  Assert.equal(group.tabCount, 1, "With its visible tab");
+});
+
+/**
+ * getTabGroupById returns null when no group has the given id.
+ */
+add_task(async function test_get_tab_group_by_id_not_found() {
+  const mockWindow = createMockWindow();
+  mockWindow.gBrowser.addTabGroup([createMockTab("https://example.com", "X")], {
+    id: "group-1",
+  });
+
+  const group = tabManagementService.getTabGroupById({
+    groupId: "does-not-exist",
+    window: mockWindow,
+  });
+
+  Assert.equal(group, null, "Unknown id -> null");
+});
+
+/**
+ * getTabGroupById returns null for a group whose tabs are all filtered out,
+ * matching getTabGroups() so a non-null result always has a visible tab.
+ */
+add_task(async function test_get_tab_group_by_id_all_filtered() {
+  const mockWindow = createMockWindow();
+  mockWindow.gBrowser.addTabGroup([createMockTab("about:blank", "Blank")], {
+    id: "group-1",
+  });
+
+  const group = tabManagementService.getTabGroupById({
+    groupId: "group-1",
+    window: mockWindow,
+  });
+
+  Assert.equal(group, null, "Group with no visible tabs -> null");
+});
+
+/**
+ * getTabGroupById returns null for invalid parameters.
+ */
+add_task(async function test_get_tab_group_by_id_invalid_params() {
+  const mockWindow = createMockWindow();
+
+  Assert.equal(
+    tabManagementService.getTabGroupById({ groupId: "", window: mockWindow }),
+    null,
+    "Missing groupId -> null"
+  );
+  Assert.equal(
+    tabManagementService.getTabGroupById({ groupId: "group-1", window: null }),
+    null,
+    "Missing window -> null"
   );
 });

@@ -353,6 +353,9 @@ devtools.jar:
     # Memory
     content/memory/index.xhtml (memory/index.xhtml)
 
+    # Settings
+    content/settings/index.html (settings/index.html)
+
     # Toolbox
     content/framework/toolbox-window.xhtml (framework/toolbox-window.xhtml)
     content/framework/toolbox-options.html (framework/toolbox-options.html)

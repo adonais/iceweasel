@@ -235,6 +235,7 @@ export const MultiStageProtonScreen = props => {
       id={props.id}
       order={props.order}
       activeTheme={props.activeTheme}
+      activeThemeId={props.activeThemeId}
       installedAddons={props.installedAddons}
       screenMultiSelects={props.screenMultiSelects}
       setScreenMultiSelects={props.setScreenMultiSelects}
@@ -626,6 +627,26 @@ export class ProtonScreen extends React.PureComponent {
         <div className={"noodle outline-L"} />
         <div className={"noodle yellow-circle"} />
       </React.Fragment>
+    );
+  }
+
+  renderLastCardImage(content) {
+    const { width, height, marginBlock, marginInline, ...image } =
+      content.center_image ?? {};
+    return (
+      <div
+        className="last-card-image"
+        style={{
+          "--last-card-image-width": width,
+          "--last-card-image-height": height,
+          "--last-card-picture-margin-block": marginBlock,
+          "--last-card-picture-margin-inline": marginInline,
+        }}
+      >
+        {content.center_image
+          ? this.renderPicture({ ...image, className: "center-image" })
+          : null}
+      </div>
     );
   }
 
@@ -1108,6 +1129,11 @@ export class ProtonScreen extends React.PureComponent {
         role={ariaRole ?? "alertdialog"}
         layout={content.layout}
         pos={content.position || "center"}
+        data-theme={
+          content.position === "card-stack" && this.props.activeThemeId
+            ? this.props.activeThemeId
+            : null
+        }
         tabIndex="-1"
         aria-labelledby={`mainContentHeader${content.subtitle ? " mainContentSubheader" : ""}`}
         aria-describedby="mainContentInner"
@@ -1204,7 +1230,9 @@ export class ProtonScreen extends React.PureComponent {
                   className={`welcome-text ${content.title_style || ""}`}
                 >
                   {content.title ? this.renderTitle(content) : null}
-
+                  {content.layout === "last-card"
+                    ? this.renderLastCardImage(content)
+                    : null}
                   {content.subtitle ? (
                     <Localized text={content.subtitle}>
                       <h2
@@ -1470,8 +1498,9 @@ export const screenContentShape = {
   width: PropTypes.string,
   // The callout card padding as a CSS value.
   padding: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  // Used when a single row with a more inline layout is desired. Works well in
-  // tandem with title_logo.
+  // A layout variant for the screen. 'inline' is a single row layout that
+  // works well in tandem with title_logo. 'last-card' is the final card-stack
+  // screen, with the title and subtitle split around a centered image slot.
   layout: PropTypes.string,
   // If true, adds a colorful gradient border to the screen. This is only
   // supported for screens with 'hide_arrow' set to true. There is no effect
@@ -1586,6 +1615,40 @@ export const screenContentShape = {
       delay: PropTypes.string,
     }),
   }),
+  // An optional image shown in the center image slot of the 'last-card'
+  // layout, revealed once the text split animation completes.
+  center_image: PropTypes.shape({
+    // The image URL.
+    imageURL: PropTypes.string,
+    // The dark mode image URL.
+    darkModeImageURL: PropTypes.string,
+    // The reduced motion image URL.
+    reducedMotionImageURL: PropTypes.string,
+    // The dark mode reduced motion image URL.
+    darkModeReducedMotionImageURL: PropTypes.string,
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Any keys ommitted keep their base values.
+    rtl: PropTypes.shape({
+      imageURL: PropTypes.string,
+      darkModeImageURL: PropTypes.string,
+      reducedMotionImageURL: PropTypes.string,
+      darkModeReducedMotionImageURL: PropTypes.string,
+    }),
+    // The <img> alt text.
+    alt: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    // The CSS width of the image slot. The split animation and margins adapt
+    // to it. Defaults to 120px.
+    width: PropTypes.string,
+    // The CSS height of the image slot. Defaults to 120px.
+    height: PropTypes.string,
+    // The CSS style overriding the marginBlock property. Useful for aligning
+    // the image's focal point with the text. Only applies when the text is
+    // split around the image, not when stacked at narrow breakpoints.
+    marginBlock: PropTypes.string,
+    // The CSS style overriding the marginInline property. Only applies when
+    // the text is split around the image, not when stacked at narrow breakpoints.
+    marginInline: PropTypes.string,
+  }),
   // The text for the headline.
   title: localizableThingPropTypes,
   // An optional object representing an icon to show next to the title.
@@ -1665,6 +1728,8 @@ export const screenContentShape = {
       // CSS overrides of the tile container. Any CSS properties starting with
       // '--' are also allowed.
       style: PropTypes.object,
+      // Accessible name for the optional carousel pill navigation.
+      pill_nav_label: localizableThingPropTypes,
       // Array of tile configurations needed for the tile type.
       data: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
     }),

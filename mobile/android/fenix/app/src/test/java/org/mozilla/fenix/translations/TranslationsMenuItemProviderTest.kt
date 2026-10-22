@@ -5,7 +5,9 @@
 package org.mozilla.fenix.translations
 
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -29,6 +31,10 @@ import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuFragmentDirections
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
 
 class TranslationsMenuItemProviderTest {
@@ -112,14 +118,41 @@ class TranslationsMenuItemProviderTest {
         assertNull(provider.itemFlow.value)
     }
 
+    @Test
+    fun `WHEN clicking the item THEN show the translations dialog for the current page instead of the menu`() =
+        runTest {
+            val menu = FakeMenuHost()
+
+            provider().onEvent(MenuAction.Navigate.Translate, menu)
+
+            assertEquals(
+                MenuFragmentDirections.actionMenuFragmentToTranslationsDialogFragment(sessionId = TAB_ID),
+                menu.directions,
+            )
+        }
+
+    @Test
+    fun `WHEN the page is translated or not THEN handle all events the item can dispatch and no others`() = runTest {
+        listOf(browserStore(), browserStore(translatedTo = LANGUAGE_CODE)).forEach { store ->
+            val provider = provider(browserStore = store)
+
+            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+
+            assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+            assertFalse(provider.handles(MenuAction.Navigate.Summarizer))
+        }
+    }
+
     // The item is kept up to date on a scope that runTest cancels at the end of each test.
     private fun TestScope.provider(
         browserStore: BrowserStore = browserStore(),
         translationsSettings: TranslationsEnabledSettings = TranslationsEnabledSettings.inMemory(true),
         isFeatureEnabled: Boolean = true,
+        target: MenuTarget = MenuTarget.BrowserTab,
     ) =
         TranslationsMenuItemProvider(
             browserStore = browserStore,
+            target = target,
             translationsSettings = translationsSettings,
             scope = backgroundScope,
             isFeatureEnabled = isFeatureEnabled,

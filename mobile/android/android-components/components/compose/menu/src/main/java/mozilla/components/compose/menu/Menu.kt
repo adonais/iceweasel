@@ -6,11 +6,10 @@ package mozilla.components.compose.menu
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -19,26 +18,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.menu.data.MenuAttribution
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.compose.menu.ui.ListMenuItemsGroup
+import mozilla.components.compose.menu.ui.MenuAttribution
 import mozilla.components.compose.menu.ui.MenuGridContainer
+import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.utils.MenuPreviewParameterProvider
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A vertically scrollable container for menu items.
@@ -46,6 +45,7 @@ import mozilla.components.lib.state.ext.observeAsComposableState
  * @param store The [MenuStore] backing this menu.
  * @param modifier [Modifier] to be applied to the menu container.
  */
+@Suppress("CognitiveComplexMethod")
 @Composable
 fun Menu(
     store: MenuStore,
@@ -56,29 +56,16 @@ fun Menu(
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         val onInteraction: (MenuEvent) -> Unit = remember(store) { { store.dispatch(it) } }
-        val menuGroups by store.observeAsComposableState { it.menuGroups }
+        val menuState by store.observeAsComposableState { it }
+        val menuGroups = menuState.menuGroups
+        val attribution = menuState.attribution
 
-        val headerGroup =
-            remember(menuGroups) {
-                menuGroups.firstOrNull()?.takeIf { it.isSticky }
-            }
-        val footerGroup =
-            remember(menuGroups) {
-                if (menuGroups.size > 1) {
-                    menuGroups.lastOrNull()?.takeIf { it.isSticky }
-                } else {
-                    null
-                }
-            }
+        val headerGroup = menuGroups.firstOrNull()?.takeIf { it.isSticky }
+        val footerGroup = menuGroups.lastOrNull()?.takeIf { menuGroups.size > 1 && it.isSticky }
         val scrollableGroups =
-            remember(menuGroups, headerGroup, footerGroup) {
-                menuGroups.filter { it != headerGroup && it != footerGroup }
-            }
+            menuGroups.drop(if (headerGroup != null) 1 else 0).dropLast(if (footerGroup != null) 1 else 0)
 
         val listState = rememberLazyListState()
-        var footerHeight by remember { mutableIntStateOf(0) }
-        val density = LocalDensity.current
-        val footerHeightDp = remember(footerHeight) { with(density) { footerHeight.toDp() } }
 
         val isScrollable = listState.canScrollForward || listState.canScrollBackward
         val stickyBackgroundColor =
@@ -88,24 +75,31 @@ fun Menu(
                 MaterialTheme.colorScheme.surfaceContainer
             }
 
-        Box {
+        Column {
+            if (attribution?.showAtTop == true) {
+                MenuAttribution(attribution = attribution)
+            }
+
             MenuContent(
                 listState = listState,
-                footerHeightDp = footerHeightDp,
                 headerGroup = headerGroup,
                 scrollableGroups = scrollableGroups,
                 onInteraction = onInteraction,
                 stickyBackgroundColor = stickyBackgroundColor,
+                modifier = Modifier.weight(1f, fill = false),
             )
 
             if (footerGroup != null) {
                 MenuFooter(
                     footerGroup = footerGroup,
-                    listState = listState,
+                    showDivider = listState.canScrollForward,
                     onInteraction = onInteraction,
-                    onHeightMeasured = { footerHeight = it },
                     backgroundColor = stickyBackgroundColor,
                 )
+            }
+
+            if (attribution?.showAtTop == false) {
+                MenuAttribution(attribution = attribution)
             }
         }
     }
@@ -114,27 +108,32 @@ fun Menu(
 @Composable
 private fun MenuContent(
     listState: LazyListState,
-    footerHeightDp: Dp,
     headerGroup: MenuItemsGroup?,
     scrollableGroups: List<MenuItemsGroup>,
     onInteraction: (MenuEvent) -> Unit,
     stickyBackgroundColor: Color,
+    modifier: Modifier = Modifier,
 ) {
+    // A sticky header spans the whole width and provides its own top spacing, which keeps it from scrolling away
+    // together with the padding that would otherwise be above it.
+    val topPadding = if (headerGroup == null) AcornTheme.layout.space.static100 else 0.dp
+
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         contentPadding =
             PaddingValues(
-                start = AcornTheme.layout.space.static100,
-                top = AcornTheme.layout.space.static100,
-                end = AcornTheme.layout.space.static100,
-                bottom = AcornTheme.layout.space.static100 + footerHeightDp,
+                top = topPadding,
+                bottom = AcornTheme.layout.space.static100,
             ),
         verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static150),
     ) {
         if (headerGroup != null) {
             stickyHeader(key = headerGroup.id) {
-                Column(modifier = Modifier.background(stickyBackgroundColor)) {
+                Column(
+                    modifier =
+                        Modifier.background(stickyBackgroundColor).padding(top = AcornTheme.layout.space.static100)
+                ) {
                     MenuGroupContent(
                         headerGroup,
                         onInteraction,
@@ -151,7 +150,11 @@ private fun MenuContent(
 
         scrollableGroups.forEach { group ->
             item(key = group.id) {
-                MenuGroupContent(group, onInteraction, isSticky = false, backgroundColor = Color.Transparent)
+                MenuGroupContent(
+                    group,
+                    onInteraction,
+                    Modifier.padding(horizontal = AcornTheme.layout.space.static100),
+                )
             }
         }
     }
@@ -161,40 +164,36 @@ private fun MenuContent(
 private fun MenuGroupContent(
     group: MenuItemsGroup,
     onInteraction: (MenuEvent) -> Unit,
-    isSticky: Boolean,
-    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+    isSticky: Boolean = false,
+    backgroundColor: Color = Color.Transparent,
 ) {
     when (group) {
         is MenuItemsGroup.Grid -> {
             MenuGridContainer(
                 items = group.items,
                 onInteraction = onInteraction,
+                modifier = modifier,
                 isSticky = isSticky,
                 backgroundColor = backgroundColor,
             )
         }
 
         is MenuItemsGroup.Row -> {
-            ListMenuItemsGroup(group.items, onInteraction)
+            ListMenuItemsGroup(group.items, onInteraction, modifier)
         }
     }
 }
 
 @Composable
-private fun BoxScope.MenuFooter(
+private fun MenuFooter(
     footerGroup: MenuItemsGroup,
-    listState: LazyListState,
+    showDivider: Boolean,
     onInteraction: (MenuEvent) -> Unit,
-    onHeightMeasured: (Int) -> Unit,
     backgroundColor: Color,
 ) {
-    Column(
-        modifier =
-            Modifier.align(Alignment.BottomCenter)
-                .onGloballyPositioned { onHeightMeasured(it.size.height) }
-                .background(backgroundColor)
-    ) {
-        if (listState.canScrollForward) {
+    Column(modifier = Modifier.background(backgroundColor)) {
+        if (showDivider) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
 
@@ -206,6 +205,20 @@ private fun BoxScope.MenuFooter(
 @Composable
 private fun MenuPreview(@PreviewParameter(MenuPreviewParameterProvider::class) menuGroups: List<MenuItemsGroup>) {
     AcornTheme {
-        Menu(store = MenuStore(initialState = MenuState(menuGroups)))
+        Menu(
+            store =
+                MenuStore(
+                    initialState =
+                        MenuState(
+                            menuGroups = menuGroups,
+                            attribution =
+                                MenuAttribution(
+                                    title = Text.String("Powered by Mozilla"),
+                                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_logo_firefox_24),
+                                    showAtTop = false,
+                                ),
+                        )
+                )
+        )
     }
 }

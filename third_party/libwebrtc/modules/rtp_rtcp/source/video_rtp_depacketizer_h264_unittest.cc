@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_h264.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -603,6 +604,32 @@ TEST(VideoRtpDepacketizerH264Test, OutOfSpecPpsIdRejected) {
   const uint8_t kPayload[] = {H264::kPps, 0x00, 0x7D, 0x38};
   EXPECT_EQ(VideoRtpDepacketizerH264().Parse(CopyOnWriteBuffer(kPayload)),
             std::nullopt);
+}
+
+TEST(VideoRtpDepacketizerH264Test, StapASpsRewriteLengthOverflowRejected) {
+  // Construct a STAP-A packet wrapping an SPS with vui_parameters_present_flag
+  // = 0 and ~44,000 trailing zeros. When SpsVuiRewriter rewrites this SPS,
+  // WriteRbsp inserts 0x03 emulation bytes, expanding the SPS past 65,535
+  // bytes. The depacketizer must reject this packet rather than truncating
+  // rewritten_size to uint16_t in the STAP-A length field.
+  CopyOnWriteBuffer in_buffer;
+  uint8_t kHeader[] = {H264::kStapA};
+  in_buffer.AppendData(kHeader, 1);
+
+  std::vector<uint8_t> sps_nalu(std::begin(kOriginalSps),
+                                std::end(kOriginalSps));
+  sps_nalu.resize(44009, 0x00);
+
+  uint8_t len_buf[2];
+  ByteWriter<uint16_t>::WriteBigEndian(len_buf,
+                                       static_cast<uint16_t>(sps_nalu.size()));
+  in_buffer.AppendData(len_buf, 2);
+  in_buffer.AppendData(sps_nalu.data(), sps_nalu.size());
+
+  VideoRtpDepacketizerH264 depacketizer;
+  std::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed =
+      depacketizer.Parse(in_buffer);
+  EXPECT_EQ(parsed, std::nullopt);
 }
 
 }  // namespace

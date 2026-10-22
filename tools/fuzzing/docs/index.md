@@ -171,7 +171,7 @@ tested/exercised using a gtest. This method is by far the fastest, but
 usually limited to testing isolated components that can be instantiated
 on this level. Utilizing this method requires you to write a fuzzing
 target similar to writing a gtest. This target will automatically be
-usable with libFuzzer and AFLFuzz. We offer a {ref}`comprehensive manual <Fuzzing Interface>`
+usable with libFuzzer and AFLFuzz. We offer a {doc}`comprehensive manual <fuzzing_interface>`
 that describes how to write and utilize your own target.
 
 A simple example here is the {searchfox}`SDP parser target <mozilla-central/rev/efdf9bb55789ea782ae3a431bda6be74a87b041e:media/webrtc/signaling/fuzztest/sdp_parser_libfuzz.cpp#30>`,

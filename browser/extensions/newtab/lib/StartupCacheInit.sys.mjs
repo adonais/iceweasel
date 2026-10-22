@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import {
   actionCreators as ac,
   actionTypes as at,
@@ -21,6 +23,9 @@ const PREF_STARTUPCACHE_FEED = "feeds.startupcacheinit";
  *                    We render this feed inert after hydrating from cache or not.
  */
 export class StartupCacheInit {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     // Internal state for checking if we've intialized this feed.
     this.loaded = false;

@@ -135,23 +135,77 @@ void gfxAndroidPlatform::WaitForInitializeFontAPI() {
   }
 }
 
+static void AppendMimeType(nsCString& aList, const nsACString& aMimeType) {
+  if (!aList.IsEmpty()) {
+    aList.Append(',');
+  }
+  aList.Append(aMimeType);
+}
+
+// Codecs that map to a media::MediaCodec are returned in aSupported. Decoder
+// MIME types which do not are returned as comma separated lists instead.
+static void QueryMediaCodecsSupported(media::MediaCodecsSupported& aSupported,
+                                      nsCString& aUnmappedSwDecode,
+                                      nsCString& aUnmappedHwDecode) {
+  jni::ObjectArray::LocalRef supportedTypes =
+      java::HardwareCodecCapabilityUtils::GetSupportedMimeTypesWithAccelInfo(
+          true);
+  for (size_t i = 0; i < supportedTypes->Length(); i++) {
+    const nsCString s =
+        jni::String::LocalRef(supportedTypes->GetElement(i))->ToCString();
+    const int32_t sep = s.FindChar(' ');
+    if (sep <= 0 || static_cast<uint32_t>(sep) + 1 >= s.Length()) {
+      continue;
+    }
+
+    const auto caps = Substring(s, 0, sep);
+    const auto mimeType = Substring(s, sep + 1);
+    const media::MediaCodec codec =
+        media::MCSInfo::GetMediaCodecFromMimeType(mimeType);
+    if (codec == media::MediaCodec::SENTINEL) {
+      if (caps == "SW"_ns) {
+        AppendMimeType(aUnmappedSwDecode, mimeType);
+      } else if (caps == "HW"_ns) {
+        AppendMimeType(aUnmappedHwDecode, mimeType);
+      }
+      continue;
+    }
+
+    if (caps == "SW"_ns) {
+      aSupported += media::MCSInfo::GetMediaCodecsSupportEnum(
+          codec, media::DecodeSupport::SoftwareDecode);
+    } else if (caps == "HW"_ns) {
+      aSupported += media::MCSInfo::GetMediaCodecsSupportEnum(
+          codec, media::DecodeSupport::HardwareDecode);
+    } else if (caps == "SWE"_ns) {
+      aSupported += media::MCSInfo::GetMediaCodecsSupportEnum(
+          codec, media::EncodeSupport::SoftwareEncode);
+    } else if (caps == "HWE"_ns) {
+      aSupported += media::MCSInfo::GetMediaCodecsSupportEnum(
+          codec, media::EncodeSupport::HardwareEncode);
+    }
+  }
+}
+
+void gfxAndroidPlatform::InitPlatformHardwareVideoConfig() {
+  media::MediaCodecsSupported supported;
+  nsCString unmappedSwDecode;
+  nsCString unmappedHwDecode;
+  QueryMediaCodecsSupported(supported, unmappedSwDecode, unmappedHwDecode);
+  gfxVars::SetPlatformMediaCodecsSupported(supported);
+  gfxVars::SetPlatformUnmappedSwDecodeMimeTypes(unmappedSwDecode);
+  gfxVars::SetPlatformUnmappedHwDecodeMimeTypes(unmappedHwDecode);
+}
+
 // static
 bool gfxAndroidPlatform::IsHwCodecSupported(media::MediaCodec aCodec,
                                             bool aEncoder) {
-  switch (aCodec) {
-    case media::MediaCodec::H264:
-      return java::HardwareCodecCapabilityUtils::HasHWH264(aEncoder);
-    case media::MediaCodec::VP8:
-      return java::HardwareCodecCapabilityUtils::HasHWVP8(aEncoder);
-    case media::MediaCodec::VP9:
-      return java::HardwareCodecCapabilityUtils::HasHWVP9(aEncoder);
-    case media::MediaCodec::AV1:
-      return java::HardwareCodecCapabilityUtils::HasHWAV1(aEncoder);
-    case media::MediaCodec::HEVC:
-      return java::HardwareCodecCapabilityUtils::HasHWHEVC(aEncoder);
-    default:
-      return false;
+  if (aEncoder) {
+    return media::MCSInfo::SupportsHardwareEncode(
+        gfxVars::PlatformMediaCodecsSupported(), aCodec);
   }
+  return media::MCSInfo::SupportsHardwareDecode(
+      gfxVars::PlatformMediaCodecsSupported(), aCodec);
 }
 
 gfxAndroidPlatform::gfxAndroidPlatform() {

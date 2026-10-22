@@ -319,6 +319,7 @@ class DOMMatrix : public DOMMatrixReadOnly {
   // These methods primarily correspond to the DOMMatrix WebIDL API.
   // Additional helpers may be declared here for CSS Typed OM implementation
   // and are not Web-exposed.
+  DOMMatrix* MultiplySelf(const DOMMatrix& aOther);
   DOMMatrix* MultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* PreMultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* TranslateSelf(double aTx, double aTy, double aTz = 0);

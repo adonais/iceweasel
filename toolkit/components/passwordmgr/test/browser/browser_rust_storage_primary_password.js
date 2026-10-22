@@ -113,3 +113,20 @@ add_task(async function test_cancel() {
 
   await LoginTestUtils.primaryPassword.disable();
 });
+
+add_task(async function test_count_does_not_prompt() {
+  await LoginTestUtils.primaryPassword.enable();
+
+  let stopAnswering = answerPrimaryPasswordDialogs([null]);
+  let login = LoginTestUtils.testData.formLogin({});
+  let count = await rustStore.countLoginsAsync(
+    login.origin,
+    login.formActionOrigin,
+    ""
+  );
+
+  Assert.equal(stopAnswering(), 0, "No dialog was shown");
+  Assert.equal(count, 1, "The matching login is counted while locked");
+
+  await LoginTestUtils.primaryPassword.disable();
+});

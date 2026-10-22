@@ -17,9 +17,6 @@ tags = "os_integration"
 ["browser_cookie_exceptions_addRemove.js"]
 
 ["browser_cookies_exceptions.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
-]
 
 ["browser_etp_exceptions_dialog.js"]
 

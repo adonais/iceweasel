@@ -18,8 +18,8 @@ platform, if 64-bit integers are supported for that platform, define
 
 NSPR provides two types to represent 64-bit integers:
 
-- {ref}`PRInt64`
-- {ref}`PRUint64`
+- {doc}`print64`
+- {doc}`pruint64`
 
 (bit-integer-functions)=
 

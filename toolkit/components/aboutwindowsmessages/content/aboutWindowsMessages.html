@@ -31,12 +31,9 @@
     <div id="windows-div"></div>
 
     <template name="window-card">
-      <details class="card">
-        <summary>
-          <h3 class="window-card-title"></h3>
-          <button data-l10n-id="windows-messages-copy-to-clipboard"></button>
-        </summary>
-      </details>
+      <moz-card type="accordion" headingLevel="3" class="window-card">
+        <div class="copy-button-container"></div>
+      </moz-card>
     </template>
   </body>
 </html>

@@ -14,6 +14,7 @@
 #include "js/WeakMap.h"
 #include "js/Wrapper.h"
 #include "js/friend/WindowProxy.h"  // js::IsWindowProxy
+#include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -452,9 +453,12 @@ bool MaybeCrossOriginObject<Base>::defineProperty(
     return false;
   }
 
-  JS_MarkCrossZoneId(cx, id);
+  JS::Rooted<jsid> wrappedId(cx, id);
+  if (!JS_WrapId(cx, &wrappedId)) {
+    return false;
+  }
 
-  return definePropertySameOrigin(cx, proxy, id, descCopy, result);
+  return definePropertySameOrigin(cx, proxy, wrappedId, descCopy, result);
 }
 
 template <typename Base>

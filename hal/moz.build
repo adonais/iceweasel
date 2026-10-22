@@ -140,3 +140,15 @@ CFLAGS += CONFIG["GLIB_CFLAGS"]
 CFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 CXXFLAGS += CONFIG["GLIB_CFLAGS"]
 CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+
+with Files("linux/**"):
+    SCHEDULES.exclusive = ["linux"]
+
+with Files("windows/**"):
+    SCHEDULES.exclusive = ["windows"]
+
+with Files("cocoa/**"):
+    SCHEDULES.exclusive = ["macosx"]
+
+with Files("android/**"):
+    SCHEDULES.exclusive = ["android"]

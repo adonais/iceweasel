@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --input-text-min-height: auto;
+  --input-min-height: auto;
 }
 
 #input {

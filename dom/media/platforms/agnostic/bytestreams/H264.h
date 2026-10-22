@@ -292,6 +292,26 @@ struct SPSData {
   uint32_t max_num_ref_frames = {};
 
   /*
+    max_num_reorder_frames from the VUI bitstream-restriction parameters
+    (Annex E.1.2) specifies the maximum number of frames, complementary
+    field pairs, or non-paired fields that precede any frame, complementary
+    field pair, or non-paired field in decoding order and follow it in
+    output order. A non-zero value means decode order can differ from
+    presentation order (B-frames). Inferred as 0 for intra-only profiles
+    (or MaxDpbFrames otherwise) when the restriction parameters are absent.
+   */
+  uint32_t max_num_reorder_frames = {};
+
+  /*
+    max_dec_frame_buffering from the VUI bitstream-restriction parameters
+    (Annex E.1.2) specifies the required size of the decoded picture buffer.
+    max_num_reorder_frames shall be in the range of 0 to
+    max_dec_frame_buffering, inclusive. Stays 0 when the restriction
+    parameters are absent.
+   */
+  uint32_t max_dec_frame_buffering = {};
+
+  /*
     gaps_in_frame_num_value_allowed_flag specifies the allowed
     values of frame_num as specified in subclause 7.4.3 and the
     decoding process in case of an inferred gap between values of
@@ -531,6 +551,12 @@ class H264 {
   static uint32_t ComputeMaxRefFrames(
       const mozilla::MediaByteBuffer* aExtraData);
 
+  // Return max_num_reorder_frames from a valid SPS in the extradata,
+  // otherwise return 0. A non-zero value means decode order can differ from
+  // presentation order (B-frames).
+  static uint32_t ComputeMaxNumReorderFrames(
+      const mozilla::MediaByteBuffer* aExtraData);
+
   enum class FrameType {
     // IDR is a special iframe, according to the spec T-REC-H.264-202408, 3.69 :
     // "An IDR picture causes the decoding process to mark all reference
@@ -576,7 +602,7 @@ class H264 {
       const uint8_t* aNAL, size_t aLength);
   static bool vui_parameters(mozilla::BitReader& aBr, SPSData& aDest);
   // Read HRD parameters, all data is ignored.
-  static void hrd_parameters(mozilla::BitReader& aBr);
+  static bool hrd_parameters(mozilla::BitReader& aBr);
   static uint8_t NumSPS(const mozilla::MediaByteBuffer* aExtraData);
   // Decode SEI payload and return true if the SEI NAL indicates a recovery
   // point.

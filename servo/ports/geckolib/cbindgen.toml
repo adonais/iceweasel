@@ -251,9 +251,6 @@ include = [
   "TouchAction",
   "WillChange",
   "TextDecorationLine",
-  "MasonryAutoFlow",
-  "MasonryPlacement",
-  "MasonryItemOrder",
   "TextUnderlinePosition",
   "TextTransform",
   "TextTransformCase",
@@ -600,6 +597,7 @@ renaming_overrides_prefixing = true
   inline bool HasLengthAndPercentage() const;
   inline bool BehavesLikeStretchOnInlineAxis() const;
   inline bool BehavesLikeStretchOnBlockAxis() const;
+  inline bool BehavesLikeStretch(LogicalAxis) const;
   inline bool BehavesLikeInitialValueOnBlockAxis() const;
   inline bool BehavesLikeInitialValue(LogicalAxis) const;
   inline bool HasAnchorPositioningFunction() const;
@@ -620,6 +618,7 @@ renaming_overrides_prefixing = true
   inline bool HasLengthAndPercentage() const;
   inline bool BehavesLikeStretchOnInlineAxis() const;
   inline bool BehavesLikeStretchOnBlockAxis() const;
+  inline bool BehavesLikeStretch(LogicalAxis) const;
   inline bool BehavesLikeInitialValueOnBlockAxis() const;
   inline bool BehavesLikeInitialValue(LogicalAxis) const;
   inline bool HasAnchorPositioningFunction() const;
@@ -1088,7 +1087,7 @@ renaming_overrides_prefixing = true
   inline Maybe<size_t> RepeatAutoIndex() const;
   inline const StyleGenericTrackRepeat<L, I>* GetRepeatAutoValue() const;
   inline bool HasRepeatAuto() const;
-  inline Span<const StyleOwnedSlice<StyleCustomIdent>> LineNameLists(bool aIsSubgrid) const;
+  inline Span<const StyleOwnedSlice<StyleCustomIdent>> LineNameLists() const;
   inline Span<const StyleGenericTrackListValue<L, I>> TrackListValues() const;
 """
 

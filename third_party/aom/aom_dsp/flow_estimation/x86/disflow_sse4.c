@@ -80,11 +80,11 @@ static inline __m128i compute_cubic_kernels(double u, double v) {
 //
 // TODO(rachelbarker): Test speed/quality impact of using bilinear interpolation
 // instad of bicubic interpolation
-static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
-                                       int width, int height, int stride, int x,
-                                       int y, double u, double v,
-                                       const int16_t *dx, const int16_t *dy,
-                                       int *b) {
+static inline void compute_flow_vector(const uint8_t *src, int src_stride,
+                                       const uint8_t *ref, int ref_stride,
+                                       int width, int height, int x, int y,
+                                       double u, double v, const int16_t *dx,
+                                       const int16_t *dy, int *b) {
   // This function is written to do 8x8 convolutions only
   assert(DISFLOW_PATCH_SIZE == 8);
 
@@ -134,7 +134,7 @@ static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
 
   for (int i = -1; i < DISFLOW_PATCH_SIZE + 2; ++i) {
     const int y_w = y0 + i;
-    const uint8_t *ref_row = &ref[y_w * stride + (x0 - 1)];
+    const uint8_t *ref_row = &ref[y_w * ref_stride + (x0 - 1)];
     int16_t *tmp_row = &tmp[i * DISFLOW_PATCH_SIZE];
 
     // Load this row of pixels.
@@ -218,7 +218,7 @@ static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
 
     __m128i warped = _mm_packs_epi32(sum0_rounded, sum1_rounded);
     __m128i src_pixels_u8 =
-        _mm_loadl_epi64((__m128i *)&src[(y + i) * stride + x]);
+        _mm_loadl_epi64((__m128i *)&src[(y + i) * src_stride + x]);
     __m128i src_pixels = _mm_slli_epi16(_mm_cvtepu8_epi16(src_pixels_u8), 3);
 
     // Calculate delta from the target patch
@@ -357,9 +357,10 @@ static inline void invert_2x2(const double *M, double *M_inv) {
   M_inv[3] = M[0] * det_inv;
 }
 
-void aom_compute_flow_at_point_sse4_1(const uint8_t *src, const uint8_t *ref,
-                                      int x, int y, int width, int height,
-                                      int stride, double *u, double *v) {
+void aom_compute_flow_at_point_sse4_1(const uint8_t *src, int src_stride,
+                                      const uint8_t *ref, int ref_stride, int x,
+                                      int y, int width, int height, double *u,
+                                      double *v) {
   DECLARE_ALIGNED(16, double, M[4]);
   DECLARE_ALIGNED(16, double, M_inv[4]);
   DECLARE_ALIGNED(16, int16_t, dx[DISFLOW_PATCH_SIZE * DISFLOW_PATCH_SIZE]);
@@ -367,15 +368,15 @@ void aom_compute_flow_at_point_sse4_1(const uint8_t *src, const uint8_t *ref,
   int b[2];
 
   // Compute gradients within this patch
-  const uint8_t *src_patch = &src[y * stride + x];
-  sobel_filter(src_patch, stride, dx, dy);
+  const uint8_t *src_patch = &src[y * src_stride + x];
+  sobel_filter(src_patch, src_stride, dx, dy);
 
   compute_flow_matrix(dx, DISFLOW_PATCH_SIZE, dy, DISFLOW_PATCH_SIZE, M);
   invert_2x2(M, M_inv);
 
   for (int itr = 0; itr < DISFLOW_MAX_ITR; itr++) {
-    compute_flow_vector(src, ref, width, height, stride, x, y, *u, *v, dx, dy,
-                        b);
+    compute_flow_vector(src, src_stride, ref, ref_stride, width, height, x, y,
+                        *u, *v, dx, dy, b);
 
     // Solve flow equations to find a better estimate for the flow vector
     // at this point

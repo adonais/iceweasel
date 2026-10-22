@@ -18,7 +18,6 @@
 #define wasm_binary_h
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Maybe.h"
 
 #include <type_traits>
 
@@ -639,13 +638,6 @@ class Decoder {
   void skipAndFinishCustomSection(const BytecodeRange& range);
 
   [[nodiscard]] bool skipCustomSection(CodeMetadata* codeMeta);
-
-  // The Name section has its own optional subsections.
-
-  [[nodiscard]] bool startNameSubsection(NameType nameType,
-                                         mozilla::Maybe<uint32_t>* endOffset);
-  [[nodiscard]] bool finishNameSubsection(uint32_t endOffset);
-  [[nodiscard]] bool skipNameSubsection();
 
   // The infallible "unchecked" decoding functions can be used when we are
   // sure that the bytes are well-formed (by construction or due to previous

@@ -120,6 +120,36 @@ Allowed actions, and subfields:
       scope - An identifier for the set of tests run during the browser session
               (e.g. a directory name) (optional)
 
+  assertion_failure
+      kind - "MOZ_ASSERT", "MOZ_CRASH", "NS_ASSERTION" or "NS_ABORT"
+      message - The asserted condition, crash reason, or NS_DebugBreak message
+      file - Source file of the assertion (optional)
+      lineno - Source line of the assertion (optional)
+      pid - PID of the process that asserted (optional)
+      process_type - Process type printed by NS_DebugBreak, e.g. "Parent" (optional)
+      thread - Name of the thread that asserted (optional)
+      fatal - Boolean indicating whether the process aborts as a result
+      stack - Native stack printed after the assertion (list of profiler-format
+              frame dicts with function/file/line or module/module_offset) (optional)
+      test - ID of the test that was running (optional)
+      subsuite - Name of the subsuite for the tests that ran (optional)
+
+  ubsan_error
+      kind - UndefinedBehaviorSanitizer check kind from the SUMMARY line
+             ("undefined-behavior" unless the runtime reports error types)
+      message - The "runtime error:" message (e.g. "applying non-zero offset
+                96 to null pointer")
+      file - Source file of the offending operation (optional)
+      lineno - Source line of the offending operation (optional)
+      column - Source column of the offending operation (optional)
+      stack - Stack printed after the report (list of profiler-format frame
+              dicts with function/file/line/column or module/module_offset)
+              (optional)
+      scope - An identifier for the set of tests run during the browser session
+              (e.g. a directory name) (optional)
+      test - ID of the test that was running (optional)
+      subsuite - Name of the subsuite for the tests that ran (optional)
+
   mozleak_object
      process - Process that leaked
      count - Number of instances that leaked
@@ -708,6 +738,36 @@ class StructuredLogger:
     )
     def tsan_error(self, data):
         self._log_data("tsan_error", data)
+
+    @log_action(
+        Unicode("kind"),
+        Unicode("message"),
+        Unicode("file", optional=True, default=None),
+        Int("lineno", optional=True, default=None),
+        Int("pid", optional=True, default=None),
+        Unicode("process_type", optional=True, default=None),
+        Unicode("thread", optional=True, default=None),
+        Boolean("fatal", optional=True, default=False),
+        List(Dict(Any), "stack", optional=True, default=None),
+        TestId("test", default=None, optional=True),
+        Unicode("subsuite", default=None, optional=True),
+    )
+    def assertion_failure(self, data):
+        self._log_data("assertion_failure", data)
+
+    @log_action(
+        Unicode("kind"),
+        Unicode("message"),
+        Unicode("file", optional=True, default=None),
+        Int("lineno", optional=True, default=None),
+        Int("column", optional=True, default=None),
+        List(Dict(Any), "stack", optional=True, default=None),
+        Unicode("scope", optional=True, default=None),
+        TestId("test", default=None, optional=True),
+        Unicode("subsuite", default=None, optional=True),
+    )
+    def ubsan_error(self, data):
+        self._log_data("ubsan_error", data)
 
     @log_action(
         Unicode("process"),

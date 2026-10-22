@@ -1028,10 +1028,8 @@ pkix_pl_CertNameConstraints_CopyNssNameConstraints(
             do {
 
                 /*
-                 * Cannot use CERT_DupGeneralNameList, which just increments
-                 * refcount. We need our own copy since arena is for each
-                 * PKIX_PL_NameConstraints. Perhaps contribute this code
-                 * as CERT_CopyGeneralNameList (in the future).
+                 * We need our own copy since arena is for each
+                 * PKIX_PL_NameConstraints.
                  */
                 nssCopyTo = NULL;
                 PKIX_CERTNAMECONSTRAINTS_DEBUG

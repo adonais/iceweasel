@@ -435,6 +435,13 @@ JS::ContextOptions& JS::ContextOptions::setFuzzing(bool flag) {
   return *this;
 }
 
+JS::ContextOptions& JS::ContextOptions::setWasmDisablesDenormals() {
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  wasmDisablesDenormals_ = true;
+#endif
+  return *this;
+}
+
 JS_PUBLIC_API const char* JS_GetImplementationVersion(void) {
   return "JavaScript-C" MOZILLA_VERSION;
 }
@@ -547,12 +554,10 @@ JS_PUBLIC_API void* JS_GetCompartmentPrivate(JS::Compartment* compartment) {
   return compartment->data;
 }
 
-JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id) {
-  cx->recordRefToId(id);
-}
-
-JS_PUBLIC_API void JS_MarkCrossZoneIdValue(JSContext* cx, const Value& value) {
-  cx->recordRefToValue(value);
+JS_PUBLIC_API bool JS_WrapId(JSContext* cx, MutableHandleId id) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  return cx->wrapOrRecordRefToId(id);
 }
 
 JS_PUBLIC_API void JS_SetZoneUserData(JS::Zone* zone, void* data) {
@@ -837,12 +842,18 @@ struct JSStdName {
 
 static const JSStdName* LookupStdName(const JSAtomState& names, JSAtom* name,
                                       const JSStdName* table) {
+  // Every name in the table is a permanent atom.
+  if (!name->isPermanent()) {
+    return nullptr;
+  }
+
   for (unsigned i = 0; !table[i].isSentinel(); i++) {
     if (table[i].isDummy()) {
       continue;
     }
     JSAtom* atom = AtomStateOffsetToName(names, table[i].atomOffset);
     MOZ_ASSERT(atom);
+    MOZ_ASSERT(atom->isPermanent());
     if (name == atom) {
       return &table[i];
     }
@@ -2515,6 +2526,8 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
   sourceIsLazy = rhs.sourceIsLazy;
   allowHTMLComments = rhs.allowHTMLComments;
   nonSyntacticScope = rhs.nonSyntacticScope;
+  allowRedeclaringExistingLexicalBinding =
+      rhs.allowRedeclaringExistingLexicalBinding;
 
   topLevelAwait = rhs.topLevelAwait;
 
@@ -3070,7 +3083,11 @@ JS_PUBLIC_API bool JS::RejectPromise(JSContext* cx, JS::HandleObject promiseObj,
 }
 
 JS_PUBLIC_API bool JS::SafeResolve(JSContext* cx, JS::HandleObject promiseObj,
-                                   JS::HandleValue resolutionValue) {
+                                   JS::HandleValue resolutionValue,
+                                   bool* deferred) {
+  if (deferred) {
+    *deferred = false;
+  }
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(promiseObj, resolutionValue);
@@ -3094,7 +3111,7 @@ JS_PUBLIC_API bool JS::SafeResolve(JSContext* cx, JS::HandleObject promiseObj,
     promise = promiseObj.as<PromiseObject>();
   }
 
-  return js::SafeResolvePromise(cx, promise, resolution);
+  return js::SafeResolvePromise(cx, promise, resolution, deferred);
 }
 
 JS_PUBLIC_API JSObject* JS::CallOriginalPromiseThen(
@@ -3727,8 +3744,13 @@ JS_PUBLIC_API JS::Symbol* JS::GetSymbolFor(JSContext* cx, HandleString key) {
   return Symbol::for_(cx, key);
 }
 
-JS_PUBLIC_API JSString* JS::GetSymbolDescription(HandleSymbol symbol) {
-  return symbol->description();
+JS_PUBLIC_API JSString* JS::GetSymbolDescription(JSContext* cx,
+                                                 HandleSymbol symbol) {
+  JSAtom* description = symbol->description();
+  if (description) {
+    cx->recordRef(description);
+  }
+  return description;
 }
 
 JS_PUBLIC_API JS::SymbolCode JS::GetSymbolCode(Handle<Symbol*> symbol) {
@@ -4157,11 +4179,9 @@ void JS::AutoSaveExceptionState::drop() {
 }
 
 void JS::AutoSaveExceptionState::restore() {
-  context->status = status;
-  context->unwrappedException() = exceptionValue;
-  if (exceptionStack) {
-    context->unwrappedExceptionStack() = &exceptionStack->as<SavedFrame>();
-  }
+  SavedFrame* stack =
+      exceptionStack ? &exceptionStack->as<SavedFrame>() : nullptr;
+  context->restorePendingExceptionState(status, exceptionValue, stack);
   drop();
 }
 

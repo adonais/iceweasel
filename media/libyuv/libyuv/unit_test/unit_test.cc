@@ -89,6 +89,9 @@ static int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_SME")) {
     cpu_info &= ~libyuv::kCpuHasSME;
   }
+  if (TestEnv("LIBYUV_DISABLE_SME2")) {
+    cpu_info &= ~libyuv::kCpuHasSME2;
+  }
 #endif
 #if defined(__longarch__) && defined(__linux__)
   if (TestEnv("LIBYUV_DISABLE_LSX")) {
@@ -101,6 +104,11 @@ static int TestCpuEnv(int cpu_info) {
 #if defined(__riscv) && defined(__linux__)
   if (TestEnv("LIBYUV_DISABLE_RVV")) {
     cpu_info &= ~libyuv::kCpuHasRVV;
+  }
+#endif
+#if defined(__wasm__)
+  if (TestEnv("LIBYUV_DISABLE_WASM")) {
+    cpu_info &= ~libyuv::kCpuHasWASMSIMD;
   }
 #endif
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \

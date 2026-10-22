@@ -117,11 +117,6 @@ skip-if = [
 ["test_select_ctrl_a.html"]
 
 ["test_select_collapsed_page_keys.html"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # select control keyboard behavior is different
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # select control keyboard behavior is different
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # select control keyboard behavior is different
-]
 
 ["test_select_key_navigation_bug961363.html"]
 

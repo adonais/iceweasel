@@ -7,26 +7,55 @@
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
-ChromeUtils.defineESModuleGetters(this, {
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = XPCOMUtils.declareLazy({
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
 });
 
+/**
+ * @typedef {XULElement & { disabled: boolean }} XULButtonElement
+ * @typedef {XULTreeElement & { currentIndex: number }} TabListTree
+ */
+
+/**
+ * A row of the tab list: a window, or one of its tabs.
+ *
+ * @typedef {object} TreeRow
+ * @property {string} label
+ * @property {boolean|0} checked
+ *   Whether the row will be restored; 0 marks a partially checked window.
+ * @property {boolean} [open]
+ *   Whether a window row is expanded. Set on window rows only.
+ * @property {number} [ix]
+ *   Index of a window row's window in the session state.
+ * @property {TreeRow[]} [tabs]
+ *   A window row's tab rows.
+ * @property {string} [src]
+ *   A tab row's favicon URL.
+ * @property {TreeRow} [parent]
+ *   A tab row's window row.
+ */
+
+/** @type {{ windows: WindowStateData[] }} */
 var gStateObject;
+/** @type {TreeRow[]} */
 var gTreeData;
 var gTreeInitialized = false;
 
 // Page initialization
 
 window.onload = function () {
-  let toggleTabs = document.getElementById("tabsToggle");
+  let toggleTabs = /** @type {HTMLButtonElement} */ (
+    document.getElementById("tabsToggle")
+  );
   if (toggleTabs) {
-    let tabList = document.getElementById("tabList");
-
     let toggleHiddenTabs = () => {
       toggleTabs.classList.toggle("tabs-hidden");
-      tabList.hidden = toggleTabs.classList.contains("tabs-hidden");
+      getTabList().hidden = toggleTabs.classList.contains("tabs-hidden");
       initTreeView();
     };
     toggleTabs.onclick = toggleHiddenTabs;
@@ -40,7 +69,7 @@ window.onload = function () {
     }
   }
 
-  var tabListTree = document.getElementById("tabList");
+  var tabListTree = getTabList();
   tabListTree.addEventListener("click", onListClick);
   tabListTree.addEventListener("keydown", onListKeyDown);
 
@@ -52,12 +81,14 @@ window.onload = function () {
     errorCancelButton.addEventListener("command", startNewSession);
   }
 
-  var errorTryAgainButton = document.getElementById("errorTryAgain");
+  var errorTryAgainButton = getTryAgainButton();
   errorTryAgainButton.addEventListener("command", restoreSession);
 
   // the crashed session state is kept inside a textbox so that SessionStore picks it up
   // (for when the tab is closed or the session crashes right again)
-  var sessionData = document.getElementById("sessionData");
+  var sessionData = /** @type {HTMLInputElement} */ (
+    document.getElementById("sessionData")
+  );
   if (!sessionData.value) {
     errorTryAgainButton.disabled = true;
     return;
@@ -76,7 +107,7 @@ window.onload = function () {
 };
 
 function isTreeViewVisible() {
-  return !document.getElementById("tabList").hidden;
+  return !getTabList().hidden;
 }
 
 async function initTreeView() {
@@ -84,7 +115,7 @@ async function initTreeView() {
     return;
   }
 
-  var tabList = document.getElementById("tabList");
+  var tabList = getTabList();
   let l10nIds = [];
   for (
     let labelIndex = 0;
@@ -98,7 +129,8 @@ async function initTreeView() {
   }
   let winLabels = await document.l10n.formatValues(l10nIds);
   gTreeData = [];
-  gStateObject.windows.forEach(function (aWinData, aIx) {
+  gStateObject.windows.forEach((aWinData, aIx) => {
+    /** @type {TreeRow} */
     var winState = {
       label: winLabels[aIx],
       open: true,
@@ -113,7 +145,7 @@ async function initTreeView() {
       return {
         label: entry.title || entry.url,
         checked: true,
-        src: PlacesUIUtils.getImageURL(aTabData.image),
+        src: lazy.PlacesUIUtils.getImageURL(aTabData.image),
         parent: winState,
       };
     });
@@ -121,7 +153,7 @@ async function initTreeView() {
     for (let tab of winState.tabs) {
       gTreeData.push(tab);
     }
-  }, this);
+  });
 
   tabList.view = treeView;
   tabList.view.selection.select(0);
@@ -130,14 +162,17 @@ async function initTreeView() {
 
 // User actions
 function updateTabListVisibility() {
-  document.getElementById("tabList").hidden =
-    !document.getElementById("radioRestoreChoose").checked;
+  getTabList().hidden = !(
+    /** @type {HTMLInputElement} */ (
+      document.getElementById("radioRestoreChoose")
+    ).checked
+  );
   initTreeView();
 }
 
 function restoreSession() {
   Services.obs.notifyObservers(null, "sessionstore-initiating-manual-restore");
-  document.getElementById("errorTryAgain").disabled = true;
+  getTryAgainButton().disabled = true;
 
   if (isTreeViewVisible()) {
     if (!gTreeData.some(aItem => aItem.checked)) {
@@ -171,15 +206,13 @@ function restoreSession() {
 
   // if there's only this page open, reuse the window for restoring the session
   if (top.gBrowser.tabs.length == 1) {
-    SessionStore.setWindowState(top, stateString, true);
+    lazy.SessionStore.setWindowState(top, stateString, true);
     return;
   }
 
   // restore the session into a new window and close the current tab
-  var newWindow = top.openDialog(
-    top.location,
-    "_blank",
-    "chrome,dialog=no,all"
+  var newWindow = /** @type {ChromeWindow} */ (
+    top.openDialog(top.location.href, "_blank", "chrome,dialog=no,all")
   );
 
   Services.obs.addObserver(function observe(win, topic) {
@@ -188,7 +221,7 @@ function restoreSession() {
     }
 
     Services.obs.removeObserver(observe, topic);
-    SessionStore.setWindowState(newWindow, stateString, true);
+    lazy.SessionStore.setWindowState(newWindow, stateString, true);
 
     let tabbrowser = top.gBrowser;
     let browser = window.docShell.chromeEventHandler;
@@ -239,12 +272,12 @@ function onListClick(aEvent) {
 function onListKeyDown(aEvent) {
   switch (aEvent.keyCode) {
     case KeyEvent.DOM_VK_SPACE:
-      toggleRowChecked(document.getElementById("tabList").currentIndex);
+      toggleRowChecked(getTabList().currentIndex);
       // Prevent page from scrolling on the space key.
       aEvent.preventDefault();
       break;
     case KeyEvent.DOM_VK_RETURN:
-      var ix = document.getElementById("tabList").currentIndex;
+      var ix = getTabList().currentIndex;
       if (aEvent.ctrlKey && !treeView.isContainer(ix)) {
         restoreSingleTab(ix, aEvent.shiftKey);
       }
@@ -254,8 +287,30 @@ function onListKeyDown(aEvent) {
 
 // Helper functions
 
+/**
+ * @returns {TabListTree}
+ */
+function getTabList() {
+  return /** @type {TabListTree} */ (document.getElementById("tabList"));
+}
+
+/**
+ * @returns {XULButtonElement}
+ */
+function getTryAgainButton() {
+  return /** @type {XULButtonElement} */ (
+    document.getElementById("errorTryAgain")
+  );
+}
+
+/**
+ * @returns {ChromeWindow}
+ */
 function getBrowserWindow() {
-  return window.browsingContext.topChromeWindow;
+  return /** @type {ChromeWindow} */ (
+    /** @type {CanonicalBrowsingContext} */ (window.browsingContext)
+      .topChromeWindow
+  );
 }
 
 function toggleRowChecked(aIx) {
@@ -275,6 +330,7 @@ function toggleRowChecked(aIx) {
     }
   } else {
     // Update the window's checkmark as well (0 means "partially checked").
+    /** @type {boolean|0} */
     let state = false;
     if (item.parent.tabs.every(isChecked)) {
       state = true;
@@ -288,8 +344,7 @@ function toggleRowChecked(aIx) {
 
   // we only disable the button when there's no cancel button.
   if (document.getElementById("errorCancel")) {
-    document.getElementById("errorTryAgain").disabled =
-      !gTreeData.some(isChecked);
+    getTryAgainButton().disabled = !gTreeData.some(isChecked);
   }
 }
 
@@ -304,7 +359,7 @@ function restoreSingleTab(aIx, aShifted) {
     ];
   // ensure tab would be visible on the tabstrip.
   tabState.hidden = false;
-  SessionStore.setTabState(newTab, JSON.stringify(tabState));
+  lazy.SessionStore.setTabState(newTab, JSON.stringify(tabState));
 
   // respect the preference as to whether to select the tab (the Shift key inverses)
   if (
@@ -333,7 +388,7 @@ var treeView = {
     return "open" in gTreeData[idx];
   },
   getCellValue(idx) {
-    return gTreeData[idx].checked;
+    return String(gTreeData[idx].checked);
   },
   isContainerOpen(idx) {
     return gTreeData[idx].open;
@@ -439,6 +494,9 @@ var treeView = {
     return null;
   },
 
+  setCellValue() {},
+  setCellText() {},
+  drop() {},
   cycleHeader() {},
   cycleCell() {},
   selectionChanged() {},

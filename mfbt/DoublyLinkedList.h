@@ -92,7 +92,7 @@ class DoublyLinkedListElement {
  */
 template <typename T>
 struct GetDoublyLinkedListElement {
-  static_assert(std::is_base_of<DoublyLinkedListElement<T>, T>::value,
+  static_assert(std::is_base_of_v<DoublyLinkedListElement<T>, T>,
                 "You need your own specialization of GetDoublyLinkedListElement"
                 " or use a separate Trait.");
   static const DoublyLinkedListElement<T>& Get(const T* aThis) {

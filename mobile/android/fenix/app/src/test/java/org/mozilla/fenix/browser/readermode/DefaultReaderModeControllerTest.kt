@@ -92,6 +92,26 @@ class DefaultReaderModeControllerTest {
     }
 
     @Test
+    fun `GIVEN a color scheme override WHEN it is set THEN it is forwarded to the reader view feature`() {
+        every { readerViewFeature.colorSchemeOverride = any() } just Runs
+        val controller = DefaultReaderModeController(featureWrapper, readerViewControlsBar)
+
+        controller.setColorSchemeOverride(ReaderViewFeature.ColorScheme.DARK)
+
+        verify { readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK }
+    }
+
+    @Test
+    fun `GIVEN a color scheme override WHEN it is cleared THEN the reader view feature override is cleared`() {
+        every { readerViewFeature.colorSchemeOverride = any() } just Runs
+        val controller = DefaultReaderModeController(featureWrapper, readerViewControlsBar)
+
+        controller.setColorSchemeOverride(null)
+
+        verify { readerViewFeature.colorSchemeOverride = null }
+    }
+
+    @Test
     fun testShowControlsNormalTab() {
         val controller =
             DefaultReaderModeController(

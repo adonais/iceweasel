@@ -16,7 +16,6 @@ PYTHON_UNITTEST_MANIFESTS += [
 
 DIRS += [
     "/tools",
-    "/xpcom/xpidl",
 ]
 
 if CONFIG["COMPILE_ENVIRONMENT"]:

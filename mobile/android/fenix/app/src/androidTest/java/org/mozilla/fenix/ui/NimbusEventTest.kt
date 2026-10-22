@@ -5,9 +5,10 @@
 package org.mozilla.fenix.ui
 
 import android.content.Intent
-import io.mockk.mockk
 import mozilla.components.concept.sync.AuthType
-import mozilla.components.service.fxa.FirefoxAccount
+import mozilla.components.concept.sync.FxAEntryPoint
+import mozilla.components.concept.sync.OAuthAccount
+import mozilla.components.concept.sync.StatePersistenceCallback
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -43,11 +44,52 @@ class NimbusEventTest {
     @Test
     fun telemetryAccountObserverTest() {
         val observer = TelemetryAccountObserver(appContext, appContext.components.settings)
-        // replacing interface mock with implementation mock.
-        observer.onAuthenticated(mockk<FirefoxAccount>(), AuthType.Signin)
+        observer.onAuthenticated(UnusedOAuthAccount(), AuthType.Signin)
 
         Experimentation.withHelper {
             assertTrue(evalJexl("'sync_auth.sign_in'|eventSum('Days', 28, 0) > 0"))
         }
     }
+}
+
+/**
+ * Stands in for the account argument of [TelemetryAccountObserver.onAuthenticated], which the observer never reads.
+ * Every member throws, so any future use shows up immediately rather than silently passing.
+ */
+private class UnusedOAuthAccount : OAuthAccount {
+    override fun getCurrentDeviceId() = unused()
+
+    override suspend fun handleWebChannelLogin(jsonPayload: String) = unused()
+
+    override fun getSignedInUserForWebChannel() = unused()
+
+    override suspend fun getProfile(ignoreCache: Boolean) = unused()
+
+    override suspend fun getAccessToken(singleScope: String) = unused()
+
+    override suspend fun getAttachedClient() = unused()
+
+    override fun authErrorDetected() = unused()
+
+    override suspend fun checkAuthorizationStatus(singleScope: String) = unused()
+
+    override suspend fun getTokenServerEndpointURL() = unused()
+
+    override suspend fun getManageAccountURL(entryPoint: FxAEntryPoint) = unused()
+
+    override fun getPairingAuthorityURL() = unused()
+
+    override fun registerPersistenceCallback(callback: StatePersistenceCallback) = unused()
+
+    override fun deviceConstellation() = unused()
+
+    override fun hasScope(scope: String) = unused()
+
+    override suspend fun disconnect() = unused()
+
+    override fun toJSONString() = unused()
+
+    override fun close() = unused()
+
+    private fun unused(): Nothing = throw UnsupportedOperationException("not used by the code under test")
 }

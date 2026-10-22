@@ -50,6 +50,7 @@ struct NSSLOWKEYPrivateKeyInfoStr {
     SECAlgorithmID algorithm;
     SECItem privateKey;
     NSSLOWKEYAttribute **attributes;
+    SECItem publicKey;
 };
 typedef struct NSSLOWKEYPrivateKeyInfoStr NSSLOWKEYPrivateKeyInfo;
 #define NSSLOWKEY_PRIVATE_KEY_INFO_VERSION 0 /* what we *create* */
@@ -67,8 +68,10 @@ typedef enum {
     NSSLOWKEYDSAKey = 2,
     NSSLOWKEYDHKey = 4,
     NSSLOWKEYECKey = 5,
-    NSSLOWKEYMLDSAKey = 6,
-    NSSLOWKEYMLKEMKey = 7,
+    NSSLOWKEYECEdwardsKey = 6,
+    NSSLOWKEYECMontgomeryKey = 7,
+    NSSLOWKEYMLDSAKey = 8,
+    NSSLOWKEYMLKEMKey = 9,
 } NSSLOWKEYType;
 
 /* ML KEM low structures packages a key with it's parameters.

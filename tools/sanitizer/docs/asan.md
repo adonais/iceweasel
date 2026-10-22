@@ -52,7 +52,7 @@ The `--debug` and `--os` switches can be used to get the other variants listed a
 If for some reason you can't use the pre-built binaries mentioned in the
 previous section (e.g. you want a non-Linux build or you need to test a
 patch), you can either build Firefox yourself (see the following
-section) or use the {ref}`try server <Pushing to Try>` to
+section) or use the {doc}`try server </tools/try/index>` to
 create the customized build for you. Pushing to try requires L1 commit
 access. If you don't have this access yet you can request access (see
 [Becoming A Mozilla
@@ -85,7 +85,7 @@ On Windows, ASan is supported only in 64-bit builds.
 
 Run `mach bootstrap` to get an updated clang-cl in your
 `~/.mozbuild` directory, then use the following
-{ref}`mozconfig <Configuring Build Options>`:
+{doc}`mozconfig </setup/configuring_build_options>`:
 
 ```
 ac_add_options --enable-address-sanitizer
@@ -114,8 +114,8 @@ everything needed to do an ASAN build.
 
 #### Getting the source
 
-Using that or any later revision, all you need to do is to {ref}`get yourself
-a clone of mozilla-central <Firefox Contributors' Quick Reference>`.
+Using that or any later revision, all you need to do is to {doc}`get yourself
+a clone of mozilla-central </contributing/contribution_quickref>`.
 
 #### Adjusting the build configuration
 

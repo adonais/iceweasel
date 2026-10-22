@@ -96,6 +96,23 @@ ServiceWorkerUnregisterJob::ClearNotifications() {
 
 already_AddRefed<GenericPromise>
 ServiceWorkerUnregisterJob::ClearPushSubscriptions() {
+  if (StaticPrefs::dom_push_window_pushmanager_enabled()) {
+    // https://w3c.github.io/push-api/#subscription-deactivation
+    //   A push subscription without a window-accessible scope MUST be
+    //   deactivated when its associated service worker registration is
+    //   unregistered, though a push subscription MAY be deactivated earlier.
+    // NOTE: If the push subscription has a scope with a pathname of /,
+    // then it can be accessed through window.pushManager, so we shouldn't
+    // deactivate it when the service worker is unregistered.
+    nsCOMPtr<nsIURI> scopeURI;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(scopeURI), mScope))) {
+      nsCString path;
+      scopeURI->GetFilePath(path);
+      if (path.EqualsLiteral("/")) {
+        return GenericPromise::CreateAndResolve(true, __func__).forget();
+      }
+    }
+  }
   nsresult rv = NS_OK;
   nsCOMPtr<nsIPushService> pushService =
       do_GetService("@mozilla.org/push/Service;1", &rv);

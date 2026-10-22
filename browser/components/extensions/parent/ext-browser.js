@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
 });
 
 var { ExtensionError } = ExtensionUtils;
@@ -633,7 +634,7 @@ class TabTracker extends TabTrackerBase {
       // by the first MozAfterPaint event. That code handles finally
       // adopting the tab, and clears it from the arguments list in the
       // process, so if we run later than it, we're too late.
-      if (window.gBrowser.isTab(tabToAdopt)) {
+      if (Tabbrowser.isTab(tabToAdopt)) {
         let adoptedBy = window.gBrowser.tabs[0];
         this.adopt(adoptedBy, tabToAdopt);
       }
@@ -822,7 +823,7 @@ class Tab extends TabBase {
   }
 
   get sharingState() {
-    return this.window.gBrowser.getTabSharingState(this.nativeTab);
+    return Tabbrowser.getTabSharingState(this.nativeTab);
   }
 
   get cookieStoreId() {
@@ -908,7 +909,7 @@ class Tab extends TabBase {
   }
 
   get successorTabId() {
-    const { successor } = this.nativeTab;
+    const successor = this.window.gBrowser.getSuccessor(this.nativeTab);
     return successor ? tabTracker.getId(successor) : -1;
   }
 

@@ -27,10 +27,37 @@ object SettingsEnhancedTrackingProtectionExceptionsSelectors : SelectorContainer
             readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
+    val EMPTY_MESSAGE =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.exceptions_empty_message_description),
+            description = "Exceptions empty state message",
+        )
+
     val LEARN_MORE_LINK =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = "Learn more",
             description = "Learn more link",
+        )
+
+    // After tapping the Exceptions "Learn more" link the SUMO article opens in the browser. The path redirects
+    // (see the legacy BrowserRobot.verifyETPLearnMoreURL fallback chain), so match the stable host as a substring
+    // of the toolbar's displayed URL rather than a full URL.
+    val LEARN_MORE_URL =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = "support.mozilla.org",
+            description = "Enhanced tracking protection SUMO article URL",
+        )
+
+    // A site row in the populated exceptions list, identified by its host. Mirrors the legacy
+    // verifySiteExceptionExists (itemContainingText(siteHost)).
+    @Suppress("FunctionName")
+    fun EXCEPTION_ROW(host: String = "") =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = host,
+            description = "Exceptions list entry for '$host'",
         )
 }

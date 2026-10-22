@@ -103,7 +103,7 @@ def create_mozconfig(test_dir, name):
                 ac_add_options --enable-artifact-builds
                 ac_add_options --target=aarch64-linux-android
                 mk_add_options MOZ_OBJDIR="{objdir.as_posix()}"
-                export GRADLE_FLAGS="-PbuildMetrics -PbuildMetricsOutputDir={objdir.as_posix()}/gradle/build/metrics -PbuildMetricsFileSuffix=test"
+                export GRADLE_FLAGS="-PbuildMetricsOutputDir={objdir.as_posix()}/gradle/build/metrics -PbuildMetricsFileSuffix=test"
             """
         )
     )

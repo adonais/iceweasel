@@ -108,3 +108,18 @@ disabled-ping:
     - glean-team@mozilla.com
   no_lint:
     - REDUNDANT_PING
+
+ping-for-ping-storage-test:
+  description: |
+    This ping is for tests only.
+  include_client_id: false
+  send_if_empty: true
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2072733
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2072733
+  notification_emails:
+    - chumphreys@mozilla.com
+    - glean-team@mozilla.com
+  no_lint:
+    - REDUNDANT_PING

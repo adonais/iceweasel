@@ -14,6 +14,7 @@ task-defaults:
         script: build-cpython.sh
         resources:
             - 'build/psutil_requirements.txt'
+            - 'build/pyyaml_requirements.txt'
             - 'build/zstandard_requirements.txt'
 
 linux64-python-3.10:

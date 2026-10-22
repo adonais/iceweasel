@@ -1042,7 +1042,6 @@ class ListOriginsOp final
     : public OpenStorageDirectoryHelper<
           ResolvableNormalOriginOp<CStringArray, /* IsExclusive */ true>>,
       public TraverseRepositoryHelper {
-  // XXX Bug 1521541 will make each origin has it's own state.
   nsTArray<nsCString> mOrigins;
 
  public:

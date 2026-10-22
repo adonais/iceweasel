@@ -400,8 +400,15 @@ Only used for openh264 plugin builds, used to signify the version (and thus info
 ## code-review
 
 If a task set this boolean attribute to `true`, it will be processed by the code
-review bot, the task will ran for every new Phabricator diff.
+review bot, the task will run for every new Phabricator diff.
 Any supported and detected issue will be automatically reported on the
+Phabricator revision.
+
+## code-review-build-test
+
+If a task set this boolean attribute to `true`, it will be processed by the code
+review bot build & test analysis, and the task will run for every new Phabricator
+diff. Any supported and detected issue will be automatically reported on the
 Phabricator revision.
 
 ## retrigger
@@ -425,9 +432,9 @@ We enable build-signing for `shippable`, `nightly`, and `enable-build-signing` t
 
 ## target-store
 
-The Android app store a `push-android` task submits to: `google`, `samsung` or
-`huawei`. Together with `build-type` it identifies a push task, since several
-stores can be fed from the same signed build.
+The Android app store a `push-android` task submits to: `google`, `samsung`,
+`huawei` or `vivo`. Together with `build-type` it identifies a push task, since
+several stores can be fed from the same signed build.
 
 ## run-visual-metrics
 

@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/resolution.h"
@@ -142,6 +143,10 @@ std::unique_ptr<FrameReader> CreateY4mFrameReader(std::string filepath);
 std::unique_ptr<FrameReader> CreateY4mFrameReader(
     std::string filepath,
     YuvFrameReaderImpl::RepeatMode repeat_mode);
+
+// Parses video resolution from filename or path if present (e.g. "1280x720",
+// "1850_1110", "cif", "qcif", "720p").
+std::optional<Resolution> ParseResolutionFromFileName(absl::string_view path);
 
 }  // namespace test
 }  // namespace webrtc

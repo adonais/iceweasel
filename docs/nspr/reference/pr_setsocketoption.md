@@ -18,22 +18,22 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing the socket whose
+: A pointer to a {doc}`prfiledesc` object representing the socket whose
   options are to be set.
 
 `data`
 
-: A pointer to a structure of type {ref}`PRSocketOptionData` specifying
+: A pointer to a structure of type {doc}`prsocketoptiondata` specifying
   the options to set.
 
 ### Returns
 
 - If successful, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. The reason for the failure can be
-  obtained by calling {ref}`PR_GetError`.
+  obtained by calling {doc}`pr_geterror`.
 
 ## Description
 
 On input, the caller must set both the `option` and `value` fields
-of the {ref}`PRSocketOptionData` object pointed to by the `data`
+of the {doc}`prsocketoptiondata` object pointed to by the `data`
 parameter.

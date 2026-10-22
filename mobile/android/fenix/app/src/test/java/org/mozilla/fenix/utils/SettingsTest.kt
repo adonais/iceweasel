@@ -5,6 +5,7 @@
 package org.mozilla.fenix.utils
 
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import androidx.core.content.edit
 import io.mockk.every
 import io.mockk.spyk
@@ -38,6 +39,7 @@ import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 private const val TOU_VERSION = 5
 
@@ -329,6 +331,18 @@ class SettingsTest {
 
         // Then
         assertFalse(settings.shouldAutofillLogins)
+    }
+
+    @Test
+    fun `GIVEN Android Automotive WHEN reading the autofill settings THEN they are all disabled by default`() {
+        shadowOf(testContext.packageManager).setSystemFeature(PackageManager.FEATURE_AUTOMOTIVE, true)
+        val automotiveSettings = Settings(testContext)
+
+        assertFalse(automotiveSettings.isAutofillSupported)
+        assertFalse(automotiveSettings.shouldPromptToSaveLogins)
+        assertFalse(automotiveSettings.shouldAutofillLogins)
+        assertFalse(automotiveSettings.shouldAutofillCreditCardDetails)
+        assertFalse(automotiveSettings.shouldAutofillAddressDetails)
     }
 
     @Test
@@ -1183,6 +1197,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 0
         settings.lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()
         settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertFalse(settings.shouldShowSetAsDefaultPrompt())
     }
@@ -1193,6 +1208,7 @@ class SettingsTest {
             3 // Maximum number of times the prompt can be shown based on the design criteria
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertFalse(settings.shouldShowSetAsDefaultPrompt())
     }
@@ -1202,6 +1218,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis() - 1000
         settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertFalse(settings.shouldShowSetAsDefaultPrompt())
     }
@@ -1211,6 +1228,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 1
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertFalse(settings.shouldShowSetAsDefaultPrompt())
     }
@@ -1220,6 +1238,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 5 // More than required cold starts
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertTrue(settings.shouldShowSetAsDefaultPrompt())
     }
@@ -1229,6 +1248,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 5 // More than required cold starts
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertFalse(settings.shouldShowSetAsDefaultPrompt(DefaultBrowserPrompt(enabled = false)))
     }
@@ -1238,6 +1258,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()
         settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertTrue(settings.shouldShowSetAsDefaultPrompt(DefaultBrowserPrompt(daysBetweenPrompts = null)))
     }
@@ -1247,6 +1268,7 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 10
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertTrue(settings.shouldShowSetAsDefaultPrompt(DefaultBrowserPrompt(maxPromptsShown = null)))
     }
@@ -1256,8 +1278,45 @@ class SettingsTest {
         settings.numberOfSetAsDefaultPromptShownTimes = 1
         settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
         settings.coldStartsBetweenSetAsDefaultPrompts = 0
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
 
         assertTrue(settings.shouldShowSetAsDefaultPrompt(DefaultBrowserPrompt(coldStartsBetweenPrompts = null)))
+    }
+
+    @Test
+    fun `GIVEN other conditions are valid WHEN continuous onboarding is in progress THEN shouldShowSetAsDefaultPrompt is false`() {
+        settings.numberOfSetAsDefaultPromptShownTimes = 1
+        settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
+        settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.continuousOnboardingFeatureEnabled = true
+        settings.seventhDayOnboardingCompletedTimestamp = -1L
+
+        assertFalse(settings.shouldShowSetAsDefaultPrompt())
+    }
+
+    @Test
+    fun `GIVEN other conditions are valid WHEN continuous onboarding is disabled THEN shouldShowSetAsDefaultPrompt is true`() {
+        settings.numberOfSetAsDefaultPromptShownTimes = 1
+        settings.lastSetAsDefaultPromptShownTimeInMillis = 0L
+        settings.coldStartsBetweenSetAsDefaultPrompts = 5
+        settings.continuousOnboardingFeatureEnabled = false
+        settings.seventhDayOnboardingCompletedTimestamp = -1L
+
+        assertTrue(settings.shouldShowSetAsDefaultPrompt())
+    }
+
+    @Test
+    fun `GIVEN day 7 onboarding is not completed THEN continuousOnboardingCompleted is false`() {
+        settings.seventhDayOnboardingCompletedTimestamp = -1L
+
+        assertFalse(settings.continuousOnboardingCompleted)
+    }
+
+    @Test
+    fun `GIVEN day 7 onboarding is completed THEN continuousOnboardingCompleted is true`() {
+        settings.seventhDayOnboardingCompletedTimestamp = 1L
+
+        assertTrue(settings.continuousOnboardingCompleted)
     }
 
     @Test
@@ -1489,5 +1548,31 @@ class SettingsTest {
         settings.recordLastBrowseActivity()
 
         assertEquals(fixedTime, settings.lastBrowseActivity)
+    }
+
+    @Test
+    fun `GIVEN a fresh profile WHEN reading the Power Saving Mode preferences THEN both are false`() {
+        assertFalse(settings.powerSavingModeAutoEnabled)
+        assertFalse(settings.powerSavingModeManuallyEnabled)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode is enabled manually WHEN it is set to follow the OS THEN it is no longer enabled manually`() {
+        settings.powerSavingModeManuallyEnabled = true
+
+        settings.powerSavingModeAutoEnabled = true
+
+        assertTrue(settings.powerSavingModeAutoEnabled)
+        assertFalse(settings.powerSavingModeManuallyEnabled)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode follows the OS WHEN it is enabled manually THEN it no longer follows the OS`() {
+        settings.powerSavingModeAutoEnabled = true
+
+        settings.powerSavingModeManuallyEnabled = true
+
+        assertTrue(settings.powerSavingModeManuallyEnabled)
+        assertFalse(settings.powerSavingModeAutoEnabled)
     }
 }

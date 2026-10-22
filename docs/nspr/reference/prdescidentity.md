@@ -24,8 +24,8 @@ There are three well-known identities:
 > - `PR_TOP_IO_LAYER`, the identity of the top of the stack
 > - `PR_NSPR_IO_LAYER`, the identity used by NSPR proper
 
-Layers are created by {ref}`PR_GetUniqueIdentity`. A string may be
+Layers are created by {doc}`pr_getuniqueidentity`. A string may be
 associated with a layer when the layer is created. The string is copied
-by the runtime, and {ref}`PR_GetNameForIdentity` returns a reference to
+by the runtime, and {doc}`pr_getnameforidentity` returns a reference to
 that copy. There is no way to delete a layer's identity after the layer
 is created.

@@ -61,7 +61,6 @@ const REQUESTS_TOOLTIP_TOGGLE_DELAY = 500;
 // Tooltip image maximum dimension in px
 const REQUESTS_TOOLTIP_IMAGE_MAX_DIM = 400;
 
-const LEFT_MOUSE_BUTTON = 0;
 const MIDDLE_MOUSE_BUTTON = 1;
 const RIGHT_MOUSE_BUTTON = 2;
 
@@ -281,13 +280,17 @@ class RequestListContentComponent extends Component {
   }
 
   onMouseDown(evt, id, request) {
-    if (evt.button === LEFT_MOUSE_BUTTON) {
-      this.props.selectRequest(id, request);
-    } else if (evt.button === RIGHT_MOUSE_BUTTON) {
+    if (evt.button === RIGHT_MOUSE_BUTTON) {
       this.props.onItemRightMouseButtonDown(id);
     } else if (evt.button === MIDDLE_MOUSE_BUTTON) {
       this.onMiddleMouseButtonDown(request);
     }
+  }
+
+  // Selecting on click rather than mousedown, as the selection opens the side
+  // panel, which resizes the columns under the mouse pointer.
+  onClick(id, request) {
+    this.props.selectRequest(id, request);
   }
 
   /**
@@ -425,6 +428,7 @@ class RequestListContentComponent extends Component {
             {
               ref: "rowGroupEl",
               className: "requests-list-row-group",
+              role: "listbox",
               tabIndex: 0,
               onKeyDown: this.onKeyDown,
             },
@@ -448,6 +452,7 @@ class RequestListContentComponent extends Component {
                 onDoubleClick: () => this.onDoubleClick(item),
                 onDragStart: evt => this.onDragStart(evt, item),
                 onMouseDown: evt => this.onMouseDown(evt, item.id, item),
+                onClick: () => this.onClick(item.id, item),
                 onInitiatorBadgeMouseDown: () =>
                   onInitiatorBadgeMouseDown(item.cause),
                 onSecurityIconMouseDown: () =>

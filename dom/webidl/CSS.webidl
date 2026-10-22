@@ -11,18 +11,20 @@
  * liability, trademark and document use rules apply.
  */
 
-[Exposed=Window]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSS::IsEnabled"]
 namespace CSS {
-  boolean supports(UTF8String property, UTF8String value);
-  boolean supports(UTF8String conditionText);
+  [Exposed=Window] boolean supports(UTF8String property, UTF8String value);
+  [Exposed=Window] boolean supports(UTF8String conditionText);
 };
 
 // http://dev.w3.org/csswg/cssom/#the-css.escape%28%29-method
+[Exposed=Window]
 partial namespace CSS {
   DOMString escape(DOMString ident);
 };
 
 // https://www.w3.org/TR/css-highlight-api-1/#registration
+[Exposed=Window]
 partial namespace CSS {
   [GetterThrows]
   readonly attribute HighlightRegistry highlights;
@@ -36,6 +38,7 @@ dictionary PropertyDefinition {
   required boolean    inherits;
            UTF8String initialValue;
 };
+[Exposed=Window]
 partial namespace CSS {
   [Pref="layout.css.properties-and-values.enabled", Throws]
   undefined registerProperty(PropertyDefinition definition);

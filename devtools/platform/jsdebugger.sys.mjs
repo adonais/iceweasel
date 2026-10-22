@@ -5,7 +5,7 @@
 /*
  * This is the js module for Debugger. Import it like so:
  *   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
- *     "resource://gre/modules/jsdebugger.sys.mjs"
+ *     "moz-src:///devtools/platform/jsdebugger.sys.mjs"
  *   );
  *   addDebuggerToGlobal(globalThis);
  *

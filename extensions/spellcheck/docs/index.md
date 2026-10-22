@@ -28,8 +28,7 @@ from the old bug to the new one.
 
 This section describes the process for adding new words to the dictionary:
 
-1. Get a clone of the [firefox repository] (see {ref}`Firefox Contributors' Quick
-   Reference`), if you don’t already have one, and make sure you can build it
+1. Get a clone of the [firefox repository] (see {doc}`/contributing/contribution_quickref`), if you don’t already have one, and make sure you can build it
    successfully.
 
 2. Move in the dictionary sources directory using this command:

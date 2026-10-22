@@ -335,6 +335,7 @@ private fun TranslationsDialogContent(
 }
 
 @Composable
+@Suppress("Deprecation")
 private fun TranslationsDialogContentInPortraitMode(
     longestLanguageSize: Dp,
     translateFromLanguages: List<Language>? = null,
@@ -397,6 +398,7 @@ private fun TranslationsDialogContentInPortraitMode(
 }
 
 @Composable
+@Suppress("Deprecation")
 private fun TranslationsDialogContentInLandscapeMode(
     longestLanguageSize: Dp,
     translateFromLanguages: List<Language>? = null,

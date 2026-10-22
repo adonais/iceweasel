@@ -82,14 +82,11 @@ class QuitOnSuccessSetObserver : public SetLocalDescriptionObserverInterface {
 class PeerConnectionAudioOptionsTest : public ::testing::Test {
  public:
   PeerConnectionAudioOptionsTest()
-      : worker_thread_(Thread::Create()),
-        network_thread_(Thread::CreateWithSocketServer()) {
+      : network_thread_(Thread::CreateWithSocketServer()) {
     network_thread_->Start();
-    worker_thread_->Start();
 
     PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = network_thread_.get();
-    dependencies.worker_thread = worker_thread_.get();
     dependencies.signaling_thread = Thread::Current();
 
     EnableFakeMedia(dependencies, std::make_unique<FakeMediaEngine>());
@@ -120,7 +117,6 @@ class PeerConnectionAudioOptionsTest : public ::testing::Test {
     return static_cast<PeerConnection*>(proxy->internal());
   }
   RunLoop loop_;
-  std::unique_ptr<Thread> worker_thread_;
   std::unique_ptr<Thread> network_thread_;
   scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   scoped_refptr<PeerConnectionInterface> pc_;

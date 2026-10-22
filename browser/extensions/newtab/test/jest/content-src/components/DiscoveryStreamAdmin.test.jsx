@@ -514,22 +514,6 @@ describe("<DiscoveryStreamAdminUI>", () => {
       );
     });
 
-    // Bug 2063657: the sports widget is retired; removed in bug 2063656.
-    it("should not render any sports widget row", () => {
-      const { container } = renderWidgets({ "widgets.system.enabled": true });
-      expect(
-        container.querySelector('[id="widgets.system.sportsWidget.enabled"]')
-      ).not.toBeInTheDocument();
-      expect(
-        container.querySelector('[id="widgets.sportsWidget.live.enabled"]')
-      ).not.toBeInTheDocument();
-      expect(
-        container.querySelector(
-          '[id="widgets.sportsWidget.celebrations.enabled"]'
-        )
-      ).not.toBeInTheDocument();
-    });
-
     it("should sort the toggles A-Z by their customize panel label", async () => {
       // jsdom has no document.l10n; the labels are attribute-only messages.
       const labels = {
@@ -539,7 +523,7 @@ describe("<DiscoveryStreamAdminUI>", () => {
         "newtab-custom-widget-picture-toggle": "Picture of the day",
         "newtab-custom-widget-privacy-toggle": "Privacy",
         "newtab-custom-widget-search-toggle": "Search",
-        "newtab-custom-widget-stocks-toggle": "Stocks",
+        "newtab-custom-widget-stocks-toggle2": "Finance",
         "newtab-custom-widget-timer-toggle": "Timer",
         "newtab-custom-widget-weather-toggle": "Weather",
       };
@@ -561,11 +545,11 @@ describe("<DiscoveryStreamAdminUI>", () => {
       expect(order()).toEqual([
         "newtab-custom-widget-clock-toggle",
         "newtab-custom-widget-crossword-toggle",
+        "newtab-custom-widget-stocks-toggle2",
         "newtab-custom-widget-lists-toggle",
         "newtab-custom-widget-picture-toggle",
         "newtab-custom-widget-privacy-toggle",
         "newtab-custom-widget-search-toggle",
-        "newtab-custom-widget-stocks-toggle",
         "newtab-custom-widget-timer-toggle",
         "newtab-custom-widget-weather-toggle",
       ]);
@@ -720,7 +704,10 @@ describe("<DiscoveryStreamAdminUI> Layouts", () => {
     "side-by-side-widgets-lead-five",
     "spaces-buttons-bottom",
     "spaces-buttons-top",
+    "spaces-floating-arrows",
     "spaces-thematic-v1",
+    // @experiment(remove) { bug 2078816 }
+    "widget-first-content-slot",
     // @experiment(remove) { bug 2069496 }
     "widgets-ad-large",
   ];

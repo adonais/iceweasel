@@ -16,11 +16,6 @@
 //! The rendering treats VBox, HBox, and Scroll as strictly layout-only: they do not create any
 //! associated windows, and the layout logic handles their behavior.
 
-// Our windows-targets doesn't link uxtheme correctly for GetThemeSysFont/GetThemeSysColor.
-// This was working in windows-sys 0.48.
-#[link(name = "uxtheme", kind = "static")]
-extern "C" {}
-
 use super::model::{self, Application, Element, ElementStyle, TypedElement};
 use crate::data::{Property, Synchronized};
 use dpi::Dpi;

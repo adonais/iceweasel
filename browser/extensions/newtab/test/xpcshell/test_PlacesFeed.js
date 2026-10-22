@@ -1175,3 +1175,80 @@ add_task(async function test_PlacesObserver_bookmark_removed() {
   );
   sandbox.restore();
 });
+
+add_task(async function test_onAction_OPEN_LINK_reports_the_opened_browser() {
+  info(
+    "PlacesFeed should report the <browser> that receives a link tagged " +
+      "with a dwell_label, so its dwell can be measured"
+  );
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  feed.onAction({
+    type: actionTypes.OPEN_LINK,
+    data: {
+      url: "https://foo.com",
+      dwell_label: "story_sponsored",
+      is_sponsored: true,
+    },
+    _target: { window: { openTrustedLinkIn } },
+  });
+
+  let [, , params] = openTrustedLinkIn.firstCall.args;
+  Assert.ok(
+    params.resolveOnContentBrowserCreated,
+    "openTrustedLinkIn was asked for the destination browser"
+  );
+
+  let browser = { permanentKey: {} };
+  params.resolveOnContentBrowserCreated(browser);
+  Assert.ok(
+    feed.store.dispatch.calledWith({
+      type: actionTypes.DWELL_LINK_OPENED,
+      data: { browser, dwell_label: "story_sponsored" },
+    }),
+    "The browser is dispatched with the label the click site chose"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_onAction_OPEN_LINK_untagged_is_not_reported() {
+  info("PlacesFeed should not report links without a dwell_label");
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  feed.onAction({
+    type: actionTypes.OPEN_LINK,
+    data: { url: "https://foo.com" },
+    _target: { window: { openTrustedLinkIn } },
+  });
+
+  let [, , params] = openTrustedLinkIn.firstCall.args;
+  Assert.ok(
+    !params.resolveOnContentBrowserCreated,
+    "Nothing to report for a link that did not opt in"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_onAction_OPEN_PRIVATE_WINDOW_is_not_reported() {
+  info("PlacesFeed should not report links opened in a private window");
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  feed.onAction({
+    type: actionTypes.OPEN_PRIVATE_WINDOW,
+    data: { url: "https://foo.com", dwell_label: "story_organic" },
+    _target: { window: { openTrustedLinkIn } },
+  });
+
+  let [, , params] = openTrustedLinkIn.firstCall.args;
+  Assert.ok(
+    !params.resolveOnContentBrowserCreated,
+    "Private browsing is not measured"
+  );
+
+  sandbox.restore();
+});

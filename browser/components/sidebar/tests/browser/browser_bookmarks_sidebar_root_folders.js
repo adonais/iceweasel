@@ -7,6 +7,8 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
 
+const { showBookmarksSidebar } = SidebarTestUtils.bookmarks;
+
 let innerFolderGuid;
 
 add_setup(async function () {
@@ -101,7 +103,7 @@ const deleteItem = document.getElementById(
 const cutItem = document.getElementById("sidebar-bookmarks-context-cut");
 
 add_task(async function test_destructive_actions_disabled_for_root_folders() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebar(window);
   const toolbarFolder = await getRootFolderEl(
     component,
     PlacesUtils.bookmarks.toolbarGuid
@@ -126,7 +128,7 @@ add_task(async function test_destructive_actions_disabled_for_root_folders() {
 });
 
 add_task(async function test_destructive_actions_enabled_for_normal_folders() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebar(window);
   const nestedList = await expandToolbarFolder(component.bookmarkList);
   const innerFolder = await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
@@ -147,7 +149,7 @@ add_task(async function test_destructive_actions_enabled_for_normal_folders() {
 });
 
 add_task(async function test_drag_root_creates_symbolic_link() {
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const menuItemCount = await descendentCount(PlacesUtils.bookmarks.menuGuid);
 
   info("Drag Bookmarks Toolbar into the Menu folder.");
@@ -206,7 +208,7 @@ add_task(async function test_drag_root_creates_symbolic_link() {
 });
 
 add_task(async function test_copy_paste_root_creates_symbolic_link() {
-  const sidebar = await showBookmarksSidebar();
+  const sidebar = await showBookmarksSidebar(window);
 
   const toolbarFolderEl = await getRootFolderEl(
     sidebar.component,
@@ -264,7 +266,7 @@ add_task(async function test_recursive_symlink_does_not_crash() {
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
   });
 
-  const sidebar = await showBookmarksSidebar();
+  const sidebar = await showBookmarksSidebar(window);
   const toolbar = await getRootFolderEl(
     sidebar.component,
     PlacesUtils.bookmarks.toolbarGuid

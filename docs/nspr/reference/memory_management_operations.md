@@ -19,16 +19,16 @@ equivalents.
 
 Memory allocation functions are:
 
-> - {ref}`PR_Malloc`
-> - {ref}`PR_Calloc`
-> - {ref}`PR_Realloc`
-> - {ref}`PR_Free`
+> - {doc}`pr_malloc`
+> - {doc}`pr_calloc`
+> - {doc}`pr_realloc`
+> - {doc}`pr_free`
 
 `PR_Malloc()`, `PR_Calloc()`, `PR_Realloc()`, and `PR_Free()`
 have the same signatures as their libc equivalents `malloc()`,
 `calloc()`, `realloc()`, and `free()`, and have the same
 semantics. (Note that the argument type `size_t` is replaced by
-{ref}`PRUint32`.) Memory allocated by `PR_Malloc()`, `PR_Calloc()`, or
+{doc}`pruint32`.) Memory allocated by `PR_Malloc()`, `PR_Calloc()`, or
 `PR_Realloc()` must be freed by `PR_Free()`.
 
 (memory-allocation-macros)=
@@ -38,10 +38,10 @@ semantics. (Note that the argument type `size_t` is replaced by
 Macro versions of the memory allocation functions are available, as well
 as additional macros that provide programming convenience:
 
-> - {ref}`PR_MALLOC`
-> - {ref}`PR_NEW`
-> - {ref}`PR_REALLOC`
-> - {ref}`PR_CALLOC`
-> - {ref}`PR_NEWZAP`
-> - {ref}`PR_DELETE`
-> - {ref}`PR_FREEIF`
+> - {doc}`pr_malloc`
+> - {doc}`pr_new`
+> - {doc}`pr_realloc`
+> - {doc}`pr_calloc`
+> - {doc}`pr_newzap`
+> - {doc}`pr_delete`
+> - {doc}`pr_freeif`

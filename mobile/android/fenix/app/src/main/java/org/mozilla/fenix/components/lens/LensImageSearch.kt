@@ -20,6 +20,41 @@ import org.mozilla.fenix.components.LensImageUploader
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 
+private val logger = Logger("LensImageSearch")
+
+/**
+ * Runs a Google Lens [upload] and records its outcome as the search telemetry, counting an image that can't be read as
+ * a failed search.
+ *
+ * @param source Upload method the image came from, recorded as telemetry.
+ * @param upload Performs the upload, or returns null if there was no image to upload.
+ * @return The result of the upload, or null if it never reached Lens.
+ */
+internal suspend fun runLensUpload(
+    source: String,
+    upload: suspend () -> LensImageUploader.UploadResult?,
+): LensImageUploader.UploadResult? {
+    val uploadResult =
+        try {
+            upload()
+        } catch (e: IOException) {
+            logger.warn("Google Lens upload failed", e)
+            null
+        } catch (e: SecurityException) {
+            // The photo picker's URI grant can be gone by the time the upload reads it.
+            logger.warn("Google Lens upload failed to read the image", e)
+            null
+        }
+    GoogleLens.searchCompleted.record(
+        GoogleLens.SearchCompletedExtra(
+            succeeded = uploadResult?.resultUrl != null,
+            httpStatusCode = uploadResult?.httpStatusCode,
+            source = source,
+        )
+    )
+    return uploadResult
+}
+
 /**
  * Uploads an image to Google Lens and opens the result, for every Google Lens entry point.
  *
@@ -38,17 +73,30 @@ class LensImageSearch(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
 ) {
 
-    private val logger = Logger("LensImageSearch")
     private var searchJob: Job? = null
 
     /**
-     * Uploads a camera capture or photo picker selection and opens the Lens result.
+     * Uploads a camera capture and opens the Lens result.
      *
      * @param imageUri Location of the image to upload.
      * @param source Upload method the image came from, recorded as telemetry.
      */
     fun searchWithImage(imageUri: Uri, source: String) {
         search(source, isObserved = true) { isPrivate -> uploader().upload(imageUri, isPrivate) }
+    }
+
+    /**
+     * Opens a Lens result that [LensCameraActivity] already uploaded, which it does for photo picker selections so it
+     * can show the image while the upload runs.
+     *
+     * @param resultUrl The Lens results URL.
+     * @param isPrivate The browsing mode the image was uploaded in, which the tab has to match for the Lens session to
+     *   carry over.
+     */
+    fun openResult(resultUrl: String, isPrivate: Boolean) {
+        searchJob?.cancel()
+        searchJob = null
+        openResultTab(resultUrl, isPrivate, isObserved = true)
     }
 
     /** Fetches the image at [imageUrl], uploads it, and opens the Lens result. */
@@ -74,56 +122,30 @@ class LensImageSearch(
         searchJob = scope.launch {
             val isPrivate = appStore.state.mode.isPrivate
 
-            val uploadResult =
-                try {
-                    upload(isPrivate)
-                } catch (e: IOException) {
-                    logger.warn("Google Lens upload failed", e)
-                    null
-                } catch (e: SecurityException) {
-                    // The photo picker's URI grant can be gone by the time the upload reads it.
-                    logger.warn("Google Lens upload failed to read the image", e)
-                    null
-                }
-
-            val resultUrl = uploadResult?.resultUrl
-            recordSearchCompleted(
-                succeeded = resultUrl != null,
-                source = source,
-                httpStatusCode = uploadResult?.httpStatusCode,
-            )
-
+            val resultUrl = runLensUpload(source) { upload(isPrivate) }?.resultUrl
             if (resultUrl == null) {
                 appStore.dispatch(LensAction.LensDismissed)
                 return@launch
             }
 
-            // Always a new tab. The tab the search started from may be gone by now, and a Lens
-            // result shouldn't replace the page the user was reading.
-            browserUseCases()
-                .loadUrlOrSearch(
-                    searchTermOrURL = resultUrl,
-                    newTab = true,
-                    private = isPrivate,
-                    flags = EngineSession.LoadUrlFlags.external(),
-                )
-            // The observed flow leaves the result in the store for BrowserToolbarSearchMiddleware, which navigates
-            // to the browser and then dispatches LensResultConsumed. Nothing observes the other flows, so they clear
-            // the state themselves rather than leaving a stale result behind.
-            appStore.dispatch(
-                if (isObserved) LensAction.LensResultAvailable(resultUrl) else LensAction.LensResultConsumed
-            )
+            openResultTab(resultUrl, isPrivate, isObserved)
         }
     }
 
-    private fun recordSearchCompleted(succeeded: Boolean, source: String, httpStatusCode: Int? = null) {
-        GoogleLens.searchCompleted.record(
-            GoogleLens.SearchCompletedExtra(
-                succeeded = succeeded,
-                httpStatusCode = httpStatusCode,
-                source = source,
+    private fun openResultTab(resultUrl: String, isPrivate: Boolean, isObserved: Boolean) {
+        // Always a new tab. The tab the search started from may be gone by now, and a Lens
+        // result shouldn't replace the page the user was reading.
+        browserUseCases()
+            .loadUrlOrSearch(
+                searchTermOrURL = resultUrl,
+                newTab = true,
+                private = isPrivate,
+                flags = EngineSession.LoadUrlFlags.external(),
             )
-        )
+        // The observed flow leaves the result in the store for BrowserToolbarSearchMiddleware, which navigates
+        // to the browser and then dispatches LensResultConsumed. Nothing observes the other flows, so they clear
+        // the state themselves rather than leaving a stale result behind.
+        appStore.dispatch(if (isObserved) LensAction.LensResultAvailable(resultUrl) else LensAction.LensResultConsumed)
     }
 
     companion object {

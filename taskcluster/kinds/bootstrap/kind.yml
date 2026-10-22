@@ -16,91 +16,98 @@ tasks:
         image: debian:bookworm
         pre-commands:
             - apt-get update
-            - apt-get install -y --no-install-recommends curl git python3-pip
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
     debian13:
         image: debian:trixie
         pre-commands:
             - apt-get update
-            - apt-get install -y --no-install-recommends curl libcurl4 git python3-pip
+            - apt-get install -y --no-install-recommends curl libcurl4 git python3 ca-certificates
     debian14:
         image: debian:forky
         pre-commands:
             - apt-get update
-            - apt-get install -y --no-install-recommends curl libcurl4 git python3-pip
+            - apt-get install -y --no-install-recommends curl libcurl4 git python3 ca-certificates
     ubuntu2204:
         image: ubuntu:jammy
         pre-commands:
             - apt-get update
-            - apt-get install -y --no-install-recommends curl git python3-pip
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
     ubuntu2404:
         image: ubuntu:noble
         pre-commands:
             - apt-get update
             # For some reason, this is required, now.
             - export DEBIAN_FRONTEND=noninteractive
-            - apt-get install -y --no-install-recommends curl git python3-pip
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
     ubuntu2504:
         image: ubuntu:plucky
         pre-commands:
             - apt-get update
             # For some reason, this is required, now.
             - export DEBIAN_FRONTEND=noninteractive
-            - apt-get install -y --no-install-recommends curl git python3-pip
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
     ubuntu2510:
         image: ubuntu:questing
         pre-commands:
             - apt-get update
             # For some reason, this is required, now.
             - export DEBIAN_FRONTEND=noninteractive
-            - apt-get install -y --no-install-recommends curl git python3-pip
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
+    ubuntu2604:
+        image: ubuntu:resolute
+        pre-commands:
+            - apt-get update
+            # For some reason, this is required, now.
+            - export DEBIAN_FRONTEND=noninteractive
+            - apt-get install -y --no-install-recommends curl git python3 ca-certificates
     fedora36:
         image: fedora:36
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora37:
         image: fedora:37
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora38:
         image: fedora:38
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora39:
         image: fedora:39
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora40:
         image: fedora:40
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora41:
         image: fedora:41
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     fedora42:
         image: fedora:42
         pre-commands:
-            - dnf install -y git python3-pip awk
+            - dnf install -y git python3 awk
     fedora43:
         image: fedora:43
         pre-commands:
-            - dnf install -y git python3-pip awk
+            - dnf install -y git python3 awk
     # Temporarily disabled due to bug 1985871
     # rockylinux8:
     #     image: rockylinux/rockylinux:8
     #     pre-commands:
-    #         - dnf install -y git python39-pip
+    #         - dnf install -y git python39
     rockylinux9:
         image: rockylinux/rockylinux:9
         pre-commands:
-            - dnf install -y git python3.11 python3.11-pip
+            - dnf install -y git python3.11 python3.11
             - mkdir -p /usr/local/pybin
             - ln -sf /usr/bin/python3.11 /usr/local/pybin/python3
             - export PATH=/usr/local/pybin:$PATH
     rockylinux10:
         image: rockylinux/rockylinux:10
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3
     opensuse-leap:
         image: opensuse/leap
         pre-commands:
@@ -108,19 +115,19 @@ tasks:
     opensuse-tumbleweed:
         image: opensuse/tumbleweed
         pre-commands:
-            - zypper install -y git python3-pip python3-curses
+            - zypper install -y git python3 python3-curses
     gentoo:
         image: gentoo/stage3
         pre-commands:
             - emerge --sync
-            - emerge dev-vcs/git dev-python/pip curl
+            - emerge dev-vcs/git dev-lang/python curl
     archlinux:
         image: archlinux
         pre-commands:
-            - pacman -Syu --noconfirm git python-pip
+            - pacman -Syu --noconfirm git python
     voidlinux:
         image: voidlinux/voidlinux
         pre-commands:
             - sed -i s/alpha.de.repo.voidlinux.org/repo-default.voidlinux.org/g /usr/share/xbps.d/*
             - xbps-install -Suyv xbps
-            - xbps-install -Suyv curl git python3-pip
+            - xbps-install -Suyv curl git python3

@@ -43,6 +43,10 @@ class MOZ_CAPABILITY("rwlock") RWLock : public detail::RWLockImpl,
  public:
   explicit RWLock(const char* aName);
 
+  RWLock() = delete;
+  RWLock(const RWLock&) = delete;
+  RWLock& operator=(const RWLock&) = delete;
+
 #ifdef DEBUG
   bool LockedForWritingByCurrentThread();
   [[nodiscard]] bool TryReadLock() MOZ_SHARED_TRYLOCK_FUNCTION(true);
@@ -67,10 +71,6 @@ class MOZ_CAPABILITY("rwlock") RWLock : public detail::RWLockImpl,
 #endif
 
  private:
-  RWLock() = delete;
-  RWLock(const RWLock&) = delete;
-  RWLock& operator=(const RWLock&) = delete;
-
 #ifdef DEBUG
   // We record the owning thread for write locks only.
   PRThread* mOwningThread;
@@ -90,13 +90,13 @@ class MOZ_RAII BaseAutoTryReadLock {
     }
   }
 
-  explicit operator bool() const { return mLock; }
-
- private:
   BaseAutoTryReadLock() = delete;
   BaseAutoTryReadLock(const BaseAutoTryReadLock&) = delete;
   BaseAutoTryReadLock& operator=(const BaseAutoTryReadLock&) = delete;
 
+  explicit operator bool() const { return mLock; }
+
+ private:
   T* mLock;
 };
 
@@ -114,11 +114,11 @@ class MOZ_SCOPED_CAPABILITY MOZ_RAII BaseAutoReadLock {
   // exclusive unlock.
   ~BaseAutoReadLock() MOZ_RELEASE_GENERIC() { mLock->ReadUnlock(); }
 
- private:
   BaseAutoReadLock() = delete;
   BaseAutoReadLock(const BaseAutoReadLock&) = delete;
   BaseAutoReadLock& operator=(const BaseAutoReadLock&) = delete;
 
+ private:
   T* mLock;
 };
 
@@ -135,13 +135,13 @@ class MOZ_RAII BaseAutoTryWriteLock {
     }
   }
 
-  explicit operator bool() const { return mLock; }
-
- private:
   BaseAutoTryWriteLock() = delete;
   BaseAutoTryWriteLock(const BaseAutoTryWriteLock&) = delete;
   BaseAutoTryWriteLock& operator=(const BaseAutoTryWriteLock&) = delete;
 
+  explicit operator bool() const { return mLock; }
+
+ private:
   T* mLock;
 };
 
@@ -156,11 +156,11 @@ class MOZ_SCOPED_CAPABILITY MOZ_RAII BaseAutoWriteLock final {
 
   ~BaseAutoWriteLock() MOZ_CAPABILITY_RELEASE() { mLock->WriteUnlock(); }
 
- private:
   BaseAutoWriteLock() = delete;
   BaseAutoWriteLock(const BaseAutoWriteLock&) = delete;
   BaseAutoWriteLock& operator=(const BaseAutoWriteLock&) = delete;
 
+ private:
   T* mLock;
 };
 
@@ -190,6 +190,19 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("rwlock")
   StaticRWLock() { MOZ_ASSERT(!mLock); }
 #endif
 
+  // Disallow these operators.
+  StaticRWLock& operator=(StaticRWLock* aRhs) = delete;
+  static void* operator new(size_t) noexcept(true) = delete;
+  static void operator delete(void*) = delete;
+
+  // Disallow copy constructor, but only in debug mode.  We only define
+  // a default constructor in debug mode (see above); if we declared
+  // this constructor always, the compiler wouldn't generate a trivial
+  // default constructor for us in non-debug mode.
+#ifdef DEBUG
+  StaticRWLock(const StaticRWLock& aOther) = delete;
+#endif
+
   [[nodiscard]] bool TryReadLock() MOZ_SHARED_TRYLOCK_FUNCTION(true) {
     return Lock()->TryReadLock();
   }
@@ -216,19 +229,6 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("rwlock")
   }
 
   Atomic<RWLock*> mLock;
-
-  // Disallow copy constructor, but only in debug mode.  We only define
-  // a default constructor in debug mode (see above); if we declared
-  // this constructor always, the compiler wouldn't generate a trivial
-  // default constructor for us in non-debug mode.
-#ifdef DEBUG
-  StaticRWLock(const StaticRWLock& aOther);
-#endif
-
-  // Disallow these operators.
-  StaticRWLock& operator=(StaticRWLock* aRhs) = delete;
-  static void* operator new(size_t) noexcept(true) = delete;
-  static void operator delete(void*) = delete;
 };
 
 typedef BaseAutoTryReadLock<StaticRWLock> StaticAutoTryReadLock;

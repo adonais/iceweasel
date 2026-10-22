@@ -36,14 +36,10 @@ prefs = [
   "network.proxy.allow_hijacking_localhost=true",
   "media.devices.enumerate.legacy.enabled=false",
 ]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 
 ["test_1488832.html"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1714410
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1714410
 ]
 
 ["test_1717318.html"]
@@ -67,9 +63,6 @@ skip-if = [
 ]
 
 ["test_fingerprinting_resistance.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1646309 - low frequency intermittent
-]
 
 ["test_forceSampleRate.html"]
 scheme = "http"

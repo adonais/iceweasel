@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -27,15 +28,20 @@
 #include "api/frame_transformer_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/sframe/sframe_decryptor_interface.h"
 #include "api/sframe/sframe_types.h"
+#include "api/transport/rtp/rtp_source.h"
+#include "api/units/timestamp.h"
 #include "media/base/media_channel.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -102,6 +108,9 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   virtual void SetStreams(
       const std::vector<scoped_refptr<MediaStreamInterface>>& streams) = 0;
 
+  virtual void OnFrameDelivered(const RtpPacketInfos& infos,
+                                Timestamp delivery_time) = 0;
+
   // Returns an ID that changes if the attached track changes, but
   // otherwise remains constant. Used to generate IDs for stats.
   // The special value zero means that no track is attached.
@@ -111,7 +120,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   static int GenerateUniqueId();
 
   static std::vector<scoped_refptr<MediaStreamInterface>> CreateStreamsFromIds(
-      std::vector<std::string> stream_ids);
+      std::span<const std::string> stream_ids);
 };
 
 class RtpReceiverBase : public RtpReceiverInternal {
@@ -122,21 +131,31 @@ class RtpReceiverBase : public RtpReceiverInternal {
   std::optional<uint32_t> ssrc() const override;
   std::optional<uint32_t> ssrc_s() const override;
   void SetSsrc_s(uint32_t ssrc) override;
+  void OnFrameDelivered(const RtpPacketInfos& infos,
+                        Timestamp delivery_time) override;
 
   void SetFrameDecryptor(
       scoped_refptr<FrameDecryptorInterface> frame_decryptor) override;
   scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor() const override;
 
+  std::vector<RtpSource> GetSources() const override;
+
+  void SetObserver(RtpReceiverObserverInterface* observer) override;
+
+  void NotifyFirstPacketReceived(uint32_t ssrc) override;
+  void NotifyFirstPacketReceivedAfterReceptiveChange(uint32_t ssrc) override;
+
   void SetFrameTransformer(
       scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
  protected:
-  explicit RtpReceiverBase(
-      Thread* worker_thread,
-      absl::AnyInvocable<RTCError()> enable_sframe_at_owner);
+  RtpReceiverBase(Thread* worker_thread,
+                  absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
+                  Clock* clock = Clock::GetRealTimeClock());
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker signaling_thread_checker_;
   Thread* const worker_thread_;
+  SourceTracker source_tracker_ RTC_GUARDED_BY(signaling_thread_checker_);
   std::optional<uint32_t> signaled_ssrc_ RTC_GUARDED_BY(worker_thread_);
   std::optional<uint32_t> ssrc_s_ RTC_GUARDED_BY(signaling_thread_checker_);
   scoped_refptr<FrameDecryptorInterface> frame_decryptor_
@@ -145,6 +164,10 @@ class RtpReceiverBase : public RtpReceiverInternal {
       RTC_GUARDED_BY(worker_thread_);
 
  private:
+  RtpReceiverObserverInterface* observer_
+      RTC_GUARDED_BY(&signaling_thread_checker_) = nullptr;
+  bool received_first_packet_ RTC_GUARDED_BY(&signaling_thread_checker_) =
+      false;
   absl::AnyInvocable<RTCError()> enable_sframe_at_owner_
       RTC_GUARDED_BY(signaling_thread_checker_);
 };

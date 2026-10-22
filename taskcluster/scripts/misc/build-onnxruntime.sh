@@ -33,18 +33,17 @@ case ${target_platform} in
         case $target_arch in
             arm64)
                 target_triple=aarch64-apple-darwin
-                macosx_deployment_target=11.0
                 ;;
             x86_64)
                 target_triple=x86_64-apple-darwin
-                macosx_deployment_target=10.15
                 ;;
             *)
                 echo "ERROR: unsupported Darwin architecture $target_arch" >&2
                 exit 1
                 ;;
         esac
-        osx_sysroot=`cd ${MOZ_FETCHES_DIR}/MacOSX*.sdk; pwd`
+        MACOS_TARGET=$target_triple
+        . $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
         # cmake probes the mac-only sw_vers; the version it sees doesn't matter.
         mkdir -p "$PWD/fakebin"
         printf '#!/bin/sh\necho 10.15\n' > "$PWD/fakebin/sw_vers"
@@ -54,14 +53,14 @@ case ${target_platform} in
             CMAKE_SYSTEM_NAME=Darwin
             CMAKE_SYSTEM_PROCESSOR=$target_arch
             CMAKE_OSX_ARCHITECTURES=$target_arch
-            CMAKE_OSX_SYSROOT=${osx_sysroot}
-            CMAKE_OSX_DEPLOYMENT_TARGET=$macosx_deployment_target
+            CMAKE_OSX_SYSROOT=${MACOS_SDK}
+            CMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET
             CMAKE_C_COMPILER_TARGET=$target_triple
             CMAKE_CXX_COMPILER_TARGET=$target_triple
             CMAKE_ASM_COMPILER_TARGET=$target_triple
-            CMAKE_AR=${MOZ_FETCHES_DIR}/clang/bin/llvm-ar
-            CMAKE_RANLIB=${MOZ_FETCHES_DIR}/clang/bin/llvm-ranlib)
-        TARGET_FLAGS="-fuse-ld=lld -Wno-unused-command-line-argument"
+            CMAKE_AR=${MACOS_AR}
+            CMAKE_RANLIB=${MACOS_RANLIB})
+        TARGET_FLAGS="$MACOS_EXTRA_CFLAGS"
         prefix=lib
         extension=dylib
         HARDENING_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-strong"

@@ -23,15 +23,6 @@ const { SidebarTestUtils } = ChromeUtils.importESModule(
 SidebarTestUtils.init(this);
 SidebarTestUtils.restoreStateAtCleanup(window);
 
-add_setup(async function () {
-  // This test exercises the legacy bookmarks sidebar panel; opt out of the
-  // updated bookmarks panel so the expected document/element ids are present.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
-
 async function expectFocusOnF6(
   backward,
   expectedDocument,
@@ -252,13 +243,23 @@ add_task(async function () {
   SidebarController.toggle("viewBookmarksSidebar");
   await loadPromise;
 
+  const isUpdatedBookmarks = Services.prefs.getBoolPref(
+    "sidebar.updatedBookmarks.enabled"
+  );
+  const bookmarksComponent = isUpdatedBookmarks
+    ? sidebar.contentDocument.querySelector("sidebar-bookmarks")
+    : null;
+  const bookmarksDocumentId = isUpdatedBookmarks ? "" : "bookmarksPanel";
+
   gURLBar.focus();
   await expectFocusOnF6(
     false,
-    "bookmarksPanel",
-    sidebar.contentDocument
-      .getElementById("search-box")
-      .shadowRoot.querySelector("input"),
+    bookmarksDocumentId,
+    isUpdatedBookmarks
+      ? bookmarksComponent.searchInput.inputEl
+      : sidebar.contentDocument
+          .getElementById("search-box")
+          .shadowRoot.querySelector("input"),
     false,
     "focus with sidebar open sidebar"
   );
@@ -286,18 +287,24 @@ add_task(async function () {
     "back focus with sidebar open content"
   );
 
+  let expectedSidebarFocusElement;
   // Bug 2006225: sidebar.revamp introduces a regression where the "X" button receives
   // focus instead of the search input.
-  let expectedSidebarFocusElement = Services.prefs.getBoolPref("sidebar.revamp")
-    ? sidebar.contentDocument
-        .getElementById("sidebar-panel-close")
-        .shadowRoot.querySelector("#main-button")
-    : sidebar.contentDocument
-        .getElementById("search-box")
-        .shadowRoot.querySelector("input");
+  if (isUpdatedBookmarks) {
+    expectedSidebarFocusElement =
+      bookmarksComponent.panelHeader.closeButton.buttonEl;
+  } else if (Services.prefs.getBoolPref("sidebar.revamp")) {
+    expectedSidebarFocusElement = sidebar.contentDocument
+      .getElementById("sidebar-panel-close")
+      .shadowRoot.querySelector("#main-button");
+  } else {
+    expectedSidebarFocusElement = sidebar.contentDocument
+      .getElementById("search-box")
+      .shadowRoot.querySelector("input");
+  }
   await expectFocusOnF6(
     true,
-    "bookmarksPanel",
+    bookmarksDocumentId,
     expectedSidebarFocusElement,
     false,
     "back focus with sidebar open sidebar"

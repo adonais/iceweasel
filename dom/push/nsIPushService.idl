@@ -74,6 +74,7 @@ interface nsIPushService : nsISupports
 {
   /** Observer topic names, exported for convenience. */
   readonly attribute AString pushTopic;
+  readonly attribute AString pushMessageHandledTopic;
   readonly attribute AString subscriptionChangeTopic;
   readonly attribute AString subscriptionModifiedTopic;
 

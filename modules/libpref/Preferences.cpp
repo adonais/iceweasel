@@ -535,10 +535,10 @@ struct PreferenceMarker : public BaseMarkerType<PreferenceMarker> {
       MS::Location::MarkerTable,
   };
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"prefName", MS::InputType::CString, "Name"},
-      {"prefKind", MS::InputType::CString, "Kind"},
-      {"prefType", MS::InputType::CString, "Type"},
-      {"prefValue", MS::InputType::CString, "Value"},
+      {"prefName", MS::InputType::CString, "Name", MS::Format::UniqueString},
+      {"prefKind", MS::InputType::CString, "Kind", MS::Format::UniqueString},
+      {"prefType", MS::InputType::CString, "Type", MS::Format::UniqueString},
+      {"prefValue", MS::InputType::CString, "Value", MS::Format::UniqueString},
   };
   static constexpr const char* TableLabel =
       "{marker.data.prefName}: {marker.data.prefValue} "

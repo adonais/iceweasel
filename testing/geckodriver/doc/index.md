@@ -5,7 +5,7 @@ Gecko-based browsers.
 
 This program provides the HTTP API described by the [WebDriver protocol].
 to communicate with Gecko browsers, such as Firefox. It translates calls
-into the {ref}`Firefox remote protocol <Protocol>` by acting as a proxy between the local-
+into the {doc}`Firefox remote protocol </remote/marionette/Protocol>` by acting as a proxy between the local-
 and remote ends.
 
 You can consult the [change log] for a record of all notable changes

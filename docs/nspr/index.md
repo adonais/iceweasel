@@ -14,26 +14,26 @@ software offerings.
 
 ## Documentation
 
-{ref}`About NSPR`
+{doc}`about_nspr`
 
 : This topic describes, in general terms, the goals of NSPR and a bit
   about how it does it.
 
-{ref}`NSPR API Reference`
+{doc}`reference/index`
 
 : The reference describes each API public macro, structure and function
   in the NSPR API.
 
-{ref}`NSPR build instructions`
+{doc}`nspr_build_instructions`
 
 : How to checkout and build from source.
 
-{ref}`NSPR release procedure`
+{doc}`nspr_release_procedure`
 
 : How to cut a new NSPR release: bumping the version and producing the
   distributions.
 
-{ref}`NSPR listing`
+{doc}`listing`
 
 : All NSPR pages
 
@@ -44,8 +44,7 @@ software offerings.
 NSPR is available in various source and binary packages, depending on
 your platform:
 
-- **Windows:** Build the source package, using the {ref}`NSPR build
-  instructions`.
+- **Windows:** Build the source package, using the {doc}`nspr_build_instructions`.
 
 - **Mac:** Install the [MacPorts](http://www.macports.org/) *nspr*
   package, or the [Homebrew](http://brew.sh) *nspr* package.
@@ -81,7 +80,7 @@ View Mozilla forums:
 
 ## Related Topics
 
-- {ref}`Networking`, {ref}`Network Security Services (NSS)`
+- {doc}`/networking/index`, {doc}`/security/nss/index`
 
 ```{toctree}
 :hidden:

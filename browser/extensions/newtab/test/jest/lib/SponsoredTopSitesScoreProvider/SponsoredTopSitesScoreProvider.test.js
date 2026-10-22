@@ -10,6 +10,7 @@ describe("SponsoredTopSitesScoreProvider", () => {
   let restoreGlobals;
   let rsFactory;
   let rsClient;
+  let executePlacesQuery;
   let getFlags;
   let provider;
 
@@ -36,8 +37,18 @@ describe("SponsoredTopSitesScoreProvider", () => {
       get: jest.fn().mockResolvedValue([]),
     };
     rsFactory = jest.fn(() => rsClient);
+    executePlacesQuery = jest.fn().mockResolvedValue([]);
     getFlags = jest.fn().mockReturnValue({});
-    restoreGlobals = stubGlobals({ RemoteSettings: rsFactory });
+    restoreGlobals = stubGlobals({
+      RemoteSettings: rsFactory,
+      PlacesUtils: {
+        getReversedHost: url => `${url.host.split("").reverse().join("")}.`,
+        history: { TRANSITIONS: { LINK: 1, TYPED: 2, BOOKMARK: 3 } },
+      },
+      NewTabUtils: {
+        activityStreamProvider: { executePlacesQuery },
+      },
+    });
     provider = new SponsoredTopSitesScoreProvider(getFlags);
   });
 
@@ -127,6 +138,69 @@ describe("SponsoredTopSitesScoreProvider", () => {
       rsClient.get.mockResolvedValue([{ id: "invalid_identifier" }]);
 
       await expect(provider._loadConfig()).resolves.toBeNull();
+    });
+  });
+
+  describe("#_getDomainDayCounts", () => {
+    const config = {
+      targets: { t1: ["example.com", "sub.example.org"] },
+      lookback_days: 28,
+    };
+
+    it("buckets visits per configured domain and day, merging subdomains and dropping other domains", async () => {
+      executePlacesQuery.mockResolvedValue([
+        { rev_host: "moc.elpmaxe.", day: 100, visits: 3 },
+        { rev_host: "moc.elpmaxe.", day: 101, visits: 1 },
+        // www.example.com merges into example.com on the same day.
+        { rev_host: "moc.elpmaxe.www.", day: 101, visits: 2 },
+        { rev_host: "gro.elpmaxe.bus.", day: 101, visits: 2 },
+        // Not a configured target, so it is dropped.
+        { rev_host: "moc.rehto.", day: 101, visits: 9 },
+        // A null rev_host is dropped without error.
+        { rev_host: null, day: 101, visits: 1 },
+      ]);
+
+      const domainDayCounts = await provider._getDomainDayCounts(config);
+
+      expect(domainDayCounts.get("example.com")).toEqual(
+        new Map([
+          [100, 3],
+          [101, 3],
+        ])
+      );
+      expect(domainDayCounts.get("sub.example.org")).toEqual(
+        new Map([[101, 2]])
+      );
+      expect(domainDayCounts.size).toBe(2);
+    });
+
+    it("attributes a visit to the most specific configured domain", async () => {
+      executePlacesQuery.mockResolvedValue([
+        // sub.example.com is the more specific match and wins over example.com.
+        { rev_host: "moc.elpmaxe.bus.", day: 100, visits: 2 },
+        // Other subdomains fall back to the parent example.com.
+        { rev_host: "moc.elpmaxe.www.", day: 100, visits: 1 },
+      ]);
+
+      const domainDayCounts = await provider._getDomainDayCounts({
+        targets: { t1: ["example.com", "sub.example.com"] },
+        lookback_days: 28,
+      });
+
+      expect(domainDayCounts.get("sub.example.com")).toEqual(
+        new Map([[100, 2]])
+      );
+      expect(domainDayCounts.get("example.com")).toEqual(new Map([[100, 1]]));
+    });
+
+    it("returns an empty result without querying when there are no target domains", async () => {
+      const domainDayCounts = await provider._getDomainDayCounts({
+        targets: {},
+        lookback_days: 28,
+      });
+
+      expect(domainDayCounts.size).toBe(0);
+      expect(executePlacesQuery).not.toHaveBeenCalled();
     });
   });
 });

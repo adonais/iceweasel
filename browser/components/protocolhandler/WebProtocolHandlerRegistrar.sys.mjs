@@ -609,7 +609,6 @@ WebProtocolHandlerRegistrar.prototype = {
                   1000 +
                   Date.now()
               );
-              Glean.protocolhandlerMailto.promptClicked.dismiss_os_default.add();
             }
           },
         },
@@ -624,11 +623,9 @@ WebProtocolHandlerRegistrar.prototype = {
                 aURI.spec
               );
               this._setProtocolHandlerDefault(aProtocol, currentHandler);
-              Glean.protocolhandlerMailto.promptClicked.set_local_default.add();
 
               if (this._canSetOSDefault(aProtocol)) {
                 if (this._setOSDefault(aProtocol)) {
-                  Glean.protocolhandlerMailto.promptClicked.set_os_default.add();
                   newitem.messageL10nId =
                     "protocolhandler-mailto-handler-confirm";
                   newitem.removeChild(newitem.buttonContainer);
@@ -637,16 +634,12 @@ WebProtocolHandlerRegistrar.prototype = {
                   return true; // `true` does not hide the bar
                 }
 
-                // if anything goes wrong with setting the OS default, we want
-                // to be informed so that we can fix it.
-                Glean.protocolhandlerMailto.promptClicked.set_os_default_error.add();
                 return false;
               }
 
               // if the installation does not have an install hash, we cannot
               // set the OS default, but mailto links from within the browser
               // should still work.
-              Glean.protocolhandlerMailto.promptClicked.set_os_default_impossible.add();
               return false;
             },
           },
@@ -667,14 +660,12 @@ WebProtocolHandlerRegistrar.prototype = {
                   1000 +
                   Date.now()
               );
-              Glean.protocolhandlerMailto.promptClicked.dismiss_os_default.add();
               return false;
             },
           },
         ]
       );
 
-      Glean.protocolhandlerMailto.handlerPromptShown.os_default.add();
       // remove the icon from the infobar, which is automatically assigned
       // after its priority, because the priority is also an indicator which
       // type of bar it is, e.g. a warning or error:

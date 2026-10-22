@@ -146,14 +146,13 @@ UniqueFileHandle SharedTextureDMABuf::CloneDmaBufFd() {
 }
 
 void SharedTextureDMABuf::onBeforeQueueSubmit(
-    const ffi::WGPUGlobal* aContext, RawId aDeviceId, RawId aQueueId,
+    const ffi::WGPUGlobal* aContext, RawId aQueueId,
     nsTArray<ffi::WGPUVkSemaphoreHandle>& aSignalSemaphores) {
-  SharedTexture::onBeforeQueueSubmit(aContext, aDeviceId, aQueueId,
-                                     aSignalSemaphores);
+  SharedTexture::onBeforeQueueSubmit(aContext, aQueueId, aSignalSemaphores);
 
   int32_t rawFd = -1;
-  auto semaphore = ffi::wgpu_vksemaphore_create_signal_semaphore(
-      aContext, aDeviceId, aQueueId, &rawFd);
+  auto semaphore =
+      ffi::wgpu_vksemaphore_create_signal_semaphore(aContext, aQueueId, &rawFd);
   if (!semaphore) {
     gfxCriticalNoteOnce << "Failed to create VkSemaphore";
     return;

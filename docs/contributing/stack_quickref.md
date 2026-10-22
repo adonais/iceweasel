@@ -9,7 +9,7 @@ various commands.
 
 :::{note}
 This page documents the Git workflow, which is the default. If you
-prefer Jujutsu, see {ref}`Introduction to Jujutsu` for the equivalent
+prefer Jujutsu, see {doc}`jujutsu` for the equivalent
 commands.
 :::
 
@@ -23,11 +23,11 @@ This is also sometimes called "stack of revisions", "stack of commits" or "serie
 ```{image} img/example-stack.png
 ```
 
-For the overall quick reference guide, see the {ref}`Firefox Contributors Quick Reference <Firefox Contributors' Quick Reference>`
+For the overall quick reference guide, see the {doc}`Firefox Contributors Quick Reference <contribution_quickref>`
 
-For background on why Firefox uses stacks and how the Phabricator workflow differs from GitHub, see {ref}`Phabricator vs GitHub`.
+For background on why Firefox uses stacks and how the Phabricator workflow differs from GitHub, see {doc}`phabricator_vs_github`.
 
-For how to shape a series so that each patch reviews well - what to front-load, where to draw the commit boundaries, when to split across bugs - see {ref}`Making a patch series reviewable`.
+For how to shape a series so that each patch reviews well - what to front-load, where to draw the commit boundaries, when to split across bugs - see {doc}`reviewable-patch-series`.
 
 ## Visualize the stack
 

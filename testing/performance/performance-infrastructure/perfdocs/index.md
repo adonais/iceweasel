@@ -16,7 +16,7 @@ This information is generated from `python/mozperftest/mozperftest/perfdocs/hard
 
 ## Try Runs and Wait Times
 
-Given that our tests run on hardware, there's a limited amount of devices that can be used to run them. This means that it's very likely that a try run (e.g. tests scheduled by {ref}`Mach Try Perf`) will be delayed waiting for capacity to free up. This limited capacity is also why there is a limit of 600 tasks that can be scheduled with `mach try perf`.
+Given that our tests run on hardware, there's a limited amount of devices that can be used to run them. This means that it's very likely that a try run (e.g. tests scheduled by {doc}`mach-try-perf`) will be delayed waiting for capacity to free up. This limited capacity is also why there is a limit of 600 tasks that can be scheduled with `mach try perf`.
 
 Something to keep in mind is that try runs have a low priority, and our production branches (e.g. autoland/mozilla-central) have a higher priority. On days when there are more pushes to those branches, try runs will hit more delays. The platforms also have different capacities available to them which will change how long you have to wait for tests to start on them. **To find out how many tasks are currently pending, or running across all platforms** [see this redash query](https://sql.telemetry.mozilla.org/queries/98004#241985) **or consult the graph below.**
 

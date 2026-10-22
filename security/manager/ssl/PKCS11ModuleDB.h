@@ -76,6 +76,14 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
                                                const nsCString& oldPassword,
                                                const nsCString& newPassword);
 
+  typedef MozPromise<nsTArray<IPCClientCertObject>, nsresult, true>
+      FindObjectsPromise;
+  RefPtr<FindObjectsPromise> FindObjects(SearchingFor searchingFor);
+
+  typedef MozPromise<nsTArray<uint8_t>, nsresult, true> SignPromise;
+  RefPtr<SignPromise> Sign(nsTArray<uint8_t> certificate,
+                           nsTArray<uint8_t> data, nsTArray<uint8_t> params);
+
  private:
   static RefPtr<TokenInfoPromise> ResetTokenGivenParent(
       const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
@@ -91,12 +99,20 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
       const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
       CK_SLOT_ID slotID, const nsCString& oldPassword,
       const nsCString& newPassword);
+
+  static RefPtr<FindObjectsPromise> FindObjectsGivenParent(
+      SearchingFor searchingFor, const RefPtr<PKCS11ModuleParent>& parent);
+
+  static RefPtr<SignPromise> SignGivenParent(
+      Span<uint8_t> certificate, Span<uint8_t> data, Span<uint8_t> params,
+      const RefPtr<PKCS11ModuleParent>& parent);
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 };
 
 const nsLiteralCString kIPCClientCertsModuleName("IPC Client Cert Module");
 const nsLiteralCString kNSSInternalModuleName("NSS Internal PKCS #11 Module");
 const nsLiteralCString kOSClientCertsModuleName("OS Client Cert Module");
+const nsLiteralCString kRemoteCertsModuleName("Remote Certs Module");
 const nsLiteralCString kRootModuleName("Builtin Roots Module");
 
 void CollectThirdPartyPKCS11ModuleTelemetry(bool aIsInitialization = false);

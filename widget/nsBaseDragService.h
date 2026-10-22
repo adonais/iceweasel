@@ -8,6 +8,7 @@
 #include "Units.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/RemoteDragStartData.h"
@@ -239,7 +240,7 @@ class nsBaseDragSession : public nsIDragSession {
   nsCOMPtr<mozilla::dom::Element> mDragPopup;
 
   // Weak references to PBrowsers that are currently engaged in drags
-  nsTArray<nsWeakPtr> mBrowsers;
+  nsTArray<mozilla::WeakPtr<mozilla::dom::BrowserParent>> mBrowsers;
   // remote drag data
   RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
 
@@ -312,7 +313,10 @@ class nsBaseDragService : public nsIDragService {
 
   uint32_t GetSuppressLevel() { return mSuppressLevel; };
 
-  nsTArray<nsWeakPtr> TakeSessionBrowserList() { return std::move(mBrowsers); }
+  nsTArray<mozilla::WeakPtr<mozilla::dom::BrowserParent>>
+  TakeSessionBrowserList() {
+    return std::move(mBrowsers);
+  }
 
   void ClearCurrentParentDragSession() { mCurrentParentDragSession = nullptr; }
 
@@ -336,7 +340,7 @@ class nsBaseDragService : public nsIDragService {
   // Weak references to PBrowsers that are currently engaged in drags.
   // Once an nsIDragSession is created for the remote drag, these browsers
   // will be moved to that object.
-  nsTArray<nsWeakPtr> mBrowsers;
+  nsTArray<mozilla::WeakPtr<mozilla::dom::BrowserParent>> mBrowsers;
 
   uint32_t mSuppressLevel = 0;
 

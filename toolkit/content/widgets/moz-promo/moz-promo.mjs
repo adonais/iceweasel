@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-promo.tagmap.d.ts" />
+
 import { html } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
@@ -27,7 +29,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozPromo.ftl");
  * @fires promo:user-dismissed
  *  Custom event indicating that the promo was dismissed by the user.
  */
-export default class MozPromo extends MozLitElement {
+export class MozPromo extends MozLitElement {
   static queries = {
     actionsSlot: "slot[name=actions]",
     supportLinkSlot: "slot[name=support-link]",

@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+<head>
+<title>Test for bug 2068422</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="fullscreen_helpers.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<iframe id="inner1" allowfullscreen="yes" src="file_fullscreen-iframe-inner.html"></iframe>
+<iframe id="inner2" allowfullscreen="yes" src="file_fullscreen-iframe-inner.html"></iframe>
+<script>
+
+// The frame tree built by this test is
+//   this document
+//      |- inner iframe 1 (inner document 1)
+//       - inner iframe 2 (inner document 2)
+// Fullscreen requests from the two sibling inner documents against an
+// exitFullscreen() call on the top-level document should not make the top-level document
+// and its inner documents have unmacthed fullscreen states.
+
+function waitForEvent(aElement, aType) {
+  return new Promise(resolve => {
+    aElement.addEventListener(aType, resolve, { once: true });
+  });
+}
+
+async function requestFullscreen(aElement) {
+  try {
+    let document = aElement.ownerDocument;
+    if (document.fullscreenElement === aElement) {
+      return;
+    }
+
+    let promise = waitForEvent(document, "fullscreenchange");
+    await aElement.requestFullscreen();
+    await promise;
+  } catch (e) {
+    info(`requestFullscreen was rejected: ${e}`);
+  }
+}
+
+async function exitFullscreen(aDocument) {
+  try {
+    if (!aDocument.fullscreenElement) {
+      return;
+    }
+
+    let promise = waitForEvent(aDocument, "fullscreenchange");
+    await aDocument.exitFullscreen();
+    await promise;
+  } catch (e) {
+    info(`exitFullscreen was rejected: ${e}`);
+  }
+}
+
+function dumpFullscreenState() {
+  const name = e => (e ? e.id || e.localName : "null");
+  let state = `top=${name(document.fullscreenElement)}`;
+
+  let innerIframe = document.querySelectorAll("iframe");
+  for (let i = 0; i < innerIframe.length; ++i) {
+    if (!innerIframe[i].contentDocument) {
+      return state;
+    }
+    state += `, inner${i + 1}=${name(innerIframe[i].contentDocument?.fullscreenElement)}`;
+  }
+
+  return state;
+}
+
+function checkFullscreenState() {
+  info(dumpFullscreenState());
+
+  let innerIframes = Array.from(document.querySelectorAll("iframe"));
+  // If the top-level document is not in fullscreen, the inner documents
+  // should not be either.
+  if (!document.fullscreenElement) {
+    for (let i = 0; i < innerIframes.length; ++i) {
+      ok(!innerIframes[i].contentDocument?.fullscreenElement,
+         `inner${i + 1} should not be in fullscreen`);
+    }
+    return;
+  }
+
+  // The fullscreenElement of top-level document should be one of the inner documents.
+  ok(innerIframes.includes(document.fullscreenElement),
+     "Top-level document's fullscreenElement should be one of the inner documents");
+  // And the fullscreen state of inner document should match that of the top-level document.
+  ok(document.fullscreenElement.contentDocument.fullscreenElement,
+     "The fullscreen state of inner document should match that of the top-level document");
+}
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["full-screen-api.allow-trusted-requests-only", false],
+      ["full-screen-api.transition-duration.enter", "0 0"],
+      ["full-screen-api.transition-duration.leave", "0 0"],
+      ["full-screen-api.warning.timeout", 0],
+    ],
+  });
+  await SimpleTest.promiseFocus();
+});
+
+add_task(async function test_no_orphaned_fullscreen_document() {
+  async function testInnerIframes(aIframes) {
+    info("Trigger fullscreen on inner documents");
+    const innerDocs = aIframes.map(iframe => iframe.contentDocument);
+    for (let innerDoc of innerDocs) {
+      let target = innerDoc.getElementById("div");
+      await requestFullscreen(target);
+      checkFullscreenState();
+    }
+
+    info("Exit fullscreen from outer document");
+    await exitFullscreen(document);
+    checkFullscreenState();
+
+    info("Trigger fullscreen on inner documents again");
+    for (let innerDoc of innerDocs) {
+      let target = innerDoc.getElementById("div");
+      await requestFullscreen(target);
+      checkFullscreenState();
+    }
+
+    info("Exit fullscreen from outer document again");
+    await exitFullscreen(document);
+    checkFullscreenState();
+
+    info("Exit fullscreen from inner documents");
+    for (let innerDoc of innerDocs) {
+      await exitFullscreen(innerDoc);
+      checkFullscreenState();
+    }
+  }
+
+  const innerIframes = Array.from(document.querySelectorAll("iframe"));
+  info(`Test iframes order: ${innerIframes.map(iframe => iframe.id).join(", ")}`);
+  await testInnerIframes(innerIframes);
+
+  const reversed = innerIframes.reverse();
+  info(`Test reversed iframes order: ${reversed.map(iframe => iframe.id).join(", ")}`);
+  await testInnerIframes(reversed);
+});
+
+add_task(async function test_current_fullscreen_chain_subdocument_exit() {
+  info("Trigger fullscreen on inner documents");
+  const innerIframes = Array.from(document.querySelectorAll("iframe"));
+  const innerDocs = innerIframes.map(iframe => iframe.contentDocument);
+  for (let innerDoc of innerDocs) {
+    let target = innerDoc.getElementById("div");
+    await requestFullscreen(target);
+    checkFullscreenState();
+  }
+
+  is(document.fullscreenElement, innerIframes[1],
+     "Top-level document's fullscreenElement should be the second inner document");
+
+  info("Exit fullscreen from the subdocument which is in the current fullscreen chain");
+  let promise = waitForEvent(innerDocs[1], "fullscreenchange");
+  await innerDocs[1].exitFullscreen();
+  await promise;
+  checkFullscreenState();
+
+  is(document.fullscreenElement, innerIframes[0],
+     "Top-level document's fullscreenElement should rollback to the first inner document");
+
+  info("Exit fullscreen from the subdocument to fully exit fullscreen");
+  promise = waitForEvent(innerDocs[0], "fullscreenchange");
+  await innerDocs[0].exitFullscreen();
+  await promise;
+  checkFullscreenState();
+
+  is(document.fullscreenElement, null, "Top-level document should fully exit fullscreen");
+});
+
+add_task(async function test_non_current_fullscreen_chain_subdocument_exit() {
+  info("Trigger fullscreen on inner documents");
+  const innerIframes = Array.from(document.querySelectorAll("iframe"));
+  const innerDocs = innerIframes.map(iframe => iframe.contentDocument);
+  for (let innerDoc of innerDocs) {
+    let target = innerDoc.getElementById("div");
+    await requestFullscreen(target);
+    checkFullscreenState();
+  }
+
+  is(document.fullscreenElement, innerIframes[1],
+     "Top-level document's fullscreenElement should be the second inner document");
+
+  info("Exit fullscreen from the subdocument which is not in the current fullscreen chain");
+  let promise = waitForEvent(innerDocs[0], "fullscreenchange");
+  await innerDocs[0].exitFullscreen();
+  await promise;
+  checkFullscreenState();
+
+  is(document.fullscreenElement, null, "Top-level document should fully exit fullscreen");
+});
+
+add_task(async function test_non_top_layer_fullscreen_document_removal() {
+  info("Trigger fullscreen on inner documents");
+  const innerIframes = Array.from(document.querySelectorAll("iframe"));
+  const innerDocs = innerIframes.map(iframe => iframe.contentDocument);
+  for (let innerDoc of innerDocs) {
+    let target = innerDoc.getElementById("div");
+    await requestFullscreen(target);
+    checkFullscreenState();
+  }
+
+  is(document.fullscreenElement, innerIframes[1],
+     "Top-level document's fullscreenElement should be the second inner document");
+
+  info("Remove the first inner document");
+  let promise = waitForEvent(document, "fullscreenchange");
+  innerIframes[0].remove();
+  await promise;
+
+  is(document.fullscreenElement, null, "Top-level document should fully exit fullscreen");
+});
+
+</script>
+</body>
+</html>

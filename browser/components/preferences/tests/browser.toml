@@ -48,7 +48,6 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Linux: bug 1613530
   "os == 'win' && ccov",                                                                    # Windows: bug 1437051
-  "tsan",
 ]
 
 ["browser_fluent.js"]
@@ -66,6 +65,8 @@ run-if = ["os == 'mac'"]
 
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
+
+["browser_tabs_browsing_highlightToSearch.js"]
 
 ["browser_tabs_open_external_next_to_active_tab.js"]
 

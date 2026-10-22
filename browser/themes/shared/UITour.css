@@ -143,7 +143,8 @@
 
 #UITourTooltipButtons {
   justify-content: flex-end;
-  background-color: var(--panel-background-color-dimmed);
+  background-color: var(--panel-footer-background-color);
+  color: var(--panel-footer-text-color);
   border-top: 1px solid var(--panel-separator-color);
   margin: 10px -16px -16px;
   padding: 16px;

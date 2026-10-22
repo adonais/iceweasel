@@ -69,6 +69,15 @@ static const FFCodec * const codec_list[] = {
 #if CONFIG_AAC_MEDIACODEC_DECODER
     &ff_aac_mediacodec_decoder,
 #endif
+#if CONFIG_OPUS_MEDIACODEC_DECODER
+    &ff_opus_mediacodec_decoder,
+#endif
+#if CONFIG_VORBIS_MEDIACODEC_DECODER
+    &ff_vorbis_mediacodec_decoder,
+#endif
+#if CONFIG_FLAC_MEDIACODEC_DECODER
+    &ff_flac_mediacodec_decoder,
+#endif
 #if CONFIG_AV1_MEDIACODEC_DECODER
     &ff_av1_mediacodec_decoder,
 #endif

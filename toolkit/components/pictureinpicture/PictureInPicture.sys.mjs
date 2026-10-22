@@ -72,6 +72,17 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled",
   true
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "PIP_WHEN_OCCLUDED",
+  "media.videocontrols.picture-in-picture.enable-when-occluded.enabled",
+  false
+);
+
+// True if the window is minimized or fully covered.
+function isWindowOutOfSight(win) {
+  return win.windowState == win.STATE_MINIMIZED || win.isFullyOccluded;
+}
 
 /**
  * To differentiate windows in the Telemetry Event Log, each Picture-in-Picture
@@ -124,7 +135,29 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
         break;
       }
       case "PictureInPicture:VideoTabHidden": {
-        if (!lazy.PIP_ENABLED || !lazy.PIP_WHEN_SWITCHING_TABS) {
+        // Skip unless an auto-open pref is on. browser is null if the tab or
+        // window has already closed.
+        if (
+          !lazy.PIP_ENABLED ||
+          (!lazy.PIP_WHEN_SWITCHING_TABS && !lazy.PIP_WHEN_OCCLUDED) ||
+          !browser
+        ) {
+          break;
+        }
+        // The page is hidden because its tab was switched away from
+        // (enable-when-switching-tabs), or because its window was minimized or
+        // covered while the tab stayed selected (enable-when-occluded).
+        let win = browser.documentGlobal;
+        let tabStillSelected = win.gBrowser.selectedBrowser == browser;
+        if (tabStillSelected) {
+          if (
+            !lazy.PIP_WHEN_OCCLUDED ||
+            !isWindowOutOfSight(win) ||
+            PictureInPicture.weakOccludedBrowserClosedDeliberately.has(browser)
+          ) {
+            break;
+          }
+        } else if (!lazy.PIP_WHEN_SWITCHING_TABS) {
           break;
         }
 
@@ -133,11 +166,6 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
           PictureInPicture.weakAutoPipBrowserClosedDeliberately.has(browser)
         ) {
           PictureInPicture.weakAutoPipBrowserClosedDeliberately.delete(browser);
-          break;
-        }
-
-        // If the tab is still selected, then we can ignore this event
-        if (browser.documentGlobal.gBrowser.selectedBrowser == browser) {
           break;
         }
         let actor = browsingContext.currentWindowGlobal.getActor(
@@ -281,6 +309,10 @@ export var PictureInPicture = {
   // Browsers with deliberately closed PiP windows; suppresses auto-toggle.
   weakAutoPipBrowserClosedDeliberately: new WeakSet(),
 
+  // Browsers whose player was closed on purpose while their window was out of
+  // sight. No auto-toggle for them until the window is shown again.
+  weakOccludedBrowserClosedDeliberately: new WeakSet(),
+
   /**
    * Returns the player window if one exists and if it hasn't yet been closed.
    *
@@ -339,6 +371,11 @@ export var PictureInPicture = {
         this.updatePlayingDurationHistograms();
         break;
       }
+      case "sizemodechange":
+      case "occlusionstatechange": {
+        this.unpipOccludedAutoPipBrowser(event.currentTarget);
+        break;
+      }
       case "popupshown":
         this.onPipPanelShown(event);
         break;
@@ -386,6 +423,10 @@ export var PictureInPicture = {
       let gBrowser = browser.getTabBrowser();
       if (gBrowser) {
         gBrowser.tabContainer.addEventListener("TabSelect", this);
+      }
+      if (lazy.PIP_WHEN_OCCLUDED) {
+        parentWin.addEventListener("sizemodechange", this);
+        parentWin.addEventListener("occlusionstatechange", this);
       }
     } else {
       this.originatingWinWeakMap.set(parentWin, count + 1);
@@ -435,6 +476,8 @@ export var PictureInPicture = {
       if (gBrowser) {
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
       }
+      parentWin.removeEventListener("sizemodechange", this);
+      parentWin.removeEventListener("occlusionstatechange", this);
     } else {
       this.originatingWinWeakMap.set(parentWin, count - 1);
     }
@@ -451,6 +494,27 @@ export var PictureInPicture = {
   unpipAutoPipBrowser(event) {
     let browser = event.target.linkedBrowser;
     if (this.weakAutoPipBrowserToParent.has(browser)) {
+      this.closeSinglePipWindow({
+        reason: "Foregrounded",
+        actorRef: this.weakAutoPipBrowserToParent.get(browser),
+      });
+    }
+  },
+
+  /**
+   * Closes a player that auto-opened because this window was minimized or
+   * covered while its video tab stayed selected, once the window can be seen
+   * again. unpipAutoPipBrowser does the same when the user switches back to
+   * a tab.
+   *
+   * @param {Window} win
+   */
+  unpipOccludedAutoPipBrowser(win) {
+    if (isWindowOutOfSight(win)) {
+      return;
+    }
+    let browser = win.gBrowser?.selectedBrowser;
+    if (browser && this.weakAutoPipBrowserToParent.has(browser)) {
       this.closeSinglePipWindow({
         reason: "Foregrounded",
         actorRef: this.weakAutoPipBrowserToParent.get(browser),
@@ -924,6 +988,32 @@ export var PictureInPicture = {
   },
 
   /**
+   * Stops auto-toggle reopening a player the user closed while its window was
+   * out of sight, until the window is shown again. The one-shot mark used for
+   * background tabs can't do this: once closed, the player stops keeping the
+   * window active, and the page reports hidden again, sometimes more than once.
+   *
+   * @param {Element} browser
+   */
+  suppressOccludedAutoPipUntilShown(browser) {
+    if (this.weakOccludedBrowserClosedDeliberately.has(browser)) {
+      return;
+    }
+    let win = browser.documentGlobal;
+    this.weakOccludedBrowserClosedDeliberately.add(browser);
+    let onWindowStateChange = () => {
+      if (isWindowOutOfSight(win)) {
+        return;
+      }
+      win.removeEventListener("sizemodechange", onWindowStateChange);
+      win.removeEventListener("occlusionstatechange", onWindowStateChange);
+      this.weakOccludedBrowserClosedDeliberately.delete(browser);
+    };
+    win.addEventListener("sizemodechange", onWindowStateChange);
+    win.addEventListener("occlusionstatechange", onWindowStateChange);
+  },
+
+  /**
    * Closes a single PiP window. Used exclusively in conjunction with support
    * for multiple PiP windows
    *
@@ -947,6 +1037,12 @@ export var PictureInPicture = {
       const tabbrowser = browser.getTabBrowser();
       if (tabbrowser && tabbrowser.selectedBrowser != browser) {
         PictureInPicture.weakAutoPipBrowserClosedDeliberately.add(browser);
+      } else if (
+        tabbrowser &&
+        lazy.PIP_WHEN_OCCLUDED &&
+        isWindowOutOfSight(browser.documentGlobal)
+      ) {
+        this.suppressOccludedAutoPipUntilShown(browser);
       }
     }
 
@@ -1073,7 +1169,10 @@ export var PictureInPicture = {
     this.weakWinToBrowser.set(win, browser);
     this.addPiPBrowserToWeakMap(browser);
     this.addOriginatingWinToWeakMap(browser);
-    if (lazy.PIP_WHEN_SWITCHING_TABS && !browser.docShellIsActive) {
+    if (
+      (lazy.PIP_WHEN_SWITCHING_TABS || lazy.PIP_WHEN_OCCLUDED) &&
+      !browser.docShellIsActive
+    ) {
       // The docshell would only not be active when the video was pip'd via auto toggle
       browser.docShellIsActive = true;
       this.weakAutoPipBrowserToParent.set(browser, actorRef);

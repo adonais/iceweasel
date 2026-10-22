@@ -12,6 +12,8 @@
 #include "mozilla/UniquePtr.h"
 
 #if defined(MOZ_MEMORY)
+// mozilla::Maybe is needed for mozmemory.h but cannot be included there.
+#  include "mozilla/Maybe.h"
 #  include "mozmemory.h"
 #endif
 

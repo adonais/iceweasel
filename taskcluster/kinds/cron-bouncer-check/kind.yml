@@ -21,16 +21,14 @@ task-defaults:
         substitution-fields:
             - run.config
             - run.product-field
-            - run.extra-config
     worker-type: b-linux
     worker:
         max-run-time: 1200
         docker-image: {in-tree: "update-verify"}
     run:
         clone-with: hg
-        sparse-profile: mozharness
-        extra-config:
-            bouncer_prefix: "https://download.mozilla.org/"
+        sparse-profile: mach
+        bouncer-prefix: "https://download.mozilla.org/"
     attributes:
         build_platform: linux64
         build_type: opt
@@ -49,16 +47,11 @@ tasks:
         run:
             config:
                 by-release-type:
-                    nightly:
-                        - releases/bouncer_firefox_nightly.py
-                    beta:
-                        - releases/bouncer_firefox_beta.py
-                    release:
-                        - releases/bouncer_firefox_release.py
-                    esr.*:
-                        - releases/bouncer_firefox_esr.py
-                    default:
-                        - releases/bouncer_firefox_beta.py
+                    nightly: python/mozrelease/mozrelease/bouncer/firefox_nightly.yml
+                    beta: python/mozrelease/mozrelease/bouncer/firefox_beta.yml
+                    release: python/mozrelease/mozrelease/bouncer/firefox_release.yml
+                    esr.*: python/mozrelease/mozrelease/bouncer/firefox_esr.yml
+                    default: python/mozrelease/mozrelease/bouncer/firefox_beta.yml
             product-field:
                 by-project:
                     mozilla-central: FIREFOX_NIGHTLY
@@ -77,8 +70,7 @@ tasks:
             product: devedition
             job-name: devedition-bouncer-check
         run:
-            config:
-                - releases/bouncer_firefox_devedition.py
+            config: python/mozrelease/mozrelease/bouncer/firefox_devedition.yml
             product-field: FIREFOX_DEVEDITION
             products-url: https://product-details.mozilla.org/1.0/firefox_versions.json
         treeherder:

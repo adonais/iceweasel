@@ -20,6 +20,7 @@ MOZ_SRC_FILES += [
 ]
 
 TESTING_JS_MODULES += [
+    "tests/BookmarksSidebarTestUtils.sys.mjs",
     "tests/SidebarTestUtils.sys.mjs",
 ]
 

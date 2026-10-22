@@ -34,9 +34,6 @@ typedef struct {
 
 static pk11MechanismData pk11_default = { CKM_GENERIC_SECRET_KEY_GEN, CKK_GENERIC_SECRET,
                                           CKM_FAKE_RANDOM, CKM_FAKE_RANDOM, 8, 8 };
-static pk11MechanismData *pk11_MechanismTable = NULL;
-static int pk11_MechTableSize = 0;
-static int pk11_MechEntrySize = 0;
 
 /*
  * list of mechanisms we're willing to wrap secret keys with.
@@ -67,22 +64,6 @@ int wrapMechanismCount = sizeof(wrapMechanismList) / sizeof(wrapMechanismList[0]
  *********************************************************************/
 
 /*
- * lookup an entry in the mechanism table. If none found, return the
- * default structure.
- */
-static pk11MechanismData *
-pk11_lookup(CK_MECHANISM_TYPE type)
-{
-    int i;
-    for (i = 0; i < pk11_MechEntrySize; i++) {
-        if (pk11_MechanismTable[i].type == type) {
-            return (&pk11_MechanismTable[i]);
-        }
-    }
-    return &pk11_default;
-}
-
-/*
  * find the best key wrap mechanism for this slot.
  */
 CK_MECHANISM_TYPE
@@ -95,52 +76,6 @@ PK11_GetBestWrapMechanism(PK11SlotInfo *slot)
         }
     }
     return CKM_INVALID_MECHANISM;
-}
-
-/*
- * NOTE: This is not thread safe. Called at init time, and when loading
- * a new Entry. It is reasonably safe as long as it is not re-entered
- * (readers will always see a consistant table)
- *
- * This routine is called to add entries to the mechanism table, once there,
- * they can not be removed.
- */
-void
-PK11_AddMechanismEntry(CK_MECHANISM_TYPE type, CK_KEY_TYPE key,
-                       CK_MECHANISM_TYPE keyGen,
-                       CK_MECHANISM_TYPE padType,
-                       int ivLen, int blockSize)
-{
-    int tableSize = pk11_MechTableSize;
-    int size = pk11_MechEntrySize;
-    int entry = size++;
-    pk11MechanismData *old = pk11_MechanismTable;
-    pk11MechanismData *newt = pk11_MechanismTable;
-
-    if (size > tableSize) {
-        int oldTableSize = tableSize;
-        tableSize += 10;
-        newt = PORT_NewArray(pk11MechanismData, tableSize);
-        if (newt == NULL)
-            return;
-
-        if (old)
-            PORT_Memcpy(newt, old, oldTableSize * sizeof(*newt));
-    } else
-        old = NULL;
-
-    newt[entry].type = type;
-    newt[entry].keyType = key;
-    newt[entry].keyGen = keyGen;
-    newt[entry].padType = padType;
-    newt[entry].iv = ivLen;
-    newt[entry].blockSize = blockSize;
-
-    pk11_MechanismTable = newt;
-    pk11_MechTableSize = tableSize;
-    pk11_MechEntrySize = size;
-    if (old)
-        PORT_Free(old);
 }
 
 /*
@@ -439,7 +374,7 @@ PK11_GetKeyType(CK_MECHANISM_TYPE type, unsigned long len)
         case CKM_ML_DSA:
             return CKK_ML_DSA;
         default:
-            return pk11_lookup(type)->keyType;
+            return pk11_default.keyType;
     }
 }
 
@@ -674,7 +609,7 @@ PK11_GetKeyGenWithSize(CK_MECHANISM_TYPE type, int size)
         case CKM_ML_DSA:
             return CKM_ML_DSA_KEY_PAIR_GEN;
         default:
-            return pk11_lookup(type)->keyGen;
+            return pk11_default.keyGen;
     }
 }
 
@@ -778,7 +713,7 @@ PK11_GetBlockSize(CK_MECHANISM_TYPE type, SECItem *params)
         case CKM_CHACHA20:
             return 64;
         default:
-            return pk11_lookup(type)->blockSize;
+            return pk11_default.blockSize;
     }
 }
 
@@ -876,7 +811,7 @@ PK11_GetIVLength(CK_MECHANISM_TYPE type)
         case CKM_PBE_SHA1_RC4_128:
             return 0;
         default:
-            return pk11_lookup(type)->iv;
+            return pk11_default.iv;
     }
 }
 
@@ -1024,9 +959,6 @@ pk11_ParamFromIVWithLen(CK_MECHANISM_TYPE type, SECItem *iv, int keyLen)
             break;
         /* unknown mechanism, pass IV in if it's there */
         default:
-            if (pk11_lookup(type)->iv == 0) {
-                break;
-            }
             if ((iv == NULL) || (iv->data == NULL)) {
                 break;
             }
@@ -1389,11 +1321,6 @@ PK11_ParamFromAlgid(SECAlgorithmID *algid)
         case CKM_CAST5_ECB:
             break;
 
-        default:
-            if (pk11_lookup(type)->iv == 0) {
-                break;
-            }
-        /* FALL THROUGH */
         case CKM_SEED_CBC:
         case CKM_CAMELLIA_CBC:
         case CKM_AES_CBC:
@@ -1430,6 +1357,7 @@ PK11_ParamFromAlgid(SECAlgorithmID *algid)
         case CKM_JUNIPER_CBC128:
         case CKM_JUNIPER_COUNTER:
         case CKM_JUNIPER_SHUFFLE:
+        default:
             /* simple cases are simply octet string encoded IVs */
             rv = SEC_ASN1DecodeItem(arena, &iv,
                                     SEC_ASN1_GET(SEC_OctetStringTemplate),
@@ -1565,10 +1493,6 @@ pk11_GenerateNewParamWithKeyLen(CK_MECHANISM_TYPE type, int keyLen)
             }
             PORT_Free(mech);
             return PK11_ParamFromIV(type, &iv);
-        default:
-            if (pk11_lookup(type)->iv == 0) {
-                break;
-            }
         case CKM_SEED_CBC:
         case CKM_CAMELLIA_CBC:
         case CKM_AES_CBC:
@@ -1602,6 +1526,7 @@ pk11_GenerateNewParamWithKeyLen(CK_MECHANISM_TYPE type, int keyLen)
         case CKM_JUNIPER_CBC128:
         case CKM_JUNIPER_COUNTER:
         case CKM_JUNIPER_SHUFFLE:
+        default:
             rv = pk11_GenIV(type, &iv);
             if (rv != SECSuccess) {
                 break;
@@ -1729,12 +1654,6 @@ PK11_ParamToAlgid(SECOidTag algTag, SECItem *param,
         case CKM_PBE_SHA1_RC4_40:
         case CKM_PBE_SHA1_RC4_128:
             return PBE_PK11ParamToAlgid(algTag, param, arena, algid);
-        default:
-            if (pk11_lookup(type)->iv == 0) {
-                rv = SECSuccess;
-                newParams = NULL;
-                break;
-            }
         case CKM_SEED_CBC:
         case CKM_CAMELLIA_CBC:
         case CKM_AES_CBC:
@@ -1768,6 +1687,7 @@ PK11_ParamToAlgid(SECOidTag algTag, SECItem *param,
         case CKM_JUNIPER_CBC128:
         case CKM_JUNIPER_COUNTER:
         case CKM_JUNIPER_SHUFFLE:
+        default:
             if (param && param->len > 0) {
                 newParams = SEC_ASN1EncodeItem(NULL, NULL, param,
                                                SEC_ASN1_GET(SEC_OctetStringTemplate));

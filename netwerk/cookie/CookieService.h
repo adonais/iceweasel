@@ -113,7 +113,7 @@ class CookieService final : public nsICookieService,
   void CloseCookieStorages();
 
   nsresult NormalizeHost(nsCString& aHost);
-  void NotifyAccepted(nsIChannel* aChannel);
+  void NotifyAccepted(nsIChannel* aChannel, uint32_t aRejectedReason);
 
   nsresult GetCookiesWithOriginAttributes(
       const OriginAttributesPattern& aPattern, const nsCString& aBaseDomain,

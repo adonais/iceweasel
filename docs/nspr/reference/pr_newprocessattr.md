@@ -20,9 +20,9 @@ A pointer to the new process attributes structure.
 
 ## Description
 
-This function creates a new {ref}`PRProcessAttr`structure that specifies
+This function creates a new {doc}`prprocessattr`structure that specifies
 the attributes of a new process, then returns a pointer to the
-structure. The new {ref}`PRProcessAttr`structure is initialized with
+structure. The new {doc}`prprocessattr`structure is initialized with
 these default attributes:
 
 - The standard I/O streams (standard input, standard output, and

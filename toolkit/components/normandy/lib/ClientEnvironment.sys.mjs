@@ -7,12 +7,7 @@ import { ClientEnvironmentBase } from "resource://gre/modules/components-utils/C
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AddonRollouts: "resource://normandy/lib/AddonRollouts.sys.mjs",
-  AddonStudies: "resource://normandy/lib/AddonStudies.sys.mjs",
   NormandyApi: "resource://normandy/lib/NormandyApi.sys.mjs",
-  PreferenceExperiments:
-    "resource://normandy/lib/PreferenceExperiments.sys.mjs",
-  PreferenceRollouts: "resource://normandy/lib/PreferenceRollouts.sys.mjs",
 });
 
 // Cached API request for client attributes that are determined by the Normandy
@@ -69,52 +64,6 @@ export class ClientEnvironment extends ClientEnvironmentBase {
       const { request_time } =
         await ClientEnvironment.getClientClassification();
       return request_time;
-    })();
-  }
-
-  static get experiments() {
-    return (async () => {
-      const names = { all: [], active: [], expired: [] };
-
-      for (const {
-        slug,
-        expired,
-      } of await lazy.PreferenceExperiments.getAll()) {
-        names.all.push(slug);
-        if (expired) {
-          names.expired.push(slug);
-        } else {
-          names.active.push(slug);
-        }
-      }
-
-      return names;
-    })();
-  }
-
-  static get studies() {
-    return (async () => {
-      const rv = { pref: {}, addon: {} };
-      for (const prefStudy of await lazy.PreferenceExperiments.getAll()) {
-        rv.pref[prefStudy.slug] = prefStudy;
-      }
-      for (const addonStudy of await lazy.AddonStudies.getAll()) {
-        rv.addon[addonStudy.slug] = addonStudy;
-      }
-      return rv;
-    })();
-  }
-
-  static get rollouts() {
-    return (async () => {
-      const rv = { pref: {}, addon: {} };
-      for (const prefRollout of await lazy.PreferenceRollouts.getAll()) {
-        rv.pref[prefRollout.slug] = prefRollout;
-      }
-      for (const addonRollout of await lazy.AddonRollouts.getAll()) {
-        rv.addon[addonRollout.slug] = addonRollout;
-      }
-      return rv;
     })();
   }
 

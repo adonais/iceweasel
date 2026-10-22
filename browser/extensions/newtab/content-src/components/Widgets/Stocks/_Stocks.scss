@@ -31,12 +31,8 @@
   }
 }
 
-// The plain "Stocks" title shown at small. Resets the h2 defaults to match the
-// small widget-title look.
+// The plain "Finance" title shown at small.
 .stocks-heading {
-  margin: 0;
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight);
   color: var(--text-color-deemphasized);
 }
 
@@ -176,6 +172,12 @@
 .stocks-context-menu-wrapper {
   opacity: 0;
   pointer-events: none;
+}
+
+// Keep the menu at the shared corner offset despite the taller top padding.
+.stocks:is(.medium-widget, .large-widget) .stocks-context-menu-wrapper {
+  position: relative;
+  inset-block-start: calc(var(--space-medium) - var(--space-large));
 }
 
 .stocks:hover,

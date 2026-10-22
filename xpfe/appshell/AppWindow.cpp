@@ -1176,23 +1176,24 @@ bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
     gotPosition = true;
   }
 
-  if (gotPosition) {
-    // Our position will be relative to our parent, if any
-    nsCOMPtr<nsIBaseWindow> parent(do_QueryReferent(mParentWindow));
-    if (parent) {
-      const DesktopIntPoint parentPos = RoundedToInt(
-          parent->GetPosition() / parent->DevicePixelsPerDesktopPixel());
-      specPoint += parentPos;
-    } else {
-      StaggerPosition(specPoint.x.value, specPoint.y.value, cssSize.width,
-                      cssSize.height);
-    }
+  if (!gotPosition) {
+    return false;
+  }
+  // Our position will be relative to our parent, if any
+  nsCOMPtr<nsIBaseWindow> parent(do_QueryReferent(mParentWindow));
+  if (parent) {
+    const DesktopIntPoint parentPos = RoundedToInt(
+        parent->GetPosition() / parent->DevicePixelsPerDesktopPixel());
+    specPoint += parentPos;
+  } else {
+    StaggerPosition(specPoint.x.value, specPoint.y.value, cssSize.width,
+                    cssSize.height);
   }
   mWindow->ConstrainPosition(specPoint);
   if (specPoint != curPoint) {
     SetPositionDesktopPix(specPoint.x, specPoint.y);
   }
-  return gotPosition;
+  return true;
 }
 
 static Maybe<int32_t> ReadSize(const Element& aElement, nsAtom* aAttr,

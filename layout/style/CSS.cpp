@@ -8,16 +8,28 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HighlightRegistry.h"
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkletCommon.h"
 #include "nsContentUtils.h"
 #include "nsStyleUtil.h"
 #include "xpcpublic.h"
 
 namespace mozilla::dom {
+
+/* static */
+bool CSS::IsEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj) {
+  if (IsWorkerGlobal(aObj) || IsWorkletGlobal(aObj)) {
+    return StaticPrefs::layout_css_namespace_exposed_in_workers_and_worklets();
+  }
+
+  return true;
+}
 
 /* static */
 bool CSS::Supports(const GlobalObject&, const nsACString& aProperty,

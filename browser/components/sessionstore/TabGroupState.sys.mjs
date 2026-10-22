@@ -55,7 +55,7 @@
  * @property {number} [windowClosedId]
  *   `closedId` of the closed window if this tab group was saved automatically
  *   due to a window closing. Not set when a user explicitly saves a tab group.
- * @property {ClosedTabStateData[]} tabs
+ * @property {SavedGroupTabStateData[]} tabs
  *   Copy of all tab data for the tabs that were in this tab group
  *   at the time it was saved.
  * @property {TabSplitViewStateData[]} splitViews
@@ -63,6 +63,13 @@
  *   at the time it was saved.
  * @property {boolean} [removeAfterRestore]
  *   Whether the tab group is to be forgotten once it has been restored.
+ */
+
+/**
+ * @typedef {Omit<ClosedTabStateData, "pos" | "sourceWindowId"> & Partial<Pick<ClosedTabStateData, "pos" | "sourceWindowId">>} SavedGroupTabStateData
+ *   State of a tab in a saved tab group. Tabs saved automatically, when their
+ *   window closes or when the last session's open groups are saved, have no
+ *   `pos` or `sourceWindowId`, since a saved group reopens its tabs in order.
  */
 
 /**
@@ -103,7 +110,7 @@ class _TabGroupState {
    *
    * @param {MozTabbrowserTabGroup} tabGroup
    * @param {string} sourceWindowId
-   *   `window.__SSi` window ID of the open window where the tab group is closing.
+   *   SessionStore ID of the open window where the tab group is closing.
    * @returns {ClosedTabGroupStateData}
    */
   closed(tabGroup, sourceWindowId) {
@@ -125,7 +132,7 @@ class _TabGroupState {
    *
    * @param {MozTabbrowserTabGroup} tabGroup
    * @param {string} sourceWindowId
-   *   `window.__SSi` window ID of the open window where the tab group
+   *   SessionStore ID of the open window where the tab group
    *   is being saved.
    * @returns {SavedTabGroupStateData}
    */

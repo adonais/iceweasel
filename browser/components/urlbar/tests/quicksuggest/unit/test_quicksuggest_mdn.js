@@ -139,11 +139,9 @@ add_task(async function nimbus() {
   });
 
   // Enable by Nimbus.
-  const cleanUpNimbusEnable = await UrlbarTestUtils.initNimbusFeature(
-    { mdnFeatureGate: true },
-    "urlbar",
-    "config"
-  );
+  const cleanUpNimbusEnable = await UrlbarTestUtils.initNimbusFeature({
+    mdnFeatureGate: true,
+  });
   await QuickSuggestTestUtils.forceSync();
   await check_results({
     context: createContext(keyword, {
@@ -159,11 +157,9 @@ add_task(async function nimbus() {
   await QuickSuggestTestUtils.forceSync();
 
   // Disable by Nimbus.
-  const cleanUpNimbusDisable = await UrlbarTestUtils.initNimbusFeature(
-    { mdnFeatureGate: false },
-    "urlbar",
-    "config"
-  );
+  const cleanUpNimbusDisable = await UrlbarTestUtils.initNimbusFeature({
+    mdnFeatureGate: false,
+  });
   await check_results({
     context: createContext(keyword, {
       providers: [UrlbarProviderQuickSuggest.name],

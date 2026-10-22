@@ -34,17 +34,11 @@ class TestClientActivity(FOGTestCase):
 
         # Restarting the browser could send multiple "baseline" pings
         # (e.g. there could be some pending, or some triggered near shutdown.)
-        # So only accept the "baseline" ping sent near startup.
-        # We identify this ping as the one that has seen an "events" ping being sent,
-        # since one of those is submitted during startup due to events being present.
+        # We happen to know the first one this session is seq = 1, so look for that.
         def is_startup_baseline_ping(ping):
             return (
                 ping["request_url"]["doc_type"] == "baseline"
-                and ping["payload"]["metrics"]
-                .get("labeled_counter", {})
-                .get("glean.validation.pings_submitted", {})
-                .get("events")
-                == 1
+                and ping["payload"]["ping_info"]["seq"] == 1
             )
 
         [ping0, ping1] = self.wait_for_pings(

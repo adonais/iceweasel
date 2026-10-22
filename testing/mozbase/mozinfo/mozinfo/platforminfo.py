@@ -50,10 +50,6 @@ def android_api_to_os_version(api_version: str):
 class PlatformInfo:
     variant_data = {}
 
-    buildmap = {
-        "debug-isolated-process": "isolated_process",
-    }
-
     def __init__(self, test_settings: OptTestSettings = None) -> None:
         if not test_settings:
             return
@@ -151,8 +147,6 @@ class PlatformInfo:
             filtered_types = [x for x in keys if x not in ["type", "shippable"]]
             if len(filtered_types) > 0:
                 build_type = filtered_types[0]
-
-        build_type = self.buildmap.get(build_type, build_type)
 
         # TODO: this is a hack, but these don't apply:
         if build_type in ["devedition", "mingwclang"]:  # only on beta, no mozinfo

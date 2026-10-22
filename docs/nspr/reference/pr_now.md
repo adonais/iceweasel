@@ -16,7 +16,7 @@ None.
 
 ### Returns
 
-The current time as a {ref}`PRTime` value.
+The current time as a {doc}`prtime` value.
 
 ## Description
 

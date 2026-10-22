@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object for the file or socket.
+: A pointer to a {doc}`prfiledesc` object for the file or socket.
 
 `buf`
 
@@ -37,10 +37,10 @@ One of the following values:
 - The value 0 means end of file is reached or the network connection is
   closed.
 - The value -1 indicates a failure. To get the reason for the failure,
-  call {ref}`PR_GetError`.
+  call {doc}`pr_geterror`.
 
 ## Description
 
-The thread invoking {ref}`PR_Read` blocks until it encounters an
+The thread invoking {doc}`pr_read` blocks until it encounters an
 end-of-stream indication, some positive number of bytes (but no more
 than `amount` bytes) are read in, or an error occurs.

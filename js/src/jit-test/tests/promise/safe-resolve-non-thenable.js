@@ -1,5 +1,3 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta")
-//
 // JS::SafeResolve fast path: non-objects and inert objects should fulfill
 // synchronously, exactly like JS::ResolvePromise.
 

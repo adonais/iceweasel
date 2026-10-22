@@ -553,4 +553,196 @@ TEST(DSAUTest, VfyVerifyDataDirectOversizedSigRejected) {
 }
 #endif  // NSS_TEST_HAVE_LARGE_VA
 
+// RFC 3279, Section 2.3.2 allows a DSA certificate to omit the parameters
+// field of its SubjectPublicKeyInfo AlgorithmIdentifier and inherit p, q and g
+// from the issuer. No key can be extracted from such a SubjectPublicKeyInfo
+// until SECKEY_UpdateCertPQG() has copied the parameters in from the issuer.
+
+// SubjectPublicKeyInfo for a DSA key that carries its own Dss-Parms. The
+// values are not a usable key, only well formed.
+static const uint8_t kDsaSpki[] = {
+    0x30, 0x1c,  // SEQUENCE
+    0x30, 0x14,  // AlgorithmIdentifier
+    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x38, 0x04, 0x01,  // id-dsa
+    0x30, 0x09,                                            // Dss-Parms
+    0x02, 0x01, 0x0b,                                      // p
+    0x02, 0x01, 0x05,                                      // q
+    0x02, 0x01, 0x02,                                      // g
+    0x03, 0x04, 0x00, 0x02, 0x01, 0x03                     // BIT STRING { y }
+};
+
+// The same key with the parameters field absent.
+static const uint8_t kDsaSpkiInheritedParams[] = {
+    0x30, 0x11,  // SEQUENCE
+    0x30, 0x09,  // AlgorithmIdentifier
+    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x38, 0x04, 0x01,  // id-dsa
+    0x03, 0x04, 0x00, 0x02, 0x01, 0x03                     // BIT STRING { y }
+};
+
+static ScopedCERTSubjectPublicKeyInfo DecodeSpki(const uint8_t* der,
+                                                 size_t len) {
+  SECItem item = {siBuffer, const_cast<unsigned char*>(der),
+                  static_cast<unsigned int>(len)};
+  return ScopedCERTSubjectPublicKeyInfo(
+      SECKEY_DecodeDERSubjectPublicKeyInfo(&item));
+}
+
+TEST(SpkiInheritedParamsTest, DsaWithParameters) {
+  ScopedCERTSubjectPublicKeyInfo spki(DecodeSpki(kDsaSpki, sizeof(kDsaSpki)));
+  ASSERT_NE(nullptr, spki.get());
+  ASSERT_NE(0u, spki->algorithm.parameters.len);
+
+  ScopedSECKEYPublicKey key(SECKEY_ExtractPublicKey(spki.get()));
+  EXPECT_NE(nullptr, key.get());
+}
+
+TEST(SpkiInheritedParamsTest, DsaInheritedParametersNoKey) {
+  ScopedCERTSubjectPublicKeyInfo spki(
+      DecodeSpki(kDsaSpkiInheritedParams, sizeof(kDsaSpkiInheritedParams)));
+  ASSERT_NE(nullptr, spki.get());
+  ASSERT_EQ(0u, spki->algorithm.parameters.len);
+
+  ScopedSECKEYPublicKey key(SECKEY_ExtractPublicKey(spki.get()));
+  EXPECT_EQ(nullptr, key.get());
+  EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+}
+
+TEST(SpkiInheritedParamsTest, EcInheritedParametersNoKey) {
+  SECKEYECParams ecParams = {siBuffer, nullptr, 0};
+  SECOidData* oidData = SECOID_FindOIDByTag(SEC_OID_ANSIX962_EC_PRIME256V1);
+  ASSERT_NE(nullptr, oidData);
+  ASSERT_NE(nullptr,
+            SECITEM_AllocItem(nullptr, &ecParams, 2 + oidData->oid.len));
+  ecParams.data[0] = SEC_ASN1_OBJECT_ID;
+  ecParams.data[1] = static_cast<unsigned char>(oidData->oid.len);
+  memcpy(ecParams.data + 2, oidData->oid.data, oidData->oid.len);
+
+  SECKEYPublicKey* pubk = nullptr;
+  ScopedSECKEYPrivateKey privk(
+      SECKEY_CreateECPrivateKey(&ecParams, &pubk, nullptr));
+  SECITEM_FreeItem(&ecParams, PR_FALSE);
+  ScopedSECKEYPublicKey pubKey(pubk);
+  ASSERT_NE(nullptr, privk.get());
+  ASSERT_NE(nullptr, pubKey.get());
+
+  ScopedCERTSubjectPublicKeyInfo spki(
+      SECKEY_CreateSubjectPublicKeyInfo(pubKey.get()));
+  ASSERT_NE(nullptr, spki.get());
+  ASSERT_NE(0u, spki->algorithm.parameters.len);
+
+  ScopedSECKEYPublicKey withParams(SECKEY_ExtractPublicKey(spki.get()));
+  EXPECT_NE(nullptr, withParams.get());
+
+  // Drop the named curve, as an absent OPTIONAL parameters field decodes.
+  // The memory stays owned by the SubjectPublicKeyInfo's arena.
+  spki->algorithm.parameters.data = nullptr;
+  spki->algorithm.parameters.len = 0;
+
+  ScopedSECKEYPublicKey inherited(SECKEY_ExtractPublicKey(spki.get()));
+  EXPECT_EQ(nullptr, inherited.get());
+  EXPECT_EQ(SEC_ERROR_INPUT_LEN, PORT_GetError());
+}
+
+// SubjectPublicKeyInfo encoding of RFC 8410 keys (edKey, ecMontKey). The
+// algorithm OID is the RFC 8410 one (id-X25519, id-Ed25519); in particular the
+// pre-RFC 8410 curve25519 OID must never appear there, since nothing can parse
+// it back.
+class Rfc8410SpkiTest : public ::testing::Test {
+ protected:
+  static void MakeEcParams(SECOidTag oid, ScopedSECItem& params) {
+    SECOidData* oidData = SECOID_FindOIDByTag(oid);
+    ASSERT_NE(nullptr, oidData);
+    SECItem* tmp = SECITEM_AllocItem(nullptr, nullptr, 2 + oidData->oid.len);
+    ASSERT_NE(nullptr, tmp);
+    tmp->type = siDEROID;
+    tmp->data[0] = SEC_ASN1_OBJECT_ID;
+    tmp->data[1] = static_cast<unsigned char>(oidData->oid.len);
+    memcpy(tmp->data + 2, oidData->oid.data, oidData->oid.len);
+    params.reset(tmp);
+  }
+
+  static void GenerateKeyPair(CK_MECHANISM_TYPE mech, SECOidTag oid,
+                              ScopedSECKEYPublicKey& pub,
+                              ScopedSECKEYPrivateKey& priv) {
+    ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+    ASSERT_NE(nullptr, slot.get());
+    ScopedSECItem params;
+    ASSERT_NO_FATAL_FAILURE(MakeEcParams(oid, params));
+    SECKEYPublicKey* pubTmp = nullptr;
+    priv.reset(PK11_GenerateKeyPair(slot.get(), mech, params.get(), &pubTmp,
+                                    PR_FALSE, PR_FALSE, nullptr));
+    ASSERT_NE(nullptr, priv.get());
+    ASSERT_NE(nullptr, pubTmp);
+    pub.reset(pubTmp);
+  }
+
+  // Encode |pub| to an SPKI, check the algorithm OID, then decode it again and
+  // check that we recovered the same key.
+  static void ExpectRoundTrip(const ScopedSECKEYPublicKey& pub,
+                              KeyType expectedType, SECOidTag expectedAlgOid) {
+    ScopedSECItem der(SECKEY_EncodeDERSubjectPublicKeyInfo(pub.get()));
+    ASSERT_NE(nullptr, der.get());
+
+    ScopedCERTSubjectPublicKeyInfo spki(
+        SECKEY_DecodeDERSubjectPublicKeyInfo(der.get()));
+    ASSERT_NE(nullptr, spki.get());
+    EXPECT_EQ(expectedAlgOid, SECOID_GetAlgorithmTag(&spki->algorithm));
+
+    ScopedSECKEYPublicKey back(SECKEY_ExtractPublicKey(spki.get()));
+    ASSERT_NE(nullptr, back.get()) << "SEC error " << PORT_GetError();
+    EXPECT_EQ(expectedType, back->keyType);
+    EXPECT_EQ(0, SECITEM_CompareItem(&pub->u.ec.publicValue,
+                                     &back->u.ec.publicValue));
+  }
+};
+
+TEST_F(Rfc8410SpkiTest, X25519WithRfc8410Oid) {
+  ScopedSECKEYPublicKey pub;
+  ScopedSECKEYPrivateKey priv;
+  ASSERT_NO_FATAL_FAILURE(GenerateKeyPair(CKM_EC_MONTGOMERY_KEY_PAIR_GEN,
+                                          SEC_OID_X25519, pub, priv));
+  ASSERT_EQ(ecMontKey, pub->keyType);
+  ExpectRoundTrip(pub, ecMontKey, SEC_OID_X25519);
+}
+
+// CKM_EC_MONTGOMERY_KEY_PAIR_GEN accepts the pre-RFC 8410 curve25519 OID as
+// the named curve. The resulting key must still encode to an SPKI that says
+// id-X25519, not curve25519.
+TEST_F(Rfc8410SpkiTest, X25519WithLegacyCurve25519Oid) {
+  ScopedSECKEYPublicKey pub;
+  ScopedSECKEYPrivateKey priv;
+  ASSERT_NO_FATAL_FAILURE(GenerateKeyPair(CKM_EC_MONTGOMERY_KEY_PAIR_GEN,
+                                          SEC_OID_CURVE25519, pub, priv));
+  ASSERT_EQ(ecMontKey, pub->keyType);
+  ExpectRoundTrip(pub, ecMontKey, SEC_OID_X25519);
+}
+
+TEST_F(Rfc8410SpkiTest, Ed25519) {
+  ScopedSECKEYPublicKey pub;
+  ScopedSECKEYPrivateKey priv;
+  ASSERT_NO_FATAL_FAILURE(GenerateKeyPair(
+      CKM_EC_EDWARDS_KEY_PAIR_GEN, SEC_OID_ED25519_PUBLIC_KEY, pub, priv));
+  ASSERT_EQ(edKey, pub->keyType);
+  ExpectRoundTrip(pub, edKey, SEC_OID_ED25519_PUBLIC_KEY);
+}
+
+// A curve that has no RFC 8410 identifier must be refused outright rather than
+// encoded into an SPKI that cannot be read back.
+TEST_F(Rfc8410SpkiTest, UnrelatedCurveRejected) {
+  ScopedSECKEYPublicKey pub;
+  ScopedSECKEYPrivateKey priv;
+  ASSERT_NO_FATAL_FAILURE(GenerateKeyPair(CKM_EC_MONTGOMERY_KEY_PAIR_GEN,
+                                          SEC_OID_X25519, pub, priv));
+
+  // Relabel the curve; the key material is irrelevant here.
+  ScopedSECItem params;
+  ASSERT_NO_FATAL_FAILURE(MakeEcParams(SEC_OID_ANSIX962_EC_PRIME256V1, params));
+  ASSERT_EQ(
+      SECSuccess,
+      SECITEM_CopyItem(pub->arena, &pub->u.ec.DEREncodedParams, params.get()));
+
+  EXPECT_EQ(nullptr, SECKEY_EncodeDERSubjectPublicKeyInfo(pub.get()));
+  EXPECT_EQ(SEC_ERROR_UNSUPPORTED_KEYALG, PORT_GetError());
+}
+
 }  // namespace nss_test

@@ -1264,8 +1264,7 @@ nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
 
   nsXREDirProvider::SetUserDataProfileDirectory(localDir, aLocal);
 
-  localDir.forget(aFile);
-  return NS_OK;
+  return localDir->Clone(aFile);
 }
 
 nsresult nsXREDirProvider::EnsureDirectoryExists(nsIFile* aDirectory) {

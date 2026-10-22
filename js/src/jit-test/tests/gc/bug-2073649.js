@@ -1,0 +1,10 @@
+var other = newGlobal({newCompartment:true});
+var sym = Symbol("x".repeat(100));
+var map = new WeakMap([[sym,0]]);
+grayRoot()[0] = other.grayRoot()[0] = sym;
+sym = null;
+gc();
+schedulezone(this);
+schedulezone("atoms");
+gc("zone");
+grayRoot()[0].description;

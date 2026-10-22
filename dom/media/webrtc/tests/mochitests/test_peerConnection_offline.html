@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "2074202",
+    title: "Going offline and back online with live PeerConnections"
+  });
+
+// Flips the offline state in the parent, which passes it on to every other
+// process, including the one running the ICE stack.
+const offlineScript = SpecialPowers.loadChromeScript(() => {
+  /* eslint-env mozilla/chrome-script */
+  addMessageListener("set-offline", offline => {
+    Services.io.offline = offline;
+  });
+});
+
+async function setOffline(offline) {
+  const changed = new Promise(resolve => {
+    const observer = {
+      observe(subject, topic) {
+        SpecialPowers.removeObserver(observer, topic);
+        resolve();
+      },
+    };
+    SpecialPowers.addObserver(observer, "network:offline-status-changed");
+  });
+  offlineScript.sendAsyncMessage("set-offline", offline);
+  await changed;
+  is(SpecialPowers.Services.io.offline, offline,
+     `This process is ${offline ? "offline" : "online"}`);
+}
+
+async function connect() {
+  const pc1 = new RTCPeerConnection();
+  const pc2 = new RTCPeerConnection();
+  pc1.onicecandidate = e => pc2.addIceCandidate(e.candidate);
+  pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
+  const dc1 = pc1.createDataChannel("no-signal-bars");
+  const dc2 = new Promise(r => (pc2.ondatachannel = e => r(e.channel)));
+  const opened = haveEvent(dc1, "open");
+  await pc1.setLocalDescription();
+  await pc2.setRemoteDescription(pc1.localDescription);
+  await pc2.setLocalDescription();
+  await pc1.setRemoteDescription(pc2.localDescription);
+  await opened;
+  return { pc1, pc2, dc1, dc2: await dc2 };
+}
+
+async function sendAcross({ dc1, dc2 }, text) {
+  const received = haveEvent(dc2, "message");
+  dc1.send(text);
+  is((await received).data, text, "Message made it across");
+}
+
+runNetworkTest(async () =>
+  // Otherwise the link service may put us back online behind our back.
+  withPrefs([["network.manage-offline-status", false]], async () => {
+    const before = await connect();
+    await sendAcross(before, "before");
+
+    info("Going offline with a connected pair");
+    await setOffline(true);
+    // The ICE stack loses its sockets here. We do not insist on any particular
+    // reaction, only that nothing crashes and everything can still be torn down.
+    await wait(1000);
+    info(`iceConnectionState while offline: ${before.pc1.iceConnectionState}, ` +
+         `${before.pc2.iceConnectionState}`);
+
+    try {
+      new RTCPeerConnection();
+      ok(false, "Creating an RTCPeerConnection while offline should throw");
+    } catch (e) {
+      is(e.name, "InvalidStateError",
+         "Creating an RTCPeerConnection while offline throws InvalidStateError");
+    }
+
+    await setOffline(false);
+    before.pc1.close();
+    before.pc2.close();
+
+    info("Back online; a new pair must connect");
+    const after = await connect();
+    await sendAcross(after, "after");
+    after.pc1.close();
+    after.pc2.close();
+  }));
+</script>
+</pre>
+</body>
+</html>

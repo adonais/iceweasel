@@ -97,6 +97,9 @@ class nsWaylandDisplay {
   void RemovePointer();
 
   void SetShm(wl_shm* aShm);
+#ifdef MOZ_LOGGING
+  void SetShmFormat(uint32_t aFormat);
+#endif
 
   void SetKeyboard(wl_keyboard* aKeyboard);
   wl_keyboard* GetKeyboard() { return mKeyboard; }

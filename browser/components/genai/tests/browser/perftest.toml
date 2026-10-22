@@ -10,6 +10,10 @@ prefs = [
   "browser.ml.linkPreview.optin=true",
   "browser.ml.linkPreview.prefetchOnEnable=false",
   "browser.ml.linkPreview.shiftAlt=true",
+  # Nightly defaults the pref on; the CI tasks that want the HWInference
+  # process opt in through MOZ_ML_LLAMA_HWINFERENCE instead (see
+  # MLPerfTestUtils).
+  "browser.ml.llama.hwInference=false",
 ]
 
 ["browser_link_preview_perf.js"]

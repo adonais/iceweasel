@@ -141,3 +141,7 @@ private fun String.stripProtocolAndCommonSubdomains(): String {
     }
     return stripped
 }
+
+/** Whether this URL and [url] are the same entry in the blocklist. */
+internal fun String.hasSameBlocklistEntryAs(url: String): Boolean =
+    stripProtocolAndCommonSubdomains() == url.stripProtocolAndCommonSubdomains()

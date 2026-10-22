@@ -14,7 +14,7 @@ void PR_SetThreadPriority(
 
 ### Parameters
 
-{ref}`PR_SetThreadPriority` has the following parameters:
+{doc}`pr_setthreadpriority` has the following parameters:
 
 `thread`
 
@@ -30,4 +30,4 @@ Modifying the priority of a thread other than the calling thread is
 risky. It is difficult to ensure that the state of the target thread
 permits a priority adjustment without ill effects. It is preferable for
 a thread to specify itself in the thread parameter when it calls
-{ref}`PR_SetThreadPriority`.
+{doc}`pr_setthreadpriority`.

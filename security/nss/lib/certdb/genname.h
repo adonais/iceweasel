@@ -72,9 +72,6 @@ void CERT_AddGeneralNameToList(CERTGeneralNameList *list,
                                CERTGeneralNameType type, void *data,
                                SECItem *oid);
 
-/* returns a duplicate of the CERTGeneralNameList */
-CERTGeneralNameList *CERT_DupGeneralNameList(CERTGeneralNameList *list);
-
 /* returns the number of CERTGeneralName objects in the  doubly linked
 ** list of which *names is a member.
 */

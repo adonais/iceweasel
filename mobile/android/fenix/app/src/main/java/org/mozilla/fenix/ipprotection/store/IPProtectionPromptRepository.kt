@@ -5,21 +5,18 @@
 package org.mozilla.fenix.ipprotection.store
 
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.Settings.Companion.ONE_WEEK_MS
 
 /** Repository for preferences related to the IP Protection bottom sheet. */
 interface IPProtectionPromptRepository {
     /**
      * Determines whether the IP Protection prompt can be shown.
      *
-     * @param currentTimeMillis the current time in milliseconds.
      * @return `true` if the following conditions are met:
      *
      * - The user has not used the built-in VPN before.
      * - The IP Protection feature flag is enabled.
-     * - Application has been installed for at least 7 days.
      */
-    fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean
+    fun canShowIPProtectionPrompt(): Boolean
 
     /**
      * A boolean to track if we are currently showing the IP protection bottom sheet prompt. This is used when
@@ -68,14 +65,10 @@ class DefaultIPProtectionPromptRepository(private val settings: Settings) : IPPr
     override val showOnboardingBottomSheet: Boolean
         get() = settings.shouldShowIPProtectionOnboardingBottomSheet
 
-    override fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean =
+    override fun canShowIPProtectionPrompt(): Boolean =
         showOnboardingBottomSheet &&
             settings.isIPProtectionAvailable &&
-            completedOnboardingOverAWeekAgo(currentTimeMillis) &&
             !isShowingPrompt &&
             !hasShownPrompt &&
             !hasAlreadyUsedIPProtection
-
-    private fun completedOnboardingOverAWeekAgo(currentTimeMillis: Long): Boolean =
-        currentTimeMillis - settings.onboardingCompletedTimestamp > ONE_WEEK_MS
 }

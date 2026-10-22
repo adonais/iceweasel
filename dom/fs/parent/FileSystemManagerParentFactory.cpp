@@ -4,7 +4,6 @@
 
 #include "FileSystemManagerParentFactory.h"
 
-#include "mozilla/OriginAttributes.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/FileSystemDataManager.h"
 #include "mozilla/dom/FileSystemLog.h"
@@ -49,11 +48,17 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
       quota::GetInfoFromValidatedPrincipalInfo(*quotaManager, aPrincipalInfo),
       IPC_OK(), [aResolver](const auto rv) { aResolver(rv); });
 
-  quota::OriginMetadata originMetadata(std::move(principalMetadata),
-                                       quota::PERSISTENCE_TYPE_DEFAULT);
+  // Private browsing data belongs to the private repository, which is wiped
+  // when the private browsing session ends.
+  const auto persistenceType = principalMetadata.mIsPrivate
+                                   ? quota::PERSISTENCE_TYPE_PRIVATE
+                                   : quota::PERSISTENCE_TYPE_DEFAULT;
 
-  // Block use for now in PrivateBrowsing
-  QM_TRY(OkIf(!OriginAttributes::IsPrivateBrowsing(originMetadata.mOrigin)),
+  quota::OriginMetadata originMetadata(std::move(principalMetadata),
+                                       persistenceType);
+
+  QM_TRY(OkIf(StaticPrefs::dom_fs_privateBrowsing_enabled() ||
+              !originMetadata.mIsPrivate),
          IPC_OK(),
          [aResolver](const auto&) { aResolver(NS_ERROR_DOM_NOT_ALLOWED_ERR); });
 

@@ -33,7 +33,7 @@ add_task(async function test_schema_14_migration() {
       "Some data",
       "foo.com",
       "/",
-      now + (i % 2 ? 34560000 * 2 : 0),
+      now + (i % 2 ? 34560000 * 2 : 3600),
       now,
       now,
       false,
@@ -72,7 +72,7 @@ add_task(async function test_schema_14_migration() {
   await promise_load_profile();
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), N);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, N);
 
   // Check if the time was reset
   {

@@ -135,7 +135,7 @@ class mozInlineSpellStatus {
 
   // Set mAnchorRange to document selection if it is collapsed
   // when spell check occurs.
-  const SetAnchorToCaret mSetAnchorToCaret;
+  SetAnchorToCaret mSetAnchorToCaret;
 
   // Contains the offset passed in to HandleNavigationEvent
   const int32_t mNewNavigationPositionOffset;

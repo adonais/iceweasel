@@ -41,15 +41,26 @@ action:
 When a permission changes between deny and a non-deny action for the same type,
 the old entry under the other key style is automatically removed.
 
+In both cases the principal is that of the tab's **top-level** document.
+Callers must not key a browser-scoped permission to a subframe principal: such
+an entry is not cleared when the subframe goes away, can be read by that origin
+again under a different first party in the same tab, and is invisible to
+`getAllForBrowser` and therefore to the permission panel. Where a permission
+belongs to an embedded third party, encode that third party in the permission
+type and store it under the top-level principal, as `3rdPartyStorage^<origin>`
+does.
+
 ## Lifetime
 
 Browser-scoped permissions have two lifetime mechanisms:
 
 1. **Tab lifetime**: All browser-scoped permissions for a tab are automatically
-   removed when the tab's browsing context is discarded (observed via the
-   `"browsing-context-discarded"` notification). Browsing context replacements
-   (e.g., process switches) where the browser ID transfers to a new context are
-   not treated as discards.
+   removed when the tab's **top-level** browsing context is discarded (observed
+   via the `"browsing-context-discarded"` notification). Subframe discards are
+   ignored: child browsing contexts share their top-level browser's browser ID,
+   so treating them as tab teardown would clear unrelated grants for the whole
+   tab. Browsing context replacements (e.g., process switches) where the browser
+   ID transfers to a new context are not treated as discards either.
 2. **Timer-based expiry**: Permissions can optionally be given a duration in
    milliseconds. A timer is scheduled in the parent process to automatically
    remove the permission after the specified duration. The `expireTimeMS`
@@ -168,9 +179,14 @@ Services.perms.copyBrowserPermissions(srcBrowserId, destBrowserId);
 ## Observer Notifications
 
 Browser-scoped permission changes fire the `"browser-perm-changed"`
-notification (not `"perm-changed"`). The subject is an `nsIPermission`
-object with the `browserId` attribute set, and the data string is one of
-`"added"`, `"changed"`, or `"deleted"`.
+notification (not `"perm-changed"`). For `"added"`, `"changed"` and
+`"deleted"` the subject is an `nsIPermission` object with the `browserId`
+attribute set.
+
+A bulk clear (`removeAllForBrowser`, `removeByActionForBrowser`) has no single
+permission to report, so it uses the data string `"cleared"` and passes an
+`nsISupportsPRUint64` carrying the browser ID instead. Observers must
+discriminate on the data string before casting the subject.
 
 ## Interaction with Regular Permissions
 

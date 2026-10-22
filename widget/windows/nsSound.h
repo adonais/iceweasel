@@ -7,35 +7,17 @@
 #define _nsSound_h_
 
 #include "mozilla/StaticPtr.h"
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
 #include "nsISound.h"
 
-class nsIThread;
-class nsIRunnable;
-
-class nsSound : public nsISound,
-                public nsIObserver
-
-{
+class nsSound final : public nsISound {
  public:
-  nsSound() = default;
   static already_AddRefed<nsISound> GetInstance();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISOUND
-  NS_DECL_NSIOBSERVER
 
  private:
-  virtual ~nsSound() = default;
-  void PurgeLastSound();
-
- private:
-  nsresult CreatePlayerThread();
-
-  nsCOMPtr<nsIThread> mPlayerThread;
-  nsCOMPtr<nsIRunnable> mSoundPlayer;
-  bool mInited{false};
+  ~nsSound() = default;
 
   static mozilla::StaticRefPtr<nsISound> sInstance;
 };

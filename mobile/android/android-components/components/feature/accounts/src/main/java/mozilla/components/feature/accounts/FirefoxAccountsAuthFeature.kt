@@ -10,6 +10,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import mozilla.appservices.fxaclient.contentUrl
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.sync.FxAEntryPoint
@@ -64,23 +65,35 @@ class FirefoxAccountsAuthFeature(
         entrypoint: FxAEntryPoint,
         scopes: Set<String> = emptySet(),
     ) {
-        beginAuthenticationAsync(context) {
+        beginAuthenticationAsync(
+            context,
+            // Pairing initiation can fail for any reason the state machine reports (the user
+            // backs out of the QR camera, scans an invalid code, or a transient error). Fall
+            // back to a normal sync sign-in that still carries the entrypoint, instead of a
+            // bare URL that sends the user to Account Settings.
+            fallbackAuthentication = {
+                accountManager.beginAuthentication(entrypoint = entrypoint, authScopes = scopes)
+            },
+        ) {
             accountManager.beginAuthentication(pairingUrl, entrypoint = entrypoint, scopes)
         }
     }
 
-    private fun beginAuthenticationAsync(context: Context, beginAuthentication: suspend () -> String?) {
+    private fun beginAuthenticationAsync(
+        context: Context,
+        fallbackAuthentication: suspend () -> String? = { null },
+        beginAuthentication: suspend () -> String?,
+    ) {
         CoroutineScope(coroutineContext).launch {
-            // FIXME return a fallback URL provided by Config...
-            // https://github.com/mozilla-mobile/android-components/issues/2496
-            val authUrl = beginAuthentication() ?: "https://accounts.firefox.com/signin"
-
             // TODO
             // We may fail to obtain an authentication URL, for example due to transient network errors.
-            // If that happens, open up a fallback URL in order to present some kind of a "no network"
-            // UI to the user.
-            // It's possible that the underlying problem will go away by the time the tab actually
-            // loads, resulting in a confusing experience.
+            // The fallback does not help then, because it fails for the same reason. The server sign-in
+            // URL below is a last resort, and the account manager does not honour it because it did not
+            // start that flow. Instead, present some kind of a "no network" UI to the user.
+            val authUrl =
+                beginAuthentication()
+                    ?: fallbackAuthentication()
+                    ?: "${accountManager.serverConfig.server.contentUrl()}/signin"
 
             onBeginAuthentication(context, authUrl)
         }

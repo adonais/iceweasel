@@ -84,8 +84,13 @@ function getThisFrameSubMenu(base_menu) {
 }
 
 add_setup(async function () {
+  // Right-clicking text selects the word under the cursor on macOS, which adds
+  // a selection to the context menu this test checks.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault.featureGate", true]],
+    set: [
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["ui.mouse.right_click.select_under_cursor", false],
+    ],
   });
 });
 

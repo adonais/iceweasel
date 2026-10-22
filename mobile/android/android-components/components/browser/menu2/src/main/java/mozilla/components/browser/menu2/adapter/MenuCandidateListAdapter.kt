@@ -25,7 +25,7 @@ internal class MenuCandidateListAdapter(
 
     @LayoutRes
     override fun getItemViewType(position: Int) =
-        when (val item = getItem(position)) {
+        when (val item: MenuCandidate = getItem(position)) {
             is TextMenuCandidate -> TextMenuCandidateViewHolder.layoutResource
             is DecorativeTextMenuCandidate -> DecorativeTextMenuCandidateViewHolder.layoutResource
             is CompoundMenuCandidate -> CompoundMenuCandidateViewHolder.getLayoutResource(item)

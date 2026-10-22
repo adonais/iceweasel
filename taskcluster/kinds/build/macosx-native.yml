@@ -37,6 +37,9 @@ macosx64-plain/opt:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
+    mozconfig:
+        variant: plain-opt
+        platform: macosx64
     run:
         actions: [build]
         config:
@@ -44,8 +47,6 @@ macosx64-plain/opt:
             - builds/taskcluster_base_macosx.py
         extra-config:
             disable_package_metrics: true
-            mozconfig_platform: macosx64
-        mozconfig-variant: plain-opt
     run-on-projects: ['mozilla-central']
     fetches:
         toolchain:
@@ -71,6 +72,9 @@ macosx64-plain/debug:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
+    mozconfig:
+        variant: plain-debug
+        platform: macosx64
     run:
         actions: [build]
         config:
@@ -78,8 +82,6 @@ macosx64-plain/debug:
             - builds/taskcluster_base_macosx.py
         extra-config:
             disable_package_metrics: true
-            mozconfig_platform: macosx64
-        mozconfig-variant: plain-debug
     run-on-projects: ['trunk']
     fetches:
         toolchain:
@@ -105,15 +107,16 @@ macosx64-rusttests/opt:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
+    mozconfig:
+        variant: rusttests
+        platform: macosx64
+        app: tools/rusttests
     run:
         actions: [build]
         config:
             - builds/releng_base_firefox.py
             - builds/taskcluster_base_macosx.py
             - builds/releng_sub_mac_configs/rusttests.py
-        extra-config:
-            mozconfig_platform: macosx64
-        mozconfig-variant: rusttests
     run-on-projects: ['mozilla-central']
     fetches:
         toolchain:
@@ -137,15 +140,16 @@ macosx64-rusttests/debug:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
+    mozconfig:
+        variant: rusttests-debug
+        platform: macosx64
+        app: tools/rusttests
     run:
         actions: [build]
         config:
             - builds/releng_base_firefox.py
             - builds/taskcluster_base_macosx.py
             - builds/releng_sub_mac_configs/rusttests.py
-        extra-config:
-            mozconfig_platform: macosx64
-        mozconfig-variant: rusttests-debug
     run-on-projects: ['trunk']
     fetches:
         toolchain:

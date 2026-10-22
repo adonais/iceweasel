@@ -24,11 +24,11 @@ typedef struct PRFileDesc PRFileDesc;
 
 `methods`
 
-: The I/O methods table. See {ref}`PRIOMethods`.
+: The I/O methods table. See {doc}`priomethods`.
 
 `secret`
 
-: Layer-dependent implementation data. See {ref}`PRFilePrivate`.
+: Layer-dependent implementation data. See {doc}`prfileprivate`.
 
 `lower`
 
@@ -44,14 +44,14 @@ typedef struct PRFileDesc PRFileDesc;
 
 `identity`
 
-: Identity of this particular layer. See {ref}`PRDescIdentity`.
+: Identity of this particular layer. See {doc}`prdescidentity`.
 
 ## Description
 
 The fields of this structure are significant only if you are
 implementing a layer on top of NSPR, such as SSL. Otherwise, you use
-functions such as {ref}`PR_Open` and {ref}`PR_NewTCPSocket` to obtain a file
+functions such as {doc}`pr_open` and {doc}`pr_newtcpsocket` to obtain a file
 descriptor, which you should treat as an opaque structure.
 
-For more details about the use of {ref}`PRFileDesc` and related structures,
+For more details about the use of {doc}`prfiledesc` and related structures,
 see [File Descriptor Types](i_o_types.md#file-descriptor-types).

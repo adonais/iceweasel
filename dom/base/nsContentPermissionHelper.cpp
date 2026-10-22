@@ -4,8 +4,6 @@
 
 #include "nsContentPermissionHelper.h"
 
-#include <map>
-
 #include "js/PropertyAndElement.h"  // JS_GetProperty, JS_SetProperty
 #include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
@@ -17,7 +15,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/PContentPermission.h"
-#include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsArrayUtils.h"
@@ -31,47 +28,13 @@
 #include "nsJSUtils.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
+#include "nsTHashMap.h"
 
 using namespace mozilla::dom;
 using namespace mozilla;
 using DelegateInfo = PermissionDelegateHandler::PermissionDelegateInfo;
 
 namespace mozilla::dom {
-
-class ContentPermissionRequestParent : public PContentPermissionRequestParent {
- public:
-  // @param aIsRequestDelegatedToUnsafeThirdParty see
-  // mIsRequestDelegatedToUnsafeThirdParty.
-  ContentPermissionRequestParent(
-      Element* aElement, nsIPrincipal* aPrincipal,
-      nsIPrincipal* aTopLevelPrincipal,
-      const bool aHasValidTransientUserGestureActivation,
-      const bool aIsRequestDelegatedToUnsafeThirdParty,
-      const bool aIgnoreAllowSitePermission = false);
-  virtual ~ContentPermissionRequestParent();
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void Init(nsTArray<PermissionRequest>&& aRequests);
-
-  bool IsBeingDestroyed();
-
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
-  nsCOMPtr<Element> mElement;
-  bool mHasValidTransientUserGestureActivation;
-
-  // See nsIPermissionDelegateHandler.maybeUnsafePermissionDelegate.
-  bool mIsRequestDelegatedToUnsafeThirdParty;
-
-  bool mIgnoreAllowSitePermission;
-
-  RefPtr<nsContentPermissionRequestProxy> mProxy;
-  nsTArray<PermissionRequest> mRequests;
-
- private:
-  virtual mozilla::ipc::IPCResult RecvDestroy() override;
-  virtual void ActorDestroy(ActorDestroyReason why) override;
-};
 
 ContentPermissionRequestParent::ContentPermissionRequestParent(
     Element* aElement, nsIPrincipal* aPrincipal,
@@ -86,13 +49,9 @@ ContentPermissionRequestParent::ContentPermissionRequestParent(
           aHasValidTransientUserGestureActivation),
       mIsRequestDelegatedToUnsafeThirdParty(
           aIsRequestDelegatedToUnsafeThirdParty),
-      mIgnoreAllowSitePermission(aIgnoreAllowSitePermission) {
-  MOZ_COUNT_CTOR(ContentPermissionRequestParent);
-}
+      mIgnoreAllowSitePermission(aIgnoreAllowSitePermission) {}
 
-ContentPermissionRequestParent::~ContentPermissionRequestParent() {
-  MOZ_COUNT_DTOR(ContentPermissionRequestParent);
-}
+ContentPermissionRequestParent::~ContentPermissionRequestParent() = default;
 
 void ContentPermissionRequestParent::Init(
     nsTArray<PermissionRequest>&& aRequests) {
@@ -110,6 +69,7 @@ mozilla::ipc::IPCResult ContentPermissionRequestParent::RecvDestroy() {
 }
 
 void ContentPermissionRequestParent::ActorDestroy(ActorDestroyReason why) {
+  nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(this);
   if (mProxy) {
     mProxy->OnParentDestroyed();
   }
@@ -212,18 +172,18 @@ void nsContentPermissionUtils::ConvertArrayToPermissionRequest(
   }
 }
 
-static std::map<PContentPermissionRequestParent*, TabId>&
+static nsTHashMap<nsRefPtrHashKey<ContentPermissionRequestParent>, TabId>&
 ContentPermissionRequestParentMap() {
   MOZ_ASSERT(NS_IsMainThread());
-  static std::map<PContentPermissionRequestParent*, TabId>
+  static nsTHashMap<nsRefPtrHashKey<ContentPermissionRequestParent>, TabId>
       sPermissionRequestParentMap;
   return sPermissionRequestParentMap;
 }
 
-static std::map<PContentPermissionRequestChild*, TabId>&
+static nsTHashMap<nsRefPtrHashKey<RemotePermissionRequest>, TabId>&
 ContentPermissionRequestChildMap() {
   MOZ_ASSERT(NS_IsMainThread());
-  static std::map<PContentPermissionRequestChild*, TabId>
+  static nsTHashMap<nsRefPtrHashKey<RemotePermissionRequest>, TabId>
       sPermissionRequestChildMap;
   return sPermissionRequestChildMap;
 }
@@ -242,28 +202,21 @@ nsresult nsContentPermissionUtils::CreatePermissionArray(
 }
 
 /* static */
-PContentPermissionRequestParent*
+already_AddRefed<ContentPermissionRequestParent>
 nsContentPermissionUtils::CreateContentPermissionRequestParent(
     Element* aElement, nsIPrincipal* aPrincipal,
     nsIPrincipal* aTopLevelPrincipal,
     const bool aHasValidTransientUserGestureActivation,
     const bool aIsRequestDelegatedToUnsafeThirdParty, const TabId& aTabId,
     const bool aIgnoreAllowSitePermission) {
-  PContentPermissionRequestParent* parent = new ContentPermissionRequestParent(
-      aElement, aPrincipal, aTopLevelPrincipal,
-      aHasValidTransientUserGestureActivation,
-      aIsRequestDelegatedToUnsafeThirdParty, aIgnoreAllowSitePermission);
-  ContentPermissionRequestParentMap()[parent] = aTabId;
+  RefPtr<ContentPermissionRequestParent> parent =
+      new ContentPermissionRequestParent(
+          aElement, aPrincipal, aTopLevelPrincipal,
+          aHasValidTransientUserGestureActivation,
+          aIsRequestDelegatedToUnsafeThirdParty, aIgnoreAllowSitePermission);
+  ContentPermissionRequestParentMap().InsertOrUpdate(parent, aTabId);
 
-  return parent;
-}
-
-/* static */
-void nsContentPermissionUtils::InitContentPermissionRequestParent(
-    PContentPermissionRequestParent* aActor,
-    nsTArray<PermissionRequest>&& aRequests) {
-  static_cast<ContentPermissionRequestParent*>(aActor)->Init(
-      std::move(aRequests));
+  return parent.forget();
 }
 
 /* static */
@@ -310,7 +263,7 @@ nsresult nsContentPermissionUtils::AskPermission(
     rv = aRequest->GetIgnoreAllowSitePermission(&ignoreAllowSitePermission);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    req->IPDLAddRef();
+    ContentPermissionRequestChildMap().InsertOrUpdate(req, child->GetTabId());
     if (!ContentChild::GetSingleton()->SendPContentPermissionRequestConstructor(
             req, permArray, principal, topLevelPrincipal,
             hasValidTransientUserGestureActivation,
@@ -318,7 +271,6 @@ nsresult nsContentPermissionUtils::AskPermission(
             ignoreAllowSitePermission)) {
       return NS_ERROR_FAILURE;
     }
-    ContentPermissionRequestChildMap()[req.get()] = child->GetTabId();
 
     return NS_OK;
   }
@@ -335,13 +287,13 @@ nsresult nsContentPermissionUtils::AskPermission(
 }
 
 /* static */
-nsTArray<PContentPermissionRequestParent*>
+nsTArray<RefPtr<ContentPermissionRequestParent>>
 nsContentPermissionUtils::GetContentPermissionRequestParentById(
     const TabId& aTabId) {
-  nsTArray<PContentPermissionRequestParent*> parentArray;
-  for (auto& it : ContentPermissionRequestParentMap()) {
-    if (it.second == aTabId) {
-      parentArray.AppendElement(it.first);
+  nsTArray<RefPtr<ContentPermissionRequestParent>> parentArray;
+  for (const auto& entry : ContentPermissionRequestParentMap()) {
+    if (entry.GetData() == aTabId) {
+      parentArray.AppendElement(entry.GetKey());
     }
   }
 
@@ -350,21 +302,18 @@ nsContentPermissionUtils::GetContentPermissionRequestParentById(
 
 /* static */
 void nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(
-    PContentPermissionRequestParent* aParent) {
-  auto it = ContentPermissionRequestParentMap().find(aParent);
-  MOZ_ASSERT(it != ContentPermissionRequestParentMap().end());
-
-  ContentPermissionRequestParentMap().erase(it);
+    ContentPermissionRequestParent* aParent) {
+  MOZ_ALWAYS_TRUE(ContentPermissionRequestParentMap().Remove(aParent));
 }
 
 /* static */
-nsTArray<PContentPermissionRequestChild*>
+nsTArray<RefPtr<RemotePermissionRequest>>
 nsContentPermissionUtils::GetContentPermissionRequestChildById(
     const TabId& aTabId) {
-  nsTArray<PContentPermissionRequestChild*> childArray;
-  for (auto& it : ContentPermissionRequestChildMap()) {
-    if (it.second == aTabId) {
-      childArray.AppendElement(it.first);
+  nsTArray<RefPtr<RemotePermissionRequest>> childArray;
+  for (const auto& entry : ContentPermissionRequestChildMap()) {
+    if (entry.GetData() == aTabId) {
+      childArray.AppendElement(entry.GetKey());
     }
   }
 
@@ -373,11 +322,8 @@ nsContentPermissionUtils::GetContentPermissionRequestChildById(
 
 /* static */
 void nsContentPermissionUtils::NotifyRemoveContentPermissionRequestChild(
-    PContentPermissionRequestChild* aChild) {
-  auto it = ContentPermissionRequestChildMap().find(aChild);
-  MOZ_ASSERT(it != ContentPermissionRequestChildMap().end());
-
-  ContentPermissionRequestChildMap().erase(it);
+    RemotePermissionRequest* aChild) {
+  MOZ_ALWAYS_TRUE(ContentPermissionRequestChildMap().Remove(aChild));
 }
 
 static nsIPrincipal* GetTopLevelPrincipal(nsPIDOMWindowInner* aWindow) {
@@ -852,16 +798,9 @@ nsContentPermissionRequestProxy::Allow(JS::Handle<JS::Value> aChoices) {
 
 RemotePermissionRequest::RemotePermissionRequest(
     nsIContentPermissionRequest* aRequest, nsPIDOMWindowInner* aWindow)
-    : mRequest(aRequest),
-      mWindow(aWindow),
-      mIPCOpen(false),
-      mDestroyed(false) {}
+    : mRequest(aRequest), mWindow(aWindow), mDestroyed(false) {}
 
-RemotePermissionRequest::~RemotePermissionRequest() {
-  MOZ_ASSERT(
-      !mIPCOpen,
-      "Protocol must not be open when RemotePermissionRequest is destroyed.");
-}
+RemotePermissionRequest::~RemotePermissionRequest() = default;
 
 void RemotePermissionRequest::DoCancel() {
   NS_ASSERTION(mRequest, "We need a request");
@@ -875,7 +814,6 @@ void RemotePermissionRequest::DoAllow(JS::Handle<JS::Value> aChoices) {
   request->Allow(aChoices);
 }
 
-// PContentPermissionRequestChild
 mozilla::ipc::IPCResult RemotePermissionRequest::RecvNotifyResult(
     const bool& aAllow, nsTArray<PermissionChoice>&& aChoices) {
   Destroy();
@@ -913,6 +851,10 @@ mozilla::ipc::IPCResult RemotePermissionRequest::RecvNotifyResult(
     DoCancel();
   }
   return IPC_OK();
+}
+
+void RemotePermissionRequest::ActorDestroy(ActorDestroyReason aWhy) {
+  nsContentPermissionUtils::NotifyRemoveContentPermissionRequestChild(this);
 }
 
 void RemotePermissionRequest::Destroy() {

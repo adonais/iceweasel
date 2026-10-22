@@ -120,6 +120,12 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
 
   SafeRefPtr<InternalRequest> GetInternalRequest();
 
+  bool HasStreamBody() const { return mRequest->HasStreamBody(); }
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  already_AddRefed<nsIInputStream> TakeBodyForServiceWorker(JSContext* aCx,
+                                                            ErrorResult& aRv);
+
   const UniquePtr<mozilla::ipc::PrincipalInfo>& GetPrincipalInfo() const {
     return mRequest->GetPrincipalInfo();
   }

@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -69,11 +71,6 @@ support-files = [
 ["test_2_conformance__uniforms__null-uniform-location.html"]
 
 ["test_2_conformance__uniforms__out-of-bounds-uniform-array-access.html"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance__uniforms__uniform-default-values.html"]
 

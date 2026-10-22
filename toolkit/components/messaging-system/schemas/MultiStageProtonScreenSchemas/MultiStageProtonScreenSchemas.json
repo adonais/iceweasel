@@ -335,8 +335,8 @@
         },
         "layout": {
           "type": "string",
-          "description": "Used when a single row with a more inline layout is desired. Works well in tandem with title_logo.",
-          "enum": ["inline"]
+          "description": "A layout variant for the screen. 'inline' is a single row layout that works well in tandem with title_logo. 'last-card' is the final card-stack screen, with the title and subtitle split around a centered image slot.",
+          "enum": ["inline", "last-card"]
         },
         "zap_border": {
           "type": "boolean",
@@ -404,6 +404,58 @@
             "marginInline": {
               "type": "string",
               "description": "The CSS style overriding the marginInline property."
+            }
+          }
+        },
+        "center_image": {
+          "type": "object",
+          "description": "An optional image shown in the center image slot of the 'last-card' layout, revealed once the text split animation completes.",
+          "properties": {
+            "imageURL": {
+              "type": "string",
+              "description": "The image URL."
+            },
+            "darkModeImageURL": {
+              "type": "string",
+              "description": "The dark mode image URL."
+            },
+            "reducedMotionImageURL": {
+              "type": "string",
+              "description": "The reduced motion image URL."
+            },
+            "darkModeReducedMotionImageURL": {
+              "type": "string",
+              "description": "The dark mode reduced motion image URL."
+            },
+            "rtl": {
+              "type": "object",
+              "description": "Right-to-left replacements for any of the URLs above, applied over them when the document is RTL. Omitted keys keep their base value.",
+              "properties": {
+                "imageURL": { "type": "string" },
+                "darkModeImageURL": { "type": "string" },
+                "reducedMotionImageURL": { "type": "string" },
+                "darkModeReducedMotionImageURL": { "type": "string" }
+              }
+            },
+            "alt": {
+              "type": "string",
+              "description": "The <img> alt text."
+            },
+            "width": {
+              "type": "string",
+              "description": "The CSS width of the image slot. The split animation and margins adapt to it. Defaults to 120px."
+            },
+            "height": {
+              "type": "string",
+              "description": "The CSS height of the image slot. Defaults to 120px."
+            },
+            "marginBlock": {
+              "type": "string",
+              "description": "The CSS style overriding the marginBlock property. Useful for aligning the image's focal point with the text. Does not apply on narrow breakpoints."
+            },
+            "marginInline": {
+              "type": "string",
+              "description": "The CSS style overriding the marginInline property. Does not apply on narrow breakpoints."
             }
           }
         },
@@ -1161,9 +1213,32 @@
           "type": "object",
           "description": "CSS overrides of the tile container. Any CSS properties starting with '--' are also allowed."
         },
+        "pill_nav_label": {
+          "$ref": "#/$defs/localizableThing",
+          "description": "Accessible name for the optional carousel pill navigation."
+        },
         "data": {
           "type": "array",
-          "description": "Array of tile configurations."
+          "description": "Tile-specific data, determined by tile type. Most types take an array of items, one per rendered row, while a few (embedded_browser, theme-picker) take an object. Settings for the tile itself are siblings of this field."
+        },
+        "source": {
+          "type": "string",
+          "description": "pinnable_sites only. Where the tile draws its sites from. 'curated' (the default) uses the authored 'data' array. 'topFrecentSites' replaces it with the user's own most-used origins, computed locally from history. Currently only supported in Spotlight.",
+          "enum": ["curated", "topFrecentSites"]
+        },
+        "slots": {
+          "type": "integer",
+          "description": "pinnable_sites only. How many tiles the surface shows. Defaults to 5.",
+          "minimum": 1
+        },
+        "minPersonalized": {
+          "type": "integer",
+          "description": "pinnable_sites only, and only when source is 'topFrecentSites'. The fewest personalized origins the tile must produce for the message to be shown at all. When the user's history yields fewer, the message is withheld and records no impression. Defaults to 0, which permits an entirely backfilled, curated tile. A value above 'slots' always withholds the message, as does a tile left with no sites at all.",
+          "minimum": 0
+        },
+        "backfill": {
+          "type": "boolean",
+          "description": "pinnable_sites only. When personalization yields fewer origins than 'slots', fill the remaining slots from the authored 'data' array rather than leaving them blank. Defaults to true."
         }
       }
     }

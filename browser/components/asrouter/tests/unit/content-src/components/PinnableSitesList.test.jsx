@@ -235,8 +235,34 @@ describe("PinnableSitesList component", () => {
     assert.ok(
       sendActionTelemetry.calledWith("TEST_MSG", TILE.data[0].id, "PIN_SITE", {
         result: "success",
+        position: 1,
+        personalized: false,
       }),
       "PIN_SITE telemetry sent with result=success"
+    );
+  });
+
+  it("reports when the pinned site was personalized for the user", async () => {
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={{
+          ...TILE,
+          data: [{ ...TILE.data[0], id: "site_1", personalized: true }],
+        }}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").first().simulate("click");
+    await handleAction.firstCall.returnValue;
+
+    assert.ok(
+      sendActionTelemetry.calledWith("TEST_MSG", "site_1", "PIN_SITE", {
+        result: "success",
+        position: 1,
+        personalized: true,
+      }),
+      "the pin is attributed to personalization, by rank position only"
     );
   });
 
@@ -255,6 +281,8 @@ describe("PinnableSitesList component", () => {
     assert.ok(
       sendActionTelemetry.calledWith("TEST_MSG", TILE.data[0].id, "PIN_SITE", {
         result: "already_pinned",
+        position: 1,
+        personalized: false,
       }),
       "PIN_SITE telemetry sent with result=already_pinned"
     );
@@ -275,8 +303,72 @@ describe("PinnableSitesList component", () => {
     assert.ok(
       sendActionTelemetry.calledWith("TEST_MSG", TILE.data[0].id, "PIN_SITE", {
         result: "failure",
+        position: 1,
+        personalized: false,
       }),
       "PIN_SITE telemetry sent with result=failure"
+    );
+  });
+
+  it("reports the row's position so conversion can be compared by slot", async () => {
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").at(1).simulate("click");
+    await handleAction.firstCall.returnValue;
+
+    assert.ok(
+      sendActionTelemetry.calledWith("TEST_MSG", TILE.data[1].id, "PIN_SITE", {
+        result: "success",
+        position: 2,
+        personalized: false,
+      }),
+      "the second row reports position 2"
+    );
+  });
+
+  it("gives each pin button a value so the screen-level handler has a source", () => {
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    const buttons = wrapper.find(".pinnable-sites-pin-button");
+
+    assert.equal(buttons.at(0).prop("value"), TILE.data[0].id);
+    assert.equal(buttons.at(1).prop("value"), TILE.data[1].id);
+  });
+
+  it("uses handleAction to send a single CLICK_BUTTON ping", async () => {
+    let clickSource;
+    handleAction.callsFake(event => {
+      clickSource = event.currentTarget.value;
+      return Promise.resolve(true);
+    });
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").at(0).simulate("click");
+    await handleAction.firstCall.returnValue;
+
+    assert.equal(clickSource, TILE.data[0].id);
+    assert.ok(
+      sendActionTelemetry.neverCalledWithMatch(
+        sinon.match.any,
+        sinon.match.any,
+        "CLICK_BUTTON"
+      ),
+      "the component does not send its own CLICK_BUTTON ping"
     );
   });
 

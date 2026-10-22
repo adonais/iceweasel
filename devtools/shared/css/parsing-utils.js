@@ -406,7 +406,9 @@ function parseDeclarationsInternal(
       // and there's an opening curly bracket
       token.tokenType === "CurlyBracketBlock" &&
       // and we're not inside a function or an attribute
-      !currentBlocks.length
+      !currentBlocks.length &&
+      // and we're not assigning to a custom property (`foo: { a: b; c: d }` is valid)
+      !lastProp.isCustomProperty
     ) {
       // Assume we're encountering a nested rule.
 
@@ -442,14 +444,18 @@ function parseDeclarationsInternal(
       continue;
     } else if (
       token.tokenType === "CloseParenthesis" ||
-      token.tokenType === "CloseSquareBracket"
+      token.tokenType === "CloseSquareBracket" ||
+      // Handling closing curly bracket for custom property declaration (`foo: { a: b; c: d }` is valid)
+      (lastProp.isCustomProperty && token.tokenType === "CloseCurlyBracket")
     ) {
       // Closing the last block that was opened.
       currentBlocks.pop();
       current += token.text;
     } else if (
       token.tokenType === "ParenthesisBlock" ||
-      token.tokenType === "SquareBracketBlock"
+      token.tokenType === "SquareBracketBlock" ||
+      // Handling curly bracket for custom property declaration (`foo: { a: b; c: d }` is valid)
+      (lastProp.isCustomProperty && token.tokenType === "CurlyBracketBlock")
     ) {
       // Opening a new block.
       currentBlocks.push(token.text);

@@ -302,6 +302,9 @@ class nsSocketTransport final : public nsASocketHandler,
 
   // called when the socket is connected
   void OnSocketConnected();
+  // Returns true if aFd is connected to a port blocked via
+  // nsIIOService::addBlockedLocalPort on this machine.
+  bool IsConnectedToBlockedLocalPort(PRFileDesc* aFd);
 
   //-------------------------------------------------------------------------
   // socket input/output objects.  these may be accessed on any thread with

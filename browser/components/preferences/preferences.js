@@ -13,7 +13,7 @@
 /* import-globals-from /browser/base/content/utilityOverlay.js */
 /* import-globals-from /toolkit/content/preferencesBindings.js */
 
-/** @import MozButton from "chrome://global/content/elements/moz-button.mjs" */
+/** @import { MozButton } from "chrome://global/content/elements/moz-button.mjs" */
 /** @import {SettingConfig, SettingEmitChange} from "chrome://global/content/preferences/Setting.mjs" */
 /** @import {SettingControlConfig, SettingOptionConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
 /** @import {SettingGroup} from "chrome://browser/content/preferences/widgets/setting-group.mjs" */
@@ -431,6 +431,7 @@ const CONFIG_PANES = Object.freeze({
       "searchShortcuts",
       "searchSuggestions",
       "firefoxSuggest",
+      "addressBarNavigation",
     ],
     iconSrc: "chrome://browser/skin/preferences/category-search.svg",
     module: "chrome://browser/content/preferences/config/search.mjs",

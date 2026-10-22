@@ -53,6 +53,11 @@ for (let op of ["f32x4.relaxed_min", "f32x4.relaxed_max",
       // from either arg
       assertEq(result1, 65535);
       assertEq(result2, 65535);
+    } else if (getBuildConfiguration("loong64")) {
+      // LSX vfmin/vfmax ignore a NaN operand and return the other operand, at least
+      // on Loongson 3B6000.
+      assertEq(result1, 0);
+      assertEq(result2, 0);
     } else {
       // x86_32 or x86_64, presumably.  What happens when one of the args
       // contains a NaN depends on which arg it is.  See Intel documentation on

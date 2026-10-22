@@ -28,7 +28,6 @@ static inline void variance_4xh_neon(const uint8_t *src, int src_stride,
   // 32767 / 255 ~= 128, but we use an 8-wide accumulator; so 256 4-wide rows.
   assert(h <= 256);
 
-  int i = h;
   do {
     uint8x8_t s = load_unaligned_u8(src, src_stride);
     uint8x8_t r = load_unaligned_u8(ref, ref_stride);
@@ -41,8 +40,8 @@ static inline void variance_4xh_neon(const uint8_t *src, int src_stride,
 
     src += 2 * src_stride;
     ref += 2 * ref_stride;
-    i -= 2;
-  } while (i != 0);
+    h -= 2;
+  } while (h != 0);
 
   *sum = horizontal_add_s16x8(sum_s16);
   *sse = (uint32_t)horizontal_add_s32x4(sse_s32);
@@ -58,7 +57,6 @@ static inline void variance_8xh_neon(const uint8_t *src, int src_stride,
   // 32767 / 255 ~= 128
   assert(h <= 128);
 
-  int i = h;
   do {
     uint8x8_t s = vld1_u8(src);
     uint8x8_t r = vld1_u8(ref);
@@ -72,7 +70,7 @@ static inline void variance_8xh_neon(const uint8_t *src, int src_stride,
 
     src += src_stride;
     ref += ref_stride;
-  } while (--i != 0);
+  } while (--h != 0);
 
   *sum = horizontal_add_s16x8(sum_s16);
   *sse = (uint32_t)horizontal_add_s32x4(vaddq_s32(sse_s32[0], sse_s32[1]));
@@ -88,7 +86,6 @@ static inline void variance_16xh_neon(const uint8_t *src, int src_stride,
   // 32767 / 255 ~= 128, so 128 16-wide rows.
   assert(h <= 128);
 
-  int i = h;
   do {
     uint8x16_t s = vld1q_u8(src);
     uint8x16_t r = vld1q_u8(ref);
@@ -112,7 +109,7 @@ static inline void variance_16xh_neon(const uint8_t *src, int src_stride,
 
     src += src_stride;
     ref += ref_stride;
-  } while (--i != 0);
+  } while (--h != 0);
 
   *sum = horizontal_add_s16x8(vaddq_s16(sum_s16[0], sum_s16[1]));
   *sse = (uint32_t)horizontal_add_s32x4(vaddq_s32(sse_s32[0], sse_s32[1]));
@@ -283,7 +280,6 @@ static inline unsigned int mse8xh_neon(const uint8_t *src, int src_stride,
   uint16x8_t diff[2];
   int32x4_t sse_s32[2] = { vdupq_n_s32(0), vdupq_n_s32(0) };
 
-  int i = h;
   do {
     s[0] = vld1_u8(src);
     src += src_stride;
@@ -307,8 +303,8 @@ static inline unsigned int mse8xh_neon(const uint8_t *src, int src_stride,
     sse_s32[0] = vmlal_s16(sse_s32[0], diff_hi[0], diff_hi[0]);
     sse_s32[1] = vmlal_s16(sse_s32[1], diff_hi[1], diff_hi[1]);
 
-    i -= 2;
-  } while (i != 0);
+    h -= 2;
+  } while (h != 0);
 
   sse_s32[0] = vaddq_s32(sse_s32[0], sse_s32[1]);
 
@@ -325,7 +321,6 @@ static inline unsigned int mse16xh_neon(const uint8_t *src, int src_stride,
   int32x4_t sse_s32[4] = { vdupq_n_s32(0), vdupq_n_s32(0), vdupq_n_s32(0),
                            vdupq_n_s32(0) };
 
-  int i = h;
   do {
     s[0] = vld1q_u8(src);
     src += src_stride;
@@ -361,8 +356,8 @@ static inline unsigned int mse16xh_neon(const uint8_t *src, int src_stride,
     sse_s32[2] = vmlal_s16(sse_s32[2], diff_hi[2], diff_hi[2]);
     sse_s32[3] = vmlal_s16(sse_s32[3], diff_hi[3], diff_hi[3]);
 
-    i -= 2;
-  } while (i != 0);
+    h -= 2;
+  } while (h != 0);
 
   sse_s32[0] = vaddq_s32(sse_s32[0], sse_s32[1]);
   sse_s32[2] = vaddq_s32(sse_s32[2], sse_s32[3]);

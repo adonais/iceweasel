@@ -18,15 +18,6 @@ support-files = [
 ]
 
 ["document-timeline/test_document-timeline.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1784938
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1784938
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt && !xorigin", # Bug 1784938
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1784938
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 1784938
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1784938
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1784938
-]
 
 ["document-timeline/test_request_animation_frame.html"]
 
@@ -39,9 +30,6 @@ skip-if = [
 ["mozilla/test_cubic_bezier_limits.html"]
 
 ["mozilla/test_deferred_start.html"]
-skip-if = [
-  "os == 'win' && arch == 'x86_64'", # Bug 1363957
-]
 
 ["mozilla/test_disabled_properties.html"]
 
@@ -78,8 +66,6 @@ skip-if = [
   "http2",
   "http3",
   "os == 'android'", # Bug 1784931
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1856969
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1784931
 ]
 
 ["mozilla/test_restyling_xhr_doc.html"]

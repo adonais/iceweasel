@@ -418,7 +418,11 @@ this.windows = class extends ExtensionAPIPersistent {
               "resizable",
               "minimizable",
               "titlebar",
-              "close"
+              "close",
+              // Ensures new windows appear in the user's current view
+              // instead of restoring a persisted fullscreen sizemode and
+              // taking a Space of their own.
+              "suppressinitialfullscreen"
             );
             if (createData.left === null && createData.top === null) {
               features.push("centerscreen");

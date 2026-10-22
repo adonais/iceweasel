@@ -18,12 +18,12 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing the socket whose
+: A pointer to a {doc}`prfiledesc` object representing the socket whose
   options are to be retrieved.
 
 `data`
 
-: A pointer to a structure of type {ref}`PRSocketOptionData`. On input,
+: A pointer to a structure of type {doc}`prsocketoptiondata`. On input,
   the `option` field of this structure must be set to indicate which
   socket option to retrieve for the socket represented by the `fd`
   parameter. On output, this structure contains the requested socket
@@ -33,4 +33,4 @@ The function has the following parameters:
 
 - If successful, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. The reason for the failure can be
-  obtained by calling {ref}`PR_GetError`.
+  obtained by calling {doc}`pr_geterror`.

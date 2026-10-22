@@ -84,7 +84,7 @@ RefPtr<SharedFTFace> UnscaledFontFreeType::InitFace() {
   if (mFile.empty()) {
     return nullptr;
   }
-  mFace = Factory::NewSharedFTFace(nullptr, mFile.c_str(), mIndex);
+  mFace = Factory::NewSharedFTFace(mFile.c_str(), mIndex);
   if (!mFace) {
     gfxWarning() << "Failed initializing FreeType face from filename";
     return nullptr;
@@ -200,15 +200,14 @@ already_AddRefed<ScaledFont> UnscaledFontFreeType::CreateScaledFont(
     return nullptr;
   }
 
-  if (aNumVariations > 0 && face->GetData()) {
-    if (RefPtr<SharedFTFace> varFace = face->GetData()->CloneFace()) {
+  if (aNumVariations > 0) {
+    if (RefPtr<SharedFTFace> varFace = face->CloneFace()) {
       face = varFace;
     }
-  }
-
-  // Only apply variations if we have an explicitly cloned face.
-  if (aNumVariations > 0 && face != GetFace()) {
-    ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    // Only apply variations if we have an explicitly cloned face.
+    if (face != GetFace()) {
+      ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    }
   }
 
   RefPtr scaledFont = MakeRefPtr<ScaledFontFreeType>(

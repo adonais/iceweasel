@@ -14,15 +14,15 @@ to manipulate the information.
 If used consistently, this API also eliminates the need to deal with the
 byte ordering of network addresses. Typically, the only numeric
 declarations required are the well-known port numbers that are part of
-the {ref}`PRNetAddr` structure.
+the {doc}`prnetaddr` structure.
 
 (network-address-types-and-constants)=
 
 # Network Address Types and Constants
 
-> - {ref}`PRHostEnt`
-> - {ref}`PRProtoEnt`
-> - {ref}`PR_NETDB_BUF_SIZE`
+> - {doc}`prhostent`
+> - {doc}`prprotoent`
+> - {doc}`pr_netdb_buf_size`
 
 (network-address-functions)=
 
@@ -32,44 +32,44 @@ the {ref}`PRNetAddr` structure.
 
 ## Initializing a network address
 
-{ref}`PR_InitializeNetAddr` facilitates the use of {ref}`PRNetAddr`, the basic
+{doc}`pr_initializenetaddr` facilitates the use of {doc}`prnetaddr`, the basic
 network address structure, in a polymorphic manner. By using these
 functions with other network address functions, clients can support
 either version 4 or version 6 of the Internet Protocol transparently.
 
-All NSPR functions that require [PRNetAddr](PRNetAddr) as an argument
+All NSPR functions that require [PRNetAddr](prnetaddr.md) as an argument
 accept either an IPv4 or IPv6 version of the address.
 
-> - {ref}`PR_InitializeNetAddr`
+> - {doc}`pr_initializenetaddr`
 
 (converting-between-a-string-and-a-network-address)=
 
 ## Converting between a string and a network address
 
-> - {ref}`PR_StringToNetAddr`
-> - {ref}`PR_NetAddrToString`
+> - {doc}`pr_stringtonetaddr`
+> - {doc}`pr_netaddrtostring`
 
 (converting-address-formats)=
 
 ## Converting address formats
 
-> - {ref}`PR_ConvertIPv4AddrToIPv6`
+> - {doc}`pr_convertipv4addrtoipv6`
 
 (getting-host-names-and-addresses)=
 
 ## Getting host names and addresses
 
-> - {ref}`PR_GetHostByName`
-> - {ref}`PR_GetHostByAddr`
-> - {ref}`PR_EnumerateHostEnt`
-> - {ref}`PR_GetAddrInfoByName`
-> - {ref}`PR_EnumerateAddrInfo`
-> - {ref}`PR_GetCanonNameFromAddrInfo`
-> - {ref}`PR_FreeAddrInfo`
+> - {doc}`pr_gethostbyname`
+> - {doc}`pr_gethostbyaddr`
+> - {doc}`pr_enumeratehostent`
+> - {doc}`pr_getaddrinfobyname`
+> - {doc}`pr_enumerateaddrinfo`
+> - {doc}`pr_getcanonnamefromaddrinfo`
+> - {doc}`pr_freeaddrinfo`
 
 (getting-protocol-entries)=
 
 ## Getting protocol entries
 
-> - {ref}`PR_GetProtoByName`
-> - {ref}`PR_GetProtoByNumber`
+> - {doc}`pr_getprotobyname`
+> - {doc}`pr_getprotobynumber`

@@ -58,9 +58,9 @@ async function renderPromo({
   const onLinkClick = async event => {
     event.preventDefault();
 
-    // Record promo click telemetry and set metrics as allow for spotlight
-    // modal opened on promo click if user is enrolled in an experiment
-    let isExperiment = window.PrivateBrowsingRecordClick("PromoLink");
+    // Set metrics as allow for spotlight modal opened on promo click if user
+    // is enrolled in an experiment
+    let isExperiment = window.PrivateBrowsingIsEnrolledInExperiment();
     const promoButtonData = promoButton?.action?.data;
     if (
       promoButton?.action?.type === "SHOW_SPOTLIGHT" &&
@@ -77,7 +77,6 @@ async function renderPromo({
       type: "BLOCK_MESSAGE_BY_ID",
       data: { id: messageId },
     });
-    window.PrivateBrowsingRecordClick("DismissButton");
     container.remove();
   };
 
@@ -409,9 +408,6 @@ document.addEventListener("DOMContentLoaded", function () {
     "href",
     RPMGetFormatURLPref("app.support.baseURL") + "private-browsing-myths"
   );
-  linkEl.addEventListener("click", () => {
-    window.PrivateBrowsingRecordClick("InfoLink");
-  });
 
   const isNovaEnabled = RPMGetBoolPref("browser.nova.enabled", false);
   const isPrivateWindowRedesignEnabled =
@@ -435,7 +431,7 @@ document.addEventListener("DOMContentLoaded", function () {
     basicsLink.hidden = false;
     basicsLink.addEventListener("click", async e => {
       e.preventDefault();
-      window.PrivateBrowsingRecordClick("PrivateWindowBasicsLink");
+      window.PrivateBrowsingRecordRedesignClick("PrivateWindowBasicsLink");
       // Trigger the spotlight
       await RPMSendAsyncMessage("TRIGGER_MESSAGING_EVENT", {
         id: "privateWindowBasicsLinkClick",
@@ -461,6 +457,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const maskIntro = document.getElementById(
       "about-private-browsing-mask-intro"
     );
+    window.PrivateBrowsingRedesignExposure();
+
     const staticLogo = document.getElementById("about-private-browsing-logo");
     staticLogo.hidden = true;
     maskIntro.hidden = false;
@@ -476,6 +474,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!alreadyShown && !reduceMotion) {
       maskIntro.play = true;
       document.documentElement.classList.add("intro-playing");
+      window.PrivateBrowsingRecordIntroAnimation();
       RPMSetPref("browser.privatebrowsing.introAnimationShown", true);
     }
   }

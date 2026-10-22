@@ -1127,6 +1127,7 @@ scoped_refptr<RTCStatsReport> RTCStatsCollector::CreateReportFilteredBySelector(
     scoped_refptr<const RTCStatsReport> report,
     scoped_refptr<RtpSenderInternal> sender_selector,
     scoped_refptr<RtpReceiverInternal> receiver_selector) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   std::vector<std::string> rtpstream_ids;
   if (filter_by_sender_selector) {
     // Filter mode: RTCStatsCollector::RequestInfo::kSenderSelector
@@ -1153,8 +1154,7 @@ scoped_refptr<RTCStatsReport> RTCStatsCollector::CreateReportFilteredBySelector(
     // Filter mode: RTCStatsCollector::RequestInfo::kReceiverSelector
     if (receiver_selector) {
       // Find the inbound-rtp of the receiver using ssrc lookup.
-      std::optional<uint32_t> ssrc;
-      worker_thread_->BlockingCall([&] { ssrc = receiver_selector->ssrc(); });
+      std::optional<uint32_t> ssrc = receiver_selector->ssrc_s();
       if (ssrc.has_value()) {
         for (const auto* inbound_rtp :
              report->GetStatsOfType<RTCInboundRtpStreamStats>()) {

@@ -6,6 +6,7 @@
 #define EnumeratedArrayCycleCollection_h_
 
 #include "mozilla/EnumeratedArray.h"
+#include "nsCycleCollectionNoteChild.h"
 #include "nsCycleCollectionTraversalCallback.h"
 
 template <typename IndexType, typename ValueType, size_t Size>

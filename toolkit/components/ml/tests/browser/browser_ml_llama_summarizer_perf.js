@@ -21,7 +21,7 @@ const smollm2Model = {
   modelFile: "smollm2-360m-instruct-q8_0.gguf",
   useMmap: false,
   useMlock: false,
-  perfModelId: "HuggingFaceTB/SmolLM2-360M-Instruct",
+  perfModelId: "SmolLM2-360M",
   backend: "llama.cpp",
 };
 
@@ -31,7 +31,7 @@ const qwen3Model = {
   modelFile: "Qwen3-0.6B-Q8_0.gguf",
   useMmap: false,
   useMlock: false,
-  perfModelId: "unsloth/Qwen3-0.6B-GGUF",
+  perfModelId: "Qwen3-0.6B",
   backend: "llama.cpp",
 };
 
@@ -54,8 +54,7 @@ let numEngines = 0;
 
 for (const model of [smollm2Model, qwen3Model]) {
   for (const article of articles) {
-    // Replace all non-alphabnumeric or dash or underscore by underscore
-    const perfName = `${model.perfModelId.replace(/\//g, "-")}_${article.type}`;
+    const perfName = `${model.perfModelId}_${article.type}${hwInferenceSuffix()}`;
 
     const engineId = `engine-${numEngines}`;
 

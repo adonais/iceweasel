@@ -59,6 +59,7 @@
 #include "jit/WasmRefTypeAnalysis.h"
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
+#include "util/Denormals.h"
 #include "util/Memory.h"
 #include "util/WindowsWrapper.h"
 #include "vm/HelperThreads.h"
@@ -1003,6 +1004,7 @@ namespace js {
 namespace jit {
 
 bool OptimizeMIR(MIRGenerator* mir) {
+  MOZ_ASSERT(!DenormalsDisabled());
   MIRGraph& graph = mir->graph();
 
   if (mir->shouldCancel("Start")) {

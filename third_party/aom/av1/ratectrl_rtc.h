@@ -97,6 +97,8 @@ typedef struct AomAV1RateControlRtcConfig {
   int min_quantizers[kAomAV1MaxLayers];
   int scaling_factor_num[kAomAV1MaxSpatialLayers];
   int scaling_factor_den[kAomAV1MaxSpatialLayers];
+  // Bit-depth (8, 10, or 12).
+  int bit_depth;
 } AomAV1RateControlRtcConfig;
 
 struct AomAV1RateControlRTC;

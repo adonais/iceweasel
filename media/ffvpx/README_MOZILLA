@@ -2,7 +2,30 @@
 
 This directory contains files used in gecko builds from FFmpeg
 (http://ffmpeg.org). The current files are from FFmpeg as of
-FFmpeg release 9.0.1
+FFmpeg release 9.0.1 (libavcodec 63.1.101, libavutil 61.1.101).
+`libavcodec/version.h` and `libavutil/version.h` stay on that release.
+
+Vulkan video sources (`libavutil/vulkan*`, `libavutil/hwcontext_vulkan*`,
+`libavcodec/vulkan*`) are taken from FFmpeg `ebb6f28da5`
+(libavcodec 63.14.100, libavutil 61.7.100; same majors as 9.0.1)
+(`vulkan_decode: don't fail COINCIDE-only profiles without separate refs`,
+2026-09-20) so they match that revision's blobs, including AVRefStruct image
+views/session parameters, the device-local bitstream buffer, the export-query
+image-flag fix, the in-loop `MAX_TILES` check, and the Ampere COINCIDE-only
+init path. After FFmpeg `d0d7d81317`,
+`vulkan.c` calls `av_get_random_seed()`; ffvpx uses `rand()` instead
+(same approach as `parseutils-no-random-seed.patch`) so mozavutil does
+not open `/dev/urandom` under the RDD sandbox. `ebb6f28da5`'s `hwcontext_vulkan.c`
+needs `uuid.h`/`uuid.c` (`av_uuid_parse` for text-form device UUIDs); those
+are compiled next to it and not exported. System FFmpeg is built with
+`--enable-libdrm`, so `vulkan_map_from()` for `DRM_PRIME` is compiled in.
+ffvpx left `CONFIG_LIBDRM` 0. GTK Vulkan defines `MOZ_FFVPX_VULKAN_LIBDRM`
+only on `hwcontext_vulkan.c` to enable it there. `va/va_drmcommon.h` is a
+mozva stub around `widget/gtk` `va_drmcommon.h`; `drmGetDevice` comes from
+`third_party/drm/libdrm/mozdrm.cpp` (`USE_LIBS` `nspr`; `OS_LIBS`
+`NSPR_LIBS` is `-lplc4` with no NSPR dependency, so
+`linux64-base-toolchains-clang` links `libmozavutil.so` before
+`libplc4.so` exists). The mozbuild sysroot does not provide `-ldrm`.
 
 All source files match their path from the library's source archive.
 
@@ -152,6 +175,9 @@ Finally, apply the patches:
   encoding via the frame pict_type on Android.
 - mediacodec_h264.patch to remove the H264 extradata parsing that brings in
   encumbered code on Android.
+- mediacodec_xiph_flac.patch to add Opus, Vorbis and FLAC decoders via Android
+  MediaCodec, with the codec specific data layout each of them expects, and to
+  reorder Opus and Vorbis output from the Vorbis channel order.
 - bug1603271-videodsp-pointer-overflow.patch to avoid a UBSan pointer-overflow
   by combining a two-step pointer adjustment into a single positive-offset step.
 - vp9-get-format-rollback.patch to fix a VP9 decoder error handling issue.
@@ -162,7 +188,6 @@ Finally, apply the patches:
   libavcodec's libvorbis wrapper, unlike its native vorbis decoder, does
   neither, so multichannel Vorbis plays with its channels permuted
   (bug 1991957). Drop this patch if it is ever fixed upstream.
-- av1_tilesize.patch to clean up av1 tile handling
 - fftime-rename.patch to include the renamed `libavutil/fftime.h` from the
   files that include `libavutil/time.h`, which shadows the system `time.h`.
   Extend it to any new file that picks up the same include. Applying it before
@@ -170,13 +195,28 @@ Finally, apply the patches:
 - dxva2-bind-shader-resource.patch to add `D3D11_BIND_SHADER_RESOURCE` to the
   bind flags of the D3D11VA decoder frames pool, so the compositor can sample
   the decoded textures directly instead of going through a copy.
-- parseutils-no-random-seed.patch to stub out the only `av_get_random_seed()`
-  call in the build, in `av_parse_color()`'s "random"/"bikeshed" branch, which
-  Gecko never reaches. This keeps `random_seed.c` and its `sha.c` dependency out
-  of `libavutil/moz.build`: on Windows `HAVE_BCRYPT` is 1, so compiling
-  `random_seed.c` would make mozavutil import bcrypt.dll for a seed nothing
-  asks for. `av_get_random_seed` and `av_sha_*` are correspondingly absent from
-  `libavutil/avutil.symbols`.
+- parseutils-no-random-seed.patch to stub out the `av_get_random_seed()`
+  call in `av_parse_color()`'s "random"/"bikeshed" branch, which
+  Gecko never reaches. This keeps `random_seed.c` / `sha.c` out of the
+  global `libavutil/moz.build` list: on Windows `HAVE_BCRYPT` is 1, so
+  compiling `random_seed.c` would make mozavutil import bcrypt.dll for a
+  seed nothing asks for. `av_get_random_seed` and `av_sha_*` stay absent
+  from `libavutil/avutil.symbols`.
+- vulkan-exec-pool-rand.patch to use `rand()` instead of
+  `av_get_random_seed()` for exec-pool queue-phase seeding in `vulkan.c`,
+  so GTK Vulkan does not compile `random_seed.c` / `sha.c`.
+- vulkan-decode-no-h264dec.patch to comment out `#include "h264dec.h"` and
+  the SPS `frame_mbs_only_flag` lookup in `vulkan_decode.c` (FFmpeg
+  `1a6a186b80`). ffvpx does not ship the H.264 decoder. H.264 Vulkan stays
+  off (`CONFIG_H264_VULKAN_HWACCEL` 0); the H.264 profile path then keeps
+  PROGRESSIVE `pictureLayout`.
+- nvidia-compute-queue-cap.patch to cap NVIDIA compute queues to 1 like
+  graphics when `limit_queues` is unset, so unused compute queues do not
+  dominate `vkCreateDevice` time (bug 2068764). Transfer and video families
+  are unchanged. Drop this patch if it is ever fixed upstream.
+- dma-buf-sync-file.patch to define `DMA_BUF_IOCTL_EXPORT_SYNC_FILE` and
+  `DMA_BUF_IOCTL_IMPORT_SYNC_FILE` in `hwcontext_vulkan.c`. The Linux sysroot
+  has no `linux/dma-buf.h`. The sync-file ioctls are Linux 5.16 uapi.
 - vp8dsp-nasm-2.14-compat.patch to restore the `%if`-based register counts in
   `put_vp8_epel*_h6`/`_h4`. Upstream folded them into inline expressions, but
   nasm cannot parse a relational operator inside parentheses until 2.15, and

@@ -4,7 +4,7 @@
 "use strict";
 
 /**
- * The assistant chat bubble uses --ai-background-color as its background so a
+ * The chat content document uses --ai-background-color as its background so a
  * blur effect masks content overflow at the edges of ai-chat-content. This
  * test verifies the token propagates from the theme manifest into the chat
  * content document and cascades down to <ai-chat-content>.

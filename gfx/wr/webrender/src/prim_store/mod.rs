@@ -319,8 +319,10 @@ pub struct PrimitiveInstance {
 /// rounds its rect out but leaves its clips exact.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ClipSnap {
-    /// Snap every clip edge to the nearest device pixel. Used by prims that
-    /// snap their whole geometry to the grid (`snaps`).
+    /// Snap every clip edge to the nearest device pixel, except for the clips
+    /// marked as anti-aliased (see `ClipTreeNode::anti_aliased`). Used by
+    /// prims that snap their geometry to the grid (`snaps`), and by
+    /// anti-aliased prims.
     Nearest,
     /// Leave clip edges exact. Used by device-space prims (text runs and
     /// surfaces), whose clips must stay at the sub-pixel position matching their
@@ -338,6 +340,17 @@ pub struct SnapPolicy {
     pub clip: ClipSnap,
 }
 
+impl SnapPolicy {
+    /// How the prim's own local clip rect rounds. It is part of the prim's
+    /// geometry, so it is left exact when the prim's rect is.
+    pub fn local_clip(&self) -> ClipSnap {
+        match self.rect {
+            SnapRounding::Exact => ClipSnap::Exact,
+            _ => self.clip,
+        }
+    }
+}
+
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
@@ -352,6 +365,10 @@ impl PrimitiveInstance {
     /// How this prim rounds to the device pixel grid: its own rect and its
     /// clips (see `SnapPolicy`).
     ///
+    /// An anti-aliased prim does not snap its rect or its own local clip rect,
+    /// but snaps the clips of its clip chain like other prims, except for the
+    /// anti-aliased ones. This takes precedence over everything below.
+    ///
     /// A device-space prim (see `PrimitiveKind::snaps`) stays at exact
     /// sub-pixel positions and only needs a conservative, grid-aligned
     /// footprint. A decoration line snaps its thickness specially so it can't
@@ -363,6 +380,9 @@ impl PrimitiveInstance {
     /// allocation) while its clips stay exact, at the sub-pixel position
     /// matching its contents (bug 2050692).
     pub fn snap_policy(&self, data_stores: &DataStores) -> SnapPolicy {
+        if data_stores.prim_has_anti_aliasing(self) {
+            return SnapPolicy { rect: SnapRounding::Exact, clip: ClipSnap::Nearest };
+        }
         if !self.kind.snaps() {
             return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
@@ -370,6 +390,9 @@ impl PrimitiveInstance {
             PrimitiveKind::LineDecoration { data_handle, .. } => SnapRounding::Line {
                 horizontal: data_stores.line_decoration[data_handle].kind.orientation
                     == LineOrientation::Horizontal,
+            },
+            PrimitiveKind::NormalBorder { data_handle, .. } => SnapRounding::BorderInner {
+                widths: data_stores.normal_border[data_handle].kind.widths,
             },
             _ => SnapRounding::Nearest,
         };

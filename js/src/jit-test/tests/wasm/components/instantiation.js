@@ -117,7 +117,7 @@ assertErrorMessage(() => {
         )
         (core instance $base (instantiate $Base))
 
-        (type $R (resource (rep i32) (dtor (func $base "dtor"))))
+        (type $R (resource (rep i32) (dtor (core func $base "dtor"))))
         (core func $R_new (canon resource.new $R))
         (core func $R_rep (canon resource.rep $R))
         (core func $R_drop (canon resource.drop $R))

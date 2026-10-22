@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 // We use importESModule here instead of static import so that
 // the Karma test environment won't choke on this module. This
 // is because the Karma test environment already stubs out
@@ -125,6 +127,9 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
 });
 
 export class PrefsFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor(prefMap) {
     this._prefMap = prefMap;
     this._prefs = new Prefs();
@@ -382,41 +387,39 @@ export class PrefsFeed {
       );
     }
 
-    // Override per-widget default enabled values from widgetsSettings. Writing
-    // to the default branch lets a trainhop flip a widget's default (e.g. ship
-    // it off) while an explicit user toggle (user branch) still wins. Toggle
-    // VISIBILITY is handled separately by the widgetsSettings.*Visible terms in
-    // WidgetsRegistry — this only affects the on/off default value.
-    if (valueObj.widgetsSettings) {
-      const defaultBranch = Services.prefs.getDefaultBranch(
-        this._prefs._branchStr
-      );
-      for (const widget of WIDGET_REGISTRY) {
-        const value =
-          valueObj.widgetsSettings[widget.widgetsSettingsEnabledKey];
-        if (typeof value === "boolean") {
-          defaultBranch.setBoolPref(widget.enabledPref, value);
-        }
+    // Override each widget's default enabled value from the train-hop config,
+    // most specific payload first: the widget's own trainhopConfig.<namespace>,
+    // then widgetsSettings.*Enabled, then the legacy widgets.*Enabled key.
+    // Writing the default branch, so an explicit user toggle still wins.
+    //
+    // The legacy key has to be in the chain because it only reveals a widget:
+    // without it a rollout sending only that key leaves the enabled pref on its
+    // region-gated default and the widget stays off. Revealing a widget is a
+    // separate concern handled by widgetsSettings.*Visible and the namespace
+    // `visible` field in WidgetsRegistry; this only sets the on/off default.
+    // Adding another widget takes nothing but its registry entry.
+    const defaultBranch = Services.prefs.getDefaultBranch(
+      this._prefs._branchStr
+    );
+    for (const widget of WIDGET_REGISTRY) {
+      const namespaced = widget.trainhopNamespace
+        ? valueObj[widget.trainhopNamespace]
+        : undefined;
+      const value =
+        namespaced?.enabled ??
+        valueObj.widgetsSettings?.[widget.widgetsSettingsEnabledKey] ??
+        valueObj.widgets?.[widget.trainhopEnabledKey];
+      if (typeof value === "boolean") {
+        defaultBranch.setBoolPref(widget.enabledPref, value);
       }
     }
 
-    // A widget with a dedicated trainhop namespace ships its whole config in one
-    // object (trainhopConfig.<namespace>). Its `enabled` overrides the default
-    // value of the widget's user-facing enabled pref on the default branch (an
-    // explicit user toggle still wins), the same effect widgetsSettings.*Enabled
-    // has but isolated to this widget's payload. Revealing the widget is a
-    // separate concern handled by the `visible` field in isWidgetAddable; the
-    // remaining fields are read directly from trainhopConfig by their consumers.
-    // Adding another widget only takes a trainhopNamespace on its registry entry.
-    for (const widget of WIDGET_REGISTRY) {
-      const enabled = widget.trainhopNamespace
-        ? valueObj[widget.trainhopNamespace]?.enabled
-        : undefined;
-      if (typeof enabled === "boolean") {
-        Services.prefs
-          .getDefaultBranch(this._prefs._branchStr)
-          .setBoolPref(widget.enabledPref, enabled);
-      }
+    // Nothing falls back to trainhopConfig when reading widgets.enabled, so
+    // this is the only remote override. widgetsSettings wins if both are sent.
+    const containerEnabled =
+      valueObj.widgetsSettings?.enabled ?? valueObj.widgets?.enabled;
+    if (typeof containerEnabled === "boolean") {
+      defaultBranch.setBoolPref("widgets.enabled", containerEnabled);
     }
 
     return valueObj;

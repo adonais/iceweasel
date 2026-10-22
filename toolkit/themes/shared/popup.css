@@ -125,21 +125,23 @@ panel[type="arrow"] {
     transition-duration: 0.18s;
   }
 
-  @media not (-moz-platform: macos) {
+  /* On Windows / GTK, prefers-reduced-motion is derived from a more general
+   * "enable animations" setting (Animation Effects / gtk-enable-animations
+   * respectively). So we disable the opacity transition there too even though
+   * it's not quite a motion effect. */
+  @media (not (-moz-platform: macos)) and (not (prefers-reduced-motion)) {
     transition-property: transform, opacity;
     will-change: transform, opacity;
     opacity: 0;
-    @media not (prefers-reduced-motion) {
-      transform: translateY(-70px);
+    transform: translateY(-70px);
 
-      &:where([side="bottom"]) {
-        transform: translateY(70px);
-      }
-      /* On some platforms we can't animate the panel position easily, see
-       * bug 1385079, bug 1800368, bug 1800442 */
-      @media not (-moz-panel-animations) {
-        transform: none;
-      }
+    &:where([side="bottom"]) {
+      transform: translateY(70px);
+    }
+    /* On some platforms we can't animate the panel position easily, see
+    * bug 1385079, bug 1800368, bug 1800442 */
+    @media not (-moz-panel-animations) {
+      transform: none;
     }
   }
 

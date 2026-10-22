@@ -96,7 +96,7 @@ def webrtc_builder(
         properties = None,
         recipe = "standalone",
         priority = 30,
-        execution_timeout = 2 * time.hour,
+        execution_timeout = 3 * time.hour,
         **kwargs):
     """WebRTC specific wrapper around luci.builder.
 

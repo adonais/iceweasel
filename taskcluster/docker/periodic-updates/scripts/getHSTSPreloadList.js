@@ -5,8 +5,10 @@
 // 1. [obtain firefox source code]
 // 2. [build/obtain firefox binaries]
 // 3. run `[path to]/firefox -xpcshell [path to]/getHSTSPreloadlist.js [absolute path to]/nsSTSPreloadlist.inc'
-// Note: Running this file outputs a new nsSTSPreloadlist.inc in the current
-//       working directory.
+//    To carry failure streaks forward, append the absolute path to the previous
+//    run's hsts-probe-results.json as an optional second argument.
+// Note: Running this file outputs a new nsSTSPreloadlist.inc and
+//       hsts-probe-results.json in the current working directory.
 
 var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
   Ci.nsISiteSecurityService
@@ -19,11 +21,11 @@ const { FileUtils } = ChromeUtils.importESModule(
 const SOURCE =
   "https://raw.githubusercontent.com/chromium/chromium/main/net/http/transport_security_state_static.json";
 const TOOL_SOURCE =
-  "https://hg.mozilla.org/mozilla-central/file/default/taskcluster/docker/periodic-updates/scripts/getHSTSPreloadList.js";
+  "https://github.com/mozilla-firefox/firefox/blob/main/taskcluster/docker/periodic-updates/scripts/getHSTSPreloadList.js";
 const OUTPUT = "nsSTSPreloadList.inc";
+const RESULTS_OUTPUT = "hsts-probe-results.json";
 const MINIMUM_REQUIRED_MAX_AGE = 60 * 60 * 24 * 7 * 18;
-const MAX_CONCURRENT_REQUESTS = 500;
-const MAX_RETRIES = 1;
+const MAX_CONCURRENT_REQUESTS = 250;
 const REQUEST_TIMEOUT = 30 * 1000;
 const ERROR_NONE = "no error";
 const ERROR_CONNECTING_TO_HOST = "could not connect to host";
@@ -78,7 +80,6 @@ function getHosts(rawdata) {
         // We trim the entry name here to avoid malformed URI exceptions when we
         // later try to connect to the domain.
         entry.name = entry.name.trim();
-        entry.retries = MAX_RETRIES;
         // We prefer the camelCase variable to the JSON's snake case version
         entry.includeSubdomains = entry.include_subdomains;
         hosts.push(entry);
@@ -91,7 +92,7 @@ function getHosts(rawdata) {
   return hosts;
 }
 
-function processStsHeader(host, header, status, securityInfo) {
+function processStsHeader(host, header, status, securityInfo, nsresult = 0) {
   let maxAge = {
     value: 0,
   };
@@ -135,8 +136,10 @@ function processStsHeader(host, header, status, securityInfo) {
     maxAge: maxAge.value,
     includeSubdomains: includeSubdomains.value,
     error,
-    retries: host.retries - 1,
     forceInclude: host.forceInclude,
+    httpStatus: status,
+    nsresult: Number(nsresult).toString(16),
+    latencyMs: Date.now() - host.startTime,
   };
 }
 
@@ -172,6 +175,7 @@ function fetchstatus(host) {
   return new Promise(resolve => {
     let xhr = new XMLHttpRequest();
     let uri = "https://" + host.name + "/";
+    host.startTime = Date.now();
 
     xhr.open("head", uri, true);
     xhr.setRequestHeader("X-Automated-Tool", TOOL_SOURCE);
@@ -184,7 +188,8 @@ function fetchstatus(host) {
           host,
           null,
           xhr.status,
-          xhr.channel && xhr.channel.securityInfo
+          xhr.channel && xhr.channel.securityInfo,
+          xhr.channel && xhr.channel.status
         )
       );
     };
@@ -203,13 +208,6 @@ function fetchstatus(host) {
     xhr.channel.notificationCallbacks = new RedirectAndAuthStopper();
     xhr.send();
   });
-}
-
-async function getHSTSStatus(host) {
-  do {
-    host = await fetchstatus(host);
-  } while (shouldRetry(host));
-  return host;
 }
 
 function compareHSTSStatus(a, b) {
@@ -242,15 +240,6 @@ function getExpirationTimeString() {
   );
 }
 
-function shouldRetry(response) {
-  return (
-    response.error != ERROR_NO_HSTS_HEADER &&
-    response.error != ERROR_MAX_AGE_TOO_LOW &&
-    response.error != ERROR_NONE &&
-    response.retries > 0
-  );
-}
-
 // Copied from browser/components/migration/MigrationUtils.sys.mjs
 function spinResolve(promise) {
   if (!(promise instanceof Promise)) {
@@ -279,31 +268,132 @@ function spinResolve(promise) {
   }
 }
 
-async function probeHSTSStatuses(inHosts) {
-  let totalLength = inHosts.length;
-  dump("Examining " + totalLength + " hosts.\n");
-
-  // Make requests in batches of MAX_CONCURRENT_REQUESTS. Otherwise, we have
-  // too many in-flight requests and the time it takes to process them causes
-  // them all to time out.
-  let allResults = [];
-  while (inHosts.length) {
-    let promises = [];
-    for (let i = 0; i < MAX_CONCURRENT_REQUESTS && inHosts.length; i++) {
-      let host = inHosts.shift();
-      promises.push(getHSTSStatus(host));
+async function probePool(hosts) {
+  let total = hosts.length;
+  let results = [];
+  let lastProgress = 0;
+  let worker = async () => {
+    while (hosts.length) {
+      results.push(await fetchstatus(hosts.pop()));
+      let progress = Math.floor((100 * results.length) / total);
+      if (progress > lastProgress) {
+        lastProgress = progress;
+        dump(progress + "% done\n");
+      }
     }
-    let results = await Promise.all(promises);
-    let progress = (
-      (100 * (totalLength - inHosts.length)) /
-      totalLength
-    ).toFixed(2);
-    dump(progress + "% done\n");
-    allResults = allResults.concat(results);
+  };
+  await Promise.all(Array.from({ length: MAX_CONCURRENT_REQUESTS }, worker));
+  return results;
+}
+
+function needsRetry(status) {
+  return (
+    status.error == ERROR_CONNECTING_TO_HOST ||
+    (status.httpStatus == 429 && status.error == ERROR_NO_HSTS_HEADER)
+  );
+}
+
+async function probeHSTSStatuses(hosts) {
+  dump("Examining " + hosts.length + " hosts.\n");
+  for (let i = hosts.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [hosts[i], hosts[j]] = [hosts[j], hosts[i]];
+  }
+  let probed = await probePool(hosts);
+
+  let results = probed.filter(status => !needsRetry(status));
+  let failed = probed.filter(needsRetry);
+  dump("Retrying " + failed.length + " hosts that failed or answered 429.\n");
+  let retried = await probePool(failed.map(status => ({ name: status.name })));
+  let rescued = retried.filter(status => !needsRetry(status));
+  for (let status of rescued) {
+    status.rescued = true;
+  }
+  results = results.concat(retried);
+  dump(
+    rescued.length + " of " + failed.length + " retried hosts were rescued.\n"
+  );
+
+  dump("HSTS Probe received " + results.length + " statuses.\n");
+  return results;
+}
+
+function probeResult(status) {
+  switch (status.error) {
+    case ERROR_NONE:
+      return "ok";
+    case ERROR_NO_HSTS_HEADER:
+    case ERROR_MAX_AGE_TOO_LOW:
+      return "no-header";
+    case ERROR_CONNECTING_TO_HOST:
+      return "connect-failed";
+    default:
+      return "invalid-header";
+  }
+}
+
+function isFailedRun(status) {
+  let result = probeResult(status);
+  return (
+    result != "ok" &&
+    status.error != ERROR_MAX_AGE_TOO_LOW &&
+    !(result == "no-header" && status.httpStatus < 400)
+  );
+}
+
+async function writeProbeResults(probedStatuses, previousPath) {
+  let previous = null;
+  if (previousPath) {
+    try {
+      previous = await IOUtils.readJSON(previousPath);
+    } catch (e) {
+      dump(`WARNING: could not read previous probe results: ${e}\n`);
+    }
+  }
+  let previousHosts = previous?.hosts ?? {};
+  let date = new Date().toISOString().slice(0, 10);
+
+  let hosts = {};
+  for (let status of probedStatuses.sort(compareHSTSStatus)) {
+    let record = { result: probeResult(status), latencyMs: status.latencyMs };
+    if (status.rescued) {
+      record.rescued = true;
+    }
+    if (status.httpStatus) {
+      record.httpStatus = status.httpStatus;
+    }
+    if (status.error == ERROR_NONE || status.error == ERROR_MAX_AGE_TOO_LOW) {
+      record.maxAge = status.maxAge;
+      record.includeSubdomains = status.includeSubdomains;
+    }
+    if (record.result == "connect-failed") {
+      record.nsresult = status.nsresult;
+    }
+    if (isFailedRun(status)) {
+      let streak = previousHosts[status.name]?.streak;
+      record.streak = {
+        count: (streak?.count ?? 0) + 1,
+        since: streak?.since ?? date,
+      };
+    }
+    hosts[status.name] = record;
   }
 
-  dump("HSTS Probe received " + allResults.length + " statuses.\n");
-  return allResults;
+  let path = PathUtils.join(
+    Services.dirsvc.get("CurWorkD", Ci.nsIFile).path,
+    RESULTS_OUTPUT
+  );
+  dump("INFO: Writing probe results to " + path + "\n");
+  await IOUtils.writeJSON(path, {
+    version: 1,
+    run: {
+      taskId: Services.env.get("TASK_ID") || null,
+      project: Services.env.get("BRANCH") || null,
+      date,
+      previousTaskId: previous?.run?.taskId ?? null,
+    },
+    hosts,
+  });
 }
 
 function readCurrentList(filename) {
@@ -348,7 +438,7 @@ function combineLists(newHosts, currentHosts) {
 
   for (let currentHost in currentHosts) {
     if (!newHostsSet.has(currentHost)) {
-      newHosts.push({ name: currentHost, retries: MAX_RETRIES });
+      newHosts.push({ name: currentHost });
     }
   }
 }
@@ -382,8 +472,6 @@ function getTestHosts() {
       maxAge: MINIMUM_REQUIRED_MAX_AGE,
       includeSubdomains: testEntry.includeSubdomains,
       error: ERROR_NONE,
-      // This deliberately doesn't have a value for `retries` (because we should
-      // never attempt to connect to this host).
       forceInclude: true,
     });
   }
@@ -448,9 +536,9 @@ function errorToString(status) {
 }
 
 async function main(args) {
-  if (args.length != 1) {
+  if (args.length < 1 || args.length > 2) {
     throw new Error(
-      "Usage: getHSTSPreloadList.js <absolute path to current nsSTSPreloadList.inc>"
+      "Usage: getHSTSPreloadList.js <absolute path to current nsSTSPreloadList.inc> [<absolute path to previous hsts-probe-results.json>]"
     );
   }
 
@@ -484,53 +572,42 @@ async function main(args) {
   dump("Adding forced hosts\n");
   insertHosts(hstsStatuses, forcedHosts);
 
-  let total = await probeHSTSStatuses(hostsToContact)
-    .then(function (probedStatuses) {
-      return hstsStatuses.concat(probedStatuses);
-    })
-    .then(function (statuses) {
-      return statuses.sort(compareHSTSStatus);
-    })
-    .then(function (statuses) {
-      for (let status of statuses) {
-        // If we've encountered an error for this entry (other than the site not
-        // sending an HSTS header), be safe and don't remove it from the list
-        // (given that it was already on the list).
-        if (
-          !status.forceInclude &&
-          status.error != ERROR_NONE &&
-          status.error != ERROR_NO_HSTS_HEADER &&
-          status.error != ERROR_MAX_AGE_TOO_LOW &&
-          status.name in currentHosts
-        ) {
-          // dump("INFO: error connecting to or processing " + status.name + " - using previous status on list\n");
-          status.maxAge = MINIMUM_REQUIRED_MAX_AGE;
-          status.includeSubdomains = currentHosts[status.name];
-        }
-      }
-      return statuses;
-    })
-    .then(function (statuses) {
-      // Filter out entries we aren't including.
-      var includedStatuses = statuses.filter(function (status) {
-        if (status.maxAge < MINIMUM_REQUIRED_MAX_AGE && !status.forceInclude) {
-          // dump("INFO: " + status.name + " NOT ON the preload list\n");
-          return false;
-        }
+  let probedStatuses = await probeHSTSStatuses(hostsToContact);
+  await writeProbeResults(probedStatuses, args[1]);
+  let statuses = hstsStatuses.concat(probedStatuses).sort(compareHSTSStatus);
+  for (let status of statuses) {
+    // If we couldn't connect to this entry, couldn't process its header, or it
+    // answered 4xx or 5xx without a valid HSTS header, be safe and don't remove
+    // it from the list (given that it was already on the list).
+    if (
+      !status.forceInclude &&
+      isFailedRun(status) &&
+      status.name in currentHosts
+    ) {
+      // dump("INFO: error connecting to or processing " + status.name + " - using previous status on list\n");
+      status.maxAge = MINIMUM_REQUIRED_MAX_AGE;
+      status.includeSubdomains = currentHosts[status.name];
+    }
+  }
 
-        // dump("INFO: " + status.name + " ON the preload list (includeSubdomains: " + status.includeSubdomains + ")\n");
-        if (status.forceInclude && status.error != ERROR_NONE) {
-          dump(
-            status.name +
-              ": " +
-              errorToString(status) +
-              " (error ignored - included regardless)\n"
-          );
-        }
-        return true;
-      });
-      return includedStatuses;
-    });
+  // Filter out entries we aren't including.
+  let total = statuses.filter(function (status) {
+    if (status.maxAge < MINIMUM_REQUIRED_MAX_AGE && !status.forceInclude) {
+      // dump("INFO: " + status.name + " NOT ON the preload list\n");
+      return false;
+    }
+
+    // dump("INFO: " + status.name + " ON the preload list (includeSubdomains: " + status.includeSubdomains + ")\n");
+    if (status.forceInclude && status.error != ERROR_NONE) {
+      dump(
+        status.name +
+          ": " +
+          errorToString(status) +
+          " (error ignored - included regardless)\n"
+      );
+    }
+    return true;
+  });
 
   // Write the output file
   output(total);

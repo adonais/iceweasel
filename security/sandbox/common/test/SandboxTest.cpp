@@ -257,10 +257,12 @@ SandboxTest::StartTests(const nsTArray<nsCString>& aProcessesList) {
             ->Then(
                 GetMainThreadSerialEventTarget(), __func__,
                 [processPromise, utilityProc, sandboxingKind]() {
-                  RefPtr<UtilityProcessParent> utilityParent =
+                  RefPtr<UtilityProcessKeepAlive> keepAlive =
                       utilityProc
-                          ? utilityProc->GetProcessParent(sandboxingKind)
+                          ? utilityProc->GetSharedKeepAlive(sandboxingKind)
                           : nullptr;
+                  RefPtr<UtilityProcessParent> utilityParent =
+                      keepAlive ? keepAlive->GetProcessParent() : nullptr;
                   if (utilityParent) {
                     return InitializeSandboxTestingActors(utilityParent.get(),
                                                           processPromise);

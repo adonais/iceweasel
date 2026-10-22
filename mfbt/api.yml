@@ -71,6 +71,7 @@ Atomics.h:
     - Atomic
   functions:
     - cpu_pause
+    - AtomicRefCountDecrement
 
 Attributes.h:
   macros:

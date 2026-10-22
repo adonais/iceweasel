@@ -15,8 +15,6 @@ subsuite = "mozharness"
 
 ["test_mozilla_building_buildbase.py"]
 
-["test_mozilla_merkle.py"]
-
 ["test_mozilla_per_test_base.py"]
 
 ["test_mozilla_structured.py"]

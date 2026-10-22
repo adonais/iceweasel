@@ -28,8 +28,8 @@ add_task(async function () {
   let l10n = document.l10n.getAttributes(elem);
   ok(
     [
-      "main-context-menu-bookmark-page",
-      "main-context-menu-bookmark-page-with-shortcut",
+      "main-context-menu-bookmark-page-2",
+      "main-context-menu-bookmark-page-with-shortcut-2",
       "main-context-menu-bookmark-page-mac",
     ].includes(l10n.id)
   );

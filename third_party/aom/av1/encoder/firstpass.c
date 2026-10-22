@@ -12,6 +12,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "config/aom_dsp_rtcd.h"
 #include "config/aom_scale_rtcd.h"
@@ -1044,6 +1045,11 @@ static void print_reconstruction_frame(
     recon_file = fopen(filename, "wb");
   } else {
     recon_file = fopen(filename, "ab");
+  }
+
+  if (!recon_file) {
+    fprintf(stderr, "%s: fopen(\"%s\") failed", __func__, filename);
+    abort();
   }
 
   fwrite(last_frame->buffer_alloc, last_frame->frame_size, 1, recon_file);

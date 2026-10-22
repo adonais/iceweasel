@@ -11,30 +11,153 @@ import "chrome://browser/content/aiwindow/components/smartwindow-resume-card.mjs
 
 const COLLAPSED_CARD_COUNT = 2;
 
+export const RESUME_SECTION_EMPTY_REASON = {
+  NO_SUGGESTIONS: "no-suggestions",
+  ALL_DISMISSED: "all-dismissed",
+};
+
 /**
  * A collapsible grid of resume cards. Card events bubble to the caller.
  *
  * @property {Array<{content: object, memory: object}>} cards - Journeys to render as cards
+ * @property {string} emptyReason - Why `cards` is empty (a
+ *   RESUME_SECTION_EMPTY_REASON value), or null/undefined to render nothing
+ *   while empty
+ * @property {boolean} loading - Whether resume content is still being generated
  */
 export class SmartwindowResumeSection extends MozLitElement {
   static properties = {
     cards: { type: Array },
+    emptyReason: { type: String },
+    loading: { type: Boolean },
     expanded: { type: Boolean, state: true },
   };
 
   constructor() {
     super();
     this.cards = [];
+    this.emptyReason = null;
+    this.loading = false;
     this.expanded = false;
+  }
+
+  #dispatch(type, detail) {
+    this.dispatchEvent(
+      new CustomEvent(`smartwindow-resume-section:${type}`, {
+        detail,
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   #onToggleClick = () => {
     this.expanded = !this.expanded;
   };
 
+  #onHideClick = () => {
+    this.#dispatch("hide", { reason: this.emptyReason });
+  };
+
+  #renderEmptyState() {
+    const isAllDismissed =
+      this.emptyReason === RESUME_SECTION_EMPTY_REASON.ALL_DISMISSED;
+
+    return html`
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/aiwindow/components/smartwindow-resume-section.css"
+      />
+      <div class="resume-section-heading">
+        <span
+          class="resume-section-title"
+          data-l10n-id="aiwindow-resume-section-heading"
+        ></span>
+      </div>
+      <div class="resume-section-empty">
+        <div
+          class="resume-section-empty-heading"
+          data-l10n-id=${isAllDismissed
+            ? "aiwindow-resume-section-empty-all-dismissed-heading"
+            : "aiwindow-resume-section-empty-no-suggestions-heading"}
+        ></div>
+        <div
+          class="resume-section-empty-description"
+          data-l10n-id=${isAllDismissed
+            ? "aiwindow-resume-section-empty-all-dismissed-description"
+            : "aiwindow-resume-section-empty-no-suggestions-description"}
+        ></div>
+        <moz-button
+          class="resume-section-empty-hide"
+          size="small"
+          @click=${this.#onHideClick}
+          data-l10n-id="aiwindow-resume-section-hide"
+        ></moz-button>
+      </div>
+    `;
+  }
+
+  #renderSkeletonCard() {
+    return html`
+      <div class="resume-card-skeleton" aria-hidden="true">
+        <div class="resume-card-skeleton-header">
+          <span class="resume-card-skeleton-favicons">
+            <span class="resume-card-skeleton-favicon"></span>
+            <span class="resume-card-skeleton-favicon"></span>
+            <span class="resume-card-skeleton-favicon"></span>
+          </span>
+          <span
+            class="resume-section-skeleton-text resume-card-skeleton-tab-count"
+          ></span>
+        </div>
+        <span
+          class="resume-section-skeleton-text resume-card-skeleton-title"
+        ></span>
+        <span
+          class="resume-section-skeleton-text resume-card-skeleton-description"
+        ></span>
+        <span
+          class="resume-section-skeleton-text resume-card-skeleton-description"
+        ></span>
+        <div class="resume-card-skeleton-actions">
+          <span
+            class="resume-section-skeleton-text resume-card-skeleton-button"
+          ></span>
+          <span
+            class="resume-section-skeleton-text resume-card-skeleton-button"
+          ></span>
+        </div>
+      </div>
+    `;
+  }
+
+  #renderLoadingState() {
+    return html`
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/aiwindow/components/smartwindow-resume-section.css"
+      />
+      <div class="resume-section-heading">
+        <span
+          class="resume-section-title"
+          data-l10n-id="aiwindow-resume-section-heading"
+        ></span>
+      </div>
+      <div class="resume-section-grid">
+        ${Array.from({ length: COLLAPSED_CARD_COUNT }, () =>
+          this.#renderSkeletonCard()
+        )}
+      </div>
+    `;
+  }
+
   render() {
+    if (this.loading) {
+      return this.#renderLoadingState();
+    }
+
     if (!this.cards.length) {
-      return nothing;
+      return this.emptyReason ? this.#renderEmptyState() : nothing;
     }
 
     const hiddenCount = Math.max(0, this.cards.length - COLLAPSED_CARD_COUNT);

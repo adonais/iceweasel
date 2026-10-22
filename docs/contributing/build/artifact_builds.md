@@ -10,7 +10,7 @@ with compiled code (see "Restrictions" below). Artifacts are typically
 fetched from [mozilla-central](https://hg.mozilla.org/mozilla-central/).
 
 To automatically download and use pre-built binary artifacts, add the
-following lines into your {ref}`mozconfig <Configuring Build Options>`
+following lines into your {doc}`mozconfig </setup/configuring_build_options>`
 file:
 
 ```shell

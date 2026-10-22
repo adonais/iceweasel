@@ -19,6 +19,13 @@ class TestRecommendedPreferences(MarionetteTestCase):
 
         super(TestRecommendedPreferences, self).tearDown()
 
+    def is_applied(self, pref):
+        with self.marionette.using_context("chrome"):
+            return self.marionette.execute_script(
+                "return Services.prefs.getBoolPref(arguments[0], false);",
+                script_args=(pref,),
+            )
+
     def has_user_value(self, pref):
         with self.marionette.using_context("chrome"):
             return self.marionette.execute_script(
@@ -37,16 +44,17 @@ class TestRecommendedPreferences(MarionetteTestCase):
                 """,
             )
 
-    def test_restored_after_in_app_restart(self):
-        # Initially, recommended pref should have no user value.
-        self.assertFalse(self.has_user_value(RECOMMENDED_PREF))
+    def assert_restored_after_restart(self, in_app):
+        self.assertFalse(self.is_applied(RECOMMENDED_PREF))
 
-        # Apply recommended preferences, the recommended pref should now have a
-        # user value.
         self.apply_recommended_prefs()
-        self.assertTrue(self.has_user_value(RECOMMENDED_PREF))
+        self.assertTrue(self.is_applied(RECOMMENDED_PREF))
+        self.assertFalse(
+            self.has_user_value(RECOMMENDED_PREF),
+            "Recommended preferences are not set on the user branch",
+        )
 
-        self.marionette.restart(in_app=True)
+        self.marionette.restart(in_app=in_app)
 
         # Note: this is set to false in user.js for this test suite, so the
         # preference set in apply_recommended_prefs does not survive a restart.
@@ -55,6 +63,14 @@ class TestRecommendedPreferences(MarionetteTestCase):
             "Recommended preferences are disabled again after the restart",
         )
         self.assertFalse(
-            self.has_user_value(RECOMMENDED_PREF),
-            "The recommended preference was restored after the restart",
+            self.is_applied(RECOMMENDED_PREF),
+            "The recommended preference was not persisted across the restart",
         )
+
+    def test_restored_after_in_app_restart(self):
+        self.assert_restored_after_restart(in_app=True)
+
+    def test_restored_after_forced_restart(self):
+        # Killing the process skips the orderly shutdown entirely, which is
+        # what happens when the application crashes or is killed by the OS.
+        self.assert_restored_after_restart(in_app=False)

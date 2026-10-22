@@ -7,6 +7,8 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
 
+const { showBookmarksSidebar } = SidebarTestUtils.bookmarks;
+
 const UPDATED_BOOKMARKS_PREF = "sidebar.updatedBookmarks.enabled";
 
 add_setup(async () => {
@@ -20,29 +22,13 @@ add_setup(async () => {
   });
 });
 
-async function showBookmarksSidebar() {
-  if (SidebarController.currentID !== "viewBookmarksSidebar") {
-    await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
-  }
-  const { contentDocument, contentWindow } = SidebarController.browser;
-  await TestUtils.waitForCondition(
-    () => contentDocument.querySelector("sidebar-bookmarks"),
-    "Wait for sidebar-bookmarks element"
-  );
-  const component = contentDocument.querySelector("sidebar-bookmarks");
-  await component.updateComplete;
-  return { component, contentWindow };
-}
-
-async function addBookmark({ url, title, parentGuid } = {}) {
-  return PlacesUtils.bookmarks.insert({
-    url,
-    title,
-    parentGuid: parentGuid ?? PlacesUtils.bookmarks.toolbarGuid,
-  });
-}
-
-async function openToolbarFolder(tabList) {
+/**
+ * Opens the first folder in the bookmark list.
+ *
+ * @param {SidebarBookmarkList} tabList - The sidebar's root bookmark list.
+ * @returns {HTMLDetailsElement} The first folder's <details> element.
+ */
+async function openFirstToolbarFolder(tabList) {
   await BrowserTestUtils.waitForMutationCondition(
     tabList.shadowRoot,
     { childList: true, subtree: true },
@@ -85,9 +71,9 @@ add_task(async function test_accel_click_selects_row() {
   await addBookmark({ url: "https://example.org/", title: "Bookmark B" });
   await addBookmark({ url: "https://example.net/", title: "Bookmark C" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -127,9 +113,9 @@ add_task(async function test_accel_click_deselects_row() {
   await addBookmark({ url: "https://example.com/", title: "Bookmark A" });
   await addBookmark({ url: "https://example.org/", title: "Bookmark B" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -163,9 +149,9 @@ add_task(async function test_shift_click_selects_range() {
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
   await addBookmark({ url: "https://example.com/4", title: "Bookmark 4" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -202,9 +188,9 @@ add_task(async function test_normal_click_clears_selection() {
   await addBookmark({ url: "https://example.com/1", title: "Bookmark 1" });
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -246,9 +232,9 @@ add_task(async function test_space_key_toggles_selection() {
   await addBookmark({ url: "https://example.com/1", title: "Bookmark 1" });
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -285,9 +271,9 @@ add_task(async function test_shift_arrowdown_extends_selection() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -336,9 +322,9 @@ add_task(async function test_shift_arrowup_extends_selection() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -375,9 +361,9 @@ add_task(async function test_plain_arrow_clears_selection() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -441,9 +427,9 @@ add_task(async function test_shift_click_across_nested_folders() {
   await addBookmark({ url: "https://example.com/outer-1", title: "Outer 1" });
   await addBookmark({ url: "https://example.com/outer-2", title: "Outer 2" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarFolder = await openToolbarFolder(tabList);
+  const toolbarFolder = await openFirstToolbarFolder(tabList);
   const toolbarList = await getNestedList(toolbarFolder);
 
   const folderEl = [...toolbarList.folderEls].find(
@@ -493,9 +479,9 @@ add_task(async function test_multiselect_context_menu_items() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -594,9 +580,9 @@ add_task(async function test_multiselect_context_menu_delete() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 
@@ -645,9 +631,9 @@ add_task(async function test_treeview_getSelectedTabItems() {
   await addBookmark({ url: "https://example.com/2", title: "Bookmark 2" });
   await addBookmark({ url: "https://example.com/3", title: "Bookmark 3" });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarDetails = await openFirstToolbarFolder(tabList);
   const nestedList = await getNestedList(toolbarDetails);
   const rows = [...nestedList.rowEls];
 

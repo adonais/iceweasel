@@ -481,14 +481,6 @@ class ContentChild final : public PContentChild,
   bool DeallocPWebrtcGlobalChild(PWebrtcGlobalChild* aActor);
 #endif
 
-  PContentPermissionRequestChild* AllocPContentPermissionRequestChild(
-      Span<const PermissionRequest> aRequests, nsIPrincipal* aPrincipal,
-      nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-      const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId,
-      const bool& aIgnoreAllowSitePermission);
-  bool DeallocPContentPermissionRequestChild(
-      PContentPermissionRequestChild* actor);
-
   // GetFiles for WebKit/Blink FileSystem API and Directory API must run on the
   // parent process.
   void CreateGetFilesRequest(nsTArray<nsString>&& aDirectoryPath,
@@ -954,6 +946,12 @@ class ContentChild final : public PContentChild,
   // priority scheduling of important threads. (Currently main thread and style
   // threads.) The work duration is reported by the RefreshDriverTimer.
   UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
+
+#ifdef XP_WIN
+  // True when the main thread runs at THREAD_PRIORITY_ABOVE_NORMAL because
+  // the process is in the foreground.
+  bool mMainThreadPriorityRaised = false;
+#endif
 };
 
 inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {

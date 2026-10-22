@@ -83,7 +83,6 @@ abstract class ApkSizeTask : DefaultTask() {
         val isAutomation = mozAutomation.orNull == "1"
         val uploadPath = mozPerfherderUpload.orNull
         if (isAutomation && uploadPath != null) {
-            println("PERFHERDER_DATA: $json")
             val outputFile = File(uploadPath)
             outputFile.parentFile?.mkdirs()
             outputFile.writeText(json.toString())

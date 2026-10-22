@@ -15,9 +15,11 @@
 
 #include "gc/PublicIterators.h"
 #include "jit/JitZone.h"
+#include "js/friend/PerformanceHint.h"  // js::SetRealmIsDyingHint
 #include "js/HeapAPI.h"
 #include "js/Value.h"
 #include "util/DifferentialTesting.h"
+#include "vm/GlobalObject.h"
 #include "vm/HelperThreads.h"
 #include "vm/Realm.h"
 #include "vm/Scope.h"
@@ -799,6 +801,11 @@ JS_PUBLIC_API void js::gc::SetPerformanceHint(JSContext* cx,
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
   cx->runtime()->gc.setPerformanceHint(hint);
+}
+
+JS_PUBLIC_API void js::SetRealmIsDyingHint(JSObject* global) {
+  MOZ_ASSERT(global->is<GlobalObject>());
+  global->as<GlobalObject>().realm()->setIsDyingHint();
 }
 
 AutoSelectGCHeap::AutoSelectGCHeap(JSContext* cx,

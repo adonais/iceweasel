@@ -94,21 +94,31 @@ abstract class TemporaryDownloadFeature(
                     requireNotNull(internetResource.response)
                 }
 
-            if (response.status != Response.SUCCESS) {
-                response.close()
-                // We experienced a problem trying to fetch the file, nothing more we can do.
-                throw (RuntimeException("Resource is not available to download"))
-            }
-
-            var tempFile: File? = null
-            response.body.useStream { input ->
-                val fileExtension = '.' + getFileExtension(response.headers, input)
-                tempFile = getTempFile(fileExtension)
-                FileOutputStream(tempFile).use { output -> input.copyTo(output) }
-            }
-
-            tempFile!!
+            persistResponseToTempFile(response)
         }
+    }
+
+    @VisibleForTesting(otherwise = PROTECTED)
+    internal suspend fun downloadDirectResource(response: Response): File =
+        withContext(ioDispatcher) {
+            persistResponseToTempFile(response)
+        }
+
+    private fun persistResponseToTempFile(response: Response): File {
+        if (response.status != Response.SUCCESS) {
+            response.close()
+            // We experienced a problem trying to fetch the file, nothing more we can do.
+            throw (RuntimeException("Resource is not available to download"))
+        }
+
+        var tempFile: File? = null
+        response.body.useStream { input ->
+            val fileExtension = '.' + getFileExtension(response.headers, input)
+            tempFile = getTempFile(fileExtension)
+            FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+        }
+
+        return tempFile!!
     }
 
     @VisibleForTesting

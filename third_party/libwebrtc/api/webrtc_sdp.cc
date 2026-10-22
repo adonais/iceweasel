@@ -487,11 +487,6 @@ bool GetSingleTokenValue(absl::string_view message,
   return true;
 }
 
-bool CaseInsensitiveFind(std::string str1, std::string str2) {
-  absl::c_transform(str1, str1.begin(), ::tolower);
-  absl::c_transform(str2, str2.begin(), ::tolower);
-  return str1.find(str2) != std::string::npos;
-}
 
 template <class T>
 bool GetValueFromString(absl::string_view line,
@@ -1859,7 +1854,7 @@ bool ParseSessionDescription(absl::string_view message,
       if (!GetValue(*aline, kAttributeMsidSemantics, &semantics, error)) {
         return false;
       }
-      if (CaseInsensitiveFind(semantics, kMediaStreamSemantic)) {
+      if (absl::StrContainsIgnoreCase(semantics, kMediaStreamSemantic)) {
         desc->set_msid_signaling(kMsidSignalingSemantic);
       }
     } else if (HasAttribute(*aline, kAttributeExtmapAllowMixed)) {

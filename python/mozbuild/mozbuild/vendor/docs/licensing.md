@@ -129,6 +129,12 @@ LICENSES += ["expat"]
 LICENSES["expat"].title = "Expat License"
 ```
 
+The manifest is found by walking up from the declaring `moz.build`'s
+directory, so this only works when the `moz.build` sits in the library's
+directory or below it. A `moz.build` that builds libraries vendored into its
+subdirectories sits above their manifests, so it sets `text` to each library's
+license file instead.
+
 The linter reports a `text` naming the file that manifest already names. Where
 `moz.yaml` has no `license-file`, add it rather than copying the text into a
 `LICENSE-NOTICE.txt` next to the `moz.build`: the manifest is what `mach vendor`
@@ -139,6 +145,21 @@ shipped file. `media/libvpx` needs one because its notice is `LICENSE` plus the
 VP8 patent grant, which upstream keeps in `libvpx/PATENTS`; `netwerk/sctp`
 needs one because its notice reproduces the FreeBSD and Cisco copyright headers
 its sources carry, which upstream's `LICENSE.md` does not.
+
+## Acknowledgements
+
+Some licenses ask for a one-line credit in the product's documentation, such
+as the IJG and FreeType licenses, and some authors merely request one, such as
+zlib's. `acknowledgement` adds that credit, as HTML, to the license's
+declaration. It is listed under "Acknowledgements" in `about:license`, and only
+in builds that ship the code:
+
+```python
+LICENSES["zlib"].acknowledgement = (
+    'The <a href="https://www.zlib.net/">zlib</a> compression library '
+    "(Jean-loup Gailly, Mark Adler and team)"
+)
+```
 
 ## Rendering `about:license` Without a Build
 
@@ -179,9 +200,13 @@ The output is CycloneDX JSON. Useful arguments:
   `MOZ_APP_BASENAME` -- `Firefox` for desktop, `Fennec` for GeckoView -- or to
   `Firefox` in an unconfigured tree.
 
+`--build-tooling`
+: Describe the third-party code that builds and tests the tree instead of what
+  the product ships. See {ref}`build_tooling_sbom`.
+
 ### What Becomes a Component
 
-Components come from three sources, because none alone covers the tree:
+Components come from four sources, because none alone covers the tree:
 
 - **`moz.yaml` manifests** give a name, an upstream version and revision, a
   description, upstream URLs and a Bugzilla component, but only exist for
@@ -194,12 +219,41 @@ Components come from three sources, because none alone covers the tree:
   they are Firefox's own crates, not third-party code.
 
   `cargo metadata` supplies what `Cargo.lock` cannot: whether each crate is
-  reached as a normal, a build or a dev dependency. Fifteen crates today are
-  test-only, `mockall` and `expect-test` among them, and ship in nothing. The
-  kinds are collected and reported on stderr but not yet written to the
-  document; expressing them as CycloneDX `scope` is the obvious next step.
-  They need the objdir's generated cargo config, so an unconfigured tree
-  collects nothing and says so.
+  reached as a normal, a build or a dev dependency. What only a dev
+  dependency or a `TOOLING_MEMBERS` member (`sbom_cargo.py`: geckodriver, the
+  http3server, the uniffi bindgens...) reaches, `mockall` or `hyper` for
+  instance, ships in nothing and goes to the
+  {ref}`build tooling document <build_tooling_sbom>`. A member missing from
+  that list counts as shipped. An unconfigured tree has no kinds, so it keeps
+  every crate in the product document.
+- **The npm lockfiles of the bundled front-end code** describe what webpack
+  folds into the newtab, aboutwelcome and asrouter bundles: React, Redux,
+  Fluent and their closures. These packages leave no directory of their own,
+  so nothing else in the tree describes them. Each becomes a component with a
+  `pkg:npm` package URL, the SHA-512 the registry publishes for the tarball,
+  the license the package declares and the package-to-package edges.
+
+  Only the runtime closure is reported; the webpack and babel toolchain that
+  makes up most of a lockfile goes to the
+  {ref}`build tooling document <build_tooling_sbom>`. The lockfiles are an
+  allowlist in `sbom_npm.py`, with `third_party/node` standing for newtab,
+  whose bundles are built from its `node_modules`.
+
+- **GeckoView's Maven dependencies**, on Android builds: the AndroidX, Play
+  services and other libraries Gradle fetches and every application embedding
+  GeckoView packages. The `writeRuntimeDependencies` task
+  (`WriteRuntimeDependencies` in the conventions plugin) writes the resolved
+  runtime closure of the published variant during the build's Gradle export,
+  unlike `gradle/libs.versions.toml`, which has neither the transitive
+  dependencies nor which are test-only. Each module becomes a `pkg:maven`
+  component with its artifact's SHA-256, its POM's licenses and its edges.
+
+  Fenix is built by Gradle alone, in its own tasks, so its nightly, beta and
+  release APK builds publish a separate `public/build/sbom.json`:
+  `mach sbom --gradle-runtime-dependencies` describes the variant's runtime
+  closure, in which GeckoView is a single component whose own SBOM describes
+  its contents.
+
 - **`LICENSES` declarations** cover everything else: one component per notice
   whose paths no manifest or crate already covers, carrying the notice id and
   the SPDX expression where one is known.
@@ -218,16 +272,34 @@ attributed path is represented.
 ### Identifiers, Evidence and the Graph
 
 Each component's `bom-ref` is the topsrcdir-relative path it was derived from —
-the manifest's directory, or `third_party/rust/<crate>` — and
-`license:<notice-id>` for a component that came from a notice alone.
+the manifest's directory, `third_party/rust/<crate>` or
+`third_party/python/<package>` — and `license:<notice-id>` for a component
+that came from a notice alone. A bundled npm package has no directory, so it
+is `npm:<name>@<version>`: the version is part of the identity because a
+package can ship at several versions at once. A Maven module is
+`maven:<group>:<name>@<version>` for the same reason, and a Python package the
+lockfile names but the tree does not vendor `pypi:<name>@<version>`.
 
-Package URLs are `pkg:cargo` for crates, and `pkg:github` or `pkg:gitlab` where
-a manifest's upstream repository is recognised, since `pkg:generic` matches
-nothing in OSV.dev or the GitHub Advisory Database; everything else keeps the
-upstream repository in a `vcs_url` qualifier. A notice-derived component gets
-no package URL at all: it is a set of files in our own tree, not a package any
-ecosystem can resolve, and a `pkg:generic/<basename>` would match nothing while
-looking like it might.
+Package URLs are `pkg:cargo` for crates, `pkg:pypi` for Python packages,
+`pkg:npm` for anything a lockfile or an `npm-name` declaration identifies,
+`pkg:maven` for GeckoView's Gradle dependencies, and `pkg:github` or
+`pkg:gitlab` where a manifest's upstream repository is recognised, since
+`pkg:generic` matches nothing in OSV.dev or the GitHub Advisory Database;
+everything else keeps the upstream repository in a `vcs_url` qualifier. A
+notice-derived component gets no package URL at all: it is a set of files in
+our own tree, not a package any ecosystem can resolve, and a
+`pkg:generic/<basename>` would match nothing while looking like it might.
+
+A vendored library that is also published on npm says so in its `moz.yaml`:
+
+```yaml
+origin:
+  npm-name: "@quartzy/prosemirror-suggestions"
+```
+
+The name is declared because nothing else in the tree gives it reliably. A
+vendored `package.json` decides the version; a name there that disagrees
+leaves the purl alone and records `moz:npm.name-mismatch`.
 
 A notice-derived component records the files it covers as CycloneDX
 `evidence.occurrences`, one entry per path, rather than as one sibling
@@ -235,7 +307,8 @@ component per file: thirty files under one notice are one piece of third-party
 code, and splitting them would bury the real libraries.
 
 `dependencies` is a real graph wherever something knows one. The crates depend
-on each other as `Cargo.lock` says, and everything no other component depends
+on each other as `Cargo.lock` says, the npm packages as their lockfiles do,
+and everything no other component depends
 on hangs off the root, so a viewer that draws the graph — CycloneDX Sunshine,
 for instance — shows the crate tree rather than one flat ring of siblings.
 
@@ -251,6 +324,22 @@ Metadata CycloneDX has no field for is recorded as `moz:`-prefixed properties:
 | `moz:vendoring.source-hosting`, `moz:vendoring.vendor-directory` | `vendoring` fields |
 | `moz:license.notice-ids` | The `about:license` notices covering this component |
 | `moz:cargo.source`, `moz:cargo.license-file` | For components derived from `Cargo.lock` |
+| `moz:npm.manifests` | The lockfiles that pull in an npm component |
+| `moz:npm.name`, `moz:npm.version` | The registry name a vendored library declares, and the version resolving it, where `mach vendor` tracks a git revision instead |
+| `moz:npm.name-mismatch` | The declared `npm-name` disagrees with the vendored `package.json`; the purl was left alone |
+| `moz:npm.unresolved-dependencies` | Dependencies the lockfile names but does not resolve |
+| `moz:npm.package-json-unreadable` | The checked-in `package.json` the license or version comes from could not be read |
+| `moz:npm.integrity-unreadable` | The lockfile's integrity string, where it could not be converted to a hash |
+| `moz:maven.pom-unreadable`, `moz:maven.artifact-unreadable` | The POM the metadata comes from, or the artifact the hash is of, could not be read |
+| `moz:maven.classified-artifacts` | Only artifacts with a classifier, which the purl does not name, so no hash |
+| `moz:maven.no-artifact` | A platform or a relocation, which ships nothing |
+| `moz:pypi.lockfile`, `moz:pypi.artifact` | For vendored Python packages: the lockfile and the archive the hash is of |
+| `moz:pypi.ambiguous-artifacts` | Several pure wheels, so no telling which one was unpacked and no hash |
+| `moz:pypi.license-file`, `moz:pypi.metadata-unreadable`, `moz:pypi.vendored-version` | A Python package that declares no license, whose metadata could not be read, or whose vendored copy is another version than the lockfile's |
+| `moz:pypi.not-vendored` | A lockfile package with no copy under `third_party/python` |
+| `moz:pypi.not-in-lockfile` | A package vendored under `third_party/python` by hand, which `uv.lock` does not name |
+| `moz:pypi.vendoring-excluded` | A package `mach vendor python` skips, stubbed or patched in the tree, so no hash |
+| `moz:pypi.unresolved-dependencies` | Dependencies that are not registry packages, a git or path source for instance |
 | `moz:license.conjunction` | `unspecified` where a manifest declares several licenses; `moz.yaml` has no `AND`/`OR` operator, so the SBOM records the ambiguity rather than inventing a legal fact |
 | `moz:source.revision` | On the root component |
 
@@ -268,21 +357,74 @@ SBOM is built from `moz.yaml` alone and the command says so on stderr. That
 covers vendored libraries only, considerably less than `about:license`
 describes. Run `./mach build-backend` for the complete picture.
 
+(build_tooling_sbom)=
+## The Build Tooling SBOM
+
+```sh
+./mach sbom --build-tooling -o /tmp/sbom-build-tooling.json
+```
+
+The product document describes what ships. The tree also runs a good deal of
+third-party code that ships in nothing -- the webpack that builds newtab's
+bundles, the test harnesses -- and that is as much a supply-chain input, so it
+gets a document of its own rather than being folded into the product's, where
+it would read as shipped.
+
+It is a separate CycloneDX document of the same shape: the same root component,
+product name and version, and the same identifiers and package URLs. What sets
+it apart is machine-readable:
+
+- `metadata.lifecycles` names the `pre-build`, `build` and `post-build` phases
+  rather than leaving the phase implied; the test harnesses run once the
+  product is built.
+- Every component has `scope: excluded`, CycloneDX's word for "not part of the
+  runtime".
+- The serial number is derived from the source revision as well, but differs
+  from the product document's, so the two stay distinct for the same checkout.
+
+It holds:
+
+- **The npm packages of the lockfiles the product document reads that are not
+  in the runtime closure**: `dev` entries of a `package-lock.json`, and for
+  `pnpm-lock.yaml` the closure of `devDependencies` less anything a runtime
+  dependency already reaches. A package that both ship and build use is
+  described by the product document only.
+- **The test and tooling crates**, reached from the workspace only as dev
+  dependencies or from a `TOOLING_MEMBERS` member, which the product document
+  leaves out. Telling them apart needs `cargo metadata`, so an unconfigured
+  tree has none here.
+- **The vendored Python packages**, which mach, the build system and the test
+  harnesses run on. `third_party/python/uv.lock` gives the version, the
+  `pkg:pypi` package URL, the SHA-256 of the archive `mach vendor python`
+  unpacked and the edges; the vendored copy's metadata gives the license, the
+  summary and the home page. The packages `mach vendor python` leaves alone,
+  vendored by hand, are described from their `moz.yaml` or their own
+  metadata instead, so `vsdownload` is here rather than in the product
+  document.
+
+Shippable builds generate it next to the product document; see
+{ref}`sbom_in_automation`.
+
+(sbom_in_automation)=
 ## In Automation
 
-Shippable builds generate the SBOM as part of the build and upload it
-alongside the other build artifacts:
+Shippable builds generate the SBOM and the
+{ref}`build tooling SBOM <build_tooling_sbom>` as part of the build and upload
+them alongside the other build artifacts:
 
 ```
 public/build/sbom.json
+public/build/sbom-build-tooling.json
 ```
 
 `MOZ_GENERATE_SBOM: "1"` in a build task's `worker.env` turns on the configure
 option of the same name, which adds a `GENERATED_FILES` entry for
-`<objdir>/sbom.json` to the top-level `moz.build`. The build graph schedules it
-like any other generated file, and `automation/upload` picks the result up. The
-generator is strict there, so an unparseable `moz.yaml` fails the build rather
-than silently shrinking the SBOM. The variable is set per task in
+`<objdir>/sbom.json` and one for `<objdir>/sbom-build-tooling.json` to the
+top-level `moz.build`. The build graph schedules them like any other generated
+file, and `automation/upload` picks the results up. The generator is strict
+there, so an unparseable `moz.yaml`, or a build tooling document without
+`cargo metadata` to tell the tooling crates apart, fails the build rather than
+silently shrinking the SBOM. The variable is set per task in
 `taskcluster/kinds/build/`, so whether a given build produces an SBOM is
 visible in the task definition.
 

@@ -130,6 +130,9 @@ function setPermission(url, permission, originAttributes = {}) {
     permission,
     Ci.nsIPermissionManager.ALLOW_ACTION
   );
+  registerCleanupFunction(() =>
+    Services.perms.removeFromPrincipal(principal, permission)
+  );
 }
 
 function removePermission(url, permission, originAttributes = {}) {

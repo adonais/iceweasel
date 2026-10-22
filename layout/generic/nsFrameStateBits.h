@@ -365,12 +365,12 @@ FRAME_STATE_BIT(GridContainer, 26, NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM)
 // We've merged some OverflowList children since last reflow.
 FRAME_STATE_BIT(GridContainer, 27, NS_STATE_GRID_HAS_CHILD_NIFS)
 
-// True if the container has masonry layout in its inline axis.
-// (mutually exclusive with NS_STATE_GRID_IS_ROW_MASONRY)
+// True if the container is a grid-lanes container, with the the inline axis
+// being the "stacking axis" (i.e. has grid rows, but no grid columns)
 FRAME_STATE_BIT(GridContainer, 28, NS_STATE_GRID_IS_COL_MASONRY)
 
-// True if the container has masonry layout in its block axis.
-// (mutually exclusive with NS_STATE_GRID_IS_COL_MASONRY)
+// True if the container is a grid-lanes container, with the the block axis
+// being the "stacking axis" (i.e. has grid columns, but no grid rows)
 FRAME_STATE_BIT(GridContainer, 29, NS_STATE_GRID_IS_ROW_MASONRY)
 
 // True if the next reflow of this frame should generate computed info metrics.

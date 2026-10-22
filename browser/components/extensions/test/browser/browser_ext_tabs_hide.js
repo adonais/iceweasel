@@ -291,9 +291,9 @@ const doorHangerDisable = (
     ok(
       images.some(img =>
         getComputedStyle(img).backgroundImage.includes(
-          gBrowser.tabContainer.verticalMode
-            ? "/search-tabs.svg"
-            : "/arrow-down.svg"
+          AppConstants.platform == "win" && !gBrowser.tabContainer.verticalMode
+            ? "/arrow-down.svg"
+            : "/search-tabs.svg"
         )
       ),
       "There's an icon for the all tabs menu"

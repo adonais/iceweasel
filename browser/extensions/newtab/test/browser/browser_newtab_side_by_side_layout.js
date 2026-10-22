@@ -416,10 +416,12 @@ test_newtab({
   async before({ pushPrefs }) {
     await resizeChromeWindowTo(1400, 1000);
     // Wide enough for side-by-side, but every widget is hidden.
-    await pushPrefs(...layoutPrefs("side-by-side-content-lead"), [
-      "browser.newtabpage.activity-stream.widgets.lists.enabled",
-      false,
-    ]);
+    await pushPrefs(
+      ...layoutPrefs("side-by-side-content-lead"),
+      ["browser.newtabpage.activity-stream.widgets.lists.enabled", false],
+      ["browser.newtabpage.activity-stream.widgets.focusTimer.enabled", false],
+      ["browser.newtabpage.activity-stream.widgets.clocks.enabled", false]
+    );
   },
 
   test: async function test_side_by_side_with_no_widgets_recenters() {
@@ -584,10 +586,12 @@ test_newtab({
 
 test_newtab({
   async before({ pushPrefs }) {
-    await pushPrefs(...layoutPrefs("side-by-side-widgets-lead"), [
-      "browser.newtabpage.activity-stream.widgets.lists.enabled",
-      false,
-    ]);
+    await pushPrefs(
+      ...layoutPrefs("side-by-side-widgets-lead"),
+      ["browser.newtabpage.activity-stream.widgets.lists.enabled", false],
+      ["browser.newtabpage.activity-stream.widgets.focusTimer.enabled", false],
+      ["browser.newtabpage.activity-stream.widgets.clocks.enabled", false]
+    );
   },
 
   // The raised cap is scoped to .side-by-side-active, so one section on its own

@@ -2134,7 +2134,11 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
         mainSession.reload()
         mainSession.waitForPageStop()
-        mainSession.forCallbacksDuringWait(Runnable @AssertCalled(count = 1) {})
+        mainSession.forCallbacksDuringWait(
+            object : Runnable {
+                @AssertCalled(count = 1) override fun run() {}
+            }
+        )
 
         assertThat("Delegate should be unregistered after wait", delegate, nullValue())
     }

@@ -29,6 +29,7 @@ ChromeUtils.defineESModuleGetters(this, {
 const FAKE_UUID = "{foo-123-foo}";
 const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 const PREF_TELEMETRY = "browser.newtabpage.activity-stream.telemetry";
+const PREF_NEWTAB_PING_ENABLED = "browser.newtabpage.ping.enabled";
 const PREF_PRIVATE_PING_ENABLED =
   "browser.newtabpage.activity-stream.telemetry.privatePing.enabled";
 const PREF_IS_MERINO_FEED_EXPERIMENT =
@@ -1789,7 +1790,7 @@ add_task(
       source: "newtab",
       position: 1,
       reporting_url: "https://test.reporting.net/",
-      advertiser: "adnoid ads",
+      advertiser_name: "adnoid ads",
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -1799,7 +1800,6 @@ add_task(
 
     Assert.deepEqual(impressions[0].extra, {
       advertiser_name: "adnoid ads",
-      tile_id: data.tile_id,
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(true),
       position: String(1),
@@ -1822,7 +1822,7 @@ add_task(
 
     let data = {
       type: "click",
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       tile_id: 42,
       source: "newtab",
       position: 0,
@@ -1836,7 +1836,6 @@ add_task(
 
     Assert.deepEqual(clicks[0].extra, {
       advertiser_name: "test advertiser",
-      tile_id: data.tile_id,
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(true),
       position: String(0),
@@ -1903,7 +1902,7 @@ add_task(
         source: "newtab",
         position: 1,
         reporting_url: "https://test.reporting.net/",
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
       },
     });
 
@@ -1952,7 +1951,7 @@ add_task(
         source: "newtab",
         position: 1,
         reporting_url: "https://test.reporting.net/",
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
       },
     });
 
@@ -1981,8 +1980,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
-      smartScores: { moo: 1 },
-      smartWeights: { moo: 0 },
+      smart_scores: { moo: 1 },
+      smart_weights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2069,7 +2068,7 @@ add_task(
         tile_id: 42,
         source: "newtab",
         position: 1,
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
         is_ad_eligible_position: true,
       },
     });
@@ -2135,8 +2134,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
-      smartScores: { moo: 1 },
-      smartWeights: { moo: 0 },
+      smart_scores: { moo: 1 },
+      smart_weights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2540,7 +2539,6 @@ add_task(
           position: ACTION_POSITION,
           corpus_item_id: "decaf-beef",
           scheduled_corpus_item_id: "dead-beef",
-          tile_id: 314623757745896,
           variant_id: 5050,
           source_section_id: "sourced-section",
         })
@@ -2586,7 +2584,6 @@ add_task(
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(true),
       position: String(ACTION_POSITION),
-      tile_id: String(448685088),
       content_redacted: String(true),
     });
 
@@ -2691,26 +2688,15 @@ add_task(
 add_task(
   async function test_handleDiscoveryStreamUserEvent_sponsored_top_stories_click_tile_id_redacted() {
     info(
-      "TelemetryFeed.handleDiscoveryStreamUserEvent redacts the tile_id from " +
-        "the newtab ping for a sponsored top stories click when the " +
-        "redactTileIdForSponsored trainhop config is enabled"
+      "TelemetryFeed.handleDiscoveryStreamUserEvent never sends a tile_id to " +
+        "either the newtab ping or the newtab-content ping for a sponsored " +
+        "top stories click"
     );
 
     Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
 
     let sandbox = sinon.createSandbox();
     let instance = new TelemetryFeed();
-    instance.store = {
-      getState: () => ({
-        Prefs: {
-          values: {
-            trainhopConfig: {
-              newtabPing: { redactTileIdForSponsored: true },
-            },
-          },
-        },
-      }),
-    };
     Services.fog.testResetFOG();
     const ACTION_POSITION = 42;
     const TILE_ID = 448685088;
@@ -2739,20 +2725,24 @@ add_task(
         position: String(ACTION_POSITION),
         content_redacted: String(true),
       },
-      "The tile_id should have been redacted from the newtab ping."
+      "A tile_id should not have been included with the newtab ping."
     );
 
     Assert.ok(
-      instance.newtabContentPing.recordEvent.calledWith(
-        "click",
-        sinon.match({
-          is_sponsored: true,
-          position: ACTION_POSITION,
-          tile_id: TILE_ID,
-        })
-      ),
-      "Redacting the newtab ping should not have mutated the event data handed " +
-        "to the newtab-content ping, which does its own sanitization."
+      instance.newtabContentPing.recordEvent.calledOnce,
+      "recordEvent was called"
+    );
+    const newtabContentClickArgs =
+      instance.newtabContentPing.recordEvent.getCall(0).args;
+    Assert.equal(
+      newtabContentClickArgs[0],
+      "click",
+      "Called with the click event type"
+    );
+    Assert.equal(
+      newtabContentClickArgs[1].tile_id,
+      undefined,
+      "tile_id was not included."
     );
 
     sandbox.restore();
@@ -2761,150 +2751,9 @@ add_task(
 );
 
 /**
- * Builds a TelemetryFeed whose store reports the redactTileIdForSponsored
- * trainhop config as enabled.
- */
-function telemetryFeedWithTileIdRedaction() {
-  let instance = new TelemetryFeed();
-  instance.store = {
-    getState: () => ({
-      Prefs: {
-        values: {
-          trainhopConfig: {
-            newtabPing: { redactTileIdForSponsored: true },
-          },
-        },
-      },
-    }),
-  };
-  return instance;
-}
-
-add_task(
-  async function test_handleTopSitesSponsoredImpressionStats_impression_tile_id_redacted() {
-    info(
-      "TelemetryFeed.handleTopSitesSponsoredImpressionStats redacts the " +
-        "tile_id from the newtab ping for a sponsored top site impression " +
-        "when the redactTileIdForSponsored trainhop config is enabled"
-    );
-
-    let sandbox = sinon.createSandbox();
-    let instance = telemetryFeedWithTileIdRedaction();
-    Services.fog.testResetFOG();
-
-    let data = {
-      type: "impression",
-      tile_id: 42,
-      source: "newtab",
-      position: 1,
-      advertiser: "adnoid ads",
-    };
-    const SESSION_ID = "decafc0ffee";
-    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-
-    await instance.handleTopSitesSponsoredImpressionStats({ data });
-
-    let impressions = Glean.topsites.impression.testGetValue();
-    Assert.equal(impressions.length, 1, "Should have recorded 1 impression");
-    Assert.deepEqual(
-      impressions[0].extra,
-      {
-        advertiser_name: "adnoid ads",
-        newtab_visit_id: SESSION_ID,
-        is_sponsored: String(true),
-        position: String(1),
-      },
-      "The tile_id should have been redacted from the newtab ping."
-    );
-
-    sandbox.restore();
-  }
-);
-
-add_task(
-  async function test_handleTopSitesSponsoredImpressionStats_click_tile_id_redacted() {
-    info(
-      "TelemetryFeed.handleTopSitesSponsoredImpressionStats redacts the " +
-        "tile_id from the newtab ping for a sponsored top site click when " +
-        "the redactTileIdForSponsored trainhop config is enabled"
-    );
-
-    let sandbox = sinon.createSandbox();
-    let instance = telemetryFeedWithTileIdRedaction();
-    Services.fog.testResetFOG();
-
-    let data = {
-      type: "click",
-      tile_id: 42,
-      source: "newtab",
-      position: 0,
-      advertiser: "test advertiser",
-    };
-    const SESSION_ID = "decafc0ffee";
-    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-
-    await instance.handleTopSitesSponsoredImpressionStats({ data });
-
-    let clicks = Glean.topsites.click.testGetValue();
-    Assert.equal(clicks.length, 1, "Should have recorded 1 click");
-    Assert.deepEqual(
-      clicks[0].extra,
-      {
-        advertiser_name: "test advertiser",
-        newtab_visit_id: SESSION_ID,
-        is_sponsored: String(true),
-        position: String(0),
-      },
-      "The tile_id should have been redacted from the newtab ping."
-    );
-
-    sandbox.restore();
-  }
-);
-
-add_task(
-  async function test_handleAboutSponsoredTopSites_showPrivacyClick_tile_id_redacted() {
-    info(
-      "TelemetryFeed.handleAboutSponsoredTopSites redacts the tile_id from " +
-        "the newtab ping when the redactTileIdForSponsored trainhop config " +
-        "is enabled"
-    );
-
-    let sandbox = sinon.createSandbox();
-    let instance = telemetryFeedWithTileIdRedaction();
-    Services.fog.testResetFOG();
-
-    let data = {
-      position: 42,
-      advertiser_name: "mozilla",
-      tile_id: 4567,
-    };
-
-    const SESSION_ID = "decafc0ffee";
-    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-
-    instance.handleAboutSponsoredTopSites({ data });
-
-    let clicks = Glean.topsites.showPrivacyClick.testGetValue();
-    Assert.equal(clicks.length, 1, "Recorded 1 click");
-    Assert.deepEqual(
-      clicks[0].extra,
-      {
-        advertiser_name: data.advertiser_name,
-        newtab_visit_id: SESSION_ID,
-        position: String(data.position),
-      },
-      "The tile_id should have been redacted from the newtab ping."
-    );
-
-    sandbox.restore();
-  }
-);
-
-/**
- * Every sponsored top sites code path that records a tile_id-bearing event on
- * the newtab ping. Keep this in sync with the topsites metrics in
- * metrics.yaml that declare a tile_id extra key.
+ * Every sponsored top sites code path that could put a tile_id on the newtab
+ * ping. These topsites metrics no longer declare a tile_id extra key, so none
+ * of these paths should ever record one.
  */
 const SPONSORED_TOPSITES_TILE_ID_PATHS = [
   {
@@ -2917,7 +2766,7 @@ const SPONSORED_TOPSITES_TILE_ID_PATHS = [
           tile_id: 4567,
           source: "newtab",
           position: 1,
-          advertiser: "adnoid ads",
+          advertiser_name: "adnoid ads",
         },
       }),
   },
@@ -2931,7 +2780,7 @@ const SPONSORED_TOPSITES_TILE_ID_PATHS = [
           tile_id: 4567,
           source: "newtab",
           position: 0,
-          advertiser: "adnoid ads",
+          advertiser_name: "adnoid ads",
         },
       }),
   },
@@ -2966,16 +2815,15 @@ const SPONSORED_TOPSITES_TILE_ID_PATHS = [
   },
 ];
 
-add_task(async function test_sponsored_topsites_tile_id_redaction_exhaustive() {
+add_task(async function test_sponsored_topsites_tile_id_never_recorded() {
   info(
-    "Every sponsored top sites event on the newtab ping should have its " +
-      "tile_id redacted when the redactTileIdForSponsored trainhop config " +
-      "is enabled"
+    "No sponsored top sites event on the newtab ping should ever carry a " +
+      "tile_id, since the topsites metrics no longer declare it"
   );
 
   for (const { name, metric, drive } of SPONSORED_TOPSITES_TILE_ID_PATHS) {
     let sandbox = sinon.createSandbox();
-    let instance = telemetryFeedWithTileIdRedaction();
+    let instance = new TelemetryFeed();
     Services.fog.testResetFOG();
     sandbox
       .stub(instance.sessions, "get")
@@ -2987,42 +2835,12 @@ add_task(async function test_sponsored_topsites_tile_id_redaction_exhaustive() {
     Assert.equal(events.length, 1, `Recorded 1 ${name} event`);
     Assert.ok(
       !("tile_id" in events[0].extra),
-      `${name} should not carry a tile_id when redaction is enabled`
+      `${name} should not carry a tile_id`
     );
 
     sandbox.restore();
   }
 });
-
-add_task(
-  async function test_sponsored_topsites_tile_id_retained_without_trainhop_config() {
-    info(
-      "Every sponsored top sites event on the newtab ping should retain its " +
-        "tile_id when the redactTileIdForSponsored trainhop config is absent"
-    );
-
-    for (const { name, metric, drive } of SPONSORED_TOPSITES_TILE_ID_PATHS) {
-      let sandbox = sinon.createSandbox();
-      let instance = new TelemetryFeed();
-      Services.fog.testResetFOG();
-      sandbox
-        .stub(instance.sessions, "get")
-        .returns({ session_id: "decafc0ffee" });
-
-      await drive(instance);
-
-      let events = metric().testGetValue();
-      Assert.equal(events.length, 1, `Recorded 1 ${name} event`);
-      Assert.equal(
-        events[0].extra.tile_id,
-        String(4567),
-        `${name} should carry a tile_id when redaction is disabled`
-      );
-
-      sandbox.restore();
-    }
-  }
-);
 
 add_task(
   async function test_handleAboutSponsoredTopSites_record_showPrivacyClick() {
@@ -3050,7 +2868,6 @@ add_task(
     Assert.equal(clicks.length, 1, "Recorded 1 click");
     Assert.deepEqual(clicks[0].extra, {
       advertiser_name: data.advertiser_name,
-      tile_id: String(data.tile_id),
       newtab_visit_id: SESSION_ID,
       position: String(data.position),
     });
@@ -3148,7 +2965,6 @@ add_task(async function test_handleBlockUrl_record_dismiss_on_action() {
   Assert.equal(dismisses.length, 1, "Should have recorded 1 dismiss");
   Assert.deepEqual(dismisses[0].extra, {
     advertiser_name: data[0].advertiser_name,
-    tile_id: String(data[0].tile_id),
     newtab_visit_id: SESSION_ID,
     is_sponsored: String(!!data[0].isSponsoredTopSite),
     position: String(data[0].position),
@@ -3229,8 +3045,6 @@ add_task(function test_randomizeOrganicContentEvent() {
     corpus_item_id: `item-${id}`,
     topic: "a",
     is_sponsored: false,
-    section_id: "section",
-    section_position: 3,
     variant_id: 0,
     source_section_id: "src-section",
   });
@@ -3311,6 +3125,55 @@ add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
     result.source_section_id,
     "swapped-source",
     "source_section_id tracks the swapped section"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_randomizeOrganicContentEvent_section_position() {
+  info(
+    "randomizeOrganicContentEvent should only swap in items from rendered " +
+      "sections and report the rendered position of the swapped section"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  const PORT_ID = "port123";
+  const session = instance.addSession(PORT_ID);
+
+  await instance.onAction({
+    type: actionTypes.CARD_SECTIONS_ORDER,
+    meta: { fromTarget: PORT_ID },
+    data: { sections: ["orig-section", "swapped-section"] },
+  });
+
+  const item = {
+    corpus_item_id: "orig",
+    section: "orig-section",
+    section_position: 0,
+  };
+  sandbox.stub(instance, "getRecommendationCount").returns(10);
+  sandbox
+    .stub(instance, "getAllRecommendations")
+    .returns([
+      { corpus_item_id: "hidden", section: "hidden" },
+      { corpus_item_id: "unsectioned" },
+      { corpus_item_id: "swapped", section: "swapped-section" },
+    ]);
+  instance._privateRandomContentTelemetryProbablityValues = { epsilon: 30 };
+  sandbox.stub(NewTabContentPing, "decideWithProbability").returns(false);
+  sandbox.stub(NewTabContentPing, "secureRandIntInRange").returns(0);
+
+  const result = instance.randomizeOrganicContentEvent(item, session);
+
+  Assert.equal(
+    result.corpus_item_id,
+    "swapped",
+    "Only items from rendered sections are candidates"
+  );
+  Assert.equal(
+    result.section_position,
+    1,
+    "section_position is the swapped section's rendered position"
   );
 
   sandbox.restore();
@@ -3790,7 +3653,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: true,
     };
@@ -3810,7 +3673,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: true,
     };
@@ -3871,7 +3734,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: false,
     };
@@ -4058,8 +3921,6 @@ add_task(async function test_recordEnabledWidgets_partial() {
           "widgets.system.focusTimer.enabled": true,
           "widgets.weather.enabled": true,
           "widgets.system.weather.enabled": true,
-          "widgets.sportsWidget.enabled": false,
-          "widgets.system.sportsWidget.enabled": true,
         },
       },
     }),
@@ -4186,7 +4047,6 @@ add_task(async function test_recordEnabledWidgets_none_enabled() {
           "widgets.lists.enabled": false,
           "widgets.focusTimer.enabled": false,
           "widgets.weather.enabled": false,
-          "widgets.sportsWidget.enabled": false,
         },
       },
     }),
@@ -4436,7 +4296,7 @@ function setupDwellFeed(sandbox) {
 
   let instance = new TelemetryFeed();
   sandbox.stub(instance, "configureContentPing");
-  sandbox.stub(instance, "isSessionInForeground").returns(true);
+  sandbox.stub(instance, "isDwellTargetInForeground").returns(true);
   let clock = sandbox.stub(instance, "now").returns(0);
 
   return { instance, setTime: ms => clock.returns(ms) };
@@ -4584,7 +4444,7 @@ add_task(async function test_dwell_time_stops_when_newtab_leaves_foreground() {
   // The user switches to another tab and carries on interacting there. The
   // switch is only noticed at the next notification, so this newtab keeps the
   // interval it was left during.
-  instance.isSessionInForeground.returns(false);
+  instance.isDwellTargetInForeground.returns(false);
   setTime(USER_INTERACTION_INTERVAL_MS);
   instance.observe(null, USER_INTERACTION_ACTIVE, null);
   setTime(USER_INTERACTION_INTERVAL_MS * 4);
@@ -4662,7 +4522,9 @@ add_task(async function test_dwell_time_only_credits_foreground_session() {
   foreground.perf.visibility_event_rcvd_ts = 1;
   let background = instance.addSession("port-background");
   background.perf.visibility_event_rcvd_ts = 1;
-  instance.isSessionInForeground.callsFake(session => session === foreground);
+  instance.isDwellTargetInForeground.callsFake(
+    session => session === foreground
+  );
 
   instance.observe(null, USER_INTERACTION_ACTIVE, null);
   setTime(USER_INTERACTION_INTERVAL_MS);
@@ -4740,9 +4602,9 @@ add_task(async function test_dwell_time_not_recorded_when_telemetry_disabled() {
   teardownDwellTest(sandbox);
 });
 
-add_task(async function test_isSessionInForeground() {
+add_task(async function test_isDwellTargetInForeground() {
   info(
-    "TelemetryFeed.isSessionInForeground should only accept the selected " +
+    "TelemetryFeed.isDwellTargetInForeground should only accept the selected " +
       "browser of the focused window"
   );
   let sandbox = sinon.createSandbox();
@@ -4755,33 +4617,33 @@ add_task(async function test_isSessionInForeground() {
   sandbox.stub(instance, "getActiveChromeWindow").returns(win);
 
   Assert.ok(
-    instance.isSessionInForeground(session),
+    instance.isDwellTargetInForeground(session),
     "Selected browser of the focused window is in the foreground"
   );
 
   instance.getActiveChromeWindow.returns({});
   Assert.ok(
-    !instance.isSessionInForeground(session),
+    !instance.isDwellTargetInForeground(session),
     "Not in the foreground when another window has focus"
   );
 
   instance.getActiveChromeWindow.returns(win);
   win.gBrowser.selectedBrowser = { documentGlobal: win };
   Assert.ok(
-    !instance.isSessionInForeground(session),
+    !instance.isDwellTargetInForeground(session),
     "Not in the foreground when another tab is selected"
   );
 
   win.gBrowser.selectedBrowser = browser;
   win.closed = true;
   Assert.ok(
-    !instance.isSessionInForeground(session),
+    !instance.isDwellTargetInForeground(session),
     "Not in the foreground once the window has closed"
   );
 
   win.closed = false;
   Assert.ok(
-    !instance.isSessionInForeground({}),
+    !instance.isDwellTargetInForeground({}),
     "A session with no browser is never in the foreground"
   );
 
@@ -4798,7 +4660,7 @@ add_task(async function test_user_interaction_observers_registered() {
 
   instance.init();
 
-  sandbox.stub(instance, "isSessionInForeground").returns(true);
+  sandbox.stub(instance, "isDwellTargetInForeground").returns(true);
   sandbox.stub(instance, "now").returns(0);
   let session = instance.addSession("port1");
   Services.obs.notifyObservers(null, USER_INTERACTION_ACTIVE);
@@ -4858,4 +4720,791 @@ add_task(async function test_wallpaper_category_click_reaches_its_handler() {
   Assert.ok(setPref.notCalled, "And the pref handler is not");
 
   sandbox.restore();
+});
+
+/**
+ * A URI the way the dwell code reads one off a <browser>.
+ *
+ * @param {string} spec
+ * @returns {object}
+ */
+function fakeURI(spec) {
+  return { spec, scheme: spec.split(":")[0] };
+}
+
+// Window globals are identified by a process-wide id in the real thing, so
+// every document a test creates gets a distinct one.
+let gNextInnerWindowId = 1;
+
+/**
+ * A stand-in for a <browser> in a tab, with the surface the dwell code
+ * touches. goTo() stands in for the tab loading a new document, and
+ * goToInDocument() for same-document navigation, which keeps the window
+ * global it already had. Neither is noticed until the next activity
+ * notification, which is how the real thing behaves.
+ *
+ * @param {string} [spec] where the tab starts out
+ * @returns {object} the fake browser
+ */
+function makeFakeBrowser(spec = "about:newtab") {
+  return {
+    permanentKey: {},
+    isConnected: true,
+    browsingContext: {
+      currentWindowGlobal: {
+        documentURI: fakeURI(spec),
+        innerWindowId: gNextInnerWindowId++,
+      },
+    },
+    getAttribute() {
+      return "";
+    },
+    goTo(newSpec) {
+      this.browsingContext.currentWindowGlobal = {
+        documentURI: fakeURI(newSpec),
+        innerWindowId: gNextInnerWindowId++,
+      };
+    },
+    goToInDocument(newSpec) {
+      this.browsingContext.currentWindowGlobal.documentURI = fakeURI(newSpec);
+    },
+  };
+}
+
+/**
+ * Open a link from the newtab, the way PlacesFeed reports it.
+ *
+ * @param {object} instance a TelemetryFeed
+ * @param {object} browser the <browser> that receives the load
+ * @param {object} [data] the dwell_label the link opted in with
+ */
+function openLinkFrom(instance, browser, data = {}) {
+  instance.handleDwellLinkOpened({
+    data: { browser, dwell_label: "story_organic", ...data },
+  });
+}
+
+/**
+ * Open a link and let the destination land, which takes an activity
+ * notification for the feed to notice.
+ *
+ * @param {object} instance a TelemetryFeed
+ * @param {object} browser the <browser> that receives the load
+ * @param {object} [data] the dwell_label the link opted in with
+ * @param {string} [url] where the link lands
+ */
+function openAndLand(
+  instance,
+  browser,
+  data = {},
+  url = "https://example.com/story"
+) {
+  openLinkFrom(instance, browser, data);
+  browser.goTo(url);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+}
+
+/**
+ * The newtab.opened_page_dwell_time distribution for one label, or null if
+ * none.
+ *
+ * @param {string} label one of the four labels the metric declares
+ * @returns {object|null}
+ */
+function readOpenedPageDwell(label) {
+  return Glean.newtab.openedPageDwellTime[label].testGetValue("metrics");
+}
+
+add_task(async function test_opened_page_dwell_time_accrues_on_opened_page() {
+  info(
+    "TelemetryFeed should accrue active time on a page opened from the " +
+      "newtab and record it when the page goes away"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, browser);
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  let dwell = readOpenedPageDwell("story_organic");
+  Assert.ok(dwell, "newtab.opened_page_dwell_time was recorded");
+  Assert.equal(dwell.count, 1, "Exactly one sample per opened page");
+  Assert.equal(
+    dwell.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "Credited up to the last notification that said the user was there"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_opened_page_dwell_time_labels() {
+  info(
+    "TelemetryFeed should label an opened page by what was clicked to open it"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+
+  const allLabels = [
+    "topsite_organic",
+    "topsite_sponsored",
+    "story_organic",
+    "story_sponsored",
+  ];
+
+  let now = 0;
+  let expected = new Map(allLabels.map(l => [l, 0]));
+  for (const label of allLabels) {
+    let browser = makeFakeBrowser();
+    setTime(now);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser, { dwell_label: label });
+
+    now += USER_INTERACTION_INTERVAL_MS;
+    setTime(now);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    now += USER_INTERACTION_INTERVAL_MS;
+    setTime(now);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    expected.set(label, 1);
+    for (const other of allLabels) {
+      Assert.equal(
+        readOpenedPageDwell(other)?.count ?? 0,
+        expected.get(other),
+        `After a ${label} open, ${other} has the samples it should`
+      );
+    }
+  }
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_opened_page_dwell_time_ignores_untagged_opens() {
+  info(
+    "TelemetryFeed should not measure links that did not opt in with a " +
+      "dwell_label, such as the widgets"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, browser, { dwell_label: undefined });
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  Assert.equal(
+    readOpenedPageDwell("story_organic"),
+    null,
+    "Nothing was measured for a link that did not opt in"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_waits_for_the_destination() {
+    info(
+      "TelemetryFeed should not accrue on an opened page while the tab is " +
+        "still showing the newtab, which is what the user is looking at"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openLinkFrom(instance, browser);
+
+    // A slow destination: the user keeps interacting, but nothing has landed.
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 2);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic"),
+      null,
+      "Nothing is credited for time spent waiting for the page"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(
+  async function test_opened_page_dwell_time_ends_when_the_tab_moves_on() {
+    info(
+      "TelemetryFeed should stop attributing a page once its tab is showing " +
+        "something else"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    browser.goTo("https://example.com/somewhere-else");
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The page is recorded once the tab has moved on"
+    );
+
+    setTime(USER_INTERACTION_INTERVAL_MS * 4);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 5);
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic").count,
+      1,
+      "Time on the page the user went to next is not credited to the newtab"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_does_not_see_a_redirect() {
+  info(
+    "TelemetryFeed should attribute the page an ad click lands on, not the " +
+      "server-side redirect it passed through on the way, however slow the " +
+      "bounce is. A 30x never becomes a document, so there is nothing to " +
+      "attribute until the landing page arrives."
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openLinkFrom(instance, browser, { dwell_label: "story_sponsored" });
+
+  // The ad server takes its time bouncing the user on to the advertiser. A
+  // redirect never becomes a document of its own, so the tab is still showing
+  // the newtab and these sweeps have nothing to attribute yet, no matter how
+  // many of them the bounce spans.
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  Assert.equal(
+    readOpenedPageDwell("story_sponsored"),
+    null,
+    "Nothing is attributed while the redirect is still in flight"
+  );
+
+  browser.goTo("https://advertiser.example/landing");
+  setTime(USER_INTERACTION_INTERVAL_MS * 3);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 4);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 5);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  Assert.equal(
+    readOpenedPageDwell("story_sponsored")?.count,
+    1,
+    "One sample, for the page the user actually read"
+  );
+  Assert.equal(
+    readOpenedPageDwell("story_sponsored").sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "Only time on the landing page, and the slow redirect cut nothing short"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_survives_same_document_nav() {
+    info(
+      "TelemetryFeed should keep measuring a page whose address changes " +
+        "without its document changing, such as a fragment link or a pushState"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    // The reader clicks a table-of-contents anchor. The address changes, the
+    // document does not, so this is still the page the newtab sent them to.
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    browser.goToInDocument("https://example.com/story#comments");
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic"),
+      null,
+      "Moving around within the page does not end the measurement"
+    );
+
+    setTime(USER_INTERACTION_INTERVAL_MS * 3);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 4);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * 3 * NS_PER_MS,
+      "The whole visit is credited, not just the part before the anchor"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(
+  async function test_opened_page_dwell_time_shares_a_browser_with_session() {
+    info(
+      "TelemetryFeed should never credit a newtab session and the page it " +
+        "opened at the same time. This is the ordinary path, because a story " +
+        "clicked without a modifier replaces the newtab in its own tab, so " +
+        "both dwell targets hang off one <browser>."
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    // One tab, so whichever of the two the tab is currently showing is the one
+    // in front of the user. This is what the real isDwellTargetInForeground
+    // works out from the DOM, where a newtab session stops qualifying as soon
+    // as its <browser> is showing a web page instead.
+    instance.isDwellTargetInForeground.callsFake(target => {
+      const showingNewtab =
+        browser.browsingContext.currentWindowGlobal.documentURI.scheme ===
+        "about";
+      return target.label ? !showingNewtab : showingNewtab;
+    });
+
+    instance.handleNewTabInit({
+      meta: { fromTarget: "port1" },
+      data: { url: "about:newtab", browser },
+    });
+    instance.sessions.get("port1").perf.visibility_event_rcvd_ts = 1;
+
+    // The user reads the newtab for two intervals, then clicks a story.
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    openLinkFrom(instance, browser);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic"),
+      null,
+      "The story accrues nothing while the newtab is still the page on screen"
+    );
+
+    // The story lands in the same tab, which ends the newtab's turn.
+    browser.goTo("https://example.com/story");
+    setTime(USER_INTERACTION_INTERVAL_MS * 2);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 3);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+    let newtabDwell;
+    GleanPings.newtab.testBeforeNextSubmit(() => {
+      newtabDwell = Glean.newtab.dwellTime.testGetValue("newtab");
+    });
+    await instance.endSession("port1");
+
+    setTime(USER_INTERACTION_INTERVAL_MS * 4);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      newtabDwell?.sum,
+      USER_INTERACTION_INTERVAL_MS * 2 * NS_PER_MS,
+      "The newtab is credited only up to the story replacing it"
+    );
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The story is credited only from the point it replaced the newtab"
+    );
+    Assert.equal(
+      newtabDwell.sum + readOpenedPageDwell("story_organic").sum,
+      USER_INTERACTION_INTERVAL_MS * 3 * NS_PER_MS,
+      "Between them they account for the active time exactly once, so no " +
+        "interval was counted twice or dropped"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_ignores_a_failed_load() {
+  info(
+    "TelemetryFeed should not treat an error page as the page the newtab " +
+      "sent the user to"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(
+    instance,
+    browser,
+    {},
+    "about:neterror?u=https%3A//example.com/story"
+  );
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  Assert.equal(
+    readOpenedPageDwell("story_organic"),
+    null,
+    "Time staring at an error page is not time spent reading the story"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_ends_when_the_user_goes_back() {
+    info(
+      "TelemetryFeed should stop attributing a page when the tab goes back to " +
+        "a newtab, rather than crediting the newtab to the story"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    browser.goTo("about:newtab");
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The story was recorded when the tab went back to a newtab"
+    );
+
+    setTime(USER_INTERACTION_INTERVAL_MS * 4);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 5);
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic").sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "Time on the newtab itself is not added to the story"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(
+  async function test_opened_page_dwell_time_ends_when_a_newtab_opens_here() {
+    info(
+      "TelemetryFeed should stop attributing a page as soon as a newtab " +
+        "session starts in the same <browser>, whatever route got it there"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    // The tab still reports the story, so only the newtab session gives it away.
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    instance.handleNewTabInit({
+      meta: { fromTarget: "port1" },
+      data: { url: "about:newtab", browser },
+    });
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The story was recorded when the newtab took over the tab"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_only_credits_foreground() {
+  info(
+    "TelemetryFeed should credit only the opened page the user is actually " +
+      "looking at"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let foreground = makeFakeBrowser();
+  let background = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  instance.isDwellTargetInForeground.callsFake(
+    target => target.browserRef?.deref() === foreground
+  );
+  openAndLand(instance, foreground, { dwell_label: "topsite_organic" });
+  openAndLand(instance, background, { dwell_label: "story_organic" });
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  foreground.isConnected = false;
+  background.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  Assert.equal(
+    readOpenedPageDwell("topsite_organic").sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "The page in front of the user was credited"
+  );
+  Assert.equal(
+    readOpenedPageDwell("story_organic"),
+    null,
+    "The page open in a background tab was not"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_opened_page_dwell_time_not_in_the_newtab_ping() {
+  info(
+    "TelemetryFeed should keep an opened page's dwell out of the newtab " +
+      "ping, and a newtab ping submission should not clear it"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, browser);
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  let session = instance.addSession("port1");
+  session.perf.visibility_event_rcvd_ts = 1;
+  let inNewtabPing;
+  GleanPings.newtab.testBeforeNextSubmit(() => {
+    inNewtabPing =
+      Glean.newtab.openedPageDwellTime.story_organic.testGetValue("newtab");
+  });
+  await instance.endSession("port1");
+
+  Assert.equal(inNewtabPing, null, "The newtab ping carried no sample");
+  Assert.equal(
+    readOpenedPageDwell("story_organic")?.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "The sample waits for the metrics ping, and the newtab submit left it alone"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_records_with_the_newtab_ping_off() {
+    info(
+      "TelemetryFeed should record an opened page's dwell when the newtab " +
+        "ping is disabled, since the sample no longer rides that ping"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    Services.prefs.setBoolPref(PREF_NEWTAB_PING_ENABLED, false);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 2);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The pref that gates the newtab ping does not gate this metric"
+    );
+
+    Services.prefs.clearUserPref(PREF_NEWTAB_PING_ENABLED);
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_rejects_an_unknown_label() {
+  info(
+    "TelemetryFeed should ignore a link whose dwell_label is not one the " +
+      "metric declares, since the label is chosen in content"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, browser, { dwell_label: "story_bogus" });
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  browser.isConnected = false;
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  for (const label of [
+    "topsite_organic",
+    "topsite_sponsored",
+    "story_organic",
+    "story_sponsored",
+  ]) {
+    Assert.equal(
+      readOpenedPageDwell(label),
+      null,
+      `An unknown label recorded nothing under ${label}`
+    );
+  }
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_not_recorded_when_telemetry_disabled() {
+    info(
+      "TelemetryFeed should not record an opened page's dwell when newtab " +
+        "telemetry is off"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    Services.prefs.setBoolPref(PREF_TELEMETRY, false);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 2);
+    browser.isConnected = false;
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic"),
+      null,
+      "Nothing is left in ping-lifetime storage for the metrics ping to pick up"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_finalized_at_uninit() {
+  info(
+    "TelemetryFeed should record what an opened page accrued when the feed " +
+      "goes away, rather than dropping it"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let browser = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, browser);
+
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.uninit();
+
+  Assert.equal(
+    readOpenedPageDwell("story_organic")?.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "The page the user was reading at shutdown was credited"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(
+  async function test_opened_page_dwell_time_reopening_the_same_browser() {
+    info(
+      "TelemetryFeed should finalize a page rather than lose it when the same " +
+        "<browser> opens another link"
+    );
+    let sandbox = sinon.createSandbox();
+    let { instance, setTime } = setupDwellFeed(sandbox);
+    let browser = makeFakeBrowser();
+
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    openAndLand(instance, browser);
+
+    setTime(USER_INTERACTION_INTERVAL_MS);
+    instance.observe(null, USER_INTERACTION_ACTIVE, null);
+    setTime(USER_INTERACTION_INTERVAL_MS * 2);
+    instance.observe(null, USER_INTERACTION_INACTIVE, null);
+    openLinkFrom(instance, browser, { dwell_label: "topsite_organic" });
+
+    Assert.equal(
+      readOpenedPageDwell("story_organic")?.sum,
+      USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+      "The first page was recorded when the second one took its place"
+    );
+
+    teardownDwellTest(sandbox);
+  }
+);
+
+add_task(async function test_opened_page_dwell_time_caps_tracked_pages() {
+  info(
+    "TelemetryFeed should finalize the oldest opened page rather than track " +
+      "an unbounded number of them"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+  let oldest = makeFakeBrowser();
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  openAndLand(instance, oldest);
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  // Open exactly enough pages that the first one has to make room.
+  for (let i = 0; i < 100; i++) {
+    openLinkFrom(instance, makeFakeBrowser(), {
+      dwell_label: "topsite_organic",
+    });
+  }
+
+  Assert.equal(
+    readOpenedPageDwell("story_organic")?.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "The oldest page was recorded, not dropped, to make room"
+  );
+
+  teardownDwellTest(sandbox);
 });

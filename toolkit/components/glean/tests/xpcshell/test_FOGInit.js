@@ -14,6 +14,9 @@ add_setup(
     // FOG needs a profile directory to put its data in.
     do_get_profile();
 
+    // We need to ensure we're not artificially decelerating early pings.
+    Services.prefs.clearUserPref("telemetry.fog.test.decelerate_early_events");
+
     // We need to initialize it once, otherwise operations will be stuck in the pre-init queue.
     Services.fog.initializeFOG();
   }
@@ -38,3 +41,21 @@ add_task(function test_fog_initialized_with_correct_rate_limit() {
     "FOG has been initialized with a ping rate limit of greater than 0."
   );
 });
+
+add_task(
+  /* on Android we can't unset telemetry.fog.test.decelerate_early_events before init */
+  { skip_if: () => AppConstants.platform == "android" },
+  function test_fog_inits_with_early_event_acceleration() {
+    // Record far fewer than FOG's configured max event threshold (500),
+    // but more than FOG's configured accelerated early events ping (20).
+    const numEvents = 100;
+    for (let i = 0; i < numEvents; i++) {
+      Glean.testOnly.eventPingEvent.record();
+    }
+    Assert.less(
+      Glean.testOnly.eventPingEvent.testGetValue()?.length || 0,
+      numEvents,
+      "At least one 'events' ping must've been sent early."
+    );
+  }
+);

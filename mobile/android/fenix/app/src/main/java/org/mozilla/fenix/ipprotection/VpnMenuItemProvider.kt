@@ -16,13 +16,20 @@ import mozilla.components.compose.menu.data.MenuItemActionButton
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
 import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.ui.icons.R as iconsR
+import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
@@ -35,11 +42,12 @@ import org.mozilla.fenix.components.menu.toMenuState
  * Shown only to users eligible for the feature, and kept in sync with the connection status so that the menu can stay
  * open while connecting.
  *
- * @param ipProtectionStore [IPProtectionStore] with information about the current VPN functionality.
+ * @param ipProtectionStore [IPProtectionStore] with information about the current VPN functionality, used also to
+ *   toggle it.
  * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown.
  */
 class VpnMenuItemProvider(
-    ipProtectionStore: IPProtectionStore,
+    private val ipProtectionStore: IPProtectionStore,
     scope: CoroutineScope,
 ) : MenuItemProvider {
     override val itemFlow: StateFlow<MenuItem?> =
@@ -50,6 +58,47 @@ class VpnMenuItemProvider(
                 started = SharingStarted.Eagerly,
                 initialValue = ipProtectionStore.state.ipProtectionMenuItem(),
             )
+
+    override fun handles(event: MenuEvent) =
+        event == MenuAction.IPProtectionToggle || event == MenuAction.Navigate.IPProtectionSettings
+
+    /** The menu is deliberately left open while connecting, so that the user can see the status change. */
+    override fun onEvent(event: MenuEvent, menu: MenuHost) {
+        when (event) {
+            MenuAction.IPProtectionToggle -> toggle(menu)
+            MenuAction.Navigate.IPProtectionSettings -> {
+                Vpn.settingsPageTapped.record(Vpn.SettingsPageTappedExtra(entrypoint = "Menu"))
+                menu.navigate(settingsDirections())
+            }
+            else -> Unit
+        }
+    }
+
+    private fun toggle(menu: MenuHost) {
+        when (ipProtectionStore.state.toMenuState().status) {
+            IPProtectionMenuStatus.Disabled -> {
+                Vpn.menuTurnedOn.record()
+                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+            }
+
+            IPProtectionMenuStatus.Enabled -> {
+                Vpn.menuTurnedOff.record()
+                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+            }
+
+            IPProtectionMenuStatus.AuthRequired -> {
+                Vpn.menuTryItTapped.record(NoExtras())
+                menu.navigate(settingsDirections())
+            }
+
+            IPProtectionMenuStatus.Activating,
+            IPProtectionMenuStatus.DataLimitReached,
+            IPProtectionMenuStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+        }
+    }
+
+    private fun settingsDirections() =
+        NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu)
 
     /** IP protection is only offered to the users that are eligible for it. */
     private fun IPProtectionState.ipProtectionMenuItem() =

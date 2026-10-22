@@ -1,6 +1,6 @@
 # Phabricator vs GitHub
 
-Firefox uses git for version control, and the source code is hosted on [GitHub](https://github.com/mozilla-firefox/firefox/). However, reviewing code happens on [Phabricator](https://phabricator.services.mozilla.com/) and landing code happens with an integration from [Lando](https://lando.moz.tools/). Phabricator is a different review and development workflow from GitHub. In GitHub your local git branch is reflected as a Pull Request based off of the commits that are different from some base commit, usually `main`. In contrast Phabricator works off of arbitrary patches (called diffs internally) that can be turned into {ref}`stacks of patches <Working with stack of patches Quick Reference>` using parent/child relationships. [`moz-phab`](https://github.com/mozilla-conduit/review) is the tool that Mozilla has built to make it easy to turn your local commits into these series of patches.
+Firefox uses git for version control, and the source code is hosted on [GitHub](https://github.com/mozilla-firefox/firefox/). However, reviewing code happens on [Phabricator](https://phabricator.services.mozilla.com/) and landing code happens with an integration from [Lando](https://lando.moz.tools/). Phabricator is a different review and development workflow from GitHub. In GitHub your local git branch is reflected as a Pull Request based off of the commits that are different from some base commit, usually `main`. In contrast Phabricator works off of arbitrary patches (called diffs internally) that can be turned into {doc}`stacks of patches <stack_quickref>` using parent/child relationships. [`moz-phab`](https://github.com/mozilla-conduit/review) is the tool that Mozilla has built to make it easy to turn your local commits into these series of patches.
 
 ## GitHub Workflow
 
@@ -28,7 +28,7 @@ Since the Phabricator workflow assumes you will be rewriting history, it's diffi
 
 ### How Phabricator Creates Stacks
 
-Stacks are created through internal relationships only tracked through the web interface. In the sidebar you can manually adjust these when the relationships get messed up. You click `"Edit Related Revisions..."` and then `Edit Parent Revisions...` or `Edit Child Revisions...`. This process is tedious and error prone, so `moz-phab` can help automate it. Take your clean local work and run `moz-phab reorg` to have the tool do the fiddly work for you. It can still be necessary to reorder work when things get too messy. For the exact commands to build and manipulate a stack, see the {ref}`Working with stack of patches Quick Reference`.
+Stacks are created through internal relationships only tracked through the web interface. In the sidebar you can manually adjust these when the relationships get messed up. You click `"Edit Related Revisions..."` and then `Edit Parent Revisions...` or `Edit Child Revisions...`. This process is tedious and error prone, so `moz-phab` can help automate it. Take your clean local work and run `moz-phab reorg` to have the tool do the fiddly work for you. It can still be necessary to reorder work when things get too messy. For the exact commands to build and manipulate a stack, see the {doc}`stack_quickref`.
 
 ### autoland vs main
 

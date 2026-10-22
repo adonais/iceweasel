@@ -35,7 +35,7 @@ ConstantPcmPacketSource::ConstantPcmPacketSource(size_t payload_len_samples,
       timestamp_(0),
       payload_ssrc_(0xABCD1234) {
   size_t encoded_len = WebRtcPcm16b_Encode(&sample_value, 1, encoded_sample_);
-  RTC_CHECK_EQ(2U, encoded_len);
+  RTC_CHECK_EQ(encoded_len, 2U);
 }
 
 std::unique_ptr<RtpPacketReceived> ConstantPcmPacketSource::NextPacket() {

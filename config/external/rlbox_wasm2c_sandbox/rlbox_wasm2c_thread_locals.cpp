@@ -77,7 +77,7 @@ void moz_wasm2c_memgrow_failed() {
 // This function is called when mozalloc_handle_oom is called from within
 // the sandbox. We redirect to that function, ignoring the ctx argument, which
 // is the sandbox itself.
-void w2c_env_mozalloc_handle_oom(void* ctx, uint32_t size) {
+void w2c_env_mozalloc_handle_oom(void* /*ctx*/, uint32_t size) {
   mozalloc_handle_oom(size);
 }
 }

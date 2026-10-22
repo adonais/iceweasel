@@ -216,8 +216,12 @@ void GainController2::Process(bool input_volume_changed, AudioBuffer* audio) {
     noise_rms_dbfs = noise_level_estimator_->Analyze(float_frame);
   }
   std::optional<SpeechLevel> speech_level;
+  float target_speech_probability = speech_probability;
   if (speech_level_estimator_) {
     speech_level_estimator_->Update(audio_levels.rms_dbfs, speech_probability);
+    if (speech_level_estimator_->IsBackgroundSpeaker()) {
+      target_speech_probability = 0.0f;
+    }
     speech_level =
         SpeechLevel{.is_confident = speech_level_estimator_->IsConfident(),
                     .rms_dbfs = speech_level_estimator_->GetLevelDbfs()};
@@ -227,15 +231,17 @@ void GainController2::Process(bool input_volume_changed, AudioBuffer* audio) {
   if (input_volume_controller_) {
     RTC_DCHECK(speech_level.has_value());
     recommended_input_volume_ = input_volume_controller_->RecommendInputVolume(
-        speech_probability, speech_level->is_confident
-                                ? std::optional<float>(speech_level->rms_dbfs)
-                                : std::nullopt);
+        target_speech_probability,
+        speech_level->is_confident
+            ? std::optional<float>(speech_level->rms_dbfs)
+            : std::nullopt);
   }
 
   if (adaptive_digital_controller_) {
     RTC_DCHECK(saturation_protector_);
     RTC_DCHECK(speech_level.has_value());
-    saturation_protector_->Analyze(speech_probability, audio_levels.peak_dbfs,
+    saturation_protector_->Analyze(target_speech_probability,
+                                   audio_levels.peak_dbfs,
                                    speech_level->rms_dbfs);
     float headroom_db = saturation_protector_->HeadroomDb();
     data_dumper_.DumpRaw("agc2_headroom_db", headroom_db);
@@ -243,7 +249,7 @@ void GainController2::Process(bool input_volume_changed, AudioBuffer* audio) {
     data_dumper_.DumpRaw("agc2_limiter_envelope_dbfs", limiter_envelope_dbfs);
     RTC_DCHECK(noise_rms_dbfs.has_value());
     adaptive_digital_controller_->Process(
-        /*info=*/{.speech_probability = speech_probability,
+        /*info=*/{.speech_probability = target_speech_probability,
                   .speech_level_dbfs = speech_level->rms_dbfs,
                   .speech_level_reliable = speech_level->is_confident,
                   .noise_rms_dbfs = *noise_rms_dbfs,

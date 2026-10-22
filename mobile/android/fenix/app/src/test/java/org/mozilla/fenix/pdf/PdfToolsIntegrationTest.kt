@@ -32,6 +32,8 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.fetch.MutableHeaders
+import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -198,17 +200,33 @@ class PdfToolsIntegrationTest {
 
     @Test
     fun `WHEN share is activated THEN the selected tab's PDF is shared`() {
-        integration().handleShareClick()
+        val response =
+            Response(
+                url = pdfTab.content.url,
+                status = 200,
+                headers = MutableHeaders(),
+                body = Response.Body.empty(),
+            )
+        val engineSession = mockk<EngineSession>()
+        every { engineSession.requestPdfToShare(any(), any()) } answers
+            {
+                firstArg<(Response) -> Unit>().invoke(response)
+            }
+
+        integration(store = storeOf(pdfTabWith(engineSession))).handleShareClick()
 
         captureActionsMiddleware.assertFirstAction(ShareResourceAction.AddShareAction::class) {
             assertEquals(tabId, it.tabId)
-            assertIs<ShareResourceState.InternetResource>(it.resource)
+            assertIs<ShareResourceState.DirectResource>(it.resource)
         }
     }
 
     @Test
     fun `GIVEN a PDF opened from a local file WHEN share is activated THEN the local file is shared`() {
-        val localTab = createTab(url = "content://downloads/document.pdf", id = tabId)
+        val localTab =
+            createTab(url = "content://downloads/document.pdf", id = tabId).let {
+                it.copy(content = it.content.copy(isPdf = true))
+            }
 
         integration(store = storeOf(localTab)).handleShareClick()
 

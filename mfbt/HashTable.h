@@ -141,10 +141,6 @@ template <class Key, class Value, class HashPolicy = DefaultHasher<Key>,
 class MOZ_STANDALONE_DEBUG HashMap {
   // -- Implementation details -----------------------------------------------
 
-  // HashMap is not copyable or assignable.
-  HashMap(const HashMap& hm) = delete;
-  HashMap& operator=(const HashMap& hm) = delete;
-
   using TableEntry = HashMapEntry<Key, Value>;
 
   struct MapHashPolicy : HashPolicy {
@@ -215,6 +211,10 @@ class MOZ_STANDALONE_DEBUG HashMap {
   // total capacity, including elements already present. Does nothing if the
   // map already has sufficient capacity.
   [[nodiscard]] bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
+
+  // HashMap is not copyable or assignable.
+  HashMap(const HashMap& hm) = delete;
+  HashMap& operator=(const HashMap& hm) = delete;
 
   // -- Lookups --------------------------------------------------------------
 
@@ -468,10 +468,6 @@ template <class T, class HashPolicy = DefaultHasher<T>,
 class HashSet {
   // -- Implementation details -----------------------------------------------
 
-  // HashSet is not copyable or assignable.
-  HashSet(const HashSet& hs) = delete;
-  HashSet& operator=(const HashSet& hs) = delete;
-
   struct SetHashPolicy : HashPolicy {
     using Base = HashPolicy;
     using KeyType = T;
@@ -502,6 +498,10 @@ class HashSet {
   // HashSet is movable.
   HashSet(HashSet&& aRhs) = default;
   HashSet& operator=(HashSet&& aRhs) = default;
+
+  // HashSet is not copyable or assignable.
+  HashSet(const HashSet& hs) = delete;
+  HashSet& operator=(const HashSet& hs) = delete;
 
   // Swap the contents of this hash set with another.
   void swap(HashSet& aOther) { mImpl.swap(aOther.mImpl); }
@@ -1015,7 +1015,6 @@ class HashMapEntry {
   static size_t offsetOfKey() { return offsetof(HashMapEntry, key_); }
   static size_t offsetOfValue() { return offsetof(HashMapEntry, value_); }
 
- private:
   HashMapEntry(const HashMapEntry&) = delete;
   void operator=(const HashMapEntry&) = delete;
 };
@@ -1121,9 +1120,6 @@ class HashTableEntry {
 
   static bool isLiveHash(HashNumber hash) { return hash > sRemovedKey; }
 
-  HashTableEntry(const HashTableEntry&) = delete;
-  void operator=(const HashTableEntry&) = delete;
-
   NonConstT* valuePtr() { return reinterpret_cast<NonConstT*>(rawValuePtr()); }
 
   void destroyStoredT() {
@@ -1136,6 +1132,9 @@ class HashTableEntry {
   HashTableEntry() = default;
 
   ~HashTableEntry() { MOZ_MAKE_MEM_UNDEFINED(this, sizeof(*this)); }
+
+  HashTableEntry(const HashTableEntry&) = delete;
+  void operator=(const HashTableEntry&) = delete;
 
   void destroy() { destroyStoredT(); }
 
@@ -1482,10 +1481,6 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     bool mRekeyed;
     bool mRemoved;
 
-    // ModIterator is movable but not copyable.
-    ModIterator(const ModIterator&) = delete;
-    void operator=(const ModIterator&) = delete;
-
    protected:
     explicit ModIterator(HashTable& aTable)
         : Iterator(aTable), mTable(aTable), mRekeyed(false), mRemoved(false) {}
@@ -1499,6 +1494,10 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       aOther.mRekeyed = false;
       aOther.mRemoved = false;
     }
+
+    // ModIterator is movable but not copyable.
+    ModIterator(const ModIterator&) = delete;
+    void operator=(const ModIterator&) = delete;
 
     // Removes the current element from the table, leaving |get()| invalid until
     // the next call to |next()|.
@@ -1610,10 +1609,6 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     aRhs.clearAndCompact();
   }
 
-  // HashTable is not copyable or assignable
-  HashTable(const HashTable&) = delete;
-  void operator=(const HashTable&) = delete;
-
   static const uint32_t CAP_BITS = 30;
 
  public:
@@ -1657,6 +1652,10 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   MOZ_ALWAYS_INLINE uint64_t gen() const {
     return mGenAndHashShift >> sGenerationShift;
   }
+
+  // HashTable is not copyable or assignable
+  HashTable(const HashTable&) = delete;
+  void operator=(const HashTable&) = delete;
 
  private:
   void setGenAndHashShift(uint64_t aGeneration, uint8_t aHashShift) {

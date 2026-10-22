@@ -4,7 +4,7 @@
 
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 
 /**
  * Array of keyCodes to defer.

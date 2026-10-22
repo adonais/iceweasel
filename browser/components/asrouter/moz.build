@@ -36,6 +36,7 @@ EXTRA_JS_MODULES.asrouter += [
     "modules/OnboardingMessageProvider.sys.mjs",
     "modules/PageEventManager.sys.mjs",
     "modules/PanelTestProvider.sys.mjs",
+    "modules/PinnableSitesProvider.sys.mjs",
     "modules/PreonboardingSplash.sys.mjs",
     "modules/RemoteL10n.sys.mjs",
     "modules/SidebarChatBotPromo.sys.mjs",

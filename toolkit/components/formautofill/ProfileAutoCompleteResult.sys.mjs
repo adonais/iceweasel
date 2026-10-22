@@ -31,24 +31,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-// Builds the "more actions" flyout secondaryAction for a profile row. The edit
-// menu item is a non-functional placeholder for now.
-function moreActionsSecondaryAction(
+function deleteSecondaryAction(
   entry,
-  editLabelId,
-  deleteLabelId,
-  deleteMessageName
+  labelId,
+  tooltipId,
+  deleteMessageName,
+  guid
 ) {
   return {
-    type: "menupopup",
-    label: lazy.l10n.formatValueSync("autocomplete-more-actions2", { entry }),
-    actions: [
-      { label: lazy.l10n.formatValueSync(editLabelId) },
-      {
-        label: lazy.l10n.formatValueSync(deleteLabelId),
-        fillMessageName: deleteMessageName,
-      },
-    ],
+    type: "delete",
+    label: lazy.l10n.formatValueSync(labelId, { entry }),
+    tooltip: lazy.l10n.formatValueSync(tooltipId),
+    fillMessageName: deleteMessageName,
+    fillMessageData: { guid },
   };
 }
 
@@ -490,11 +485,12 @@ export class AddressResult extends ProfileAutoCompleteResult {
         type: "address",
         profile,
         ...(lazy.removeRecordsEnabled && {
-          secondaryAction: moreActionsSecondaryAction(
+          secondaryAction: deleteSecondaryAction(
             ariaLabel,
-            "autocomplete-edit-address",
+            "autocomplete-delete-address-entry",
             "autocomplete-delete-address",
-            "FormAutofill:DeleteAddress"
+            "FormAutofill:DeleteAddress",
+            profile.guid
           ),
         }),
       });
@@ -643,11 +639,12 @@ export class CreditCardResult extends ProfileAutoCompleteResult {
           type: "payment",
           profile,
           ...(lazy.removeRecordsEnabled && {
-            secondaryAction: moreActionsSecondaryAction(
+            secondaryAction: deleteSecondaryAction(
               ariaLabel,
-              "autocomplete-edit-payment-method",
+              "autocomplete-delete-payment-method-entry",
               "autocomplete-delete-payment-method",
-              "FormAutofill:DeleteCreditCard"
+              "FormAutofill:DeleteCreditCard",
+              profile.guid
             ),
           }),
         };

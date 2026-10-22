@@ -1022,7 +1022,7 @@ void ConnectionEntry::MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo) {
   LOG(("ConnectionEntry::MaybeUpdateEchConfig [ci=%s]\n",
        mConnInfo->HashKey().get()));
 
-  mConnInfo->SetEchConfig(echConfig);
+  mConnInfo = mConnInfo->Mutate().SetEchConfig(echConfig).Finalize();
 
   // If echConfig is changed, we should close all DnsAndConnectSockets and idle
   // connections. This is to make sure the new echConfig will be used for the

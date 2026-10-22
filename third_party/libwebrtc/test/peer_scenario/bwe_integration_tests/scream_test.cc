@@ -353,9 +353,13 @@ TEST(ScreamTest, MaybeTest(LinkCapacity600KbpsRtt100msNoEcn)) {
       CreateNetworkPath(s, /*use_dual_pi= */ false,
                         DataRate::KilobitsPerSec(600), TimeDelta::Millis(50));
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
-  EXPECT_THAT(result.caller().subspan(1), Each(AvailableSendBitrateIsBetween(
-                                              DataRate::KilobitsPerSec(250),
-                                              DataRate::KilobitsPerSec(700))));
+  EXPECT_THAT(
+      result.caller().subspan(0, 4),
+      Each(AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(200),
+                                         DataRate::KilobitsPerSec(700))));
+  EXPECT_THAT(result.caller().subspan(4), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(400),
+                                              DataRate::KilobitsPerSec(650))));
 }
 
 TEST(ScreamTest,
@@ -801,12 +805,12 @@ TEST(ScreamTest, MaybeTest(LinkCapacity2MbitRepeatedDelaySpikesNoEcn)) {
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
   // Ignore BWE the first second.
   EXPECT_THAT(result.caller().subspan(5), Each(AvailableSendBitrateIsBetween(
-                                              DataRate::KilobitsPerSec(700),
+                                              DataRate::KilobitsPerSec(550),
                                               DataRate::KilobitsPerSec(2000))));
-  // Ensure average pacing delay between two reports is below 50ms.
+  // Ensure average pacing delay between two reports is below 70ms.
   for (size_t i = 1; i < result.caller_stats.size(); ++i) {
     EXPECT_THAT(result.caller_stats[i],
-                AveragePacingDelayIsBelow(TimeDelta::Millis(50),
+                AveragePacingDelayIsBelow(TimeDelta::Millis(70),
                                           result.caller_stats[i - 1]));
   }
 }

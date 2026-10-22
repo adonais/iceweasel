@@ -5870,6 +5870,7 @@ class FunctionCompiler {
   bool emitResumeThrowRef();
   bool emitSwitch();
   bool emitGuardSuspending();
+  bool emitExternToCont();
 #endif
   bool emitGetLocal();
   bool emitSetLocal();
@@ -9900,6 +9901,17 @@ bool FunctionCompiler::emitGuardSuspending() {
   return true;
 }
 
+bool FunctionCompiler::emitExternToCont() {
+  uint32_t contTypeIndex;
+  MDefinition* ref;
+  if (!iter().readExternToCont(&contTypeIndex, &ref)) {
+    return false;
+  }
+
+  iter().setResult(ref);
+  return true;
+}
+
 #endif  // ENABLE_WASM_JSPI
 
 bool FunctionCompiler::emitBodyExprs() {
@@ -11072,6 +11084,8 @@ bool FunctionCompiler::emitBodyExprs() {
 #ifdef ENABLE_WASM_JSPI
           case uint32_t(MozOp::GuardSuspending):
             CHECK(emitGuardSuspending());
+          case uint32_t(MozOp::ExternToCont):
+            CHECK(emitExternToCont());
 #endif  // ENABLE_WASM_JSPI
 
           default:

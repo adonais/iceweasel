@@ -106,6 +106,7 @@
     <ID>ForbiddenSuppress:LoginPickerView.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:MainActivity.kt$MainActivity$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ManifestDatabase.kt$ManifestDatabase.Companion$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:Menu.kt$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:MozillaSocorroService.kt$MozillaSocorroService$@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:NestedGeckoView.kt$NestedGeckoView$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Origin.kt$@Suppress("LongMethod")</ID>

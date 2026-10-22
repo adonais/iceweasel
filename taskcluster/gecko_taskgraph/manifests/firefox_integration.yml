@@ -128,15 +128,3 @@ mapping:
             - win64-aarch64-shippable
         pretty_name: firefox-${version}.${locale}.${filename_platform}.zip
         checksums_path: firefox-${version}.${locale}.${filename_platform}.zip
-    target.installer.exe:
-        <<: *default
-        description: "Main installer for Windows platforms"
-        only_for_platforms:
-            - win32
-            - win32-shippable
-            - win64
-            - win64-shippable
-            - win64-aarch64
-            - win64-aarch64-shippable
-        pretty_name: firefox-${version}.${locale}.${filename_platform}.installer.exe
-        checksums_path: firefox-${version}.${locale}.${filename_platform}.installer.exe

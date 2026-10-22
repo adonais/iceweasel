@@ -4,11 +4,6 @@
 
 package org.mozilla.focus.activity.robots
 
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import org.junit.Assert.assertTrue
@@ -94,7 +89,9 @@ class HomeScreenRobot {
     class Transition {
         fun openMainMenu(interact: ThreeDotMainMenuRobot.() -> Unit): ThreeDotMainMenuRobot.Transition {
             editURLBar.waitForExists(waitingTime)
-            mainMenu.check(matches(isDisplayed())).perform(click())
+            assertTrue(mainMenu.waitForExists(waitingTime))
+            mainMenu.click()
+            mDevice.waitForIdle()
 
             ThreeDotMainMenuRobot().interact()
             return ThreeDotMainMenuRobot.Transition()
@@ -126,7 +123,8 @@ fun homeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition
 private val editURLBar =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
 
-private val mainMenu = onView(withId(R.id.menuView))
+private val mainMenu
+    get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
 
 /** ******* First Run Locators */
 private val firstSlideTitle =

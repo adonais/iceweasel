@@ -20,4 +20,4 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_NewLock` creates a new opaque lock.
+{doc}`pr_newlock` creates a new opaque lock.

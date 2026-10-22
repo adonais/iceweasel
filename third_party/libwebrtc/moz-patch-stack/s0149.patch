@@ -1,0 +1,32 @@
+From: Michael Froman <mfroman@mozilla.com>
+Date: Tue, 15 Sep 2026 20:40:00 +0000
+Subject: Bug 1996020 - use I420Buffer::CreateOrNull in
+ VideoFrameBufferPool::CreateI420Buffer. r=bwc
+
+Looking at the crash reports, even after converting DesktopCaptureImpl::OnCaptureResult
+to use the VideoFrameBufferPool, we're still seeing occasional crashes
+in AlignedMalloc so use CreateOrNull so we don't crash in OOM situations.
+
+Differential Revision: https://phabricator.services.mozilla.com/D326269
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/93cb056a0c8220b5b364f9cd1204ac34bb0d163d
+---
+ common_video/video_frame_buffer_pool.cc | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/common_video/video_frame_buffer_pool.cc b/common_video/video_frame_buffer_pool.cc
+index 07d3fd00c8..dc204423a4 100644
+--- a/common_video/video_frame_buffer_pool.cc
++++ b/common_video/video_frame_buffer_pool.cc
+@@ -139,8 +139,10 @@ scoped_refptr<I420Buffer> VideoFrameBufferPool::CreateI420Buffer(int width,
+   if (buffers_.size() >= max_number_of_buffers_)
+     return nullptr;
+   // Allocate new buffer.
+-  scoped_refptr<I420Buffer> buffer =
+-      make_ref_counted<I420Buffer>(width, height);
++  scoped_refptr<I420Buffer> buffer = I420Buffer::CreateOrNull(width, height);
++  if (!buffer) {
++    return nullptr;
++  }
+ 
+   if (zero_initialize_)
+     buffer->InitializeData();

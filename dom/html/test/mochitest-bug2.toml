@@ -2,6 +2,7 @@
 prefs = [
   "apz.zoom-to-focused-input.enabled=false",
   "gfx.font_loader.delay=0",
+  # Bug 2077709
   "dom.navigation.navigationRateLimit.count=0",
 ]
 support-files = [
@@ -389,9 +390,6 @@ skip-if = [
 ["test_bug741266.html"]
 run-if = [
   "os != 'android'", # Android: needs control of popup window size
-]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1856975
 ]
 
 ["test_bug742030.html"]

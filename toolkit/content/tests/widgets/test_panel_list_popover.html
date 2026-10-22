@@ -316,6 +316,40 @@
         );
       });
 
+      add_task(async function testPressDragReleaseLightDismiss() {
+        // Mimic moz-button: open on mousedown, so nothing is open at pointerdown.
+        let openOnMousedown = e => panelList.toggle(e);
+        anchorButton.addEventListener("mousedown", openOnMousedown);
+
+        try {
+          let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+          synthesizeMouseAtCenter(anchorButton, { type: "mousedown" });
+          await shown;
+
+          ok(
+            panelList.matches(":popover-open"),
+            "Panel should be open after press"
+          );
+          ok(panelList.open, "Panel open attribute should be true after press");
+
+          let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+          synthesizeMouseAtCenter(document.body, { type: "mouseup" });
+          await hidden;
+
+          ok(
+            !panelList.matches(":popover-open"),
+            "Panel should be closed after press-drag-release"
+          );
+          ok(
+            !panelList.open,
+            "Panel open attribute should be false after press-drag-release"
+          );
+        } finally {
+          anchorButton.removeEventListener("mousedown", openOnMousedown);
+          await closePanels();
+        }
+      });
+
       add_task(async function testSecondPanelAutoClosesFirst() {
         let secondAnchor = document.createElement("button");
         secondAnchor.id = "second-anchor";

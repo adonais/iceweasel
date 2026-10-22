@@ -6,6 +6,7 @@
 #define mozilla_dom_page_load_event_utils_h_
 
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/PageloadEvent.h"
 
 namespace IPC {

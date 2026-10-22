@@ -147,17 +147,15 @@ this.sessions = class extends ExtensionAPIPersistent {
           let closedTabData = SessionStore.getClosedTabDataForWindow(window);
           let closedId = getClosedIdFromSessionId(sessionId);
 
-          let closedTabIndex = closedTabData.findIndex(closedTab => {
-            return closedTab.closedId === closedId;
-          });
-
-          if (closedTabIndex < 0) {
+          if (
+            !closedTabData.some(closedTab => closedTab.closedId === closedId)
+          ) {
             throw new ExtensionError(
               `Could not find closed tab using sessionId ${sessionId}.`
             );
           }
 
-          SessionStore.forgetClosedTab(window, closedTabIndex);
+          SessionStore.forgetClosedTabById(closedId, window);
         },
 
         async forgetClosedWindow(sessionId) {

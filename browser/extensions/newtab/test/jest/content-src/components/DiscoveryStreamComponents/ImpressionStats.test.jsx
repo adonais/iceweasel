@@ -164,7 +164,7 @@ describe("<ImpressionStats>", () => {
     renderImpressionStats({
       dispatch,
       flightId,
-      rows: [{ id: 1, pos: 1, advertiser: "test advertiser" }],
+      rows: [{ id: 1, pos: 1, advertiser_name: "test advertiser" }],
       source: "TOP_SITES",
       IntersectionObserver: buildIntersectionObserver(FullIntersectEntries),
     });
@@ -183,7 +183,7 @@ describe("<ImpressionStats>", () => {
     renderImpressionStats({
       dispatch,
       flightId,
-      rows: [{ id: 1, pos: 1, advertiser: "test advertiser" }],
+      rows: [{ id: 1, pos: 1, advertiser_name: "test advertiser" }],
       source: "TOP_SITES",
       IntersectionObserver: buildIntersectionObserver(FullIntersectEntries),
     });
@@ -197,7 +197,7 @@ describe("<ImpressionStats>", () => {
       type: "impression",
       tile_id: 1,
       source: "newtab",
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       position: 1,
       attribution: undefined,
     });

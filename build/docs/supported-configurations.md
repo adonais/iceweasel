@@ -83,7 +83,7 @@ The term **"Tier-1 platform"** refers to those platforms - CPU
 architectures and operating systems - that are the primary focus of
 Firefox development efforts. Tier-1 platforms are fully supported by
 Mozilla's [continuous integration processes](https://treeherder.mozilla.org/) and the
-{ref}`Pushing to Try`. Any proposed change to Firefox on these
+{doc}`/tools/try/index`. Any proposed change to Firefox on these
 platforms that results in build failures, test failures, performance
 regressions or other major problems **will be reverted immediately**.
 

@@ -216,12 +216,13 @@ class AbsoluteContainingBlock {
    * our absolute child list, reparenting them to aDelegatingFrame.
    *
    * @param aDelegatingFrame the frame that owns us.
-   * @param aOnlyFirstInFlows if Yes, only first-in-flow children are moved.
+   * @param aPullKind if PullKind::FirstInFlows, only first-in-flow children are
+   * moved. If PullKind::All, all children, including those in aContinuation's
+   * pushed child list, are moved.
    */
-  enum class OnlyFirstInFlows : bool { No, Yes };
+  enum class PullKind : uint8_t { FirstInFlows, All };
   void PullAbsoluteFramesFrom(nsContainerFrame* aDelegatingFrame,
-                              nsIFrame* aContinuation,
-                              OnlyFirstInFlows aOnlyFirstInFlows);
+                              nsIFrame* aContinuation, PullKind aPullKind);
 
   // Stores the abspos frames that have been placed in this containing block.
   nsFrameList mAbsoluteFrames;

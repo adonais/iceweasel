@@ -12,12 +12,12 @@ import {
 import { PREF_WIDGETS_ORDER } from "common/WidgetsRegistry.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 
-const FULL_ORDER = ["lists", "focusTimer", "weather", "sportsWidget", "clocks"];
+const FULL_ORDER = ["lists", "focusTimer", "weather", "privacy", "clocks"];
 const ALL_ENABLED = {
   lists: true,
   focusTimer: true,
   weather: true,
-  sportsWidget: true,
+  privacy: true,
   clocks: true,
 };
 
@@ -68,9 +68,7 @@ describe("buildMoveProps", () => {
     expect(dispatch).toHaveBeenCalledTimes(1);
     const [[action]] = dispatch.mock.calls;
     expect(action.data.name).toBe(PREF_WIDGETS_ORDER);
-    expect(action.data.value).toBe(
-      "weather,focusTimer,lists,sportsWidget,clocks"
-    );
+    expect(action.data.value).toBe("weather,focusTimer,lists,privacy,clocks");
   });
 
   it("onMoveRight swaps with the next visible widget", () => {
@@ -78,9 +76,7 @@ describe("buildMoveProps", () => {
     const props = buildMoveProps("weather", FULL_ORDER, ALL_ENABLED, dispatch);
     props.onMoveRight();
     const [[action]] = dispatch.mock.calls;
-    expect(action.data.value).toBe(
-      "lists,focusTimer,sportsWidget,weather,clocks"
-    );
+    expect(action.data.value).toBe("lists,focusTimer,privacy,weather,clocks");
   });
 
   it("onMoveLeft swaps with the previous visible widget", () => {
@@ -88,9 +84,7 @@ describe("buildMoveProps", () => {
     const props = buildMoveProps("weather", FULL_ORDER, ALL_ENABLED, dispatch);
     props.onMoveLeft();
     const [[action]] = dispatch.mock.calls;
-    expect(action.data.value).toBe(
-      "lists,weather,focusTimer,sportsWidget,clocks"
-    );
+    expect(action.data.value).toBe("lists,weather,focusTimer,privacy,clocks");
   });
 
   it("dispatches a SET_PREF action", () => {
@@ -128,9 +122,7 @@ describe("buildMoveProps", () => {
       expect(props.canMoveRight).toBe(true);
       props.onMoveLeft();
       const [[action]] = dispatch.mock.calls;
-      expect(action.data.value).toBe(
-        "lists,weather,focusTimer,sportsWidget,clocks"
-      );
+      expect(action.data.value).toBe("lists,weather,focusTimer,privacy,clocks");
     } finally {
       document.documentElement.dir = "ltr";
     }

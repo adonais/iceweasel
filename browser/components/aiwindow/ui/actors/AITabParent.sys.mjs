@@ -4,6 +4,8 @@
 
 import { AITabStore } from "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs";
 import { ConversationStore } from "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs";
+import { getSmartPageName } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
+import { A2UI } from "../modules/A2UI.mjs";
 
 const lazy = {};
 
@@ -16,8 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "fluentStrings", () => {
   return new Localization(["preview/aiWindow.ftl"], true);
 });
-
-const PAGE_NAME_REGEX = /^[\w-]+(\.html)?$/;
 
 /**
  * Renders the eyebrow shown above a generated page's title.
@@ -87,8 +87,7 @@ export class AITabParent extends JSWindowActorParent {
       return null;
     }
 
-    const pageName = URL.parse(spec)?.searchParams.get("page");
-    return pageName && PAGE_NAME_REGEX.test(pageName) ? pageName : null;
+    return getSmartPageName(URL.parse(spec));
   }
 
   async #handleGetPage() {
@@ -98,14 +97,24 @@ export class AITabParent extends JSWindowActorParent {
     }
 
     try {
-      const page = await AITabStore.getBySlug(pageName);
+      const pageData = await AITabStore.getBySlug(pageName);
+      const surface = pageData?.components?.surface;
+      if (!surface) {
+        return { success: true, page: null };
+      }
+
+      const a2ui = new A2UI(surface);
+      const page = a2ui.toUI();
+
       return {
         success: true,
-        // Content renders the label as-is; it never sees the raw timestamp.
-        page: page && {
-          ...page,
-          createdAtLabel: formatCreatedAt(page.createdAt),
-        },
+        page: pageData &&
+          page && {
+            ...pageData,
+            ...page,
+            // Content renders the label as-is; it never sees the raw timestamp.
+            createdAtLabel: formatCreatedAt(pageData.createdAt),
+          },
       };
     } catch (error) {
       console.error("Failed to retrieve AI Tab page:", error);
@@ -141,13 +150,20 @@ export class AITabParent extends JSWindowActorParent {
         // The page is gone from here on. If clearing the conversation fails,
         // the delete the reader asked for still happened, so say so and log
         // the leftover rather than reporting a failure that did not happen.
-        try {
-          await ConversationStore.deleteConversationById(page.convId);
-        } catch (error) {
-          console.error(
-            "Deleted an AI Tab page but could not delete its conversation",
-            error
-          );
+        //
+        // The generation conversation holds the text extracted from every
+        // source page, so it is the one that has to go; `convId` names the
+        // chat the page was requested in, which outlives it. Pages stored
+        // before that id was recorded have nothing to clear.
+        if (page.toolConvId) {
+          try {
+            await ConversationStore.deleteConversationById(page.toolConvId);
+          } catch (error) {
+            console.error(
+              "Deleted an AI Tab page but could not delete its conversation",
+              error
+            );
+          }
         }
       }
 

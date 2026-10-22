@@ -94,8 +94,6 @@ class NimbusPlugin : Plugin<Project> {
         extension.manifestFile.convention("nimbus.fml.yaml")
         extension.cacheDir.convention("nimbus-cache")
 
-        val validateTask = setupValidateTask(project)
-
         // We need to locate our nimbus-fml tool - prior to app-services moving into mozilla-firefox, we
         // download this tool from taskcluster. After the move of app-services, we expect the tool to exist
         // locally having been built by `./mach build`.
@@ -122,32 +120,21 @@ class NimbusPlugin : Plugin<Project> {
                 nimbusFmlPath
             }
 
-            // Configure the task with proper file type
-            validateTask.configure {
-                fmlBinary.set(project.layout.file(fmlBinaryString.map { s -> File(s) }))
-            }
-
-            setupAndroidVariants(project, validateTask) { generateTask ->
+            setupAndroidVariants(project) { generateTask ->
                 generateTask.configure {
                     fmlBinary.set(project.layout.file(fmlBinaryString.map { s -> File(s) }))
-                    dependsOn(validateTask)
                 }
             }
         } else {
             // building from an app-services artifact.
             val fmlBinaryProvider = getOrCreateAssembleToolsFmlBinary(project.rootProject, extension.applicationServicesDir)
 
-            validateTask.configure {
-                // Gradle tracks the dependency on the `nimbus-fml` binary that the
-                // `assembleNimbusTools` task produces implicitly; we don't need an
-                // explicit `dependsOn` here.
-                fmlBinary.set(fmlBinaryProvider)
-            }
-
-            setupAndroidVariants(project, validateTask) { generateTask ->
+            // Gradle tracks the dependency on the `nimbus-fml` binary that the
+            // `assembleNimbusTools` task produces implicitly; we don't need an
+            // explicit `dependsOn` here.
+            setupAndroidVariants(project) { generateTask ->
                 generateTask.configure {
                     fmlBinary.set(fmlBinaryProvider)
-                    dependsOn(validateTask)
                 }
             }
         }
@@ -155,7 +142,6 @@ class NimbusPlugin : Plugin<Project> {
 
     private fun setupAndroidVariants(
         project: Project,
-        validateTask: TaskProvider<NimbusValidateTask>,
         configureGenerateTask: (TaskProvider<NimbusFeaturesTask>) -> Unit
     ) {
         project.plugins.withType(AppPlugin::class.java).configureEach {
@@ -230,16 +216,13 @@ class NimbusPlugin : Plugin<Project> {
             group = "Nimbus"
             description = "Fetch the Nimbus FML tools from Application Services"
 
-            val cacheDir = asVersionProvider.map { version: String ->
-                val absoluteCachePath = File(topsrcdir, ".gradle/caches/nimbus-fml/$version")
-                val relativeFromProject = rootProjectLayout.projectDirectory.asFile.toPath()
-                    .relativize(absoluteCachePath.toPath())
-                    .toString()
-                rootProjectLayout.projectDirectory.dir(relativeFromProject)
-            }
+            val relativeCacheRoot = rootProjectLayout.projectDirectory.asFile.toPath()
+                .relativize(File(topsrcdir, ".gradle/caches/nimbus-fml").toPath())
+                .toString()
+            val cacheRoot = rootProjectLayout.projectDirectory.dir(relativeCacheRoot)
 
-            archiveFile.set(cacheDir.map { it.file("nimbus-fml.zip") })
-            hashFile.set(cacheDir.map { it.file("nimbus-fml.sha256") })
+            cacheRootDir.set(cacheRoot)
+            versionCacheDir.set(asVersionProvider.map { version -> cacheRoot.dir(version) })
             fmlBinary.set(rootBuildDir.flatMap { buildDir ->
                 asVersionProvider.zip(platform) { version, plat ->
                     buildDir.dir("bin/nimbus/$version").file(NimbusAssembleToolsTask.getBinaryName(plat))
@@ -310,27 +293,5 @@ class NimbusPlugin : Plugin<Project> {
         task.cacheDir.set(project.layout.buildDirectory.dir(extension.cacheDir).map {
             it.dir(cacheDirSuffix)
         })
-    }
-
-    private fun setupValidateTask(project: Project): TaskProvider<NimbusValidateTask> {
-        return project.tasks.register("nimbusValidate", NimbusValidateTask::class.java) {
-            description = "Validate the Nimbus feature manifest for the app"
-            group = "Nimbus"
-
-            doFirst {
-                logger.info("Nimbus FML: validating manifest")
-                logger.info("manifest             {}", inputFile.get().asFile)
-                logger.info("cache dir            {}", cacheDir.get().asFile)
-                logger.info("repo file(s)         {}", repoFiles.files.joinToString())
-            }
-
-            configureCommonTaskProperties(this, project, "validate")
-
-            // `nimbusValidate` doesn't have any outputs, so Gradle will always
-            // run it, even if its inputs haven't changed. This predicate tells
-            // Gradle to ignore the outputs, and only consider the inputs, for
-            // up-to-date checks.
-            outputs.upToDateWhen { true }
-        }
     }
 }

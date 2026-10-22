@@ -98,9 +98,6 @@ tags = "devtools webextensions"
 ["browser_eyedropper.js"]
 
 ["browser_eyedropper_update.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
-]
 
 ["browser_in_rdm_pane.js"]
 
@@ -219,15 +216,6 @@ fail-if = [
 ["browser_touch_does_not_trigger_hover_states.js"]
 
 ["browser_touch_event_iframes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1767692
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1767692
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1767692
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1767692
-]
 
 ["browser_touch_event_should_bubble.js"]
 
@@ -265,9 +253,6 @@ skip-if = [
 ["browser_viewport_state_after_close.js"]
 
 ["browser_viewport_zoom_resolution_invariant.js"]
-skip-if = [
-  "os == 'win' && opt && standalone", # Bug 2028815
-]
 
 ["browser_viewport_zoom_toggle.js"]
 
@@ -277,8 +262,5 @@ skip-if = [
 ]
 
 ["browser_window_sizing.js"]
-skip-if = [
-  "os == 'win' && opt && standalone", # Bug 2063169
-]
 
 ["browser_zoom.js"]

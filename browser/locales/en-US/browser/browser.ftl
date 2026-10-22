@@ -99,6 +99,8 @@ urlbar-result-menu-tip-get-help2 = Get help
     .accesskey = h
 urlbar-result-menu-dismiss-suggestion2 = Dismiss this suggestion
     .accesskey = D
+urlbar-result-menu-remove-top-site = Remove this top site
+    .accesskey = T
 urlbar-result-menu-manage-firefox-suggest2 = Manage { -firefox-suggest-brand-name }
     .accesskey = M
 # Some urlbar suggestions show the user's approximate location as automatically
@@ -939,6 +941,13 @@ urlbar-view-context-menu-open-in-window2 = Open in New Window
 urlbar-view-context-menu-open-in-private-window2 = Open in New Private Window
     .accesskey = P
 
+# A checkable menu item that controls whether pressing the Tab key while
+# navigating the address bar results stops on each result's menu button. When
+# checked, the Tab key moves straight from one result to the next, skipping the
+# menu button that opens this menu.
+urlbar-view-context-menu-skip-menu-with-tab = Skip this menu when using the tab key
+    .accesskey = S
+
 ## Labels shown above groups of urlbar results
 
 # A label shown above the "Firefox Suggest" (bookmarks/history) group in the
@@ -1203,11 +1212,33 @@ panel-save-update-password-2 =
 
 ##
 
-# "More" item in macOS share menu
-menu-share-more =
-    .label = More…
-menu-share-windows =
-    .label = More Options
+# Caption shown in the native macOS share picker for the items being shared.
+# Variables:
+#   $count (Number) - The number of links being shared.
+menu-share-links =
+    .label =
+        { $count ->
+            [one] { $count } Link
+           *[other] { $count } Links
+        }
+# macOS-only item that opens the system share picker, used when a single link
+# is shared. "AirDrop" and "Messages" are names of macOS apps, so they should
+# match the macOS translation of those names where possible.
+menu-share-mac-picker-single =
+    .label = AirDrop, Messages, and More…
+    .accesskey = M
+# macOS-only item that opens the system share picker, used when more than one
+# link is shared. AirDrop is not mentioned here because it can only share a
+# single URL. "Messages" and "Mail" are names of macOS apps, so they should
+# match the macOS translation of those names where possible.
+menu-share-mac-picker-multiple =
+    .label = Messages, Mail, and More…
+    .accesskey = M
+# Share entry in the addressbar context menu. Opens the macOS share picker
+# directly, hence the ellipsis.
+urlbar-share-url =
+    .label = Share…
+    .accesskey = h
 # Variables:
 #   $count (Number) - The number of links that will be copied.
 menu-share-copy-links =
@@ -1217,6 +1248,8 @@ menu-share-copy-links =
            *[other] Copy { $count } Links
         }
     .accesskey = L
+menu-share-windows =
+    .label = More Options
 ui-tour-info-panel-close =
     .tooltiptext = Close
 
@@ -1312,6 +1345,17 @@ restore-session-startup-suggestion-button = Show me how
 
 filepicker-blocked-infobar = Your organization has blocked access to local files on this computer
 
+## Address bar result shown when someone who used the Extensions and Themes
+## keyboard shortcut presses that shortcut after it moved to Search Tabs.
+## Variables:
+##   $searchTabsShortcut (String) - The Search Tabs keyboard shortcut, e.g. "Ctrl+Shift+A".
+##   $addonsShortcut (String) - The Extensions and Themes keyboard shortcut, e.g. "Ctrl+Shift+F".
+
+urlbar-addons-shortcut-moved-title = { $searchTabsShortcut } now searches tabs
+urlbar-addons-shortcut-moved-description = To open extensions and themes, use { $addonsShortcut }.
+urlbar-addons-shortcut-moved-change-shortcuts = Manage shortcuts
+urlbar-addons-shortcut-moved-dismiss = Got it
+
 ## Mozilla data reporting notification (Telemetry, Firefox Health Report, etc)
 
 data-reporting-notification-message = { -brand-short-name } automatically sends some data to { -vendor-short-name } so that we can improve your experience.
@@ -1341,11 +1385,11 @@ private-browsing-info-panel-description = This helps keep your browsing hidden f
 # Variables:
 #   $agentName (String): The name of the DLP agent that is connected
 content-analysis-indicator-tooltip =
-    .tooltiptext = Data loss prevention (DLP) by { $agentName }. Click for more info.
-content-analysis-panel-title = Data protection
+    .tooltiptext = Data Loss Prevention (DLP) by { $agentName }. Click for more info.
+content-analysis-panel-title2 = Data loss prevention
 # Variables:
 #   $agentName (String): The name of the DLP agent that is connected
-content-analysis-panel-text-styled = Your organization uses <b>{ $agentName }</b> to protect against data loss. <a data-l10n-name="info">Learn more</a>
+content-analysis-panel-text-styled2 = Your organization uses <b>{ $agentName }</b> to control how sensitive data may be shared. <a data-l10n-name="info">Learn more</a>
 
 ## Unified extensions (toolbar) button
 

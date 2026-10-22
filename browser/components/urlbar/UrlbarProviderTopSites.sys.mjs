@@ -17,6 +17,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
   TOP_SITES_DEFAULT_ROWS: "resource:///modules/topsites/constants.mjs",
@@ -291,6 +292,13 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
             }
           }
 
+          if (
+            resultSource == lazy.UrlbarShared.RESULT_SOURCE.HISTORY ||
+            resultSource == lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS
+          ) {
+            payload.isBlockable = true;
+          }
+
           let result = new lazy.UrlbarResult({
             type: lazy.UrlbarShared.RESULT_TYPE.URL,
             source: resultSource,
@@ -359,6 +367,55 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
         Glean.contextualServicesTopsites.impression[`urlbar_${index}`].add(1);
       }
     });
+  }
+
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {UrlbarResult} details.result
+   * @param {string} details.selType
+   */
+  async onEngagement(queryContext, controller, { result, selType }) {
+    if (!result.payload.isBlockable) {
+      return;
+    }
+
+    switch (selType) {
+      case "dismiss": {
+        lazy.NewTabUtils.activityStreamLinks.blockURL({
+          url: result.payload.url,
+        });
+        controller.removeResult(result);
+        break;
+      }
+      case "remove_history": {
+        await lazy.PlacesUtils.history.remove(result.payload.url);
+        controller.removeResult(result);
+        break;
+      }
+    }
+  }
+
+  /**
+   * @param {UrlbarResult} result
+   * @returns {?UrlbarResultCommand[]}
+   */
+  getResultCommands(result) {
+    if (!result.payload.isBlockable) {
+      return null;
+    }
+
+    return [
+      {
+        name: "dismiss",
+        l10n: { id: "urlbar-result-menu-remove-top-site" },
+      },
+      {
+        name: "remove_history",
+        l10n: { id: "urlbar-result-menu-remove-from-history2" },
+      },
+    ];
   }
 
   async #fetchLastVisit(url) {

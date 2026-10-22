@@ -56,38 +56,9 @@ function lockIOWithMutex() {
 /**
  * Interface dedicated to handling I/O for Session Store.
  */
-export const SessionWriter = {
-  init(origin, useOldExtension, paths, prefs = {}) {
-    return SessionWriterInternal.init(origin, useOldExtension, paths, prefs);
-  },
-
-  /**
-   * Write the contents of the session file.
-   *
-   * @param state - May get changed on shutdown.
-   */
-  async write(state, options = {}) {
-    const unlock = await lockIOWithMutex();
-    try {
-      return await SessionWriterInternal.write(state, options);
-    } finally {
-      unlock();
-    }
-  },
-
-  async wipe() {
-    const unlock = await lockIOWithMutex();
-    try {
-      return await SessionWriterInternal.wipe();
-    } finally {
-      unlock();
-    }
-  },
-};
-
-const SessionWriterInternal = {
+export const SessionWriter = new (class {
   // Path to the files used by the SessionWriter
-  Paths: null,
+  #paths = null;
 
   /**
    * The current state of the session file, as one of the following strings:
@@ -95,17 +66,23 @@ const SessionWriterInternal = {
    * - one of "clean", "recovery", "recoveryBackup", "cleanBackup",
    *   "upgradeBackup" if we have started by loading the corresponding file.
    */
-  state: null,
+  #state = null;
 
   /**
    * A flag that indicates we loaded a session file with the deprecated .js extension.
    */
-  useOldExtension: false,
+  #useOldExtension = false;
 
   /**
    * Number of old upgrade backups that are being kept
    */
-  maxUpgradeBackups: null,
+  #maxUpgradeBackups = null;
+
+  #maxSerializeBack = null;
+
+  #maxSerializeForward = null;
+
+  #upgradeBackupNeeded = false;
 
   /**
    * Initialize (or reinitialize) the writer.
@@ -133,30 +110,40 @@ const SessionWriterInternal = {
       }
     }
 
-    this.useOldExtension = useOldExtension;
-    this.state = origin;
-    this.Paths = paths;
-    this.maxUpgradeBackups = prefs.maxUpgradeBackups;
-    this.maxSerializeBack = prefs.maxSerializeBack;
-    this.maxSerializeForward = prefs.maxSerializeForward;
-    this.upgradeBackupNeeded = paths.nextUpgradeBackup != paths.upgradeBackup;
+    this.#useOldExtension = useOldExtension;
+    this.#state = origin;
+    this.#paths = paths;
+    this.#maxUpgradeBackups = prefs.maxUpgradeBackups;
+    this.#maxSerializeBack = prefs.maxSerializeBack;
+    this.#maxSerializeForward = prefs.maxSerializeForward;
+    this.#upgradeBackupNeeded = paths.nextUpgradeBackup != paths.upgradeBackup;
     return { result: true };
-  },
+  }
 
   /**
-   * Write the session to disk.
    * Write the session to disk, performing any necessary backup
    * along the way.
    *
-   * @param {object} state The state to write to disk.
-   * @param {object} options
-   *  - performShutdownCleanup If |true|, we should
-   *    perform shutdown-time cleanup to ensure that private data
-   *    is not left lying around;
-   *  - isFinalWrite If |true|, write to Paths.clean instead of
-   *    Paths.recovery
+   * @param {object} state
+   *        The state to write to disk. May get changed on shutdown.
+   * @param {object} [options]
+   *        Options for write.
+   * @param {boolean} [options.performShutdownCleanup]
+   *        Whether we should perform shutdown-time cleanup to ensure that
+   *        private data is not left lying around.
+   * @param {boolean} [options.isFinalWrite]
+   *        Whether to write to Paths.clean instead of Paths.recovery.
    */
-  async write(state, options) {
+  async write(state, options = {}) {
+    const unlock = await lockIOWithMutex();
+    try {
+      return await this.#write(state, options);
+    } finally {
+      unlock();
+    }
+  }
+
+  async #write(state, options) {
     let exn;
     let telemetry = {};
 
@@ -167,11 +154,11 @@ const SessionWriterInternal = {
           let lower = 0;
           let upper = tab.entries.length;
 
-          if (this.maxSerializeBack > -1) {
-            lower = Math.max(lower, tab.index - this.maxSerializeBack - 1);
+          if (this.#maxSerializeBack > -1) {
+            lower = Math.max(lower, tab.index - this.#maxSerializeBack - 1);
           }
-          if (this.maxSerializeForward > -1) {
-            upper = Math.min(upper, tab.index + this.maxSerializeForward);
+          if (this.#maxSerializeForward > -1) {
+            upper = Math.min(upper, tab.index + this.#maxSerializeForward);
           }
 
           tab.entries = tab.entries.slice(lower, upper);
@@ -181,25 +168,25 @@ const SessionWriterInternal = {
     }
 
     try {
-      if (this.state == STATE_CLEAN || this.state == STATE_EMPTY) {
+      if (this.#state == STATE_CLEAN || this.#state == STATE_EMPTY) {
         // The backups directory may not exist yet. In all other cases,
         // we have either already read from or already written to this
         // directory, so we are satisfied that it exists.
-        await IOUtils.makeDirectory(this.Paths.backups);
+        await IOUtils.makeDirectory(this.#paths.backups);
       }
 
-      if (this.state == STATE_CLEAN) {
+      if (this.#state == STATE_CLEAN) {
         // Move $Path.clean out of the way, to avoid any ambiguity as
         // to which file is more recent.
-        if (!this.useOldExtension) {
-          await IOUtils.move(this.Paths.clean, this.Paths.cleanBackup);
+        if (!this.#useOldExtension) {
+          await IOUtils.move(this.#paths.clean, this.#paths.cleanBackup);
         } else {
           // Since we are migrating from .js to .jsonlz4,
           // we need to compress the deprecated $Path.clean
           // and write it to $Path.cleanBackup.
-          let oldCleanPath = this.Paths.clean.replace("jsonlz4", "js");
+          let oldCleanPath = this.#paths.clean.replace("jsonlz4", "js");
           let d = await IOUtils.read(oldCleanPath);
-          await IOUtils.write(this.Paths.cleanBackup, d, { compress: true });
+          await IOUtils.write(this.#paths.cleanBackup, d, { compress: true });
         }
       }
 
@@ -212,33 +199,33 @@ const SessionWriterInternal = {
         // originally present and valid, it has been moved to
         // $Paths.cleanBackup a long time ago. We can therefore write
         // with the guarantees that we erase no important data.
-        await IOUtils.writeJSON(this.Paths.clean, state, {
-          tmpPath: this.Paths.clean + ".tmp",
+        await IOUtils.writeJSON(this.#paths.clean, state, {
+          tmpPath: this.#paths.clean + ".tmp",
           compress: true,
         });
-        fileStat = await IOUtils.stat(this.Paths.clean);
-      } else if (this.state == STATE_RECOVERY) {
+        fileStat = await IOUtils.stat(this.#paths.clean);
+      } else if (this.#state == STATE_RECOVERY) {
         // At this stage, either $Paths.recovery was written >= 15
         // seconds ago during this session or we have just started
         // from $Paths.recovery left from the previous session. Either
         // way, $Paths.recovery is good. We can move $Path.backup to
         // $Path.recoveryBackup without erasing a good file with a bad
         // file.
-        await IOUtils.writeJSON(this.Paths.recovery, state, {
-          tmpPath: this.Paths.recovery + ".tmp",
-          backupFile: this.Paths.recoveryBackup,
+        await IOUtils.writeJSON(this.#paths.recovery, state, {
+          tmpPath: this.#paths.recovery + ".tmp",
+          backupFile: this.#paths.recoveryBackup,
           compress: true,
         });
-        fileStat = await IOUtils.stat(this.Paths.recovery);
+        fileStat = await IOUtils.stat(this.#paths.recovery);
       } else {
         // In other cases, either $Path.recovery is not necessary, or
         // it doesn't exist or it has been corrupted. Regardless,
         // don't backup $Path.recovery.
-        await IOUtils.writeJSON(this.Paths.recovery, state, {
-          tmpPath: this.Paths.recovery + ".tmp",
+        await IOUtils.writeJSON(this.#paths.recovery, state, {
+          tmpPath: this.#paths.recovery + ".tmp",
           compress: true,
         });
-        fileStat = await IOUtils.stat(this.Paths.recovery);
+        fileStat = await IOUtils.stat(this.#paths.recovery);
       }
 
       telemetry.writeFileMs = Date.now() - startWriteMs;
@@ -258,17 +245,17 @@ const SessionWriterInternal = {
     // If necessary, perform an upgrade backup
     let upgradeBackupComplete = false;
     if (
-      this.upgradeBackupNeeded &&
-      (this.state == STATE_CLEAN || this.state == STATE_UPGRADE_BACKUP)
+      this.#upgradeBackupNeeded &&
+      (this.#state == STATE_CLEAN || this.#state == STATE_UPGRADE_BACKUP)
     ) {
       try {
         // If we loaded from `clean`, the file has since then been renamed to `cleanBackup`.
         let path =
-          this.state == STATE_CLEAN
-            ? this.Paths.cleanBackup
-            : this.Paths.upgradeBackup;
-        await IOUtils.copy(path, this.Paths.nextUpgradeBackup);
-        this.upgradeBackupNeeded = false;
+          this.#state == STATE_CLEAN
+            ? this.#paths.cleanBackup
+            : this.#paths.upgradeBackup;
+        await IOUtils.copy(path, this.#paths.nextUpgradeBackup);
+        this.#upgradeBackupNeeded = false;
         upgradeBackupComplete = true;
       } catch (ex) {
         // Don't throw immediately
@@ -283,9 +270,9 @@ const SessionWriterInternal = {
       let backups = [];
 
       try {
-        let children = await IOUtils.getChildren(this.Paths.backups);
+        let children = await IOUtils.getChildren(this.#paths.backups);
         backups = children.filter(path =>
-          path.startsWith(this.Paths.upgradeBackupPrefix)
+          path.startsWith(this.#paths.upgradeBackupPrefix)
         );
       } catch (ex) {
         // Don't throw immediately
@@ -297,14 +284,14 @@ const SessionWriterInternal = {
       }
 
       // If too many backups exist, delete them
-      if (backups.length > this.maxUpgradeBackups) {
+      if (backups.length > this.#maxUpgradeBackups) {
         lazy.sessionStoreLogger.debug(
-          `SessionWriter.write, cleaning up ${backups.length - this.maxUpgradeBackups} backup files`
+          `SessionWriter.write, cleaning up ${backups.length - this.#maxUpgradeBackups} backup files`
         );
         // Use alphanumerical sort since dates are in YYYYMMDDHHMMSS format
         backups.sort();
         // remove backup file if it is among the first (n-maxUpgradeBackups) files
-        for (let i = 0; i < backups.length - this.maxUpgradeBackups; i++) {
+        for (let i = 0; i < backups.length - this.#maxUpgradeBackups; i++) {
           try {
             await IOUtils.remove(backups[i]);
           } catch (ex) {
@@ -326,11 +313,11 @@ const SessionWriterInternal = {
 
       // If an exception was raised, we assume that we still need
       // these files.
-      await IOUtils.remove(this.Paths.recoveryBackup);
-      await IOUtils.remove(this.Paths.recovery);
+      await IOUtils.remove(this.#paths.recoveryBackup);
+      await IOUtils.remove(this.#paths.recovery);
     }
 
-    this.state = STATE_RECOVERY;
+    this.#state = STATE_RECOVERY;
 
     if (exn) {
       throw exn;
@@ -342,20 +329,29 @@ const SessionWriterInternal = {
       },
       telemetry,
     };
-  },
+  }
 
   /**
    * Wipes all files holding session data from disk.
    */
   async wipe() {
+    const unlock = await lockIOWithMutex();
+    try {
+      return await this.#wipe();
+    } finally {
+      unlock();
+    }
+  }
+
+  async #wipe() {
     // Don't stop immediately in case of error.
     let exn = null;
 
     // Erase main session state file
     try {
-      await IOUtils.remove(this.Paths.clean);
+      await IOUtils.remove(this.#paths.clean);
       // Remove old extension ones.
-      let oldCleanPath = this.Paths.clean.replace("jsonlz4", "js");
+      let oldCleanPath = this.#paths.clean.replace("jsonlz4", "js");
       await IOUtils.remove(oldCleanPath, {
         ignoreAbsent: true,
       });
@@ -366,25 +362,25 @@ const SessionWriterInternal = {
 
     // Wipe the Session Restore directory
     try {
-      await IOUtils.remove(this.Paths.backups, { recursive: true });
+      await IOUtils.remove(this.#paths.backups, { recursive: true });
     } catch (ex) {
       exn = exn || ex;
     }
 
     // Wipe legacy Session Restore files from the profile directory
     try {
-      await this._wipeFromDir(PathUtils.profileDir, "sessionstore.bak");
+      await this.#wipeFromDir(PathUtils.profileDir, "sessionstore.bak");
     } catch (ex) {
       exn = exn || ex;
     }
 
-    this.state = STATE_EMPTY;
+    this.#state = STATE_EMPTY;
     if (exn) {
       throw exn;
     }
 
     return { result: true };
-  },
+  }
 
   /**
    * Wipe a number of files from a directory.
@@ -393,7 +389,7 @@ const SessionWriterInternal = {
    * @param {string} prefix Remove files whose
    * name starts with the prefix.
    */
-  async _wipeFromDir(path, prefix) {
+  async #wipeFromDir(path, prefix) {
     // Sanity check
     if (!prefix) {
       throw new TypeError("Must supply prefix");
@@ -423,5 +419,5 @@ const SessionWriterInternal = {
     if (exn) {
       throw exn;
     }
-  },
-};
+  }
+})();

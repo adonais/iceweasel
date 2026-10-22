@@ -1,5 +1,13 @@
 "use strict";
 
+add_setup(async function () {
+  // Right-clicking text selects the word under the cursor on macOS, which adds
+  // a selection to the context menu this test checks.
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+});
+
 // Make sure that we won't trigger events for a private window.
 add_task(async function test_no_show_hide_for_private_window() {
   function background() {
@@ -89,11 +97,11 @@ add_task(async function test_no_show_hide_for_private_window() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:robots"
+    "https://example.com/browser/browser/components/extensions/test/browser/file_dummy.html"
   );
 
   // Open and close a menu on the public window.
-  await openContextMenu("body");
+  await openContextMenu("p");
 
   // We naturally expect both extensions here.
   ok(document.getElementById(extMenuId), `menu exists ${extMenuId}`);

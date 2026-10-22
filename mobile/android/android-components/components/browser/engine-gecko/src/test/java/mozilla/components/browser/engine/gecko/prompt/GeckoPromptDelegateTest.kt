@@ -329,7 +329,7 @@ class GeckoPromptDelegateTest {
 
         promptDelegate.onDateTimePrompt(mock(), geckoPrompt)
 
-        assertNotNull(timeSelectionRequest) {
+        assertNotNull(timeSelectionRequest).let {
             assertEquals(it.initialDate, "2019-11-29".toDate("yyyy-MM-dd"))
             assertEquals(it.minimumDate, "2019-11-28".toDate("yyyy-MM-dd"))
             assertEquals(it.maximumDate, "2019-11-30".toDate("yyyy-MM-dd"))
@@ -397,7 +397,7 @@ class GeckoPromptDelegateTest {
             )
         promptDelegate.onDateTimePrompt(mock(), geckoPrompt)
 
-        assertNotNull(timeSelectionRequest) {
+        assertNotNull(timeSelectionRequest).let {
             assertEquals(it.initialDate, "2019-11".toDate("yyyy-MM"))
             assertEquals(it.minimumDate, "2019-11".toDate("yyyy-MM"))
             assertEquals(it.maximumDate, "2019-11".toDate("yyyy-MM"))
@@ -463,7 +463,7 @@ class GeckoPromptDelegateTest {
             )
         promptDelegate.onDateTimePrompt(mock(), geckoPrompt)
 
-        assertNotNull(timeSelectionRequest) {
+        assertNotNull(timeSelectionRequest).let {
             assertEquals(it.initialDate, "2018-W18".toDate("yyyy-'W'ww"))
             assertEquals(it.minimumDate, "2018-W18".toDate("yyyy-'W'ww"))
             assertEquals(it.maximumDate, "2018-W26".toDate("yyyy-'W'ww"))
@@ -529,7 +529,7 @@ class GeckoPromptDelegateTest {
             )
         promptDelegate.onDateTimePrompt(mock(), geckoPrompt)
 
-        assertNotNull(timeSelectionRequest) {
+        assertNotNull(timeSelectionRequest).let {
             assertEquals(it.initialDate, "17:00".toDate("HH:mm"))
             assertEquals(it.minimumDate, "9:00".toDate("HH:mm"))
             assertEquals(it.maximumDate, "18:00".toDate("HH:mm"))
@@ -677,7 +677,7 @@ class GeckoPromptDelegateTest {
             )
         promptDelegate.onDateTimePrompt(mock(), geckoPrompt)
 
-        assertNotNull(timeSelectionRequest) {
+        assertNotNull(timeSelectionRequest).let {
             assertEquals(it.initialDate, "2018-06-12T19:30".toDate("yyyy-MM-dd'T'HH:mm"))
             assertEquals(it.minimumDate, "2018-06-07T00:00".toDate("yyyy-MM-dd'T'HH:mm"))
             assertEquals(it.maximumDate, "2018-06-14T00:00".toDate("yyyy-MM-dd'T'HH:mm"))

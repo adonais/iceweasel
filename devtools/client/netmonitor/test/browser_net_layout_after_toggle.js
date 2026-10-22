@@ -21,7 +21,7 @@ add_task(async function () {
 
   info("Select the first request to show the details side panel");
   const firstRequest = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
 
   // Wait for a reflow before measuring the request list height.
   await new Promise(r =>

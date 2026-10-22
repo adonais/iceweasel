@@ -7,6 +7,8 @@
 
 #include "ppc.h"
 
+#include "mozilla/Attributes.h"
+
 #if defined(XP_LINUX)
 // Use the getauxval() function if available.
 // ARCH_3_00 wasn't defined until glibc 2.23, so include just in case.
@@ -53,8 +55,8 @@ static signed get_ppc_cpu_flags(void) {
 
 namespace mozilla {
 namespace ppc_private {
-bool vmx_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VMX);
-bool vsx_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VSX);
-bool vsx3_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VSX3);
+MOZ_RUNINIT bool vmx_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VMX);
+MOZ_RUNINIT bool vsx_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VSX);
+MOZ_RUNINIT bool vsx3_enabled = !!(get_ppc_cpu_flags() & PPC_FLAG_VSX3);
 }  // namespace ppc_private
 }  // namespace mozilla

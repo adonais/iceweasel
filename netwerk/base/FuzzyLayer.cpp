@@ -4,9 +4,10 @@
 
 #include "FuzzyLayer.h"
 
+#include <deque>
+
 #include "mozilla/Logging.h"
 #include "mozilla/StaticMutex.h"
-#include "nsDeque.h"
 #include "nsIRunnable.h"
 #include "nsSocketTransportService2.h"
 #include "nsTHashMap.h"
@@ -42,10 +43,20 @@ constinit static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 // This holds all buffers for connections we can still open.
-// Intentionally leaked to avoid destructor running after XPCOM shutdown
-// (nsDeque dtor -> NS_LogDtor -> mutex lock on already-destroyed mutex).
-MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer>& gNetworkFuzzingBuffers =
-    *new nsDeque<NetworkFuzzingBuffer>();
+// This is a std::deque rather than an nsDeque because nsDeque's constructor and
+// destructor are logged by nsTraceRefcnt, which either reports a leak or locks
+// a mutex that is already destroyed when the destructor runs after XPCOM
+// shutdown.
+MOZ_RUNINIT static std::deque<NetworkFuzzingBuffer*> gNetworkFuzzingBuffers;
+
+static NetworkFuzzingBuffer* PopFrontNetworkFuzzingBuffer() {
+  if (gNetworkFuzzingBuffers.empty()) {
+    return nullptr;
+  }
+  NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.front();
+  gNetworkFuzzingBuffers.pop_front();
+  return buf;
+}
 
 // This is `true` once all connections are closed and either there are
 // no buffers left to be used or all remaining buffers are marked optional.
@@ -81,7 +92,7 @@ void addNetworkFuzzingBuffer(const uint8_t* data, size_t size, bool readFirst,
   buf->allowUnused = useIsOptional;
   buf->addr = nullptr;
 
-  gNetworkFuzzingBuffers.Push(buf);
+  gNetworkFuzzingBuffers.push_back(buf);
 
   fuzzingMainSignaledDone = false;
   fuzzingNoWaitRequired = false;
@@ -102,7 +113,7 @@ bool signalNetworkFuzzingDone() {
   if (fuzzingNoWaitRequired) {
     FUZZING_LOG(("[signalNetworkFuzzingDone] Purging remaining buffers."));
     // Easy case, we already have no connections and non-optional buffers left.
-    gNetworkFuzzingBuffers.Erase();
+    gNetworkFuzzingBuffers.clear();
     gFuzzingConnClosed = true;
     rv = true;
   } else {
@@ -146,7 +157,7 @@ static PRStatus FuzzyConnect(PRFileDesc* fd, const PRNetAddr* addr,
 
   StaticMutexAutoLock lock(gConnRecvMutex);
 
-  NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.PopFront();
+  NetworkFuzzingBuffer* buf = PopFrontNetworkFuzzingBuffer();
   if (!buf) {
     FUZZING_LOG(("[FuzzyConnect] Denying additional connection."));
     return PR_FAILURE;
@@ -172,7 +183,7 @@ static PRInt32 FuzzySendTo(PRFileDesc* fd, const void* buf, PRInt32 amount,
 
   NetworkFuzzingBuffer* fuzzBuf = gConnectedNetworkFuzzingBuffers.Get(fd);
   if (!fuzzBuf) {
-    NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.PopFront();
+    NetworkFuzzingBuffer* buf = PopFrontNetworkFuzzingBuffer();
     if (!buf) {
       FUZZING_LOG(("[FuzzySentTo] Denying additional connection."));
       return 0;
@@ -330,8 +341,8 @@ static PRStatus FuzzyClose(PRFileDesc* fd) {
     // At this point, all connections are closed, but we might still have
     // unused network buffers that were not marked as optional.
     bool haveRemainingUnusedBuffers = false;
-    for (size_t i = 0; i < gNetworkFuzzingBuffers.GetSize(); ++i) {
-      NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.ObjectAt(i);
+    for (size_t i = 0; i < gNetworkFuzzingBuffers.size(); ++i) {
+      NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers[i];
 
       if (!buf->allowUnused) {
         haveRemainingUnusedBuffers = true;
@@ -355,7 +366,7 @@ static PRStatus FuzzyClose(PRFileDesc* fd) {
       // and then signal the main thread to continue.
       FUZZING_LOG(("[FuzzyClose] All connections closed, cleaning up."));
 
-      gNetworkFuzzingBuffers.Erase();
+      gNetworkFuzzingBuffers.clear();
       gFuzzingConnClosed = true;
 
       // We need to dispatch this so the main thread is guaranteed to wake up

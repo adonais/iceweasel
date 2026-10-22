@@ -1,0 +1,263 @@
+Ensure that the interception thunks for a module can be allocated.
+
+The child allocates the thunks for a patched dll within 2GiB above that dll's
+base address, because an export address table entry is a 32-bit RVA from it. A
+module's base is fixed for the lifetime of the boot and can end up close enough
+to the top of the address space, or hemmed in closely enough by other modules,
+that no allocation is possible above it. The interceptions for it are then
+silently skipped.
+
+Refactor the search that AllocateNearTo performs into FreeSpaceNearTo, so that
+it can also be run without allocating, and use that in the broker to detect this
+before the child starts. Where our own mapping of a module predicts that it will
+be unpatchable, reserve its base in the child so that the loader relocates it to
+somewhere that can be patched.
+
+diff --git a/sandbox/win/src/interception.cc b/sandbox/win/src/interception.cc
+index 35989536a951..f3f3f99f0d44 100644
+--- a/sandbox/win/src/interception.cc
++++ b/sandbox/win/src/interception.cc
+@@ -25,6 +25,7 @@
+ #include "sandbox/win/src/interceptors.h"
+ #include "sandbox/win/src/internal_types.h"
+ #include "sandbox/win/src/sandbox.h"
++#include "sandbox/win/src/sandbox_nt_util.h"
+ #include "sandbox/win/src/service_resolver.h"
+ #include "sandbox/win/src/target_interceptions.h"
+ #include "sandbox/win/src/target_process.h"
+@@ -194,6 +195,24 @@ size_t InterceptionManager::GetBufferSize() const {
+   return buffer_bytes;
+ }
+ 
++void InterceptionManager::ReserveBaseIfUnpatchable(const std::wstring& dll,
++                                                   size_t num_functions) {
++  // Modules will be mapped in the same position in every process, so we use
++  // where ours are mapped to predict patching issues.
++  HMODULE module = ::GetModuleHandleW(dll.c_str());
++  if (!module) {
++    return;
++  }
++
++  if (CanAllocateNearTo(module, GetDllInterceptionDataSize(num_functions))) {
++    return;
++  }
++
++  // Reserve a byte to make the loader relocate it to where it can be patched.
++  (void)::VirtualAllocEx(child_->Process(), module, 1, MEM_RESERVE,
++                         PAGE_NOACCESS);
++}
++
+ // Basically, walk the list of interceptions moving them to the config buffer,
+ // but keeping together all interceptions that belong to the same dll.
+ // The config buffer is a local buffer, not the one allocated on the child.
+@@ -240,6 +259,12 @@ bool InterceptionManager::SetupConfigBuffer(void* buffer, size_t buffer_bytes) {
+         ++rest;
+       }
+     }
++
++    // A module that is going to be unloaded is never patched.
++    if (!dll_info->unload_module) {
++      ReserveBaseIfUnpatchable(dll, dll_info->num_functions);
++    }
++
+     dll_info = reinterpret_cast<DllPatchInfo*>(buffer);
+     ++num_dlls;
+   }
+diff --git a/sandbox/win/src/interception.h b/sandbox/win/src/interception.h
+index 2a214c0b38b1..c05fb85ed35c 100644
+--- a/sandbox/win/src/interception.h
++++ b/sandbox/win/src/interception.h
+@@ -156,6 +156,10 @@ class InterceptionManager {
+   // Calculates the size of the required configuration buffer.
+   size_t GetBufferSize() const;
+ 
++  // Detects if the DLL is likely to be unpatchable in the child and reserves a
++  // byte at its base in the child to force it to a new location.
++  void ReserveBaseIfUnpatchable(const std::wstring& dll, size_t num_functions);
++
+   // Sets up a given buffer with all the information that has to be transfered
+   // to the child.
+   // Returns true on success.
+diff --git a/sandbox/win/src/interception_agent.cc b/sandbox/win/src/interception_agent.cc
+index 519b6865e315..4065f6a8e4eb 100644
+--- a/sandbox/win/src/interception_agent.cc
++++ b/sandbox/win/src/interception_agent.cc
+@@ -108,8 +108,7 @@ bool InterceptionAgent::OnDllLoad(const UNICODE_STRING* full_path,
+   if (dlls_[i])
+     return true;
+ 
+-  size_t buffer_bytes = offsetof(DllInterceptionData, thunks) +
+-                        dll_info->num_functions * sizeof(ThunkData);
++  size_t buffer_bytes = GetDllInterceptionDataSize(dll_info->num_functions);
+   dlls_[i] = reinterpret_cast<DllInterceptionData*>(
+       new (NT_PAGE, base_address) char[buffer_bytes]);
+ 
+diff --git a/sandbox/win/src/interception_internal.h b/sandbox/win/src/interception_internal.h
+index 39cb695c194d..e71bbbb9572a 100644
+--- a/sandbox/win/src/interception_internal.h
++++ b/sandbox/win/src/interception_internal.h
+@@ -87,6 +87,13 @@ struct PatchClientResultData {
+ 
+ #pragma pack(pop)
+ 
++// Size required to hold the interception data for a dll with `num_functions`
++// interceptions.
++inline size_t GetDllInterceptionDataSize(size_t num_functions) {
++  return offsetof(DllInterceptionData, thunks) +
++         num_functions * sizeof(ThunkData);
++}
++
+ }  // namespace sandbox
+ 
+ #endif  // SANDBOX_WIN_SRC_INTERCEPTION_INTERNAL_H_
+diff --git a/sandbox/win/src/sandbox_nt_util.cc b/sandbox/win/src/sandbox_nt_util.cc
+index bd138b95286f..f1d6b5e204e3 100644
+--- a/sandbox/win/src/sandbox_nt_util.cc
++++ b/sandbox/win/src/sandbox_nt_util.cc
+@@ -54,53 +54,71 @@ inline char* AlignToBoundary(void* ptr, size_t increment) {
+   return reinterpret_cast<char*>(ret_ptr);
+ }
+ 
+-// Allocate a memory block somewhere within 2GiB of a specified base address.
+-// This is used for the DLL hooking code to get a valid trampoline location
+-// which must be within +/- 2GiB of the base. We only consider +2GiB for now.
+-void* AllocateNearTo(void* source, size_t size) {
+-  // 2GiB, maximum upper bound the allocation address must be within.
+-  const size_t kMaxSize = 0x80000000ULL;
+-  // We don't support null as a base as this would just pick an arbitrary
+-  // address when passed to NtAllocateVirtualMemory.
+-  if (!source)
+-    return nullptr;
+-  // Ignore an allocation which is larger than the maximum.
+-  if (size > kMaxSize)
+-    return nullptr;
++// Walks the addresses where an allocation of `size` could be made within 2GiB
++// above `source`.
++class FreeSpaceNearTo {
++  // EAT hooking code needs a trampoline within +2GiB of the base.
++  static constexpr size_t kMaxNearToDistance = 0x80000000ULL;
++
++ public:
++  FreeSpaceNearTo(void* source, size_t size) : size_(size) {
++    // Null `source` is not supported, as NtAllocateVirtualMemory would then
++    // just pick an arbitrary address.
++    if (!source || size > kMaxNearToDistance) {
++      return;
++    }
+ 
+-  // Ensure base address is aligned to the allocation granularity boundary.
+-  char* base = AlignToBoundary(source, 0);
+-  if (!base)
+-    return nullptr;
+-  // Set top address to be base + 2GiB.
+-  const char* top_address = base + kMaxSize;
+-
+-  while (base < top_address) {
+-    // Avoid memset inserted by -ftrivial-auto-var-init=pattern.
+-    STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
+-    NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
+-        NtCurrentProcess, base, MemoryBasicInformation, &mem_info,
+-        sizeof(mem_info), nullptr);
+-    if (!NT_SUCCESS(status))
+-      break;
+-
+-    if ((mem_info.State == MEM_FREE) && (mem_info.RegionSize >= size)) {
+-      // We've found a valid free block, try and allocate it for use.
+-      // Note that we need to both commit and reserve the block for the
+-      // allocation to succeed as per Windows virtual memory requirements.
+-      void* ret_base = mem_info.BaseAddress;
+-      status = sandbox::GetNtExports()->AllocateVirtualMemory(
+-          NtCurrentProcess, &ret_base, 0, &size, MEM_COMMIT | MEM_RESERVE,
+-          PAGE_READWRITE);
+-      // Shouldn't fail, but if it does we'll just continue and try next block.
+-      if (NT_SUCCESS(status))
+-        return ret_base;
++    next_ = AlignToBoundary(source, 0);
++    if (next_) {
++      top_ = next_ + kMaxNearToDistance;
+     }
++  }
++
++  // Returns the lowest usable address not yet examined, so a caller whose
++  // allocation fails can simply call again. nullptr when there are none left.
++  void* Next() {
++    while (next_ && next_ < top_) {
++      // Avoid memset inserted by -ftrivial-auto-var-init=pattern.
++      STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
++      NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
++          NtCurrentProcess, next_, MemoryBasicInformation, &mem_info,
++          sizeof(mem_info), nullptr);
++      if (!NT_SUCCESS(status)) {
++        break;
++      }
+ 
+-    // Update base past current allocation region.
+-    base = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
+-    if (!base)
+-      break;
++      // next_ is already page aligned, so it should match the base address.
++      DCHECK_NT(mem_info.BaseAddress == next_);
++      char* candidate = next_;
++
++      // Advance before returning, so that a repeat call moves on.
++      next_ = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
++      if (mem_info.State == MEM_FREE && mem_info.RegionSize >= size_) {
++        return candidate;
++      }
++    }
++    return nullptr;
++  }
++
++ private:
++  char* next_ = nullptr;
++  const char* top_ = nullptr;
++  size_t size_;
++};
++
++// Allocate a memory block somewhere within 2GiB of a specified base address.
++void* AllocateNearTo(void* source, size_t size) {
++  FreeSpaceNearTo search(source, size);
++  while (void* candidate = search.Next()) {
++    // We need to both commit and reserve the block for the allocation to
++    // succeed as per Windows virtual memory requirements.
++    NTSTATUS status = sandbox::GetNtExports()->AllocateVirtualMemory(
++        NtCurrentProcess, &candidate, 0, &size, MEM_COMMIT | MEM_RESERVE,
++        PAGE_READWRITE);
++    // Shouldn't fail, but if it does we'll just continue and try next block.
++    if (NT_SUCCESS(status)) {
++      return candidate;
++    }
+   }
+   return nullptr;
+ }
+@@ -195,6 +213,15 @@ static_assert(offsetof(PARTIAL_TEB, ProcessEnvironmentBlock) ==
+ 
+ namespace sandbox {
+ 
++bool CanAllocateNearTo(void* source, size_t size) {
++#if defined(_WIN64)
++  return FreeSpaceNearTo(source, size).Next() != nullptr;
++#else
++  // Any address is near to `source` in a 32-bit address space.
++  return true;
++#endif  // defined(_WIN64).
++}
++
+ // Handle for our private heap.
+ void* g_heap = nullptr;
+ 
+diff --git a/sandbox/win/src/sandbox_nt_util.h b/sandbox/win/src/sandbox_nt_util.h
+index a2772fa3275f..031b921a4d6a 100644
+--- a/sandbox/win/src/sandbox_nt_util.h
++++ b/sandbox/win/src/sandbox_nt_util.h
+@@ -116,6 +116,10 @@ std::optional<base::span<const uint8_t>> GetGlobalDelegateData();
+ // Returns a reference to imported NT functions.
+ const NtExports* GetNtExports();
+ 
++// Returns whether AllocateNearTo would find space for `size` above `source`,
++// which is where a module's interception thunks have to be allocated.
++bool CanAllocateNearTo(void* source, size_t size);
++
+ enum RequiredAccess { READ, WRITE };
+ 
+ // Performs basic user mode buffer validation. In any case, buffers access must

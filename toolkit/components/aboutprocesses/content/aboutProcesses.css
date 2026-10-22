@@ -250,6 +250,17 @@ tr.thread {
   opacity: 0.3;
 }
 
+/* Row-level opacity composites onto descendants, capping the go-to-tab
+   icon's own focus-visible opacity below 1 -- undo the row dim for tab rows
+   and apply it to the non-action cells instead so the button isn't capped. */
+tr.tab-row.killed {
+  opacity: 1;
+}
+
+tr.tab-row.killed > td:not(:last-child) {
+  opacity: 0.3;
+}
+
 /* icons */
 .close-icon {
   background: url("chrome://global/skin/icons/close.svg") no-repeat center;
@@ -281,6 +292,57 @@ tr:is([selected], :hover, :focus-visible):not(.killing) > td > .close-icon,
   color: var(--button-text-color-active);
 }
 
+.unload-icon,
+.go-to-tab-icon {
+  /* Sized to moon.svg/arrow-right.svg's shared native 16px (clips oddly at
+     close-icon's 10px); padding trimmed to keep the same 24px footprint. */
+  display: inline-block;
+  height: 100%;
+  width: 16px;
+  padding: 2px 4px;
+  margin: -2px -5px;
+  opacity: 0;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+/* No rtl mirroring -- moon.svg is non-directional, like its other consumers (theme-picker, about:addons). */
+.unload-icon {
+  background: url("chrome://global/skin/icons/moon.svg") no-repeat center;
+}
+
+.go-to-tab-icon {
+  background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat center;
+}
+
+.go-to-tab-icon:dir(rtl) {
+  transform: scaleX(-1);
+}
+
+/* Unlike .close-icon, no [selected]/:focus-visible here -- this view's rows aren't focusable or selectable. */
+tr:hover:not(.killing) > td > .unload-icon,
+tr:hover:not(.killing) > td > .go-to-tab-icon,
+.unload-icon:focus-visible,
+.go-to-tab-icon:focus-visible {
+  opacity: 1;
+}
+
+.unload-icon:hover,
+.go-to-tab-icon:hover,
+.unload-icon:focus-visible,
+.go-to-tab-icon:focus-visible {
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
+}
+
+.unload-icon:hover:active,
+.go-to-tab-icon:hover:active,
+.unload-icon:focus-visible:active,
+.go-to-tab-icon:focus-visible:active {
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
+}
+
 /* column-name */
 
 /* When the process is reported as frozen, we display an hourglass before its name. */
@@ -305,4 +367,10 @@ tr.separate-from-previous-process-group {
 }
 .cpu:dir(rtl) {
   background: linear-gradient(to right, var(--bar-color) calc(var(--bar-width) * 1%), transparent calc(var(--bar-width) * 1%));
+}
+
+/* No CPU bar in the tab view -- --bar-width's default of 0 still leaves a
+   rounding sliver of the gradient visible. */
+.tab-row > .cpu {
+  background: none;
 }

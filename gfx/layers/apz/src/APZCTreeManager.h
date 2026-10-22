@@ -20,10 +20,10 @@
 #include "mozilla/TimeStamp.h"       // for mozilla::TimeStamp
 #include "mozilla/UniquePtr.h"       // for UniquePtr
 #include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Logging.h"            // for gfx::TreeLog
-#include "mozilla/gfx/Matrix.h"             // for Matrix4x4
-#include "mozilla/layers/APZInputBridge.h"  // for APZInputBridge
-#include "mozilla/layers/APZUtils.h"        // for AsyncTransformComponents
+#include "mozilla/gfx/Logging.h"       // for gfx::TreeLog
+#include "mozilla/gfx/Matrix.h"        // for Matrix4x4
+#include "mozilla/layers/APZBridge.h"  // for APZBridge
+#include "mozilla/layers/APZUtils.h"   // for AsyncTransformComponents
 #include "mozilla/layers/CompositorScrollUpdate.h"  // for CompositorScrollUpdate
 #include "mozilla/layers/IAPZCTreeManager.h"        // for IAPZCTreeManager
 #include "mozilla/layers/KeyboardMap.h"             // for KeyboardMap
@@ -111,7 +111,7 @@ struct ZoomTarget;
  * Behaviour of APZ is controlled by a number of preferences shown
  * \ref APZCPrefs "here".
  */
-class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
+class APZCTreeManager : public IAPZCTreeManager, public APZBridge {
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
   typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
   using HitTestResult = IAPZHitTester::HitTestResult;
@@ -209,7 +209,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                           const SampleTime& aSampleTime);
 
   /**
-   * Refer to the documentation of APZInputBridge::ReceiveInputEvent() and
+   * Refer to the documentation of APZBridge::ReceiveInputEvent() and
    * APZEventResult.
    */
   APZEventResult ReceiveInputEvent(
@@ -455,7 +455,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
    */
   bool ChainHasFastPathApzAwareListener(const ScrollableLayerGuid& aHitGuid);
 
-  APZInputBridge* InputBridge() override { return this; }
+  RefPtr<APZBridge> Bridge() override { return this; }
 
   /**
    * Add a callback to be invoked when |aInputBlockId| is ready for handling.
@@ -888,6 +888,15 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                                 const MutexAutoLock& aProofOfMapLock)
       MOZ_REQUIRES(mMapLock) {
     mInteractiveWidget = aInteractiveWidgetMode;
+  }
+  // The compositor-side counterpart of
+  // nsPresContext::IsKeyboardVisibleOnOverlaysContent; the two need to be kept
+  // consistent.
+  bool IsKeyboardVisibleOnOverlaysContent(
+      const MutexAutoLock& aProofOfMapLock) const MOZ_REQUIRES(mMapLock) {
+    return IsSoftwareKeyboardVisible(aProofOfMapLock) &&
+           InteractiveWidgetMode(aProofOfMapLock) ==
+               dom::InteractiveWidget::OverlaysContent;
   }
 
  protected:

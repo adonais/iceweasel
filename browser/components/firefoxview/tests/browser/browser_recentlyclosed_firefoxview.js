@@ -59,7 +59,7 @@ async function tabTestCleanup() {
 async function prepareSingleClosedTab() {
   Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Closed tab count after purging session history"
   );
@@ -72,7 +72,7 @@ async function prepareSingleClosedTab() {
 async function prepareClosedTabs() {
   Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Closed tab count after purging session history"
   );
@@ -417,7 +417,7 @@ add_task(async function test_dismiss_tab() {
     listItems = listElem.rowEls;
     expectedURLs.pop(); // we expect to have removed the last URL from the list
     let actualClosedTabCount =
-      SessionStore.getClosedTabCount(window) +
+      SessionStore.getClosedTabCount({ sourceWindow: window }) +
       SessionStore.getClosedTabCountFromClosedWindows();
     Assert.equal(
       actualClosedTabCount,
@@ -436,7 +436,7 @@ add_task(async function test_dismiss_tab() {
 add_task(async function test_empty_states() {
   Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Closed tab count after purging session history"
   );

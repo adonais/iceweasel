@@ -37,7 +37,7 @@ var PointerlockFsWarning = {
   },
 
   showPointerLock(aOrigin) {
-    if (!document.fullscreen) {
+    if (!document.fullscreenElement) {
       let timeout = Services.prefs.getIntPref(
         "pointer-lock-api.warning.timeout"
       );
@@ -477,7 +477,7 @@ var FullScreen = {
 
   exitDomFullScreen() {
     // Don't use `this` here. It does not reliably refer to this object.
-    if (document.fullscreen) {
+    if (document.fullscreenElement) {
       document.exitFullscreen();
     }
   },

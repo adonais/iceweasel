@@ -69,7 +69,7 @@ prefs = ["browser.urlbar.suggest.engines=false"]
 
 ["test_UrlbarUtils_getBackspaceBlock.js"]
 
-["test_UrlbarUtils_getRemoteIconUrl.js"]
+["test_UrlbarUtils_getRemoteImageUrl.js"]
 
 ["test_UrlbarUtils_getShortcutOrURIAndPostData.js"]
 

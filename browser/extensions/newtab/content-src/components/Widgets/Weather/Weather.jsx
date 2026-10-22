@@ -9,6 +9,7 @@ import { PREF_WEATHER_SIZE } from "common/WidgetsRegistry.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 
 const USER_ACTION_TYPES = {
@@ -328,13 +329,10 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
   function renderContextMenu() {
     return (
       <div className="weather-context-menu-wrapper">
-        <moz-button
+        <WidgetMenuButton
           className="weather-context-menu-button"
-          data-l10n-id="newtab-menu-section-tooltip"
-          iconSrc="chrome://global/skin/icons/more.svg"
           menuId="weather-widget-context-menu"
-          type="ghost"
-          size="small"
+          l10nId="newtab-weather-widget-open-menu-button"
         />
         <panel-list
           className="panel-list-no-icons"
@@ -436,7 +434,9 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
       <div className="widget-title-bar">
         <div className="widget-title">
           {!showOptInState && !searchActive && (
-            <h3>{weatherData.locationData.city}</h3>
+            <h3 className="newtab-widget-title">
+              {weatherData.locationData.city}
+            </h3>
           )}
         </div>
         {!searchActive && renderContextMenu()}

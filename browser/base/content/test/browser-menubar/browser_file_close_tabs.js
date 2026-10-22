@@ -43,7 +43,61 @@ add_task(async function test_menu_close_tab_count() {
   info("Tabs closed");
 });
 
+add_task(async function test_menu_close_items_with_vertical_tabs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", true],
+    ],
+  });
+  await BrowserTestUtils.waitForMutationCondition(
+    gNavToolbox,
+    { attributeFilter: ["tabs-hidden"] },
+    () => gNavToolbox.hasAttribute("tabs-hidden")
+  );
+
+  let { closeTab, closeWindow } = await openFileMenu(window);
+  ok(!closeWindow.hidden, "Close Window is shown with vertical tabs");
+  is(closeTab.getAttribute("label"), "Close Tab", "Close Tab names the tab");
+  await simulateMenuClosed(document.getElementById("menu_FilePopup"));
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_menu_close_items_in_popup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.disable_open_during_load", false]],
+  });
+  let newWin = BrowserTestUtils.waitForNewWindow();
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.open("about:blank", "", "popup");
+  });
+  let win = await newWin;
+
+  let { closeTab, closeWindow } = await openFileMenu(win);
+  ok(closeWindow.hidden, "Close Window is hidden in a popup");
+  is(closeTab.getAttribute("label"), "Close", "Close doesn't mention the tab");
+  is(closeTab.getAttribute("accesskey"), "C", "Close has an access key");
+  await simulateMenuClosed(win.document.getElementById("menu_FilePopup"));
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+async function openFileMenu(win) {
+  let doc = win.document;
+  await simulateMenuOpen(doc.getElementById("menu_FilePopup"));
+  if (doc.hasPendingL10nMutations) {
+    await BrowserTestUtils.waitForEvent(doc, "L10nMutationsFinished");
+  }
+  return {
+    closeTab: doc.getElementById("menu_close"),
+    closeWindow: doc.getElementById("menu_closeWindow"),
+  };
+}
+
 async function simulateMenuOpen(menu) {
+  let { MouseEvent } = menu.documentGlobal;
   return new Promise(resolve => {
     menu.addEventListener("popupshown", resolve, { once: true });
     menu.dispatchEvent(new MouseEvent("popupshowing", { bubbles: true }));
@@ -52,6 +106,7 @@ async function simulateMenuOpen(menu) {
 }
 
 async function simulateMenuClosed(menu) {
+  let { MouseEvent } = menu.documentGlobal;
   return new Promise(resolve => {
     menu.addEventListener("popuphidden", resolve, { once: true });
     menu.dispatchEvent(new MouseEvent("popuphiding", { bubbles: true }));

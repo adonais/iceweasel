@@ -18,6 +18,7 @@
 #include "dev.h"
 #endif /* DEV_H */
 
+#include "certdb.h"
 #include "hasht.h"
 #include "pk11func.h"
 #include "pki3hack.h"
@@ -948,6 +949,40 @@ nssTrust_Destroy(NSSTrust *trust)
         (void)nssPKIObject_Destroy(&trust->object);
     }
     return PR_SUCCESS;
+}
+
+/* see pk11cert.c:pk11_HandleTrustObject */
+static unsigned int
+nssTrustLevel_ToCERTCertTrustFlags(nssTrustLevel t)
+{
+    unsigned int rt = 0;
+    if (t == nssTrustLevel_Trusted) {
+        rt |= CERTDB_TERMINAL_RECORD | CERTDB_TRUSTED;
+    }
+    if (t == nssTrustLevel_TrustedDelegator) {
+        rt |= CERTDB_VALID_CA | CERTDB_TRUSTED_CA | CERTDB_NS_TRUSTED_CA;
+    }
+    if (t == nssTrustLevel_NotTrusted) {
+        rt |= CERTDB_TERMINAL_RECORD;
+    }
+    if (t == nssTrustLevel_ValidDelegator) {
+        rt |= CERTDB_VALID_CA;
+    }
+    return rt;
+}
+
+NSS_IMPLEMENT void
+nssTrust_ToCERTCertTrust(NSSTrust *trust, CERTCertTrust *certTrust)
+{
+    certTrust->sslFlags = nssTrustLevel_ToCERTCertTrustFlags(trust->serverAuth);
+    unsigned int clientFlags = nssTrustLevel_ToCERTCertTrustFlags(trust->clientAuth);
+    if (clientFlags & (CERTDB_TRUSTED_CA | CERTDB_NS_TRUSTED_CA)) {
+        clientFlags &= ~(CERTDB_TRUSTED_CA | CERTDB_NS_TRUSTED_CA);
+        certTrust->sslFlags |= CERTDB_TRUSTED_CLIENT_CA;
+    }
+    certTrust->sslFlags |= clientFlags;
+    certTrust->emailFlags = nssTrustLevel_ToCERTCertTrustFlags(trust->emailProtection);
+    certTrust->objectSigningFlags = nssTrustLevel_ToCERTCertTrustFlags(trust->codeSigning);
 }
 
 NSS_IMPLEMENT nssSMIMEProfile *

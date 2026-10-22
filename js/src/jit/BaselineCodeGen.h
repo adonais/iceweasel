@@ -375,7 +375,8 @@ class BaselineCompilerHandler {
 
   Label* labelOf(jsbytecode* pc) { return &labels_[script_->pcToOffset(pc)]; }
 
-  bool isDefinitelyLastOp() const { return pc_ == script_->lastPC(); }
+  // No code is emitted for the ops after the last reachable one.
+  bool isLastReachableOp() const { return pc_ == analysis_.lastReachablePC(); }
 
   bool shouldEmitDebugEpilogueAtReturnOp() const {
     // The JIT uses the return address -> pc mapping and bakes in the pc
@@ -576,7 +577,7 @@ class BaselineInterpreterHandler {
 
   // Interpreter doesn't know the script and pc statically.
   jsbytecode* maybePC() const { return nullptr; }
-  bool isDefinitelyLastOp() const { return false; }
+  bool isLastReachableOp() const { return false; }
   JSScript* maybeScript() const { return nullptr; }
 
   bool shouldEmitDebugEpilogueAtReturnOp() const {

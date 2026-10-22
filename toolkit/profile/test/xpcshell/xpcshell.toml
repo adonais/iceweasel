@@ -84,6 +84,8 @@ run-sequentially = ["true"]
 
 ["test_profile_metrics_store_id_mismatch.js"]
 
+["test_profile_metrics_store_id_null.js"]
+
 ["test_previous_dedicated.js"]
 
 ["test_profile_descriptor_and_localdir.js"]

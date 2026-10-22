@@ -1155,6 +1155,17 @@ class Sources(BaseSources):
         )
 
 
+class Headers(ContextDerived):
+    """Represents headers to be handled during the build."""
+
+    def __init__(self, context, static_files, generated_files, canonical_suffix):
+        super().__init__(context)
+        self.static_files = sorted(static_files)
+        self.generated_files = sorted(generated_files)
+        self.files = self.static_files + self.generated_files
+        self.canonical_suffix = canonical_suffix
+
+
 class PgoGenerateOnlySources(BaseSources):
     """Represents files to be compiled during the build.
 
@@ -1429,6 +1440,7 @@ class DeclaredLicenseNotice(ContextDerived):
         "url",
         "paths",
         "subcomponent",
+        "acknowledgement",
     )
 
     def __init__(
@@ -1442,6 +1454,7 @@ class DeclaredLicenseNotice(ContextDerived):
         url=None,
         paths=(),
         subcomponent=False,
+        acknowledgement=None,
     ):
         ContextDerived.__init__(self, context)
         if not title:
@@ -1463,6 +1476,7 @@ class DeclaredLicenseNotice(ContextDerived):
         self.url = url
         self.paths = list(paths)
         self.subcomponent = subcomponent
+        self.acknowledgement = acknowledgement
 
     def asdict(self):
         return {name: getattr(self, name) for name in self.__slots__}

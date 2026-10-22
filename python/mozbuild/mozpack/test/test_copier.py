@@ -5,13 +5,14 @@
 import os
 import stat
 import unittest
+from unittest import mock
 
 import mozunit
 
 import mozpack.path as mozpath
 from mozpack.copier import FileCopier, FileRegistry, FileRegistrySubtree, Jarrer
 from mozpack.errors import ErrorMessage
-from mozpack.files import ExistingFile, GeneratedFile
+from mozpack.files import ExistingFile, File, GeneratedFile
 from mozpack.mozjar import JarReader
 from mozpack.test.test_files import MatchTestTemplate, MockDest, TestWithTmpDir
 
@@ -481,6 +482,31 @@ class TestFileCopier(TestWithTmpDir):
             },
         )
         self.assertEqual(result.removed_directories, {self.tmppath("dest/foo/bar")})
+
+    def test_file_registry_scopes_the_destination_scan(self):
+        """A destination such as the object directory holds far more than the
+        copy manages, so only the directories it writes into are read."""
+        dest = self.tmppath("dest")
+        os.makedirs(os.path.join(dest, "elsewhere"))
+        with open(os.path.join(dest, "elsewhere", "file"), "w") as fh:
+            fh.write("untouched")
+
+        source = self.tmppath("source")
+        os.makedirs(source)
+        copier = FileCopier()
+        for i in range(101):
+            with open(os.path.join(source, f"file{i}"), "w") as fh:
+                fh.write("content")
+            copier.add(f"foo/file{i}", File(os.path.join(source, f"file{i}")))
+        copier.copy(dest, remove_unaccounted=FileRegistry())
+
+        with mock.patch("mozpack.copier._scandir_dest_info") as scan:
+            result = copier.copy(dest, remove_unaccounted=FileRegistry())
+
+        scan.assert_not_called()
+        self.assertEqual(result.updated_files, set())
+        self.assertEqual(len(result.existing_files), 101)
+        self.assertEqual(self.all_files(dest), set(copier.paths()) | {"elsewhere/file"})
 
 
 class TestJarrer(unittest.TestCase):

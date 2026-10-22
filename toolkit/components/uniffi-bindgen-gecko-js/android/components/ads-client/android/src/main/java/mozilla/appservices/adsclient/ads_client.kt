@@ -718,6 +718,8 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "ads_client"))
         uniffiCheckContractApiVersion(this)
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_ads_client_checksum_method_mozadsclient_clear_cache(
     ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclient_record_click(
@@ -775,6 +777,8 @@ internal object UniffiLib {
         uniffiCallbackInterfaceMozAdsTelemetry.register(this)
         
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_ads_client_fn_clone_mozadsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ads_client_fn_free_mozadsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -935,10 +939,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    IntegrityCheckingUniffiLib
-    // UniffiLib() initialized as objects are used, but we still need to explicitly
-    // reference it so initialization across crates works as expected.
-    UniffiLib
+    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
+    // their init blocks run. This ensures initialization across crates works as expected.
+    IntegrityCheckingUniffiLib.ensureInitialized()
+    UniffiLib.ensureInitialized()
 }
 
 // Async support
@@ -2213,9 +2217,9 @@ data class MozAdsImage (
     , 
     var `format`: kotlin.String
     , 
-    var `imageUrl`: kotlin.String
+    var `imageUrl`: AdsClientUrl
     , 
-    var `url`: kotlin.String
+    var `url`: AdsClientUrl
     
 ){
     
@@ -2236,8 +2240,8 @@ public object FfiConverterTypeMozAdsImage: FfiConverterRustBuffer<MozAdsImage> {
             FfiConverterString.read(buf),
             FfiConverterTypeMozAdsCallbacks.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
         )
     }
 
@@ -2246,8 +2250,8 @@ public object FfiConverterTypeMozAdsImage: FfiConverterRustBuffer<MozAdsImage> {
             FfiConverterString.allocationSize(value.`blockKey`) +
             FfiConverterTypeMozAdsCallbacks.allocationSize(value.`callbacks`) +
             FfiConverterString.allocationSize(value.`format`) +
-            FfiConverterString.allocationSize(value.`imageUrl`) +
-            FfiConverterString.allocationSize(value.`url`)
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`imageUrl`) +
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`url`)
     )
 
     override fun write(value: MozAdsImage, buf: ByteBuffer) {
@@ -2255,8 +2259,8 @@ public object FfiConverterTypeMozAdsImage: FfiConverterRustBuffer<MozAdsImage> {
             FfiConverterString.write(value.`blockKey`, buf)
             FfiConverterTypeMozAdsCallbacks.write(value.`callbacks`, buf)
             FfiConverterString.write(value.`format`, buf)
-            FfiConverterString.write(value.`imageUrl`, buf)
-            FfiConverterString.write(value.`url`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`imageUrl`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`url`, buf)
     }
 }
 
@@ -2404,7 +2408,7 @@ data class MozAdsSpoc (
     , 
     var `format`: kotlin.String
     , 
-    var `imageUrl`: kotlin.String
+    var `imageUrl`: AdsClientUrl
     , 
     var `ranking`: MozAdsSpocRanking
     , 
@@ -2414,7 +2418,7 @@ data class MozAdsSpoc (
     , 
     var `title`: kotlin.String
     , 
-    var `url`: kotlin.String
+    var `url`: AdsClientUrl
     
 ){
     
@@ -2437,12 +2441,12 @@ public object FfiConverterTypeMozAdsSpoc: FfiConverterRustBuffer<MozAdsSpoc> {
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
             FfiConverterTypeMozAdsSpocRanking.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
         )
     }
 
@@ -2453,12 +2457,12 @@ public object FfiConverterTypeMozAdsSpoc: FfiConverterRustBuffer<MozAdsSpoc> {
             FfiConverterString.allocationSize(value.`domain`) +
             FfiConverterString.allocationSize(value.`excerpt`) +
             FfiConverterString.allocationSize(value.`format`) +
-            FfiConverterString.allocationSize(value.`imageUrl`) +
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`imageUrl`) +
             FfiConverterTypeMozAdsSpocRanking.allocationSize(value.`ranking`) +
             FfiConverterString.allocationSize(value.`sponsor`) +
             FfiConverterOptionalString.allocationSize(value.`sponsoredByOverride`) +
             FfiConverterString.allocationSize(value.`title`) +
-            FfiConverterString.allocationSize(value.`url`)
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`url`)
     )
 
     override fun write(value: MozAdsSpoc, buf: ByteBuffer) {
@@ -2468,12 +2472,12 @@ public object FfiConverterTypeMozAdsSpoc: FfiConverterRustBuffer<MozAdsSpoc> {
             FfiConverterString.write(value.`domain`, buf)
             FfiConverterString.write(value.`excerpt`, buf)
             FfiConverterString.write(value.`format`, buf)
-            FfiConverterString.write(value.`imageUrl`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`imageUrl`, buf)
             FfiConverterTypeMozAdsSpocRanking.write(value.`ranking`, buf)
             FfiConverterString.write(value.`sponsor`, buf)
             FfiConverterOptionalString.write(value.`sponsoredByOverride`, buf)
             FfiConverterString.write(value.`title`, buf)
-            FfiConverterString.write(value.`url`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`url`, buf)
     }
 }
 
@@ -2600,11 +2604,11 @@ data class MozAdsTile (
     , 
     var `format`: kotlin.String
     , 
-    var `imageUrl`: kotlin.String
+    var `imageUrl`: AdsClientUrl
     , 
     var `name`: kotlin.String
     , 
-    var `url`: kotlin.String
+    var `url`: AdsClientUrl
     
 ){
     
@@ -2624,9 +2628,9 @@ public object FfiConverterTypeMozAdsTile: FfiConverterRustBuffer<MozAdsTile> {
             FfiConverterString.read(buf),
             FfiConverterTypeMozAdsCallbacks.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterTypeAdsClientUrl.read(buf),
         )
     }
 
@@ -2634,18 +2638,18 @@ public object FfiConverterTypeMozAdsTile: FfiConverterRustBuffer<MozAdsTile> {
             FfiConverterString.allocationSize(value.`blockKey`) +
             FfiConverterTypeMozAdsCallbacks.allocationSize(value.`callbacks`) +
             FfiConverterString.allocationSize(value.`format`) +
-            FfiConverterString.allocationSize(value.`imageUrl`) +
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`imageUrl`) +
             FfiConverterString.allocationSize(value.`name`) +
-            FfiConverterString.allocationSize(value.`url`)
+            FfiConverterTypeAdsClientUrl.allocationSize(value.`url`)
     )
 
     override fun write(value: MozAdsTile, buf: ByteBuffer) {
             FfiConverterString.write(value.`blockKey`, buf)
             FfiConverterTypeMozAdsCallbacks.write(value.`callbacks`, buf)
             FfiConverterString.write(value.`format`, buf)
-            FfiConverterString.write(value.`imageUrl`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`imageUrl`, buf)
             FfiConverterString.write(value.`name`, buf)
-            FfiConverterString.write(value.`url`, buf)
+            FfiConverterTypeAdsClientUrl.write(value.`url`, buf)
     }
 }
 

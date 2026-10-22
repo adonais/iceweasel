@@ -6,8 +6,8 @@
 
 # Toolbar button that opens the panel where the user creates a monitor
 smartwindow-monitor-button =
-    .label = Monitors
-    .tooltiptext = Monitors
+    .label = Tasks
+    .tooltiptext = Tasks
 
 # Title of the panel opened by the toolbar button above
 smartwindow-monitor-panel-title = Tasks
@@ -38,8 +38,14 @@ smartwindow-monitor-panel-manage = Manage and view all tasks
 # a user-created task in Smart Window that watches a web page and alerts the
 # user when a condition they described is met.
 # The user-facing name is not final.
-ai-tasks-monitor-notification-title = { -smart-window-brand-name } monitor agent
-ai-tasks-monitor-notification-body = Found what you’re watching for.
+ai-tasks-monitor-notification-title = Match found
+# Variables:
+#   $pageCount (Number) - How many pages the monitor watches
+ai-tasks-monitor-notification-body =
+    { $pageCount ->
+        [one] { -smart-window-brand-name } found a match on a page you’re watching.
+       *[other] { -smart-window-brand-name } found a match on pages you’re watching.
+    }
 ai-tasks-monitor-notification-snooze = Snooze
 ai-tasks-monitor-notification-dismiss = Dismiss
 
@@ -328,12 +334,12 @@ ai-tasks-alert-history-error-unknown = Something went wrong on our side and this
 # the user did not say what the page should focus on.
 ai-tab-default-page-title = Generated page
 
-# Shown in place of a generated page when it can no longer be found, for
-# example because the user deleted it.
-ai-tab-page-unavailable = This page isn’t available anymore.
-
-# Shown in place of a generated page when it could not be loaded.
-ai-tab-page-error = Something went wrong loading this page.
+# Shown in place of a generated page when it can't be displayed, for
+# example because the user deleted it, the address is wrong, or it
+# failed to load.
+aitab-page-error-heading = This page isn’t available anymore.
+# TODO - Bug 2075639: update this string based on UX feedback
+aitab-page-error-description = Some other supplementary string.
 
 # Page context menu entry that builds a generated page from the current page.
 main-context-menu-create-aitab =
@@ -359,6 +365,13 @@ ai-tab-create-page-prompt =
         [one] Create an { -ai-tab-brand-name } from this tab:
        *[other] Create an { -ai-tab-brand-name } from these tabs:
     }
+
+# A rating cell in a generated table, for example "4.5 / 5". Both numbers
+# arrive already formatted for the locale.
+# Variables:
+#   $value (String) - The item's rating.
+#   $max (String) - The highest possible rating.
+ai-tab-table-rating = { $value } / { $max }
 
 ## Smartbar command palette
 ## Slash commands shown in the smartbar when the user types "/".
@@ -523,3 +536,22 @@ aiwindow-resume-section-show-more = Show more ({ $count })
 # Variables:
 #   $count (Number) - Total number of resume cards in the section
 aiwindow-resume-section-show-less = Show less ({ $count })
+
+# Shown in place of the cards when there are no journeys to suggest yet. A
+# "journey" is a past browsing or chat session the user can pick back up
+# from where they left off.
+aiwindow-resume-section-empty-no-suggestions-heading = Nothing to suggest right now
+aiwindow-resume-section-empty-no-suggestions-description = When there’s something to pick back up, you’ll see it here.
+# Shown in place of the cards when the user has dismissed every suggestion.
+aiwindow-resume-section-empty-all-dismissed-heading = All caught up
+aiwindow-resume-section-empty-all-dismissed-description = That’s all the suggestions for now. Check back later for more.
+aiwindow-resume-section-hide = Hide for now
+
+smartwindow-aitab-creating = Creating a page…
+# "Open here" opens aitab url in the current tab
+smartwindow-aitab-open-current =
+    .label = Open here
+# "Open in new tab" opens a new browser tab with the AITab url in it
+smartwindow-aitab-open-new =
+    .label = Open in new tab
+smartwindow-aitab-created-an-aitab = Created a Smart Page

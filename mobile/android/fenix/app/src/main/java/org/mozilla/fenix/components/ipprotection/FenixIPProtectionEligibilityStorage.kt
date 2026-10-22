@@ -46,7 +46,8 @@ class FenixIPProtectionEligibilityStorage(
                     when {
                         secretOverride -> EligibilityStatus.Eligible
                         !nimbus.enabled -> EligibilityStatus.Ineligible
-                        region?.home in nimbus.allowedRegions -> EligibilityStatus.Eligible
+                        region == null -> EligibilityStatus.Unknown
+                        region.home in nimbus.allowedRegions -> EligibilityStatus.Eligible
                         else -> EligibilityStatus.UnsupportedRegion
                     }
                 status

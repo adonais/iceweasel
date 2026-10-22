@@ -11,6 +11,7 @@
 #include <ostream>  // for std::ostream
 #include <utility>  // for mozilla::Move
 
+#include "fmt/ostream.h"
 #include "mozilla/ArrayView.h"      // for ArrayView
 #include "mozilla/gfx/MatrixFwd.h"  // for mozilla::gfx::Matrix4x4
 #include "nsCoord.h"                // for nscoord
@@ -2526,5 +2527,11 @@ class IntRegionTyped
 }  // namespace mozilla
 
 typedef mozilla::gfx::IntRegion nsIntRegion;
+
+template <>
+struct fmt::formatter<nsRegion> : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntRegionTyped<Units>>
+    : fmt::ostream_formatter {};
 
 #endif

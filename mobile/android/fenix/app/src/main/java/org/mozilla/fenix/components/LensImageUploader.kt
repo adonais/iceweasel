@@ -55,8 +55,28 @@ class LensImageUploader(
     suspend fun upload(imageUri: Uri, isPrivate: Boolean): UploadResult =
         withContext(Dispatchers.IO) {
             val bitmap = decodeBitmap(imageUri) ?: return@withContext UploadResult(resultUrl = null)
-            uploadBitmap(bitmap, isPrivate)
+            uploadBitmap(bitmap, isPrivate, recycleSource = true)
         }
+
+    /**
+     * Decodes the image at [imageUri] upright and subsampled to the upload size, for callers that display the image
+     * before passing it to [uploadImage]. The caller owns the returned bitmap.
+     *
+     * @param imageUri The content URI of the image to decode.
+     * @return The decoded bitmap, or null if the image could not be read.
+     */
+    suspend fun decodeImage(imageUri: Uri): Bitmap? = withContext(Dispatchers.IO) { decodeBitmap(imageUri) }
+
+    /**
+     * Scales, compresses, and uploads [bitmap] to Google Lens. Unlike [upload], [bitmap] is left untouched so the
+     * caller can keep drawing it.
+     *
+     * @param bitmap The image to upload, typically from [decodeImage].
+     * @param isPrivate When true, the upload runs in GeckoView's private cookie context so the returned Lens session
+     *   matches the private tab the result is opened in.
+     */
+    suspend fun uploadImage(bitmap: Bitmap, isPrivate: Boolean): UploadResult =
+        withContext(Dispatchers.IO) { uploadBitmap(bitmap, isPrivate, recycleSource = false) }
 
     /**
      * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens. The browser's User-Agent
@@ -69,10 +89,16 @@ class LensImageUploader(
     suspend fun uploadFromUrl(imageUrl: String, isPrivate: Boolean): UploadResult =
         withContext(Dispatchers.IO) {
             val bitmap = fetchBitmap(imageUrl, isPrivate) ?: return@withContext UploadResult(resultUrl = null)
-            uploadBitmap(bitmap, isPrivate)
+            uploadBitmap(bitmap, isPrivate, recycleSource = true)
         }
 
-    private fun uploadBitmap(bitmap: Bitmap, isPrivate: Boolean): UploadResult {
+    /**
+     * @param bitmap The image to upload.
+     * @param isPrivate Whether the upload runs in GeckoView's private cookie context.
+     * @param recycleSource Whether [bitmap] is recycled once compressed, freeing it before the network wait. False when
+     *   the caller still owns it.
+     */
+    private fun uploadBitmap(bitmap: Bitmap, isPrivate: Boolean, recycleSource: Boolean): UploadResult {
         val scaled = scaleBitmap(bitmap)
         val scaledWidth = scaled.width
         val scaledHeight = scaled.height
@@ -80,7 +106,7 @@ class LensImageUploader(
         val jpegData = compressToJpeg(scaled)
 
         if (scaled !== bitmap) scaled.recycle()
-        bitmap.recycle()
+        if (recycleSource) bitmap.recycle()
 
         val uploadUrl = "$UPLOAD_ENDPOINT?${commonParams()}&ep=$EP_BY_BYTES"
 

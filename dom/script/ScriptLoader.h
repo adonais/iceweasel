@@ -15,6 +15,7 @@
 #include "js/loader/ScriptLoadRequestList.h"
 #include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
@@ -491,7 +492,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
       ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
-      ScriptLoadRequestType aRequestType);
+      ScriptLoadRequestType aRequestType,
+      const Encoding* aClassicScriptPreloadHintEncoding);
 
   /**
    * Helper function to lookup the cache entry and associate it to the
@@ -506,12 +508,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   /**
    * Helper function to notify network observers for cached request.
    */
-  void EmulateNetworkEvents(ScriptLoadRequest* aRequest,
-                            const Maybe<nsAutoString>& aCharsetForPreload);
+  void EmulateNetworkEvents(ScriptLoadRequest* aRequest);
 
-  void NotifyObserversForCachedScript(
-      ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+  void NotifyObserversForCachedScript(ScriptLoadRequest* aRequest);
 
   /**
    * Unblocks the creator parser of the parser-blocking scripts.
@@ -577,18 +576,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   /**
    * Start a load for aRequest's URI.
    */
-  nsresult StartLoad(ScriptLoadRequest* aRequest,
-                     const Maybe<nsAutoString>& aCharsetForPreload);
+  nsresult StartLoad(ScriptLoadRequest* aRequest);
   /**
    * Start a load for a classic script URI.
    * Sets up the necessary security flags before calling StartLoadInternal.
    */
-  nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
-                            const Maybe<nsAutoString>& aCharsetForPreload);
+  nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
 
-  MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
-      ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+  MOZ_CAN_RUN_SCRIPT void OnDelayedReady(ScriptLoadRequest* aRequest);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);
@@ -597,8 +592,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       nsIChannel* aChannel, ScriptLoadRequest* aRequest);
 
   [[nodiscard]] static nsresult PrepareHttpRequestAndInitiatorType(
-      nsIChannel* aChannel, ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+      nsIChannel* aChannel, ScriptLoadRequest* aRequest);
 
   [[nodiscard]] nsresult PrepareIncrementalStreamLoader(
       nsIIncrementalStreamLoader** aOutLoader, nsIChannel* aChannel,
@@ -606,14 +600,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   /**
    * Start a load for a script (module or classic) URI.
-   *
-   * aCharsetForPreload is only needed when this load is a preload (via
-   * ScriptLoader::PreloadURI), because ScriptLoadRequest doesn't
-   * have this information.
    */
   nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
-                             nsSecurityFlags securityFlags,
-                             const Maybe<nsAutoString>& aCharsetForPreload);
+                             nsSecurityFlags securityFlags);
 
   /**
    * Register a <link rel=modulepreload> request that opened no channel with the
@@ -764,6 +753,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);
   static nsCString& BytecodeMimeTypeFor(
       const JS::loader::LoadedScript* aLoadedScript);
+
+  // Return the encoding for the classic script, which is used by the
+  // ScriptLoadHandler::TrySetDecoder method when neither the BOM or the charset
+  // is provided in the response.
+  const Encoding* GetClassicScriptFallbackEncoding(
+      const ScriptLoadRequest* aRequest);
+  const Encoding* GetClassicScriptFallbackEncoding(
+      const Encoding* aClassicScriptHintEncoding);
 
   // Queue the script load request for caching if we decided to cache it, or
   // cleanup the script load request fields otherwise.
@@ -968,7 +965,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   // In mRequests, the additional information here is stored by the element.
   struct PreloadInfo {
     RefPtr<ScriptLoadRequest> mRequest;
-    nsString mCharset;
   };
 
   friend void ImplCycleCollectionUnlink(ScriptLoader::PreloadInfo& aField);
@@ -978,7 +974,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   struct PreloadRequestComparator {
     bool Equals(const PreloadInfo& aPi,
-                ScriptLoadRequest* const& aRequest) const {
+                const ScriptLoadRequest* const& aRequest) const {
       return aRequest == aPi.mRequest;
     }
   };

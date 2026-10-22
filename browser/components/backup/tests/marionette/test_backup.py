@@ -45,6 +45,8 @@ class BackupTest(MarionetteTestCase):
             # Prevent WallpaperFeed from fetching Remote Settings attachments
             # from the CDN, which is blocked in CI test environments.
             "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
+            # Prevent PictureOfTheDayFeed from fetching from Merino.
+            "browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled": False,
         })
 
         self.marionette.set_context("chrome")
@@ -991,7 +993,10 @@ class BackupTest(MarionetteTestCase):
             """
           const isCustom = Services.prefs.getStringPref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "") == "custom";
           const wallpaperUUID = Services.prefs.getStringPref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid", "");
-          const wallpaperPath = PathUtils.join(PathUtils.profileDir, "wallpaper", wallpaperUUID);
+          // Ask the feed where saved images live rather than spelling the
+          // folder out here, so this cannot drift from where they are written.
+          const feed = AboutNewTab.activityStream.store.feeds.get("feeds.wallpaperfeed");
+          const wallpaperPath = PathUtils.join(feed.libraryDirectory, wallpaperUUID);
           return [isCustom, wallpaperPath];
         """
         )

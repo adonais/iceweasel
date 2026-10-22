@@ -29,9 +29,6 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "media-engine-compatible media-gpu"
 prefs = ["media.hevc.enabled=1"] # for test_hevc_playback
@@ -542,6 +539,8 @@ support-files = [
   "invalid-cmap-s1c2.opus^headers^",
   "invalid-cmap-short.opus",
   "invalid-cmap-short.opus^headers^",
+  "invalid-crop-wrap.webm",
+  "invalid-crop-wrap.webm^headers^",
   "invalid-discard_on_multi_blocks.webm",
   "invalid-discard_on_multi_blocks.webm^headers^",
   "invalid-excess_discard.webm",
@@ -885,9 +884,6 @@ skip-if = [
 
 ["test_mediatrack_events.html"]
 scheme = "https"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # TIMEOUT
-]
 
 ["test_mediatrack_parsing_ogg.html"]
 
@@ -1003,9 +999,6 @@ skip-if = [
 ["test_readyState.html"]
 
 ["test_referer.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && wmfme", # Bug 2019640
-]
 
 ["test_reset_src.html"]
 

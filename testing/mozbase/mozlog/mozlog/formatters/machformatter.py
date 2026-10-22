@@ -407,6 +407,28 @@ class MachFormatter(base.BaseFormatter):
         prefix = self.color_formatter.warning("WARNING")
         return f"{prefix} ThreadSanitizer: {data['kind']} | {data['signature']}"
 
+    def assertion_failure(self, data):
+        if data.get("fatal"):
+            prefix = self.color_formatter.error("ERROR")
+        else:
+            prefix = self.color_formatter.warning("WARNING")
+        location = ""
+        if data.get("file"):
+            location = f" [{data['file']}:{data.get('lineno')}]"
+        return f"{prefix} {data['kind']}: {data['message']}{location}"
+
+    def ubsan_error(self, data):
+        prefix = self.color_formatter.warning("WARNING")
+        location = ""
+        if data.get("file"):
+            location = data["file"]
+            if data.get("lineno") is not None:
+                location += f":{data['lineno']}"
+                if data.get("column") is not None:
+                    location += f":{data['column']}"
+            location = f" [{location}]"
+        return f"{prefix} UndefinedBehaviorSanitizer: {data['message']}{location}"
+
     def lsan_summary(self, data):
         allowed = data.get("allowed", False)
         if allowed:

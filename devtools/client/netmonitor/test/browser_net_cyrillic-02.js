@@ -46,10 +46,7 @@ add_task(async function () {
   );
 
   wait = waitForDOM(document, "#headers-panel");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   wait = waitForDOM(document, "#response-panel .data-header");

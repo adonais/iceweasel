@@ -197,6 +197,7 @@ private fun GleanDebugViewSection(
 }
 
 @Composable
+@Suppress("Deprecation")
 private fun GleanDebugSendPingsSection(
     isButtonEnabled: Boolean,
     curPing: String,

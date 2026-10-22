@@ -1,8 +1,22 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="context-fill" stroke-opacity="context-fill-opacity" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+<style>
+.nova { display: none; }
+
+@media -moz-pref("browser.nova.enabled") {
+  .proton { display: none; }
+  .nova { display: revert; }
+}
+</style>
+<g class="proton" fill="none" stroke="context-fill" stroke-opacity="context-fill-opacity" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
   <path d="M2.6 12.2a6 6 0 1 1 10.8 0"/>
   <path d="M8 9.4 11 5.9"/>
   <circle cx="8" cy="9.4" r="1" fill="context-fill" fill-opacity="context-fill-opacity" stroke="none"/>
+</g>
+<g class="nova">
+  <path d="M8 0c1.295 0 2.516.316 3.599.865l-1.126 1.126A6.5 6.5 0 0 0 8 1.5 6.51 6.51 0 0 0 1.5 8c0 3.584 2.916 6.5 6.5 6.5s6.5-2.916 6.5-6.5c0-.876-.177-1.71-.492-2.473l1.127-1.126A7.94 7.94 0 0 1 16 8c0 4.411-3.589 8-8 8s-8-3.589-8-8 3.589-8 8-8"/>
+  <path d="M6.686 7.116c.61-.658 5.325-4.663 5.983-4.053.657.612-2.99 5.608-3.6 6.265a1.627 1.627 0 0 1-2.383-2.212"/>
+</g>
 </svg>

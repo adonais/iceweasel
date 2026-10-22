@@ -98,6 +98,7 @@ class MochiRemote(MochitestDesktop):
         self.appName = options.remoteappname
         self.appActivity = options.appActivity
         self.device.stop_application(self.appName)
+        self.isolatedProcess = options.isolated_process
         if self.device.process_exist(self.appName):
             self.log.warning("unable to kill %s before running tests!" % self.appName)
 
@@ -327,6 +328,10 @@ class MochiRemote(MochitestDesktop):
         # MOZ_UPLOAD_DIR available to the browser environment so that tests
         # can use it as though they were running on the host.
         browserEnv["MOZ_UPLOAD_DIR"] = self.remoteMozLog
+
+        if self.isolatedProcess:
+            browserEnv["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS"] = "1"
+
         return browserEnv
 
     def runApp(

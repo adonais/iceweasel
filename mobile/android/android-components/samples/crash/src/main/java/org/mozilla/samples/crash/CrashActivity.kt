@@ -11,9 +11,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.view.View
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.google.android.material.snackbar.Snackbar
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
@@ -46,7 +46,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         binding = ActivityCrashBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         window.setupPersistentInsets(true)
 
         binding.fatalCrashButton.setOnClickListener(this)

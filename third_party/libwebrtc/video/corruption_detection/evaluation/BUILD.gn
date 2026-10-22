@@ -85,18 +85,11 @@ rtc_library("picture_pair_provider") {
   ]
 }
 
+# TODO(bugs.webrtc.org/496266459): Remove when downstream usage is gone.
 rtc_library("qp_parser") {
   testonly = true
-  sources = [
-    "qp_parser.cc",
-    "qp_parser.h",
-  ]
-  deps = [
-    "../../../api/video:video_frame",
-    "../../../modules/video_coding:av1_qp_parser",
-    "../../../modules/video_coding:video_coding_utility",
-    "../../../rtc_base:checks",
-  ]
+  sources = [ "qp_parser.h" ]
+  deps = [ "../../../test:qp_parser_for_test" ]
 }
 
 rtc_library("test_clip") {
@@ -170,8 +163,8 @@ if (rtc_include_tests) {
     testonly = true
     sources = [ "qp_parser_unittest.cc" ]
     deps = [
-      ":qp_parser",
       "../../../api/video:video_frame",
+      "../../../test:qp_parser_for_test",
       "../../../test:test_support",
     ]
   }

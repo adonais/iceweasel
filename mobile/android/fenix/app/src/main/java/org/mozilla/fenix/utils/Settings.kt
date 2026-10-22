@@ -22,6 +22,7 @@ import java.security.InvalidParameterException
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
+import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
@@ -523,6 +524,12 @@ class Settings(
     var isUserSkyflagAttributed by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_is_user_skyflag_attributed),
+            default = false,
+        )
+
+    var isUserQuoraAttributed by
+        booleanPreference(
+            appContext.getPreferenceKey(R.string.pref_key_is_user_quora_attributed),
             default = false,
         )
 
@@ -1528,6 +1535,25 @@ class Settings(
             field = value
         }
 
+    /**
+     * The state of the OS power saving (battery saver) mode the last time it was observed, or `null` if it has never
+     * been observed. Persisted so that a change made while the app process was not running is still detected the next
+     * time the app starts.
+     */
+    var lastKnownPowerSaveMode: Boolean?
+        get() {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            return if (preferences.contains(key)) preferences.getBoolean(key, false) else null
+        }
+        set(value) {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            preferences.edit {
+                if (value == null) remove(key) else putBoolean(key, value)
+            }
+        }
+
     var shouldDeleteBrowsingDataOnQuit by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_delete_browsing_data_on_quit),
@@ -1958,16 +1984,23 @@ class Settings(
             default = true,
         )
 
+    /**
+     * Whether this device supports the application's own autofill and password management. Both are disabled on Android
+     * Automotive OS for now until we meet specific Google requirements around protecting passwords and credit card
+     * information in cars.
+     */
+    val isAutofillSupported: Boolean by lazy { !appContext.isAndroidAutomotiveAvailable() }
+
     var shouldPromptToSaveLogins by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_save_logins),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     var shouldAutofillLogins by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_autofill_logins),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /**
@@ -2323,7 +2356,7 @@ class Settings(
     var shouldAutofillCreditCardDetails by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /**
@@ -2334,7 +2367,7 @@ class Settings(
     var shouldAutofillAddressDetails by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /** Indicates if the Contile functionality should be visible. */
@@ -2449,6 +2482,10 @@ class Settings(
             key = appContext.getPreferenceKey(R.string.pref_key_continuous_onboarding_day_seven_completed_timestamp),
             default = -1L,
         )
+
+    /** Indicates if continuous onboarding has been completed, meaning its final day-7 stage has finished. */
+    val continuousOnboardingCompleted: Boolean
+        get() = seventhDayOnboardingCompletedTimestamp != -1L
 
     /** Indicates if the marketing onboarding card should be shown to the user. */
     var shouldShowMarketingOnboarding by
@@ -2592,13 +2629,6 @@ class Settings(
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_ads_client_for_stories),
             default = { FxNimbus.features.adsClientForStories.value().enabled },
-        )
-
-    /** Indicates if Add Shortcuts improvement is enabled. */
-    var enableAddShortcutsImprovement by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_add_shortcuts_improvement),
-            default = { FxNimbus.features.addShortcutsImprovement.value().enabled },
         )
 
     /** Indicates if more shortcuts should be shown. */
@@ -2964,14 +2994,11 @@ class Settings(
             default = false,
         )
 
-    /**
-     * Feature flag that indicates if the "Check Archived Version" button is shown on eligible error pages. Off by
-     * default; the toggle is only exposed via secret settings on Nightly.
-     */
+    /** Feature flag that indicates if the "Check Archived Version" button is shown on eligible error pages. */
     var isWaybackMachineEnabled by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_wayback_machine),
-            default = false,
+            default = { FxNimbus.features.waybackMachine.value().enabled },
         )
 
     /** Indicates if the Set as default Browser prompt should be displayed to the user. */
@@ -2979,6 +3006,8 @@ class Settings(
         nimbusFeature: DefaultBrowserPrompt = FxNimbus.features.defaultBrowserPrompt.value()
     ): Boolean {
         if (!nimbusFeature.enabled) return false
+
+        if (continuousOnboardingFeatureEnabled && !continuousOnboardingCompleted) return false
 
         val now = currentTimeMillis()
 
@@ -3298,7 +3327,7 @@ class Settings(
     var nativeShareSheetEnabled by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_native_share_sheet),
-            default = { FxNimbus.features.nativeShareSheet.value().enabled },
+            default = true,
         )
 
     var googleLensIntegrationEnabled by
@@ -3443,4 +3472,49 @@ class Settings(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_pdf_tools),
             default = { FxNimbus.features.pdfViewer.value().androidUiTools },
         )
+
+    var accountSettingsNewUi by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_account_settings_new_ui),
+            default = { FxNimbus.features.accountSyncDecoupleM1.value().enabled },
+        )
+
+    private var powerSavingModeAutoPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_auto_enabled),
+            default = false,
+        )
+
+    private var powerSavingModeManuallyPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_manually_enabled),
+            default = false,
+        )
+
+    /**
+     * Indicates if Power Saving Mode should turn on automatically whenever the OS reports that power save (battery
+     * saver) mode is active. Mutually exclusive with [powerSavingModeManuallyEnabled], which is turned off whenever
+     * this is turned on.
+     */
+    var powerSavingModeAutoEnabled: Boolean
+        get() = powerSavingModeAutoPreference
+        set(value) {
+            powerSavingModeAutoPreference = value
+            if (value) {
+                powerSavingModeManuallyPreference = false
+            }
+        }
+
+    /**
+     * Indicates if Power Saving Mode is enabled manually, regardless of the OS power save (battery saver) mode.
+     * Mutually exclusive with [powerSavingModeAutoEnabled], which is turned off whenever this is turned on.
+     */
+    var powerSavingModeManuallyEnabled: Boolean
+        get() = powerSavingModeManuallyPreference
+        set(value) {
+            powerSavingModeManuallyPreference = value
+            if (value) {
+                powerSavingModeAutoPreference = false
+            }
+        }
 }

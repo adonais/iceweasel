@@ -311,15 +311,15 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase,
  public:
   explicit FakePeerConnectionForStats(
       const Environment& env,
-      Thread* worker_thread = Thread::Current(),
       Thread* network_thread = Thread::Current())
       : FakePeerConnectionBase(env),
         network_thread_(network_thread),
-        worker_thread_(worker_thread),
+        worker_thread_(network_thread_),
         signaling_thread_(Thread::Current()),
         // TODO(hta): remove separate thread variables and use context.
-        dependencies_(
-            MakeDependencies(signaling_thread_, worker_thread, network_thread)),
+        dependencies_(MakeDependencies(signaling_thread_,
+                                       worker_thread_,
+                                       network_thread_)),
         context_(ConnectionContext::Create(env, &dependencies_)),
         local_streams_(StreamCollection::Create()),
         remote_streams_(StreamCollection::Create()),
@@ -600,8 +600,10 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase,
     return transceivers_;
   }
 
+  // Matches PeerConnection::GetDataChannelStats() and
+  // DataChannelController::GetDataChannelStats() which run on network_thread.
   std::vector<DataChannelStats> GetDataChannelStats() const override {
-    RTC_DCHECK_RUN_ON(signaling_thread());
+    RTC_DCHECK_RUN_ON(network_thread());
     std::vector<DataChannelStats> stats;
     for (const auto& channel : sctp_data_channels_)
       stats.push_back(channel->GetStats());

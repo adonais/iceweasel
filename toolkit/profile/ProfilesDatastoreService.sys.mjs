@@ -23,7 +23,7 @@ ChromeUtils.defineLazyGetter(lazy, "MigrationUtils", () => {
   try {
     let { MigrationUtils } = ChromeUtils.importESModule(
       // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-      "resource:///modules/MigrationUtils.sys.mjs"
+      "moz-src:///browser/components/migration/MigrationUtils.sys.mjs"
     );
     return MigrationUtils;
   } catch (e) {
@@ -481,7 +481,7 @@ class ProfilesDatastoreServiceClass {
     } catch (e) {
       console.error(e);
 
-      await this.uninit();
+      await this.#uninit();
       return;
     }
 
@@ -499,6 +499,14 @@ class ProfilesDatastoreServiceClass {
   }
 
   async uninit() {
+    if (this.#initPromise) {
+      await this.#initPromise;
+    }
+
+    await this.#uninit();
+  }
+
+  async #uninit() {
     if (this.#asyncShutdownBarrier) {
       await this.#asyncShutdownBarrier.wait();
     }

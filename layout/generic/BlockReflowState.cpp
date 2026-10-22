@@ -372,7 +372,7 @@ nsFlowAreaRect BlockReflowState::GetFloatAvailableSpaceWithState(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
-    fmt::println("{} band={} hasFloats={}", __func__, ToString(result.mRect),
+    fmt::println("{} band={} hasFloats={}", __func__, result.mRect,
                  YesOrNo(result.HasFloats()));
   }
 #endif
@@ -402,7 +402,7 @@ nsFlowAreaRect BlockReflowState::GetFloatAvailableSpaceForBSize(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
-    fmt::println("{} band={} hasFloats={}", __func__, ToString(result.mRect),
+    fmt::println("{} band={} hasFloats={}", __func__, result.mRect,
                  YesOrNo(result.HasFloats()));
   }
 #endif

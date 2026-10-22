@@ -55,6 +55,19 @@ BEGIN_FRONTEND_TEST(testFrontendContextCompileGlobalScriptToStencil) {
     CHECK(stencil);
   }
 
+  {
+    // Constant folding of division and modulo must work without a JSContext
+    // (and without TlsContext being initialized).
+    const char source[] = "var a = 1 / 3; var b = 7 % 3; var c = 1 % 0.5;";
+
+    JS::SourceText<mozilla::Utf8Unit> srcBuf;
+    CHECK(
+        srcBuf.init(fc, source, strlen(source), JS::SourceOwnership::Borrowed));
+    RefPtr<JS::Stencil> stencil =
+        JS::CompileGlobalScriptToStencil(fc, options, srcBuf);
+    CHECK(stencil);
+  }
+
   JS::DestroyFrontendContext(fc);
 
   return true;

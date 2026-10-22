@@ -196,6 +196,12 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetWritable(
   AssertIsOnIOTarget();
   MOZ_ASSERT(mDataManager);
 
+  // TODO: The implementation should support PBM.
+  if (mDataManager->OriginMetadataRef().mIsPrivate) {
+    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return IPC_OK();
+  }
+
   const fs::FileMode mode = mDataManager->GetMode(aRequest.keepData());
 
   auto reportError = [aResolver](const auto& aRv) {
@@ -274,6 +280,13 @@ mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetWritable(
 IPCResult FileSystemManagerParent::RecvGetFile(
     FileSystemGetFileRequest&& aRequest, GetFileResolver&& aResolver) {
   AssertIsOnIOTarget();
+  MOZ_ASSERT(mDataManager);
+
+  // TODO: The implementation should support PBM.
+  if (mDataManager->OriginMetadataRef().mIsPrivate) {
+    aResolver(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return IPC_OK();
+  }
 
   // XXX Spec https://www.w3.org/TR/FileAPI/#dfn-file wants us to snapshot the
   // state of the file at getFile() time

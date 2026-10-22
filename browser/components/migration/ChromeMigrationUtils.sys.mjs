@@ -8,7 +8,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
 });
 
 const S100NS_FROM1601TO1970 = 0x19db1ded53e8000;
@@ -422,6 +423,48 @@ export var ChromeMigrationUtils = {
    */
   dateToChromeTime(aDate) {
     return (aDate * 10000 + S100NS_FROM1601TO1970) / S100NS_PER_MS;
+  },
+
+  /**
+   * Merge the children of the same Chrome bookmark root coming from several
+   * bookmark files (e.g. "Bookmarks" and "AccountBookmarks"). URL items are
+   * concatenated in order; folders with the same name are merged recursively
+   * so that a subfolder present in more than one file yields a single folder
+   * holding the items from all of them. The input arrays are not modified.
+   *
+   * @param {Array<Array<object>|undefined>} childrenArrays
+   *   The per-file children arrays for a given root, in import order.
+   * @returns {Array<object>} The merged list of Chrome bookmark items.
+   */
+  mergeBookmarkChildren(childrenArrays) {
+    let merged = [];
+    let foldersByName = new Map();
+    for (let children of childrenArrays) {
+      if (!children) {
+        continue;
+      }
+      for (let item of children) {
+        if (item.type == "folder") {
+          let existing = foldersByName.get(item.name);
+          if (existing) {
+            existing.children = this.mergeBookmarkChildren([
+              existing.children,
+              item.children,
+            ]);
+            continue;
+          }
+          let folder = {
+            ...item,
+            children: this.mergeBookmarkChildren([item.children]),
+          };
+          foldersByName.set(item.name, folder);
+          merged.push(folder);
+        } else {
+          merged.push(item);
+        }
+      }
+    }
+    return merged;
   },
 
   /**

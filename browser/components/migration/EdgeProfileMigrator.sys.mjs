@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
-import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
-import { MSMigrationUtils } from "resource:///modules/MSMigrationUtils.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
+import { MigratorBase } from "moz-src:///browser/components/migration/MigratorBase.sys.mjs";
+import { MSMigrationUtils } from "moz-src:///browser/components/migration/MSMigrationUtils.sys.mjs";
 
 const EDGE_COOKIE_PATH_OPTIONS = ["", "#!001\\", "#!002\\"];
 const EDGE_COOKIES_SUFFIX = "MicrosoftEdge\\Cookies";
@@ -13,7 +13,7 @@ const ALLOWED_PROTOCOLS = new Set(["http:", "https:", "ftp:"]);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  ESEDBReader: "resource:///modules/ESEDBReader.sys.mjs",
+  ESEDBReader: "moz-src:///browser/components/migration/ESEDBReader.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 

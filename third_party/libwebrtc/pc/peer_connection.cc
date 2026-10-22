@@ -26,6 +26,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -135,7 +136,7 @@ class CodecLookupHelperForPeerConnection : public CodecLookupHelper {
   explicit CodecLookupHelperForPeerConnection(PeerConnection* self)
       : self_(self),
         codec_vendor_(self_->context()->media_engine(),
-                      self_->context()->use_rtx(),
+                      /*rtx_enabled=*/true,
                       self_->trials()) {}
 
   webrtc::PayloadTypeSuggester* PayloadTypeSuggester() override {
@@ -302,8 +303,6 @@ RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
       existing_configuration;
   modified_config.type = configuration.type;
   modified_config.crypto_options = configuration.crypto_options;
-  modified_config.always_negotiate_data_channels =
-      configuration.always_negotiate_data_channels;
 
   // ICE configuration.
   modified_config.servers = configuration.servers;
@@ -509,7 +508,7 @@ PeerConnection::PeerConnection(
   }
 
   if (tracer_) {
-    tracer_->OnSetConfiguration(configuration_);
+    tracer_->OnCreate(configuration_);
   }
 
   std::vector<IceParameters> pooled_credentials;
@@ -892,6 +891,9 @@ RTCErrorOr<scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
     RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
   if (sender_or_error.ok()) {
+    if (tracer_) {
+      tracer_->OnAddTrack(*track, stream_ids);
+    }
     sdp_handler_->UpdateNegotiationNeeded();
     legacy_stats_->AddTrack(track.get());
   }
@@ -1125,7 +1127,8 @@ PeerConnection::AddTransceiver(MediaType media_type,
   std::vector<Codec> codecs;
   // Gather the current codec capabilities to allow checking scalabilityMode and
   // codec selection against supported values.
-  CodecVendor codec_vendor(context_->media_engine(), false, trials());
+  CodecVendor codec_vendor(context_->media_engine(), /*rtx_enabled=*/false,
+                           trials());
   if (media_type == MediaType::VIDEO) {
     codecs = codec_vendor.video_send_codecs().codecs();
   } else {
@@ -1158,7 +1161,12 @@ PeerConnection::AddTransceiver(MediaType media_type,
       /*initial_simulcast_layers=*/{}, sender_id);
   transceiver->internal()->set_direction(init.direction);
 
+  // Only the internal offerToReceive path passes update_negotiation_needed
+  // false, so it doubles as the "called by the application" condition.
   if (update_negotiation_needed) {
+    if (tracer_) {
+      tracer_->OnAddTransceiver(media_type, track.get(), init);
+    }
     sdp_handler_->UpdateNegotiationNeeded();
   }
 
@@ -1195,7 +1203,8 @@ scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   }
 
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
-  CodecVendor codec_vendor(context_->media_engine(), false, trials());
+  CodecVendor codec_vendor(context_->media_engine(), /*rtx_enabled=*/false,
+                           trials());
 
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     auto audio_sender = AudioRtpSender::Create(
@@ -1443,7 +1452,11 @@ PeerConnection::CreateDataChannelOrError(const std::string& label,
   ClearStatsCache();
   scoped_refptr<DataChannelInterface> channel = ret.MoveValue();
   if (tracer_) {
-    tracer_->OnCreateDataChannel(*channel);
+    std::optional<int> id;
+    if (internal_config.id >= 0) {
+      id = internal_config.id;
+    }
+    tracer_->OnCreateDataChannel(*channel, id);
   }
 
   // Check the onRenegotiationNeeded event (with plan-b backward compat)
@@ -1458,6 +1471,11 @@ PeerConnection::CreateDataChannelOrError(const std::string& label,
 
 void PeerConnection::RestartIce() {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  // Traced first because RestartIce() may synchronously fire
+  // OnNegotiationNeeded().
+  if (tracer_) {
+    tracer_->OnRestartIce();
+  }
   sdp_handler_->RestartIce();
 }
 
@@ -1654,38 +1672,30 @@ RTCError PeerConnection::SetConfiguration(
 bool PeerConnection::AddIceCandidate(const IceCandidate* ice_candidate) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   ClearStatsCache();
-  bool succeeded = sdp_handler_->AddIceCandidate(ice_candidate);
-  if (tracer_ && ice_candidate != nullptr) {
-    tracer_->OnAddIceCandidate(*ice_candidate, succeeded);
-  }
-  return succeeded;
+  return sdp_handler_->AddIceCandidate(ice_candidate);
 }
 
 void PeerConnection::AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                                      std::function<void(RTCError)> callback) {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  // Traced before chaining, so the order is the one the application called in.
   const bool trace_candidate = tracer_ != nullptr && candidate != nullptr;
-  std::string sdp_mid;
-  int sdp_mline_index = 0;
-  Candidate candidate_copy;
   if (trace_candidate) {
-    sdp_mid = candidate->sdp_mid();
-    sdp_mline_index = candidate->sdp_mline_index();
-    candidate_copy = candidate->candidate();
+    tracer_->OnAddIceCandidate(*candidate);
   }
   sdp_handler_->AddIceCandidate(
       std::move(candidate),
       [this, safety = signaling_thread_safety_.flag(),
-       callback = std::move(callback), sdp_mid = std::move(sdp_mid),
-       sdp_mline_index, candidate_copy = std::move(candidate_copy),
-       trace_candidate](RTCError result) {
+       callback = std::move(callback), trace_candidate](RTCError result) {
         RTC_DCHECK_RUN_ON(signaling_thread());
         if (safety->alive()) {
           ClearStatsCache();
           if (trace_candidate) {
-            IceCandidate reconstructed(sdp_mid, sdp_mline_index,
-                                       candidate_copy);
-            tracer_->OnAddIceCandidate(reconstructed, result.ok());
+            if (result.ok()) {
+              tracer_->OnAddIceCandidateSuccess();
+            } else {
+              tracer_->OnAddIceCandidateFailure(result);
+            }
           }
         }
         callback(result);
@@ -1978,9 +1988,6 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
              PeerConnectionInterface::kIceConnectionClosed);
 
   ice_connection_state_ = new_state;
-  if (tracer_) {
-    tracer_->OnIceConnectionStateChanged(new_state);
-  }
   RunWithObserver([&](auto observer) {
     RTC_DCHECK_RUN_ON(signaling_thread());
     observer->OnIceConnectionChange(ice_connection_state_);
@@ -2001,6 +2008,9 @@ void PeerConnection::SetStandardizedIceConnectionState(
                    << standardized_ice_connection_state_ << " => " << new_state;
 
   standardized_ice_connection_state_ = new_state;
+  if (tracer_) {
+    tracer_->OnIceConnectionStateChanged(new_state);
+  }
   RunWithObserver([&](auto observer) {
     observer->OnStandardizedIceConnectionChange(new_state);
   });
@@ -2062,17 +2072,27 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
     // that the ufrag/pwd consists of a valid ice-char or one of the four
     // not allowed characters since we have passed the IsIceChar check done
     // by the p2p transport description on setRemoteDescription calls.
-    auto ice_parameters = transport_infos[0].description.GetIceParameters();
+    // The ice-options are not validated when parsing so any character may
+    // show up there, RFC 8839 section 5.6 defines them as 1*ice-char.
+    const TransportDescription& description = transport_infos[0].description;
     auto is_invalid_char = [](char c) {
       return c == '-' || c == '=' || c == '#' || c == '_';
     };
-    bool isUsingInvalidIceCharInUfrag =
-        absl::c_any_of(ice_parameters.ufrag, is_invalid_char);
-    bool isUsingInvalidIceCharInPwd =
-        absl::c_any_of(ice_parameters.pwd, is_invalid_char);
-    RTC_HISTOGRAM_BOOLEAN(
-        "WebRTC.PeerConnection.ValidIceChars",
-        !(isUsingInvalidIceCharInUfrag || isUsingInvalidIceCharInPwd));
+    auto is_valid_ice_char = [](char c) {
+      return absl::ascii_isalnum(c) || c == '+' || c == '/';
+    };
+    bool valid_ufrag = absl::c_none_of(description.ice_ufrag, is_invalid_char);
+    bool valid_pwd = absl::c_none_of(description.ice_pwd, is_invalid_char);
+    bool valid_ice_options = true;
+    for (const std::string& option : description.transport_options) {
+      valid_ice_options &=
+          !option.empty() && absl::c_all_of(option, is_valid_ice_char);
+    }
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidIceChars.Ufrag",
+                          valid_ufrag);
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidIceChars.Pwd", valid_pwd);
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidIceChars.IceOptions",
+                          valid_ice_options);
 
     // Record whether the hash algorithm of the first transport's
     // DTLS fingerprint is still using SHA-1.
@@ -3086,7 +3106,10 @@ bool PeerConnection::OnTransportChanged(
     for (const auto& transceiver :
          rtp_manager()->transceivers()->UnsafeList()) {
       auto internal = transceiver->internal();
-      if (internal->mid() == mid) {
+      // Match on the MID that the channel was created for rather than on the
+      // transceiver's current MID. The channel is bound to the transport of
+      // that MID and must be notified when that transport changes.
+      if (internal->channel_mid() == mid) {
         ret = internal->SetRtpTransport(rtp_transport);
       }
     }
@@ -3154,7 +3177,7 @@ bool PeerConnection::ShouldFireNegotiationNeededEvent(uint32_t event_id) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   bool should_fire = sdp_handler_->ShouldFireNegotiationNeededEvent(event_id);
   if (should_fire && tracer_) {
-    tracer_->OnNegotiationNeededEvent();
+    tracer_->OnNegotiationNeeded();
   }
   return should_fire;
 }

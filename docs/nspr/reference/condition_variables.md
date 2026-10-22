@@ -13,7 +13,7 @@ its life. In addition, a static association exists between the condition
 and some data within the monitor. This data is what will be manipulated
 by the program under the protection of the monitor.
 
-A call to {ref}`PR_WaitCondVar` causes a thread to block until a specified
+A call to {doc}`pr_waitcondvar` causes a thread to block until a specified
 condition variable receives notification of a change of state in its
 associated monitored data. Other threads may notify the condition
 variable when changes occur.
@@ -25,24 +25,24 @@ NSPR](introduction_to_nspr.md).
 For reference information on NSPR locks, see
 [Locks](locks.md).
 
-NSPR provides a special type, {ref}`PRMonitor`, for use with Java. Unlike a
-mutex of type {ref}`PRLock`, which can have multiple associated condition
-variables of type {ref}`PRCondVar`, a mutex of type {ref}`PRMonitor` has a
+NSPR provides a special type, {doc}`prmonitor`, for use with Java. Unlike a
+mutex of type {doc}`prlock`, which can have multiple associated condition
+variables of type {doc}`prcondvar`, a mutex of type {doc}`prmonitor` has a
 single, implicitly associated condition variable. For information about
-{ref}`PRMonitor`, see [Monitors](monitors.md).
+{doc}`prmonitor`, see [Monitors](monitors.md).
 
 (condition-variable-type)=
 
 # Condition Variable Type
 
-> - {ref}`PRCondVar`
+> - {doc}`prcondvar`
 
 (condition-variable-functions)=
 
 # Condition Variable Functions
 
-> - {ref}`PR_NewCondVar`
-> - {ref}`PR_DestroyCondVar`
-> - {ref}`PR_WaitCondVar`
-> - {ref}`PR_NotifyCondVar`
-> - {ref}`PR_NotifyAllCondVar`
+> - {doc}`pr_newcondvar`
+> - {doc}`pr_destroycondvar`
+> - {doc}`pr_waitcondvar`
+> - {doc}`pr_notifycondvar`
+> - {doc}`pr_notifyallcondvar`

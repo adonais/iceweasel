@@ -176,19 +176,6 @@ bool WasmGcObject::loadValue(JSContext* cx, Handle<WasmGcObject*> obj, jsid id,
     return false;
   }
 
-#ifdef ENABLE_WASM_JSPI
-  // Temporary hack: We don't reject continuations in ValType::isExposable()
-  // because that is also used on the JSPI-internal paths that legitimately move
-  // continuations across the boundary. But we do want to generally disallow
-  // them from JS otherwise.
-  if (type.isTypeRef() &&
-      type.refType().hierarchy() == RefTypeHierarchy::Cont) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_VAL_TYPE);
-    return false;
-  }
-#endif
-
   if (!type.isExposable()) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_VAL_TYPE);

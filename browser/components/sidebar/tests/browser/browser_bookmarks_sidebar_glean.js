@@ -48,13 +48,14 @@ registerCleanupFunction(async () => {
 });
 
 /**
- * Show the Bookmarks panel in the revamped sidebar and return the element +
+ * Show the Bookmarks panel in the revamped sidebar, wait for the test folder
+ * to appear in component.bookmarks, and return the element +
  * its content window.
  *
  * @returns {Promise<{component: SidebarBookmarks, contentWindow: Window}>}
  *   The `<sidebar-bookmarks>` element and the sidebar's content window.
  */
-async function showBookmarksSidebar() {
+async function showBookmarksSidebarWithTestFolder() {
   await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
   const { contentDocument, contentWindow } = SidebarController.browser;
 
@@ -194,7 +195,7 @@ async function fillFieldAndAccept(dialog, fieldId, text) {
 }
 
 add_task(async function test_open_commands() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
 
   const promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
@@ -224,7 +225,7 @@ add_task(async function test_open_commands() {
 
 add_task(async function test_edit_vs_rename_folder_cancelled() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
 
   info("Open the edit bookmark dialog and cancel it.");
   const row = await getTestBookmarkRow(component);
@@ -267,7 +268,7 @@ add_task(async function test_edit_vs_rename_folder_cancelled() {
 
 add_task(async function test_edit_vs_rename_folder_confirmed() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
 
   info("Open the edit bookmark dialog and confirm it.");
   let dialogClosed = BrowserTestUtils.promiseAlertDialogOpen(
@@ -321,7 +322,7 @@ add_task(async function test_edit_vs_rename_folder_confirmed() {
 });
 
 add_task(async function test_open_all_bookmarks() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const testFolderEl = await getTestFolderEl(component);
   const folderHeader = testFolderEl.querySelector("summary");
 
@@ -345,7 +346,7 @@ add_task(async function test_open_all_bookmarks() {
 });
 
 add_task(async function test_container_tab() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
   const containerMenu = document.getElementById(
     "sidebar-bookmarks-context-open-in-container-tab"
@@ -374,7 +375,7 @@ add_task(async function test_container_tab() {
 });
 
 add_task(async function test_copy_bookmark_url() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
   await activateContextMenuItem(
     row.mainEl,
@@ -384,7 +385,7 @@ add_task(async function test_copy_bookmark_url() {
 });
 
 add_task(async function test_add_bookmark_and_folder_cancelled() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
 
   info("Start the Add Bookmark flow. Cancel the resulting dialog box.");
@@ -429,7 +430,7 @@ add_task(async function test_add_bookmark_and_folder_cancelled() {
 });
 
 add_task(async function test_add_bookmark_and_folder_confirmed() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
 
   info("Start the Add Bookmark flow. Confirm the resulting dialog box.");
@@ -488,7 +489,7 @@ add_task(async function test_add_bookmark_and_folder_confirmed() {
 });
 
 add_task(async function test_sort_by_name() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const testFolderEl = await getTestFolderEl(component);
   const folderHeader = testFolderEl.querySelector("summary");
   await activateContextMenuItem(
@@ -499,7 +500,7 @@ add_task(async function test_sort_by_name() {
 });
 
 add_task(async function test_add_separator() {
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const row = await getTestBookmarkRow(component);
 
   const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
@@ -524,7 +525,7 @@ add_task(async function test_cut_bookmark() {
     parentGuid: testFolder.guid,
   });
 
-  const { component } = await showBookmarksSidebar();
+  const { component } = await showBookmarksSidebarWithTestFolder();
   const testFolderEl = await getTestFolderEl(component);
   if (!testFolderEl.open) {
     testFolderEl.querySelector("summary").click();
@@ -546,7 +547,8 @@ add_task(async function test_cut_bookmark() {
 });
 
 add_task(async function test_search() {
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } =
+    await showBookmarksSidebarWithTestFolder();
 
   EventUtils.synthesizeMouseAtCenter(component.searchInput, {}, contentWindow);
   EventUtils.sendString("mozilla", contentWindow);

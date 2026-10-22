@@ -210,6 +210,8 @@ add_task(async function test_post_serp_abandonment_tab_close() {
         tagged: "true",
         partner_code: "ff",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
         has_ai_summary: "unknown",
       },
       adImpressions: [],

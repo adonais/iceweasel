@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContentClassifierFeatureUtils.h"
+#include "ContentClassifierService.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -64,14 +65,14 @@ NS_IMETHODIMP HarmfulAddonPingSender::Observe(nsISupports*, const char* aTopic,
 }  // namespace
 
 /* static */
-bool ContentClassifierFeatureUtils::IsThirdPartyRequest(
-    const ContentClassifierRequest& aRequest) {
-  return aRequest.ThirdParty();
+bool ContentClassifierFeatureUtils::IsThirdPartyUnlessAnnotating(
+    const ContentClassifierRequest& aRequest, ClassifyMode aMode) {
+  return aMode == ClassifyMode::Annotate || aRequest.ThirdParty();
 }
 
 /* static */
 bool ContentClassifierFeatureUtils::IsNonRecommendedAddonRequest(
-    const ContentClassifierRequest& aRequest) {
+    const ContentClassifierRequest& aRequest, ClassifyMode) {
   return aRequest.IsNonRecommendedAddon();
 }
 

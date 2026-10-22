@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<script>
+  "use strict";
+
+  // A 628-byte TrueType font.
+  const FONT_BASE64 =
+    "AAEAAAAKAIAAAwAgT1MvMkUhRDUAAAEoAAAAYGNtYXAADACUAAABkAAAADRnbHlm99FWagAAAcwAAAAaaGVhZC9GutgAAACsAAAANmhoZWEFegH2AAAA5AAAACRobXR4ArwAAAAAAYgAAAAGbG9jYQANAAAAAAHEAAAABm1heHAABAAGAAABCAAAACBuYW1lhde/uAAAAegAAABjcG9zdAAoAAAAAAJMAAAAJgABAAAAAQAAsIBtVF8PPPUAAwPoAAAAAObsO54AAAAA5uw7ngBkAAAB9AK8AAAAAwACAAAAAAAAAAEAAAMg/zgAAAJYAGQAZAH0AAEAAAAAAAAAAAAAAAAAAAABAAEAAAACAAQAAQAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAwJYAZAABQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAPz8/PwAAAEEAQQMg/zgAAAMgAMgAAAAAAAAAAAAAAAAAAAAgAAACWAAAAGQAAAAAAAIAAAADAAAAFAADAAEAAAAUAAQAIAAAAAQABAABAAAAQf//AAAAQf///8AAAQAAAAAAAAAAAA0AAAABAGQAAAH0ArwAAwAAMxEhEWQBkAK8/UQAAAAAAAAEADYAAQAAAAAAAQAIAAAAAQAAAAAAAgAHAAgAAwABBAkAAQAQAA8AAwABBAkAAgAOAB9SZXByb0JveFJlZ3VsYXIAUgBlAHAAcgBvAEIAbwB4AFIAZQBnAHUAbABhAHIAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAACQAAA==";
+
+  // Collect each worker's constructor status and load error.
+  async function createFontFacesConcurrently(aCount) {
+    const bytes = Uint8Array.from(atob(FONT_BASE64), c => c.charCodeAt(0));
+    const workers = await Promise.all(
+      Array.from(
+        { length: aCount },
+        () =>
+          new Promise(resolve => {
+            const worker = new Worker(
+              "file_fontface_buffer_concurrent_worker.js"
+            );
+            worker.onmessage = () => resolve(worker);
+          })
+      )
+    );
+    const at = Date.now() + 100;
+    return Promise.all(
+      workers.map(
+        worker =>
+          new Promise(resolve => {
+            worker.onmessage = ({ data }) => resolve(data);
+            worker.postMessage({ bytes: bytes.slice(), at });
+          })
+      )
+    );
+  }
+</script>

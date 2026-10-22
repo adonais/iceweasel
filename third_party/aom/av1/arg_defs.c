@@ -42,8 +42,6 @@ static const struct arg_enum_list end_usage_enum[] = { { "vbr", AOM_VBR },
 static const struct arg_enum_list tuning_enum[] = {
   { "psnr", AOM_TUNE_PSNR },
   { "ssim", AOM_TUNE_SSIM },
-  { "vmaf_with_preprocessing", AOM_TUNE_VMAF_WITH_PREPROCESSING },
-  { "vmaf_without_preprocessing", AOM_TUNE_VMAF_WITHOUT_PREPROCESSING },
   { "vmaf", AOM_TUNE_VMAF_MAX_GAIN },
   { "vmaf_neg", AOM_TUNE_VMAF_NEG_MAX_GAIN },
   { "butteraugli", AOM_TUNE_BUTTERAUGLI },
@@ -727,7 +725,8 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
               "Check that input samples are within the valid range "
               "for the chosen bit depth with high bit depth encoding (0: "
               "disabled, 1: enabled (default))"),
-  .force_max_q =
-      ARG_DEF(NULL, "force-max-q", 1, "Force max Q used in vbr mode."),
+  .force_max_q = ARG_DEF(
+      NULL, "force-max-q", 1,
+      "Force the use of max Q in VBR mode (0: false (default), 1: true)."),
 #endif  // CONFIG_AV1_ENCODER
 };

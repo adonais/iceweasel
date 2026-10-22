@@ -12,16 +12,15 @@
 
 #include <cstddef>
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "absl/base/nullability.h"
 #include "api/environment/environment.h"
 #include "api/sequence_checker.h"
-#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/clock_aligner.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
@@ -51,7 +50,8 @@ AsyncUDPSocket::AsyncUDPSocket(const Environment& env,
                                absl_nonnull std::unique_ptr<Socket> socket)
     : env_(env),
       sequence_checker_(SequenceChecker::kDetached),
-      socket_(std::move(socket)) {
+      socket_(std::move(socket)),
+      clock_aligner_(env) {
   // The socket should start out readable but not writable.
   socket_->SubscribeReadEvent(this,
                               [this](Socket* socket) { OnReadEvent(socket); });
@@ -155,21 +155,12 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
     return;
   }
 
-  if (!receive_buffer.arrival_time) {
+  if (!receive_buffer.arrival_time.has_value()) {
     // Timestamp from socket is not available.
     receive_buffer.arrival_time = env_.clock().CurrentTime();
   } else {
-    Timestamp current_time = env_.clock().CurrentTime();
-    if (!socket_time_offset_ ||
-        *receive_buffer.arrival_time + *socket_time_offset_ > current_time) {
-      // Estimate timestamp offset from first packet arrival time.
-      // This may be wrong if packets have been buffered in the socket before we
-      // read the first packet and `socket_time_offset_` may then have to be set
-      // again to ensure no arrival times are set in the future.
-      socket_time_offset_ = current_time - *receive_buffer.arrival_time;
-    }
-    *receive_buffer.arrival_time += *socket_time_offset_;
-    RTC_DCHECK_LE(*receive_buffer.arrival_time, current_time);
+    receive_buffer.arrival_time =
+        clock_aligner_.Align(*receive_buffer.arrival_time);
   }
   NotifyPacketReceived(
       ReceivedIpPacket(receive_buffer.payload, receive_buffer.source_address,

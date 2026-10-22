@@ -16,22 +16,22 @@ The function has the following parameter:
 
 `dir`
 
-: A pointer to a {ref}`PRDir` structure representing the directory to be
+: A pointer to a {doc}`prdir` structure representing the directory to be
   closed.
 
 ### Returns
 
 - If successful, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. The reason for the failure can be
-  retrieved via {ref}`PR_GetError`.
+  retrieved via {doc}`pr_geterror`.
 
 ## Description
 
-When a {ref}`PRDir` object is no longer needed, it must be closed and freed
-with a call to {ref}`PR_CloseDir` call. Note that after a {ref}`PR_CloseDir`
-call, any `PRDirEntry` object returned by a previous {ref}`PR_ReadDir`
-call on the same {ref}`PRDir` object becomes invalid.
+When a {doc}`prdir` object is no longer needed, it must be closed and freed
+with a call to {doc}`pr_closedir` call. Note that after a {doc}`pr_closedir`
+call, any `PRDirEntry` object returned by a previous {doc}`pr_readdir`
+call on the same {doc}`prdir` object becomes invalid.
 
 ## See Also
 
-{ref}`PR_OpenDir`
+{doc}`pr_opendir`

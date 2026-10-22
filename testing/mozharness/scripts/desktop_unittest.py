@@ -786,7 +786,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                         else:
                             self.warning(
                                 "--tag does not currently work with the "
-                                "'{suite_category}' suite."
+                                f"'{suite_category}' suite."
                             )
                 elif c.get("total_chunks") and c.get("this_chunk"):
                     base_cmd.extend([

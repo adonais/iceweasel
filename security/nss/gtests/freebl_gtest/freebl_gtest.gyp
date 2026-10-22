@@ -30,6 +30,7 @@
       'target_name': 'freebl_gtest',
       'type': 'executable',
       'sources': [
+        'aes_ctr_unittest.cc',
         'blake2b_unittest.cc',
         'shake_unittest.cc',
         'cmac_unittests.cc',

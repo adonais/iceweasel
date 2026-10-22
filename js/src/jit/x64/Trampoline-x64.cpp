@@ -366,6 +366,13 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   // Pop the machine state and the dead frame.
   masm.moveToStackPtr(FramePointer);
 
+#ifdef JS_HW_SHADOW_STACK
+  // The above move removes the return address pushed by the call from the
+  // OSI-point to the invalidation epilogue. Remove the corresponding shadow
+  // stack entry.
+  masm.addToShadowStackPtr(Imm32(sizeof(uintptr_t)), rdx);
+#endif
+
   // Jump to shared bailout tail. The BailoutInfo pointer has to be in r9.
   masm.jmp(bailoutTail);
 }

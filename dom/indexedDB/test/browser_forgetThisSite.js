@@ -46,9 +46,8 @@ add_task(async function test2() {
 
 add_task(async function test3() {
   // Remove database from domain 2
-  ForgetAboutSite.removeDataFromBaseDomain(domains[1]).then(() => {
-    setPermission(testPageURL4, "indexedDB");
-  });
+  await ForgetAboutSite.removeDataFromBaseDomain(domains[1]);
+  setPermission(testPageURL4, "indexedDB");
 });
 
 add_task(async function test4() {

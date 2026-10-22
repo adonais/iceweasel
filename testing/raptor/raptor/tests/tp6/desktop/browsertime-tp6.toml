@@ -129,10 +129,6 @@ playback_pageset_manifest = "mitm6-linux-firefox-netflix.manifest"
 secondary_url = "https://www.netflix.com/title/699257"
 test_url = "https://www.netflix.com/title/80117263"
 
-[nytimes]
-secondary_url = "https://www.nytimes.com/section/opinion/columnists"
-test_url = "https://www.nytimes.com/2020/02/19/opinion/surprise-medical-bill.html"
-
 [office]
 secondary_url = "https://www.office.com/"
 test_url = "https://www.office.com/launch/powerpoint?auth=1"
@@ -163,19 +159,6 @@ playback_version = "8.1.1"
 playback_pageset_manifest = "mitm6-linux-firefox-tumblr.manifest"
 secondary_url = "https://www.tumblr.com/tagged/funny+cats?sort=top"
 test_url = "https://www.tumblr.com/dashboard"
-
-[twitch]
-measure = "fcp, loadtime, ContentfulSpeedIndex, PerceptualSpeedIndex, SpeedIndex, FirstVisualChange, LastVisualChange"
-alert_on = "fcp, loadtime, ContentfulSpeedIndex, PerceptualSpeedIndex, SpeedIndex, FirstVisualChange, LastVisualChange"
-playback_pageset_manifest = "mitm8-linux-firefox-twitch.manifest"
-secondary_url = "https://www.twitch.tv/gmashley"
-test_url = "https://www.twitch.tv/videos/894226211"
-preferences = ['media.autoplay.default=5',
-               'media.autoplay.ask-permission=true',
-               'media.autoplay.blocking_policy=1',
-               'media.allowed-to-play.enabled=false',
-               'media.block-autoplay-until-in-foreground=true',
-]
 
 [twitter]
 benchmark_page = false

@@ -868,6 +868,7 @@ export const MonitorAgent = {
     const shown = this._showMonitorAlert(monitor, {
       text: entry.resultExplanation,
       textId: "ai-tasks-monitor-notification-body",
+      textArgs: { pageCount: monitor.watchUrls.length },
       ...this._runNotificationActions(
         monitor,
         NOTIFICATION_TYPES.CONDITION_MET,

@@ -1,6 +1,6 @@
 # PR_ExportFileMapAsString
 
-Creates a string identifying a {ref}`PRFileMap`.
+Creates a string identifying a {doc}`prfilemap`.
 
 ## Syntax
 
@@ -23,7 +23,7 @@ The function has the following parameters:
 
 `fm`
 
-: A pointer to the {ref}`PRFileMap` to be represented as a string.
+: A pointer to the {doc}`prfilemap` to be represented as a string.
 
 `bufsize`
 
@@ -35,9 +35,9 @@ The function has the following parameters:
 
 ### Returns
 
-{ref}`PRStatus`
+{doc}`prstatus`
 
 ## Description
 
-Creates an identifier, as a string, from a {ref}`PRFileMap` object
-previously created with {ref}`PR_OpenAnonFileMap`.
+Creates an identifier, as a string, from a {doc}`prfilemap` object
+previously created with {doc}`pr_openanonfilemap`.

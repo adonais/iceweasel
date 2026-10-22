@@ -343,6 +343,7 @@ void DtlsSrtpTransport::OnDtlsState(DtlsTransportInternal* transport,
 void DtlsSrtpTransport::OnWritableState(
     PacketTransportInternal* packet_transport) {
   MaybeSetupDtlsSrtp();
+  MaybeUpdateWritableState();
 }
 
 void DtlsSrtpTransport::SetOnDtlsStateChange(

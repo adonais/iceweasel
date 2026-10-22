@@ -404,6 +404,7 @@ set_defaults("rtc_test") {
 
 set_defaults("rtc_cc_test") {
   configs = rtc_add_configs
+  suppressed_configs = []
 }
 
 set_defaults("rtc_library") {
@@ -1333,6 +1334,7 @@ if (is_mac || is_ios) {
 
     if (is_mac) {
       headers_dir = "Versions/A/Headers"
+
       copy("copy_umbrella_header_$this_target_name") {
         sources = [ umbrella_header_path ]
         outputs = [
@@ -1413,8 +1415,6 @@ template("rtc_cc_test") {
     forward_variables_from(invoker,
                            "*",
                            [
-                             "public_configs",
-                             "suppressed_configs",
                              "deps",
                              "visibility",
                            ])
@@ -1445,6 +1445,7 @@ template("rtc_cc_test") {
     _binary_name = string_replace(_path_from_webrtc_root, "/", "_") + "_" +
                    target_name + "_bin"
   }
+
   rtc_test("${target_name}_bin") {
     testonly = true
 
@@ -1542,6 +1543,7 @@ template("rtc_rust_library") {
   assert(
       !defined(invoker.cxx_bindings),
       "cxx_bindings are not allowed in rtc_rust_library. Use rtc_rust_cxx_bridge instead.")
+
   rust_static_library(target_name) {
     forward_variables_from(invoker,
                            "*",
@@ -1570,6 +1572,7 @@ template("rtc_rust_unittest") {
     assert(
         !defined(invoker.crate_name),
         "Custom crate_name is not allowed in WebRTC. Use webrtc::import! instead.")
+
     rust_unit_test(target_name) {
       forward_variables_from(invoker,
                              "*",
@@ -1663,7 +1666,7 @@ template("rtc_rust_cxx_bridge") {
 
 # Defines a suite of Rust unit tests.
 template("rtc_rust_test_suite") {
-  if (can_build_rust_unit_tests) {
+  if (rtc_rust && can_build_rust_unit_tests) {
     rust_unit_tests_group(target_name) {
       forward_variables_from(invoker, "*")
     }

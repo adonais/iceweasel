@@ -33,6 +33,13 @@ export function EditClocksPanel({
     };
   }, []);
 
+  // Back arrow mirrors in RTL. Built in JS like the other newtab arrows: a
+  // static URL would make browser_all_files_referenced.js flag the icon.
+  const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${
+    isRTL ? "right" : "left"
+  }.svg`;
+
   return (
     <section
       className="clocks-panel clocks-edit-panel"
@@ -49,7 +56,7 @@ export function EditClocksPanel({
             className="clocks-edit-back-button"
             type="icon ghost"
             size="small"
-            iconSrc="chrome://global/skin/icons/arrow-left.svg"
+            iconSrc={arrowIconSrc}
             data-l10n-id="newtab-clock-widget-button-back"
             onClick={onClose}
             ref={backButtonRef}
@@ -113,24 +120,14 @@ export function EditClocksPanel({
                   )}
                 </div>
               </div>
-              <span
-                aria-hidden="true"
-                className="clocks-edit-subtitle"
-                data-l10n-id={
-                  clock.label
-                    ? "newtab-clock-widget-label-nickname-with-value"
-                    : undefined
-                }
-                data-l10n-args={
-                  clock.label
-                    ? JSON.stringify({
-                        nickname: clock.label,
-                      })
-                    : undefined
-                }
-              >
-                {clock.label ? null : " "}
-              </span>
+              {clock.label && (
+                <span
+                  aria-hidden="true"
+                  className="clocks-edit-subtitle"
+                  data-l10n-id="newtab-clock-widget-label-nickname-with-value"
+                  data-l10n-args={JSON.stringify({ nickname: clock.label })}
+                />
+              )}
             </li>
           );
         })}

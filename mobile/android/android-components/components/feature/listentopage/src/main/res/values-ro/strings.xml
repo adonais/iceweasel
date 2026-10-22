@@ -46,7 +46,7 @@
   <!-- Error text shown on the Listen to Page media player when the player encounters an error partway through playing the audio. -->
   <string name="mozac_feature_listentopage_error_could_not_finish_playing_audio">Nu s-a putut finaliza redarea audio. Încearcă din nou.</string>
   <!-- Error text shown on the Listen to Page media player when no voice options are available to play the audio. -->
-  <string name="mozac_feature_listentopage_error_voice_options_not_available">Opțiuni de voce indisponibile</string>
+  <string name="mozac_feature_listentopage_error_voice_options_not_available">Opțiuni vocale indisponibile</string>
   <!-- Listen to Page media player: content description for the button that closes the player. -->
   <string name="mozac_feature_listentopage_close">Închide</string>
   <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->

@@ -34,12 +34,6 @@ loader.lazyGetter(this, "RELOAD_PAGE_INFO", function () {
   return L10N.getStr("appErrorBoundary.reloadPanelInfo");
 });
 
-// File a bug for the selected component specifically
-// Add format=__default__ to make sure users without EDITBUGS permission still
-// use the regular UI to create bugs, including the prefilled description.
-const bugLink =
-  "https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__&blocked=devtools-toolbox-crash&product=DevTools&component=";
-
 /**
  * Error boundary that wraps around the a given component.
  */
@@ -50,6 +44,7 @@ class AppErrorBoundary extends Component {
       panel: PropTypes.any.isRequired,
       componentName: PropTypes.string.isRequired,
       openLink: PropTypes.func,
+      disableVerticalOverflow: PropTypes.bool,
     };
   }
 
@@ -291,20 +286,41 @@ class AppErrorBoundary extends Component {
       msg += `## Client Packet:\n\`\`\`\n${JSON.stringify(clientPacket, null, 2)}\n\`\`\`\n\n`;
     }
 
+    // Some stacks might be long enough to trigger a "414 URI Too Long" response
+    // from Bugzilla, so let's crop them when they're too long
+    const cropStackIfNeeded = stackStr => {
+      // The max length seems to be 10000 chars, and we're calling this function for 3
+      // stacks, so let them be at most 3000 to leave some room for the other strings
+      // we set in the comment.
+      const limit = 3000;
+      if (!stackStr || stackStr.length < limit) {
+        return stackStr;
+      }
+      const croppedStr = ` (…)`;
+      return stackStr.substring(0, limit - croppedStr.length) + croppedStr;
+    };
+
     if (serverPacket) {
       // Display the packet as JSON, while removing the artificial `stack`/`contentProcessStack` attributes from it
       msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined, contentProcessStack: undefined }, null, 2)}\n\`\`\`\n\n`;
-      msg += `## Server Stack:\n\`\`\`\n${serverPacket.stack}\n\`\`\`\n\n`;
+      msg += `## Server Stack:\n\`\`\`\n${cropStackIfNeeded(serverPacket.stack)}\n\`\`\`\n\n`;
       if (serverPacket.contentProcessStack) {
-        msg += `## Server Content Process Stack:\n\`\`\`\n${serverPacket.contentProcessStack}\n\`\`\`\n\n`;
+        msg += `## Server Content Process Stack:\n\`\`\`\n${cropStackIfNeeded(serverPacket.contentProcessStack)}\n\`\`\`\n\n`;
       }
     }
 
-    msg += `## Stacktrace: \n\`\`\`\n${this.state.errorStack}\n\`\`\``;
+    msg += `## Stacktrace: \n\`\`\`\n${cropStackIfNeeded(this.state.errorStack)}\n\`\`\``;
 
-    return `${bugLink}${this.props.componentName}&comment=${encodeURIComponent(
-      msg
-    )}`;
+    const bugLinkSearchParams = new URLSearchParams({
+      //  make sure users without EDITBUGS permission still
+      // use the regular UI to create bugs, including the prefilled description.
+      format: "__default__",
+      blocked: "devtools-toolbox-crash",
+      product: "DevTools",
+      component: this.props.componentName,
+      comment: msg,
+    });
+    return `https://bugzilla.mozilla.org/enter_bug.cgi?${bugLinkSearchParams}`;
   }
 
   render() {
@@ -319,7 +335,7 @@ class AppErrorBoundary extends Component {
 
       return div(
         {
-          className: `app-error-panel`,
+          className: `app-error-panel${this.props.disableVerticalOverflow ? " disable-vertical-overflow" : ""}`,
         },
         h1({ className: "error-panel-header" }, errorDescription),
         a(

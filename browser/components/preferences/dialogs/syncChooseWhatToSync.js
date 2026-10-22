@@ -23,10 +23,20 @@ Preferences.addAll([
   { id: "services.sync.engine.creditcards", type: "bool" },
 ]);
 
+if (Services.prefs.getBoolPref("services.sync.perDeviceEngineChoices", false)) {
+  document.l10n.setAttributes(
+    document.documentElement,
+    "sync-choose-what-to-sync-dialog5"
+  );
+  let dialog = document.getElementById("syncChooseOptions");
+  document.l10n.setAttributes(dialog, "sync-choose-what-to-sync-dialog5");
+}
+
 let gSyncChooseWhatToSync = {
   init() {
     this._setupEventListeners();
     this._adjustForPrefs();
+
     let options = window.arguments[0];
     if (options.disconnectFun) {
       // Offer 'Disconnect' functionality if it was provided

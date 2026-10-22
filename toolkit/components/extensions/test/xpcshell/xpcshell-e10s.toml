@@ -4,9 +4,6 @@ firefox-appdir = "browser"
 skip-if = [
   "appname == 'thunderbird'",
   "os == 'android'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1814779
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1814779
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1814779
 ]
 dupe-manifest = ""
 support-files = [

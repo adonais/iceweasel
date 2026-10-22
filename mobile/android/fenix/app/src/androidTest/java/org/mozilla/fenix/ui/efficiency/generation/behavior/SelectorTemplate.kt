@@ -30,7 +30,7 @@ object SelectorTemplateCatalog {
                 pagePropertyName = "bookmarks",
                 requiredDataKeys = setOf("folderName"),
                 description = "Bookmark folder row matching the generated folder name",
-                build = { data -> BookmarksSelectors.BOOKMARK_ITEM(data.require("folderName")) },
+                build = { data -> BookmarksSelectors.BOOKMARK_ITEM_TITLE(data.require("folderName")) },
             )
         )
 

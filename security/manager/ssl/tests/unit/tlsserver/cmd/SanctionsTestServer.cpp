@@ -55,7 +55,7 @@ int32_t DoSNISocketConfigBySubjectCN(PRFileDesc* aFd,
 }
 
 int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
-                          uint32_t aSrvNameArrSize, void* aArg) {
+                          uint32_t aSrvNameArrSize, void* /*aArg*/) {
   const SanctionsCertHost* host =
       GetHostForSNI(aSrvNameArr, aSrvNameArrSize, sSanctionsCertHosts);
   if (!host) {

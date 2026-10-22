@@ -648,7 +648,7 @@ async function doReopenTests(useVerticalTabs) {
 
   info("restoring saved group via undoClosetab");
   await waitForNoActiveGroups();
-  SessionWindowUI.undoCloseTab(win, undefined, win.__SSi);
+  SessionWindowUI.undoCloseTab(win, undefined, SessionStore.getWindowId(win));
   await waitForReopenRecord();
   assertReopenEvent({
     id: groupId,

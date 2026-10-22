@@ -335,6 +335,18 @@ class UnicodeProperties final {
     return u_getIntPropertyMaxValue(UCHAR_SCRIPT);
   }
 
+  // Attempt to get a script code corresponding to an ISO 15924 tag given as a
+  // C string. Returns Script::UNKNOWN if the string cannot be mapped to a
+  // Script code.
+  static inline Script GetScriptCodeFromString(const char* aStr) {
+    UScriptCode icu_script;
+    UErrorCode status = U_ZERO_ERROR;
+    if (uscript_getCode(aStr, &icu_script, 1, &status) == 1) {
+      return Script(icu_script);
+    }
+    return Script::UNKNOWN;
+  }
+
   // Return true if aChar belongs to a SEAsian script that is written without
   // word spaces, so we need to use the "complex breaker" to find possible word
   // boundaries. (https://en.wikipedia.org/wiki/Scriptio_continua)
@@ -408,6 +420,37 @@ class UnicodeProperties final {
     }
 
     return Ok();
+  }
+
+  /**
+   * IdentifierType values, matching ICU's UIdentifierType constants.
+   * https://www.unicode.org/reports/tr39/#Identifier_Status_and_Type.
+   */
+  enum class IdentifierType {
+    NotCharacter = U_ID_TYPE_NOT_CHARACTER,
+    Deprecated = U_ID_TYPE_DEPRECATED,
+    DefaultIgnorable = U_ID_TYPE_DEFAULT_IGNORABLE,
+    NotNFKC = U_ID_TYPE_NOT_NFKC,
+    NotXID = U_ID_TYPE_NOT_XID,
+    Exclusion = U_ID_TYPE_EXCLUSION,
+    Obsolete = U_ID_TYPE_OBSOLETE,
+    Technical = U_ID_TYPE_TECHNICAL,
+    UncommonUse = U_ID_TYPE_UNCOMMON_USE,
+    LimitedUse = U_ID_TYPE_LIMITED_USE,
+    Inclusion = U_ID_TYPE_INCLUSION,
+    Recommended = U_ID_TYPE_RECOMMENDED,
+  };
+
+  /**
+   * Return whether the codepoint has the given IdentifierType value and does
+   * not combine it with any additional IdentifierTypes.
+   */
+  static bool HasSingleIdentifierType(char32_t aCodePoint,
+                                      IdentifierType aType) {
+    UErrorCode status = U_ZERO_ERROR;
+    UIdentifierType type;
+    return u_getIDTypes(aCodePoint, &type, 1, &status) == 1 &&
+           IdentifierType(type) == aType;
   }
 };
 

@@ -53,8 +53,6 @@ loader.lazyGetter(this, "MessageListItem", function () {
   );
 });
 
-const LEFT_MOUSE_BUTTON = 0;
-
 /**
  * Renders the actual contents of the message list.
  */
@@ -203,10 +201,10 @@ class MessageListContent extends Component {
     });
   }
 
-  onMouseDown(evt, item) {
-    if (evt.button === LEFT_MOUSE_BUTTON) {
-      this.props.selectMessage(item);
-    }
+  // Selecting on click rather than mousedown, as the selection opens the
+  // payload panel, which shrinks the message list under the mouse pointer.
+  onClick(item) {
+    this.props.selectMessage(item);
   }
 
   onContextMenu(evt, item) {
@@ -312,6 +310,7 @@ class MessageListContent extends Component {
         tbody(
           {
             className: "message-list-body",
+            role: "listbox",
             onKeyDown: this.onKeyDown,
           },
           tr(
@@ -366,7 +365,7 @@ class MessageListContent extends Component {
               item,
               index,
               isSelected: item === selectedMessage,
-              onMouseDown: evt => this.onMouseDown(evt, item),
+              onClick: () => this.onClick(item),
               onContextMenu: evt => this.onContextMenu(evt, item),
               connector,
               visibleColumns,

@@ -711,7 +711,7 @@ nsresult BounceTrackingState::OnStartNavigation(
     mClientBounceDetectionTimeout = nullptr;
   }
 
-  // Obtain the (schemeless) site to keep track of bounces.
+  // The initiator's (schemeless) site, for the user activation set.
   nsAutoCString siteHost;
 
   // If origin is an opaque origin, set siteHost to empty host. Strictly
@@ -728,16 +728,19 @@ nsresult BounceTrackingState::OnStartNavigation(
     }
   }
 
-  // RecordStatefulBounces exempts the initial host, so it must be the site this
-  // context is leaving, not the initiator's, otherwise a frame which navigates
-  // the top level exempts itself. Both reads are at commit time. A context with
-  // no committed document was opened by this navigation; use its opener, not
-  // the initiator, which can resolve back into it and name the frame again.
+  // The site this context is leaving, not the initiator's, which can be a frame
+  // or another tab. Read at commit time. Empty if nothing is committed yet.
+  nsAutoCString departingSiteHost;
+  // RecordStatefulBounces exempts the initial host, so a frame which navigates
+  // the top level must not name itself. A context with no committed document
+  // was opened by this navigation; use its opener, not the initiator, which can
+  // resolve back into it and name the frame again.
   nsAutoCString initialSiteHost;
   if (RefPtr<dom::BrowsingContext> browsingContext = CurrentBrowsingContext()) {
     if (browsingContext->GetHasLoadedNonInitialDocument()) {
       GetTopLevelSiteHost(browsingContext->GetCurrentWindowContext(),
-                          initialSiteHost);
+                          departingSiteHost);
+      initialSiteHost = departingSiteHost;
     } else if (RefPtr<dom::BrowsingContext> opener =
                    browsingContext->GetOpener()) {
       GetTopLevelSiteHost(opener->GetCurrentWindowContext(), initialSiteHost);
@@ -745,8 +748,8 @@ nsresult BounceTrackingState::OnStartNavigation(
   }
 
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-              "{}: siteHost: {}, initialSiteHost: {}", __FUNCTION__, siteHost,
-              initialSiteHost);
+              "{}: siteHost: {}, departingSiteHost: {}, initialSiteHost: {}",
+              __FUNCTION__, siteHost, departingSiteHost, initialSiteHost);
 
   // If sourceSnapshotParams’s has transient activation is true,
   // we initialize a new bounce tracking record with the initialHost
@@ -791,11 +794,13 @@ nsresult BounceTrackingState::OnStartNavigation(
     return NS_OK;
   }
 
-  // There is no transient user activation. Add host as a bounce candidate.
-  if (siteHost.IsEmpty()) {
+  // There is no transient user activation. Add the site being left as a bounce
+  // candidate. Not initialSiteHost: its opener fallback would name the
+  // initiating tab again.
+  if (departingSiteHost.IsEmpty()) {
     mBounceTrackingRecord->AddBounceHost("null"_ns);
   } else {
-    mBounceTrackingRecord->AddBounceHost(siteHost);
+    mBounceTrackingRecord->AddBounceHost(departingSiteHost);
   }
 
   return NS_OK;

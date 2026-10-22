@@ -701,7 +701,7 @@ performant way of doing so.
 
 ### Reflows and style flushes
 
-See {ref}`Performance best practices for Firefox front-end engineers`
+See {doc}`/performance/bestpractices`
 for more information about this.
 
 ## Misc
@@ -714,7 +714,7 @@ text as it will cause text to be aliased differently.
 ### HDPI support
 
 It's recommended to use SVG since it keeps the CSS clean when supporting
-multiple resolutions. See the {ref}`SVG Guidelines` for more information
+multiple resolutions. See the {doc}`svg_guidelines` for more information
 on SVG usage.
 
 However, if only 1x and 2x PNG assets are available, you can use this

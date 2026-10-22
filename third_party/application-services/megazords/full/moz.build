@@ -42,12 +42,7 @@ RUST_TESTS = [
     "rc_crypto",
 ]
 
-# On Android, libmegazord.so must use bionic's allocator rather than mozglue's
-# mozjemalloc. Depending on nss still builds mozglue before Cargo runs.
-if CONFIG["OS_TARGET"] != "Android":
-    USE_LIBS += ["mozglue"]
-
-USE_LIBS += ["nss"]
+USE_LIBS += ["mozglue", "nss"]
 
 if CONFIG["OS_TARGET"] == "Linux":
     USE_LIBS += [

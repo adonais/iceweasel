@@ -133,6 +133,19 @@ add_task(async function test_edit_profile_theme() {
 
         Assert.ok(themePicker, "Theme picker should exist");
 
+        let themeGroup =
+          editProfileCard.shadowRoot.getElementById("theme-group");
+        Assert.ok(
+          themeGroup.contains(themePicker),
+          "Theme picker should be inside the theme group"
+        );
+        await themeGroup.updateComplete;
+        Assert.equal(
+          themeGroup.shadowRoot.querySelector("legend")?.textContent.trim(),
+          "Theme",
+          "Theme group should be labelled"
+        );
+
         const EventUtils = ContentTaskUtils.getEventUtils(content);
 
         let sunThemeItem = themePicker.shadowRoot.querySelector(

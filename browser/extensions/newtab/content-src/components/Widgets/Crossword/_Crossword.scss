@@ -29,12 +29,6 @@
     min-inline-size: 0;
   }
 
-  h3 {
-    margin-block: 0;
-    font-weight: var(--font-weight);
-    font-size: var(--font-size-root);
-  }
-
   // moz-badge renders its visible content in shadow DOM, so it can only be
   // styled here via its token custom properties (padding/background) plus
   // inherited properties (text-transform). The green "filled" look normally

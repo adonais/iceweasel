@@ -4,23 +4,14 @@
 
 use pkcs11_bindings::*;
 use rsclientcerts::cryptoki::*;
-use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
+use rsclientcerts::manager::{
+    ClientCertsBackend, CryptokiObject, FindObjectsCallback, Sign, SignCallback,
+};
 use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::*;
 use std::ffi::{c_char, c_void, CString};
 
-type FindObjectsCallback = Option<
-    unsafe extern "C" fn(
-        typ: u8,
-        data_len: usize,
-        data: *const u8,
-        extra_len: usize,
-        extra: *const u8,
-        ctx: *mut c_void,
-    ),
->;
-
-// Wrapper of C AndroidDoFindObject function implemented in nsNSSIOLayer.cpp
+// Wrapper of C AndroidDoFindObjects function implemented in nsNSSIOLayer.cpp
 fn AndroidDoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObjectsContext) {
     // `AndroidDoFindObjects` communicates with the
     // `ClientAuthCertificateManager` to find all available client
@@ -33,9 +24,6 @@ fn AndroidDoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObje
         AndroidDoFindObjects(callback, ctx as *mut _ as *mut c_void);
     }
 }
-
-type SignCallback =
-    Option<unsafe extern "C" fn(data_len: usize, data: *const u8, ctx: *mut c_void)>;
 
 // Wrapper of C AndroidDoSign function implemented in nsNSSIOLayer.cpp
 fn AndroidDoSignWrapper(
@@ -193,13 +181,13 @@ unsafe extern "C" fn find_objects_callback(
     extra: *const u8,
     ctx: *mut c_void,
 ) {
-    let data = if data_len == 0 {
+    let data = if data_len == 0 || data.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(data, data_len)
     }
     .to_vec();
-    let extra = if extra_len == 0 {
+    let extra = if extra_len == 0 || extra.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(extra, extra_len)
@@ -254,14 +242,21 @@ const TOKEN_SERIAL_NUMBER_BYTES: &[u8; 16] = b"0000000000000000";
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+    fn find_objects(
+        &mut self,
+        slot_id: CK_SLOT_ID,
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>)>, Error> {
+        if !crate::should_search_for_objects(slot_id) {
+            return Ok(None);
+        }
+
         let mut find_objects_context = FindObjectsContext::new();
         AndroidDoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
-        Ok((
+        Ok(Some((
             find_objects_context.certs,
             find_objects_context.keys,
             Vec::new(),
-        ))
+        )))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {

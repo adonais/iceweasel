@@ -80,12 +80,20 @@ SharedPlanarYCbCrImage::GetAsSourceSurface() {
 }
 
 nsresult SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData) {
+  const Maybe<gfx::IntSize> checkedYSize = aData.GetCheckedYDataSize();
+  if (checkedYSize.isNothing()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   // If mTextureClient has not already been allocated by CreateEmptyBuffer,
   // allocate it. This code path is slower than the one used when
   // CreateEmptyBuffer has been called since it will trigger a full copy.
   if (!mTextureClient) {
-    nsresult r =
-        CreateEmptyBuffer(aData, aData.YDataSize(), aData.CbCrDataSize());
+    const gfx::IntSize ySize = checkedYSize.value();
+    const gfx::IntSize cbcrSize =
+        aData.mCbCrStride > 0 ? gfx::ChromaSize(ySize, aData.mChromaSubsampling)
+                              : gfx::IntSize(0, 0);
+    nsresult r = CreateEmptyBuffer(aData, ySize, cbcrSize);
     if (NS_FAILED(r)) {
       return r;
     }
@@ -142,10 +150,11 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   // The locking here is sort of a lie. The SharedPlanarYCbCrImage just pulls
   // pointers out of the TextureClient and keeps them around, which works only
   // because the underlyin BufferTextureData is always mapped in memory even
-  // outside of the lock/unlock interval. That's sad and new code should follow
-  // this example.
+  // outside of the lock/unlock interval. For shmem, mShmemHolder also keeps the
+  // mapping alive if ImageBridge shutdown destroys the TextureClient. New code
+  // should not retain borrowed pointers without retaining their storage.
   if (!mTextureClient->Lock(OpenMode::OPEN_READ) ||
-      !mTextureClient->BorrowMappedYCbCrData(mapped)) {
+      !mTextureClient->BorrowMappedYCbCrData(mapped, mShmemHolder)) {
     MOZ_CRASH("GFX: Cannot lock or borrow mapped YCbCr");
   }
 

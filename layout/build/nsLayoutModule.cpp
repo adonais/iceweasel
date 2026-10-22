@@ -14,7 +14,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/IOThread.h"
 #include "nsContentDLF.h"
-#include "nsContentPolicyUtils.h"
 #include "nsDOMCID.h"
 #include "nsDataDocumentContentPolicy.h"
 #include "nsFocusManager.h"
@@ -105,7 +104,6 @@ void Shutdown() {
 
 already_AddRefed<nsIDocumentViewer> NS_NewDocumentViewer();
 nsresult NS_NewContentDocumentLoaderFactory(nsIDocumentLoaderFactory** aResult);
-nsresult NS_NewContentPolicy(nsIContentPolicy** aResult);
 
 nsresult NS_NewEventListenerService(nsIEventListenerService** aResult);
 nsresult NS_NewGlobalMessageManager(nsISupports** aResult);
@@ -146,7 +144,6 @@ MAKE_CTOR(CreateXHTMLContentSerializer, nsIContentSerializer,
           NS_NewXHTMLContentSerializer)
 MAKE_CTOR(CreatePlainTextSerializer, nsIContentSerializer,
           NS_NewPlainTextSerializer)
-MAKE_CTOR(CreateContentPolicy, nsIContentPolicy, NS_NewContentPolicy)
 
 MAKE_GENERIC_CTOR(nsIDocumentLoaderFactory, NS_NewContentDocumentLoaderFactory)
 MAKE_GENERIC_CTOR(nsIEventListenerService, NS_NewEventListenerService)

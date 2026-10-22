@@ -1078,11 +1078,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     // When in an engine search mode, discard URL results whose hostnames don't
-    // include the root domain of the search mode engine.
+    // include the root domain of the search mode engine. A heuristic URL is
+    // kept when navigation is enabled in search mode.
     if (
       state.context.searchMode?.engineName &&
       result.payload.url &&
-      state.context.restrictInSearchMode()
+      state.context.restrictInSearchMode() &&
+      !(result.heuristic && state.context.navigationInSearchModeEnabled)
     ) {
       let engine = lazy.SearchService.getEngineByName(
         state.context.searchMode.engineName

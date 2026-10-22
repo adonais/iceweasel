@@ -22,9 +22,6 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "media-gpu"
 prefs = [
@@ -783,7 +780,6 @@ tags = "capturestream"
 skip-if = [
   "mda_gpu", # Disabled because high intermittent failure
   "os == 'android'", # 1712598 (canvas error)
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # 1713397, 1719881 (high intermittent failure on linux tsan), 1776937
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # 1517199 (timeout-on-osx)
 ]
 
@@ -810,7 +806,6 @@ tags = "cloneelementvisually"
 ["test_cloneElementVisually_resource_change.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1559308 - lower frequency intermittent
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1559308 - lower frequency intermittent
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1909908
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1909908
 ]
@@ -858,6 +853,9 @@ skip-if = [
 ["test_imagecapture.html"]
 scheme = "https"
 
+["test_invalid_content_range.html"]
+scheme = "https"
+
 ["test_invalid_reject_play.html"]
 
 ["test_live_duration.html"]
@@ -878,9 +876,6 @@ support-files = ["mediacapabilities_drm_utils.js"]
 ["test_mediatrack_consuming_mediastream.html"]
 scheme = "https"
 tags = "mtg"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # TIMEOUT
-]
 
 ["test_mediatrack_replay_from_end.html"]
 
@@ -889,7 +884,6 @@ skip-if = [
 ["test_mixed_principals.html"]
 skip-if = [
   "os == 'android'", # bug 1309814, android(bug 1232305)
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1707737
 ]
 
 ["test_mkv_playback.html"]
@@ -906,9 +900,6 @@ skip-if = [
 ["test_mp4a_32bit_samplesize.html"] # bug 1924052
 
 ["test_multiple_mediastreamtracks.html"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # TIMEOUT
-]
 scheme = "https"
 
 ["test_networkconnection_spoofing.html"]
@@ -942,7 +933,6 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1110922
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && mda_gpu", # Bug 1929426
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && socketprocess_e10s", # Bug 1929426
-  "os == 'win'", # Bug 1110922
 ]
 
 ["test_replay_metadata.html"]
@@ -989,10 +979,6 @@ skip-if = [
 
 ["test_setSinkId_after_loop.html"]
 scheme = "https"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !fission",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1961557
-]
 
 ["test_blob_from_arraybuffer_video_plays.html"]
 

@@ -352,6 +352,7 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
 
   SECItem encodedIssuerNameItem =
       pkix::UnsafeMapInputToSECItem(encodedIssuerName);
+  AutoSearchingForCertificates _;
   // NSS seems not to differentiate between "no potential issuers found" and
   // "there was an error trying to retrieve the potential issuers." We assume
   // there was no error if CERT_CreateSubjectCertList returns nullptr.

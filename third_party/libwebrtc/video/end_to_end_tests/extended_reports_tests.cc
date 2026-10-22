@@ -21,9 +21,6 @@
 #include "api/test/simulated_network.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
-#include "api/video/video_codec_type.h"
-#include "api/video_codecs/sdp_video_format.h"
-#include "call/rtp_config.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
@@ -52,14 +49,10 @@ class ExtendedReportsEndToEndTest : public test::CallTest {
 class RtcpXrObserver : public test::EndToEndTest {
  public:
   RtcpXrObserver(bool enable_rrtr,
-                 bool expect_target_bitrate,
-                 bool enable_zero_target_bitrate,
                  VideoEncoderConfig::ContentType content_type,
                  TimeDelta timeout = test::VideoTestConstants::kDefaultTimeout)
       : EndToEndTest(timeout),
         enable_rrtr_(enable_rrtr),
-        expect_target_bitrate_(expect_target_bitrate),
-        enable_zero_target_bitrate_(enable_zero_target_bitrate),
         content_type_(content_type),
         sent_rtcp_sr_(0),
         sent_rtcp_rr_(0),
@@ -97,14 +90,6 @@ class RtcpXrObserver : public test::EndToEndTest {
     test::RtcpPacketParser parser;
     EXPECT_TRUE(parser.Parse(packet));
 
-    if (parser.sender_ssrc() == test::VideoTestConstants::kVideoSendSsrcs[1] &&
-        enable_zero_target_bitrate_) {
-      // Reduce bandwidth restriction to disable second stream after it was
-      // enabled for some time.
-      forward_transport_config_.link_capacity = DataRate::KilobitsPerSec(200);
-      send_simulated_network_->SetConfig(forward_transport_config_);
-    }
-
     sent_rtcp_sr_ += parser.sender_report()->num_packets();
     EXPECT_LE(parser.xr()->num_packets(), 1);
     if (parser.xr()->num_packets() > 0) {
@@ -128,9 +113,7 @@ class RtcpXrObserver : public test::EndToEndTest {
     }
 
     if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
-        sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve &&
-        (sent_rtcp_target_bitrate_ || !expect_target_bitrate_) &&
-        (sent_zero_rtcp_target_bitrate_ || !enable_zero_target_bitrate_)) {
+        sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve) {
       if (enable_rrtr_) {
         EXPECT_GT(sent_rtcp_rrtr_, 0);
         EXPECT_GT(sent_rtcp_dlrr_, 0);
@@ -138,18 +121,14 @@ class RtcpXrObserver : public test::EndToEndTest {
         EXPECT_EQ(sent_rtcp_rrtr_, 0);
         EXPECT_EQ(sent_rtcp_dlrr_, 0);
       }
-      EXPECT_EQ(expect_target_bitrate_, sent_rtcp_target_bitrate_);
-      EXPECT_EQ(enable_zero_target_bitrate_, sent_zero_rtcp_target_bitrate_);
+      EXPECT_FALSE(sent_rtcp_target_bitrate_);
+      EXPECT_FALSE(sent_zero_rtcp_target_bitrate_);
       observation_complete_.Set();
     }
     return SEND_PACKET;
   }
 
-  size_t GetNumVideoStreams() const override {
-    // When sending a zero target bitrate, we use two spatial layers so that
-    // we'll still have a layer with non-zero bitrate.
-    return enable_zero_target_bitrate_ ? 2 : 1;
-  }
+  size_t GetNumVideoStreams() const override { return 1; }
 
   BuiltInNetworkBehaviorConfig GetSendTransportConfig() const override {
     return forward_transport_config_;
@@ -167,16 +146,6 @@ class RtcpXrObserver : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStreamInterface::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    if (enable_zero_target_bitrate_) {
-      // Configure VP8 to be able to use simulcast.
-      send_config->rtp.payload_name = "VP8";
-      encoder_config->codec_type = kVideoCodecVP8;
-      (*receive_configs)[0].decoders.resize(1);
-      (*receive_configs)[0].decoders[0].payload_type =
-          send_config->rtp.payload_type;
-      (*receive_configs)[0].decoders[0].video_format =
-          SdpVideoFormat(send_config->rtp.payload_name);
-    }
     encoder_config->content_type = content_type_;
     (*receive_configs)[0].rtp.rtcp_mode = RtcpMode::kReducedSize;
     (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
@@ -192,8 +161,6 @@ class RtcpXrObserver : public test::EndToEndTest {
 
   Mutex mutex_;
   const bool enable_rrtr_;
-  const bool expect_target_bitrate_;
-  const bool enable_zero_target_bitrate_;
   const VideoEncoderConfig::ContentType content_type_;
   int sent_rtcp_sr_;
   int sent_rtcp_rr_ RTC_GUARDED_BY(&mutex_);
@@ -205,54 +172,17 @@ class RtcpXrObserver : public test::EndToEndTest {
   SimulatedNetworkInterface* send_simulated_network_ = nullptr;
 };
 
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithRrtrWithoutTargetBitrate) {
-  RtcpXrObserver test(/*enable_rrtr=*/true, /*expect_target_bitrate=*/false,
-                      /*enable_zero_target_bitrate=*/false,
+TEST_F(ExtendedReportsEndToEndTest, TestExtendedReportsWithRrtr) {
+  RtcpXrObserver test(/*enable_rrtr=*/true,
                       VideoEncoderConfig::ContentType::kRealtimeVideo);
   RunBaseTest(&test);
 }
 
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithoutRrtrWithoutTargetBitrate) {
-  RtcpXrObserver test(/*enable_rrtr=*/false, /*expect_target_bitrate=*/false,
-                      /*enable_zero_target_bitrate=*/false,
+TEST_F(ExtendedReportsEndToEndTest, TestExtendedReportsWithoutRrtr) {
+  RtcpXrObserver test(/*enable_rrtr=*/false,
                       VideoEncoderConfig::ContentType::kRealtimeVideo);
   RunBaseTest(&test);
 }
 
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithRrtrWithTargetBitrate) {
-  RtcpXrObserver test(/*enable_rrtr=*/true, /*expect_target_bitrate=*/true,
-                      /*enable_zero_target_bitrate=*/false,
-                      VideoEncoderConfig::ContentType::kScreen);
-  RunBaseTest(&test);
-}
-
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithoutRrtrWithTargetBitrate) {
-  RtcpXrObserver test(/*enable_rrtr=*/false, /*expect_target_bitrate=*/true,
-                      /*enable_zero_target_bitrate=*/false,
-                      VideoEncoderConfig::ContentType::kScreen);
-  RunBaseTest(&test);
-}
-
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsWithoutRrtrWithTargetBitrateExplicitlySet) {
-  field_trials().Set("WebRTC-Target-Bitrate-Rtcp", "Enabled");
-  RtcpXrObserver test(/*enable_rrtr=*/false, /*expect_target_bitrate=*/true,
-                      /*enable_zero_target_bitrate=*/false,
-                      VideoEncoderConfig::ContentType::kRealtimeVideo);
-  RunBaseTest(&test);
-}
-
-TEST_F(ExtendedReportsEndToEndTest,
-       TestExtendedReportsCanSignalZeroTargetBitrate) {
-  RtcpXrObserver test(/*enable_rrtr=*/false, /*expect_target_bitrate=*/true,
-                      /*enable_zero_target_bitrate=*/true,
-                      VideoEncoderConfig::ContentType::kScreen,
-                      test::VideoTestConstants::kLongTimeout);
-  RunBaseTest(&test);
-}
 }  // namespace
 }  // namespace webrtc

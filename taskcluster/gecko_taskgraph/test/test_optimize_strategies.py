@@ -16,13 +16,14 @@ from taskgraph.util.python_path import find_object
 from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.optimize import experimental, perf_batching, project
+from gecko_taskgraph.optimize import experimental, perf_batching, project, tryselect
 from gecko_taskgraph.optimize.backstop import SkipUnlessBackstop, SkipUnlessPushInterval
 from gecko_taskgraph.optimize.bugbug import (
     FALLBACK,
     BugBugPushSchedules,
     DisperseGroups,
     SkipUnlessDebug,
+    merge_bugbug_replies,
 )
 from gecko_taskgraph.optimize.docs import SkipUnlessSphinxJs
 from gecko_taskgraph.optimize.mozlint import SkipUnlessMozlint
@@ -34,6 +35,8 @@ from gecko_taskgraph.optimize.strategies import SkipUnlessMissing, SkipUnlessSch
 from gecko_taskgraph.util.backstop import BACKSTOP_PUSH_INTERVAL
 from gecko_taskgraph.util.bugbug import (
     BUGBUG_BASE_URL,
+    CT_LOW,
+    CT_MEDIUM,
     BugbugTimeoutException,
     push_schedules,
 )
@@ -288,6 +291,35 @@ def test_optimization_strategy_remove(params, opt, tasks, arg, expected):
             },
             ["task-2-label"],
         ),
+        # the groups thresholds returned by bugbug replace the preset ones
+        pytest.param(
+            (CT_LOW,),
+            {
+                "groups": {"foo/test.ini": 0.35, "bar/test.ini": 0.25},
+                "confidence_thresholds": {
+                    "groups": {"low": 0.3, "medium": 0.4, "high": 0.5}
+                },
+            },
+            ["task-0-label"],
+        ),
+        # the tasks thresholds returned by bugbug replace the preset ones
+        pytest.param(
+            (CT_MEDIUM, True),
+            {
+                "tasks": {"task-2-label": 0.35, "task-4-label": 0.25},
+                "confidence_thresholds": {"tasks": {"medium": 0.3}},
+            },
+            ["task-2-label"],
+        ),
+        # the thresholds returned by bugbug are only used for the preset ones
+        pytest.param(
+            (0.5,),
+            {
+                "groups": {"foo/test.ini": 0.35},
+                "confidence_thresholds": {"groups": {"low": 0.3}},
+            },
+            [],
+        ),
     ],
     ids=idfn,
 )
@@ -373,6 +405,41 @@ def test_bugbug_multiple_pushes(responses, params):
         "task-2-label",
         "task-4-label",
     ])
+
+
+def test_bugbug_group_importance_thresholds(responses, params):
+    responses.add(
+        responses.GET,
+        BUGBUG_BASE_URL + "/push/{branch}/{head_rev}/schedules".format(**params),
+        json={
+            "groups": {"foo/test.ini": 0.45, "bar/test.ini": 0.35},
+            "confidence_thresholds": {
+                "groups": {"low": 0.3, "medium": 0.4, "high": 0.5}
+            },
+        },
+        status=200,
+    )
+
+    importance = {}
+    opt = BugBugPushSchedules(CT_LOW)
+    assert not opt.should_remove_task(default_tasks[0], params, importance)
+    assert importance == {"foo/test.ini": "medium", "bar/test.ini": "low"}
+
+
+def test_merge_bugbug_replies_confidence_thresholds():
+    data = {}
+    merge_bugbug_replies(
+        data,
+        {"tasks": {"a": 0.5}, "confidence_thresholds": {"tasks": {"low": 0.3}}},
+    )
+    merge_bugbug_replies(
+        data,
+        {"tasks": {"a": 0.4}, "confidence_thresholds": {"tasks": {"low": 0.2}}},
+    )
+    # A reply without thresholds doesn't remove them.
+    merge_bugbug_replies(data, {"tasks": {}, "confidence_thresholds": {}})
+    assert data["tasks"] == {"a": 0.5}
+    assert data["confidence_thresholds"] == {"tasks": {"low": 0.2}}
 
 
 def test_bugbug_timeout(monkeypatch, responses, params):
@@ -480,6 +547,60 @@ def test_expanded(params):
         t.label for t in default_tasks if not opt.should_remove_task(t, params, None)
     }
     assert scheduled == all_labels
+
+
+@pytest.mark.parametrize("strategy", ["skip-unless-backstop", "skip-unless-expanded"])
+def test_tryselect_backstop_expanded(responses, params, strategy):
+    params.update({"project": "try", "backstop": False, "pushlog_id": 11})
+    responses.add(
+        responses.GET,
+        BUGBUG_BASE_URL + "/push/{project}/{head_rev}/schedules".format(**params),
+        json={
+            "tasks": {"task-0-label": 0.9, "task-1-label": 0.9},
+            "reduced_tasks": {"task-0-label": 0.9},
+            "known_tasks": ["task-0-label", "task-1-label", "task-2-label"],
+        },
+        status=200,
+    )
+
+    tasks = list(generate_tasks({}, {}, {}))
+    opt = tryselect.bugbug_reduced_manifests_config_selection_medium[strategy]
+    scheduled = {t.label for t in tasks if not opt.should_remove_task(t, params, None)}
+    assert scheduled == {"task-0-label"}
+
+
+def test_tryselect_changed(responses, params):
+    params.update({
+        "project": "try",
+        "files_changed": ["js/src/foo.cpp"],
+        "base_rev": "123456",
+    })
+    responses.add(
+        responses.GET,
+        BUGBUG_BASE_URL + "/push/{project}/{head_rev}/schedules".format(**params),
+        json={
+            "tasks": {"task-1-label": 0.9},
+            "reduced_tasks": {"task-1-label": 0.9},
+            "known_tasks": ["task-0-label", "task-1-label", "task-2-label"],
+        },
+        status=200,
+    )
+
+    tasks = list(generate_tasks({}, {}, {}))
+    opt = tryselect.bugbug_reduced_manifests_config_selection_medium[
+        "skip-unless-changed"
+    ]
+    patterns = {
+        "task-0-label": ["js/src/**"],
+        "task-1-label": ["dom/**"],
+        "task-2-label": ["dom/**"],
+    }
+    scheduled = {
+        t.label
+        for t in tasks
+        if not opt.should_remove_task(t, params, patterns[t.label])
+    }
+    assert scheduled == {"task-0-label", "task-1-label"}
 
 
 def test_project_autoland_test(monkeypatch, responses, params):

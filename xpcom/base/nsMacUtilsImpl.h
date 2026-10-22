@@ -66,6 +66,12 @@ nsCString CodeSignatureTypeToString(CodeSignatureType aType);
 // Returns the signature type for the binary at `aPath`.
 CodeSignatureType GetSignatureType(const nsCString& aPath);
 
+// Returns the path to the main executable of the bundle at `aBundlePath`, as
+// named by the bundle's Info.plist. Fails if the bundle or the executable it
+// names is not on disk.
+nsresult GetExecutablePathFromBundle(const nsCString& aBundlePath,
+                                     nsACString& aExecutablePath);
+
 }  // namespace nsMacUtilsImpl
 
 #endif /* nsMacUtilsImpl_h_ */

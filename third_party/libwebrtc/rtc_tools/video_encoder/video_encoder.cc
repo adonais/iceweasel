@@ -566,13 +566,11 @@ int main(int argc, char* argv[]) {
       "--scalability_mode=L1T3\n");
   absl::ParseCommandLine(argc, argv);
 
-  if (absl::GetFlag(FLAGS_verbose)) {
-    webrtc::LogMessage::LogToDebug(webrtc::LS_VERBOSE);
-  } else {
-    webrtc::LogMessage::LogToDebug(webrtc::LS_INFO);
-  }
-
-  webrtc::LogMessage::SetLogToStderr(true);
+  webrtc::LoggingConfig config;
+  config.set_min_severity(absl::GetFlag(FLAGS_verbose) ? webrtc::LS_VERBOSE
+                                                       : webrtc::LS_INFO);
+  config.set_debug_severity(config.min_severity());
+  webrtc::InitializeLogging(std::move(config));
 
   const bool list_formats = absl::GetFlag(FLAGS_list_formats);
   const bool validate_psnr = absl::GetFlag(FLAGS_validate_psnr);

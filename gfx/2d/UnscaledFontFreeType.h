@@ -19,7 +19,7 @@ class UnscaledFontFreeType : public UnscaledFont {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(UnscaledFontFreeType, override)
   explicit UnscaledFontFreeType(const RefPtr<SharedFTFace>& aFace)
-      : mFace(aFace), mIndex(0) {}
+      : mFace(aFace), mIndex(aFace ? aFace->GetFaceIndex() : 0) {}
   explicit UnscaledFontFreeType(const char* aFile, uint32_t aIndex = 0,
                                 RefPtr<SharedFTFace> aFace = nullptr)
       : mFace(std::move(aFace)), mFile(aFile), mIndex(aIndex) {}

@@ -35,17 +35,17 @@ TANY(TransposeWx8_Any_NEON, TransposeWx8_NEON, TransposeWx8_C, 7)
 TANY(TransposeWx16_Any_NEON, TransposeWx16_NEON, TransposeWx16_C, 15)
 #endif
 #ifdef HAS_TRANSPOSEWX8_SSSE3
-TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 7)
+TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 15)
 #endif
-#ifdef HAS_TRANSPOSEWX8_FAST_SSSE3
-TANY(TransposeWx8_Fast_Any_SSSE3, TransposeWx8_Fast_SSSE3, TransposeWx8_C, 15)
+#ifdef HAS_TRANSPOSEWX16_AVX2
+TANY(TransposeWx16_Any_AVX2, TransposeWx16_AVX2, TransposeWx16_C, 15)
 #endif
 #ifdef HAS_TRANSPOSEWX16_LSX
 TANY(TransposeWx16_Any_LSX, TransposeWx16_LSX, TransposeWx16_C, 15)
 #endif
 #undef TANY
 
-#define TUVANY(NAMEANY, TPOS_SIMD, MASK)                                       \
+#define TUVANY(NAMEANY, TPOS_SIMD, TPOS_C, MASK)                               \
   void NAMEANY(const uint8_t* src, int src_stride, uint8_t* dst_a,             \
                int dst_stride_a, uint8_t* dst_b, int dst_stride_b,             \
                int width) {                                                    \
@@ -55,19 +55,21 @@ TANY(TransposeWx16_Any_LSX, TransposeWx16_LSX, TransposeWx16_C, 15)
       TPOS_SIMD(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b, n); \
     }                                                                          \
     ptrdiff_t np = n;                                                          \
-    TransposeUVWx8_C(src + np * 2, src_stride, dst_a + np * dst_stride_a,      \
-                     dst_stride_a, dst_b + np * dst_stride_b, dst_stride_b,    \
-                     r);                                                       \
+    TPOS_C(src + np * 2, src_stride, dst_a + np * dst_stride_a, dst_stride_a,  \
+           dst_b + np * dst_stride_b, dst_stride_b, r);                        \
   }
 
 #ifdef HAS_TRANSPOSEUVWX8_NEON
-TUVANY(TransposeUVWx8_Any_NEON, TransposeUVWx8_NEON, 7)
+TUVANY(TransposeUVWx8_Any_NEON, TransposeUVWx8_NEON, TransposeUVWx8_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEUVWX8_SSE2
-TUVANY(TransposeUVWx8_Any_SSE2, TransposeUVWx8_SSE2, 7)
+TUVANY(TransposeUVWx8_Any_SSE2, TransposeUVWx8_SSE2, TransposeUVWx8_C, 7)
+#endif
+#ifdef HAS_TRANSPOSEUVWX16_AVX2
+TUVANY(TransposeUVWx16_Any_AVX2, TransposeUVWx16_AVX2, TransposeUVWx16_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEUVWX16_LSX
-TUVANY(TransposeUVWx16_Any_LSX, TransposeUVWx16_LSX, 7)
+TUVANY(TransposeUVWx16_Any_LSX, TransposeUVWx16_LSX, TransposeUVWx16_C, 7)
 #endif
 #undef TUVANY
 

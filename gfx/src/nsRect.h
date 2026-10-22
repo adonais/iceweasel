@@ -10,6 +10,7 @@
 #include <algorithm>    // for min/max
 #include <type_traits>  // for is_trivially_copyable_v
 
+#include "fmt/ostream.h"
 #include "mozilla/Likely.h"  // for MOZ_UNLIKELY
 #include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/Rect.h"
@@ -393,5 +394,8 @@ struct nsRectCornerRadii final
     : public mozilla::gfx::BaseRectCornerRadii<nscoord, nsSize, nsMargin> {
   using BaseRectCornerRadii::BaseRectCornerRadii;
 };
+
+template <>
+struct fmt::formatter<nsRect> : fmt::ostream_formatter {};
 
 #endif /* NSRECT_H */

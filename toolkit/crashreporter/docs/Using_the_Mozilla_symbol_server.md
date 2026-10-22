@@ -160,7 +160,7 @@ sharedlibrary lib
 On older GDB and Mac OS X there is a [Python script to download symbols
 from the Mozilla symbol
 server](http://hg.mozilla.org/users/jwatt_jwatt.org/fetch-symbols)
-for {ref}`gdb <Debugging Firefox with GDB>`, Shark and other software
+for {doc}`gdb </contributing/debugging/debugging_firefox_with_gdb>`, Shark and other software
 that uses symbols. Note that the symbol file for the XUL library is very
 large and takes some time to download. This may make it appear as if the
 script has gotten stuck, but it will continue.
@@ -179,7 +179,7 @@ BLAH-symbols.txt file is found in.
 ## The source server
 
 In addition to symbols, Mozilla also has a
-{ref}`source server <Using The Mozilla Source Server>`, letting you do
+{doc}`source server </taskcluster/using-the-mozilla-source-server>`, letting you do
 source-level debugging and inspection on demand.
 
 ## Troubleshooting: Symbols will not download

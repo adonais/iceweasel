@@ -67,4 +67,4 @@ function f() {
 }
 ```
 
-See {ref}`System Modules <System Modules>` for more details about those API.
+See {doc}`System Modules <system-modules>` for more details about those API.

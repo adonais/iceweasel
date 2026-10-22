@@ -12,7 +12,7 @@ document.addEventListener(
         "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
       ContainerCreationPanel:
         "chrome://browser/content/usercontext/ContainerCreationPanel.mjs",
-      Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+      Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
     });
 
     // <commandset id="mainCommandSet"> defined in browser-sets.inc.xhtml
@@ -157,6 +157,13 @@ document.addEventListener(
           case "Browser:SearchBookmarks":
             PlacesCommandHook.searchBookmarks();
             break;
+          case "Browser:SearchTabs":
+            PlacesCommandHook.searchTabs(
+              event.sourceEvent?.target.id == "menu_searchTabs"
+                ? "historymenu"
+                : "shortcut"
+            );
+            break;
           case "Browser:BookmarkAllTabs":
             PlacesCommandHook.bookmarkTabs();
             break;
@@ -274,12 +281,6 @@ document.addEventListener(
             break;
           case "Tools:Addons":
             BrowserAddonUI.openAddonsMgr();
-            if (event.sourceEvent?.target.id == "key_openAddons") {
-              Services.prefs.setStringPref(
-                "browser.keys.openAddons.lastUsed",
-                new Date().toISOString()
-              );
-            }
             break;
           case "cmd_openUnifiedExtensionsPanel":
             gUnifiedExtensions.openPanel(event);

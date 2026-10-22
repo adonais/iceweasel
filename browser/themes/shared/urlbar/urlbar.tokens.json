@@ -23,10 +23,12 @@
             "dark": "rgb(66, 65, 77)",
             "nativeTheme": "{button.background.color.@base}",
             "nova": {
-              "comment": "color-mix with currentColor cannot be expressed in Figma",
+              "comment": "TODO(bug 2076362): use the ghost button colors once they follow currentColor",
               "value": {
                 "nativeTheme": "color-mix(in srgb, currentColor 16%, transparent)",
-                "default": "{urlbarview.background.color.hover}"
+                "light": "color-mix(in srgb, currentColor 17%, transparent)",
+                "dark": "color-mix(in srgb, currentColor 20%, transparent)",
+                "forcedColors": "{button.background.color.ghost.@base}"
               }
             }
           }
@@ -39,7 +41,8 @@
               "comment": "color-mix with currentColor cannot be expressed in Figma",
               "value": {
                 "nativeTheme": "color-mix(in srgb, currentColor 22%, transparent)",
-                "default": "{urlbarview.background.color.selected}"
+                "default": "{urlbarview.background.color.selected}",
+                "forcedColors": "{button.background.color.ghost.hover}"
               }
             }
           }
@@ -52,7 +55,8 @@
               "value": {
                 "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
                 "light": "rgba(117, 102, 159, 0.6)",
-                "dark": "rgba(176, 163, 210, 0.6)"
+                "dark": "rgba(176, 163, 210, 0.6)",
+                "forcedColors": "{button.background.color.ghost.active}"
               }
             }
           }
@@ -68,13 +72,39 @@
     "text": {
       "color": {
         "@base": {
-          "ignoreFigma": "Figma stores a token reference that would overwrite 'inherit'",
-          "value": "inherit"
+          "value": {
+            "default": "inherit",
+            "nova": {
+              "value": {
+                "default": "inherit",
+                "forcedColors": "{button.text.color.ghost.@base}"
+              }
+            }
+          }
         },
         "hover": {
-          "value": "{urlbar.box.text.color.@base}"
+          "value": {
+            "default": "{urlbar.box.text.color.@base}",
+            "nova": {
+              "value": {
+                "default": "{urlbar.box.text.color.@base}",
+                "forcedColors": "{button.text.color.ghost.hover}"
+              }
+            }
+          }
         },
         "active": {
+          "value": {
+            "default": "{urlbar.box.text.color.@base}",
+            "nova": {
+              "value": {
+                "default": "{urlbar.box.text.color.@base}",
+                "forcedColors": "{button.text.color.ghost.active}"
+              }
+            }
+          }
+        },
+        "focus": {
           "value": "{urlbar.box.text.color.@base}"
         }
       }

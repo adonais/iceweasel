@@ -205,6 +205,10 @@ export const MODEL_FEATURES = Object.freeze({
   AGENT_MONITOR: "agent-monitor",
   // search agent
   SEARCH_ANSWER_GENERATION: "search-answer-generation",
+  // Exa /answers service. Not Remote Settings-backed — the model and service
+  // type are pinned by the search flow — so it has no FEATURE_MAJOR_VERSIONS
+  // entry; it only names the engine and its telemetry.
+  SEARCH_ANSWERS: "search-answers",
   // aitab structured-page generation
   AITAB: "aitab",
 });
@@ -218,6 +222,7 @@ export const SERVICE_TYPES = Object.freeze({
   AI: "ai",
   MEMORIES: "memories",
   AGENT: "agent",
+  SW_ANSWER: "sw-answer",
 });
 
 /**
@@ -246,9 +251,9 @@ export const PURPOSES = Object.freeze({
  * Keep ui/test/browser/head.js MOCK_RS_RECORDS aligned with this table.
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  // TODO Bug 2053495: remove with mistral release pref (CHAT becomes 11)
+  // TODO Bug 2053495: remove with mistral release pref (CHAT becomes 12)
   get [MODEL_FEATURES.CHAT]() {
-    return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 11 : 10;
+    return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 12 : 10;
   },
   [MODEL_FEATURES.SMART_FORM_FILL]: 1,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,

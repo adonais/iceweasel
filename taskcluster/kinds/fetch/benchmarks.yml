@@ -38,9 +38,9 @@ speedometer-experimental:
     description: Speedometer benchmark suite, experimental subtests
     fetch:
         type: static-url
-        url: https://github.com/mozilla/Speedometer/archive/89435e5dfb97cf793516449370f14b2176b4aed7.tar.gz
-        sha256: 9b9393f281b7421d3eded909ad3435792c6ed42536617a2dc69936b5e25d5195
-        size: 64205598
+        url: https://github.com/mozilla/Speedometer/archive/11aa6278897ad5fe33c28df9099604dc07a90352.tar.gz
+        sha256: 3e4f076ca5f8b740e2d1f43d832062f4ed5e9a2baea645e973fe0775adb2ce4a
+        size: 64204712
         artifact-name: speedometer-experimental.tar.zst
         strip-components: 1
         add-prefix: Speedometer/

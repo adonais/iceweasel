@@ -1778,7 +1778,8 @@ const BASE_MESSAGES = () => [
       ],
       lifetime: 12,
     },
-    targeting: "doesAppNeedPrivatePin",
+    targeting:
+      "doesAppNeedPrivatePin && !'browser.privateWindowRedesign.enabled'|preferenceValue",
   },
   {
     id: "PB_NEWTAB_RELAY_PROMO",
@@ -1797,23 +1798,10 @@ const BASE_MESSAGES = () => [
       promoTitleEnabled: true,
       promoButton: {
         action: {
-          type: "MULTI_ACTION",
+          type: "OPEN_URL",
           data: {
-            actions: [
-              {
-                type: "OPEN_URL",
-                data: {
-                  args: "https://relay.firefox.com/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=pbw&utm_content=prevent-inbox-spam-global",
-                  where: "tabshifted",
-                },
-              },
-              {
-                type: "BLOCK_MESSAGE",
-                data: {
-                  id: "PB_NEWTAB_RELAY_PROMO",
-                },
-              },
-            ],
+            args: "https://relay.firefox.com/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=pbw&utm_content=prevent-inbox-spam-global",
+            where: "tabshifted",
           },
         },
       },
@@ -1828,7 +1816,8 @@ const BASE_MESSAGES = () => [
       ],
       lifetime: 12,
     },
-    targeting: "'browser.privateWindowRedesign.enabled'|preferenceValue",
+    targeting:
+      "'browser.privateWindowRedesign.enabled'|preferenceValue && 'signon.firefoxRelay.feature'|preferenceValue != 'enabled' && 'signon.firefoxRelay.feature'|preferenceValue != 'disabled'",
   },
   {
     id: "PRIVATE_WINDOW_BASICS_SPOTLIGHT",
@@ -2020,7 +2009,7 @@ const BASE_MESSAGES = () => [
                 type: "OPEN_URL",
                 navigate: true,
                 data: {
-                  args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/common-myths-about-private-browsing",
+                  args: "https://support.mozilla.org/%LOCALE%/kb/private-browsing-use-firefox-without-history",
                   where: "tabshifted",
                 },
               },

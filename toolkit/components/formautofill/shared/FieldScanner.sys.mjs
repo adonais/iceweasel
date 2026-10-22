@@ -122,7 +122,10 @@ export class FieldDetail {
     }
 
     if (!fieldDetail.fieldName) {
-      fieldDetail.reason = "unknown";
+      // An autocomplete attribute the parser could not resolve still tells us
+      // the site had something to say about this field, unlike one we simply
+      // failed to classify.
+      fieldDetail.reason = autocompleteInfo ? "autocomplete" : "unknown";
     } else if (autocompleteInfo) {
       fieldDetail.reason = "autocomplete";
       fieldDetail.section = autocompleteInfo.section;

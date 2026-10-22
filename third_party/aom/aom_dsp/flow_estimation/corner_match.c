@@ -118,12 +118,11 @@ typedef struct {
   double best_match_corr;
 } PointInfo;
 
-static int determine_correspondence(const unsigned char *src,
+static int determine_correspondence(const unsigned char *src, int src_stride,
                                     const int *src_corners, int num_src_corners,
-                                    const unsigned char *ref,
+                                    const unsigned char *ref, int ref_stride,
                                     const int *ref_corners, int num_ref_corners,
-                                    int width, int height, int src_stride,
-                                    int ref_stride,
+                                    int width, int height,
                                     Correspondence *correspondences) {
   PointInfo *src_point_info = NULL;
   PointInfo *ref_point_info = NULL;
@@ -233,8 +232,8 @@ static int determine_correspondence(const unsigned char *src,
       const int patch_tl_x = sx - DISFLOW_PATCH_CENTER;
       const int patch_tl_y = sy - DISFLOW_PATCH_CENTER;
 
-      aom_compute_flow_at_point(src, ref, patch_tl_x, patch_tl_y, width, height,
-                                src_stride, &u, &v);
+      aom_compute_flow_at_point(src, src_stride, ref, ref_stride, patch_tl_x,
+                                patch_tl_y, width, height, &u, &v);
 
       Correspondence *correspondence = &correspondences[num_correspondences];
       correspondence->x = (double)sx;
@@ -290,6 +289,10 @@ bool av1_compute_global_motion_feature_match(
   assert(ref_pyramid->layers[0].height == src_height);
   const int ref_stride = ref_pyramid->layers[0].stride;
 
+  if (src_corners->num_corners == 0 || ref_corners->num_corners == 0) {
+    return false;
+  }
+
   // find correspondences between the two images
   correspondences = (Correspondence *)aom_malloc(src_corners->num_corners *
                                                  sizeof(*correspondences));
@@ -298,9 +301,9 @@ bool av1_compute_global_motion_feature_match(
     return false;
   }
   num_correspondences = determine_correspondence(
-      src_buffer, src_corners->corners, src_corners->num_corners, ref_buffer,
-      ref_corners->corners, ref_corners->num_corners, src_width, src_height,
-      src_stride, ref_stride, correspondences);
+      src_buffer, src_stride, src_corners->corners, src_corners->num_corners,
+      ref_buffer, ref_stride, ref_corners->corners, ref_corners->num_corners,
+      src_width, src_height, correspondences);
 
   bool result = ransac(correspondences, num_correspondences, type,
                        motion_models, num_motion_models, mem_alloc_failed);

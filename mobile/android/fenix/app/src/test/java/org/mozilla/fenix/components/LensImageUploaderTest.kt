@@ -27,6 +27,7 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -222,6 +223,29 @@ class LensImageUploaderTest {
 
         assertEquals(true, requestSlot.captured.private)
     }
+
+    @Test
+    fun `GIVEN a decoded image WHEN uploadImage THEN it runs in the requested cookie context and leaves the bitmap usable`() =
+        runTest {
+            val requestSlot = slot<Request>()
+            val client = mockk<Client>()
+            every { client.fetch(capture(requestSlot)) } answers
+                {
+                    Response(
+                        url = "https://lens.google.com/search?results",
+                        status = 200,
+                        headers = MutableHeaders(),
+                        body = Response.Body(ByteArrayInputStream(ByteArray(0))),
+                    )
+                }
+            val uploader = LensImageUploader(context = metricsContext(), client = client, userAgent = "test")
+            val bitmap = Bitmap.createBitmap(80, 40, Bitmap.Config.ARGB_8888)
+
+            uploader.uploadImage(bitmap, isPrivate = true)
+
+            assertEquals(true, requestSlot.captured.private)
+            assertFalse(bitmap.isRecycled)
+        }
 
     @Test
     fun `GIVEN a private uploadFromUrl WHEN fetching the image THEN the request runs in the private context`() {

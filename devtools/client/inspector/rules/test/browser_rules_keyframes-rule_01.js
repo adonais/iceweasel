@@ -14,6 +14,7 @@ add_task(async function () {
   await testPacman(inspector, view);
   await testBoxy(inspector, view);
   await testMoxy(inspector, view);
+  await testHolly(inspector, view);
 });
 
 async function testPacman(inspector, view) {
@@ -54,6 +55,19 @@ async function testMoxy(inspector, view) {
   });
 
   assertRuleViewHeaders(view, ["Keyframes boxy", "Keyframes moxy"]);
+}
+
+async function testHolly(inspector, view) {
+  info("Test content and gutter in the keyframes rule of #holly");
+
+  await assertKeyframeRules("#holly", inspector, view, {
+    elementRulesNb: 3,
+    keyframeRulesNb: 1,
+    keyframesRules: ["holly molly"],
+    keyframeRules: ["100%"],
+  });
+
+  assertRuleViewHeaders(view, ["Keyframes holly molly"]);
 }
 
 async function assertKeyframeRules(selector, inspector, view, expected) {

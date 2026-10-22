@@ -14,8 +14,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
 import mozilla.components.feature.addons.worker.shouldReport
 import mozilla.components.support.base.log.logger.Logger
@@ -97,37 +95,37 @@ internal class SupportedAddonsWorker(
     private val logger = Logger("SupportedAddonsWorker")
 
     @Suppress("TooGenericExceptionCaught")
-    override suspend fun doWork(): Result =
-        withContext(Dispatchers.IO) {
-            try {
-                logger.info("Trying to check for new supported add-ons")
-
-                val addonManager = GlobalAddonDependencyProvider.requireAddonManager()
-                val addonUpdater = GlobalAddonDependencyProvider.requireAddonUpdater()
-
-                addonManager
-                    .getAddons()
-                    .filter { addon ->
-                        addon.isSupported() && addon.isDisabledAsUnsupported()
-                    }
-                    .let { addons ->
-                        if (addons.isNotEmpty()) {
-                            addons.forEach { addon ->
-                                addonUpdater.registerForFutureUpdates(addon.id)
-                            }
-                            val extIds = addons.joinToString { addon -> addon.id }
-                            logger.info("New supported add-ons available $extIds")
-                        }
-                    }
-            } catch (exception: Exception) {
-                logger.error(
-                    "An exception happened trying to check for new supported add-ons, re-schedule ${exception.message}",
-                    exception,
-                )
-                if (exception.shouldReport()) {
-                    GlobalAddonDependencyProvider.onCrash?.invoke(exception)
-                }
+    override suspend fun doWork(): Result {
+        try {
+            checkSupportedAddons()
+        } catch (exception: Exception) {
+            logger.error(
+                "An exception happened trying to check for new supported add-ons, re-schedule ${exception.message}",
+                exception,
+            )
+            if (exception.shouldReport()) {
+                GlobalAddonDependencyProvider.onCrash?.invoke(exception)
             }
-            Result.success()
         }
+        return Result.success()
+    }
+
+    private suspend fun checkSupportedAddons() {
+        logger.info("Trying to check for new supported add-ons")
+
+        val addonManager = GlobalAddonDependencyProvider.requireAddonManager()
+        val addonUpdater = GlobalAddonDependencyProvider.requireAddonUpdater()
+
+        val addons = addonManager.getAddons().filter { it.isSupported() && it.isDisabledAsUnsupported() }
+
+        if (addons.isEmpty()) {
+            return
+        }
+
+        addons.forEach { addon ->
+            addonUpdater.registerForFutureUpdates(addon.id)
+        }
+        val extIds = addons.joinToString { it.id }
+        logger.info("New supported add-ons available $extIds")
+    }
 }

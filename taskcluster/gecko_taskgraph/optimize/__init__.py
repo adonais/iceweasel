@@ -410,6 +410,14 @@ tryselect = ExperimentalOverride(
         "build": Any(
             "skip-unless-schedules", "bugbug-reduced", split_args=split_bugbug_arg
         ),
+        "skip-unless-changed": All(
+            "skip-unless-changed", "bugbug-reduced", split_args=split_bugbug_arg
+        ),
+        # We override skip-unless-backstop and skip-unless-expanded because on try we
+        # want to be able to run any task. backstop and expanded pushes only make sense
+        # on autoland.
+        "skip-unless-backstop": Alias("bugbug-reduced"),
+        "skip-unless-expanded": Alias("bugbug-reduced"),
         "test-verify": "base:test",
         "upload-symbols": Alias("always"),
         "reprocess-symbols": Alias("always"),

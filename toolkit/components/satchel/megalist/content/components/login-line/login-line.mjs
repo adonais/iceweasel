@@ -233,6 +233,7 @@ class ConcealedLoginLine extends MozLitElement {
           data-l10n-id=${l10nAriaId}
           aria-labelledby=${l10nAriaId}
           iconSrc=${this.#revealIconSrc()}
+          ?hidden=${!Services.policies.isAllowed("passwordReveal")}
           @keypress=${async e => {
             if (e.code === "Enter") {
               await this.#onRevealButtonClick();

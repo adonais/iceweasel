@@ -68,7 +68,6 @@ class CompileDBBackend(CommonBackend):
                 self._build_db_line(
                     obj.objdir, obj.relsrcdir, obj.config, f, obj.canonical_suffix
                 )
-
         elif isinstance(obj, VariablePassthru):
             for var in ("MOZBUILD_CMFLAGS", "MOZBUILD_CMMFLAGS"):
                 if var in obj.variables:
@@ -198,6 +197,7 @@ class CompileDBBackend(CommonBackend):
 
     COMPILERS = {
         ".c": "CC",
+        ".h": "CXX",
         ".cpp": "CXX",
         ".m": "CC",
         ".mm": "CXX",
@@ -205,6 +205,7 @@ class CompileDBBackend(CommonBackend):
 
     CFLAGS = {
         ".c": "CFLAGS",
+        ".h": "CXXFLAGS",
         ".cpp": "CXXFLAGS",
         ".m": "CFLAGS",
         ".mm": "CXXFLAGS",
@@ -242,3 +243,4 @@ class CompileDBBackend(CommonBackend):
         elif canonical_suffix == ".mm":
             append_var("OS_COMPILE_CMMFLAGS")
             db.append("$(MOZBUILD_CMMFLAGS)")
+        return db

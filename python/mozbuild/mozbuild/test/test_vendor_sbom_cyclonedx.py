@@ -106,6 +106,28 @@ class TestSerialization(unittest.TestCase):
         )
         self.assertNotEqual(first, other["serialNumber"])
 
+    def test_build_tooling_document(self):
+        product = render([record()])
+        self.assertNotIn("lifecycles", product["metadata"])
+        self.assertNotIn("scope", product["components"][0])
+
+        tooling = json.loads(
+            to_json(
+                build_bom(
+                    [record()], "155.0a1", REVISION, TIMESTAMP, build_tooling=True
+                )
+            )
+        )
+        self.assertEqual(
+            sorted(
+                lifecycle["phase"] for lifecycle in tooling["metadata"]["lifecycles"]
+            ),
+            ["build", "post-build", "pre-build"],
+        )
+        self.assertEqual(tooling["components"][0]["scope"], "excluded")
+        # Two documents of the same revision must not share an identity.
+        self.assertNotEqual(tooling["serialNumber"], product["serialNumber"])
+
     def test_output_is_byte_identical_across_runs(self):
         records = [record(), record(bom_ref="media/libjpeg", name="libjpeg")]
         first = to_json(build_bom(records, "155.0a1", REVISION, TIMESTAMP))

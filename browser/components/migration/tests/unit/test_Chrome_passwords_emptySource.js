@@ -1,7 +1,7 @@
 "use strict";
 
 const { ChromeProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeProfileMigrator.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.importESModule(

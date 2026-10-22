@@ -5,23 +5,23 @@
 #ifndef nswindowsshellservice_h_
 #define nswindowsshellservice_h_
 
-#include "nscore.h"
-#include "nsString.h"
-#include "nsToolkitShellService.h"
-#include "nsIShellService.h"
-#include "nsIWindowsShellService.h"
-
 #include <windows.h>
 #include <ole2.h>
 
-class nsWindowsShellService : public nsToolkitShellService,
+#include "nscore.h"
+#include "nsIShellService.h"
+#include "nsIWindowsShellService.h"
+#include "nsShellService.h"
+#include "nsString.h"
+
+class nsWindowsShellService : public nsShellService,
                               public nsIWindowsShellService {
   virtual ~nsWindowsShellService() = default;
 
  public:
   nsWindowsShellService() = default;
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSISHELLSERVICE
   NS_DECL_NSIWINDOWSSHELLSERVICE
 

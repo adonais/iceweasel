@@ -277,6 +277,17 @@ class TestMergeLicenseNotices(unittest.TestCase):
             records[0]["properties"]["moz:license.notice-ids"], "dtoa,praton"
         )
 
+    def test_npm_package_matches_where_it_is_installed(self):
+        record = dict(
+            self.record("npm:react@19.2.0"),
+            occurrences=["third_party/node/node_modules/react"],
+        )
+        merge_license_notices(
+            [record], [self.notice("mit", ["third_party/node/node_modules/react"])]
+        )
+        self.assertEqual(record["properties"]["moz:license.notice-ids"], "mit")
+        self.assertEqual(record["occurrences"], ["third_party/node/node_modules/react"])
+
     def test_missing_licenses_json_is_not_an_error(self):
         self.assertEqual(load_license_notices("/nonexistent/licenses.json"), [])
 
@@ -295,6 +306,23 @@ class TestComponentsForUnmatched(unittest.TestCase):
     def record(self, bom_ref):
         return {"bom_ref": bom_ref, "licenses": [], "properties": {}}
 
+    def test_npm_package_covers_its_installed_directory(self):
+        record = dict(
+            self.record("npm:react@19.2.0"),
+            occurrences=["third_party/node/node_modules/react"],
+        )
+        extra = components_for_unmatched(
+            [record],
+            [
+                self.notice(
+                    "mit",
+                    ["third_party/node/node_modules/react", "third_party/rlbox"],
+                    "MIT",
+                )
+            ],
+        )
+        self.assertEqual(extra[0]["occurrences"], ["third_party/rlbox"])
+
     def test_notice_without_a_manifest_becomes_a_component(self):
         extra = components_for_unmatched(
             [], [self.notice("mit", ["third_party/rust/byteorder"], "MIT")]
@@ -306,6 +334,10 @@ class TestComponentsForUnmatched(unittest.TestCase):
         self.assertEqual(extra[0]["occurrences"], ["third_party/rust/byteorder"])
         self.assertEqual(extra[0]["properties"]["moz:license.notice-ids"], "mit")
         self.assertIsNone(extra[0]["bugzilla"])
+
+    def test_notice_without_spdx_is_licensed_by_its_title(self):
+        extra = components_for_unmatched([], [self.notice("jpnic", ["netwerk/dns"])])
+        self.assertEqual(extra[0]["licenses"], ["jpnic License"])
 
     def test_no_purl_is_invented(self):
         extra = components_for_unmatched([], [self.notice("mit", ["a/one.js"])])

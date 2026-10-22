@@ -41,7 +41,7 @@ add_task(async function () {
   const requests = document.querySelectorAll(".request-list-item");
   is(requests.length, 1, "There should be one request");
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
   await waitFor(
     () =>
       document.querySelectorAll("#headers-panel .accordion-item").length >= 2,

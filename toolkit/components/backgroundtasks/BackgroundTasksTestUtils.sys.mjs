@@ -120,18 +120,10 @@ export var BackgroundTasksTestUtils = {
   // Setup that allows to use the profile service in xpcshell tests,
   // lifted from `toolkit/profile/xpcshell/head.js`.
   setupProfileService() {
-    let gProfD = this.testScope.do_get_profile();
-    let gDataHome = gProfD.clone();
-    gDataHome.append("data");
-    gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-    let gDataHomeLocal = gProfD.clone();
-    gDataHomeLocal.append("local");
-    gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-    let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
+    // Make sure the directory service provider is initialised
+    Cc["@mozilla.org/xre/directory-provider;1"].getService(
       Ci.nsIXREDirProvider
     );
-    xreDirProvider.setUserDataDirectory(gDataHome, false);
-    xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+    this.testScope.do_get_profile();
   },
 };

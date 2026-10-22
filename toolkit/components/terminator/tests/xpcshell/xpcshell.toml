@@ -9,5 +9,4 @@ skip-if = [
   "asan", # Disabled by bug 1242084, bug 1255484 will enable it again
   "ccov", # Bug 1607583 tracks the ccov failure
   "debug",
-  "tsan", # Bug 1683730 made this timeout for tsan.
 ]

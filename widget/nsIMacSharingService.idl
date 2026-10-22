@@ -4,27 +4,51 @@
 
 #include "nsISupports.idl"
 
+webidl Element;
+
 /**
  * Allow applications to interface with the Mac OS X Sharing APIs.
  */
 
-[scriptable, uuid(de59fe1a-46c8-490f-b04d-34545acb06c9)]
+
+[scriptable, function, uuid(d1ddabe9-40da-4a13-a160-e8eb7001922f)]
+interface nsIMacShareCustomItemHandler : nsISupports {
+  void handle();
+};
+
+/**
+ * Describes a single custom item to inject alongside the system-provided
+ * services in the NSSharingServicePicker (e.g. "QR Code"). Multiple items
+ * can be passed to shareUrlWithPicker.
+ */
+[scriptable, uuid(19f4a6ef-794f-4140-8dc5-7372cc0feec0)]
+interface nsIMacShareCustomItem : nsISupports {
+  readonly attribute AString label;
+  readonly attribute AString icon;   // SF Symbol name; empty for no icon
+  readonly attribute nsIMacShareCustomItemHandler handler;
+};
+
+
+[scriptable, uuid(00de6161-61e5-4b1e-a251-7a8d4ea4b0c0)]
 interface nsIMacSharingService : nsISupports
 {
   /**
-   * Get list of sharing providers
+   * Show the native NSSharingServicePicker, anchored to the given DOM element.
+   * The picker owns the list of providers and the UI. macOS invokes the
+   * service that the user chooses.
+   *
+   * `urls.length == 1` implies a single-tab share, otherwise the share item exposes
+   * text/html structure covering all URLs. `shareTitle` populates the picker's
+   * preview area (the page title for single tab share or "Share N Links" for multiple).
+   *
+   * `copyItem` swizzles Apple's built in Copy Link entry in the
+   * picker so it keeps its native icon and identity but adopts the caller's
+   * label and handler.
    */
-  [implicit_jscontext] jsval getSharingProviders(in AString pageUrl);
-
-  /**
-   * Launch service with shareTitle with given url
-   */
-  void shareUrl(in AString serviceName,
-                in AString pageUrl,
-                in AString pageTitle);
-
-  /**
-   * Open the MacOS preferences window to the sharing panel
-   */
-  void openSharingPreferences();
+  void shareUrlWithPicker(in Element anchor,
+                          in Array<AString> urls,
+                          in Array<AString> titles,
+                          in AString shareTitle,
+                          in Array<nsIMacShareCustomItem> customItems,
+                          in nsIMacShareCustomItem copyItem);
 };

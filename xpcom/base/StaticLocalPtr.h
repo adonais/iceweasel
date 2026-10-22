@@ -46,6 +46,12 @@ class MOZ_STATIC_LOCAL_CLASS StaticLocalAutoPtr final {
     Assign(aRhs);
     return *this;
   }
+  StaticLocalAutoPtr(const StaticLocalAutoPtr<T>& aOther) = delete;
+
+  // We do not allow assignment as the intention of this class is to only
+  // assign to mRawPtr during construction.
+  StaticLocalAutoPtr& operator=(const StaticLocalAutoPtr<T>& aOther) = delete;
+  StaticLocalAutoPtr& operator=(StaticLocalAutoPtr<T>&&) = delete;
 
   T* get() const { return mRawPtr; }
 
@@ -65,13 +71,6 @@ class MOZ_STATIC_LOCAL_CLASS StaticLocalAutoPtr final {
   }
 
  private:
-  StaticLocalAutoPtr(const StaticLocalAutoPtr<T>& aOther) = delete;
-
-  // We do not allow assignment as the intention of this class is to only
-  // assign to mRawPtr during construction.
-  StaticLocalAutoPtr& operator=(const StaticLocalAutoPtr<T>& aOther) = delete;
-  StaticLocalAutoPtr& operator=(StaticLocalAutoPtr<T>&&) = delete;
-
   void Assign(T* aNewPtr) {
     MOZ_ASSERT(!aNewPtr || mRawPtr != aNewPtr);
     T* oldPtr = mRawPtr;
@@ -109,6 +108,11 @@ class MOZ_STATIC_LOCAL_CLASS StaticLocalRefPtr final {
     return *this;
   }
 
+  // We do not allow assignment as the intention of this class is to only
+  // assign to mRawPtr during construction.
+  StaticLocalRefPtr<T>& operator=(const StaticLocalRefPtr<T>& aRhs) = delete;
+  StaticLocalRefPtr<T>& operator=(StaticLocalRefPtr<T>&& aRhs) = delete;
+
   already_AddRefed<T> forget() {
     T* temp = mRawPtr;
     mRawPtr = nullptr;
@@ -127,11 +131,6 @@ class MOZ_STATIC_LOCAL_CLASS StaticLocalRefPtr final {
   T& operator*() const { return *get(); }
 
  private:
-  // We do not allow assignment as the intention of this class is to only
-  // assign to mRawPtr during construction.
-  StaticLocalRefPtr<T>& operator=(const StaticLocalRefPtr<T>& aRhs) = delete;
-  StaticLocalRefPtr<T>& operator=(StaticLocalRefPtr<T>&& aRhs) = delete;
-
   void AssignWithAddref(T* aNewPtr) {
     if (aNewPtr) {
       aNewPtr->AddRef();

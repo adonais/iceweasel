@@ -38,9 +38,9 @@ is mapped. Returns `NULL` on error.
 
 ## Description
 
-{ref}`PR_MemMap` maps a section of the file represented by the file mapping
+{doc}`pr_memmap` maps a section of the file represented by the file mapping
 `fmap` to memory. The section of the file starts at `offset` and has
 the length `len`.
 
 When the file-mapping memory region is no longer needed, it should be
-unmapped with a call to {ref}`PR_MemUnmap`.
+unmapped with a call to {doc}`pr_unmap`.

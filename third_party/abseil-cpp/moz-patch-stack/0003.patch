@@ -1,49 +1,23 @@
 From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
-Date: Sun, 23 Aug 2026 13:55:22 -0400
-Subject: Bug 1935474 - do not demangle rust symbols in abseil-cpp.
+Date: Sun, 23 Aug 2026 13:55:26 -0400
+Subject: Bug 1978462 - disable absl nullability specifiers.
 
-Building demangle.cc breaks the hazard-linux64-haz/debug analysis build: sixgill
-aborts analyzing the Rust demangler. See bug 2068076.
+libwebrtc is not annotated consistently enough for these to be useful.
 ---
- abseil-cpp/absl/debugging/BUILD.gn             | 3 +++
- abseil-cpp/absl/debugging/internal/demangle.cc | 3 +++
- 2 files changed, 6 insertions(+)
+ abseil-cpp/absl/base/nullability.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/abseil-cpp/absl/debugging/BUILD.gn b/abseil-cpp/absl/debugging/BUILD.gn
-index 8d621a847ac..39dd35855b7 100644
---- a/abseil-cpp/absl/debugging/BUILD.gn
-+++ b/abseil-cpp/absl/debugging/BUILD.gn
-@@ -184,6 +184,8 @@ absl_test("decode_rust_punycode_test") {
- }
+diff --git a/abseil-cpp/absl/base/nullability.h b/abseil-cpp/absl/base/nullability.h
+index ad80178adc1..b209f450cef 100644
+--- a/abseil-cpp/absl/base/nullability.h
++++ b/abseil-cpp/absl/base/nullability.h
+@@ -224,7 +224,8 @@
+ #define ABSL_POINTERS_DEFAULT_NONNULL
  
- absl_source_set("demangle_rust") {
-+# sixgill aborts analyzing this code; see bug 2068076.
-+if (!moz_webrtc_build) {
-   sources = [ "internal/demangle_rust.cc" ]
-   public = [ "internal/demangle_rust.h" ]
-   visibility = [ ":*" ]
-@@ -193,6 +195,7 @@ absl_source_set("demangle_rust") {
-     "//third_party/abseil-cpp/absl/base:core_headers",
-   ]
- }
-+}
- 
- absl_test("demangle_rust_test") {
-   sources = [ "internal/demangle_rust_test.cc" ]
-diff --git a/abseil-cpp/absl/debugging/internal/demangle.cc b/abseil-cpp/absl/debugging/internal/demangle.cc
-index e97a8ffbbed..b4703f82a4f 100644
---- a/abseil-cpp/absl/debugging/internal/demangle.cc
-+++ b/abseil-cpp/absl/debugging/internal/demangle.cc
-@@ -2950,9 +2950,12 @@ static bool Overflowed(const State *state) {
- 
- // The demangler entry point.
- bool Demangle(const char* mangled, char* out, size_t out_size) {
-+// mozilla - sixgill aborts analyzing this code; see bug 2068076.
-+#if 0
-   if (mangled[0] == '_' && mangled[1] == 'R') {
-     return DemangleRustSymbolEncoding(mangled, out, out_size);
-   }
-+#endif
- 
-   State state;
-   InitState(&state, mangled, out, out_size);
+ #if defined(__clang__) && !defined(__OBJC__) && \
+-    ABSL_HAVE_FEATURE(nullability_on_classes)
++    ABSL_HAVE_FEATURE(nullability_on_classes) && \
++    0 // mozilla - stop warnings in libwebrtc for "missing a nullability type specifier"
+ // absl_nonnull (default with `ABSL_POINTERS_DEFAULT_NONNULL`)
+ //
+ // The indicated pointer is never null. It is the responsibility of the provider

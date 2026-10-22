@@ -22,6 +22,8 @@ src:*/mozglue/static/lz4/lz4.c
 src:*/media/libogg/src/ogg_framing.c
 # mochitest gl2c dom/canvas/test/webgl-conf/generated/test_2_conformance2__reading__read-pixels-pack-parameters.html
 src:*/dom/canvas/WebGLContextGL.cpp
+# mochitest toolkit/components/ml/tests/browser/browser_ml_textgeneration.js (ggml_graph_nbytes sizes the graph by offsetting a null pointer)
+src:*/third_party/llama.cpp/ggml/src/ggml-c.c
 # reftest J1
 src:*/js/src/builtin/TypedObject.cpp
 # jittest Jit6

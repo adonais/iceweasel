@@ -50,6 +50,14 @@ class RtpReceiverObserverInterface {
   virtual void OnFirstPacketReceivedAfterReceptiveChange(MediaType media_type) {
   }
 
+  // Triggered on the signaling thread when the received SSRC or CSRC set
+  // changes. Frame delivery notifications are posted asynchronously from the
+  // media thread to the signaling thread, where observer callbacks are invoked
+  // after the receiver's source maps are updated.
+  // May also be called synchronously from SetObserver() if sources are already
+  // known.
+  virtual void OnSourceChanged(bool ssrc_changed, bool csrc_changed) {}
+
  protected:
   virtual ~RtpReceiverObserverInterface() {}
 };

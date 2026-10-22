@@ -109,7 +109,7 @@ class Translator {
   }
   virtual already_AddRefed<SourceSurface>
   LookupSourceSurfaceFromSurfaceDescriptor(
-      const layers::SurfaceDescriptor& aDesc) {
+      DrawTarget* aDT, const layers::SurfaceDescriptor& aDesc) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return nullptr;
   }

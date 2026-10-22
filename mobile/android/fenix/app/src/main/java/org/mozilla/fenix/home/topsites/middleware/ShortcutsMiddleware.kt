@@ -27,7 +27,6 @@ import org.mozilla.fenix.home.topsites.store.ShortcutsAction
 import org.mozilla.fenix.home.topsites.store.ShortcutsState
 import org.mozilla.fenix.home.topsites.store.ShortcutsStore
 import org.mozilla.fenix.home.topsites.store.toPopularSite
-import org.mozilla.fenix.utils.Settings
 
 @VisibleForTesting internal const val POPULAR_SITES_LIMIT = 8
 
@@ -38,7 +37,6 @@ import org.mozilla.fenix.utils.Settings
  * @param appStore The [AppStore] to observe for top site updates and dispatching actions.
  * @param topSitesUseCases The [TopSitesUseCases] used to persist new pinned shortcuts.
  * @param merinoManifestProvider The [MerinoManifestProvider] used to read popular site suggestions.
- * @param settings The [Settings] used to read whether the add shortcut tile is enabled.
  * @param scope The lifecycle-aware [CoroutineScope] used to launch coroutines. The consumer is responsible for
  *   providing a scope that gets canceled when the consuming component is destroyed to avoid leaking the
  *   [ShortcutsStore].
@@ -48,7 +46,6 @@ class ShortcutsMiddleware(
     private val appStore: AppStore,
     private val topSitesUseCases: TopSitesUseCases,
     private val merinoManifestProvider: MerinoManifestProvider,
-    private val settings: Settings,
     private val scope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Middleware<ShortcutsState, ShortcutsAction> {
@@ -87,8 +84,6 @@ class ShortcutsMiddleware(
     }
 
     private fun initialize(store: Store<ShortcutsState, ShortcutsAction>) {
-        store.dispatch(ShortcutsAction.UpdateShowAddShortcut(settings.enableAddShortcutsImprovement))
-
         scope.launch {
             appStore
                 .flow()

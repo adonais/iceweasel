@@ -113,8 +113,10 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
       // The delegate is already being kept alive in a minor GC since it has an
       // edge from a tenured cell (the key). Make sure the key stays alive too.
       delegate->storeBuffer()->putWholeCell(key);
-    } else if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
-      return false;
+    } else if (delegate->zone()->isGCMarking()) {
+      if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
+        return false;
+      }
     }
   }
 
@@ -129,7 +131,10 @@ bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::TenuredCell* src,
                                    gc::TenuredCell* dst) {
   // Add an implicit edge from |src| to |dst|.
 
-  auto& edgeTable = src->zone()->gcEphemeronEdges();
+  Zone* zone = src->zone();
+  MOZ_ASSERT(zone->isGCMarking());
+
+  auto& edgeTable = zone->gcEphemeronEdges();
   auto p = edgeTable.lookupForAdd(src);
   if (!p) {
     if (!edgeTable.add(p, src, EphemeronEdgeVector())) {

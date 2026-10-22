@@ -1,5 +1,3 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta")
-//
 // JS::SafeResolve latches the promise's resolving functions on return, so any
 // subsequent resolve/reject (including a second SafeResolve) is a silent
 // no-op. The promise also stays pending through the deferral window.

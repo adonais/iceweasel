@@ -62,6 +62,13 @@ static bool ValidateSamplerParameterParams(WebGLContext* webgl, GLenum pname,
         case LOCAL_GL_MIRRORED_REPEAT:
           return true;
 
+        case LOCAL_GL_MIRROR_CLAMP_TO_EDGE_EXT:
+          if (webgl->IsExtensionEnabled(
+                  WebGLExtensionID::EXT_texture_mirror_clamp_to_edge)) {
+            return true;
+          }
+          break;
+
         default:
           break;
       }

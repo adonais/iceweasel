@@ -87,16 +87,15 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "nsNativeAppSupportCocoa.mm",
         "updaterfileutils_osx.mm",
     ]
-    if CONFIG["NIGHTLY_BUILD"]:
-        XPIDL_SOURCES += [
-            "nsIASWebAuthSessionRequest.idl",
-        ]
-        UNIFIED_SOURCES += [
-            "ASWebAuthSessionHandler.mm",
-        ]
-        OS_LIBS += [
-            "-framework AuthenticationServices",
-        ]
+    XPIDL_SOURCES += [
+        "nsIASWebAuthSessionRequest.idl",
+    ]
+    UNIFIED_SOURCES += [
+        "ASWebAuthSessionHandler.mm",
+    ]
+    OS_LIBS += [
+        "-framework AuthenticationServices",
+    ]
     DEFINES["PROXY_PRINTING"] = 1
     LOCAL_INCLUDES += [
         "../components/printingui",

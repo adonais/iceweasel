@@ -1698,7 +1698,12 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036009
-    @Ignore("Will be fixed in bug 2059592")
+    @Converted(
+        replacedBy =
+            ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheMoreMainMenuSummarizePageButtonTest"],
+        bug = 2074835,
+        since = "2026-09",
+    )
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSummarizePageButtonTest() {

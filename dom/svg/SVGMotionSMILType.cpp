@@ -213,7 +213,10 @@ inline static void GetAngleAndPointAtDistance(
   } else {
     Point tangent;  // Unit vector tangent to the point we find.
     aPoint = aPath->ComputePointAtLength(aDistance, &tangent);
-    float tangentAngle = atan2(tangent.y, tangent.x);
+    // The tangent of a zero-length path is undefined, so rotate="auto" must not
+    // fall back to the angle of the position vector.
+    float tangentAngle =
+        aPath->ComputeLength() == 0.f ? 0.f : atan2(tangent.y, tangent.x);
     if (aRotateType == RotateType::Auto) {
       aRotateAngle = tangentAngle;
     } else {
@@ -401,20 +404,19 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
   const MotionSegmentArray& arr = ExtractMotionSegmentArray(aSMILVal);
 
   gfx::Matrix matrix;
-  uint32_t length = arr.Length();
-  for (uint32_t i = 0; i < length; i++) {
-    Point point;                              // initialized below
-    float rotateAngle = arr[i].mRotateAngle;  // might get updated below
-    if (arr[i].mSegmentType == SegmentType::Translation) {
-      point.x = arr[i].mU.mTranslationParams.mX;
-      point.y = arr[i].mU.mTranslationParams.mY;
-      MOZ_ASSERT(arr[i].mRotateType == RotateType::Explicit,
+  for (const auto& value : arr) {
+    Point point;                             // initialized below
+    float rotateAngle = value.mRotateAngle;  // might get updated below
+    if (value.mSegmentType == SegmentType::Translation) {
+      point.x = value.mU.mTranslationParams.mX;
+      point.y = value.mU.mTranslationParams.mY;
+      MOZ_ASSERT(value.mRotateType == RotateType::Explicit,
                  "'auto'/'auto-reverse' should have been converted to "
                  "explicit angles when we generated this translation");
     } else {
-      GetAngleAndPointAtDistance(arr[i].mU.mPathPointParams.mPath,
-                                 arr[i].mU.mPathPointParams.mDistToPoint,
-                                 arr[i].mRotateType, rotateAngle, point);
+      GetAngleAndPointAtDistance(value.mU.mPathPointParams.mPath,
+                                 value.mU.mPathPointParams.mDistToPoint,
+                                 value.mRotateType, rotateAngle, point);
     }
     matrix.PreTranslate(point.x, point.y);
     matrix.PreRotate(rotateAngle);

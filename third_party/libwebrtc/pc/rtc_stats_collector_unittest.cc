@@ -275,7 +275,7 @@ scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
     int attachment_id) {
   auto receiver = make_ref_counted<MockRtpReceiverInternal>();
   EXPECT_CALL(*receiver, track()).WillRepeatedly(Return(track));
-  EXPECT_CALL(*receiver, ssrc()).WillRepeatedly([ssrc]() { return ssrc; });
+  EXPECT_CALL(*receiver, ssrc_s()).WillRepeatedly([ssrc]() { return ssrc; });
   EXPECT_CALL(*receiver, streams())
       .WillRepeatedly(
           Return(std::vector<scoped_refptr<MediaStreamInterface>>({})));
@@ -4251,7 +4251,7 @@ TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestReturnsImmediately) {
 
   auto env = CreateTestEnvironment();
   auto pc = make_ref_counted<FakePeerConnectionForStats>(
-      env, worker_and_network.get(), worker_and_network.get());
+      env, worker_and_network.get());
   RTCStatsCollectorWrapper wrapper(pc, env);
   auto callback = make_ref_counted<MockStatsCollectorCallback>();
 

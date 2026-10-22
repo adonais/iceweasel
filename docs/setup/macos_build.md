@@ -31,6 +31,30 @@ sudo xcode-select --switch /Applications/Xcode.app
 sudo xcodebuild -license
 ```
 
+(install-python-macos)=
+
+### 1.3. Install Python
+
+Building Firefox requires Python 3.10 or newer. The Python that ships with
+Xcode (`/usr/bin/python3`) is too old, so you need to install another one.
+The recommended way is with [uv](https://docs.astral.sh/uv/), which can
+download and manage Python versions for you:
+
+```shell
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv python install 3.13 --default
+```
+
+This installs `python3.13`, `python3` and `python` executables into
+`~/.local/bin`. Open a new terminal afterwards so that directory is on your
+`PATH`. If `python3.13` is still not found, run `uv python update-shell` and
+open a new terminal again.
+
+The `--default` flag makes `python3` resolve to the uv managed Python, which
+lets `./mach` use it directly. uv marks the flag as experimental. If you would
+rather leave `python3` alone, drop `--default`. Only `python3.13` is installed
+then, and `./mach` finds it on its own, printing a notice each time it does.
+
 ## 2. Bootstrap a copy of the Firefox source code
 
 Now that your system is ready, we can download the source code and have Firefox
@@ -40,7 +64,7 @@ the interactive setup process.
 
 ```shell
 curl -L https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py -O
-python3 bootstrap.py
+python3.13 bootstrap.py
 ```
 
 ### Choosing a build type
@@ -135,23 +159,14 @@ However, if you are using a non-artifact/full build, the next build will take si
 Building, running, testing, etc. not always support the latest Python versions, therefore it is possible to encounter Python-related errors,
 especially after updating your Python distribution to a new version.
 
-The recommended way to work around this is to use a virtual environment with a compatible Python version.
+The recommended way to work around this is to run `./mach` with a compatible Python version.
 Please consider {searchfox}`mach's <mach>` `MIN_PYTHON_VERSION` and `MAX_PYTHON_VERSION_TO_CONSIDER`
 for the range of compatible versions.
 
-Should you be using Python through Homebrew, you can install older releases like this:
+You can install a compatible version with [uv](https://docs.astral.sh/uv/)
+(see {ref}`install-python-macos`) and run `./mach` with it explicitly:
 
 ```shell
-brew install python@3.<your-desired-version>
-```
-
-You can set up the virtual environment manually or use a supporting tool such as [pyenv](https://github.com/pyenv/pyenv) (recommended).
-Below is an example for manual setup.
-
-```shell
-cd firefox
-# Creates virtual environment for <your-desired-version> in folder .venv
-python3.<your-desired-version> -m venv .venv
-# Activates virtual environment
-source .venv/bin/activate
+uv python install 3.<your-desired-version>
+python3.<your-desired-version> ./mach build
 ```

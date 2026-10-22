@@ -199,7 +199,7 @@ class BenchECDHRunner : public BenchRunner {
  public:
   void Warmup() override { mozilla::UniquePK11SymKey(this->DeriveKey()); }
 
-  void RunWithSize(size_t size) override {
+  void RunWithSize(size_t /*size*/) override {
     mozilla::UniquePK11SymKey key = nullptr;
     mozilla::GTestBench(SuiteName(), "derive",
                         ([this, &key] { key.reset(this->DeriveKey()); }));

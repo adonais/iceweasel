@@ -211,9 +211,41 @@ def check_android_megazord_mozglue(binary):
     try:
         for tag, value in at_least_one(iter_readelf_dynamic(binary)):
             if tag == "NEEDED" and "[libmozglue.so]" in value:
-                raise RuntimeError("libmegazord.so must not link against libmozglue.so")
+                return
+        raise RuntimeError("libmegazord.so must link against libmozglue.so")
     except Empty:
         raise RuntimeError("Could not parse readelf output?")
+
+
+def check_android_megazord_bionic_allocations(binary):
+    if PLATFORM != "Android" or os.path.basename(binary) != "libmegazord.so":
+        raise Skip()
+    bionic_allocating_functions = {
+        "getdelim",
+        "getline",
+        "open_memstream",
+        "open_wmemstream",
+        "pvalloc",
+        "reallocarray",
+        "scandir",
+        "scandir64",
+        "scandirat",
+        "scandirat64",
+        "tempnam",
+        "wcsdup",
+    }
+    imported = set()
+    try:
+        for sym in at_least_one(iter_elf_symbols(binary)):
+            if sym["addr"] == 0 and sym["name"] in bionic_allocating_functions:
+                imported.add(sym["name"])
+    except Empty:
+        raise RuntimeError("Could not parse readelf output?")
+    if imported:
+        raise RuntimeError(
+            "libmegazord.so imports bionic functions that allocate outside "
+            f"mozjemalloc: {', '.join(sorted(imported))}"
+        )
 
 
 def check_networking(binary):
@@ -299,6 +331,7 @@ def checks(binary):
         checks.append(check_pt_load)
         checks.append(check_mozglue_order)
         checks.append(check_android_megazord_mozglue)
+        checks.append(check_android_megazord_bionic_allocations)
 
     retcode = 0
     basename = os.path.basename(binary)

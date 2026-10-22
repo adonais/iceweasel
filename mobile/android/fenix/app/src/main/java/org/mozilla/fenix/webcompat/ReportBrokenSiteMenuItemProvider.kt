@@ -9,43 +9,98 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import mozilla.components.browser.state.selector.selectedTab
-import mozilla.components.browser.state.state.BrowserState
+import kotlinx.coroutines.launch
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.support.ktx.kotlin.isAboutUrl
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.menu.MenuFragmentDirections
+import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.middleware.getTabUrl
 import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.utils.Settings
 
 /**
  * [MenuItemProvider] for the menu item allowing to report the current page as broken.
  *
- * @param browserStore [BrowserStore] used to know which page the item is about.
- * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown.
+ * @param browserStore [BrowserStore] allowing to integrate with the current open tabs.
+ * @param target [MenuTarget] for which this menu item would be shown for.
+ * @param settings [Settings] used to know whether the user allows telemetry.
+ * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] for sending the details of a broken site to
+ *   webcompat.com.
+ * @param appStore [AppStore] used to know whether to open pages in a private tab.
+ * @param fenixBrowserUseCases [FenixBrowserUseCases] for opening webcompat.com.
+ * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown, and to send the
+ *   details of a broken site.
  */
+@Suppress("LongParameterList")
 class ReportBrokenSiteMenuItemProvider(
-    browserStore: BrowserStore,
-    scope: CoroutineScope,
+    private val browserStore: BrowserStore,
+    private val target: MenuTarget,
+    private val settings: Settings,
+    private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
+    private val appStore: AppStore,
+    private val fenixBrowserUseCases: FenixBrowserUseCases,
+    private val scope: CoroutineScope,
 ) : MenuItemProvider {
     override val itemFlow: StateFlow<MenuItem?> =
         browserStore.stateFlow
-            .map { state -> state.reportBrokenSiteItem() }
+            .map { state -> target.browserSessionFrom(state).reportBrokenSiteItem() }
             .stateIn(
                 scope = scope,
                 started = SharingStarted.Eagerly,
-                initialValue = browserStore.state.reportBrokenSiteItem(),
+                initialValue = target.browserSessionFrom(browserStore.state).reportBrokenSiteItem(),
             )
+
+    override fun handles(event: MenuEvent) = event == MenuAction.Navigate.WebCompatReporter
+
+    /**
+     * A broken site is reported from inside the app if the user allows telemetry, since only then can the details of
+     * the issue be collected. If they don't, the report is filled in on webcompat.com, with the details of the issue
+     * sent separately before opening the website, so that the engine still has the page to collect them from.
+     */
+    override fun onEvent(event: MenuEvent, menu: MenuHost) {
+        val tab = target.browserSessionFrom(browserStore.state) ?: return
+        val tabUrl = tab.content.url
+
+        if (settings.isTelemetryEnabled) {
+            menu.navigate(MenuFragmentDirections.actionMenuFragmentToWebCompatReporterFragment(tabUrl = tabUrl))
+            return
+        }
+
+        scope.launch {
+            webCompatReporterMoreInfoSender.sendMoreWebCompatInfo(
+                reason = null,
+                problemDescription = null,
+                enteredUrl = null,
+                tabUrl = tab.getTabUrl(),
+                engineSession = tab.engineState.engineSession,
+            )
+
+            menu.dismiss()
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "$WEB_COMPAT_REPORTER_URL$tabUrl",
+                newTab = true,
+                private = appStore.state.mode.isPrivate,
+            )
+        }
+    }
 }
 
-private fun BrowserState.reportBrokenSiteItem(): MenuItem? {
-    val url = selectedTab?.content?.url ?: return null
+private fun SessionState?.reportBrokenSiteItem(): MenuItem? {
+    val url = this?.content?.url ?: return null
 
     return StandardMenuItem(
         title = Text.Resource(R.string.browser_menu_webcompat_reporter_2),

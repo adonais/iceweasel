@@ -768,7 +768,7 @@ void IDBDatabase::NoteFinishedFileActor(
   MOZ_ASSERT(aFileActor);
 
   mFileActors.RemoveIf([aFileActor](const auto& iter) {
-    MOZ_ASSERT(iter.Key());
+    MOZ_ASSERT(!iter.Key().IsDead());
     PBackgroundIDBDatabaseFileChild* actor = iter.Data();
     MOZ_ASSERT(actor);
 
@@ -812,7 +812,7 @@ void IDBDatabase::ExpireFileActors(bool aExpireAll) {
 
   if (mBackgroundActor && mFileActors.Count()) {
     for (auto iter = mFileActors.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<BlobImpl> key = iter.Key();
+      RefPtr<BlobImpl> key(iter.Key());
       PBackgroundIDBDatabaseFileChild* actor = iter.Data();
       MOZ_ASSERT(actor);
 

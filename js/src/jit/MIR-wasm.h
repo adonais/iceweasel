@@ -2223,6 +2223,10 @@ class MWasmBinarySimd128 : public MBinaryInstruction,
 
   // Checks if pmaddubsw operation is supported.
   bool canPmaddubsw();
+
+  // Checks if a not-equal of an and against zero can be one test-bits
+  // operation.
+  bool canTestBits();
 #endif
 
   wasm::SimdOp simdOp() const { return simdOp_; }

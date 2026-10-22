@@ -1,0 +1,11 @@
+[DEFAULT]
+
+["browser_a_referrerpolicy.js"]
+support-files = [
+  "a_referrerpolicy.html",
+]
+
+["browser_mathml_download.js"]
+support-files = [
+  "download_page_mathml.html",
+]

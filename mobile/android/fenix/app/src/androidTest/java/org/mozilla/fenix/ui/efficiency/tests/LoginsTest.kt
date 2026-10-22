@@ -155,4 +155,38 @@ class LoginsTest : BaseTest() {
             SettingsSavedPasswordsSelectors.SAVED_LOGIN_ENTRY("test@example.com")
         )
     }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/593768
+    @Critical
+    @Test
+    fun doNotSaveOptionWillNotUpdateALoginTest() {
+        val loginPage = mockWebServer.saveLoginAsset
+
+        // Save the login with a known password so the declined update can be checked against it.
+        on.browserPage.navigateToPage(loginPage.url.toString())
+        on.browserPage.mozVerify(BrowserPageSelectors.PASSWORD_WEB_FIELD)
+        on.browserPage.mozClick(BrowserPageSelectors.PASSWORD_WEB_FIELD)
+        on.browserPage.mozEnterText("firefox", BrowserPageSelectors.PASSWORD_WEB_FIELD)
+        on.browserPage.clickSubmitLoginButton()
+        on.browserPage.verifySaveLoginPromptIsDisplayed()
+        on.browserPage.mozClick(BrowserPageSelectors.SAVE_LOGIN_PROMPT_CONFIRM_BUTTON)
+
+        // Reload the page so the fixture's script re-randomizes the password to a value that differs
+        // from the saved one, re-submit, and decline the update via "Not now" (the update prompt's
+        // negative button shares the save_cancel res-id). The reload is required: re-submitting the
+        // un-reloaded form does not re-fire GeckoView's update detection, so no update prompt would
+        // appear. Route back through Home first.
+        on.home.navigateToPage()
+        on.browserPage.navigateToPage(loginPage.url.toString())
+        on.browserPage.mozVerify(BrowserPageSelectors.PASSWORD_WEB_FIELD)
+        on.browserPage.clickSubmitLoginButton()
+        on.browserPage.verifySaveLoginPromptIsDisplayed()
+        on.browserPage.mozClick(BrowserPageSelectors.SAVE_LOGIN_PROMPT_NEVER_SAVE_BUTTON)
+
+        // The saved login keeps its original password because the update was declined.
+        on.settingsSavedPasswords.navigateToPage()
+        on.settingsSavedPasswords.mozClick(SettingsSavedPasswordsSelectors.SAVED_LOGIN_ENTRY("test@example.com"))
+        on.settingsSavedPasswords.mozClick(SettingsSavedPasswordsSelectors.REVEAL_PASSWORD_BUTTON)
+        on.settingsSavedPasswords.mozVerify(SettingsSavedPasswordsSelectors.LOGIN_DETAILS_PASSWORD("firefox"))
+    }
 }

@@ -14,9 +14,9 @@ PRIntn PL_CompareStrings(
 
 ## Description
 
-{ref}`PL_CompareStrings` compares `v1` and `v2` as character strings
+{doc}`pl_comparestrings` compares `v1` and `v2` as character strings
 using `strcmp`. If the two strings are equal, it returns 1. If the two
 strings are not equal, it returns 0.
 
-{ref}`PL_CompareStrings` can be used as the comparator function for
+{doc}`pl_comparestrings` can be used as the comparator function for
 string-valued key or entry value.

@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/khaledhosny/ots
 
-  release: 62634335137d86473c84b20a8de9b9d97645bbd6 (2026-09-11T14:03:29Z).
-  revision: 62634335137d86473c84b20a8de9b9d97645bbd6
+  release: 6540e90426c17de7ddcae650409a9af5a450ea7a (2026-10-13T11:40:17Z).
+  revision: 6540e90426c17de7ddcae650409a9af5a450ea7a
 
   license: BSD-3-Clause
   license-file: LICENSE
@@ -39,4 +39,3 @@ vendoring:
     - ots-lz4.patch
     - ots-rlbox.patch
     - ots-visibility.patch
-    - ots-cff-charstring-ops-limit.patch

@@ -130,7 +130,7 @@ add_task(
 
     await nimbusFeatureCleanup();
     info(
-      "Simulated browser restart while newtabTrainhopAddon nimbus feature is unenrolled"
+      "Simulated browser restart while newtabTrainhopAddonDeployment nimbus feature is unenrolled"
     );
     mockAboutNewTabUninit();
     await AddonTestUtils.promiseRestartManager();

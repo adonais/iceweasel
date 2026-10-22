@@ -7,6 +7,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import zipfile
 from unittest.mock import patch
 
 import mozunit
@@ -44,9 +45,21 @@ def test_browsertime_profiling(mock_log_info, mock_log_critical):
         profile.clean()
         arcname = os.environ["RAPTOR_LATEST_PROFILE"]
         assert os.stat(arcname).st_size > 1000000, "We got a 1mb+ zip"
-    except Exception:
-        assert False, "Symbolication failed!"
-        raise
+
+        with zipfile.ZipFile(arcname) as arc:
+            names = arc.namelist()
+            assert len(names) == 1, f"Expected one profile, got {names}"
+            name = names[0]
+            assert os.path.basename(name).startswith("page-cycle-1."), (
+                f"Unexpected profile name {name}"
+            )
+            # The extension has to state the profile's real compression; samply
+            # and profiler.firefox.com go by it and don't sniff the content.
+            with arc.open(name) as archived_profile:
+                gzipped = archived_profile.read(2) == b"\x1f\x8b"
+            assert gzipped == name.endswith(".gz"), (
+                f"{name} holds {'gzipped data' if gzipped else 'plain JSON'}"
+            )
     finally:
         shutil.rmtree(upload_dir)
         shutil.rmtree(symbols_path)

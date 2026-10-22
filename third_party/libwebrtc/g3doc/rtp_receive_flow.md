@@ -43,7 +43,6 @@ The raw bytes reach the RTP core structures where they are parsed into proper C+
 
 ### 6. Call Interface & Demuxer (Level 2) 📞 *(Network Thread -> Worker Thread)*
 *   **`Call::DeliverRtpPacket`**
-    *   Evaluates `receive_time_calculator_` directly on the Network Thread to avoid jitter/delay.
     *   **Thread Hop**: Dispatches a task to the **Worker Thread** and invokes `Call::DeliverRtpPacket_w`.
 *   **`Call::DeliverRtpPacket_w`**
     *   Executes on the Worker Thread.

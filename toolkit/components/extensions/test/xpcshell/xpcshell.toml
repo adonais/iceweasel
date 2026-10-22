@@ -136,13 +136,6 @@ skip-if = [
 ["test_ext_shared_array_buffer.js"]
 
 ["test_ext_startup_cache_telemetry.js"]
-skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1996467
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1996467
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1996467
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1996467
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1996467
-]
 
 ["test_ext_test_mock.js"]
 

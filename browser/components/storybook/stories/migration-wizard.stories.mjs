@@ -202,7 +202,7 @@ const Template = ({
     }
   </style>
 
-  <div class="card card-no-hover" style="width: fit-content">
+  <moz-card style="width: fit-content">
     <migration-wizard
       ?dialog-mode=${dialogMode}
       ?force-show-import-all=${forceShowImportAll}
@@ -224,7 +224,7 @@ const Template = ({
       subheader-font-weight=${subheaderFontWeight}
       .state=${state}
     ></migration-wizard>
-  </div>
+  </moz-card>
 `;
 
 export const LoadingSkeleton = Template.bind({});

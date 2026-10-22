@@ -65,7 +65,11 @@ function getVisibleMenuItems(aMenu) {
       var label = item.getAttribute("label");
       ok(label.length, "menuitem " + item.id + " has a label");
       if (isGenerated) {
-        is(key, null, "Generated items shouldn't have an access key");
+        if (item.hasAttribute("auto-accesskey")) {
+          ok(key, "Generated item with auto-accesskey has an access key");
+        } else {
+          is(key, null, "Generated items shouldn't have an access key");
+        }
         items.push("*" + label);
       } else if (
         item.id.indexOf("spell-check-dictionary-") != 0 &&

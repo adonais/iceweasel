@@ -7,6 +7,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/BloomFilter.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/UniquePtr.h"
 
 using mozilla::BitBloomFilter;
@@ -47,6 +48,27 @@ void testBitBloomFilter() {
 
   MOZ_RELEASE_ASSERT(!filter->mightContain(&one), "clear() failed to work");
   MOZ_RELEASE_ASSERT(!filter->mightContain(&two), "clear() failed to work");
+}
+
+void testLargeBitBloomFilter() {
+  using Filter = BitBloomFilter<18, FilterChecker>;
+  static_assert(sizeof(Filter) == 32 * 1024);
+
+  const auto filter = mozilla::MakeUnique<Filter>();
+  MOZ_RELEASE_ASSERT(filter);
+
+  constexpr uint32_t EntryCount = 17124;
+  for (uint32_t i = 0; i < EntryCount; i++) {
+    filter->add(mozilla::HashGeneric(i));
+  }
+  for (uint32_t i = 0; i < EntryCount; i++) {
+    MOZ_RELEASE_ASSERT(filter->mightContain(mozilla::HashGeneric(i)));
+  }
+
+  filter->clear();
+  for (uint32_t i = 0; i < EntryCount; i++) {
+    MOZ_RELEASE_ASSERT(!filter->mightContain(mozilla::HashGeneric(i)));
+  }
 }
 
 void testCountingBloomFilter() {
@@ -133,6 +155,7 @@ void testCountingBloomFilter() {
 
 int main() {
   testBitBloomFilter();
+  testLargeBitBloomFilter();
   testCountingBloomFilter();
 
   return 0;

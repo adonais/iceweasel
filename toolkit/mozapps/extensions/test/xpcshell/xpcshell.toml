@@ -150,9 +150,6 @@ run-if = [
 ["test_embedderDisabled.js"]
 
 ["test_error.js"]
-skip-if = [
-  "os == 'win'", # Bug 1508482
-]
 
 ["test_ext_management.js"]
 tags = "webextensions"
@@ -176,6 +173,8 @@ skip-if = [
 ["test_installOrigins.js"]
 
 ["test_install_cancel.js"]
+
+["test_install_expected_addon_details.js"]
 
 ["test_install_file_change.js"]
 
@@ -204,9 +203,6 @@ skip-if = [
 
 ["test_onPropertyChanged_appDisabled.js"]
 head = "head_addons.js head_compat.js"
-skip-if = [
-  "tsan", # Times out, bug 1674773
-]
 
 ["test_permissions.js"]
 
@@ -276,7 +272,6 @@ skip-if = [
 head = "head_addons.js head_sideload.js"
 skip-if = [
   "condprof", # Bug 1769184 - by design for now
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1613268
 ]
 
 ["test_sideloads.js"]
@@ -320,7 +315,6 @@ skip-if = [
 head = "head_addons.js head_sideload.js"
 skip-if = [
   "condprof", # Bug 1769184 - by design for now
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1613268
 ]
 
 ["test_startupTimeline.js"]
@@ -408,9 +402,6 @@ skip-if = [
 head = "head_addons.js head_system_addons.js"
 
 ["test_temporary.js"]
-skip-if = [
-  "os == 'win'", # Bug 1469904
-]
 tags = "webextensions"
 
 ["test_trash_directory.js"]
@@ -421,9 +412,6 @@ run-if = [
 ["test_types.js"]
 
 ["test_undouninstall.js"]
-skip-if = [
-  "os == 'win'", # Bug 1358846
-]
 
 ["test_update.js"]
 

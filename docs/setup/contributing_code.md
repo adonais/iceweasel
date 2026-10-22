@@ -86,7 +86,7 @@ We leave this in your hands. Here are some further resources to help:
 - Our {ref}`reviewer checklist <reviewer-checklist>` is very
   useful, if you have a patch near completion, and seek a favorable
   review
-- Utilize our build tool {ref}`mach`, its linting,
+- Utilize our build tool {doc}`/mach/index`, its linting,
   static analysis, and other code checking features
 
 ## Getting your code reviewed
@@ -98,7 +98,7 @@ for code review.
 
 If you have a mentored bug, ask your mentor first: they will review the
 patch, or can easily find out who should. Otherwise, see
-{ref}`Getting reviews` for how to pick a reviewer or a review group, the
+{doc}`/contributing/reviews` for how to pick a reviewer or a review group, the
 `r=` commit message syntax, and what to do when a review is not
 happening.
 
@@ -143,7 +143,7 @@ to work on, or you can
 
 As you fix more bugs, you can request more access to Mozilla
 infrastructure so you can push to try and eventually land your own code.
-See {ref}`Levelling up`.
+See {doc}`/contributing/levelling-up`.
 
 ## More information
 

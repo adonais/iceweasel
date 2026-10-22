@@ -7,6 +7,8 @@ export PATH=$MOZ_FETCHES_DIR/clang-tidy/bin:$PATH
 # Use toolchain clang
 export LD_LIBRARY_PATH=$MOZ_FETCHES_DIR/clang/lib
 
+export MOZ_OBJDIR=$HOME/workspace/obj-static-analysis
+
 # Write custom mozconfig
 export MOZCONFIG=$GECKO_PATH/mozconfig
 

@@ -77,6 +77,7 @@ if __name__ == '__main__':
         'CMAKE_INSTALL_PREFIX': 'INSTALLDIR',
         'CMAKE_SYSTEM_NAME': 'Linux',
         'CMAKE_SYSTEM_PROCESSOR': 'x86_64',
+        'ENABLE_APPS': 0,
         'ENABLE_EXAMPLES': 0,
         'ENABLE_TESTS': 0,
         'ENABLE_TOOLS': 0,

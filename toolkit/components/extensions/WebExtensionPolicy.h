@@ -78,7 +78,7 @@ class WebExtensionPolicyCore final {
 
   nsIURI* BaseURI() const { return mBaseURI; }
 
-  bool IsPrivileged() { return mIsPrivileged; }
+  bool IsPrivileged() const { return mIsPrivileged; }
 
   bool TemporarilyInstalled() { return mTemporarilyInstalled; }
 

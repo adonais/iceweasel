@@ -538,7 +538,7 @@ function migrateStoredTaskbarTab(aStored) {
  * @param {nsIURI} aUri - The URI to derive the name from.
  * @returns {string} A name suitable for user facing UI.
  */
-function generateName(aUri) {
+export function generateName(aUri) {
   // https://www.subdomain.example.co.uk/test
 
   // ["www", "subdomain", "example", "co", "uk"]

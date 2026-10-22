@@ -23,6 +23,7 @@
 #include "nsError.h"
 #include "nsIContentInlines.h"
 #include "nsNameSpaceManager.h"
+#include "nsNodeSupportsWeakRefTearoff.h"
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 #include "nsWrapperCacheInlines.h"

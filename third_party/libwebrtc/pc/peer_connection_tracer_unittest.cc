@@ -9,17 +9,23 @@
  */
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "api/create_modular_peer_connection_factory.h"
 #include "api/data_channel_interface.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
+#include "api/media_stream_interface.h"
+#include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/peer_connection_tracer_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtp_transceiver_direction.h"
+#include "api/rtp_transceiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "pc/peer_connection.h"
 #include "pc/peer_connection_wrapper.h"
@@ -57,13 +63,23 @@ class CountingTracer : public PeerConnectionTracerInterface {
     int set_remote_description = 0;
     int set_remote_description_success = 0;
     int set_remote_description_failure = 0;
+    int create = 0;
     int set_configuration = 0;
+    int restart_ice = 0;
     int close = 0;
     int ice_candidate = 0;
     int add_ice_candidate = 0;
+    int add_ice_candidate_success = 0;
+    int add_ice_candidate_failure = 0;
     int ice_candidate_error = 0;
     int data_channel_created_local = 0;
     int data_channel_created_remote = 0;
+    std::optional<int> data_channel_id;
+    int add_transceiver = 0;
+    std::optional<RtpTransceiverDirection> add_transceiver_direction;
+    int add_track = 0;
+    std::vector<std::string> add_track_stream_ids;
+    int track = 0;
     int signaling_state_changed = 0;
     int ice_connection_state_changed = 0;
     int connection_state_changed = 0;
@@ -119,14 +135,27 @@ class CountingTracer : public PeerConnectionTracerInterface {
   void OnSetRemoteDescriptionFailure(const RTCError&) override {
     counts_.set_remote_description_failure++;
   }
+  void OnCreate(
+      const PeerConnectionInterface::RTCConfiguration& /*configuration*/)
+      override {
+    counts_.create++;
+  }
+
   void OnSetConfiguration(
       const PeerConnectionInterface::RTCConfiguration&) override {
     counts_.set_configuration++;
   }
+  void OnRestartIce() override { counts_.restart_ice++; }
   void OnClose() override { counts_.close++; }
   void OnIceCandidate(const IceCandidate&) override { counts_.ice_candidate++; }
-  void OnAddIceCandidate(const IceCandidate&, bool) override {
+  void OnAddIceCandidate(const IceCandidate&) override {
     counts_.add_ice_candidate++;
+  }
+  void OnAddIceCandidateSuccess() override {
+    counts_.add_ice_candidate_success++;
+  }
+  void OnAddIceCandidateFailure(const RTCError&) override {
+    counts_.add_ice_candidate_failure++;
   }
   void OnIceCandidateError(absl::string_view,
                            int,
@@ -135,12 +164,28 @@ class CountingTracer : public PeerConnectionTracerInterface {
                            absl::string_view) override {
     counts_.ice_candidate_error++;
   }
-  void OnCreateDataChannel(const DataChannelInterface&) override {
+  void OnCreateDataChannel(const DataChannelInterface&,
+                           std::optional<int> id) override {
     counts_.data_channel_created_local++;
+    counts_.data_channel_id = id;
   }
-  void OnDataChannel(const DataChannelInterface&) override {
+  void OnDataChannel(const DataChannelInterface&,
+                     std::optional<int> id) override {
     counts_.data_channel_created_remote++;
+    counts_.data_channel_id = id;
   }
+  void OnAddTransceiver(MediaType,
+                        const MediaStreamTrackInterface*,
+                        const RtpTransceiverInit& init) override {
+    counts_.add_transceiver++;
+    counts_.add_transceiver_direction = init.direction;
+  }
+  void OnAddTrack(const MediaStreamTrackInterface&,
+                  const std::vector<std::string>& stream_ids) override {
+    counts_.add_track++;
+    counts_.add_track_stream_ids = stream_ids;
+  }
+  void OnTrack(const RtpTransceiverInterface&) override { counts_.track++; }
   void OnSignalingStateChanged(
       PeerConnectionInterface::SignalingState) override {
     counts_.signaling_state_changed++;
@@ -157,9 +202,7 @@ class CountingTracer : public PeerConnectionTracerInterface {
       PeerConnectionInterface::IceGatheringState) override {
     counts_.ice_gathering_state_changed++;
   }
-  void OnNegotiationNeededEvent() override {
-    counts_.negotiation_needed_event++;
-  }
+  void OnNegotiationNeeded() override { counts_.negotiation_needed_event++; }
 
  private:
   Counts counts_;
@@ -215,13 +258,15 @@ class PeerConnectionTracerTest : public ::testing::Test {
   scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
 };
 
-// At construction time the tracer should see exactly one
-// OnSetConfiguration (for the initial configuration) and nothing else.
-TEST_F(PeerConnectionTracerTest, FiresOnConstruction) {
+// At construction time the tracer should see exactly one OnCreate and nothing
+// else. In particular the configuration is reported there, not as an
+// OnSetConfiguration the application never triggered.
+TEST_F(PeerConnectionTracerTest, FiresOnCreate) {
   auto pc = CreatePeerConnection();
   ASSERT_TRUE(pc);
 
-  EXPECT_EQ(Counts(*pc).set_configuration, 1);
+  EXPECT_EQ(Counts(*pc).create, 1);
+  EXPECT_EQ(Counts(*pc).set_configuration, 0);
   EXPECT_EQ(Counts(*pc).create_offer, 0);
   EXPECT_EQ(Counts(*pc).close, 0);
 }
@@ -266,19 +311,43 @@ TEST_F(PeerConnectionTracerTest, FiresOnCreateDataChannel) {
   ASSERT_TRUE(channel);
   EXPECT_EQ(Counts(*pc).data_channel_created_local, 1);
   EXPECT_EQ(Counts(*pc).data_channel_created_remote, 0);
+  EXPECT_EQ(Counts(*pc).data_channel_id, std::nullopt);
 }
 
-// SetConfiguration should fire OnSetConfiguration in addition to the one
-// fired at construction.
+// A negotiated channel carries the id the application picked.
+TEST_F(PeerConnectionTracerTest, FiresOnCreateDataChannelWithNegotiatedId) {
+  auto pc = CreatePeerConnection();
+  ASSERT_TRUE(pc);
+
+  DataChannelInit config;
+  config.negotiated = true;
+  config.id = 7;
+  auto channel = pc->pc()->CreateDataChannelOrError("dc", &config);
+  ASSERT_TRUE(channel.ok());
+  EXPECT_EQ(Counts(*pc).data_channel_created_local, 1);
+  EXPECT_EQ(Counts(*pc).data_channel_id, 7);
+}
+
+// SetConfiguration should fire OnSetConfiguration once it succeeded.
 TEST_F(PeerConnectionTracerTest, FiresOnSetConfiguration) {
   auto pc = CreatePeerConnection();
   ASSERT_TRUE(pc);
-  ASSERT_EQ(Counts(*pc).set_configuration, 1);
+  ASSERT_EQ(Counts(*pc).set_configuration, 0);
 
   RTCConfiguration config;
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   ASSERT_TRUE(pc->pc()->SetConfiguration(config).ok());
-  EXPECT_EQ(Counts(*pc).set_configuration, 2);
+  EXPECT_EQ(Counts(*pc).set_configuration, 1);
+}
+
+// RestartIce should fire OnRestartIce.
+TEST_F(PeerConnectionTracerTest, FiresOnRestartIce) {
+  auto pc = CreatePeerConnection();
+  ASSERT_TRUE(pc);
+  ASSERT_EQ(Counts(*pc).restart_ice, 0);
+
+  pc->pc()->RestartIce();
+  EXPECT_EQ(Counts(*pc).restart_ice, 1);
 }
 
 // Close should fire OnClose once and at least one signaling-state transition
@@ -340,6 +409,92 @@ TEST_F(PeerConnectionTracerTest, FiresOnSetRemoteDescription) {
   EXPECT_TRUE(WaitUntil([&] { return set_observer->called(); }));
   EXPECT_EQ(Counts(*callee).set_remote_description_success, 1);
   EXPECT_EQ(Counts(*callee).set_remote_description_failure, 0);
+}
+
+// AddIceCandidate is traced as a call plus a separate outcome, so a candidate
+// that is rejected still shows up as having been added.
+TEST_F(PeerConnectionTracerTest, FiresOnAddIceCandidateFailure) {
+  auto pc = CreatePeerConnection();
+  ASSERT_TRUE(pc);
+  // No remote description, so the candidate cannot be accepted.
+  std::unique_ptr<IceCandidate> candidate(CreateIceCandidate(
+      "0", 0, "candidate:a0+B/1 1 udp 2130706432 192.168.1.1 1234 typ host",
+      nullptr));
+  ASSERT_TRUE(candidate);
+
+  std::optional<RTCError> result;
+  pc->pc()->AddIceCandidate(std::move(candidate),
+                            [&](RTCError error) { result = error; });
+  EXPECT_EQ(Counts(*pc).add_ice_candidate, 1);
+
+  EXPECT_TRUE(WaitUntil([&] { return result.has_value(); }));
+  EXPECT_FALSE(result->ok());
+  EXPECT_EQ(Counts(*pc).add_ice_candidate_success, 0);
+  EXPECT_EQ(Counts(*pc).add_ice_candidate_failure, 1);
+}
+
+// AddTransceiver fires OnAddTransceiver with the init it was called with.
+TEST_F(PeerConnectionTracerTest, FiresOnAddTransceiver) {
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  RtpTransceiverInit init;
+  init.direction = RtpTransceiverDirection::kRecvOnly;
+  ASSERT_TRUE(caller->pc()->AddTransceiver(MediaType::AUDIO, init).ok());
+  EXPECT_EQ(Counts(*caller).add_transceiver, 1);
+  EXPECT_EQ(Counts(*caller).add_transceiver_direction,
+            RtpTransceiverDirection::kRecvOnly);
+}
+
+// The recvonly transceiver that offerToReceive creates is not an application
+// call and is not traced.
+TEST_F(PeerConnectionTracerTest, DoesNotFireOnAddTransceiverForOfferToReceive) {
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio = 1;
+  ASSERT_TRUE(caller->CreateOffer(options));
+  EXPECT_EQ(Counts(*caller).add_transceiver, 0);
+}
+
+// AddTrack fires OnAddTrack with the stream ids it was called with.
+TEST_F(PeerConnectionTracerTest, FiresOnAddTrack) {
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  auto sender = caller->AddAudioTrack("a", {"s"});
+  ASSERT_TRUE(sender);
+  EXPECT_EQ(Counts(*caller).add_track, 1);
+  EXPECT_EQ(Counts(*caller).add_track_stream_ids,
+            std::vector<std::string>{"s"});
+}
+
+// A rejected AddTrack is not traced.
+TEST_F(PeerConnectionTracerTest, DoesNotFireOnAddTrackOnFailure) {
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  auto sender = caller->AddAudioTrack("a");
+  ASSERT_TRUE(sender);
+  EXPECT_EQ(Counts(*caller).add_track, 1);
+  // Adding the same track a second time fails.
+  EXPECT_FALSE(caller->pc()->AddTrack(sender->track(), {}).ok());
+  EXPECT_EQ(Counts(*caller).add_track, 1);
+}
+
+// SetRemoteDescription with a receiving section fires OnTrack, on the
+// receiving side only.
+TEST_F(PeerConnectionTracerTest, FiresOnTrack) {
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  auto callee = CreatePeerConnection();
+  ASSERT_TRUE(callee);
+  caller->AddAudioTrack("a");
+  auto offer = caller->CreateOffer();
+  ASSERT_TRUE(offer);
+
+  auto set_observer = make_ref_counted<MockSetSessionDescriptionObserver>();
+  callee->pc()->SetRemoteDescription(set_observer.get(), offer.release());
+  EXPECT_TRUE(WaitUntil([&] { return set_observer->called(); }));
+  EXPECT_EQ(Counts(*callee).track, 1);
+  EXPECT_EQ(Counts(*caller).track, 0);
 }
 
 }  // namespace

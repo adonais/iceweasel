@@ -31,7 +31,8 @@ import org.mozilla.fenix.R
  */
 class DefaultFenixSettingsIndexer(
     private val context: Context,
-    private val preferenceFileInformationList: List<PreferenceFileInformation> = defaultPreferenceFileInformationList,
+    private val preferenceFileInformationList: List<PreferenceFileInformation> =
+        defaultPreferenceFileInformationList(includeAutofillPreferences = true),
     private val additionalProviders: List<SettingsSearchProvider> = emptyList(),
     private val excludedPreferenceKeys: () -> Set<String> = { emptySet() },
 ) : SettingsIndexer {
@@ -349,24 +350,30 @@ class DefaultFenixSettingsIndexer(
         /**
          * All the preference xml files to load with information for the indexer. In a [List] of
          * [PreferenceFileInformation]s.
+         *
+         * @param includeAutofillPreferences Whether to include the autofill and saved logins preference screens.
          */
-        val defaultPreferenceFileInformationList =
-            listOf(
-                PreferenceFileInformation.GeneralPreferences,
-                PreferenceFileInformation.AccessibilityPreferences,
-                PreferenceFileInformation.AutofillPreferences,
-                PreferenceFileInformation.CustomizationPreferences,
-                PreferenceFileInformation.DefaultSearchEnginePreferences,
-                PreferenceFileInformation.DownloadsSettingsPreferences,
-                PreferenceFileInformation.HomePreferences,
-                PreferenceFileInformation.OpenLinksInAppsPreferences,
-                PreferenceFileInformation.PrivateBrowsingPreferences,
-                PreferenceFileInformation.SearchSettingsPreferences,
-                PreferenceFileInformation.SiteSettingsPreferences,
-                PreferenceFileInformation.TabsPreferences,
-                PreferenceFileInformation.TrackingProtectionPreferences,
-                PreferenceFileInformation.SaveLoginsPreferences,
-            )
+        fun defaultPreferenceFileInformationList(includeAutofillPreferences: Boolean): List<PreferenceFileInformation> =
+            buildList {
+                add(PreferenceFileInformation.GeneralPreferences)
+                add(PreferenceFileInformation.AccessibilityPreferences)
+                if (includeAutofillPreferences) {
+                    add(PreferenceFileInformation.AutofillPreferences)
+                }
+                add(PreferenceFileInformation.CustomizationPreferences)
+                add(PreferenceFileInformation.DefaultSearchEnginePreferences)
+                add(PreferenceFileInformation.DownloadsSettingsPreferences)
+                add(PreferenceFileInformation.HomePreferences)
+                add(PreferenceFileInformation.OpenLinksInAppsPreferences)
+                add(PreferenceFileInformation.PrivateBrowsingPreferences)
+                add(PreferenceFileInformation.SearchSettingsPreferences)
+                add(PreferenceFileInformation.SiteSettingsPreferences)
+                add(PreferenceFileInformation.TabsPreferences)
+                add(PreferenceFileInformation.TrackingProtectionPreferences)
+                if (includeAutofillPreferences) {
+                    add(PreferenceFileInformation.SaveLoginsPreferences)
+                }
+            }
 
         /**
          * List of strings that require format args.

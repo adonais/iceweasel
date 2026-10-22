@@ -17,7 +17,7 @@ const { require } = ChromeUtils.importESModule(
 const { Match } = ChromeUtils.importESModule("resource://test/Match.sys.mjs");
 const { Census } = ChromeUtils.importESModule("resource://test/Census.sys.mjs");
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-  "resource://gre/modules/jsdebugger.sys.mjs"
+  "moz-src:///devtools/platform/jsdebugger.sys.mjs"
 );
 
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");

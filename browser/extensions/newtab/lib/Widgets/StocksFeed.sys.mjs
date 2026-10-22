@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -37,6 +39,9 @@ const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED = "widgets.system.stocks.enabled";
  * mirrors them into the `Stocks` Redux slice.
  */
 export class StocksFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
     this.merino = null;

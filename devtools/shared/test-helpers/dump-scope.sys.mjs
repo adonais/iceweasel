@@ -4,7 +4,7 @@
 
 /* eslint-disable no-console */
 
-import { addDebuggerToGlobal } from "resource://gre/modules/jsdebugger.sys.mjs";
+import { addDebuggerToGlobal } from "moz-src:///devtools/platform/jsdebugger.sys.mjs";
 
 // Exclude frames from the test harness.
 const hiddenSourceURLs = [

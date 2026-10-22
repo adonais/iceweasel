@@ -48,7 +48,7 @@ class WorkManagerSyncWorkerTest {
     /** Account manager - needed to ensure we get a valid auth info for sync */
     private val accountManager = mock<FxaAccountManager>()
     private val supportedSyncEngines = setOf(SyncEngine.Tabs, SyncEngine.Bookmarks)
-    private val syncStateMutableStorage = SharedPrefsSyncStateStorage(sharedPrefs = FakeSharedPreferences())
+    private val syncStateStorage = SharedPrefsSyncStateStorage(sharedPrefs = FakeSharedPreferences())
     private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
@@ -65,7 +65,7 @@ class WorkManagerSyncWorkerTest {
     fun `WHEN sync returns a success result, THEN the sync state in the result is persisted`() =
         runTest(testDispatcher) {
             // given sync state was previously null
-            syncStateMutableStorage.persistedSyncState = null
+            syncStateStorage.persistedSyncState = null
 
             // when we sync successfully
             val successfulSyncResult =
@@ -79,7 +79,7 @@ class WorkManagerSyncWorkerTest {
             // then the sync state is persisted
             assertEquals(
                 expected = successfulSyncResult.persistedState,
-                actual = syncStateMutableStorage.persistedSyncState,
+                actual = syncStateStorage.persistedSyncState,
             )
         }
 
@@ -87,7 +87,7 @@ class WorkManagerSyncWorkerTest {
     fun `WHEN sync returns an error, THEN the sync state in the result is persisted`() =
         runTest(testDispatcher) {
             // given sync state was previously null
-            syncStateMutableStorage.persistedSyncState = null
+            syncStateStorage.persistedSyncState = null
 
             // when sync returns an error
             val errorSyncResult =
@@ -99,7 +99,7 @@ class WorkManagerSyncWorkerTest {
             worker.doWork()
 
             // then the sync state is persisted
-            assertEquals(errorSyncResult.persistedState, syncStateMutableStorage.persistedSyncState)
+            assertEquals(errorSyncResult.persistedState, syncStateStorage.persistedSyncState)
         }
 
     @Test
@@ -107,7 +107,7 @@ class WorkManagerSyncWorkerTest {
         runTest(testDispatcher) {
             // given persisted sync state exists
             val storedPersistedSyncState = "{\"foo\":\"bar\"}"
-            syncStateMutableStorage.persistedSyncState = storedPersistedSyncState
+            syncStateStorage.persistedSyncState = storedPersistedSyncState
 
             // WHEN we sync and we receive an error result
             val actualSyncResult =
@@ -129,7 +129,7 @@ class WorkManagerSyncWorkerTest {
     fun `GIVEN persistedSyncState does not exist, WHEN the work executes, an empty string is passed to rust sync manager`() =
         runTest(testDispatcher) {
             // given persisted sync state does not exist
-            syncStateMutableStorage.persistedSyncState = null
+            syncStateStorage.persistedSyncState = null
 
             // WHEN we sync and we receive an error result
             val actualSyncResult =
@@ -148,17 +148,40 @@ class WorkManagerSyncWorkerTest {
         }
 
     @Test
-    fun `GIVEN successful sync at a specific time, WHEN worker returns, THEN the timestamp of the last sync is updated`() =
+    fun `GIVEN successful full sync at a specific time, WHEN worker returns, THEN the timestamp of the last sync is updated`() =
         runTest(testDispatcher) {
             // given successful sync at specific time
             val lastSyncTime = Instant.fromEpochMilliseconds(1000)
             FakeClock.expectedInstantNow = lastSyncTime
             val successfulSyncResult = createSyncResult(status = ServiceStatus.OK)
-            val worker = createSyncWorker(expectedResult = successfulSyncResult)
+            val worker =
+                createSyncWorker(
+                    customEngines = emptyList(),
+                    expectedResult = successfulSyncResult,
+                )
             worker.doWork()
 
             // then the last sync timestamp is updated
-            assertEquals(lastSyncTime, syncStateMutableStorage.lastSynced)
+            assertEquals(lastSyncTime, syncStateStorage.lastSynced)
+        }
+
+    @Test
+    fun `GIVEN successful sync of custom subset engines, WHEN worker returns, THEN the lastSynced time is not updated`() =
+        runTest(testDispatcher) {
+            // given successful sync at specific time
+            val lastSyncTime = Instant.fromEpochMilliseconds(1000)
+            FakeClock.expectedInstantNow = lastSyncTime
+
+            val successfulSyncResult = createSyncResult(status = ServiceStatus.OK)
+            val worker =
+                createSyncWorker(
+                    customEngines = listOf(SyncEngine.Tabs),
+                    expectedResult = successfulSyncResult,
+                )
+            worker.doWork()
+
+            // then the last sync timestamp is not updated
+            assertNull(syncStateStorage.lastSynced)
         }
 
     @Test
@@ -172,7 +195,7 @@ class WorkManagerSyncWorkerTest {
             worker.doWork()
 
             // then the last sync timestamp is not updated
-            assertNull(syncStateMutableStorage.lastSynced, "Last sync time should not be updated")
+            assertNull(syncStateStorage.lastSynced, "Last sync time should not be updated")
         }
 
     // region Test Helpers
@@ -195,7 +218,7 @@ class WorkManagerSyncWorkerTest {
         whenever(accountManager.connectedAccount()).thenReturn(AuthenticatedAccount)
         GlobalAccountManager.setInstance(accountManager)
         GlobalAccountManager.setRustSyncManager(testRustSyncManager)
-        GlobalAccountManager.setSyncStateStorageProvider { syncStateMutableStorage }
+        GlobalAccountManager.setSyncStateStorageProvider { syncStateStorage }
         GlobalAccountManager.syncIoDispatcher = testDispatcher
         GlobalAccountManager.setTestClock(FakeClock)
 
@@ -210,7 +233,8 @@ class WorkManagerSyncWorkerTest {
     }
 
     private fun createSyncWorker(
-        expectedResult: SyncResult = createSyncResult(ServiceStatus.NETWORK_ERROR, "")
+        customEngines: List<SyncEngine> = emptyList(),
+        expectedResult: SyncResult = createSyncResult(ServiceStatus.NETWORK_ERROR, ""),
     ): WorkManagerSyncWorker {
         testRustSyncManager.expectedResult = expectedResult
         return TestListenableWorkerBuilder<WorkManagerSyncWorker>(
@@ -219,7 +243,7 @@ class WorkManagerSyncWorkerTest {
                     WorkManagerSyncDispatcher.getWorkerData(
                         reason = SyncReason.User,
                         supportedEngines = supportedSyncEngines,
-                        customEngineSubset = emptyList(),
+                        customEngineSubset = customEngines,
                     ),
             )
             .build()

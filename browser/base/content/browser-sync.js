@@ -26,7 +26,7 @@ ChromeUtils.defineESModuleGetters(this, {
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   MenuMessage: "resource:///modules/asrouter/MenuMessage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+  Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
   SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
   SyncedTabsManagement: "resource://services-sync/SyncedTabs.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
@@ -1731,6 +1731,25 @@ var gSync = {
     PanelUI.showSubView("PanelUI-fxa-menu-secure-sync-subpanel", anchor, event);
   },
 
+  _updateAppMenuSignedOutRow(email, messageL10nId) {
+    const titleEl = PanelMultiView.getViewNode(
+      document,
+      "appMenu-fxa-signed-out-title"
+    );
+    const messageEl = PanelMultiView.getViewNode(
+      document,
+      "appMenu-fxa-signed-out-message"
+    );
+
+    if (email) {
+      titleEl.removeAttribute("data-l10n-id");
+      titleEl.textContent = email;
+    } else {
+      document.l10n.setAttributes(titleEl, "fxa-menu-signed-out-title");
+    }
+    document.l10n.setAttributes(messageEl, messageL10nId);
+  },
+
   // Updates the secure sync subpanel's "Sync now" button label. While a sync is
   // in progress it reads "Syncing…"; otherwise it reads "Sync <device> Now".
   // The spinning sync icon is shown separately via the "syncstatus" attribute
@@ -2598,6 +2617,11 @@ var gSync = {
       appMenuLabel.classList.remove("subviewbutton-nav");
 
       if (signedOut) {
+        this._updateAppMenuSignedOutRow(
+          null,
+          "fxa-menu-signed-out-description"
+        );
+
         appMenuStatus.setAttribute("fxastatus", "signed-out");
         appMenuHeaderText.hidden = true;
         appMenuLabel.hidden = true;
@@ -2638,22 +2662,17 @@ var gSync = {
       );
       return;
     } else if (status == UIState.STATUS_NOT_VERIFIED) {
-      const [tooltipDescription, unverifiedLabel] =
-        this.fluentStrings.formatValuesSync([
-          { id: "account-verify", args: { email } },
-          { id: "account-finish-account-setup" },
-        ]);
       appMenuStatus.setAttribute("fxastatus", "unverified");
-      appMenuStatus.setAttribute("tooltiptext", tooltipDescription);
-      appMenuLabel.classList.add("subviewbutton-nav");
-      appMenuHeaderTitle.hidden = false;
-      appMenuHeaderTitle.value = unverifiedLabel;
-      appMenuHeaderDescription.value = email;
 
-      appMenuLabel.removeAttribute("label");
-      appMenuLabel.setAttribute(
-        "aria-labelledby",
-        `${appMenuHeaderTitle.id},${appMenuHeaderDescription.id}`
+      appMenuHeaderText.hidden = true;
+      appMenuLabel.hidden = true;
+      if (appMenuSignedOutRow) {
+        appMenuSignedOutRow.hidden = false;
+      }
+
+      this._updateAppMenuSignedOutRow(
+        email,
+        "fxa-menu-signed-out-message-unverified"
       );
       return;
     }

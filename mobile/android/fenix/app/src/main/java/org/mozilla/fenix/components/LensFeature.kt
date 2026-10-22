@@ -34,7 +34,8 @@ import org.mozilla.fenix.ext.components
  * Handles Google Lens image search requests.
  * - Observes Lens requests from the AppStore.
  * - Launches the Lens camera screen.
- * - Forwards the selected image to [LensImageSearch], which uploads it and opens the result.
+ * - Forwards the captured image to [LensImageSearch], which uploads it and opens the result, or opens the result of an
+ *   image the camera screen already uploaded.
  */
 class LensFeature(
     private val context: Context,
@@ -93,7 +94,7 @@ class LensFeature(
     }
 
     private fun launchCameraActivity() {
-        val intent = LensCameraActivity.newIntent(context)
+        val intent = LensCameraActivity.newIntent(context, isPrivate = appStore.state.mode.isPrivate)
         try {
             lensLauncher.launch(intent)
         } catch (e: ActivityNotFoundException) {
@@ -136,8 +137,22 @@ class LensFeature(
      * precedes the view lifecycle's, so this runs before [start].
      */
     fun handleImageResult(resultCode: Int, data: Intent?) {
-        val imageUri = data?.data
-        if (resultCode != Activity.RESULT_OK || imageUri == null) {
+        if (resultCode != Activity.RESULT_OK || data == null) {
+            appStore.dispatch(LensAction.LensDismissed)
+            return
+        }
+
+        val resultUrl = data.getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL)
+        if (resultUrl != null) {
+            lensImageSearch.openResult(
+                resultUrl = resultUrl,
+                isPrivate = data.getBooleanExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false),
+            )
+            return
+        }
+
+        val imageUri = data.data
+        if (imageUri == null) {
             appStore.dispatch(LensAction.LensDismissed)
             return
         }

@@ -101,7 +101,8 @@ fi
 
 # Logic for macosx64
 if [[ $(uname -s) == "Darwin" ]]; then
-  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX26.5.sdk"
+  MACOS_SYSROOT=$(ls -d "$MOZ_FETCHES_DIR"/MacOSX*.sdk)
+  export MACOS_SYSROOT
   CONFIG=$(echo $CONFIG mac_sdk_path='"//out/Default/MacOSX.sdk"')
 
   PGO_SUBSTR="chrome-mac-arm-main"

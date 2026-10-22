@@ -64,7 +64,7 @@ bool CodeGeneratorRiscv64::generateOutOfLineCode() {
     return false;
   }
 
-  if (deoptLabel_.used()) {
+  if (needsDeoptLabel()) {
     // All non-table-based bailouts will go here.
     masm.bind(&deoptLabel_);
 

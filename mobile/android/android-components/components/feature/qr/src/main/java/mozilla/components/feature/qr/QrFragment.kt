@@ -137,25 +137,7 @@ class QrFragment : Fragment() {
         fun onScanComplete(result: String)
     }
 
-    @Volatile
     internal var scanCompleteListener: OnScanCompleteListener? = null
-        set(value) {
-            field =
-                object : OnScanCompleteListener {
-                    override fun onScanComplete(result: String) {
-                        Handler(Looper.getMainLooper()).apply {
-                            post {
-                                context?.let {
-                                    customViewFinder.setViewFinderColor(
-                                        getColor(it, R.color.mozac_feature_qr_scan_success_color)
-                                    )
-                                }
-                                value?.onScanComplete(result)
-                            }
-                        }
-                    }
-                }
-        }
 
     /** [CameraDevice.StateCallback] is called when [CameraDevice] changes its state. */
     internal val stateCallback =
@@ -778,7 +760,16 @@ class QrFragment : Fragment() {
             Bundle().apply {
                 putString(RESULT_BUNDLE_KEY, result)
             }
-        scanCompleteListener?.onScanComplete(result ?: "")
+
+        Handler(Looper.getMainLooper()).post {
+            scanCompleteListener?.let { listener ->
+                context?.let {
+                    customViewFinder.setViewFinderColor(getColor(it, R.color.mozac_feature_qr_scan_success_color))
+                }
+                listener.onScanComplete(result ?: "")
+            }
+        }
+
         if (isAdded) {
             setFragmentResult(RESULT_REQUEST_KEY, resultBundle)
         }

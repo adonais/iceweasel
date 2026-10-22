@@ -22,9 +22,11 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.feature.contextmenu.R as contextMenuR
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
@@ -707,6 +709,43 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                 mozVerify(BrowserPageSelectors.ENGINE_VIEW, timeout = waitingTime)
             }
         }
+        return this
+    }
+
+    /**
+     * Assert the web-content long-press context menu raised for a link to another local-host asset: its URL header and
+     * the "Open link in new tab", "Open link in private tab", "Copy link" and "Share link" options. Ports the legacy
+     * BrowserRobot.verifyContextMenuForLocalHostLinks — a same-host link offers no "Download link", and a non-applink
+     * offers no "Open in external app".
+     */
+    fun verifyContextMenuForLocalHostLinks(linkUrl: String): BrowserPage {
+        mozVerify(BrowserPageSelectors.CONTEXT_MENU_LINK_URL(linkUrl))
+        mozVerify(
+            BrowserPageSelectors.CONTEXT_MENU_ITEM(
+                getStringResource(contextMenuR.string.mozac_feature_contextmenu_open_link_in_new_tab)
+            )
+        )
+        mozVerify(
+            BrowserPageSelectors.CONTEXT_MENU_ITEM(
+                getStringResource(contextMenuR.string.mozac_feature_contextmenu_open_link_in_private_tab)
+            )
+        )
+        mozVerify(
+            BrowserPageSelectors.CONTEXT_MENU_ITEM(
+                getStringResource(contextMenuR.string.mozac_feature_contextmenu_copy_link)
+            )
+        )
+        mozVerify(
+            BrowserPageSelectors.CONTEXT_MENU_ITEM(
+                getStringResource(contextMenuR.string.mozac_feature_contextmenu_share_link)
+            )
+        )
+        return this
+    }
+
+    /** Assert a snackbar showing the message [text] is displayed, as legacy verifySnackBarText did. */
+    fun verifySnackbarText(text: String): BrowserPage {
+        mozVerify(BrowserPageSelectors.SNACKBAR_MESSAGE(text))
         return this
     }
 

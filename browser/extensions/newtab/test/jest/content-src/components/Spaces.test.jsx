@@ -216,3 +216,52 @@ describe("Spaces", () => {
     ).toBe("true");
   });
 });
+
+describe("Spaces with arrows", () => {
+  function setupArrows(defaultId) {
+    const dispatch = jest.fn();
+    const utils = render(
+      <Spaces
+        spaces={SPACES}
+        defaultId={defaultId}
+        arrows={true}
+        dispatch={dispatch}
+      />
+    );
+    const arrow = direction =>
+      utils.container.querySelector(
+        `.spaces-arrow-rail.${direction} moz-button`
+      );
+    return { dispatch, arrow, ...utils };
+  }
+
+  it("replaces the tablist with an arrow toward each neighbouring space", () => {
+    const { container, arrow } = setupArrows("widgets");
+    expect(container.querySelector('[role="tablist"]')).toBeNull();
+    expect(container.querySelector('[role="tabpanel"]')).toBeNull();
+    expect(arrow("prev").dataset.l10nId).toBe("newtab-spaces-tab-stories");
+    expect(arrow("next").dataset.l10nId).toBe("newtab-spaces-tab-activity");
+  });
+
+  it("wraps from the first space to the last and back", () => {
+    const { arrow, dispatch } = setupArrows();
+    expect(arrow("prev").dataset.l10nId).toBe("newtab-spaces-tab-activity");
+
+    fireEvent.click(arrow("prev"));
+    expect(switchData(dispatch).space).toBe("activity");
+    expect(arrow("next").dataset.l10nId).toBe("newtab-spaces-tab-stories");
+
+    fireEvent.click(arrow("next"));
+    expect(switchData(dispatch).space).toBe("stories");
+  });
+
+  it("records an arrow switch", () => {
+    const { arrow, dispatch } = setupArrows();
+    fireEvent.click(arrow("next"));
+    expect(switchData(dispatch)).toEqual({
+      space: "widgets",
+      previous_space: "stories",
+      method: "arrow",
+    });
+  });
+});

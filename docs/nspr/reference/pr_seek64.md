@@ -20,7 +20,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object.
+: A pointer to a {doc}`prfiledesc` object.
 
 `offset`
 
@@ -29,7 +29,7 @@ The function has the following parameters:
 
 `whence`
 
-: A value of type {ref}`PRSeekWhence` that specifies how to interpret the
+: A value of type {doc}`prseekwhence` that specifies how to interpret the
   `offset` parameter in setting the file pointer associated with the
   fd parameter. The value for the `whence` parameter can be one of
   the following:
@@ -49,7 +49,7 @@ The function returns one of the following values:
   pointer location, measured in bytes from the beginning of the file.
 - If the function fails, the file pointer remains unchanged and the
   function returns -1. The error code can then be retrieved with
-  {ref}`PR_GetError`.
+  {doc}`pr_geterror`.
 
 ## Description
 
@@ -59,9 +59,9 @@ This is the idiom for obtaining the current location (expressed as a
 `PR_Seek64(fd, 0, PR_SEEK_CUR)`
 
 If the operating system can handle only a 32-bit file offset,
-{ref}`PR_Seek64` may fail with the error code `PR_FILE_TOO_BIG_ERROR` if
+{doc}`pr_seek64` may fail with the error code `PR_FILE_TOO_BIG_ERROR` if
 the `offset` parameter is out of the range of a 32-bit integer.
 
 ## See Also
 
-{ref}`PR_Seek`
+{doc}`pr_seek`

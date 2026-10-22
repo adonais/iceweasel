@@ -229,7 +229,7 @@ int ClientAuthValueComparator(const void* v1, const void* v2) {
   return -1;
 }
 
-static int match_hostname(PLHashEntry* he, int index, void* arg) {
+static int match_hostname(PLHashEntry* he, int /*index*/, void* arg) {
   server_match_t* match = (server_match_t*)arg;
   if (match->fullHost.find((char*)he->key) != string::npos)
     match->matched = true;
@@ -1012,7 +1012,7 @@ void StartServer(void* data) {
 }
 
 // bogus password func, just don't use passwords. :-P
-char* password_func(PK11SlotInfo* slot, PRBool retry, void* arg) {
+char* password_func(PK11SlotInfo* /*slot*/, PRBool retry, void* /*arg*/) {
   if (retry) return nullptr;
 
   return PL_strdup("");
@@ -1482,35 +1482,35 @@ int parseConfigFile(const char* filePath) {
   return 0;
 }
 
-int freeHostCertHashItems(PLHashEntry* he, int i, void* arg) {
+int freeHostCertHashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   delete[] (char*)he->value;
   return HT_ENUMERATE_REMOVE;
 }
 
-int freeHostRedirHashItems(PLHashEntry* he, int i, void* arg) {
+int freeHostRedirHashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   delete[] (char*)he->value;
   return HT_ENUMERATE_REMOVE;
 }
 
-int freeClientAuthHashItems(PLHashEntry* he, int i, void* arg) {
+int freeClientAuthHashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   delete (client_auth_option*)he->value;
   return HT_ENUMERATE_REMOVE;
 }
 
-int freeSSL3HashItems(PLHashEntry* he, int i, void* arg) {
+int freeSSL3HashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   return HT_ENUMERATE_REMOVE;
 }
 
-int freeTLSHashItems(PLHashEntry* he, int i, void* arg) {
+int freeTLSHashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   return HT_ENUMERATE_REMOVE;
 }
 
-int free3DESHashItems(PLHashEntry* he, int i, void* arg) {
+int free3DESHashItems(PLHashEntry* he, int /*i*/, void* /*arg*/) {
   delete[] (char*)he->key;
   return HT_ENUMERATE_REMOVE;
 }

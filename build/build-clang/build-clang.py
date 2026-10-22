@@ -349,19 +349,6 @@ def build_one_stage(
                 "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY",
                 "-DCMAKE_MACOSX_RPATH=ON",
                 "-DCMAKE_OSX_ARCHITECTURES=%s" % arch,
-                "-DDARWIN_osx_ARCHS=%s" % arch,
-                "-DDARWIN_osx_SYSROOT=%s" % slashify_path(os.getenv("OSX_SYSROOT")),
-            ]
-            if arch == "arm64":
-                cmake_args += [
-                    "-DDARWIN_osx_BUILTIN_ARCHS=arm64",
-                ]
-            # Starting in LLVM 11 (which requires SDK 10.12) the build tries to
-            # detect the SDK version by calling xcrun. Cross-compiles don't have
-            # an xcrun, so we have to set the version explicitly.
-            cmake_args += [
-                "-DDARWIN_macosx_OVERRIDE_SDK_VERSION=%s"
-                % os.environ["MACOSX_DEPLOYMENT_TARGET"],
             ]
 
         if profile == "gen":

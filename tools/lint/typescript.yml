@@ -13,6 +13,7 @@ typescript:
         - browser/components/tabbrowser/
         - browser/components/urlbar/
         - browser/extensions/newtab/
+        - devtools/client/settings/
         - toolkit/components/extensions/
         - toolkit/components/places/
         - toolkit/components/search/

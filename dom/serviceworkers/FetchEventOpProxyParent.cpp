@@ -151,12 +151,23 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
 
   if (aBodyStream) {
     copyRequest.body() = Some(ParentToChildStream());
-
-    RefPtr<RemoteLazyInputStream> stream =
-        RemoteLazyInputStream::WrapStream(aBodyStream);
-    MOZ_DIAGNOSTIC_ASSERT(stream);
-
-    copyRequest.body().ref().get_ParentToChildStream() = stream;
+    if (copyRequest.hasStreamBody()) {
+      IPCStream stream;
+      if (!SerializeIPCStream(aBodyStream.forget(), stream,
+                              /* aAllowLazy */ false)) {
+        actor->mReal->OnFinish();
+        actor->mLifetimePromise->Reject(NS_ERROR_FAILURE, __func__);
+        actor->mLifetimePromise = nullptr;
+        actor->mReal = nullptr;
+        return;
+      }
+      copyRequest.body().ref().get_ParentToChildStream() = stream;
+    } else {
+      RefPtr<RemoteLazyInputStream> stream =
+          RemoteLazyInputStream::WrapStream(aBodyStream);
+      MOZ_DIAGNOSTIC_ASSERT(stream);
+      copyRequest.body().ref().get_ParentToChildStream() = stream;
+    }
   }
 
   (void)aManager->SendPFetchEventOpProxyConstructor(actor, copyArgs);

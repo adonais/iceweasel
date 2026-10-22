@@ -362,7 +362,7 @@ def parsenames(namestr):
 
 
 def validate(args):
-    if not shutil.which('dot'):
+    if args.format != 'html' and not shutil.which('dot'):
         sys.stderr.write("ERROR: graphviz (dot) is not installed\n")
         exit(1)
     if args.format == 'pdf':

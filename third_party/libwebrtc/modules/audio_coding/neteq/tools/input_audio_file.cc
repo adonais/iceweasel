@@ -59,11 +59,11 @@ bool InputAudioFile::Seek(int samples) {
   }
   // Find file boundaries.
   const long current_pos = ftell(fp_);
-  RTC_CHECK_NE(EOF, current_pos)
+  RTC_CHECK_NE(current_pos, EOF)
       << "Error returned when getting file position.";
-  RTC_CHECK_EQ(0, fseek(fp_, 0, SEEK_END));  // Move to end of file.
+  RTC_CHECK_EQ(fseek(fp_, 0, SEEK_END), 0);  // Move to end of file.
   const long file_size = ftell(fp_);
-  RTC_CHECK_NE(EOF, file_size) << "Error returned when getting file position.";
+  RTC_CHECK_NE(file_size, EOF) << "Error returned when getting file position.";
   // Find new position.
   long new_pos = current_pos + sizeof(int16_t) * samples;  // Samples to bytes.
   if (loop_at_end_) {
@@ -79,7 +79,7 @@ bool InputAudioFile::Seek(int samples) {
   RTC_CHECK_GE(new_pos, 0)
       << "Trying to move to before the beginning of the file";
   // Move to new position relative to the beginning of the file.
-  RTC_CHECK_EQ(0, fseek(fp_, new_pos, SEEK_SET));
+  RTC_CHECK_EQ(fseek(fp_, new_pos, SEEK_SET), 0);
   return true;
 }
 

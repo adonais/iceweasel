@@ -102,6 +102,8 @@ abstract class AbstractFetchDownloadService : Service() {
 
     protected open val notificationUpdateScope by lazy { CoroutineScope(mainDispatcher + SupervisorJob()) }
 
+    private val ioScope by lazy { CoroutineScope(ioDispatcher + SupervisorJob()) }
+
     protected abstract val httpClient: Client
 
     protected open val style: Style = Style()
@@ -204,10 +206,9 @@ abstract class AbstractFetchDownloadService : Service() {
                         } else {
                             setDownloadJobStatus(currentDownloadJobState, DOWNLOADING)
 
-                            currentDownloadJobState.job =
-                                CoroutineScope(ioDispatcher).launch {
-                                    startDownloadJob(currentDownloadJobState)
-                                }
+                            currentDownloadJobState.job = ioScope.launch {
+                                startDownloadJob(currentDownloadJobState)
+                            }
                         }
                         emitNotificationResumeFact()
                         logger.debug("ACTION_RESUME for ${currentDownloadJobState.state.id}")
@@ -228,10 +229,9 @@ abstract class AbstractFetchDownloadService : Service() {
                         currentDownloadJobState.createdTime = dateTimeProvider.currentTimeMillis()
                         setDownloadJobStatus(currentDownloadJobState, DOWNLOADING)
 
-                        currentDownloadJobState.job =
-                            CoroutineScope(ioDispatcher).launch {
-                                startDownloadJob(currentDownloadJobState)
-                            }
+                        currentDownloadJobState.job = ioScope.launch {
+                            startDownloadJob(currentDownloadJobState)
+                        }
 
                         emitNotificationTryAgainFact()
                         logger.debug("ACTION_TRY_AGAIN for ${currentDownloadJobState.state.id}")
@@ -332,10 +332,9 @@ abstract class AbstractFetchDownloadService : Service() {
         store.dispatch(DownloadAction.UpdateDownloadAction(downloadJobState.state))
 
         if (actualStatus == DOWNLOADING) {
-            downloadJobState.job =
-                CoroutineScope(ioDispatcher).launch {
-                    startDownloadJob(downloadJobState)
-                }
+            downloadJobState.job = ioScope.launch {
+                startDownloadJob(downloadJobState)
+            }
         }
 
         downloadJobs[download.id] = downloadJobState
@@ -419,7 +418,7 @@ abstract class AbstractFetchDownloadService : Service() {
     internal fun updateDownloadNotification(
         latestUIStatus: Status,
         download: DownloadJobState,
-        scope: CoroutineScope = CoroutineScope(ioDispatcher),
+        scope: CoroutineScope = ioScope,
     ) {
         val notification =
             when (latestUIStatus) {
@@ -508,6 +507,8 @@ abstract class AbstractFetchDownloadService : Service() {
             }
         }
         notificationManager.cancel(NOTIFICATION_DOWNLOAD_GROUP_ID)
+
+        ioScope.cancel()
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -528,7 +529,7 @@ abstract class AbstractFetchDownloadService : Service() {
     @VisibleForTesting
     internal fun addToDownloadSystemDatabaseCompat(
         download: DownloadState,
-        scope: CoroutineScope = CoroutineScope(ioDispatcher),
+        scope: CoroutineScope = ioScope,
     ) {
         if (!shouldUseScopedStorage()) {
             val fileName = download.fileName ?: throw IllegalStateException("A fileName for a download is required")
@@ -759,7 +760,7 @@ abstract class AbstractFetchDownloadService : Service() {
         val throttleUpdateDownload =
             throttleLatest<Long>(
                 PROGRESS_UPDATE_INTERVAL,
-                coroutineScope = CoroutineScope(ioDispatcher),
+                coroutineScope = ioScope,
             ) { copiedBytes ->
                 val newState = downloadJobState.state.copy(currentBytesCopied = copiedBytes)
                 updateDownloadState(newState)

@@ -5,6 +5,7 @@
 #ifndef _nsContentPolicy_h_
 #define _nsContentPolicy_h_
 
+#include "nsCOMPtr.h"
 #include "nsCategoryCache.h"
 #include "nsIContentPolicy.h"
 
@@ -19,12 +20,19 @@ class nsContentPolicy : public nsIContentPolicy {
 
   nsContentPolicy();
 
+  nsresult Init();
+
  protected:
   virtual ~nsContentPolicy();
 
  private:
   // Array of policies
   nsCategoryCache<nsIContentPolicy> mPolicies;
+
+  // Policies that are consulted before everything in mPolicies, in the order
+  // they are declared here.
+  nsCOMPtr<nsIContentPolicy> mCSPService;
+  nsCOMPtr<nsIContentPolicy> mMixedContentBlocker;
 
   // Helper type for CheckPolicy
   using CPMethod = decltype(&nsIContentPolicy::ShouldProcess);
@@ -34,7 +42,5 @@ class nsContentPolicy : public nsIContentPolicy {
   nsresult CheckPolicy(CPMethod policyMethod, nsIURI* aURI,
                        nsILoadInfo* aLoadInfo, int16_t* decision);
 };
-
-nsresult NS_NewContentPolicy(nsIContentPolicy** aResult);
 
 #endif /* _nsContentPolicy_h_ */

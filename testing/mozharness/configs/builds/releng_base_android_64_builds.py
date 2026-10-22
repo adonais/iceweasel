@@ -45,7 +45,6 @@ config = {
         "PATH": "/usr/local/bin:/bin:/usr/bin",
         "SHIP_LICENSED_FONTS": "1",
     },
-    "app_name": "mobile/android",
     # Bug 1583594: GeckoView doesn't (yet) produce have a package file
     # from which to extract package metrics.
     "disable_package_metrics": True,

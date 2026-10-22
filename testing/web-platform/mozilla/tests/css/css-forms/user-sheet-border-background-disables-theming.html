@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>User-specified border / background should disable native theming, like author-specified ones do</title>
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2075979">
+<link rel="match" href="user-sheet-border-background-disables-theming-ref.html">
+<button>Button</button>
+<input type="text" value="Text">
+<textarea>Textarea</textarea>
+<select><option>Select</option></select>
+<script>
+  const utils = SpecialPowers.wrap(window).windowUtils;
+  utils.loadSheetUsingURIString(
+    "data:text/css,button, input, textarea, select { background-color: lime; border: 3px solid blue; }",
+    utils.USER_SHEET
+  );
+</script>

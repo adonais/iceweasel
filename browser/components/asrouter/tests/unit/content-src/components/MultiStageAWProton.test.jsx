@@ -224,6 +224,89 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.ok(wrapper.find(".section-secondary").exists());
     });
 
+    it("should set data-theme from activeThemeId for card-stack screens", () => {
+      const wrapper = mount(
+        <MultiStageProtonScreen
+          content={{ position: "card-stack", title: "test title" }}
+          activeThemeId="nova-flare@mozilla.org"
+        />
+      );
+      assert.equal(
+        wrapper.find("main").prop("data-theme"),
+        "nova-flare@mozilla.org"
+      );
+    });
+
+    it("should not set data-theme for non-card-stack screens", () => {
+      const wrapper = mount(
+        <MultiStageProtonScreen
+          content={{ position: "split", title: "test title" }}
+          activeThemeId="nova-flare@mozilla.org"
+        />
+      );
+      assert.equal(wrapper.find("main").prop("data-theme"), null);
+    });
+
+    it("should render an image slot between title and subtitle for last-card screens", () => {
+      const SCREEN_PROPS = {
+        content: {
+          position: "card-stack",
+          layout: "last-card",
+          title: "test title",
+          subtitle: "test subtitle",
+          center_image: {
+            imageURL: "test.svg",
+            alt: "",
+          },
+        },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.equal(wrapper.find("main").prop("layout"), "last-card");
+      const welcomeText = wrapper.find(".welcome-text").getDOMNode();
+      assert.equal(welcomeText.children[0].tagName, "H1");
+      assert.equal(welcomeText.children[1].className, "last-card-image");
+      assert.equal(welcomeText.children[2].tagName, "H2");
+      const img = wrapper.find(".last-card-image .center-image img");
+      assert.equal(img.prop("src"), "test.svg");
+    });
+
+    it("should size the last-card image slot from center_image width and height", () => {
+      const SCREEN_PROPS = {
+        content: {
+          position: "card-stack",
+          layout: "last-card",
+          title: "test title",
+          subtitle: "test subtitle",
+          center_image: {
+            imageURL: "test.svg",
+            alt: "",
+            width: "150px",
+            height: "90px",
+            marginBlock: "40px 0",
+          },
+        },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      const slot = wrapper.find(".last-card-image").getDOMNode();
+      assert.equal(
+        slot.style.getPropertyValue("--last-card-image-width"),
+        "150px"
+      );
+      assert.equal(
+        slot.style.getPropertyValue("--last-card-image-height"),
+        "90px"
+      );
+      assert.equal(
+        slot.style.getPropertyValue("--last-card-picture-margin-block"),
+        "40px 0"
+      );
+      const picture = wrapper.find(".last-card-image .center-image");
+      assert.isUndefined(picture.prop("style")?.marginBlock);
+      const img = wrapper.find(".last-card-image .center-image img");
+      assert.isUndefined(img.prop("style")?.width);
+    });
+
     it("should render secondary section with content background for split positioned screens", () => {
       const BACKGROUND_URL =
         "chrome://activity-stream/content/data/content/assets/confetti.svg";

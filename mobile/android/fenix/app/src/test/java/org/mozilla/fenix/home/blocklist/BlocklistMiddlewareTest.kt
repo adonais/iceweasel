@@ -10,8 +10,10 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -452,5 +454,45 @@ class BlocklistMiddlewareTest {
             currentTabs[1],
             (appStore.state.recentSyncedTabState as RecentSyncedTabState.Success).tabs.firstOrNull(),
         )
+    }
+
+    @Test
+    fun `WHEN a top site is removed and should be blocked THEN its url is added to the blocklist`() {
+        val url = "https://www.mozilla.org/"
+        val topSite = TopSite.Default(id = null, title = "Mozilla", url = url, createdAt = null)
+
+        val updateSlot = slot<Set<String>>()
+        every { mockSettings.homescreenBlocklist } returns setOf()
+        every { mockSettings.homescreenBlocklist = capture(updateSlot) } just Runs
+        every { mockSettings.frecencyFilterQuery } returns ""
+        val appStore =
+            AppStore(
+                AppState(topSites = listOf(topSite)),
+                middlewares = listOf(BlocklistMiddleware(blocklistHandler)),
+            )
+
+        appStore.dispatch(AppAction.RemoveTopSite(topSite = topSite, shouldBlock = true))
+
+        assertEquals(setOf(url.stripAndHash()), updateSlot.captured)
+    }
+
+    @Test
+    fun `WHEN a top site is removed and should not be blocked THEN its url is not added to the blocklist`() {
+        val url = "https://www.firefox.com/"
+        val topSite = TopSite.Default(id = null, title = "Firefox", url = url, createdAt = null)
+
+        val updateSlot = slot<Set<String>>()
+        every { mockSettings.homescreenBlocklist } returns setOf()
+        every { mockSettings.homescreenBlocklist = capture(updateSlot) } just Runs
+        every { mockSettings.frecencyFilterQuery } returns ""
+        val appStore =
+            AppStore(
+                AppState(topSites = listOf(topSite)),
+                middlewares = listOf(BlocklistMiddleware(blocklistHandler)),
+            )
+
+        appStore.dispatch(AppAction.RemoveTopSite(topSite = topSite, shouldBlock = false))
+
+        assertFalse(updateSlot.isCaptured)
     }
 }

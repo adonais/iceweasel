@@ -4,9 +4,6 @@
 
 package mozilla.components.service.sync.autofill
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
 import mozilla.components.concept.storage.CreditCardEntry
@@ -24,14 +21,12 @@ import mozilla.components.support.ktx.kotlin.last4Digits
  * [CreditCardsAddressesStorageDelegate] implementation.
  *
  * @param storage The [CreditCardsAddressesStorage] used for looking up addresses and credit cards to autofill.
- * @param dispatcher [CoroutineDispatcher] for long running operations. Defaults to using the [Dispatchers.IO].
  * @param isCreditCardAutofillEnabled callback allowing to limit [storage] operations if autofill is disabled.
  * @param validationDelegate The [DefaultCreditCardValidationDelegate] used to check if a credit card can be saved in
  *   [storage] and returns information about why it can or cannot
  */
 class GeckoCreditCardsAddressesStorageDelegate(
     private val storage: Lazy<CreditCardsAddressesStorage>,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val validationDelegate: DefaultCreditCardValidationDelegate = DefaultCreditCardValidationDelegate(storage),
     private val isCreditCardAutofillEnabled: () -> Boolean = { false },
     private val isAddressAutofillEnabled: () -> Boolean = { false },
@@ -51,12 +46,10 @@ class GeckoCreditCardsAddressesStorageDelegate(
     }
 
     override suspend fun onAddressesFetch(): List<Address> =
-        withContext(dispatcher) {
-            if (!isAddressAutofillEnabled()) {
-                emptyList()
-            } else {
-                storage.value.getAllAddresses()
-            }
+        if (!isAddressAutofillEnabled()) {
+            emptyList()
+        } else {
+            storage.value.getAllAddresses()
         }
 
     override suspend fun onAddressSave(address: Address) {
@@ -74,55 +67,48 @@ class GeckoCreditCardsAddressesStorageDelegate(
                 email = address.email,
             )
 
-        withContext(dispatcher) {
-            if (address.guid.isBlank()) {
-                storage.value.addAddress(fields)
-            } else {
-                storage.value.updateAddress(address.guid, fields)
-            }
+        if (address.guid.isBlank()) {
+            storage.value.addAddress(fields)
+        } else {
+            storage.value.updateAddress(address.guid, fields)
         }
     }
 
     override suspend fun onCreditCardsFetch(): List<CreditCard> =
-        withContext(dispatcher) {
-            if (!isCreditCardAutofillEnabled()) {
-                emptyList()
-            } else {
-                storage.value.getAllCreditCards()
-            }
+        if (!isCreditCardAutofillEnabled()) {
+            emptyList()
+        } else {
+            storage.value.getAllCreditCards()
         }
 
     override suspend fun onCreditCardSave(creditCard: CreditCardEntry) {
         if (!creditCard.isValid) return
-
-        withContext(dispatcher) {
-            when (val result = validationDelegate.shouldCreateOrUpdate(creditCard)) {
-                is CreditCardValidationDelegate.Result.CanBeCreated -> {
-                    storage.value.addCreditCard(
-                        NewCreditCardFields(
+        when (val result = validationDelegate.shouldCreateOrUpdate(creditCard)) {
+            is CreditCardValidationDelegate.Result.CanBeCreated -> {
+                storage.value.addCreditCard(
+                    NewCreditCardFields(
+                        billingName = creditCard.name,
+                        plaintextCardNumber = CreditCardNumber.Plaintext(creditCard.number),
+                        cardNumberLast4 = creditCard.number.last4Digits(),
+                        expiryMonth = creditCard.expiryMonth.toLong(),
+                        expiryYear = creditCard.expiryYear.toLong(),
+                        cardType = creditCard.cardType,
+                    )
+                )
+            }
+            is CreditCardValidationDelegate.Result.CanBeUpdated -> {
+                storage.value.updateCreditCard(
+                    guid = result.foundCreditCard.guid,
+                    creditCardFields =
+                        UpdatableCreditCardFields(
                             billingName = creditCard.name,
-                            plaintextCardNumber = CreditCardNumber.Plaintext(creditCard.number),
+                            cardNumber = CreditCardNumber.Plaintext(creditCard.number),
                             cardNumberLast4 = creditCard.number.last4Digits(),
                             expiryMonth = creditCard.expiryMonth.toLong(),
                             expiryYear = creditCard.expiryYear.toLong(),
                             cardType = creditCard.cardType,
-                        )
-                    )
-                }
-                is CreditCardValidationDelegate.Result.CanBeUpdated -> {
-                    storage.value.updateCreditCard(
-                        guid = result.foundCreditCard.guid,
-                        creditCardFields =
-                            UpdatableCreditCardFields(
-                                billingName = creditCard.name,
-                                cardNumber = CreditCardNumber.Plaintext(creditCard.number),
-                                cardNumberLast4 = creditCard.number.last4Digits(),
-                                expiryMonth = creditCard.expiryMonth.toLong(),
-                                expiryYear = creditCard.expiryYear.toLong(),
-                                cardType = creditCard.cardType,
-                            ),
-                    )
-                }
+                        ),
+                )
             }
         }
     }

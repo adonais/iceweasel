@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import {
   actionTypes as at,
   actionCreators as ac,
@@ -67,6 +69,9 @@ const ENABLEMENT_PREFS = new Set([
  * Feed for the Recent Searches widget. Runs in the parent process.
  */
 export class RecentSearchesFeed {
+  /** @type {Store} */
+  store = null;
+
   #observing = false;
   #updateQueued = false;
 
@@ -186,7 +191,7 @@ export class RecentSearchesFeed {
    * removed one of the listed searches, and a default engine change, which decides
    * both which searches are listed and what is trending.
    *
-   * @param {nsISupports} subject Unused; the subject differs per topic.
+   * @param {nsISupports} _subject Unused; the subject differs per topic.
    * @param {string} topic Either `satchel-storage-changed` or
    *   `SearchUtils.TOPIC_ENGINE_MODIFIED`.
    * @param {string} data What changed: one of the form history operations for

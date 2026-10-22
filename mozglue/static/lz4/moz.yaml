@@ -1,0 +1,38 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: mozglue
+
+origin:
+  name: lz4
+  description: Extremely fast compression algorithm
+
+  url: https://github.com/lz4/lz4
+
+  release: v1.10.0 (2024-07-21T10:29:49-07:00).
+  revision: v1.10.0
+
+  license: BSD-2-Clause
+  license-file: LICENSE
+
+vendoring:
+  url: https://github.com/lz4/lz4
+  source-hosting: github
+  tracking: tag
+
+  exclude:
+    - "**"
+
+  include:
+    - lib/LICENSE
+    - lib/README.md
+    - lib/lz4*.c
+    - lib/lz4*.h
+
+  update-actions:
+    - action: move-dir
+      from: '{vendor_dir}/lib'
+      to: '{vendor_dir}'
+    - action: delete-path
+      path: '{vendor_dir}/lib'

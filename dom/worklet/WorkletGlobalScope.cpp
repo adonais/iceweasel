@@ -6,6 +6,7 @@
 
 #include "js/RealmOptions.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/WorkletGlobalScopeBinding.h"
 #include "mozilla/dom/WorkletImpl.h"
@@ -149,6 +150,10 @@ JS::RealmOptions WorkletGlobalScope::CreateRealmOptions() const {
       IsSharedMemoryAllowed());
 
   return options;
+}
+
+bool IsWorkletGlobal(JSObject* aObj) {
+  return IS_INSTANCE_OF(WorkletGlobalScope, aObj);
 }
 
 }  // namespace mozilla::dom

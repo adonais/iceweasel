@@ -122,8 +122,6 @@ skip-if = [
 ["browser_toolbox_console_new_process.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1591590
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929454
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929454, Bug 2028047
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1591590
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1591590
 ]

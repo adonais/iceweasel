@@ -53,7 +53,7 @@ int32_t DoSNISocketConfigBySubjectCN(PRFileDesc* aFd,
 }
 
 int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
-                          uint32_t aSrvNameArrSize, void* aArg) {
+                          uint32_t aSrvNameArrSize, void* /*aArg*/) {
   const EchHost* host = GetHostForSNI(aSrvNameArr, aSrvNameArrSize, sEchHosts);
   if (!host) {
     PrintPRError("No cert found for hostname");

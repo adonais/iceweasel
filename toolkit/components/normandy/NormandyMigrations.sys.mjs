@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Log } from "resource://gre/modules/Log.sys.mjs";
-import { AddonStudies } from "resource://normandy/lib/AddonStudies.sys.mjs";
-import { PreferenceExperiments } from "resource://normandy/lib/PreferenceExperiments.sys.mjs";
 import { RecipeRunner } from "resource://normandy/lib/RecipeRunner.sys.mjs";
 
 const BOOTSTRAP_LOGGER_NAME = "app.normandy.bootstrap";
@@ -42,17 +40,16 @@ export const NormandyMigrations = {
   migrations: [
     migrateShieldPrefs,
     migrateStudiesEnabledWithoutHealthReporting,
-    AddonStudies.migrations
-      .migration01AddonStudyFieldsToSlugAndUserFacingFields,
-    PreferenceExperiments.migrations.migration01MoveExperiments,
-    PreferenceExperiments.migrations.migration02MultiPreference,
-    PreferenceExperiments.migrations.migration03AddActionName,
-    PreferenceExperiments.migrations.migration04RenameNameToSlug,
+    migrateAddonStudyFieldsToSlugAndUserFacingFields,
+    migrateNoop,
+    migrateNoop,
+    migrateNoop,
+    migrateNoop,
     RecipeRunner.migrations.migration01RemoveOldRecipesCollection,
     migrateRemoveOldAddonStudyAction,
     migrateRemoveLastBuildIdPref,
-    PreferenceExperiments.migrations.migration05RemoveOldAction,
-    PreferenceExperiments.migrations.migration06TrackOverriddenPrefs,
+    migrateNoop,
+    migrateNoop,
   ],
 };
 
@@ -105,6 +102,17 @@ function migrateShieldPrefs() {
 
     legacyBranch.clearUserPref(prefName);
   }
+}
+
+function migrateAddonStudyFieldsToSlugAndUserFacingFields() {
+  // Removed with AddonStudies. This migration renamed fields in the "shield"
+  // database, which the Nimbus remove-normandy-databases migration now deletes.
+}
+
+function migrateNoop() {
+  // Removed with PreferenceExperiments. These migrations updated the data in
+  // shield-preference-experiments.json which the Nimbus
+  // remove-normandy-databases migration now deletes.
 }
 
 function migrateRemoveOldAddonStudyAction() {

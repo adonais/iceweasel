@@ -18,7 +18,6 @@
 #include <span>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
@@ -34,7 +33,6 @@
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "audio/audio_send_stream.h"
@@ -377,10 +375,6 @@ bool AudioReceiveStreamImpl::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
 int AudioReceiveStreamImpl::GetBaseMinimumPlayoutDelayMs() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return channel_receive_->GetBaseMinimumPlayoutDelayMs();
-}
-
-std::vector<RtpSource> AudioReceiveStreamImpl::GetSources() const {
-  return channel_receive_->GetSources();
 }
 
 AudioMixer::Source::AudioFrameInfo

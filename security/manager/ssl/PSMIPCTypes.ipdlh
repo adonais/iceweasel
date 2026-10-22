@@ -23,6 +23,7 @@ struct RSAKey {
 
 struct Certificate {
   uint8_t[] der; // the encoding of this certificate
+  bool serverAuthTrustAnchor; // true if this is a TLS server auth trust anchor
 };
 
 // Helper type for sending keys and certificates over IPC for use by IPC client

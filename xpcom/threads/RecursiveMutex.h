@@ -22,6 +22,10 @@ class MOZ_CAPABILITY("recursive mutex") RecursiveMutex
   explicit RecursiveMutex(const char* aName);
   ~RecursiveMutex();
 
+  RecursiveMutex() = delete;
+  RecursiveMutex(const RecursiveMutex&) = delete;
+  RecursiveMutex& operator=(const RecursiveMutex&) = delete;
+
 #ifdef DEBUG
   void Lock() MOZ_CAPABILITY_ACQUIRE();
   void Unlock() MOZ_CAPABILITY_RELEASE();
@@ -47,10 +51,6 @@ class MOZ_CAPABILITY("recursive mutex") RecursiveMutex
 #endif
 
  private:
-  RecursiveMutex() = delete;
-  RecursiveMutex(const RecursiveMutex&) = delete;
-  RecursiveMutex& operator=(const RecursiveMutex&) = delete;
-
   void LockInternal();
   void UnlockInternal();
 
@@ -82,10 +82,11 @@ class MOZ_RAII MOZ_SCOPED_CAPABILITY RecursiveMutexAutoLock {
     mRecursiveMutex->Unlock();
   }
 
- private:
   RecursiveMutexAutoLock() = delete;
   RecursiveMutexAutoLock(const RecursiveMutexAutoLock&) = delete;
   RecursiveMutexAutoLock& operator=(const RecursiveMutexAutoLock&) = delete;
+
+ private:
   static void* operator new(size_t) noexcept(true);
 
   mozilla::RecursiveMutex* mRecursiveMutex;
@@ -104,10 +105,11 @@ class MOZ_RAII MOZ_SCOPED_CAPABILITY RecursiveMutexAutoUnlock {
     mRecursiveMutex->Lock();
   }
 
- private:
   RecursiveMutexAutoUnlock() = delete;
   RecursiveMutexAutoUnlock(const RecursiveMutexAutoUnlock&) = delete;
   RecursiveMutexAutoUnlock& operator=(const RecursiveMutexAutoUnlock&) = delete;
+
+ private:
   static void* operator new(size_t) noexcept(true);
 
   mozilla::RecursiveMutex* mRecursiveMutex;

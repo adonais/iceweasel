@@ -123,11 +123,15 @@ loser:
 void
 NSS_CMSSignerInfo_Destroy(NSSCMSSignerInfo *si)
 {
-    if (si->cert != NULL)
+    if (si->cert != NULL) {
         CERT_DestroyCertificate(si->cert);
+        si->cert = NULL;
+    }
 
-    if (si->certList != NULL)
+    if (si->certList != NULL) {
         CERT_DestroyCertificateList(si->certList);
+        si->certList = NULL;
+    }
 
     /* XXX storage ??? */
 }
@@ -751,16 +755,6 @@ NSS_CMSSignerInfo_AddAuthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *att
 }
 
 /*
- * NSS_CMSSignerInfo_AddUnauthAttr - add an attribute to the
- * unauthenticated attributes of "signerinfo".
- */
-SECStatus
-NSS_CMSSignerInfo_AddUnauthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *attr)
-{
-    return NSS_CMSAttributeArray_AddAttr(signerinfo->cmsg->poolp, &(signerinfo->unAuthAttr), attr);
-}
-
-/*
  * NSS_CMSSignerInfo_AddSigningTime - add the signing time to the
  * authenticated (i.e. signed) attributes of "signerinfo".
  *
@@ -935,27 +929,6 @@ NSS_CMSSignerInfo_AddMSSMIMEEncKeyPrefs(NSSCMSSignerInfo *signerinfo, CERTCertif
 
 loser:
     PORT_ArenaRelease(poolp, mark);
-    return SECFailure;
-}
-
-/*
- * NSS_CMSSignerInfo_AddCounterSignature - countersign a signerinfo
- *
- * 1. digest the DER-encoded signature value of the original signerinfo
- * 2. create new signerinfo with correct version, sid, digestAlg
- * 3. add message-digest authAttr, but NO content-type
- * 4. sign the authAttrs
- * 5. DER-encode the new signerInfo
- * 6. add the whole thing to original signerInfo's unAuthAttrs
- *    as a SEC_OID_PKCS9_COUNTER_SIGNATURE attribute
- *
- * XXXX give back the new signerinfo?
- */
-SECStatus
-NSS_CMSSignerInfo_AddCounterSignature(NSSCMSSignerInfo *signerinfo,
-                                      SECOidTag digestalg, CERTCertificate signingcert)
-{
-    /* XXXX TBD XXXX */
     return SECFailure;
 }
 

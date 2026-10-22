@@ -1601,6 +1601,14 @@ secu_PrintSubjectPublicKeyInfo(FILE *out, PLArenaPool *arena,
                 secu_PrintECPublicKey(out, pk, "EC Public Key", level + 1);
                 break;
 
+            case ecMontKey:
+                secu_PrintECPublicKey(out, pk, "EC Montgomery Public Key", level + 1);
+                break;
+
+            case edKey:
+                secu_PrintECPublicKey(out, pk, "EC Edwards Public Key", level + 1);
+                break;
+
             case mldsaKey:
                 SECU_PrintMLDSAPublicKey(out, pk, "ML-DSA Public Key", level + 1);
                 break;

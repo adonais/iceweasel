@@ -697,10 +697,13 @@ fn prepare_quad_impl(
         };
 
         // Only use AA edge instances if the drawn area is large enough to require it.
+        // A batch with an inline backdrop readback must hold a single instance, so
+        // patterns that need one can't be split into AA edge instances.
         if device_bounds.width() > MIN_AA_SEGMENTS_SIZE
             && device_bounds.height() > MIN_AA_SEGMENTS_SIZE
             && local_bounds.width() > MIN_AA_SEGMENTS_SIZE
-            && local_bounds.height() > MIN_AA_SEGMENTS_SIZE {
+            && local_bounds.height() > MIN_AA_SEGMENTS_SIZE
+            && !pattern.kind.requires_backdrop_readback() {
             quad_flags |= QuadFlags::USE_AA_SEGMENTS;
         }
 
@@ -1038,7 +1041,10 @@ fn prepare_nine_patch(
             };
 
             if should_create_task(mode, x, y) {
-                let task_size = segment_device_rect.size().to_i32();
+                // The segment rect can have a sub-pixel size where it meets the antialiased
+                // bounds of the primitive; round up so the task is never empty
+                // and covers the area that gets drawn.
+                let task_size = segment_device_rect.size().ceil().to_i32();
                 let task_id = add_render_task_with_mask(
                     pattern,
                     &local_bounds,

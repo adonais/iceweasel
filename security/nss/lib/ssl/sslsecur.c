@@ -633,9 +633,12 @@ ssl_CopySecurityInfo(sslSocket *ss, sslSocket *os)
 {
     ss->sec.isServer = os->sec.isServer;
 
-    ss->sec.peerCert = CERT_DupCertificate(os->sec.peerCert);
-    if (os->sec.peerCert && !ss->sec.peerCert)
-        goto loser;
+    if (os->sec.peerCertDER.data) {
+        if (ssl_SetPeerCertificate(&ss->sec, &os->sec.peerCertDER) !=
+            SECSuccess) {
+            goto loser;
+        }
+    }
 
     return SECSuccess;
 
@@ -653,10 +656,7 @@ ssl_ResetSecurityInfo(sslSecurityInfo *sec, PRBool doMemset)
         CERT_DestroyCertificate(sec->localCert);
         sec->localCert = NULL;
     }
-    if (sec->peerCert) {
-        CERT_DestroyCertificate(sec->peerCert);
-        sec->peerCert = NULL;
-    }
+    ssl_ClearPeerCertificate(sec);
     if (sec->peerKey) {
         SECKEY_DestroyPublicKey(sec->peerKey);
         sec->peerKey = NULL;

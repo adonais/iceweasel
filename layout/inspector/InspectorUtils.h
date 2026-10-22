@@ -306,6 +306,7 @@ class InspectorUtils {
    * Returns whether or not a CSS property value is valid for the passed syntax
    */
   static bool ValueMatchesSyntax(GlobalObject&, Document& aDocument,
+                                 const nsACString& aProperty,
                                  const nsACString& aValue,
                                  const nsACString& aSyntax);
 

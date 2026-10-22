@@ -1427,6 +1427,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   void ClearStencil(GLint v);
 
+  void ClipControlEXT(GLenum origin, GLenum depth);
+
   void ColorMask(bool r, bool g, bool b, bool a) const {
     ColorMaskI({}, r, g, b, a);
   }

@@ -2221,9 +2221,14 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
                                           object, CKA_VALUE);
             break;
         case CKK_EC_EDWARDS:
+            pubKey->keyType = NSSLOWKEYECEdwardsKey;
+            goto ec_continue;
         case CKK_EC_MONTGOMERY:
+            pubKey->keyType = NSSLOWKEYECMontgomeryKey;
+            goto ec_continue;
         case CKK_EC:
             pubKey->keyType = NSSLOWKEYECKey;
+        ec_continue:
             crv = sftk_Attribute2SSecItem(arena,
                                           &pubKey->u.ec.ecParams.DEREncoding,
                                           object, CKA_EC_PARAMS);
@@ -2453,9 +2458,14 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
              * if we don't set it explicitly */
             break;
         case CKK_EC_EDWARDS:
+            privKey->keyType = NSSLOWKEYECEdwardsKey;
+            goto ec_continue;
         case CKK_EC_MONTGOMERY:
+            privKey->keyType = NSSLOWKEYECMontgomeryKey;
+            goto ec_continue;
         case CKK_EC:
             privKey->keyType = NSSLOWKEYECKey;
+        ec_continue:
             crv = sftk_Attribute2SSecItem(arena,
                                           &privKey->u.ec.ecParams.DEREncoding,
                                           object, CKA_EC_PARAMS);
@@ -2519,6 +2529,7 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
             privKey->keyType = NSSLOWKEYMLKEMKey;
+
             crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
                                          &paramSet);
             if (crv != CKR_OK) {

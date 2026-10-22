@@ -24,7 +24,7 @@ const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
 const { TaskbarTabsUtils } = ChromeUtils.importESModule(
-  "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs"
+  "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs"
 );
 ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",

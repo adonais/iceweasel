@@ -71,6 +71,12 @@ export class ThemePreview extends MozLitElement {
     if (!screenshot.url) {
       return nothing;
     }
+    if (screenshot.url === DEFAULT_THEME_PREVIEW_NOVA_URL) {
+      const rtlFlipParam = "param(--rtl-flip, var(--theme-preview-rtl-flip))";
+      screenshot.linkParameters = screenshot.linkParameters
+        ? `${screenshot.linkParameters}, ${rtlFlipParam}`
+        : rtlFlipParam;
+    }
     return html`<img
       class="card-heading-image"
       role="presentation"

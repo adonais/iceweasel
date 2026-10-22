@@ -127,9 +127,6 @@ support-files = [
 ["browser_net_open_request_in_tab.js"]
 
 ["browser_net_overrides.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1949050
-]
 
 ["browser_net_overrides_with_debugger.js"]
 
@@ -146,10 +143,6 @@ skip-if = [
 ["browser_net_pause.js"]
 
 ["browser_net_persistent_logs.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1661612
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1661612
-]
 
 ["browser_net_post-data-json-payloads.js"]
 
@@ -199,9 +192,6 @@ fail-if = [
 ["browser_net_security-error.js"]
 
 ["browser_net_security-icon-click.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_security-redirect.js"]
 
@@ -218,16 +208,10 @@ fail-if = [
 ["browser_net_send-beacon.js"]
 
 ["browser_net_server_timings.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_service-worker-status.js"]
 
 ["browser_net_service-worker-timings.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_set-cookie-same-site.js"]
 
@@ -263,10 +247,6 @@ skip-if = [
 ["browser_net_stacktraces-visibility.js"]
 
 ["browser_net_statistics-01.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2026850
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2026850
-]
 
 ["browser_net_statistics-02.js"]
 skip-if = [
@@ -274,10 +254,6 @@ skip-if = [
 ]
 
 ["browser_net_statistics-content.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1982005
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1982005
-]
 
 ["browser_net_statistics-edge-case.js"]
 

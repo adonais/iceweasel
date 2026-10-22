@@ -387,7 +387,6 @@ prefs = [
 ["test_wasm_jspi_profiler.js"]
 skip-if = [
   "!nightly_build",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
 ]
 
 ["test_wasm_tailcalls_profiler.js"]

@@ -41,7 +41,7 @@ add_task(async function () {
   );
 
   // Select the websocket request
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
 
   // Test that 'Save Response As' is not in the context menu
   EventUtils.sendMouseEvent({ type: "contextmenu" }, requests[0]);

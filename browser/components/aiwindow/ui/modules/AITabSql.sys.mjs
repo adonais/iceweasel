@@ -24,6 +24,7 @@ export const AITAB_PAGES_TABLE = `
 CREATE TABLE aitab_pages (
   uuid TEXT PRIMARY KEY,
   conv_id TEXT NOT NULL,
+  tool_conv_id TEXT,
   slug TEXT NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,
   title TEXT NOT NULL,
@@ -37,12 +38,21 @@ CREATE TABLE aitab_pages (
 
 export const AITAB_PAGE_INSERT = `
 INSERT INTO aitab_pages (
-  uuid, conv_id, slug, version, title, created_at, updated_at,
+  uuid, conv_id, tool_conv_id, slug, version, title, created_at, updated_at,
   context_jsonb, components_jsonb, localstate_jsonb
 ) VALUES (
-  :uuid, :conv_id, :slug, :version, :title, :created_at, :updated_at,
-  jsonb(:context), jsonb(:components), jsonb(:localstate)
+  :uuid, :conv_id, :tool_conv_id, :slug, :version, :title, :created_at,
+  :updated_at, jsonb(:context), jsonb(:components), jsonb(:localstate)
 );
+`;
+
+// conv_id is NOT NULL and tool_conv_id is nullable because the two are not
+// the same kind of reference: a page cannot exist outside the chat it was
+// requested in, whereas the conversation that composed it is a resource that
+// can be cleared independently (see DELETE_AITAB_PAGES_BY_SLUG) and is absent
+// on rows written before the column existed.
+export const ADD_TOOL_CONV_ID_COLUMN = `
+ALTER TABLE aitab_pages ADD COLUMN tool_conv_id TEXT;
 `;
 
 // Compound index on (slug, version): serves both "latest version for a slug"
@@ -58,14 +68,24 @@ export const AITAB_PAGES_SLUG_VERSION_INDEX = `
 CREATE UNIQUE INDEX idx_aitab_pages_slug_version ON aitab_pages (slug, version);
 `;
 
+// Keyed on slug, to match the UNIQUE index the insert has to satisfy. On
+// conv_id it would number versions per conversation while uniqueness was
+// enforced per slug, so one conversation could only ever hold one page.
 export const GET_NEXT_VERSION = `
 SELECT COALESCE(MAX(version), 0) + 1 AS next_version
 FROM aitab_pages
-WHERE conv_id = :conv_id;
+WHERE slug = :slug;
+`;
+
+// Whether any version already holds a slug, for minting a free one. Uses the
+// (slug, version) index by its leftmost prefix, and EXISTS stops at the first
+// row rather than counting them.
+export const SLUG_EXISTS = `
+SELECT EXISTS (SELECT 1 FROM aitab_pages WHERE slug = :slug) AS taken;
 `;
 
 const AITAB_PAGE_COLUMNS = `
-  uuid, conv_id, slug, version, title, created_at, updated_at,
+  uuid, conv_id, tool_conv_id, slug, version, title, created_at, updated_at,
   json(context_jsonb) AS context,
   json(components_jsonb) AS components,
   json(localstate_jsonb) AS localstate
@@ -103,14 +123,22 @@ WHERE conv_id = :conv_id
 ORDER BY version ASC;
 `;
 
+// Every version of a slug below a given one, so a write can leave just the
+// version it wrote. Uses the (slug, version) index, and cannot reach another
+// tab's rows for the same reason DELETE_AITAB_PAGES_BY_SLUG cannot.
+export const DELETE_AITAB_VERSIONS_BEFORE = `
+DELETE FROM aitab_pages
+WHERE slug = :slug AND version < :version;
+`;
+
 // Keyed on slug so it can use idx_aitab_pages_slug_version; conv_id has no
 // index and would scan the table. UNIQUE on (slug, version) is what makes this
 // safe: a slug cannot be claimed by a second conversation, so every row it
 // matches belongs to the one tab being deleted.
 //
-// The conversation lives in conversation-store.sqlite, a different database
-// file, so no foreign key cascades into it: callers must delete it through
-// ConversationStore as well.
+// The conversation named by tool_conv_id lives in conversation-store.sqlite, a
+// different database file, so no foreign key cascades into it: callers must
+// delete it through ConversationStore as well.
 export const DELETE_AITAB_PAGES_BY_SLUG = `
 DELETE FROM aitab_pages
 WHERE slug = :slug;

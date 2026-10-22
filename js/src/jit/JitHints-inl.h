@@ -23,6 +23,22 @@ inline JitHintsMap::ScriptKey JitHintsMap::getScriptKey(
   return 0;
 }
 
+inline void JitHintsMap::incrementBaselineInterpreterEntryCount() {
+  if (++baselineInterpreterEntryCount_ > BaselineInterpreterMaxEntries) {
+    baselineInterpreterHintMap_.clear();
+    baselineInterpreterEntryCount_ = 0;
+  }
+}
+
+inline void JitHintsMap::addBaselineInterpreterHint(ScriptKey key) {
+  if (baselineInterpreterHintMap_.mightContain(key)) {
+    return;
+  }
+
+  incrementBaselineInterpreterEntryCount();
+  baselineInterpreterHintMap_.add(key);
+}
+
 inline void JitHintsMap::incrementBaselineEntryCount() {
   // Clear the cache if we've exceeded the false positivity rate
   // calculated by MaxEntries.
@@ -37,6 +53,8 @@ inline void JitHintsMap::setEagerBaselineHint(JSScript* script) {
   if (!key) {
     return;
   }
+
+  addBaselineInterpreterHint(key);
 
   // If the entry already exists, don't increment entryCount.
   if (baselineHintMap_.mightContain(key)) {
@@ -55,6 +73,23 @@ inline bool JitHintsMap::mightHaveEagerBaselineHint(JSScript* script) const {
     return baselineHintMap_.mightContain(key);
   }
   script->setNoEagerBaselineHint(true);
+  return false;
+}
+
+inline void JitHintsMap::setEagerBaselineInterpreterHint(JSScript* script) {
+  ScriptKey key = getScriptKey(script);
+  if (!key) {
+    return;
+  }
+
+  addBaselineInterpreterHint(key);
+}
+
+inline bool JitHintsMap::mightHaveEagerBaselineInterpreterHint(
+    JSScript* script) const {
+  if (ScriptKey key = getScriptKey(script)) {
+    return baselineInterpreterHintMap_.mightContain(key);
+  }
   return false;
 }
 

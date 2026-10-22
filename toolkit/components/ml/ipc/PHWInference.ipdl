@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PSpeechRecognition;
+include protocol PTextGeneration;
+include protocol PUtilityProcess;
+
+include TextGenerationTypes;
 
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
 using mozilla::hwinference::ModelInstallResult from "mozilla/hwinference/HWInferenceTypes.h";
@@ -31,6 +35,8 @@ union GetModelFileResult
 [ChildProc=Utility]
 protocol PHWInference
 {
+  manager PUtilityProcess;
+
   parent:
     // id is an abstract, task-defined model id. HWInference looks up the
     // resolver registered for task (contract id
@@ -71,6 +77,14 @@ protocol PHWInference
   child:
     async NewContentSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint,
                                       ContentParentId contentId);
+
+    // The model file is resolved and opened by the parent, the utility never
+    // learns its path.
+    async NewTextGeneration(Endpoint<PTextGenerationChild> endpoint,
+                            FileDescriptor model,
+                            TextGenerationOptions options);
+
+    async __delete__();
 };
 
 } // namespace hwinference

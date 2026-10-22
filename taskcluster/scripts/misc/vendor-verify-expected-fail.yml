@@ -15,7 +15,6 @@ expected-fail:
     dom/media/webrtc/transport/third_party/nICEr/moz.yaml: "TODO bug: re-vendoring fails"
     js/src/irregexp/moz.yaml: "TODO bug: sources differ after re-vendoring"
     media/libvpx/moz.yaml: "TODO bug: sources differ after re-vendoring"
-    modules/xz-embedded/moz.yaml: "TODO bug: re-vendoring fails"
     third_party/libepoxy/moz.yaml: "TODO bug: re-vendoring fails"
     third_party/opentelemetry-cpp/third_party/opentelemetry-proto/moz.yaml: "TODO bug: re-vendoring fails"
     third_party/sqlite3/moz.yaml: "TODO bug: sources differ after re-vendoring"

@@ -179,6 +179,9 @@ add_task(async function run_test() {
     Assert.equal(cookie.value, "good");
   }
 
+  await promise_close_profile();
+  await promise_load_profile();
+
   // Ensure the invalid cookies is gone in the DB.
   await invalidCookiesRemoved;
   {

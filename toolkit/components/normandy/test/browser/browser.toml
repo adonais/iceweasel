@@ -1,23 +1,9 @@
 [DEFAULT]
 tags = "addons"
-support-files = [
-  "action_server.sjs",
-  "addons/normandydriver-a-1.0.xpi",
-  "addons/normandydriver-b-1.0.xpi",
-  "addons/normandydriver-a-2.0.xpi",
-]
-generated-files = [
-  "addons/normandydriver-a-1.0.xpi",
-  "addons/normandydriver-b-1.0.xpi",
-  "addons/normandydriver-a-2.0.xpi",
-]
+support-files = ["action_server.sjs"]
 head = "head.js"
 
 ["browser_ActionsManager.js"]
-
-["browser_AddonRollouts.js"]
-
-["browser_AddonStudies.js"]
 
 ["browser_BaseAction.js"]
 
@@ -40,17 +26,8 @@ skip-if = [
 
 ["browser_NormandyMigrations.js"]
 
-["browser_PreferenceExperiments.js"]
-
-["browser_PreferenceRollouts.js"]
-
 ["browser_RecipeRunner.js"]
 tags = "remote-settings"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1775749
-]
-
-["browser_Storage.js"]
 
 ["browser_about_preferences.js"]
 

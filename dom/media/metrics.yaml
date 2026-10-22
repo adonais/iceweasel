@@ -694,7 +694,7 @@ media:
       - https://bugzil.la/2053586
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 160
+    expires: 170
 
   video_hardware_decoding_support:
     type: labeled_boolean

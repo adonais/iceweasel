@@ -58,6 +58,8 @@ support-files = [
   "browser_dragdrop_outer.html",
 ]
 
+["browser_dragsession_end_without_dragend.js"]
+
 ["browser_dragimage.js"]
 support-files = [
   "dragimage.html",

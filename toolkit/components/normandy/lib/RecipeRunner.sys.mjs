@@ -27,7 +27,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   RemoteSettingsClient:
     "resource://services-settings/RemoteSettingsClient.sys.mjs",
-  Storage: "resource://normandy/lib/Storage.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -558,7 +557,6 @@ export var RecipeRunner = {
     Services.prefs.setCharPref(API_URL_PREF, baseApiUrl);
 
     try {
-      lazy.Storage.clearAllStorage();
       this.clearCaches();
       await this.run();
     } finally {

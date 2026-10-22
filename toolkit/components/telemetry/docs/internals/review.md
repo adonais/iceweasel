@@ -44,7 +44,7 @@ Besides the basic considerations above, these are additional detailed considerat
 
   - Firefox Desktop:
 
-    - {ref}`The Mozilla coding style <Coding style>`
+    - {doc}`The Mozilla coding style </code-quality/coding-style/index>`
     - [The toolkit code review guidelines](https://wiki.mozilla.org/Toolkit/Code_Review)
 
   - Mobile:
@@ -74,7 +74,7 @@ Besides the basic considerations above, these are additional detailed considerat
 
 - Does this need documentation updates?
 
-  - To the {ref}`in-tree docs <Telemetry>`?
+  - To the {doc}`in-tree docs </toolkit/components/telemetry/index>`?
   - To the [firefox-data-docs](https://docs.telemetry.mozilla.org/) ([repository](https://github.com/mozilla/firefox-data-docs))?
   - To the [glean documentation](https://mozilla.github.io/glean/dev/)?
 

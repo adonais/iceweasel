@@ -5,6 +5,9 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
@@ -12,8 +15,11 @@ import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import org.hamcrest.CoreMatchers
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.TAG
+import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.click
+import org.mozilla.fenix.settings.account.AccountSettingsTestTag
 
 /** Implementation of Robot Pattern for the URL toolbar. */
 class AccountSettingsRobot {
@@ -43,13 +49,23 @@ class AccountSettingsRobot {
 
     class Transition {
 
-        fun disconnectAccount(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
+        fun disconnectAccount(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsRobot.() -> Unit,
+        ): SettingsRobot.Transition {
             Log.i(TAG, "disconnectAccount: Trying to click the \"Sign out\" button")
             signOutButton().click()
             Log.i(TAG, "disconnectAccount: Clicked the \"Sign out\" button")
-            Log.i(TAG, "disconnectAccount: Trying to click the \"Disconnect\" button")
-            disconnectButton().click()
-            Log.i(TAG, "disconnectAccount: Clicked the \"Disconnect\" button")
+
+            if (TestHelper.appContext.components.settings.accountSettingsNewUi) {
+                Log.i(TAG, "disconnectAccount: Trying to click the \"Sign out\" button")
+                composeTestRule.onNodeWithTag(AccountSettingsTestTag.SIGN_OUT_DIALOG_CONFIRM_BUTTON).performClick()
+                Log.i(TAG, "disconnectAccount: Clicked the \"Sign out\" button")
+            } else {
+                Log.i(TAG, "disconnectAccount: Trying to click the \"Disconnect\" button")
+                disconnectButton().click()
+                Log.i(TAG, "disconnectAccount: Clicked the \"Disconnect\" button")
+            }
 
             SettingsRobot().interact()
             return SettingsRobot.Transition()

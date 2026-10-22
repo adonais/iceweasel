@@ -40,4 +40,4 @@ not decremented.
 
 ## See Also
 
-{ref}`PL_HashTableEnumerateEntries`
+{doc}`pl_hashtableenumerateentries`

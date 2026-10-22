@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
 
 const lazy = {};
@@ -15,6 +17,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 export const SYSTEM_TICK_INTERVAL = 5 * 60 * 1000;
 
 export class SystemTickFeed {
+  /** @type {Store} */
+  store = null;
+
   init() {
     this._idleService = Cc["@mozilla.org/widget/useridleservice;1"].getService(
       Ci.nsIUserIdleService

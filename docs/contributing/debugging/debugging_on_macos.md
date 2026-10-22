@@ -2,9 +2,9 @@
 
 This document explains how to debug Gecko-based applications such as
 Firefox, Thunderbird, and SeaMonkey on macOS using Xcode. If you want to
-debug from the terminal see {ref}`Debugging Mozilla with
-lldb <Debugging Firefox with LLDB>`. For specific
-information on a way to debug hangs, see {ref}`Debugging a hang on macOS <Debugging A Hang On macOS>`.
+debug from the terminal see {doc}`Debugging Mozilla with
+lldb <debugging_firefox_with_lldb>`. For specific
+information on a way to debug hangs, see {doc}`Debugging a hang on macOS <debugging_a_hang_on_macos>`.
 
 ## Creating a debuggable build
 
@@ -22,7 +22,7 @@ you can also add this flag if you want assertions etc. compiled in
 ac_add_options --enable-debug
 ```
 
-See {ref}`Building Firefox for macOS <Building Firefox On MacOS>`
+See {doc}`Building Firefox for macOS </setup/macos_build>`
 if you need help creating your own build.
 
 ## Debugging Firefox on macOS 10.14+
@@ -47,8 +47,8 @@ builds. The differences are explained below.**
 ### try Server Builds
 
 In most cases, developers needing to debug a build as close as possible
-to the production environment should use a {ref}`try
-build <Pushing to Try>`. These
+to the production environment should use a {doc}`try
+build </tools/try/index>`. These
 builds enable Hardened Runtime and only differ from production builds in
 that they are not Notarized which should not otherwise affect
 functionality, (other than the ability to easily launch the browser on
@@ -181,8 +181,8 @@ default some breakpoints will be listed as "pending", and Xcode will
 not stop at them. If you don't include the Mozilla's .lldbinit, you
 must at least put
 `settings set target.inline-breakpoint-strategy always` in your
-`$HOME/.lldbinit` as recommended on {ref}`Debugging Firefox with
-lldb <Debugging Firefox with LLDB>`.
+`$HOME/.lldbinit` as recommended on {doc}`Debugging Firefox with
+lldb <debugging_firefox_with_lldb>`.
 :::
 
 The
@@ -256,8 +256,8 @@ breakpoint command add -s python
 DONE
 ```
 
-see {ref}`Debugging Mozilla with
-lldb <Debugging Firefox with LLDB>`. for more information.
+see {doc}`Debugging Mozilla with
+lldb <debugging_firefox_with_lldb>`. for more information.
 
 ## Having a profile for debugging purposes
 
@@ -292,8 +292,8 @@ Note that with the default configuration, some breakpoints will be
 listed as "pending", and Xcode will not stop at them. If you don't
 include the Mozilla's .lldbinit, you must at least put
 `settings set target.inline-breakpoint-strategy always` in your
-`$HOME/.lldbinit` as recommended on {ref}`Debugging Mozilla with
-lldb <Debugging Firefox with LLDB>`.
+`$HOME/.lldbinit` as recommended on {doc}`Debugging Mozilla with
+lldb <debugging_firefox_with_lldb>`.
 :::
 
 ### Using Firefox-specific lldb commands
@@ -301,8 +301,8 @@ lldb <Debugging Firefox with LLDB>`.
 If you included the .lldbinit when [Setting up
 lldb](#setting-up-lldb), you can use Mozilla-specific lldb commands
 in the console, located in the Debug area of Xcode. For example, type
-`js` to see the JavaScript stack. For more information, see {ref}`Debugging
-Mozilla with lldb <Debugging Firefox with LLDB>`.
+`js` to see the JavaScript stack. For more information, see {doc}`Debugging
+Mozilla with lldb <debugging_firefox_with_lldb>`.
 
 ### Debugging e10s child processes
 
@@ -338,8 +338,8 @@ Now you're ready to start debugging:
 4. When you are done debugging, click the "Stop" button and quit the
    instance of Firefox that you were debugging in the normal way.
 
-For some help on using lldb see {ref}`Debugging Mozilla with
-lldb <Debugging Firefox with LLDB>`.
+For some help on using lldb see {doc}`Debugging Mozilla with
+lldb <debugging_firefox_with_lldb>`.
 
 ## Other resources
 

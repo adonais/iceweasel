@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Opt the root out of the view transition, so that only #captured is
+     captured and the sticky element outside it is built normally. */
+  :root { view-transition-name: none; }
+  body { margin: 0; height: 400vh; }
+  .sticky { position: sticky; top: 0; }
+  #captured { view-transition-name: cap; height: 150px; }
+  /* Keep the transition running for several paints. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 1s;
+  }
+</style>
+</head>
+<body>
+  <div class="sticky">outside the capture</div>
+  <div id="captured">
+    <div class="sticky">inside the capture</div>
+  </div>
+  <script>
+    function done() {
+      document.documentElement.classList.remove("reftest-wait");
+    }
+
+    requestAnimationFrame(() => {
+      if (!document.startViewTransition) {
+        done();
+        return;
+      }
+      const transition = document.startViewTransition(() => {
+        document.getElementById("captured").style.background = "cyan";
+      });
+      transition.finished.then(done, done);
+    });
+  </script>
+</body>
+</html>

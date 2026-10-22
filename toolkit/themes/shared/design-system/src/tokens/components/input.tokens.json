@@ -1,50 +1,88 @@
 {
-  "border": {
+  "background": {
     "color": {
-      "value": "{border.color.interactive.@base}"
+      "@base": {
+        "value": {
+          "nativeTheme": "Field",
+          "platform": {
+            "light": "{color.white.@base}",
+            "dark": "#42414d"
+          },
+          "nova": {
+            "comment": "The token name needs to be updated in Figma",
+            "value": {
+              "nativeTheme": "Field",
+              "default": "{background.color.box.@base}"
+            }
+          }
+        }
+      },
+      "disabled": {
+        "value": {
+          "default": "{button.background.color.disabled}",
+          "nova": {
+            "comment": "The token name needs to be updated in Figma",
+            "value": "{button.background.color.ghost.disabled}"
+          }
+        }
+      }
     }
   },
-  "folder": {
-    "gap": {
-      "value": "{space.medium}"
+  "border": {
+    "@base": {
+      "value": "{border.width} solid {input.border.color.@base}"
+    },
+    "color": {
+      "@base": {
+        "value": "{border.color.interactive.@base}"
+      },
+      "disabled": {
+        "value": "{border.color.interactive.disabled}"
+      }
+    },
+    "radius": {
+      "value": "{border.radius.medium}"
     }
   },
   "height": {
     "value": "{size.item.small}"
   },
-  "text": {
-    "background": {
-      "color": {
-        "@base": {
-          "value": {
-            "nativeTheme": "Field",
-            "platform": {
-              "light": "{color.white.@base}",
-              "dark": "#42414d"
-            }
-          }
-        },
-        "disabled": {
-          "value": "{button.background.color.disabled}"
-        }
-      }
-    },
+  "icon": {
+    "size": {
+      "value": "{icon.size.xsmall}"
+    }
+  },
+  "min-height": {
+    "value": "{button.min-height.@base}"
+  },
+  "opacity": {
+    "disabled": {
+      "value": "{button.opacity.disabled}"
+    }
+  },
+  "search": {
     "border": {
-      "@base": {
-        "value": "{border.width} solid {input.text.border.color.@base}"
-      },
-      "color": {
-        "@base": {
-          "value": "{border.color.@base}"
-        },
-        "disabled": {
-          "value": "{border.color.interactive.disabled}"
-        }
-      },
       "radius": {
-        "value": "{border.radius.medium}"
+        "value": {
+          "default": "{input.border.radius}",
+          "nova": {
+            "value": "{border.radius.circle}"
+          }
+        }
       }
     },
+    "icon": {
+      "size": {
+        "value": {
+          "default": "{input.icon.size}",
+          "nova": {
+            "value": "{icon.size.small}"
+          }
+        }
+      }
+    }
+  },
+  "text": {
     "color": {
       "@base": {
         "value": {
@@ -63,36 +101,6 @@
           "default": "{input.text.color.@base}",
           "forcedColors": "GrayText"
         }
-      }
-    },
-    "icon": {
-      "size": {
-        "value": "{icon.size.xsmall}"
-      }
-    },
-    "min-height": {
-      "value": "{button.min-height.@base}"
-    },
-    "opacity": {
-      "disabled": {
-        "value": "{button.opacity.disabled}"
-      }
-    }
-  },
-  "search": {
-    "border": {
-      "radius": {
-        "value": {
-          "default": "{input.text.border.radius}",
-          "nova": {
-            "value": "{border.radius.circle}"
-          }
-        }
-      }
-    },
-    "icon": {
-      "size": {
-        "value": "{input.text.icon.size}"
       }
     }
   },

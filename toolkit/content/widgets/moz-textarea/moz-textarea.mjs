@@ -2,8 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-textarea.tagmap.d.ts" />
+
 import { html, ifDefined } from "../vendor/lit.all.mjs";
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 /**
  * A textarea custom element.
@@ -24,7 +26,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} title - The title attribute, mapped onto the inner textarea.
  * @property {number} rows - The number of visible text rows.
  */
-export default class MozTextarea extends MozInputText {
+export class MozTextarea extends MozInputText {
   static properties = {
     ...MozInputText.properties,
     rows: { type: Number, reflect: true },

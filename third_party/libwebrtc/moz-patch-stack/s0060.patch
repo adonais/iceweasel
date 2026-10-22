@@ -1,36 +1,23 @@
 From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Thu, 6 Jan 2022 00:16:00 +0000
-Subject: Bug 1748458 - Add TRACE_EVENT for keyframe requests. r=bwc
+Date: Wed, 11 Jan 2023 22:42:00 +0000
+Subject: Bug 1800942 - Add DCHECKs to
+ TimestampExtrapolator::ExtrapolateLocalTime. r=mjf
 
-Differential Revision: https://phabricator.services.mozilla.com/D135113
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/5b2a7894ef1cf096d0e8977754507c0820e757fc
+Differential Revision: https://phabricator.services.mozilla.com/D166536
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c5df7f40392464ffc63f44a53ddcaab2091741e0
 ---
- video/rtp_video_stream_receiver2.cc | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ video/timing/timestamp_extrapolator.cc | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index e7b44cdc44..da901c037c 100644
---- a/video/rtp_video_stream_receiver2.cc
-+++ b/video/rtp_video_stream_receiver2.cc
-@@ -876,6 +876,12 @@ void RtpVideoStreamReceiver2::OnRtpPacket(const RtpPacketReceived& packet) {
+diff --git a/video/timing/timestamp_extrapolator.cc b/video/timing/timestamp_extrapolator.cc
+index 192bbde978..5e91f7fe98 100644
+--- a/video/timing/timestamp_extrapolator.cc
++++ b/video/timing/timestamp_extrapolator.cc
+@@ -268,6 +268,7 @@ void TimestampExtrapolator::Update(Timestamp now, uint32_t ts90khz) {
+ std::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
+     uint32_t timestamp90khz) const {
+   int64_t unwrapped_ts90khz = unwrapper_.PeekUnwrap(timestamp90khz);
++  RTC_DCHECK_GE(unwrapped_ts90khz, 0);
  
- void RtpVideoStreamReceiver2::RequestKeyFrame() {
-   RTC_DCHECK_RUN_ON(worker_queue_);
-+  TRACE_EVENT2("webrtc", "RtpVideoStreamReceiver2::RequestKeyFrame",
-+               "remote_ssrc", config_.rtp.remote_ssrc, "method",
-+               keyframe_request_method_ == KeyFrameReqMethod::kPliRtcp   ? "PLI"
-+               : keyframe_request_method_ == KeyFrameReqMethod::kFirRtcp ? "FIR"
-+               : keyframe_request_method_ == KeyFrameReqMethod::kNone ? "None"
-+                                                                      : "Other");
-   // TODO(bugs.webrtc.org/10336): Allow the sender to ignore key frame requests
-   // issued by anything other than the LossNotificationController if it (the
-   // sender) is relying on LNTF alone.
-@@ -1227,7 +1233,7 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
- void RtpVideoStreamReceiver2::RemoteRTCPSenderInfo(
-     uint32_t* packet_count, uint32_t* octet_count,
-     int64_t* ntp_timestamp_ms, int64_t* remote_ntp_timestamp_ms) const {
--  RTC_DCHECK_RUN_ON(&worker_task_checker_);
-+  RTC_DCHECK_RUN_ON(worker_queue_);
-   rtp_rtcp_->RemoteRTCPSenderInfo(packet_count, octet_count, ntp_timestamp_ms,
-                                   remote_ntp_timestamp_ms);
- }
+   if (!first_unwrapped_timestamp_) {
+     return std::nullopt;

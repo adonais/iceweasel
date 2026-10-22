@@ -1630,8 +1630,8 @@ void MediaCapabilities::CreateWebRTCEncodingInfo(
       })
       ->Then(
           targetThread, __func__,
-          [encodePromise = RefPtr(aPromise), workerRef, holder,
-           aConfiguration](MediaCapabilitiesInfo aInfo) {
+          [encodePromise = RefPtr(aPromise), workerRef,
+           holder](MediaCapabilitiesInfo aInfo) {
             holder->Complete();
             nsIGlobalObject* global = holder->GetParentObject();
             NS_ENSURE_TRUE_VOID(global);

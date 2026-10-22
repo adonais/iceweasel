@@ -9,6 +9,17 @@
  * @typedef {import("../content/Utils.sys.mjs").ProgressAndStatusCallbackParams} ProgressAndStatusCallbackParams
  */
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    TextGenerationEngine:
+      "moz-src:///toolkit/components/ml/textgeneration/TextGenerationEngine.sys.mjs",
+  },
+  { global: "contextual" }
+);
+
 /**
  * @constant
  * @type {string}
@@ -241,6 +252,11 @@ export const FEATURES = {
   },
   // see browser/components/aiwindow/models/search/SearchAgent.sys.mjs
   "search-answer-generation": {
+    engineId: "smart-openai",
+  },
+  // Exa /answers service.
+  // see browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs
+  "search-answers": {
     engineId: "smart-openai",
   },
   aitab: {
@@ -608,14 +624,14 @@ export class PipelineOptions {
    *
    * @type {?number}
    */
-  numBatch = 1024;
+  numBatch = 2048;
 
   /**
    * Token batch size
    *
    * @type {?number}
    */
-  numUbatch = 1024;
+  numUbatch = 512;
 
   /**
    * Whether to use flash attention
@@ -1386,6 +1402,13 @@ export async function createEngine(
 ) {
   try {
     const pipelineOptions = new PipelineOptions(options);
+    if (lazy.TextGenerationEngine.shouldRoute(pipelineOptions)) {
+      return lazy.TextGenerationEngine.create(
+        pipelineOptions,
+        notificationsCallback,
+        abortSignal
+      );
+    }
     const engineParent = await EngineProcess.getMLEngineParent();
     return engineParent.getEngine({
       pipelineOptions,

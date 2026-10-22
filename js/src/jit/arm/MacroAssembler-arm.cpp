@@ -2613,8 +2613,8 @@ Assembler::Condition MacroAssemblerARMCompat::testMagic(
 Assembler::Condition MacroAssemblerARMCompat::testPrimitive(
     Assembler::Condition cond, Register tag) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_cmp(tag, ImmTag(JS::detail::ValueUpperExclPrimitiveTag));
-  return cond == Equal ? Below : AboveOrEqual;
+  ma_cmp(tag, ImmTag(JSVAL_TAG_OBJECT));
+  return cond == Equal ? NotEqual : Equal;
 }
 
 Assembler::Condition MacroAssemblerARMCompat::testGCThing(

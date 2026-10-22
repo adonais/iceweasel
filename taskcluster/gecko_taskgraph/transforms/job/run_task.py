@@ -154,6 +154,10 @@ def docker_worker_run_task(config, job, taskdesc):
     command = [f"/builds/worker/bin/{run_task_bin}"]
     common_setup(config, job, taskdesc, command)
 
+    worker.setdefault("env", {}).setdefault(
+        "RUN_TASK_PRE_COMMAND_HOOK", "/builds/worker/bin/run-task-setup.py"
+    )
+
     if run["tooltool-downloads"]:
         internal = run["tooltool-downloads"] == "internal"
         add_tooltool(config, job, taskdesc, internal=internal)
@@ -225,6 +229,16 @@ def generic_worker_run_task(config, job, taskdesc):
             },
             "file": "./robustcheckout.py",
         })
+
+    worker["mounts"].append({
+        "content": {
+            "url": script_url(config, "run-task-setup.py"),
+        },
+        "file": "./run-task-setup.py",
+    })
+    worker.setdefault("env", {}).setdefault(
+        "RUN_TASK_PRE_COMMAND_HOOK", "./run-task-setup.py"
+    )
 
     run_command = run["command"]
 

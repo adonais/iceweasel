@@ -678,6 +678,8 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "logins"))
         uniffiCheckContractApiVersion(this)
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_logins_checksum_func_create_login_store_with_static_key_manager(
     ): Int
     external fun uniffi_logins_checksum_func_create_managed_encdec(
@@ -731,6 +733,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_logins_checksum_method_loginstore_list(
     ): Int
     external fun uniffi_logins_checksum_method_loginstore_list_candidates(
+    ): Int
+    external fun uniffi_logins_checksum_method_loginstore_list_candidates_by_origin(
     ): Int
     external fun uniffi_logins_checksum_method_loginstore_record_breach_alert_dismissal(
     ): Int
@@ -801,6 +805,8 @@ internal object UniffiLib {
         mozilla.appservices.db_crypto.uniffiEnsureInitialized()
         
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_logins_fn_clone_loginstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_logins_fn_free_loginstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -854,6 +860,8 @@ internal object UniffiLib {
     external fun uniffi_logins_fn_method_loginstore_list(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_logins_fn_method_loginstore_list_candidates(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_logins_fn_method_loginstore_list_candidates_by_origin(`ptr`: Long,`origins`: RustBuffer.ByValue,`domains`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal(`ptr`: Long,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1035,10 +1043,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    IntegrityCheckingUniffiLib
-    // UniffiLib() initialized as objects are used, but we still need to explicitly
-    // reference it so initialization across crates works as expected.
-    UniffiLib
+    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
+    // their init blocks run. This ensures initialization across crates works as expected.
+    IntegrityCheckingUniffiLib.ensureInitialized()
+    UniffiLib.ensureInitialized()
 }
 
 // Async support
@@ -1499,6 +1507,15 @@ public interface LoginStoreInterface {
      * key. Resolve the ids you're interested in with `get_many()`.
      */
     fun `listCandidates`(): List<LoginCandidate>
+    
+    /**
+     * Like `list_candidates()`, but only the logins whose origin is one of `origins`, or whose
+     * host is one of `domains` or a subdomain of one. Meant as a pre-filter for consumers with
+     * their own origin matching: the result is a superset of what they match, as long as
+     * `domains` holds the base domain (eTLD+1, which the caller computes) of every host they
+     * accept subdomains of.
+     */
+    fun `listCandidatesByOrigin`(`origins`: List<kotlin.String>, `domains`: List<kotlin.String>): List<LoginCandidate>
     
     /**
      * Stores that the user dismissed the breach alert for a login.
@@ -2064,6 +2081,29 @@ open class LoginStore: Disposable, AutoCloseable, LoginStoreInterface
     UniffiLib.uniffi_logins_fn_method_loginstore_list_candidates(
         it,
         _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Like `list_candidates()`, but only the logins whose origin is one of `origins`, or whose
+     * host is one of `domains` or a subdomain of one. Meant as a pre-filter for consumers with
+     * their own origin matching: the result is a superset of what they match, as long as
+     * `domains` holds the base domain (eTLD+1, which the caller computes) of every host they
+     * accept subdomains of.
+     */
+    @Throws(LoginsApiException::class)override fun `listCandidatesByOrigin`(`origins`: List<kotlin.String>, `domains`: List<kotlin.String>): List<LoginCandidate> {
+            return FfiConverterSequenceTypeLoginCandidate.lift(
+    callWithHandle {
+    uniffiRustCallWithError(LoginsApiException) { _status ->
+    UniffiLib.uniffi_logins_fn_method_loginstore_list_candidates_by_origin(
+        it,
+        
+        FfiConverterSequenceString.lower(`origins`),
+        FfiConverterSequenceString.lower(`domains`),_status)
 }
     }
     )

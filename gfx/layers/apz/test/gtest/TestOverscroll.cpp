@@ -1322,7 +1322,7 @@ TEST_F(APZCOverscrollTester, OverscrollByPanGesturesInterruptedByReflowZoom) {
                            ScreenIntPoint(5, 5), ScreenPoint(0, -2),
                            MODIFIER_CONTROL);
   WidgetWheelEvent wheelEvent = panInput.ToWidgetEvent(nullptr);
-  EXPECT_FALSE(APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome());
+  EXPECT_FALSE(APZBridge::ActionForWheelEvent(&wheelEvent).isSome());
 
   ScrollableLayerGuid rootGuid = CreateSimpleRootScrollableForWebRender();
   RefPtr<AsyncPanZoomController> apzc =

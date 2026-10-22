@@ -543,6 +543,9 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
   Vector& operator=(Vector&&); /* Move assignment. */
   ~Vector();
 
+  Vector(const Vector&) = delete;
+  void operator=(const Vector&) = delete;
+
   /* accessors */
 
   const AllocPolicy& allocPolicy() const { return *this; }
@@ -953,10 +956,6 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
       aTraceFunc(&mBegin);
     }
   }
-
- private:
-  Vector(const Vector&) = delete;
-  void operator=(const Vector&) = delete;
 };
 
 /* This does the re-entrancy check plus several other sanity checks. */

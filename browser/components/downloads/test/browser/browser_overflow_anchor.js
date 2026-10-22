@@ -29,8 +29,19 @@ add_task(async function test_overflow_anchor() {
 
   await gCustomizeMode.addToPanel(button.node);
 
+  let overflowPanel = document.getElementById("widget-overflow");
+  let overflowShown = BrowserTestUtils.waitForPopupEvent(
+    overflowPanel,
+    "shown"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    document.getElementById("nav-bar-overflow-button"),
+    {}
+  );
+  await overflowShown;
+
   let promise = promisePanelOpened();
-  EventUtils.sendMouseEvent({ type: "mousedown", button: 0 }, button.node);
+  EventUtils.synthesizeMouseAtCenter(button.node, {});
   info("waiting for panel to open");
   await promise;
 
@@ -49,7 +60,7 @@ add_task(async function test_overflow_anchor() {
 
   // Now try opening the panel again.
   promise = promisePanelOpened();
-  EventUtils.sendMouseEvent({ type: "mousedown", button: 0 }, button.node);
+  EventUtils.synthesizeMouseAtCenter(button.node, {});
   await promise;
 
   let downloadsAnchor = button.node.badgeStack;

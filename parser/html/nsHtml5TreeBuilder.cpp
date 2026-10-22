@@ -3638,6 +3638,7 @@ bool nsHtml5TreeBuilder::adoptionAgencyEndTag(nsAtom* name) {
     int32_t bookmark = formattingEltListPos;
     int32_t nodePos = furthestBlockPos;
     nsHtml5StackNode* lastNode = furthestBlock;
+    sanitizerDeferRedirect(furthestBlock->node);
     int32_t j = 0;
     for (;;) {
       ++j;
@@ -3683,7 +3684,8 @@ bool nsHtml5TreeBuilder::adoptionAgencyEndTag(nsAtom* name) {
       node->release(this);
       node->release(this);
       node = newNode;
-      if (!sanitizerRedirectsClone(node->node, insertionCommonAncestor)) {
+      if (!sanitizerRedirectsClone(node->node)) {
+        sanitizerRedirectPending(node->node);
         detachFromParent(lastNode->node);
         appendElement(lastNode->node, nodeFromStackWithBlinkCompat(nodePos));
         lastNode = node;
@@ -3691,10 +3693,9 @@ bool nsHtml5TreeBuilder::adoptionAgencyEndTag(nsAtom* name) {
     }
     if (commonAncestor->isFosterParenting()) {
       detachFromParent(lastNode->node);
-      insertIntoFosterParent(lastNode->node, furthestBlock->node);
+      insertIntoFosterParent(lastNode->node);
     } else {
-      sanitizerRedirectFurthestBlock(furthestBlock->node,
-                                     insertionCommonAncestor);
+      sanitizerRedirectPending(insertionCommonAncestor);
       detachFromParent(lastNode->node);
       appendElement(lastNode->node, insertionCommonAncestor);
     }
@@ -3714,6 +3715,7 @@ bool nsHtml5TreeBuilder::adoptionAgencyEndTag(nsAtom* name) {
     MOZ_ASSERT(formattingEltStackPos < furthestBlockPos);
     removeFromStack(formattingEltStackPos);
     insertIntoStack(formattingClone, furthestBlockPos);
+    sanitizerRedirectBelowFormattingClone(furthestBlockPos);
   }
   return true;
 }
@@ -3950,18 +3952,16 @@ nsHtml5StackNode* nsHtml5TreeBuilder::createStackNode(
   return instance;
 }
 
-void nsHtml5TreeBuilder::insertIntoFosterParent(
-    nsIContentHandle* child, nsIContentHandle* furthestBlock) {
+void nsHtml5TreeBuilder::insertIntoFosterParent(nsIContentHandle* child) {
   int32_t tablePos = findLastOrRoot(nsHtml5TreeBuilder::TABLE);
   int32_t templatePos = findLastOrRoot(nsHtml5TreeBuilder::TEMPLATE);
   if (templatePos >= tablePos) {
-    sanitizerRedirectFurthestBlock(furthestBlock, stack[templatePos]->node);
+    sanitizerRedirectPending(stack[templatePos]->node);
     appendElement(child, stack[templatePos]->node);
     return;
   }
   nsHtml5StackNode* node = stack[tablePos];
-  sanitizerRedirectFurthestBlockToFosterParent(furthestBlock, node->node,
-                                               stack[tablePos - 1]->node);
+  sanitizerRedirectPendingToFosterParent(node->node, stack[tablePos - 1]->node);
   insertFosterParentedChild(child, node->node, stack[tablePos - 1]->node);
 }
 

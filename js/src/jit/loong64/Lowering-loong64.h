@@ -87,6 +87,11 @@ class LIRGeneratorLOONG64 : public LIRGeneratorShared {
 
   void lowerAtomicLoad64(MLoadUnboxedScalar* ins);
   void lowerAtomicStore64(MStoreUnboxedScalar* ins);
+
+#ifdef ENABLE_JIT_SIMD
+  bool canFoldReduceSimd128AndBranch(wasm::SimdOp op);
+  bool canEmitWasmReduceSimd128AtUses(MWasmReduceSimd128* ins);
+#endif
 };
 
 typedef LIRGeneratorLOONG64 LIRGeneratorSpecific;

@@ -67,9 +67,10 @@ var SessionMigrationInternal = {
             groupToSave.removeAfterRestore = true;
             groupsToSave.set(groupStateToSave.id, groupToSave);
           }
-          groupToSave.tabs.push(
-            lazy.SessionStore.formatTabStateForSavedGroup(tab)
-          );
+          let tabData = lazy.SessionStore.formatTabStateForSavedGroup(tab);
+          if (tabData) {
+            groupToSave.tabs.push(tabData);
+          }
         }
         return tab;
       });

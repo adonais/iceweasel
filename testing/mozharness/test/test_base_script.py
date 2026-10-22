@@ -1,4 +1,5 @@
 import gc
+import json
 import os
 import re
 import shutil
@@ -199,6 +200,38 @@ class TestScript(unittest.TestCase):
         self.assertEqual(self.tmpdir, os.getcwd(), msg="chdir error")
         self.s.chdir(cwd)
 
+    def test_run_perfherder_extra_options(self):
+        class Script(script.BaseScript):
+            def ran(self):
+                pass
+
+            def skipped(self):
+                pass
+
+        self.s = Script(
+            config={"log_type": "multi"},
+            initial_config_file="test/test.json",
+            all_actions=["ran", "skipped"],
+            default_actions=["ran"],
+        )
+        upload_dir = os.path.join(self.tmpdir, "upload")
+        env = {
+            "MOZ_AUTOMATION": "1",
+            "UPLOAD_DIR": upload_dir,
+            "PERFHERDER_EXTRA_OPTIONS": "mochitest-plain xorig",
+        }
+        with mock.patch.dict(os.environ, env):
+            self.s.run()
+        with open(
+            os.path.join(upload_dir, "perfherder-data-mozharness-actions.json")
+        ) as fh:
+            data = json.load(fh)
+        self.assertEqual(data["framework"], {"name": "mozharness"})
+        self.assertEqual([suite["name"] for suite in data["suites"]], ["ran"])
+        self.assertEqual(
+            data["suites"][0]["extraOptions"], ["mochitest-plain", "xorig"]
+        )
+
     def test_chdir_relative(self):
         subdir = os.path.join(self.tmpdir, "subdir")
         os.mkdir(subdir)
@@ -327,11 +360,12 @@ class TestScript(unittest.TestCase):
 
         # Test for invalid filenames (Windows only)
         if PYWIN32:
-            with self.assertRaises(IOError):
-                self.s.download_unpack(
-                    url=os.path.join(archives_path, "archive_invalid_filename.zip"),
-                    extract_to=self.tmpdir,
-                )
+            self.s.download_unpack(
+                url=os.path.join(archives_path, "archive_invalid_filename.zip"),
+                extract_to=self.tmpdir,
+            )
+            self.assertTrue(os.path.exists(os.path.join(self.tmpdir, "_^_$.txt")))
+            shutil.rmtree(self.tmpdir)
 
         for archive in (
             "archive-setuid.tar",

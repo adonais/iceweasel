@@ -19,6 +19,7 @@
 #  include "nsDebug.h"
 #  include "nsString.h"
 #  include "nsXULAppAPI.h"
+#  include "nsCharSeparatedTokenizer.h"
 
 #  if defined(LINUX)
 #    include <sys/time.h>

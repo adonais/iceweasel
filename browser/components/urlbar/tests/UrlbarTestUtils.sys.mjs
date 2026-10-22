@@ -1271,6 +1271,7 @@ export class UrlbarInputBaseTestUtils {
     // urlbar's actual search mode object.
     let ignoreProperties = [
       "icon",
+      "keyId",
       "pref",
       "restrict",
       "telemetryLabel",
@@ -1697,21 +1698,33 @@ export class UrlbarInputBaseTestUtils {
   }
 
   /**
-   * Enrolls in a mock Nimbus feature.
+   * Enrolls in a mock Nimbus experiment or rollout.
    *
-   * @param {object} value
+   * @param {?object} value
    *   Define any desired Nimbus variables in this object.
-   * @param {string} [feature]
-   *   The feature to init.
-   * @param {string} [enrollmentType]
-   *   The enrollment type, either "rollout" (default) or "config".
-   * @returns {Promise<() => Promise<void>>}
-   *   A cleanup function that will unenroll the feature, returns a promise.
+   * @param {?object} options
+   * @param {?string} options.featureId
+   *   The name of the Nimbus feature.
+   * @param {?boolean} options.isRollout
+   *   True to use a rollout, false to use an experiment.
+   * @param {?string} options.slug
+   *   The experiment/rollout name. `NimbusTestUtils` will generate a name if
+   *   this isn't specified.
+   * @param {?string} options.branch
+   *   The experiment/rollout branch to enroll in. `NimbusTestUtils` will
+   *   generate a branch if this isn't specified.
+   * @returns {Function}
+   *   A cleanup function that should be called to unenroll and remove the
+   *   experiment/rollout.
    */
   async initNimbusFeature(
     value = {},
-    feature = "urlbar",
-    enrollmentType = "rollout"
+    {
+      featureId = "urlbar",
+      isRollout = true,
+      slug = undefined,
+      branchSlug = undefined,
+    } = {}
   ) {
     this.info("initNimbusFeature awaiting ExperimentAPI.init");
     const initializedExperimentAPI = await lazy.ExperimentAPI.init();
@@ -1725,11 +1738,13 @@ export class UrlbarInputBaseTestUtils {
     const doExperimentCleanup =
       await lazy.NimbusTestUtils.enrollWithFeatureConfig(
         {
-          featureId: lazy.NimbusFeatures[feature].featureId,
           value,
+          featureId: lazy.NimbusFeatures[featureId].featureId,
         },
         {
-          isRollout: enrollmentType === "rollout",
+          branchSlug,
+          isRollout,
+          slug,
         }
       );
 

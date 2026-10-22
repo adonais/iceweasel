@@ -25,6 +25,7 @@
 #include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/internal_types.h"
 #include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/service_resolver.h"
 #include "sandbox/win/src/target_interceptions.h"
 #include "sandbox/win/src/target_process.h"
@@ -194,6 +195,24 @@ size_t InterceptionManager::GetBufferSize() const {
   return buffer_bytes;
 }
 
+void InterceptionManager::ReserveBaseIfUnpatchable(const std::wstring& dll,
+                                                   size_t num_functions) {
+  // Modules will be mapped in the same position in every process, so we use
+  // where ours are mapped to predict patching issues.
+  HMODULE module = ::GetModuleHandleW(dll.c_str());
+  if (!module) {
+    return;
+  }
+
+  if (CanAllocateNearTo(module, GetDllInterceptionDataSize(num_functions))) {
+    return;
+  }
+
+  // Reserve a byte to make the loader relocate it to where it can be patched.
+  (void)::VirtualAllocEx(child_->Process(), module, 1, MEM_RESERVE,
+                         PAGE_NOACCESS);
+}
+
 // Basically, walk the list of interceptions moving them to the config buffer,
 // but keeping together all interceptions that belong to the same dll.
 // The config buffer is a local buffer, not the one allocated on the child.
@@ -240,6 +259,12 @@ bool InterceptionManager::SetupConfigBuffer(void* buffer, size_t buffer_bytes) {
         ++rest;
       }
     }
+
+    // A module that is going to be unloaded is never patched.
+    if (!dll_info->unload_module) {
+      ReserveBaseIfUnpatchable(dll, dll_info->num_functions);
+    }
+
     dll_info = reinterpret_cast<DllPatchInfo*>(buffer);
     ++num_dlls;
   }

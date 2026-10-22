@@ -16,9 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.GleanMetrics.ReviewPrompt
 import org.mozilla.fenix.components.ReviewPromptAttemptResult.Displayed
@@ -39,7 +37,7 @@ class PlayStoreReviewPromptController(
     @Suppress("TooGenericExceptionCaught")
     suspend fun tryPromptReview(activity: Activity): ReviewPromptAttemptResult {
         logger.info("tryPromptReview in progress...")
-        val reviewInfoTask = withContext(Dispatchers.IO) { manager.requestReviewFlow() }
+        val reviewInfoTask = manager.requestReviewFlow()
 
         val result =
             try {

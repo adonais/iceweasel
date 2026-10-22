@@ -21,6 +21,7 @@
 #include "api/environment/environment.h"
 #include "api/media_types.h"
 #include "api/rtp_parameters.h"
+#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "call/call.h"
 #include "call/simulated_packet_receiver.h"
@@ -52,6 +53,18 @@ class RtpRtcpObserver {
       return true;
     }
     return observation_complete_.Wait(timeout_);
+  }
+
+  virtual bool Wait(TimeController* time_controller) {
+    if (time_controller == nullptr) {
+      return Wait();
+    }
+    TimeDelta max_duration = absl::GetFlag(FLAGS_webrtc_quick_perf_test)
+                                 ? TimeDelta::Millis(500)
+                                 : timeout_;
+    return time_controller->Wait(
+        [this]() { return observation_complete_.Wait(TimeDelta::Zero()); },
+        max_duration);
   }
 
   virtual Action OnSendRtp(std::span<const uint8_t> packet) {

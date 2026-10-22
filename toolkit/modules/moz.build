@@ -344,6 +344,7 @@ for var in (
     "MOZ_UPDATE_AGENT",
     "MOZ_BITS_DOWNLOAD",
     "MOZ_DEBUG",
+    "MOZ_DIAGNOSTIC_ASSERT_ENABLED",
     "MOZ_ASAN",
     "MOZ_ASAN_REPORTER",
     "MOZ_TSAN",
@@ -363,7 +364,6 @@ for var in (
     "MOZ_SYSTEM_POLICIES",
     "MOZ_SELECTABLE_PROFILES",
     "USE_LIBZ_RS",
-    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
 ):
     DEFINES[f"{var}_BOOL"] = "true" if CONFIG[var] else "false"
 

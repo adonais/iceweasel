@@ -5,7 +5,7 @@
 /* eslint-disable strict */
 if (typeof Debugger != "function") {
   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-    "resource://gre/modules/jsdebugger.sys.mjs"
+    "moz-src:///devtools/platform/jsdebugger.sys.mjs"
   );
   addDebuggerToGlobal(globalThis);
 }

@@ -5,10 +5,10 @@
 #ifndef mozilla_dom_IDTracker_h_
 #define mozilla_dom_IDTracker_h_
 
+#include "nsAtom.h"
 #include "nsIObserver.h"
 #include "nsThreadUtils.h"
 
-class nsAtom;
 class nsIContent;
 class nsINode;
 class nsIURI;

@@ -268,9 +268,7 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
   // create some more tabs after the group
   createManyTabs(4, win);
 
-  await TestUtils.waitForCondition(() => {
-    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
-  });
+  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
 
   info("selecting the last tab");
   let tabSelected = BrowserTestUtils.waitForEvent(win, "TabSelect");
@@ -619,7 +617,7 @@ add_task(async function test_tabGroupMoveToNewWindow() {
     tabGroupCreate,
   ]);
   Assert.ok(
-    tabGroupCreateEvent.detail.isAdoptingGroup,
+    tabGroupCreateEvent.detail.adopting,
     "TabGroupCreate event should report that this tab group was creating by adoption"
   );
 
@@ -678,7 +676,7 @@ add_task(async function test_TabGroupEvents() {
     "TabGroupCreate"
   ).then(event => {
     Assert.ok(
-      !event.detail.isAdoptingGroup,
+      !event.detail.adopting,
       "a tab group being created from scratch should not be treated like it was adopted from another window"
     );
     createdGroupId = event.target.id;
@@ -916,6 +914,60 @@ add_task(async function test_tabGroupSelect() {
 
   await removeTabGroup(group);
   BrowserTestUtils.removeTab(tab3);
+});
+
+/**
+ * Bug 2067355 - Selecting a group that already holds the active tab must still
+ * scroll that tab into view.
+ */
+add_task(async function test_tabGroupSelectScrollsActiveTabIntoView() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.overflowTabs(null, win, { overflowAtStart: true });
+
+  let arrowScrollbox = win.gBrowser.tabContainer.arrowScrollbox;
+  let [startProp, endProp] = arrowScrollbox.startEndProps;
+  let start = ele => ele.getBoundingClientRect()[startProp];
+  let end = ele => ele.getBoundingClientRect()[endProp];
+
+  let group = win.gBrowser.addTabGroup([win.gBrowser.tabs.at(-1)]);
+  let activeTab = group.tabs[0];
+  win.gBrowser.selectedTab = activeTab;
+  Assert.ok(activeTab.selected, "Tab in the group is selected");
+
+  let scrollportStart = start(arrowScrollbox.scrollbox);
+  let scrollportEnd = end(arrowScrollbox.scrollbox);
+  let isInView = ele =>
+    scrollportStart <= start(ele) && end(ele) <= scrollportEnd;
+
+  info("scrolling to beginning of tabstrip");
+  arrowScrollbox.ensureElementIsVisible(win.gBrowser.tabs[0], true);
+  await TestUtils.waitForCondition(
+    () =>
+      arrowScrollbox.hasAttribute("scrolledtostart") && !isInView(activeTab),
+    "Waiting for the active tab to scroll out of view"
+  );
+
+  info("selecting the group that already holds the active tab");
+  group.select();
+  await TestUtils.waitForCondition(
+    () => isInView(activeTab),
+    "Waiting for the active tab to scroll into view"
+  );
+
+  Assert.ok(activeTab.selected, "Active tab is still selected");
+  Assert.lessOrEqual(
+    scrollportStart,
+    start(activeTab),
+    `Active tab starts inside the scrollport (${scrollportStart} <= ${start(activeTab)})`
+  );
+  Assert.lessOrEqual(
+    end(activeTab),
+    scrollportEnd,
+    `Active tab ends inside the scrollport (${end(activeTab)} <= ${scrollportEnd})`
+  );
+
+  await TabGroupTestUtils.removeTabGroup(group);
+  await BrowserTestUtils.closeWindow(win);
 });
 
 // Opening new tabs from links around/within tab groups

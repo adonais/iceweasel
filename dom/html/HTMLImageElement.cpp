@@ -489,7 +489,12 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
   nsImageLoadingContent::UnbindFromTree();
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
-  UpdateAutoSizeObserver();
+  if (!aContext.IsMove()) {
+    // https://html.spec.whatwg.org/#the-img-element:html-element-removing-steps
+    // 2. Set removedNode's last auto-sizes width to null.
+    // (We also stop observing it for resizes at this point.)
+    UpdateAutoSizeObserver();
+  }
 
   if (wasInPicture != IsInPicture()) {
     MOZ_ASSERT(wasInPicture);

@@ -964,6 +964,9 @@ class MochitestArguments(ArgumentContainer):
         # set to the SSL proxy setting. See:
         # see https://bugzilla.mozilla.org/show_bug.cgi?id=916517
         # args.webSocketPort = DEFAULT_PORTS['ws']
+        #
+        # isolated_process is used in manifest but this is Android only
+        "isolated_process": False,
     }
 
     def validate(self, parser, options, context):
@@ -1314,6 +1317,15 @@ class AndroidArguments(ArgumentContainer):
                 "default": None,
                 "help": "When using --enable-java-coverage, save the code coverage report "
                 "files to this directory.",
+            },
+        ],
+        [
+            ["--enable-isolated-process"],
+            {
+                "action": "store_true",
+                "dest": "isolated_process",
+                "default": False,
+                "help": "Run the tests with content service isolated process enabled.",
             },
         ],
     ]

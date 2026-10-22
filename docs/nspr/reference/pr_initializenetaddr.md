@@ -32,7 +32,7 @@ The function has the following parameters:
 
 `addr`
 
-: A pointer to the {ref}`PRNetAddr` structure to be manipulated.
+: A pointer to the {doc}`prnetaddr` structure to be manipulated.
 
 ### Returns
 
@@ -42,11 +42,11 @@ The function returns one of the following values:
 - If unsuccessful, `PR_FAILURE`. This may occur, for example, if the
   value of val is not within the ranges defined by `PRNetAddrValue`.
   You can retrieve the reason for the failure by calling
-  {ref}`PR_GetError`.
+  {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_InitializeNetAddr` allows the assignment of special network
+{doc}`pr_initializenetaddr` allows the assignment of special network
 address values and the port number, while also setting the state that
 indicates the version of the address being used.
 

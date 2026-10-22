@@ -21,7 +21,7 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/drag-and-drop.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/split-view-footer.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/status-panel.js", this);
-  Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tab.js", this);
+  ChromeUtils.importESModule("chrome://browser/content/tabbrowser/tab.mjs", { global: "current" });
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tab-bar-visibility.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tab-context-menu.js", this);
   ChromeUtils.importESModule("chrome://browser/content/tabbrowser/tabgroup.mjs", { global: "current" });

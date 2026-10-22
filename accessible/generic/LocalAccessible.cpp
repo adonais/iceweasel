@@ -2607,6 +2607,9 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
     }
 
     case RelationType::ERRORMSG:
+      if (!(ExplicitState() & states::INVALID)) {
+        return Relation();
+      }
       return Relation(new AssociatedElementsIterator(
           mDoc, mContent, nsGkAtoms::aria_errormessage));
 

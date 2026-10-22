@@ -26,7 +26,6 @@ import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.geckoview.AllowOrDeny;
-import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
@@ -499,7 +498,6 @@ public class TestRunnerActivity extends Activity {
                   .safeBrowsingProviders(google, googleLegacy, google5)
                   .build())
           .lowMemoryDetection(false) // Avoid unpredictability in tests
-          .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
           .appZygoteProcessEnabled(
               Objects.equals(
                   System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"));

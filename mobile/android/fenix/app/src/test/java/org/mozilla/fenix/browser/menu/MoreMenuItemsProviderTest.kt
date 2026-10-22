@@ -6,8 +6,11 @@ package org.mozilla.fenix.browser.menu
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
@@ -18,8 +21,12 @@ import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import org.junit.Test
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
+import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 
 class MoreMenuItemsProviderTest {
     @Test
@@ -82,18 +89,90 @@ class MoreMenuItemsProviderTest {
     private fun MoreMenuItemsProvider.resolve(children: List<StandardMenuItem>) =
         updateWithSubMenuItems(itemFlow.value, children)
 
+    @Test
+    fun `GIVEN it draws attention to summarizing WHEN expanding it THEN count summarizing as noticed`() = runTest {
+        val settings = discoverySettings(highlight = true)
+        val provider = provider(settings = settings)
+        provider.resolve(listOf(translateItem, summarizeItem))
+
+        provider.onEvent(MenuAction.OnMoreMenuClicked, FakeMenuHost())
+
+        verify { settings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.MenuOverflowInteraction) }
+    }
+
+    @Test
+    fun `GIVEN it doesn't expand to summarizing WHEN expanding it THEN don't count summarizing as noticed`() = runTest {
+        val settings = discoverySettings(highlight = true)
+        val provider = provider(settings = settings)
+        provider.resolve(listOf(translateItem))
+
+        provider.onEvent(MenuAction.OnMoreMenuClicked, FakeMenuHost())
+
+        verify(exactly = 0) { settings.cacheDiscoveryEvent(any()) }
+    }
+
+    @Test
+    fun `GIVEN it doesn't draw attention to summarizing WHEN expanding it THEN don't count summarizing as noticed`() =
+        runTest {
+            val settings = discoverySettings(highlight = false)
+            val provider = provider(settings = settings)
+            provider.resolve(listOf(summarizeItem))
+
+            provider.onEvent(MenuAction.OnMoreMenuClicked, FakeMenuHost())
+
+            verify(exactly = 0) { settings.cacheDiscoveryEvent(any()) }
+        }
+
+    @Test
+    fun `GIVEN a private tab WHEN expanding it THEN don't count summarizing as noticed`() = runTest {
+        val settings = discoverySettings(highlight = true)
+        val provider = provider(isPrivate = true, settings = settings)
+        provider.resolve(listOf(summarizeItem))
+
+        provider.onEvent(MenuAction.OnMoreMenuClicked, FakeMenuHost())
+
+        verify(exactly = 0) { settings.cacheDiscoveryEvent(any()) }
+    }
+
+    @Test
+    fun `WHEN expanding it THEN keep the menu open`() = runTest {
+        val menu = FakeMenuHost()
+        val provider = provider()
+        provider.resolve(listOf(summarizeItem))
+
+        provider.onEvent(MenuAction.OnMoreMenuClicked, menu)
+
+        assertFalse(menu.isUsed)
+    }
+
+    @Test
+    fun `WHEN building the item THEN handle only the events it dispatches itself`() = runTest {
+        val provider = provider()
+
+        val events = provider.itemFlow.value.reachableEvents()
+
+        assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+        assertFalse(provider.handles(MenuAction.Navigate.Summarizer))
+    }
+
+    private fun discoverySettings(highlight: Boolean): SummarizationFeatureDiscoveryConfiguration =
+        mockk(relaxed = true) { every { shouldHighlightOverflowMenuItem } returns highlight }
+
     private fun TestScope.provider(
         highlight: Boolean = true,
         isPrivate: Boolean = false,
         hasTab: Boolean = true,
+        settings: SummarizationFeatureDiscoveryConfiguration = discoverySettings(highlight),
+        target: MenuTarget = MenuTarget.BrowserTab,
     ): MoreMenuItemsProvider {
-        val settings =
-            mockk<SummarizationFeatureDiscoveryConfiguration> {
-                every { shouldHighlightOverflowMenuItem } returns highlight
-            }
         val tab = createTab(url = "https://mozilla.org", private = isPrivate)
         val browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = tab.id.takeIf { hasTab }))
-        return MoreMenuItemsProvider(browserStore, settings, backgroundScope)
+        return MoreMenuItemsProvider(
+            browserStore,
+            target,
+            settings,
+            backgroundScope,
+        )
     }
 
     private companion object {

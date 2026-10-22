@@ -89,6 +89,7 @@ export const presets = {
       "onnx_worker",
       "llama.cpp",
       "Parakeet",
+      "TextGenerator",
     ],
     duration: 0,
     l10nIds: {
@@ -195,6 +196,7 @@ export const presets = {
       "onnx_worker",
       "llama.cpp",
       "Parakeet",
+      "TextGenerator",
     ],
     duration: 0,
     l10nIds: {

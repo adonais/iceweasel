@@ -64,24 +64,30 @@ message and the reverser's go with it: harvest what the diff cannot show first
 ### 3. Resolve the cascade faithfully
 
 Expect one conflict per commit that built on the dropped one, plus any commit
-that merely trimmed a comment near the dropped code. The reverser itself does
-not conflict when the resolutions below it were faithful: its change is
-already in the tree, so it comes out empty; the mechanics reference says how
-each VCS reports that and what to confirm. A reverser that conflicts on
-anything but the deletion of a file the drop already removed means a
-resolution below it diverged from the reverser's form. The usual shape is
-the dropped commit's additions appearing as *context re-adds* (the merge
-thinks the later commit is re-introducing the symbols): drop those re-adds and
-repoint reads to the pre-move form. A commit that only *modified* what the
-dropped commit added conflicts as delete/modify instead, with no re-add to
-drop: keep its real change, rebased onto the pre-move form (the edit rides the
-cascade to wherever the text lives after the drop, the churn rule in
-`SKILL.md`), and never resolve it by the deletion alone. Where re-targeting
-the hunk to the pre-move path does not apply cleanly, insert the change by
-hand and check it byte for byte against the backup tip at that path. Check any
-whole-tree invariant (the mechanics reference, verifying every commit) at the
-resolved commit too. Keep each later commit's *real* changes; drop only what
-the dropped commit had introduced.
+that merely trimmed a comment near the dropped code. Keep each later commit's
+*real* changes; drop only what the dropped commit had introduced.
+
+- **Context re-adds**, the usual shape: the dropped commit's additions appear
+  as if the later commit were re-introducing the symbols. Drop those re-adds
+  and repoint reads to the pre-move form.
+- **Delete/modify**, from a commit that only *modified* what the dropped
+  commit added, with no re-add to drop. **Never resolve it by the deletion
+  alone.** Keep its real change, rebased onto the pre-move form: the edit rides
+  the cascade to wherever the text lives after the drop (the churn rule in
+  `SKILL.md`). Where re-targeting the hunk to the pre-move path does not apply
+  cleanly, insert the change by hand and check it byte for byte against the
+  backup tip at that path.
+- **The reverser** does not conflict when the resolutions below it were
+  faithful: its change is already in the tree, so it comes out empty; the
+  mechanics reference says how each VCS reports that and what to confirm.
+  **A reverser that conflicts on anything but the deletion of a file the drop
+  already removed means a resolution below it diverged from the reverser's
+  form: return to the backup and redo that resolution.** Taking the reverser's
+  side instead keeps it as a commit carrying the coupled change under a
+  message that no longer describes it.
+
+Check any whole-tree invariant (the mechanics reference, verifying every
+commit) at the resolved commit too.
 
 ### 4. Finish coupled changes at their source
 
@@ -95,7 +101,11 @@ correct form with no separate add-then-remove.
 - **Already net-zero:** the diff from the backup tip to the result must be
   **empty**. Non-empty means the commit had surviving changes: return to the
   backup and keep it. The resolution must have been faithful; forcing the
-  final content makes the diff trivially empty and proves nothing.
+  final content makes the diff trivially empty and proves nothing, so count
+  the commits as well: the result has two fewer than the input, the dropped
+  commit and the reverser that came out empty. A reverser that survives with
+  a remainder is carrying a coupled change for step 4 under a message that no
+  longer describes it.
 - **Deliberate reversal:** the tree changes by design, so build and test
   instead. The drop is sound only if the result is behavior-neutral on the
   default path and any remaining failures are *unrelated* gaps, not

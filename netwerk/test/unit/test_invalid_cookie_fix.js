@@ -54,7 +54,7 @@ add_task(async function test_invalid_cookie_fix() {
     17
   );
 
-  const nowInMSec = Date.now();
+  const nowInMSec = Date.now() - 60 * 1000;
   const farFarInThePastInMSec = nowInMSec - 60 * 60 * 24 * 1000 * 1000;
   const farFarInTheFutureInMSec = nowInMSec + 60 * 60 * 24 * 1000 * 1000;
   const nearFutureInMSec = nowInMSec + 60 * 60 * 24 * 1000;
@@ -382,7 +382,7 @@ add_task(async function test_invalid_cookie_fix() {
   await promise;
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 7);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 7);
 
   // Close the profile.
   await promise_close_profile();

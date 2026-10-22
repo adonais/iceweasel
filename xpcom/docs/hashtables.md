@@ -2,7 +2,7 @@
 
 :::{note}
 For a deep-dive into the underlying mechanisms that power our hashtables,
-check out the {ref}`XPCOM Hashtable Technical Details`
+check out the {doc}`hashtables_detailed`
 document.
 :::
 

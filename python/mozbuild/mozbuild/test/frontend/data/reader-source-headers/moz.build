@@ -1,0 +1,9 @@
+@template
+def Library(name):
+    LIBRARY_NAME = name
+
+
+EXPORTS += ["exported.h", "exported.inc"]
+EXPORTS.mozilla += ["installed.h", "installed.inc"]
+SOURCE_HEADERS += ["header.h"]
+Library("srclib")

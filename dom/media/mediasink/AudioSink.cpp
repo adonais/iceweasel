@@ -38,7 +38,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
     : mOwnerThread(aThread),
       mOutputRate(
           DecideAudioPlaybackSampleRate(aInfo, aShouldResistFingerprinting)),
-      mOutputChannels(DecideAudioPlaybackChannels(aInfo)),
+      mOutputChannels(AudioPlaybackChannels(aInfo)),
       mAudibilityMonitor(
           mOutputRate,
           StaticPrefs::dom_media_silence_duration_for_audibility()),

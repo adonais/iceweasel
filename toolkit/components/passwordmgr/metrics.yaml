@@ -1215,9 +1215,6 @@ pwmgr:
     type: labeled_counter
     description: >
       Results of login import from a CSV/TSV file, by category
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL.
     labels:
       - added
       - modified
@@ -1230,6 +1227,7 @@ pwmgr:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072837
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1688653
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749882
@@ -1237,10 +1235,10 @@ pwmgr:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010472
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072837
     notification_emails:
       - passwords-dev@mozilla.org
-    expires: 160
-    telemetry_mirror: h#PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL
+    expires: 170
 
   login_page_safety:
     type: custom_distribution

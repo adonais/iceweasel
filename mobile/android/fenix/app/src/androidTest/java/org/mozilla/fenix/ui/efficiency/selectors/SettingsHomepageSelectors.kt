@@ -72,6 +72,86 @@ object SettingsHomepageSelectors : SelectorContainer {
             groups = setOf(Group.HOMEPAGE_SETTINGS),
         )
 
+    val WALLPAPERS_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_wallpapers),
+            description = "the Wallpapers button",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    // Espresso title anchors for the toggle/checkbox rows. Their on/off state is a View-hierarchy question
+    // (the switch/checkbox is a relative of the title, addressed via hasCousinSwitch / hasSiblingCheckBox),
+    // so these must resolve through Espresso rather than the UiAutomator "*_BUTTON" variants above.
+    val SHORTCUTS_SWITCH =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.top_sites_toggle_top_recent_sites_4),
+            description = "the Shortcuts switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val SPONSORED_SHORTCUTS_CHECKBOX =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_contile),
+            description = "the Sponsored shortcuts checkbox row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    // The row's label depends on the longfox flag: "Help catch trackers" when it is on (developer/debug builds),
+    // "Privacy report" otherwise (nightly/beta/release). See HomeSettingsFragment. The caller passes the label that
+    // matches the running build so this locator works on every channel; the switch itself is always
+    // pref_key_privacy_report.
+    @Suppress("FunctionName")
+    fun PRIVACY_REPORT_SWITCH(label: String) =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = label,
+            description = "the Privacy report / Help catch trackers switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val CONTINUE_SWITCH =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_continue),
+            description = "the Continue switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val BOOKMARKS_SWITCH =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_bookmarks),
+            description = "the Bookmarks switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val RECENTLY_VISITED_SWITCH =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_recently_visited),
+            description = "the Recently visited switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val STORIES_SWITCH =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_pocket_3),
+            description = "the Stories switch row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
+    val SPONSORED_STORIES_CHECKBOX =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.customize_toggle_pocket_sponsored),
+            description = "the Sponsored stories checkbox row",
+            groups = setOf(Group.HOMEPAGE_SETTINGS),
+        )
+
     @Suppress("FunctionName")
     fun OPENING_SCREEN_OPTION(openingScreenOption: String = "") =
         Selector(

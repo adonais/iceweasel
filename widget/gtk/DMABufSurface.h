@@ -23,8 +23,6 @@
 typedef void* EGLImageKHR;
 typedef void* EGLSyncKHR;
 
-#define DMABUF_BUFFER_PLANES 4
-
 namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
@@ -72,8 +70,6 @@ class PlanarYCbCrImage;
 
 class DMABufSurface : public BufferSurface {
  public:
-  nsAutoCString GetDebugTag() const;
-
   // Import surface from SurfaceDescriptor. This is usually
   // used to copy surface from another process over IPC.
   // When a global reference counter was created for the surface
@@ -90,15 +86,12 @@ class DMABufSurface : public BufferSurface {
   virtual int GetWidthAligned(int aPlane = 0) = 0;
   virtual int GetHeightAligned(int aPlane = 0) = 0;
 
-  virtual bool HoldsTexture() = 0;
-
 #ifdef MOZ_LOGGING
   bool IsMapped(int aPlane = 0) { return (mMappedRegion[aPlane] != nullptr); };
   void Unmap(int aPlane = 0);
 #endif
 
-  virtual DMABufSurfaceRGBA* GetAsDMABufSurfaceRGBA() { return nullptr; }
-  virtual DMABufSurfaceYUV* GetAsDMABufSurfaceYUV() { return nullptr; }
+  DMABufSurface* GetAsDMABufSurface() override { return this; }
   already_AddRefed<mozilla::gfx::DataSourceSurface> GetAsSourceSurface()
       override;
 
@@ -114,22 +107,6 @@ class DMABufSurface : public BufferSurface {
 
   void MaybeSemaphoreWait(GLuint aGlTexture);
   void SetSemaphoreFd(int aDuppedRawFd, bool aIsSyncFd = false);
-
-  // Set and get a global surface UID. The UID is shared across process
-  // and it's used to track surface lifetime in various parts of rendering
-  // engine.
-  uint32_t GetUID() const { return mUID; };
-
-  // Get PID of process where surface was created. PID+UID gives global
-  // surface ID which is unique for all used surfaces.
-  uint32_t GetPID() const { return mPID; };
-
-  bool Matches(DMABufSurface* aSurface) const {
-    return mUID == aSurface->mUID && mPID == aSurface->mPID;
-  }
-
-  bool CanRecycle() const { return mCanRecycle && mPID; }
-  void DisableRecycle() { mCanRecycle = false; }
 
   // Creates a global reference counter objects attached to the surface.
   // It's created as unreferenced, i.e. IsGlobalRefSet() returns false
@@ -218,21 +195,15 @@ class DMABufSurface : public BufferSurface {
 
   virtual ~DMABufSurface();
 
-  // Configuration of surface planes, it depends on surface modifiers.
-  // RGBA surface may use one RGBA plane or two planes (RGB + A)
-  // YUV surfaces use various planes setup (Y + UV planes or Y+U+V planes)
-  int mBufferPlaneCount = 0;
-  RefPtr<mozilla::gfx::FileHandleWrapper> mDmabufFds[DMABUF_BUFFER_PLANES];
-  int32_t mStrides[DMABUF_BUFFER_PLANES] = {};
-  int32_t mOffsets[DMABUF_BUFFER_PLANES] = {};
+  RefPtr<mozilla::gfx::FileHandleWrapper> mDmabufFds[BUFFER_SURFACE_PLANES];
 
-  struct gbm_bo* mGbmBufferObject[DMABUF_BUFFER_PLANES]{};
+  struct gbm_bo* mGbmBufferObject[BUFFER_SURFACE_PLANES]{};
   uint32_t mGbmBufferFlags = 0;
 
 #ifdef MOZ_LOGGING
-  void* mMappedRegion[DMABUF_BUFFER_PLANES]{};
-  void* mMappedRegionData[DMABUF_BUFFER_PLANES]{};
-  uint32_t mMappedRegionStride[DMABUF_BUFFER_PLANES]{};
+  void* mMappedRegion[BUFFER_SURFACE_PLANES]{};
+  void* mMappedRegionData[BUFFER_SURFACE_PLANES]{};
+  uint32_t mMappedRegionStride[BUFFER_SURFACE_PLANES]{};
 #endif
 
   RefPtr<mozilla::gfx::FileHandleWrapper> mSyncFd;
@@ -246,17 +217,6 @@ class DMABufSurface : public BufferSurface {
   // it's used for surface recycle.
   int mGlobalRefCountFd = 0;
 
-  // mUID/mPID is set when DMABuf is created and/or exported to different
-  // process. Allows to identify surfaces created by different process.
-  uint32_t mUID;
-  uint32_t mPID;
-
-  // Internal DMABuf flag, it's not exported (Serialized).
-  // If set to false we can't recycle this surfaces as we can't ensure
-  // mUID/mPID consistency. Also mPID may be zero in this case.
-  // Applies to copied DMABuf surfaces for instance.
-  bool mCanRecycle = true;
-
   mozilla::Mutex mSurfaceLock MOZ_UNANNOTATED;
 };
 
@@ -266,6 +226,11 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
       mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
       int aDMABufSurfaceFlags = 0,
       RefPtr<mozilla::widget::DRMFormat> aFormat = nullptr);
+  // Create a DMABuf surface of aSize/aFOURCCFormat and copy aSrcTexture
+  // content to it. aSrcTexture stays owned by caller.
+  static already_AddRefed<DMABufSurfaceRGBA> CreateDMABufSurface(
+      mozilla::gl::GLContext* aGLContext, GLuint aSrcTexture,
+      mozilla::gfx::IntSize aSize, int32_t aFOURCCFormat);
   static already_AddRefed<DMABufSurface> CreateDMABufSurface(
       RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
       const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo, int aWidth,
@@ -279,10 +244,12 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
 
   bool CopyFrom(class DMABufSurface* aSourceSurface);
 
-  int GetWidth(int aPlane = 0) override { return mWidth; };
-  int GetHeight(int aPlane = 0) override { return mHeight; };
-  int GetWidthAligned(int aPlane = 0) override { return mWidth; };
-  int GetHeightAligned(int aPlane = 0) override { return mHeight; };
+  int GetWidthAligned(int aPlane = 0) override { return mWidth[0]; };
+  int GetHeightAligned(int aPlane = 0) override { return mHeight[0]; };
+
+  // RGBA surface may be backed by more planes (compressed/tiled formats)
+  // but it's always sampled as a single texture.
+  int GetTextureCount() override { return 1; }
 
 #ifdef MOZ_LOGGING
   void* MapReadOnly(uint32_t aX, uint32_t aY, uint32_t aWidth, uint32_t aHeight,
@@ -298,18 +265,9 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   virtual void Clear(unsigned int aValue) override;
 #endif
 
-  bool CreateTexture(mozilla::gl::GLContext* aGLContext,
-                     int aPlane = 0) override;
-  void ReleaseTextures() override;
-  GLuint GetTexture(int aPlane = 0) override { return mTexture; };
-  EGLImageKHR GetEGLImage(int aPlane = 0) override { return mEGLImage; };
-
 #ifdef MOZ_WAYLAND
   wl_buffer* CreateWlBuffer() override;
 #endif
-
-  int GetTextureCount() override { return 1; };
-  bool HoldsTexture() override;
 
   DMABufSurfaceRGBA();
   DMABufSurfaceRGBA(const DMABufSurfaceRGBA&) = delete;
@@ -317,6 +275,8 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
 
  private:
   ~DMABufSurfaceRGBA();
+
+  bool CreateTexture(mozilla::gl::GLContext* aGLContext, int aPlane) override;
 
   bool Create(mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
               int aDMABufSurfaceFlags,
@@ -331,17 +291,14 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   bool Create(RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
               const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo,
               int aWidth, int aHeight);
+  bool Create(mozilla::gl::GLContext* aGLContext, GLuint aSrcTexture,
+              mozilla::gfx::IntSize aSize, int32_t aFOURCCFormat);
 
   bool ImportSurfaceDescriptor(const mozilla::layers::SurfaceDescriptor& aDesc);
   bool OpenFileDescriptorForPlane(
       mozilla::widget::DMABufDeviceLock* aDeviceLock, int aPlane) override;
 
  private:
-  int mWidth;
-  int mHeight;
-
-  EGLImageKHR mEGLImage;
-  GLuint mTexture;
   uint64_t mBufferModifier;
 };
 
@@ -356,6 +313,10 @@ class DMABufSurfaceYUV final : public DMABufSurface {
       const VADRMPRIMESurfaceDescriptor& aVaDesc, int aWidth, int aHeight);
   static void ReleaseVADRMPRIMESurfaceDescriptor(
       VADRMPRIMESurfaceDescriptor& aDesc);
+  // Create a NV12/P010 DMABuf surface and copy aSourceSurface YUV plane
+  // textures to it. Source textures need to be created by caller.
+  static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
+      mozilla::gl::GLContext* aGLContext, BufferSurface* aSourceSurface);
 
   bool Serialize(mozilla::layers::SurfaceDescriptor& aOutDescriptor) override;
 
@@ -367,9 +328,6 @@ class DMABufSurfaceYUV final : public DMABufSurface {
       const std::function<mozilla::layers::MemoryOrShmem(uint32_t)>& aAllocate)
       override;
 
-  int GetWidth(int aPlane = 0) override { return mWidth[aPlane]; }
-  int GetHeight(int aPlane = 0) override { return mHeight[aPlane]; }
-
   int GetWidthAligned(int aPlane = 0) override { return mWidthAligned[aPlane]; }
   int GetHeightAligned(int aPlane = 0) override {
     return mHeightAligned[aPlane];
@@ -380,28 +338,12 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   mozilla::gfx::SurfaceFormat GetHWFormat(
       mozilla::gfx::SurfaceFormat aSWFormat);
 
-  bool CreateTexture(mozilla::gl::GLContext* aGLContext,
-                     int aPlane = 0) override;
   bool CreateTextureViaCopyYUV(mozilla::gl::GLContext* aGLContext,
                                int aPlane = 0);
   bool CreateTextureViaCopyP010(mozilla::gl::GLContext* aGLContext,
                                 int aPlane = 0);
-  void ReleaseTextures() override;
 
   void ReleaseSurface() override;
-
-  GLuint GetTexture(int aPlane = 0) override { return mTexture[aPlane]; };
-  EGLImageKHR GetEGLImage(int aPlane = 0) override {
-    return mEGLImage[aPlane];
-  };
-
-  int GetTextureCount() override;
-  bool HoldsTexture() override;
-
-  void SetWPChromaLocation(uint32_t aWPChromaLocation) override {
-    mWPChromaLocation = aWPChromaLocation;
-  }
-  uint32_t GetWPChromaLocation() override { return mWPChromaLocation; }
 
   DMABufSurfaceYUV();
 
@@ -412,6 +354,9 @@ class DMABufSurfaceYUV final : public DMABufSurface {
                      int aHeight, bool aCopy);
   bool UpdateYUVData(const mozilla::layers::PlanarYCbCrData& aData,
                      mozilla::gfx::SurfaceFormat aImageFormat);
+  bool UpdateYUVData(mozilla::gl::GLContext* aGLContext,
+                     BufferSurface* aSourceSurface);
+
   bool VerifyTextureCreation();
 
 #ifdef MOZ_WAYLAND
@@ -420,6 +365,8 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
  private:
   ~DMABufSurfaceYUV();
+
+  bool CreateTexture(mozilla::gl::GLContext* aGLContext, int aPlane) override;
 
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) override;
   bool CreateYUVPlane(mozilla::gl::GLContext* aGLContext, int aPlane,
@@ -441,21 +388,14 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   bool OpenFileDescriptorForPlane(
       mozilla::widget::DMABufDeviceLock* aDeviceLock, int aPlane) override;
 
-  int mWidth[DMABUF_BUFFER_PLANES];
-  int mHeight[DMABUF_BUFFER_PLANES];
   // Aligned size of the surface imported from VADRMPRIMESurfaceDescriptor.
   // It's used only internally to create EGLImage as some GL drivers
   // needs that (Bug 1724385).
-  int mWidthAligned[DMABUF_BUFFER_PLANES];
-  int mHeightAligned[DMABUF_BUFFER_PLANES];
+  int mWidthAligned[BUFFER_SURFACE_PLANES];
+  int mHeightAligned[BUFFER_SURFACE_PLANES];
   // DRM (fourcc) formats for each plane.
-  int32_t mDrmFormats[DMABUF_BUFFER_PLANES];
-  EGLImageKHR mEGLImage[DMABUF_BUFFER_PLANES];
-  GLuint mTexture[DMABUF_BUFFER_PLANES];
-  uint64_t mBufferModifiers[DMABUF_BUFFER_PLANES];
-  // Chroma location in wp_color_representation_surface_v1_chroma_location
-  // format.
-  uint32_t mWPChromaLocation = 0;
+  int32_t mDrmFormats[BUFFER_SURFACE_PLANES];
+  uint64_t mBufferModifiers[BUFFER_SURFACE_PLANES];
 };
 
 #endif

@@ -4,17 +4,8 @@
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 import { TabMetrics } from "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const MAX_INITIAL_ITEMS = 5;
-
-const lazy = {};
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "tabGroupsAlternateMenu",
-  "browser.tabs.groups.alternateMenu",
-  false
-);
 
 export class GroupsPanel {
   constructor({ view, containerNode, showAll = false }) {
@@ -106,12 +97,6 @@ export class GroupsPanel {
 
   #showAll;
   #populate() {
-    if (lazy.tabGroupsAlternateMenu) {
-      this.containerNode.replaceChildren();
-      this.#setupListeners();
-      return;
-    }
-
     let fragment = this.doc.createDocumentFragment();
 
     let openGroups = this.win.gBrowser.getAllTabGroups({
@@ -170,7 +155,7 @@ export class GroupsPanel {
   }
 
   /**
-   * @param {TabGroupStateData} group
+   * @param {MozTabbrowserTabGroup|SavedTabGroupStateData} group
    * @param {object} [options]
    * @param {boolean} [options.isOpen]
    *   Set to true if the group is currently open, and false if it's saved
@@ -218,7 +203,7 @@ export class GroupsPanel {
     button.setAttribute("crop", "end");
 
     let setName = tabGroupName => {
-      if (group.saved) {
+      if (!isOpen) {
         doc.l10n.setAttributes(button, "tabbrowser-manager-closed-tab-group", {
           tabGroupName,
         });

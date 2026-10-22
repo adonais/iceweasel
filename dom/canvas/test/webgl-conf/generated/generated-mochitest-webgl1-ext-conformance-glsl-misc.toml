@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -72,8 +74,6 @@ fail-if = [
 ["test_conformance__glsl__misc__shader-uniform-packing-restrictions.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
 ["test_conformance__glsl__misc__shader-varying-packing-restrictions.html"]

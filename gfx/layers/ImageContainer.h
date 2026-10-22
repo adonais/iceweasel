@@ -835,9 +835,16 @@ struct PlanarYCbCrData {
                            : gfx::IntSize(0, 0);
   }
 
-  // The total uncropped size of data in the Y channel.
+  // Returns the uncropped Y size when the picture rect is non-empty, has a
+  // non-negative origin, and both endpoints fit in int32_t.
+  Maybe<gfx::IntSize> GetCheckedYDataSize() const;
+
+  // The total uncropped size of data in the Y channel. Falls back to the raw
+  // picture rect endpoint when GetCheckedYDataSize() rejects the rect.
+  // TODO: Bug 2072459
   gfx::IntSize YDataSize() const {
-    return gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost());
+    return GetCheckedYDataSize().valueOr(
+        gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost()));
   }
 
   // The total uncropped size of data in the Cb/Cr channels.

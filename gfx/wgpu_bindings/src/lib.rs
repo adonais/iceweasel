@@ -281,7 +281,6 @@ pub(crate) enum Message<'a> {
     },
     BufferUnmap(id::DeviceId, id::BufferId, bool),
     QueueSubmit(
-        id::DeviceId,
         id::QueueId,
         Cow<'a, [id::CommandBufferId]>,
         Cow<'a, [id::TextureId]>,
@@ -423,7 +422,7 @@ pub enum BufferMapResult<'a> {
 #[derive(serde::Serialize, serde::Deserialize)]
 enum ServerMessage<'a> {
     RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
-    RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
+    RequestDeviceResponse(id::DeviceId, id::QueueId, Result<wgt::Limits, String>),
     PopErrorScopeResponse(id::DeviceId, FfiPopErrorScopeResultType, Cow<'a, str>),
     CreateRenderPipelineResponse {
         pipeline_id: id::RenderPipelineId,

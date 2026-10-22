@@ -23,7 +23,7 @@
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/dom/XULPopupElement.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
@@ -55,8 +55,10 @@
 #include "nsLayoutUtils.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
+#include "nsMenuItemX.h"
 #include "nsMenuPopupFrame.h"
 #include "nsMenuUtilsX.h"
+#include "nsMenuX.h"
 #include "nsNativeThemeCocoa.h"
 #include "nsNativeThemeColors.h"
 #include "nsObjCExceptions.h"
@@ -702,6 +704,90 @@ nsresult nsCocoaWindow::ActivateNativeMenuItemAt(const nsAString& indexString) {
     }
   }
   return NS_ERROR_FAILURE;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+}
+
+static nsMenuItemX* FindMenuItemByElementId(nsMenuX* aMenu,
+                                            const nsAString& aElementId) {
+  for (uint32_t i = 0; i < aMenu->GetItemCount(); i++) {
+    Maybe<nsMenuParentX::MenuChild> child = aMenu->GetItemAt(i);
+    if (!child) {
+      continue;
+    }
+    if (child->is<RefPtr<nsMenuItemX>>()) {
+      nsMenuItemX* item = child->as<RefPtr<nsMenuItemX>>();
+      nsIContent* content = item->Content();
+      if (content && content->IsElement() &&
+          content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                                            aElementId, eCaseMatters)) {
+        return item;
+      }
+    } else if (nsMenuItemX* found = FindMenuItemByElementId(
+                   child->as<RefPtr<nsMenuX>>(), aElementId)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
+// Used for testing native menu system structure and event handling.
+nsresult nsCocoaWindow::GetNativeMenuItemKeyEquivalent(
+    const nsAString& aElementId, nsAString& aResult) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  aResult.Truncate();
+
+  // Not [NSApp mainMenu]: that may belong to a different window, for example
+  // the hidden window's menu bar.
+  nsMenuBarX* menuBar = GetMenuBar();
+  if (!menuBar) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsMenuItemX* item = nullptr;
+  for (uint32_t i = 0; i < menuBar->GetMenuCount() && !item; i++) {
+    if (nsMenuX* menu = menuBar->GetMenuAt(i)) {
+      item = FindMenuItemByElementId(menu, aElementId);
+    }
+  }
+  if (!item) {
+    return NS_ERROR_FAILURE;
+  }
+
+  NSMenuItem* nativeItem = item->NativeNSMenuItem();
+  NSString* keyEquivalent = nativeItem.keyEquivalent;
+  if (keyEquivalent.length == 0) {
+    return NS_OK;
+  }
+
+  NSEventModifierFlags mask = nativeItem.keyEquivalentModifierMask;
+  nsAutoString result;
+  auto appendModifier = [&result](const char* aName) {
+    if (!result.IsEmpty()) {
+      result.AppendLiteral(",");
+    }
+    result.AppendASCII(aName);
+  };
+  if (mask & NSEventModifierFlagControl) {
+    appendModifier("control");
+  }
+  if (mask & NSEventModifierFlagOption) {
+    appendModifier("option");
+  }
+  if (mask & NSEventModifierFlagShift) {
+    appendModifier("shift");
+  }
+  if (mask & NSEventModifierFlagCommand) {
+    appendModifier("command");
+  }
+
+  result.AppendLiteral("|");
+  nsAutoString key;
+  nsCocoaUtils::GetStringForNSString(keyEquivalent, key);
+  result.Append(key);
+  aResult = result;
+  return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
@@ -1368,7 +1454,7 @@ nsEventStatus nsCocoaWindow::DispatchAPZInputEvent(InputData& aEvent) {
   APZEventResult result;
 
   if (mAPZC) {
-    result = mAPZC->InputBridge()->ReceiveInputEvent(aEvent);
+    result = mAPZC->Bridge()->ReceiveInputEvent(aEvent);
   }
 
   if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
@@ -1409,22 +1495,22 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
 
     switch (aEvent.mInputType) {
       case PANGESTURE_INPUT: {
-        result = mAPZC->InputBridge()->ReceiveInputEvent(aEvent);
+        result = mAPZC->Bridge()->ReceiveInputEvent(aEvent);
         if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
           return;
         }
 
-        event = MayStartSwipeForAPZ(aEvent.AsPanGestureInput(), result);
+        event = MayStartSwipe(aEvent.AsPanGestureInput(), result);
         break;
       }
       case SCROLLWHEEL_INPUT: {
         // For wheel events on macOS, send it to APZ using the WidgetInputEvent
-        // variant of ReceiveInputEvent, because the APZInputBridge version of
+        // variant of ReceiveInputEvent, because the APZBridge version of
         // that function has special handling (for delta multipliers etc.) that
         // we need to run. Using the InputData variant would bypass that and
         // go straight to the APZCTreeManager subclass.
         event = aEvent.AsScrollWheelInput().ToWidgetEvent(this);
-        result = mAPZC->InputBridge()->ReceiveInputEvent(event);
+        result = mAPZC->Bridge()->ReceiveInputEvent(event);
         if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
           return;
         }
@@ -1434,18 +1520,12 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
         MOZ_CRASH("unsupported event type");
         return;
     }
-    if (event.mMessage == eWheel &&
-        (event.mDeltaX != 0 || event.mDeltaY != 0)) {
-      ProcessUntransformedAPZEvent(&event, result);
-    }
+    ProcessUntransformedAPZEvent(&event, result);
     return;
   }
 
   switch (aEvent.mInputType) {
     case PANGESTURE_INPUT: {
-      if (MayStartSwipeForNonAPZ(aEvent.AsPanGestureInput())) {
-        return;
-      }
       event = aEvent.AsPanGestureInput().ToWidgetEvent(this);
       break;
     }
@@ -1457,7 +1537,7 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
       MOZ_CRASH("unexpected event type");
       return;
   }
-  if (event.mMessage == eWheel && (event.mDeltaX != 0 || event.mDeltaY != 0)) {
+  if (event.mMessage == eWheel) {
     DispatchEvent(&event);
   }
 }
@@ -2829,7 +2909,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
                                 // DispatchAPZWheelInputEvent, which turns this
                                 // ScrollWheelInput back into a WidgetWheelEvent
                                 // and then it goes through the regular handling
-                                // in APZInputBridge. So passing |eNone| won't
+                                // in APZBridge. So passing |eNone| won't
                                 // pass up the necessary wheel delta adjustment.
                                 WheelDeltaAdjustmentStrategy::eNone);
     wheelEvent.mLineOrPageDeltaX = lineOrPageDelta.x;
@@ -2853,7 +2933,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
                                 // DispatchAPZWheelInputEvent, which turns this
                                 // ScrollWheelInput back into a WidgetWheelEvent
                                 // and then it goes through the regular handling
-                                // in APZInputBridge. So passing |eNone| won't
+                                // in APZBridge. So passing |eNone| won't
                                 // pass up the necessary wheel delta adjustment.
                                 WheelDeltaAdjustmentStrategy::eNone);
     wheelEvent.mLineOrPageDeltaX = lineOrPageDelta.x;
@@ -6700,11 +6780,6 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::Zoom:
         if (!mWindow.zoomed) {
-          // Snapshot pre-zoom bounds for GetRestoredBounds() before the
-          // zoom resizes the window to fill the screen.
-          if (mSizeMode == nsSizeMode_Normal) {
-            mRestoredBounds = Some(mBounds);
-          }
           [mWindow zoom:nil];
         }
         break;
@@ -6994,15 +7069,13 @@ CGFloat nsCocoaWindow::BackingScaleFactor() const {
 void nsCocoaWindow::BackingScaleFactorChanged() {
   CGFloat newScale = ComputeBackingScaleFactor();
 
-  // Ignore notification if it hasn't really changed
   if (BackingScaleFactor() == newScale) {
     return;
   }
 
-  UpdateBounds();
-
   SuspendAsyncCATransactions();
   mBackingScaleFactor = newScale;
+  UpdateBounds();
   if (mNativeLayerRoot) {
     mNativeLayerRoot->SetBackingScale(newScale);
   }
@@ -7721,6 +7794,15 @@ void nsCocoaWindow::CocoaSendToplevelDeactivateEvents() {
   }
 }
 
+// Called before every zoom, whether we start it or the user does with a title
+// bar double-click or the zoom button, and when a live resize starts. The
+// "Fill" tiling action only reaches us through the latter.
+void nsCocoaWindow::SaveRestoredBounds() {
+  if (mSizeMode == nsSizeMode_Normal) {
+    mRestoredBounds = Some(mBounds);
+  }
+}
+
 void nsCocoaWindow::CocoaWindowDidResize() {
   // It's important to update our bounds before we trigger any listeners. This
   // ensures that our bounds are correct when GetScreenBounds is called.
@@ -8022,6 +8104,12 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   RollUpPopups();
 }
 
+- (void)windowWillStartLiveResize:(NSNotification*)aNotification {
+  if (mGeckoWindow) {
+    mGeckoWindow->SaveRestoredBounds();
+  }
+}
+
 - (void)windowDidMove:(NSNotification*)aNotification {
   if (mGeckoWindow) mGeckoWindow->ReportMoveEvent();
 }
@@ -8069,6 +8157,9 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
     return NO;  // See bug 429954.
   }
   mHasEverBeenZoomed = YES;
+  if (mGeckoWindow) {
+    mGeckoWindow->SaveRestoredBounds();
+  }
   return YES;
 }
 

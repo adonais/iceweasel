@@ -1,0 +1,96 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+}
+
+.status {
+  /* stylelint-disable stylelint-plugin-mozilla/no-base-design-tokens */
+  background-image: linear-gradient(
+    90deg,
+    var(--color-violet-50),
+    var(--color-violet-40) 22%,
+    var(--color-pink-40) 42%,
+    var(--color-pink-30) 52%,
+    var(--color-violet-40) 72%,
+    var(--color-violet-50)
+  );
+  /* stylelint-enable stylelint-plugin-mozilla/no-base-design-tokens */
+  background-size: 200% auto;
+  background-clip: text;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
+   * Figma style */
+  color: transparent;
+  animation: aitab-status-shimmer 2s ease-in-out infinite;
+  font-weight: var(--font-weight-bold);
+}
+
+@keyframes aitab-status-shimmer {
+  from {
+    background-position: 100% center;
+  }
+
+  to {
+    background-position: -100% center;
+  }
+}
+
+.card {
+  background: var(--background-color-box);
+  border: var(--border-width) solid var(--border-color-deemphasized);
+  border-radius: var(--border-radius-large);
+  display: grid;
+  gap: var(--space-medium);
+  padding: var(--space-large);
+}
+
+.title {
+  display: flex;
+  gap: var(--space-small);
+  padding: var(--space-xsmall) var(--space-small);
+  align-items: center;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}
+
+.complete-title {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
+   * Figma style */
+  color: var(--smartwindow-text-color-accent-primary);
+  display: flex;
+  gap: var(--space-small);
+  cursor: pointer;
+
+  img {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
+  }
+}
+
+.complete {
+  .title {
+    padding: var(--space-xsmall) 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .status {
+    background-image: none;
+    color: var(--text-color);
+    animation: none;
+  }
+}

@@ -500,21 +500,44 @@ void nsDragSessionSource::SourceEndDragSession(GdkDragContext* aContext,
 
   if (!mDoingDrag || mDragTaskSourceFinished) return;
 
-  if (mEndDragPoint.x < 0) {
-    gint x, y;
-    GdkDisplay* display = gdk_display_get_default();
-    GdkScreen* screen = gdk_display_get_default_screen(display);
-    GtkWindow* window = GetGtkWindow(mSourceDocument);
-    GdkWindow* gdkWindow = window ? gtk_widget_get_window(GTK_WIDGET(window))
-                                  : gdk_screen_get_root_window(screen);
-    if (!gdkWindow) {
-      return;
+  if (mEndDragPoint == LayoutDeviceIntPoint(-1, -1)) {
+    // Nothing took the drop, so no drag-drop signal set the end point.
+    //
+    // The end point is client-relative, while the positions available here are
+    // relative to the outer window, whose origin is the decoration corner, so
+    // both branches subtract the margin between the two.
+    auto margin = mSourceWindow ? mSourceWindow->GetClientOffset()
+                                : LayoutDeviceIntPoint();
+    if (GdkIsWaylandDisplay() && !mDragIsOverSourceWindow) {
+      // On Wayland gdk_window_get_device_position() doesn't handle a pointer
+      // outside the window correctly. Only inside versus outside matters
+      // here, so report a point outside (bug 2073336).
+      SetDragEndPoint(LayoutDeviceIntPoint(-100, -100) - margin);
+      LOGDRAGSERVICE("  drag end point outside the window %d %d",
+                     (int)mEndDragPoint.x, (int)mEndDragPoint.y);
+    } else {
+      gint x, y;
+      GdkDisplay* display = gdk_display_get_default();
+      GdkScreen* screen = gdk_display_get_default_screen(display);
+      GtkWindow* window = GetGtkWindow(mSourceDocument);
+      GdkWindow* gdkWindow = window ? gtk_widget_get_window(GTK_WIDGET(window))
+                                    : gdk_screen_get_root_window(screen);
+      if (!gdkWindow) {
+        return;
+      }
+      gdk_window_get_device_position(
+          gdkWindow, gdk_drag_context_get_device(aContext), &x, &y, nullptr);
+      gint scale = gdk_window_get_scale_factor(gdkWindow);
+      auto point = LayoutDeviceIntPoint(x * scale, y * scale);
+      if (window) {
+        // Skipped when we fell back to the root window above, where the
+        // position is relative to the screen and no margin applies.
+        point -= margin;
+      }
+      SetDragEndPoint(point);
+      LOGDRAGSERVICE("  guess drag end point %d %d (over source window %d)\n",
+                     (int)point.x, (int)point.y, mDragIsOverSourceWindow);
     }
-    gdk_window_get_device_position(
-        gdkWindow, gdk_drag_context_get_device(aContext), &x, &y, nullptr);
-    gint scale = gdk_window_get_scale_factor(gdkWindow);
-    SetDragEndPoint(x * scale, y * scale);
-    LOGDRAGSERVICE("  guess drag end point %d %d\n", x * scale, y * scale);
   }
 
   uint32_t dropEffect;

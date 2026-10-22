@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src='/tests/SimpleTest/paint_listener.js'></script>
+<script src='apz_test_utils.js'></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select dropdowns of two different heights (bug 2041504)</title>
+</head>
+<body>
+    <!-- Every select in a window shares one popup element so, opening this
+         short dropdown first causes its geometry to be inherited by the long
+         one below. -->
+    <select id="short">
+      <option>one</option>
+      <option>two</option>
+      <option>three</option>
+    </select>
+
+    <!-- Kept at the top of the page so that its dropdown opens downwards and
+         is clipped against the bottom of the content area. -->
+    <select id="long"></select>
+
+    <script>
+        const select = document.getElementById("long");
+        for (let i = 0; i < 300; i++) {
+            const option = document.createElement("option");
+            option.value = `${i}`;
+            option.textContent = `item ${i}`;
+            select.appendChild(option);
+        }
+    </script>
+</body>
+<script>
+  SimpleTest.waitForExplicitFinish();
+</script>
+</html>

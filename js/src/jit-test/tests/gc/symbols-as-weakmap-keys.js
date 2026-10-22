@@ -52,7 +52,7 @@ gc();
 printErr("Test 3");
 keyZone = newGlobal({newCompartment: true});
 mapZone = newGlobal({newCompartment: true});
-keyZone.eval('var key = Symbol("test2");');
+keyZone.eval('var key = Symbol("test3");');
 mapZone.eval(`var map = new WeakMap;`);
 mapZone.keyZone = keyZone;
 mapZone.eval('map.set(keyZone.key, {});');
@@ -71,40 +71,16 @@ printErr("  3.3 Collect only map zone");
 gc(mapZone);
 assertEq(mapSize(mapZone.map), 1);
 
-printErr("  3.4 Collect only key zone");
+printErr("  3.4 Collect only key zone (wrapper to symbol collected");
 gc(keyZone);
-// Bug 1410123: Perhaps we could stop marking the key atom in the key zone at
-// this point if we refine the atom bitmaps without requiring the atoms zone
-// to be collected.
 assertEq(mapSize(mapZone.map), 1);
 
-printErr("  3.5 Collect map zone and atoms zone (entry not removed)");
-schedulezone(mapZone);
-schedulezone('atoms');
-gc('zone');
-assertEq(mapSize(mapZone.map), 1);
-
-printErr("  3.6 Collect key zone and atoms zone (key no longer referenced)");
-schedulezone(keyZone);
-schedulezone('atoms');
-gc('zone');
-assertEq(mapSize(mapZone.map), 1);
-
-printErr("  3.7 Collect only atoms zone (nothing collected)");
-schedulezone('atoms');
-gc('zone');
-assertEq(mapSize(mapZone.map), 1);
-
-printErr("  3.8 Collect only map zone (nothing collected)");
-gc(mapZone);
-assertEq(mapSize(mapZone.map), 1);
-
-printErr("  3.9 Collect map zone and atoms zone (entry collected)");
+printErr("  3.5 Collect map zone and atoms zone (entry removed)");
 schedulezone(mapZone);
 schedulezone('atoms');
 gc('zone');
 assertEq(mapSize(mapZone.map), 0);
 
-printErr("  3.10 Collect all zones (nothing more collected)");
+printErr("  3.6 Collect all zones (nothing more collected)");
 gc();
 assertEq(mapSize(mapZone.map), 0);

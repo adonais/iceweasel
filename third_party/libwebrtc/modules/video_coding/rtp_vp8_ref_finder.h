@@ -56,6 +56,8 @@ class RtpVp8RefFinder {
                           int64_t unwrapped_tl0,
                           uint8_t temporal_idx);
   void UnwrapPictureIds(RtpFrameObject* frame);
+  void CleanupOldPictures(int64_t frame_id);
+  void CleanupOldBaseLayers(int64_t unwrapped_tl0);
 
   // Save the last picture id in order to detect when there is a gap in frames
   // that have not yet been fully received.

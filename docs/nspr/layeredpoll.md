@@ -11,15 +11,15 @@ it has had no clients.
 NSPR provides a public API function, PR_Poll() that is modeled after
 UNIX' `poll()` system call.
 
-The implementation of {ref}`PR_Poll` is somewhat complicated. Not only
+The implementation of {doc}`reference/pr_poll` is somewhat complicated. Not only
 does it map the `PRPollDesc` array into structures needed by the
 underlying OS, it also must deal with layered I/O. This is done despite
-the fact that {ref}`PR_Poll` itself is *not* layered. For every element
-of the `PRPollDesc` array that has a non-NULL {ref}`PRFileDesc` and whose
+the fact that {doc}`reference/pr_poll` itself is *not* layered. For every element
+of the `PRPollDesc` array that has a non-NULL {doc}`reference/prfiledesc` and whose
 `in_flags` are not zero, it calls the file descriptor's
 `poll() method`.
 The `poll()` method is one of the vector contained in the
-{ref}`PRIOMethods` table. In the case of layered I/O, the elements (the
+{doc}`reference/priomethods` table. In the case of layered I/O, the elements (the
 methods) of the methods table may be overridden by the implementer of
 that layer. The layers are then *stacked.* I/O using that *stack* will
 call through the method at the top layer, and each layer may make
@@ -40,7 +40,7 @@ the number of bytes it is willing to receive (in the test code there are
 no error conditions, so don't even ask).
 
 The implication of the protocol is obvious. In order to do a
-{ref}`PR_Send` operation, the layer must first do a *different* send and
+{doc}`reference/pr_send` operation, the layer must first do a *different* send and
 then *receive* a response. Doing this and keeping the *stack's* client
 unaware is the goal. **It is not a goal of NSPR 2.0 to hide the nuances
 of synchronous verses non-blocking I/O**.
@@ -49,7 +49,7 @@ of synchronous verses non-blocking I/O**.
 
 Each layer must implement a suitable function for *every* element of the
 methods table. One can get a copy of default methods by calling
-{ref}`PR_GetDefaultIOMethods` These methods simply pass all calls
+{doc}`reference/pr_getdefaultiomethods` These methods simply pass all calls
 through the layer on to the next lower layer of the stack.
 
 A layer implementer might copy the elements of the `PRIOMethods`
@@ -61,12 +61,12 @@ the next lower layer's equivalent function.
 ## Layered `poll()`
 
 One of the more interesting methods is the `poll()`. It is called by
-the runtime whenever the client calls {ref}`PR_Poll`. It may be called at
+the runtime whenever the client calls {doc}`reference/pr_poll`. It may be called at
 the *top* layer for *every* file descriptor in the poll descriptor. It
 may be called zero or more times. The purpose of the `poll()` method
 is to provide the layer an opportunity to adjust the polling bits as
 needed. For instance, if a client (*i.e.*, top layer) is calling
-{ref}`PR_Poll` for a particular file descriptor with a *read* poll
+{doc}`reference/pr_poll` for a particular file descriptor with a *read* poll
 request, a lower layer might decide that it must perform a *write*
 first.
 In that case, the layer's `poll()` method would be called with
@@ -75,7 +75,7 @@ In that case, the layer's `poll()` method would be called with
 with a `PR_POLL_WRITE` bit set. This process of re-assigning the poll
 flags can happen as many times as there are layers in the stack. It is
 the final value, the one returned to the caller of the top layer's
-`poll()` method ({ref}`PR_Poll`) that will be used by the runtime when
+`poll()` method ({doc}`reference/pr_poll`) that will be used by the runtime when
 calling the OS' `poll()` (or equivalent) system call.
 
 It is expected that the modification of the polling bits propagate from
@@ -108,7 +108,7 @@ still confirm with the OS that such an operation is permitted.
 Since the `poll()` method may be called zero or more times it must
 therefore be *idempotent* or at least *functional*. It will need to look
 at the layer's state, but must not make modifications to that state that
-would cause subsequent calls within the same {ref}`PR_Poll` call to
+would cause subsequent calls within the same {doc}`reference/pr_poll` call to
 return a different answer. Since the `poll()` method may not be called
 at all, so there is not guarantee that any modifications that would have
 been performed by the routine will every happen.

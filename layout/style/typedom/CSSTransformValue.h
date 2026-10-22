@@ -62,8 +62,10 @@ class CSSTransformValue final : public CSSStyleValue {
   // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformvalue-length
   uint32_t Length() const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformvalue-is2d
   bool Is2D() const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformvalue-tomatrix
   already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   CSSTransformComponent* IndexedGetter(uint32_t aIndex, bool& aFound);

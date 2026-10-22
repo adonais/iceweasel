@@ -311,3 +311,239 @@ add_task(async function test_timeline_items() {
     ]
   );
 });
+
+add_task(async function test_highlights_renders_statements() {
+  await withAITabDocument(
+    async items => {
+      await content.customElements.whenDefined("aitab-highlights");
+      const element = content.document.createElement("aitab-highlights");
+      content.document.body.append(element);
+      const highlights = element.wrappedJSObject;
+
+      highlights.title = "A day on Niijima";
+      highlights.items = Cu.cloneInto(items, content);
+      await highlights.updateComplete;
+
+      const shadow = highlights.shadowRoot;
+      const title = shadow.querySelector("h2");
+      Assert.equal(title.textContent.trim(), "A day on Niijima", "Title");
+      const list = shadow.querySelector("ul");
+      Assert.equal(
+        list.getAttribute("aria-labelledby"),
+        title.id,
+        "The list is named by the title"
+      );
+
+      const rows = [...shadow.querySelectorAll("li")];
+      Assert.equal(rows.length, 3, "One row per statement");
+      Assert.deepEqual(
+        rows.map(row => [
+          row.querySelector(".aitab-eyebrow")?.textContent ?? null,
+          row.querySelector(".aitab-highlight-title")?.textContent.trim() ??
+            null,
+          row.querySelector(".aitab-highlight-body")?.textContent ?? null,
+        ]),
+        [
+          ["Morning", "Habushiura beach", "White sand and turquoise water."],
+          [null, "Overnight ferry", "Departs from Takeshiba Pier in Tokyo."],
+          [null, null, "A statement can be a bare sentence of evidence."],
+        ],
+        "Eyebrow, statement and evidence render only when the item has them"
+      );
+
+      Assert.ok(!shadow.querySelector("h3"), "Statements are not headings");
+
+      highlights.title = "";
+      await highlights.updateComplete;
+      Assert.ok(!shadow.querySelector("h2"), "No title element");
+      Assert.ok(
+        !shadow.querySelector("ul").hasAttribute("aria-labelledby"),
+        "No dangling aria-labelledby without a title"
+      );
+
+      highlights.items = null;
+      await highlights.updateComplete;
+      Assert.ok(
+        !shadow.querySelector("ul"),
+        "A null items list renders nothing"
+      );
+    },
+    [
+      [
+        {
+          eyebrow: "Morning",
+          title: "Habushiura beach",
+          body: "White sand and turquoise water.",
+        },
+        {
+          title: "Overnight ferry",
+          body: "Departs from Takeshiba Pier in Tokyo.",
+        },
+        { body: "A statement can be a bare sentence of evidence." },
+      ],
+    ]
+  );
+});
+
+add_task(async function test_highlights_source_chips() {
+  await withAITabDocument(
+    async items => {
+      await content.customElements.whenDefined("aitab-highlights");
+      const element = content.document.createElement("aitab-highlights");
+      content.document.body.append(element);
+      const highlights = element.wrappedJSObject;
+
+      highlights.items = Cu.cloneInto(items, content);
+      await highlights.updateComplete;
+
+      const chips = [...highlights.shadowRoot.querySelectorAll("li")].map(row =>
+        [...row.querySelectorAll("ai-website-chip")].map(chip => ({
+          label: chip.label,
+          href: chip.href,
+          icon: chip.iconSrc,
+          event: chip.getAttribute("openLinkEvent"),
+        }))
+      );
+      Assert.deepEqual(
+        chips,
+        [
+          [
+            {
+              label: "Expedia",
+              href: "https://www.expedia.com/niijima",
+              icon: "chrome://branding/content/icon16.png",
+              event: "AITab:OpenLink",
+            },
+            {
+              label: "www.tripadvisor.com",
+              href: "https://www.tripadvisor.com/habushiura",
+              icon: "page-icon:https://www.tripadvisor.com/habushiura",
+              event: "AITab:OpenLink",
+            },
+          ],
+          [],
+        ],
+        "Each http(s) source is a chip wired to the AI Tab open-link event; " +
+          "the label falls back to the host and the icon to page-icon"
+      );
+      Assert.ok(
+        !highlights.shadowRoot.querySelector(
+          "li:nth-child(2) .aitab-highlight-sources"
+        ),
+        "No sources container when nothing is linkable"
+      );
+    },
+    [
+      [
+        {
+          title: "Habushiura beach",
+          body: "White sand and turquoise water.",
+          sources: {
+            items: [
+              {
+                title: "Expedia",
+                href: "https://www.expedia.com/niijima",
+                favicon: "chrome://branding/content/icon16.png",
+              },
+              { href: "https://www.tripadvisor.com/habushiura" },
+            ],
+          },
+        },
+        {
+          title: "Overnight ferry",
+          sources: {
+            items: [{ title: "Route", href: "app://views/relayout" }],
+          },
+        },
+      ],
+    ]
+  );
+});
+
+add_task(async function test_text_block_content() {
+  await withAITabDocument(
+    async (heading, paragraphs) => {
+      await content.customElements.whenDefined("aitab-text-block");
+      const element = content.document.createElement("aitab-text-block");
+      content.document.body.append(element);
+      const block = element.wrappedJSObject;
+      await block.updateComplete;
+
+      Assert.ok(
+        !block.shadowRoot.querySelector(".aitab-text-block-p"),
+        "No paragraph is rendered before there are any"
+      );
+
+      block.heading = heading;
+      block.paragraphs = Cu.cloneInto(paragraphs, content);
+      await block.updateComplete;
+
+      Assert.equal(
+        block.shadowRoot
+          .querySelector(".aitab-text-block-heading")
+          .textContent.trim(),
+        heading,
+        "The heading renders"
+      );
+      Assert.deepEqual(
+        [...block.shadowRoot.querySelectorAll(".aitab-text-block-p")].map(p =>
+          p.textContent.trim()
+        ),
+        paragraphs,
+        "Each paragraph renders, in order"
+      );
+    },
+    [
+      "Three nights is enough for Kanazawa",
+      [
+        "Everything sits inside a 25-minute walk.",
+        "The ryokan is the trade-off.",
+      ],
+    ]
+  );
+});
+
+add_task(async function test_text_block_references() {
+  await withAITabDocument(
+    async references => {
+      await content.customElements.whenDefined("aitab-text-block");
+      const element = content.document.createElement("aitab-text-block");
+      content.document.body.append(element);
+      const block = element.wrappedJSObject;
+      await block.updateComplete;
+
+      Assert.ok(
+        !block.shadowRoot.querySelector(".aitab-text-block-references"),
+        "No references row is rendered when there are no references"
+      );
+
+      block.references = Cu.cloneInto(references, content);
+      await block.updateComplete;
+
+      const chips = [
+        ...block.shadowRoot.querySelectorAll(".aitab-text-block-chip"),
+      ];
+      Assert.deepEqual(
+        chips.map(chip => [chip.href, chip.label]),
+        [
+          ["https://energy.gov", "energy.gov"],
+          ["https://neep.org", "https://neep.org"],
+        ],
+        "Each reference becomes a chip, labelled by its href when untitled"
+      );
+
+      // ai-website-chip is shared with chat and defaults to chat's event
+      // name, so without this the AITab actor would never hear about a click.
+      Assert.ok(
+        chips.every(chip => chip.openLinkEvent == "AITab:OpenLink"),
+        "Each chip is wired to the AI Tab open-link event, not chat's"
+      );
+    },
+    [
+      [
+        { title: "energy.gov", href: "https://energy.gov" },
+        { href: "https://neep.org" },
+      ],
+    ]
+  );
+});

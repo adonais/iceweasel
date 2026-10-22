@@ -8,10 +8,10 @@
  * the Taskbar Tabs systems should interact with it through this interface.
  */
 
-import { TaskbarTabsRegistryStorage } from "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs";
-import { TaskbarTabsWindowManager } from "resource:///modules/taskbartabs/TaskbarTabsWindowManager.sys.mjs";
-import { TaskbarTabsPin } from "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs";
-import { TaskbarTabsUtils } from "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs";
+import { TaskbarTabsRegistryStorage } from "moz-src:///browser/components/taskbartabs/TaskbarTabsRegistry.sys.mjs";
+import { TaskbarTabsWindowManager } from "moz-src:///browser/components/taskbartabs/TaskbarTabsWindowManager.sys.mjs";
+import { TaskbarTabsPin } from "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs";
+import { TaskbarTabsUtils } from "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs";
 
 let lazy = {};
 

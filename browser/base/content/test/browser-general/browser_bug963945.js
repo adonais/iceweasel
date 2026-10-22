@@ -8,6 +8,10 @@
  */
 
 add_task(async function test() {
+  const lastUsed = "2026-01-01T00:00:00.000Z";
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.keys.openAddons.lastUsed", lastUsed]],
+  });
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   let tab = (win.gBrowser.selectedTab = BrowserTestUtils.addTab(
@@ -17,10 +21,19 @@ add_task(async function test() {
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   await promiseWaitForFocus(win);
 
-  EventUtils.synthesizeKey("a", { ctrlKey: true, shiftKey: true }, win);
+  EventUtils.synthesizeKey(
+    AppConstants.platform == "macosx" ? "e" : "f",
+    { shiftKey: true, accelKey: true },
+    win
+  );
 
   is(win.gBrowser.tabs.length, 2, "about:addons tab was re-focused.");
   is(win.gBrowser.currentURI.spec, "about:addons", "Addons tab was opened.");
+  is(
+    Services.prefs.getStringPref("browser.keys.openAddons.lastUsed"),
+    lastUsed,
+    "The new shortcut preserves the old Add-ons shortcut usage timestamp."
+  );
 
   await BrowserTestUtils.closeWindow(win);
 });

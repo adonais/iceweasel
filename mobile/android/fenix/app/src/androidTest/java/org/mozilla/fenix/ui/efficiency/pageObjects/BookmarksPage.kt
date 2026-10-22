@@ -96,7 +96,7 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
     fun setParentFolder(folderName: String): BookmarksPage {
         mozClick(BookmarksSelectors.DEFAULT_BOOKMARKS_FOLDER_TITLE)
         mozClick(BookmarksSelectors.EXPAND_FOLDER_BUTTON("Bookmarks"))
-        mozClick(BookmarksSelectors.BOOKMARK_ITEM(folderName))
+        mozClick(BookmarksSelectors.BOOKMARK_ITEM_TITLE(folderName))
         mozClick(BookmarksSelectors.NAVIGATE_UP_BUTTON)
         return this
     }
@@ -107,12 +107,12 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
     }
 
     fun longClickBookmarkedItem(title: String): BookmarksPage {
-        mozLongClick(BookmarksSelectors.BOOKMARK_ITEM(title))
+        mozLongClick(BookmarksSelectors.BOOKMARK_ITEM_TITLE(title))
         return this
     }
 
     fun selectBookmarkedItem(title: String): BookmarksPage {
-        mozClick(BookmarksSelectors.BOOKMARK_ITEM(title))
+        mozClick(BookmarksSelectors.BOOKMARK_ITEM_TITLE(title))
         return this
     }
 
@@ -127,7 +127,7 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
     }
 
     fun verifyBookmarkTitle(title: String): BookmarksPage {
-        mozVerify(BookmarksSelectors.BOOKMARK_ITEM(title))
+        mozVerify(BookmarksSelectors.BOOKMARK_ITEM_TITLE(title))
         return this
     }
 }

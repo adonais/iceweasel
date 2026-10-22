@@ -272,6 +272,15 @@ Result<UniquePtr<TrackInfo>, nsresult> AudioDecoderTraits::CreateTrackInfo(
   ai->mChannels = aConfig.mNumberOfChannels;
   ai->mRate = aConfig.mSampleRate;
 
+  if (aConfig.mCodec.EqualsLiteral("opus")) {
+    OpusCodecSpecificData opusData;
+    if (aConfig.mDescription && !aConfig.mDescription->IsEmpty()) {
+      opusData.mHeadersBinaryBlob = aConfig.mDescription;
+    }
+    ai->mCodecSpecificConfig = AudioCodecSpecificVariant{std::move(opusData)};
+    SetOpusOutputChannels(*ai);
+  }
+
   LOG("Created AudioInfo {} ({}ch {}Hz - with extra-data: {})",
       NS_ConvertUTF16toUTF8(aConfig.mCodec).get(), ai->mChannels, ai->mRate,
       aConfig.mDescription && !aConfig.mDescription->IsEmpty() ? "yes" : "no");

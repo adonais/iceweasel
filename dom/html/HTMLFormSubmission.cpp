@@ -702,6 +702,8 @@ HTMLFormSubmission::HTMLFormSubmission(
   MOZ_COUNT_CTOR(HTMLFormSubmission);
 }
 
+MOZ_COUNTED_DTOR_VIRTUAL_DEF(HTMLFormSubmission)
+
 Element* HTMLFormSubmission::GetSubmitterElement() const {
   return mFormData ? mFormData->GetSubmitterElement() : nullptr;
 }

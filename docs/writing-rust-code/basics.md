@@ -12,17 +12,18 @@ To format all the Rust code within a directory `$DIR`, run:
 
 Many Cargo commands can be run on individual crates. Change into the directory
 containing the crate's `Cargo.toml` file, and then run the command with
-`MOZ_TOPOBJDIR` set appropriately. For example, to generate and view rustdocs
-for the `xpcom` crate, run these commands:
+`MOZ_TOPOBJDIR` and `MOZ_TOPSRCDIR` set appropriately. For example, to generate
+and view rustdocs for the `xpcom` crate, run these commands:
 
 ```
 cd xpcom/rust/xpcom
-MOZ_TOPOBJDIR=$OBJDIR cargo doc
+MOZ_TOPOBJDIR=$OBJDIR MOZ_TOPSRCDIR=$SRCDIR cargo doc
 cd -
 firefox target/doc/xpcom/index.html
 ```
 
-where `$OBJDIR` is the path to the object directory.
+where `$OBJDIR` is the path to the object directory and `$SRCDIR` the path to
+the source directory.
 
 ## Using static prefs
 

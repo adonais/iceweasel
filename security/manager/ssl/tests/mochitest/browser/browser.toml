@@ -50,11 +50,6 @@ skip-if = [
 ["browser_downloadCert_ui.js"]
 
 ["browser_editCACertTrust.js"]
-# An earlier attempt at landing this test resulted in frequent intermittent
-# failures, almost entirely on Linux. See Bug 1309519.
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-]
 
 ["browser_exportP12_passwordUI.js"]
 

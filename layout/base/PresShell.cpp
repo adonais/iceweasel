@@ -77,6 +77,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/StaticPrefs_toolkit.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Telemetry.h"
@@ -437,12 +438,16 @@ class MOZ_STACK_CLASS nsPresShellEventCB : public EventDispatchingCallback {
   virtual void HandleEvent(EventChainPostVisitor& aVisitor) override {
     if (aVisitor.mPresContext && aVisitor.mEvent->mClass != eBasicEventClass) {
       if (aVisitor.mEvent->mMessage == eMouseDown ||
-          aVisitor.mEvent->mMessage == eMouseUp) {
-        // Mouse-up and mouse-down events call nsIFrame::HandlePress/Release
-        // which call GetContentOffsetsFromPoint which requires up-to-date
-        // layout. Bring layout up-to-date now so that GetCurrentEventFrame()
-        // below will return a real frame and we don't have to worry about
-        // destroying it by flushing later.
+          aVisitor.mEvent->mMessage == eMouseUp ||
+          (aVisitor.mEvent->mMessage == eContextMenu &&
+           StaticPrefs::ui_mouse_right_click_select_under_cursor())) {
+        // Mouse-up, mouse-down and contextmenu events call
+        // nsIFrame::HandlePress/Release and
+        // nsIFrame::HandleContextMenuEventToSelectWordOrLink which call
+        // GetContentOffsetsFromPoint which requires up-to-date layout. Bring
+        // layout up-to-date now so that GetCurrentEventFrame() below will
+        // return a real frame and we don't have to worry about destroying it by
+        // flushing later.
         MOZ_KnownLive(mPresShell)->FlushPendingNotifications(FlushType::Layout);
       } else if (aVisitor.mEvent->mMessage == eWheel &&
                  aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
@@ -1844,6 +1849,10 @@ void PresShell::FlushDelayedResize() {
 }
 
 void PresShell::SetLayoutViewportSize(const nsSize& aSize, bool aDelay) {
+  if (mPresContext && aSize == mPresContext->GetVisibleArea().Size()) {
+    mPendingLayoutViewportSize.reset();
+    return;
+  }
   mPendingLayoutViewportSize = Some(aSize);
   if (aDelay || ShouldDelayResize()) {
     SetNeedStyleFlush();
@@ -4604,12 +4613,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   // resources here instead of Document::FlushPendingNotifications.
   doc->FlushExternalResources(flushType);
 
-  // Force flushing of any pending content notifications that might have
-  // queued up while our event was pending.  That will ensure that we don't
-  // construct frames for content right now that's still waiting to be
-  // notified on,
-  doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-
   doc->UpdateSVGUseElementShadowTrees();
 
   // Process pending restyles, since any flush of the presshell wants
@@ -5700,6 +5703,9 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
 
   nsDisplaySolidColor* item =
       MakeDisplayItem<nsDisplaySolidColor>(aBuilder, aFrame, aBounds, bgcolor);
+  if (!item) {
+    return;
+  }
   if (canvasBg.mCSSSpecified && isRootContentDocumentCrossProcess) {
     item->SetIsCheckerboardBackground();
   }
@@ -12553,7 +12559,7 @@ nsSize PresShell::GetVisualViewportSizeUpdatedByDynamicToolbar() const {
 
 nsSize PresShell::GetFixedViewportSize() const {
   nsSize layoutViewportSize = GetLayoutViewportSize();
-  if (!mPresContext->IsKeyboardHiddenOrResizesContentMode()) {
+  if (mPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     return layoutViewportSize;
   }
   layoutViewportSize.height +=

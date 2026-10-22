@@ -35,5 +35,5 @@ memory containing the null value.
 
 ## Notes
 
-The memory allocated by {ref}`PL_strdup` should be freed with
+The memory allocated by {doc}`pl_strdup` should be freed with
 [PL_strfree](pl_strfree.md).

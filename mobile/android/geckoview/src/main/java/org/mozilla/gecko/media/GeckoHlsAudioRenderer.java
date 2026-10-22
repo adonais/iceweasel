@@ -15,7 +15,6 @@ import androidx.media3.common.Format;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.decoder.DecoderInputBuffer;
-import androidx.media3.exoplayer.ExoPlaybackException;
 import androidx.media3.exoplayer.RendererCapabilities;
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
@@ -102,17 +101,6 @@ public class GeckoHlsAudioRenderer extends GeckoHlsRendererBase {
   protected void resetRenderer() {
     mInputBuffer = null;
     mInitialized = false;
-  }
-
-  @Override
-  protected void handleReconfiguration(final DecoderInputBuffer bufferForRead) {
-    // Do nothing
-  }
-
-  @Override
-  protected void handleFormatRead(final DecoderInputBuffer bufferForRead)
-      throws ExoPlaybackException {
-    onInputFormatChanged(mFormatHolder.format);
   }
 
   @Override

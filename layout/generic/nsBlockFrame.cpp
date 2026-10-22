@@ -1623,9 +1623,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println("{}: begin reflow: availSize={} computedSize={}",
-                 ListTag().get(), ToString(aReflowInput.AvailableSize()),
-                 ToString(aReflowInput.ComputedSize()));
+    fmt::println("{}: begin reflow: availSize={} computedSize={}", ListTag(),
+                 aReflowInput.AvailableSize(), aReflowInput.ComputedSize());
   }
   AutoNoisyIndenter indent(gNoisy);
   PRTime start = 0;  // Initialize these variablies to silence the compiler.
@@ -2082,13 +2081,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag().get(),
-               ToString(aStatus), ToString(aMetrics.Size(wm)),
-               aMetrics.mCarriedOutBEndMargin.Get());
+    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag(), aStatus,
+               aMetrics.Size(wm), aMetrics.mCarriedOutBEndMargin.Get());
     if (HasOverflowAreas()) {
-      fmt::print(" overflow-ink={} overflow-scr={}",
-                 ToString(aMetrics.InkOverflow()),
-                 ToString(aMetrics.ScrollableOverflow()));
+      fmt::print(" overflow-ink={} overflow-scr={}", aMetrics.InkOverflow(),
+                 aMetrics.ScrollableOverflow());
     }
     printf("\n");
   }
@@ -3486,8 +3483,8 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
         "line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
         "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} childCount={}",
         static_cast<void*>(aLine), aState.mBCoord, YesOrNo(aLine->IsDirty()),
-        ToString(aLine->GetBounds()), ToString(aLine->InkOverflowRect()),
-        ToString(aLine->ScrollableOverflowRect()), aDeltaBCoord,
+        aLine->GetBounds(), aLine->InkOverflowRect(),
+        aLine->ScrollableOverflowRect(), aDeltaBCoord,
         aState.mPrevBEndMargin.Get(), aLine->GetChildCount());
   }
 #endif
@@ -4052,6 +4049,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         RemoveFirstLine(nextInFlow->mLines, nextInFlow->mFrames, &pulledLine,
                         &pulledFrames);
         ClearLineCursors();
+        nextInFlow->ClearLineCursors();
       } else {
         // Grab an overflow line if there are any
         FrameLines* overflowLines = nextInFlow->GetOverflowLines();
@@ -4415,6 +4413,7 @@ nsIFrame* nsBlockFrame::PullFrameFrom(nsLineBox* aLine,
     MOZ_ASSERT(aLine == mLines.back());
     MOZ_ASSERT(aFromLine == aFromContainer->mLines.begin(),
                "should only pull from first line");
+    aFromContainer->ClearLineCursors();
     aFromContainer->mFrames.RemoveFrame(frame);
 
     // When pushing and pulling frames we need to check for whether any
@@ -8425,6 +8424,22 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
   collection.MoveTo(aLists);
 }
 
+// Traverse lines skipped by line-clamp to build marked abspos descendants and
+// their ancestor container items.
+static void DisplayLineClampAbsPosDescendants(
+    nsDisplayListBuilder* aBuilder,
+    nsBlockFrame::LineIterator aFirstSkippedLine,
+    nsBlockFrame::LineIterator aLineEnd, const nsDisplayListSet& aLists,
+    nsBlockFrame* aFrame, int32_t aDepth, int32_t& aDrawnLines) {
+  nsDisplayListBuilder::AutoInLineClampAbsPosTraversal traversal(aBuilder);
+  bool foundClamp = false;
+
+  for (auto line = aFirstSkippedLine; line != aLineEnd; ++line) {
+    DisplayLine(aBuilder, line, line->IsInline(), aLists, aFrame, nullptr, 0,
+                aDepth, aDrawnLines, foundClamp);
+  }
+}
+
 // Walk aFrame's inline descendants and, for each inline that is an absolute
 // containing block, build the display items for its abspos children that are
 // continuations. Note the first continuation of the abspos children is built
@@ -8503,6 +8518,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (HidesContent()) {
     return;
   }
+
+  const bool skipClampedContent =
+      StaticPrefs::layout_css_webkit_line_clamp_skip_paint();
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
@@ -8584,7 +8602,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
     if ((HasLineClampEllipsis() || HasLineClampEllipsisDescendant() ||
          LineClampIsClampedToZero()) &&
-        StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+        skipClampedContent) {
       // We can't use the cursor if we're in a line-clamping situation, and
       // we're configured to not paint its clamped content, as we need to know
       // whether we've hit the clamp point which requires iterating over all
@@ -8597,7 +8615,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsLineBox* cursor = canUseCursor
                           ? GetFirstLineContaining(aBuilder->GetDirtyRect().y)
                           : nullptr;
-  LineIterator line_end = LinesEnd();
+  const LineIterator line_end = LinesEnd();
 
   TextOverflow* textOverflowPtr = textOverflow.get();
   bool foundClamp = false;
@@ -8616,8 +8634,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (ShouldDescendIntoLine(lineArea)) {
           DisplayLine(aBuilder, line, line->IsInline(), aLists, this, nullptr,
                       0, depth, drawnLines, foundClamp);
-          MOZ_ASSERT(!foundClamp ||
-                     !StaticPrefs::layout_css_webkit_line_clamp_skip_paint());
+          MOZ_ASSERT(!foundClamp || !skipClampedContent);
         }
       }
     }
@@ -8642,8 +8659,11 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           backplateColor.value());
     };
 
-    if (!(LineClampIsClampedToZero() &&
-          StaticPrefs::layout_css_webkit_line_clamp_skip_paint())) {
+    LineIterator firstSkippedLine =
+        LineClampIsClampedToZero() && skipClampedContent ? LinesBegin()
+                                                         : line_end;
+
+    if (firstSkippedLine == line_end) {
       for (LineIterator line = LinesBegin(); line != line_end; ++line) {
         const nsRect lineArea = line->InkOverflowRect();
         const bool lineInLine = line->IsInline();
@@ -8683,12 +8703,20 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           }
         }
         foundClamp = foundClamp || line->HasLineClampEllipsis();
-        if (foundClamp &&
-            StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+        if (foundClamp && skipClampedContent) {
+          firstSkippedLine = line.next();
           break;
         }
         lineCount++;
       }
+    }
+
+    const bool hasForcedDisplayListDescend =
+        HasAnyStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO);
+
+    if (firstSkippedLine != line_end && hasForcedDisplayListDescend) {
+      DisplayLineClampAbsPosDescendants(aBuilder, firstSkippedLine, line_end,
+                                        aLists, this, depth, drawnLines);
     }
 
     if (GetPrevInFlow() || GetNextInFlow()) {

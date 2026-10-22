@@ -682,4 +682,18 @@ interface nsITextInputProcessor : nsISupports
     unsigned long guessKeyCodeValueOfPrintableKeyInUSEnglishKeyboardLayout(
                     in AString aKeyValue,
                     [optional] in jsval aLocation);
+
+  /**
+   * This is designed to test TextEventDispatcher::BeginBatch(). So, you
+   * shouldn't use this when you want to synthesize text input events.
+   * Before calling this, you must call beginInputTransactionForTests because
+   * it associates this instance with a widget which has a TextEventDispatcher.
+   */
+  void beginTextEventDispatcherBatchForTests();
+
+  /**
+   * This is designed to test TextEventDispatcher::EndBatch(). So, you
+   * shouldn't use this when you want to synthesize text input events.
+   */
+  void endTextEventDispatcherBatchForTests();
 };

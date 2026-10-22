@@ -32,7 +32,7 @@ installation process are fine.
 ### A Firefox nightly or release
 
 You need a Firefox version for which symbols are available from the
-{ref}`symbol server <Using The Mozilla Symbol Server>` to use
+{doc}`symbol server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>` to use
 with WinDbg. You can use any [official nightly
 build](https://ftp.mozilla.org/pub/firefox/nightly/) or released
 version of Firefox from Mozilla. You can find the latest trunk nightly
@@ -71,7 +71,7 @@ time, into the bottom of the Command box.
 Now that Firefox is opened in the debugger, you need to configure your
 WinDbg to download symbols from the Mozilla symbol server. To load the
 symbols, enter the three commands below, pressing enter after each one.
-(More details are available at {ref}`symbol server <Using The Mozilla Symbol Server>`.)
+(More details are available at {doc}`symbol server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>`.)
 
 ```
 .sympath SRV*c:\symbols*http://symbols.mozilla.org/firefox;SRV*c:\symbols*http://msdl.microsoft.com/download/symbols
@@ -145,8 +145,8 @@ to a related bug on [Bugzilla](https://bugzilla.mozilla.org/).
 Sometimes the stacktrace alone is not enough information for a developer
 to figure out what went wrong. A developer may ask you for a "minidump"
 or a "full memory dump", which are files containing more information
-about the process. {ref}`You can easily produce minidumps from WinDBG and
-provide them to developers <Capturing a minidump>`.
+about the process. {doc}`You can easily produce minidumps from WinDBG and
+provide them to developers <capturing_minidump>`.
 
 FAQ
 
@@ -214,5 +214,5 @@ Internet Explorer to ensure "Work Offline" is unchecked.
 
 ## See also
 
-- {ref}`symbol server <Using The Mozilla Symbol Server>` Maps addresses to human readable strings.
-- {ref}`source server <Using The Mozilla Source Server>` Maps addresses to source code lines
+- {doc}`symbol server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>` Maps addresses to human readable strings.
+- {doc}`source server </taskcluster/using-the-mozilla-source-server>` Maps addresses to source code lines

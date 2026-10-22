@@ -72,7 +72,7 @@ const customLazy = {
       return require("Debugger");
     }
     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-      "resource://gre/modules/jsdebugger.sys.mjs"
+      "moz-src:///devtools/platform/jsdebugger.sys.mjs"
     );
     // Avoid polluting all Modules global scope by using a Sandox as global.
     const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
@@ -85,7 +85,7 @@ const customLazy = {
 
   get DistinctCompartmentDebugger() {
     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-      "resource://gre/modules/jsdebugger.sys.mjs",
+      "moz-src:///devtools/platform/jsdebugger.sys.mjs",
       { global: "contextual" }
     );
     const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();

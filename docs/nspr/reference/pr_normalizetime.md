@@ -19,7 +19,7 @@ The function has these parameters:
 
 `time`
 
-: A pointer to a clock/calendar time in the {ref}`PRExplodedTime` format.
+: A pointer to a clock/calendar time in the {doc}`prexplodedtime` format.
 
 `params`
 
@@ -46,7 +46,7 @@ Call this function in these situations:
   For example, suppose you want to compute the day of week for 3 March
   1998\. You can set `tm_mday` to 3, `tm_month` to 2, and
   `tm_year` to 1998, and all the other fields to 0, then call
-  `PR_NormalizeTime()` with {ref}`PR_GMTParameters`. On return,
+  `PR_NormalizeTime()` with {doc}`pr_gmtparameters`. On return,
   `tm_wday` (and `tm_yday`) are set for you.
 - To convert from one time zone to another. For example, if the input
   argument time is in time zone A and the input argument `params`

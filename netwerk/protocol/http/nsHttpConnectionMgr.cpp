@@ -493,7 +493,7 @@ nsresult nsHttpConnectionMgr::DoShiftReloadConnectionCleanupWithConnInfo(
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<nsHttpConnectionInfo> ci = aCI->Clone();
+  RefPtr<nsHttpConnectionInfo> ci = aCI;
   return PostEvent(&nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup, 0,
                    ci);
 }
@@ -504,7 +504,7 @@ nsresult nsHttpConnectionMgr::DoSingleConnectionCleanup(
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<nsHttpConnectionInfo> ci = aCI->Clone();
+  RefPtr<nsHttpConnectionInfo> ci = aCI;
   return PostEvent(&nsHttpConnectionMgr::OnMsgDoSingleConnectionCleanup, 0, ci,
                    aPriority);
 }
@@ -688,7 +688,7 @@ nsresult nsHttpConnectionMgr::ProcessPendingQ(nsHttpConnectionInfo* aCI) {
   LOG(("nsHttpConnectionMgr::ProcessPendingQ [ci=%s]\n", aCI->HashKey().get()));
   RefPtr<nsHttpConnectionInfo> ci;
   if (aCI) {
-    ci = aCI->Clone();
+    ci = aCI;
   }
   return PostEvent(&nsHttpConnectionMgr::OnMsgProcessPendingQ, 0, ci);
 }
@@ -1073,8 +1073,11 @@ nsHttpConnectionMgr::HandOffHttp3OnlyConnection(HttpConnectionBase* aConn,
     return nullptr;
   }
 
-  RefPtr<nsHttpConnectionInfo> allowedCI = aConn->ConnectionInfo()->Clone();
-  allowedCI->SetHttp3Policy(Http3Policy::Allowed);
+  RefPtr<nsHttpConnectionInfo> allowedCI =
+      aConn->ConnectionInfo()
+          ->Mutate()
+          .SetHttp3Policy(Http3Policy::Allowed)
+          .Finalize();
 
   bool unused = false;
   RefPtr<ConnectionEntry> originEnt =
@@ -2097,9 +2100,8 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
       ConnectionEntry* specificEnt = mCT.GetWeak(ci->HashKey());
 
       if (!specificEnt) {
-        RefPtr<nsHttpConnectionInfo> clone(ci->Clone());
-        specificEnt = new ConnectionEntry(clone, mPendingQEntries);
-        mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
+        specificEnt = new ConnectionEntry(ci, mPendingQEntries);
+        mCT.InsertOrUpdate(ci->HashKey(), RefPtr{specificEnt});
       }
 
       ent = specificEnt;
@@ -3754,9 +3756,8 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   // step 3
   LOG(("GetOrCreateConnectionEntry step 3"));
   if (!specificEnt) {
-    RefPtr<nsHttpConnectionInfo> clone(specificCI->Clone());
-    specificEnt = new ConnectionEntry(clone, mPendingQEntries);
-    mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
+    specificEnt = new ConnectionEntry(specificCI, mPendingQEntries);
+    mCT.InsertOrUpdate(specificCI->HashKey(), RefPtr{specificEnt});
   }
   return specificEnt;
 }
@@ -4151,7 +4152,7 @@ class nsStoreServerCertHashesData : public ARefBase {
 nsresult nsHttpConnectionMgr::StoreServerCertHashes(
     nsHttpConnectionInfo* aConnInfo, bool aNoSpdy, bool aNoHttp3,
     nsTArray<RefPtr<nsIWebTransportHash>>&& aServerCertHashes) {
-  RefPtr<nsHttpConnectionInfo> ci = aConnInfo->Clone();
+  RefPtr<nsHttpConnectionInfo> ci = aConnInfo;
   RefPtr<nsStoreServerCertHashesData> data = new nsStoreServerCertHashesData(
       ci, aNoSpdy, aNoHttp3, std::move(aServerCertHashes));
   return PostEvent(&nsHttpConnectionMgr::OnMsgStoreServerCertHashes, 0, data);

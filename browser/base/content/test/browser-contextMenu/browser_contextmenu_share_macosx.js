@@ -6,6 +6,10 @@
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+const { UrlbarTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/UrlbarTestUtils.sys.mjs"
+);
+UrlbarTestUtils.init(this);
 const BASE = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   // eslint-disable-next-line sdl/no-insecure-url
@@ -14,20 +18,7 @@ const BASE = getRootDirectory(gTestPath).replace(
 const TEST_URL_1 = BASE + "browser_contextmenu_shareurl.html";
 const TEST_URL_2 = "https://example.org/";
 
-let mockShareData = [
-  {
-    name: "Test",
-    menuItemTitle: "Sharing Service Test",
-    image:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKE" +
-      "lEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==",
-  },
-];
-
-// Setup spies for observing function calls from MacSharingService
-let shareUrlSpy = sinon.spy();
-let openSharingPreferencesSpy = sinon.spy();
-let getSharingProvidersSpy = sinon.spy();
+let shareUrlWithPickerSpy = sinon.spy();
 
 let { MockRegistrar } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistrar.sys.mjs"
@@ -35,15 +26,13 @@ let { MockRegistrar } = ChromeUtils.importESModule(
 let mockMacSharingService = MockRegistrar.register(
   "@mozilla.org/widget/macsharingservice;1",
   {
-    getSharingProviders(url) {
-      getSharingProvidersSpy(url);
-      return mockShareData;
-    },
-    shareUrl(name, url, title) {
-      shareUrlSpy(name, url, title);
-    },
-    openSharingPreferences() {
-      openSharingPreferencesSpy();
+    shareUrlWithPicker(anchor, urls, titles, shareTitle) {
+      shareUrlWithPickerSpy(
+        anchor,
+        Array.from(urls),
+        Array.from(titles),
+        shareTitle
+      );
     },
     QueryInterface: ChromeUtils.generateQI([Ci.nsIMacSharingService]),
   }
@@ -57,11 +46,11 @@ const qrCodeEnabled = Services.prefs.getBoolPref(
   "browser.shareqrcode.enabled",
   false
 );
-// copy link + service + More, plus QR code if enabled.
-const expectedItemCount = qrCodeEnabled ? 4 : 3;
+// copy link + mac picker item, plus QR code if enabled.
+const expectedItemCount = qrCodeEnabled ? 3 : 2;
 
 /**
- * Test the "Share" item menus in the tab contextmenu on MacOSX.
+ * Test the "Share" submenu in the tab context menu on macOS.
  */
 add_task(async function test_contextmenu_share_macosx() {
   await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
@@ -74,11 +63,6 @@ add_task(async function test_contextmenu_share_macosx() {
     ok(true, "Got Share item");
 
     await openShareMenuPopup(contextMenu);
-    ok(getSharingProvidersSpy.calledOnce, "getSharingProviders called");
-
-    info(
-      "Check we have copy link, a service and one extra menu item for the More... button"
-    );
     let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
     let items = Array.from(popup.querySelectorAll("menuitem"));
     is(
@@ -87,92 +71,59 @@ add_task(async function test_contextmenu_share_macosx() {
       `There should be ${expectedItemCount} menu items.`
     );
 
-    info("Click on the sharing service");
-    let menuPopupClosedPromised = BrowserTestUtils.waitForPopupEvent(
+    info("Click the macOS share picker item");
+    let pickerItem = popup.querySelector(".share-mac-picker-item");
+    Assert.ok(pickerItem, "macOS share picker item exists");
+    let menuPopupClosed = BrowserTestUtils.waitForPopupEvent(
       contextMenu,
       "hidden"
     );
-    let shareButton = items.find(
-      t => t.label == mockShareData[0].menuItemTitle
-    );
-    ok(
-      shareButton,
-      "Share button's label should match the service's menu item title. "
-    );
-    is(
-      shareButton?.getAttribute("data-share-name"),
-      mockShareData[0].name,
-      "Share button's share-name value should match the service's name. "
-    );
+    Services.fog.testResetFOG();
+    GleanPings.prototypeNoCodeEvents.setEnabled(true);
+    popup.activateItem(pickerItem);
+    await menuPopupClosed;
 
-    popup.activateItem(shareButton);
-    await menuPopupClosedPromised;
+    await TestUtils.waitForCondition(
+      () => shareUrlWithPickerSpy.calledOnce,
+      "shareUrlWithPicker called"
+    );
+    let [, urls, titles, shareTitle] = shareUrlWithPickerSpy.getCall(0).args;
+    Assert.deepEqual(urls, [TEST_URL_1], "Shared the correct URL");
+    Assert.equal(titles[0], "Sharing URL", "Shared the correct title");
+    Assert.equal(shareTitle, "Sharing URL", "Share title matches page title");
 
-    ok(shareUrlSpy.calledOnce, "shareUrl called");
-
-    info("Check the correct data was shared.");
-    let [name, url, title] = shareUrlSpy.getCall(0).args;
-    is(name, mockShareData[0].name, "Shared correct service name");
-    is(url, TEST_URL_1, "Shared correct URL");
-    is(title, "Sharing URL", "Shared the correct title.");
+    let events =
+      Glean.browserUsage.interaction
+        .testGetValue()
+        ?.map(e => [e.extra.source, e.extra.widget_id]) ?? [];
+    Assert.deepEqual(
+      events,
+      [
+        ["tabs-context", "macos-share-picker"],
+        ["tabs-context-entrypoint", "macos-share-picker"],
+      ],
+      "picker click records the macos-share-picker widget id"
+    );
 
     info("Test the copy link button");
     contextMenu = await openTabContextMenu(gBrowser.selectedTab);
     await openShareMenuPopup(contextMenu);
-    // Since the tab context menu was collapsed previously, the popup needs to get the
-    // providers again.
-    ok(getSharingProvidersSpy.calledTwice, "getSharingProviders called again");
     popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-    items = Array.from(popup.querySelectorAll("menuitem"));
-    is(
-      items.length,
-      expectedItemCount,
-      `There should be ${expectedItemCount} menu items.`
-    );
-    info("Click on the Copy Link item");
-    let copyLinkItem = items.find(item =>
-      item.classList.contains("share-copy-link")
-    );
-    menuPopupClosedPromised = BrowserTestUtils.waitForPopupEvent(
-      contextMenu,
-      "hidden"
-    );
+    let copyLinkItem = popup.querySelector(".share-copy-link");
+    Assert.ok(copyLinkItem, "Copy Link item exists");
+    menuPopupClosed = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
     await SimpleTest.promiseClipboardChange(TEST_URL_1, () =>
       popup.activateItem(copyLinkItem)
     );
-    await menuPopupClosedPromised;
+    await menuPopupClosed;
 
-    info("Test the More... item");
-    contextMenu = await openTabContextMenu(gBrowser.selectedTab);
-    await openShareMenuPopup(contextMenu);
-    // Since the tab context menu was collapsed previously, the popup needs to get the
-    // providers again.
-    is(getSharingProvidersSpy.callCount, 3, "getSharingProviders called again");
-    popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-    items = popup.querySelectorAll("menuitem");
-    is(
-      items.length,
-      expectedItemCount,
-      `There should be ${expectedItemCount} menu items.`
-    );
-
-    info("Click on the More item");
-    let moreMenuitem = popup.querySelector(".share-more-button");
-    menuPopupClosedPromised = BrowserTestUtils.waitForPopupEvent(
-      contextMenu,
-      "hidden"
-    );
-    popup.activateItem(moreMenuitem);
-    await menuPopupClosedPromised;
-    ok(openSharingPreferencesSpy.calledOnce, "openSharingPreferences called");
-
-    shareUrlSpy.resetHistory();
+    shareUrlWithPickerSpy.resetHistory();
   });
 });
 
 /**
  * Test that for multiple selected tabs on macOS:
- *  - Native sharing services are enabled and share the context tab's URL
+ *  - The share picker item is enabled and forwards every URL/title
  *  - "Copy links" copies all shareable URLs to the clipboard
  */
 add_task(async function test_contextmenu_share_multiselect_macosx() {
@@ -193,42 +144,38 @@ add_task(async function test_contextmenu_share_multiselect_macosx() {
   await openShareMenuPopup(contextMenu);
 
   let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-  let items = Array.from(popup.querySelectorAll("menuitem"));
-
-  info("Native sharing service should be enabled for multi-tab");
-  let nativeServiceItem = items.find(
-    item => item.label == mockShareData[0].menuItemTitle
-  );
-  ok(nativeServiceItem, "native service item exists");
+  let pickerItem = popup.querySelector(".share-mac-picker-item");
+  Assert.ok(pickerItem, "macOS share picker item exists");
   ok(
-    !nativeServiceItem.hasAttribute("disabled"),
-    "native service is enabled for multi-tab (shares context tab URL)"
+    !pickerItem.hasAttribute("disabled"),
+    "share picker is enabled for multi-tab"
   );
 
-  info("Clicking native service shares the context tab's URL");
+  info("Clicking the picker forwards every selected tab's URL");
   let menuPopupClosed = BrowserTestUtils.waitForPopupEvent(
     contextMenu,
     "hidden"
   );
-  popup.activateItem(nativeServiceItem);
+  popup.activateItem(pickerItem);
   await menuPopupClosed;
 
-  ok(shareUrlSpy.calledOnce, "shareUrl was called once");
-  is(
-    shareUrlSpy.firstCall.args[1],
-    TEST_URL_2,
-    "shareUrl was called with the context tab's URL"
+  await TestUtils.waitForCondition(
+    () => shareUrlWithPickerSpy.calledOnce,
+    "shareUrlWithPicker was called once"
+  );
+  let [, urls] = shareUrlWithPickerSpy.getCall(0).args;
+  Assert.deepEqual(
+    urls,
+    [TEST_URL_1, TEST_URL_2],
+    "shareUrlWithPicker received both tab URLs"
   );
 
-  info("Verify that tab multiselect is enabled");
+  info("Verify that Copy Links copies every selected tab's URL");
   contextMenu = await openTabContextMenu(tab2);
   await openShareMenuPopup(contextMenu);
   popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-  items = Array.from(popup.querySelectorAll("menuitem"));
 
-  let copyLinkItem = items.find(item =>
-    item.classList.contains("share-copy-link")
-  );
+  let copyLinkItem = popup.querySelector(".share-copy-link");
   ok(copyLinkItem, "copy link item exists");
   ok(
     !copyLinkItem.hasAttribute("disabled"),
@@ -261,7 +208,7 @@ add_task(async function test_contextmenu_share_multiselect_macosx() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
-  shareUrlSpy.resetHistory();
+  shareUrlWithPickerSpy.resetHistory();
 });
 
 /**
@@ -293,9 +240,7 @@ add_task(
     await openShareMenuPopup(contextMenu);
 
     let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-    let copyLinkItem = Array.from(popup.querySelectorAll("menuitem")).find(
-      item => item.classList.contains("share-copy-link")
-    );
+    let copyLinkItem = popup.querySelector(".share-copy-link");
     ok(copyLinkItem, "copy links item exists");
     ok(
       !copyLinkItem.hasAttribute("disabled"),
@@ -341,9 +286,7 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_macosx() {
   await openShareMenuPopup(contextMenu);
 
   let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-  let copyLinkItem = Array.from(popup.querySelectorAll("menuitem")).find(item =>
-    item.classList.contains("share-copy-link")
-  );
+  let copyLinkItem = popup.querySelector(".share-copy-link");
   ok(copyLinkItem, "copy links item exists");
   is(
     copyLinkItem.getAttribute("disabled"),
@@ -360,4 +303,110 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_macosx() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+});
+
+/**
+ * Test the share group in the address bar context menu on macOS: Share…,
+ * Create QR Code and Copy Clean Link.
+ */
+add_task(async function test_urlbar_contextmenu_share_macosx() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shareqrcode.enabled", true]],
+  });
+  await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
+    await UrlbarTestUtils.withContextMenu(window, popup => {
+      let shareItem = popup.querySelector(".share-mac-picker-item");
+      let qrCodeItem = popup.querySelector(".share-qrcode-item");
+      let stripOnShare = popup.querySelector('[anonid="strip-on-share"]');
+
+      Assert.ok(shareItem, "Share item is present");
+      Assert.ok(qrCodeItem, "Create QR Code item is present");
+      Assert.ok(stripOnShare, "Copy Clean Link item is present");
+
+      Assert.ok(BrowserTestUtils.isVisible(shareItem), "Share item is visible");
+      Assert.ok(
+        BrowserTestUtils.isVisible(qrCodeItem),
+        "Create QR Code is visible when the pref is enabled"
+      );
+      Assert.ok(!shareItem.hasAttribute("disabled"), "Share item is enabled");
+      Assert.ok(
+        !qrCodeItem.hasAttribute("disabled"),
+        "Create QR Code is enabled"
+      );
+    });
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Test that Create QR Code is hidden when the QR code pref is disabled.
+ */
+add_task(async function test_urlbar_contextmenu_share_qrcode_pref_off() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shareqrcode.enabled", false]],
+  });
+  await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
+    await UrlbarTestUtils.withContextMenu(window, popup => {
+      let qrCodeItem = popup.querySelector(".share-qrcode-item");
+      Assert.ok(qrCodeItem, "Create QR Code item is still in the DOM");
+      Assert.ok(
+        !BrowserTestUtils.isVisible(qrCodeItem),
+        "Create QR Code is hidden when the pref is disabled"
+      );
+    });
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Test that the Share item opens the picker anchored to the address bar, with
+ * the current tab's URL and title.
+ */
+add_task(async function test_urlbar_contextmenu_share_invokes_picker() {
+  await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
+    shareUrlWithPickerSpy.resetHistory();
+    await UrlbarTestUtils.withContextMenu(window, popup => {
+      popup.activateItem(popup.querySelector(".share-mac-picker-item"));
+    });
+
+    await TestUtils.waitForCondition(
+      () => shareUrlWithPickerSpy.calledOnce,
+      "shareUrlWithPicker was called"
+    );
+    let [anchor, urls, titles, shareTitle] =
+      shareUrlWithPickerSpy.getCall(0).args;
+    Assert.equal(
+      anchor,
+      gURLBar.inputField,
+      "Picker is anchored to the address bar input field"
+    );
+    Assert.deepEqual(urls, [TEST_URL_1], "Shared the current tab's URL");
+    Assert.equal(titles[0], "Sharing URL", "Shared the correct title");
+    Assert.equal(shareTitle, "Sharing URL", "Share title matches page title");
+
+    shareUrlWithPickerSpy.resetHistory();
+  });
+});
+
+/**
+ * Test that Share and Create QR Code are disabled for a URL that cannot be
+ * shared.
+ */
+add_task(async function test_urlbar_contextmenu_share_unshareable_url() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shareqrcode.enabled", true]],
+  });
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await UrlbarTestUtils.withContextMenu(window, popup => {
+      Assert.ok(
+        popup.querySelector(".share-mac-picker-item").hasAttribute("disabled"),
+        "Share is disabled for an unshareable URL"
+      );
+      Assert.ok(
+        popup.querySelector(".share-qrcode-item").hasAttribute("disabled"),
+        "Create QR Code is disabled for an unshareable URL"
+      );
+    });
+  });
+  await SpecialPowers.popPrefEnv();
 });

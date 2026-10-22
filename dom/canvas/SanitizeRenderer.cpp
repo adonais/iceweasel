@@ -385,8 +385,14 @@ std::string SanitizeRenderer(const std::string& raw_renderer) {
 // -
 
 /**
- * Sanitize vendor string to standardized buckets.
- * E.g. "NVIDIA Corporation" => "NVIDIA Corporation"
+ * Sanitize vendor string to a coarse GPU-family bucket.
+ *
+ * The buckets are deliberately limited to the four desktop families that
+ * shader libraries branch on when selecting driver workarounds
+ * (see bug 2055176); everything else collapses to "Other" so that
+ * low-population vendors are not individually identifiable.
+ *
+ * E.g. "NVIDIA Corporation" => "NVIDIA Corporation", "ARM" => "Other"
  */
 std::string SanitizeVendor(const std::string& raw_vendor) {
   if (Contains(raw_vendor, "NVIDIA")) {
@@ -399,31 +405,9 @@ std::string SanitizeVendor(const std::string& raw_vendor) {
       Contains(raw_vendor, "Advanced Micro Devices")) {
     return "AMD";
   }
-  if (Contains(raw_vendor, "Qualcomm")) {
-    return "Qualcomm";
-  }
-  if (Contains(raw_vendor, "ARM")) {
-    return "ARM";
-  }
   if (Contains(raw_vendor, "Apple")) {
     return "Apple";
   }
-  if (Contains(raw_vendor, "Samsung")) {
-    return "Samsung";
-  }
-  if (Contains(raw_vendor, "Mesa") || Contains(raw_vendor, "X.Org")) {
-    return "Mesa";
-  }
-  if (Contains(raw_vendor, "Microsoft")) {
-    return "Microsoft";
-  }
-  if (Contains(raw_vendor, "VMware")) {
-    return "VMware";
-  }
-  if (Contains(raw_vendor, "Google")) {
-    return "Google";
-  }
-
   return "Other";
 }
 

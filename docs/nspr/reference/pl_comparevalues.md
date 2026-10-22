@@ -14,9 +14,9 @@ PRIntn PL_CompareValues(const
 
 ## Description
 
-{ref}`PL_CompareValues` compares the two `void *` values `v1` and
+{doc}`pl_comparevalues` compares the two `void *` values `v1` and
 `v2` numerically, i.e., it returns the value of the expression `v1`
 == `v2`.
 
-{ref}`PL_CompareValues` can be used as the comparator function for integer
+{doc}`pl_comparevalues` can be used as the comparator function for integer
 or pointer-valued key or entry value.

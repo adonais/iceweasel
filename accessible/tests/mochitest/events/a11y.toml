@@ -62,9 +62,6 @@ skip-if = [
 ["test_focus_listcontrols.xhtml"]
 
 ["test_focus_menu.xhtml"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1808737
-]
 
 ["test_focus_name.html"]
 

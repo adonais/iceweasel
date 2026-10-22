@@ -75,8 +75,7 @@ void aom_upsampled_pred_neon(MACROBLOCKD *xd, const AV1_COMMON *const cm,
     aom_convolve8_vert(ref, ref_stride, comp_pred, width, NULL, -1, filter_y,
                        16, width, height);
   } else {
-    DECLARE_ALIGNED(16, uint8_t,
-                    im_block[((MAX_SB_SIZE * 2 + 16) + 16) * MAX_SB_SIZE]);
+    uint8_t *im_block = comp_pred;
 
     const int16_t *const filter_x =
         av1_get_interp_filter_subpel_kernel(filter_params, subpel_x_q3 << 1);
@@ -89,7 +88,7 @@ void aom_upsampled_pred_neon(MACROBLOCKD *xd, const AV1_COMMON *const cm,
     const int ref_vert_offset = ref_stride * ((SUBPEL_TAPS >> 1) - 1);
     const int im_vert_offset = im_stride * ((filter_params->taps >> 1) - 1);
 
-    assert(im_height <= (MAX_SB_SIZE * 2 + 16) + 16);
+    assert(im_height < (MAX_SB_SIZE + SUBPEL_TAPS));
     aom_convolve8_horiz(ref - ref_vert_offset, ref_stride, im_block,
                         MAX_SB_SIZE, filter_x, 16, NULL, -1, width, im_height);
     aom_convolve8_vert(im_block + im_vert_offset, MAX_SB_SIZE, comp_pred, width,
@@ -171,19 +170,19 @@ void aom_highbd_upsampled_pred_neon(MACROBLOCKD *xd,
     aom_highbd_convolve8_vert_neon(ref8, ref_stride, comp_pred8, width, NULL,
                                    -1, kernel, 16, width, height, bd);
   } else {
-    DECLARE_ALIGNED(16, uint16_t,
-                    temp[((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE]);
+    uint16_t *temp = CONVERT_TO_SHORTPTR(comp_pred8);
+    const uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
     const int16_t *const kernel_x =
         av1_get_interp_filter_subpel_kernel(filter, subpel_x_q3 << 1);
     const int16_t *const kernel_y =
         av1_get_interp_filter_subpel_kernel(filter, subpel_y_q3 << 1);
     const int intermediate_height =
         (((height - 1) * 8 + subpel_y_q3) >> 3) + filter->taps;
-    assert(intermediate_height <= (MAX_SB_SIZE * 2 + 16) + 16);
+    assert(intermediate_height < (MAX_SB_SIZE + SUBPEL_TAPS));
     aom_highbd_convolve8_horiz_neon(
-        ref8 - ref_stride * ((filter->taps >> 1) - 1), ref_stride,
-        CONVERT_TO_BYTEPTR(temp), MAX_SB_SIZE, kernel_x, 16, NULL, -1, width,
-        intermediate_height, bd);
+        CONVERT_TO_BYTEPTR(ref - ref_stride * ((filter->taps >> 1) - 1)),
+        ref_stride, CONVERT_TO_BYTEPTR(temp), MAX_SB_SIZE, kernel_x, 16, NULL,
+        -1, width, intermediate_height, bd);
     aom_highbd_convolve8_vert_neon(
         CONVERT_TO_BYTEPTR(temp + MAX_SB_SIZE * ((filter->taps >> 1) - 1)),
         MAX_SB_SIZE, comp_pred8, width, NULL, -1, kernel_y, 16, width, height,

@@ -638,18 +638,21 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     // IME was blurred without a focus change
     BlurredWithoutFocusChange,
   };
-  friend std::ostream& operator<<(std::ostream& aStream, IMEFocusState aState) {
+  friend auto format_as(IMEFocusState aState) {
     switch (aState) {
       case IMEFocusState::Focused:
-        return aStream << "IMEFocusState::Focused";
+        return "Focused";
       case IMEFocusState::Blurred:
-        return aStream << "IMEFocusState::Blurred";
+        return "Blurred";
       case IMEFocusState::BlurredWithoutFocusChange:
-        return aStream << "IMEFocusState::BlurredWithoutFocusChange";
+        return "BlurredWithoutFocusChange";
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid value");
-        return aStream << "<illegal value>";
+        return "<illegal value>";
     }
+  }
+  friend std::ostream& operator<<(std::ostream& aStream, IMEFocusState aState) {
+    return aStream << format_as(aState);
   }
   IMEFocusState mIMEFocusState = IMEFocusState::Blurred;
 

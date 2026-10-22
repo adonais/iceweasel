@@ -94,14 +94,41 @@ data class StandardMenuItem(
 ) : MenuItem()
 
 /**
+ * Configuration of a full-width promotional banner that is user dismissable. Only shown in list groups as grids don't
+ * have the room for it.
+ *
+ * @param title The title of the banner.
+ * @param summary Summary to show for this banner.
+ * @param icon Icon to show for this banner.
+ * @param onClickEvent [MenuEvent] to dispatch when the banner is clicked.
+ * @param onDismissEvent [MenuEvent] to dispatch when the banner is dismissed.
+ */
+data class BannerMenuItem(
+    override val title: Text,
+    override val summary: MenuItemSummary,
+    override val icon: MenuItemIcon,
+    override val onClickEvent: MenuEvent,
+    val onDismissEvent: MenuEvent,
+) : MenuItem() {
+    override val contentDescription: Text? = null
+    override val role: Role = Button
+    override val showNewIndicator: Boolean = false
+    override val badge: MenuItemBadge? = null
+    override val state: MenuItemState = DEFAULT
+    override val onLongClickEvent: MenuEvent? = null
+}
+
+/**
  * Configuration of the summary text of a [MenuItem].
  *
  * @param text The text to show.
  * @param state The [MenuItemState] of this summary.
+ * @param maxLines The maximum number of lines to show this text on.
  */
 data class MenuItemSummary(
     val text: Text,
     val state: MenuItemState = DEFAULT,
+    val maxLines: Int = 1,
 )
 
 /**

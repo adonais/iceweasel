@@ -2652,10 +2652,61 @@ const TileList = props => {
     className: "text body-text"
   }))))));
 };
+;// ./content-src/components/CarouselNav.jsx
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+const CarouselNav = ({
+  items = [],
+  activeId,
+  onSelect,
+  navLabel
+}) => {
+  const groupRef = (0,external_React_namespaceObject.useRef)(null);
+  const onSelectRef = (0,external_React_namespaceObject.useRef)(onSelect);
+  onSelectRef.current = onSelect;
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const group = groupRef.current;
+    if (!group) {
+      return undefined;
+    }
+    const handleChange = () => onSelectRef.current?.(group.value);
+    group.addEventListener("change", handleChange);
+    return () => group.removeEventListener("change", handleChange);
+  }, []);
+  const pillItems = items.filter(item => item?.pill && item.id);
+  if (pillItems.length < 2) {
+    return null;
+  }
+  const labelProps = navLabel?.raw ? {
+    "aria-label": navLabel.raw
+  } : {
+    "data-l10n-id": navLabel?.string_id ?? "onboarding-carousel-nav"
+  };
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "carousel-nav"
+  }, /*#__PURE__*/external_React_default().createElement("moz-segmented-control", _extends({
+    ref: groupRef,
+    value: activeId
+  }, labelProps), pillItems.map(({
+    id,
+    pill
+  }) => /*#__PURE__*/external_React_default().createElement("moz-segmented-control-item", {
+    key: id,
+    value: id,
+    label: pill.label?.raw,
+    "data-l10n-id": pill.label?.string_id,
+    iconsrc: pill.icon
+  }))));
+};
 ;// ./content-src/components/SingleSelect.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -2675,6 +2726,17 @@ const SingleSelect = ({
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
+  const cardRefs = (0,external_React_namespaceObject.useRef)(new Map());
+  const handlePillSelect = id => {
+    setActiveSingleSelectSelection(id, singleSelectId);
+    const card = cardRefs.current.get(id);
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    card?.scrollIntoView?.({
+      behavior: reduceMotion ? "auto" : "smooth",
+      inline: "center",
+      block: "nearest"
+    });
+  };
   const autoTriggerAllowed = itemAction => {
     // Currently only enabled for sidebar experiment prefs
     const allowedActions = ["SET_PREF"];
@@ -2717,7 +2779,12 @@ const SingleSelect = ({
   const CONFIGURABLE_STYLES = ["background", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: `tiles-single-select-container`
-  }, /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("fieldset", {
+  }, isSingleSelect ? /*#__PURE__*/external_React_default().createElement(CarouselNav, {
+    items: content.tiles?.data,
+    activeId: activeSingleSelectSelections[singleSelectId],
+    onSelect: handlePillSelect,
+    navLabel: content.tiles?.pill_nav_label
+  }) : null, /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, /*#__PURE__*/external_React_default().createElement(Localized, {
     text: content.tiles?.subtitle || content.subtitle
@@ -2769,6 +2836,13 @@ const SingleSelect = ({
       text: valOrObj(tooltip)
     }, /*#__PURE__*/external_React_default().createElement("label", {
       className: `select-item ${type} ${selected ? " selected" : ""}`,
+      ref: el => {
+        if (el) {
+          cardRefs.current.set(value, el);
+        } else {
+          cardRefs.current.delete(value);
+        }
+      },
       onKeyDown: e => handleKeyDown(e),
       style: {
         ...MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -3734,9 +3808,8 @@ const PinnableSitesList = ({
     ...prev,
     [id]: state
   }));
-  const handlePin = async (event, item) => {
+  const handlePin = async (event, item, position) => {
     setItemState(item.id, PENDING);
-    MultiStageUtils.sendActionTelemetry(messageId, item.id, "CLICK_BUTTON");
     const result = await handleAction(event, {
       type: "PIN_TASKBAR_TAB",
       needsAwait: true,
@@ -3755,7 +3828,9 @@ const PinnableSitesList = ({
       pinResultLabel = "failure";
     }
     MultiStageUtils.sendActionTelemetry(messageId, item.id, "PIN_SITE", {
-      result: pinResultLabel
+      result: pinResultLabel,
+      position,
+      personalized: !!item.personalized
     });
 
     // Re-enable the button only on explicit failure so the user can retry.
@@ -3769,7 +3844,7 @@ const PinnableSitesList = ({
   };
   return /*#__PURE__*/external_React_default().createElement("ul", {
     className: `pinnable-sites-list${alwaysShow ? " always-visible" : ""}`
-  }, items.map(item => {
+  }, items.map((item, index) => {
     const nameId = `pinnable-site-name-${item.id}`;
     const state = itemStates[item.id] ?? IDLE;
     const isPendingOrPinned = state === PENDING || state === PINNED;
@@ -3793,8 +3868,9 @@ const PinnableSitesList = ({
       className: "pinnable-sites-description"
     }))), /*#__PURE__*/external_React_default().createElement("button", {
       className: "pinnable-sites-pin-button primary",
+      value: item.id,
       disabled: isPendingOrPinned,
-      onClick: e => handlePin(e, item),
+      onClick: e => handlePin(e, item, index + 1),
       "aria-describedby": nameId
     }, pinButtonLabel && /*#__PURE__*/external_React_default().createElement(Localized, {
       text: pinButtonLabel
@@ -3854,7 +3930,7 @@ const TextBoxTile = ({
   }, activeContent ?? ""));
 };
 ;// ./content-src/components/ContentTiles.jsx
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function ContentTiles_extends() { return ContentTiles_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, ContentTiles_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -3881,6 +3957,21 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
 const HEADER_STYLES = ["backgroundColor", "border", "padding", "margin", "width", "height"];
 const ContentTiles_TILE_STYLES = ["border", "borderRadius", "marginBlock", "marginInline", "paddingBlock", "paddingInline"];
 const CONTAINER_STYLES = ["padding", "margin", "marginBlock", "marginInline", "paddingBlock", "paddingInline", "flexDirection", "flexWrap", "flexFlow", "flexGrow", "flexShrink", "justifyContent", "alignItems", "gap"];
+
+/**
+ * @param {object|object[]} tiles - The tiles of the screen being shown.
+ * @returns {object} Impression context, if any.
+ */
+function getTileImpressionContext(tiles) {
+  const pinnableSites = (Array.isArray(tiles) ? tiles : [tiles]).find(tile => tile?.type === "pinnable_sites" && Array.isArray(tile.data));
+  if (!pinnableSites) {
+    return {};
+  }
+  return {
+    total_sites: pinnableSites.data.length,
+    personalized_sites: pinnableSites.data.filter(item => item?.personalized).length
+  };
+}
 const ContentTiles = props => {
   const {
     content
@@ -4048,7 +4139,7 @@ const ContentTiles = props => {
       key: index,
       className: `content-tile ${header ? "has-header" : ""}`,
       style: MultiStageUtils.getTileStyle(tile, ContentTiles_TILE_STYLES)
-    }, header?.title && /*#__PURE__*/external_React_default().createElement("button", _extends({
+    }, header?.title && /*#__PURE__*/external_React_default().createElement("button", ContentTiles_extends({
       className: `tile-header secondary${header.linkStyle ? " link-style" : ""}`,
       onClick: () => toggleTile(index, tile)
     }, tileHeaderProps, {
@@ -4376,6 +4467,7 @@ const MultiStageProtonScreen = props => {
     id: props.id,
     order: props.order,
     activeTheme: props.activeTheme,
+    activeThemeId: props.activeThemeId,
     installedAddons: props.installedAddons,
     screenMultiSelects: props.screenMultiSelects,
     setScreenMultiSelects: props.setScreenMultiSelects,
@@ -4700,6 +4792,27 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }), /*#__PURE__*/external_React_default().createElement("div", {
       className: "noodle yellow-circle"
     }));
+  }
+  renderLastCardImage(content) {
+    const {
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      ...image
+    } = content.center_image ?? {};
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: "last-card-image",
+      style: {
+        "--last-card-image-width": width,
+        "--last-card-image-height": height,
+        "--last-card-picture-margin-block": marginBlock,
+        "--last-card-picture-margin-inline": marginInline
+      }
+    }, content.center_image ? this.renderPicture({
+      ...image,
+      className: "center-image"
+    }) : null);
   }
   renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
@@ -5027,6 +5140,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       role: ariaRole ?? "alertdialog",
       layout: content.layout,
       pos: content.position || "center",
+      "data-theme": content.position === "card-stack" && this.props.activeThemeId ? this.props.activeThemeId : null,
       tabIndex: "-1",
       "aria-labelledby": `mainContentHeader${content.subtitle ? " mainContentSubheader" : ""}`,
       "aria-describedby": "mainContentInner",
@@ -5055,7 +5169,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? /*#__PURE__*/external_React_default().createElement("div", {
       id: "multi-stage-message-welcome-text",
       className: `welcome-text ${content.title_style || ""}`
-    }, content.title ? this.renderTitle(content) : null, content.subtitle ? /*#__PURE__*/external_React_default().createElement(Localized, {
+    }, content.title ? this.renderTitle(content) : null, content.layout === "last-card" ? this.renderLastCardImage(content) : null, content.subtitle ? /*#__PURE__*/external_React_default().createElement(Localized, {
       text: content.subtitle
     }, /*#__PURE__*/external_React_default().createElement("h2", {
       "data-l10n-args": JSON.stringify({
@@ -5249,8 +5363,9 @@ const screenContentShape = {
   width: (prop_types_default()).string,
   // The callout card padding as a CSS value.
   padding: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).number]),
-  // Used when a single row with a more inline layout is desired. Works well in
-  // tandem with title_logo.
+  // A layout variant for the screen. 'inline' is a single row layout that
+  // works well in tandem with title_logo. 'last-card' is the final card-stack
+  // screen, with the title and subtitle split around a centered image slot.
   layout: (prop_types_default()).string,
   // If true, adds a colorful gradient border to the screen. This is only
   // supported for screens with 'hide_arrow' set to true. There is no effect
@@ -5349,6 +5464,40 @@ const screenContentShape = {
       delay: (prop_types_default()).string
     })
   }),
+  // An optional image shown in the center image slot of the 'last-card'
+  // layout, revealed once the text split animation completes.
+  center_image: prop_types_default().shape({
+    // The image URL.
+    imageURL: (prop_types_default()).string,
+    // The dark mode image URL.
+    darkModeImageURL: (prop_types_default()).string,
+    // The reduced motion image URL.
+    reducedMotionImageURL: (prop_types_default()).string,
+    // The dark mode reduced motion image URL.
+    darkModeReducedMotionImageURL: (prop_types_default()).string,
+    // Right-to-left replacements for any of the URLs above, applied over them
+    // when the document is RTL. Any keys ommitted keep their base values.
+    rtl: prop_types_default().shape({
+      imageURL: (prop_types_default()).string,
+      darkModeImageURL: (prop_types_default()).string,
+      reducedMotionImageURL: (prop_types_default()).string,
+      darkModeReducedMotionImageURL: (prop_types_default()).string
+    }),
+    // The <img> alt text.
+    alt: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).object]),
+    // The CSS width of the image slot. The split animation and margins adapt
+    // to it. Defaults to 120px.
+    width: (prop_types_default()).string,
+    // The CSS height of the image slot. Defaults to 120px.
+    height: (prop_types_default()).string,
+    // The CSS style overriding the marginBlock property. Useful for aligning
+    // the image's focal point with the text. Only applies when the text is
+    // split around the image, not when stacked at narrow breakpoints.
+    marginBlock: (prop_types_default()).string,
+    // The CSS style overriding the marginInline property. Only applies when
+    // the text is split around the image, not when stacked at narrow breakpoints.
+    marginInline: (prop_types_default()).string
+  }),
   // The text for the headline.
   title: localizableThingPropTypes,
   // An optional object representing an icon to show next to the title.
@@ -5405,6 +5554,8 @@ const screenContentShape = {
     // CSS overrides of the tile container. Any CSS properties starting with
     // '--' are also allowed.
     style: (prop_types_default()).object,
+    // Accessible name for the optional carousel pill navigation.
+    pill_nav_label: localizableThingPropTypes,
     // Array of tile configurations needed for the tile type.
     data: prop_types_default().oneOfType([(prop_types_default()).array, (prop_types_default()).object])
   })]),
@@ -5637,8 +5788,11 @@ function addUtmParams(url, utmTerm) {
 
 
 
+
 // Amount of milliseconds for all transitions to complete (including delays).
 const TRANSITION_OUT_TIME = 1000;
+// Keep in sync with --card-stack-duration in _multistage.scss.
+const CARD_STACK_TRANSITION_OUT_TIME = 400;
 const LANGUAGE_MISMATCH_SCREEN_ID = "AW_LANGUAGE_MISMATCH";
 const MultiStageAboutWelcome = props => {
   const gateInitialPaint = props.gateInitialPaint ?? false;
@@ -5702,7 +5856,8 @@ const MultiStageAboutWelcome = props => {
             screen_family: props.message_id,
             screen_index: order,
             screen_id: screen.id,
-            screen_initials: screenInitials
+            screen_initials: screenInitials,
+            ...getTileImpressionContext(screen.content?.tiles)
           });
 
           // Impression actions should be fired before recording the
@@ -5745,11 +5900,20 @@ const MultiStageAboutWelcome = props => {
       requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
     }
   }, [transition]);
+  const isCardStack = defaultScreens?.[0]?.content?.position === "card-stack";
+  const transitionOutTime = isCardStack ? CARD_STACK_TRANSITION_OUT_TIME : TRANSITION_OUT_TIME;
 
   // Transition to next screen, opening about:home on last screen button CTA
   const handleTransition = goBack => {
     // Only handle transitioning out from a screen once.
     if (transition === "out") {
+      return;
+    }
+
+    // The card stack plays a single exit animation on teardown, so finishing
+    // from its last screen would otherwise wait for that twice.
+    if (isCardStack && !goBack && index >= screens.length - 1) {
+      window.AWFinish();
       return;
     }
 
@@ -5767,7 +5931,7 @@ const MultiStageAboutWelcome = props => {
       } else {
         window.AWFinish();
       }
-    }, props.transitions ? TRANSITION_OUT_TIME : 0);
+    }, props.transitions ? transitionOutTime : 0);
   };
   (0,external_React_namespaceObject.useEffect)(() => {
     // When about:welcome loads (on refresh or pressing back button
@@ -5788,7 +5952,7 @@ const MultiStageAboutWelcome = props => {
         setTimeout(() => {
           setTransition(props.transitions ? "in" : "");
           setScreenIndex(Math.min(state, screens.length - 1));
-        }, props.transitions ? TRANSITION_OUT_TIME : 0);
+        }, props.transitions ? transitionOutTime : 0);
       };
 
       // Handle page load, e.g., going back to about:welcome from about:home
@@ -5804,7 +5968,9 @@ const MultiStageAboutWelcome = props => {
       window.addEventListener("popstate", handler);
       return () => window.removeEventListener("popstate", handler);
     }
-    return false;
+    // React calls a non-undefined return value on unmount, so `false` here
+    // throws when the message is torn down.
+    return undefined;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [multiSelects, setMultiSelects] = (0,external_React_namespaceObject.useState)({});
@@ -5849,6 +6015,22 @@ const MultiStageAboutWelcome = props => {
       setInitialTheme(theme);
       setActiveTheme(theme);
     })();
+  }, []);
+  const [activeThemeId, setActiveThemeId] = (0,external_React_namespaceObject.useState)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let mounted = true;
+    const refreshActiveThemeId = async () => {
+      let themeId = await window.AWGetActiveThemeId?.();
+      if (mounted) {
+        setActiveThemeId(themeId);
+      }
+    };
+    refreshActiveThemeId();
+    window.addEventListener("LightweightTheme:Set", refreshActiveThemeId);
+    return () => {
+      mounted = false;
+      window.removeEventListener("LightweightTheme:Set", refreshActiveThemeId);
+    };
   }, []);
   const {
     negotiatedLanguage,
@@ -5952,6 +6134,7 @@ const MultiStageAboutWelcome = props => {
       UTMTerm: props.utm_term,
       flowParams: flowParams,
       activeTheme: activeTheme,
+      activeThemeId: activeThemeId,
       initialTheme: initialTheme,
       setActiveTheme: setActiveTheme,
       setInitialTheme: setInitialTheme,
@@ -6475,6 +6658,7 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       order: this.props.order,
       previousOrder: this.props.previousOrder,
       activeTheme: this.props.activeTheme,
+      activeThemeId: this.props.activeThemeId,
       installedAddons: this.props.installedAddons,
       screenMultiSelects: this.props.screenMultiSelects,
       setScreenMultiSelects: this.props.setScreenMultiSelects,
@@ -6517,11 +6701,10 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
     });
   }
 }
-;// ./content-src/asrouter-newtab-multistage.jsx
+;// ./content-src/components/MultistageWithDismiss.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 
 
 
@@ -6539,8 +6722,37 @@ function MultistageWithDismiss({
   // The card-stack template has its own inline dismiss button, so it doesn't
   // need the corner one.
   const isCardStack = config.screens?.[0]?.content?.position === "card-stack";
+  const transitions = config.transitions ?? false;
+  const animateCardStack = isCardStack && transitions;
+  const [isExiting, setIsExiting] = (0,external_React_namespaceObject.useState)(false);
+  const exitTimeout = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!animateCardStack) {
+      return undefined;
+    }
+    const finish = window.AWFinish;
+    window.AWFinish = () => {
+      if (exitTimeout.current) {
+        return;
+      }
+      setIsExiting(true);
+      exitTimeout.current = setTimeout(finish, CARD_STACK_TRANSITION_OUT_TIME);
+    };
+    return () => {
+      window.AWFinish = finish;
+      clearTimeout(exitTimeout.current);
+      exitTimeout.current = null;
+    };
+  }, [animateCardStack]);
+  const wrapperClasses = ["multistage-newtab-wrapper"];
+  if (animateCardStack) {
+    wrapperClasses.push("card-stack-animated");
+  }
+  if (isExiting) {
+    wrapperClasses.push("card-stack-exiting");
+  }
   return /*#__PURE__*/external_React_default().createElement("div", {
-    className: "multistage-newtab-wrapper",
+    className: wrapperClasses.join(" "),
     style: config.wrapper_content_style ? MultiStageUtils.getValidStyle(config.wrapper_content_style, ["height"]) : {
       height: "500px"
     }
@@ -6553,12 +6765,20 @@ function MultistageWithDismiss({
   }), /*#__PURE__*/external_React_default().createElement(MultiStageAboutWelcome, {
     defaultScreens: config.screens,
     message_id: config.id,
-    transitions: config.transitions ?? false,
+    transitions: transitions,
     backdrop: config.backdrop,
     startScreen: 0,
     updateHistory: false
   }));
 }
+;// ./content-src/asrouter-newtab-multistage.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 window.mountMultistageMessage = function mountMultistageMessage(container, props) {
   const {
     messageData,
@@ -6590,6 +6810,15 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
       }
     },
     AWGetSelectedTheme: () => Promise.resolve(),
+    AWGetActiveThemeId: async () => {
+      try {
+        return await window.ASRouterMessage({
+          type: "AW_GET_ACTIVE_THEME_ID"
+        });
+      } catch {
+        return "";
+      }
+    },
     AWGetInstalledAddons: () => Promise.resolve()
   };
   for (const [handlerName, fn] of Object.entries(awHandlers)) {

@@ -269,7 +269,7 @@ some links, as the following screenshot shows.
 These links are to the following items.
 
 1. A minidump. Minidumps can be extremely useful in understanding a
-   crash report; see {ref}`this page <Debugging A Minidump>` for an
+   crash report; see {doc}`this page <debugging_a_minidump>` for an
    explanation how to use them.
 2. The aforementioned JSON raw crash report.
 3. The memory report contained within the crash report.
@@ -311,4 +311,4 @@ occasionally.
 - [A talk about understanding crash
   reports](https://air.mozilla.org/a-talk-about-understanding-crash-reports/),
   by David Baron, from March 2016.
-- {ref}`A guide to searching crash reports`
+- {doc}`/crash-reporting/searching_crash_reports`

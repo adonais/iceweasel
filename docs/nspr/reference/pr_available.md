@@ -18,7 +18,7 @@ The function has the following parameter:
 
 `fd`
 
-: Pointer to a {ref}`PRFileDesc` object representing a file or socket.
+: Pointer to a {doc}`prfiledesc` object representing a file or socket.
 
 ### Returns
 
@@ -28,14 +28,14 @@ The function returns one of the following values:
   bytes that are available for reading. For a normal file, these are
   the bytes beyond the current file pointer.
 - If the function fails, it returns the value -1. The error code can
-  then be retrieved via {ref}`PR_GetError`.
+  then be retrieved via {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_Available` works on normal files and sockets. {ref}`PR_Available`
+{doc}`pr_available` works on normal files and sockets. {doc}`pr_available`
 does not work with pipes on Win32 platforms.
 
 ## See Also
 
 If the number of bytes available for reading is out of the range of a
-32-bit integer, use {ref}`PR_Available64`.
+32-bit integer, use {doc}`pr_available64`.

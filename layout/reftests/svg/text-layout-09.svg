@@ -37,7 +37,7 @@
     element.parentElement.appendChild(rect);
   }
   onload = function() {
-    document.fonts.ready.then(() => {
+    document.fonts.load('25px test').then(() => {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
       ctx.font = '25px test';

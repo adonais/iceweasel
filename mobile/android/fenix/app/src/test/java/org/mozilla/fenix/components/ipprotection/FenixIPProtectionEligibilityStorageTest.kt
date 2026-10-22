@@ -111,6 +111,63 @@ class FenixIPProtectionEligibilityStorageTest {
     }
 
     @Test
+    fun `WHEN nimbus enabled and region is not yet known THEN status is Unknown`() = runTest {
+        FxNimbus.features.ipProtection.withCachedValue(
+            IpProtection(enabled = true, allowedRegions = listOf("US", "CA"))
+        )
+        val browserStore = BrowserStore(initialState = BrowserState(search = SearchState(region = null)))
+
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
+
+        assertEquals(EligibilityStatus.Unknown, storage.eligibilityStatus.first())
+    }
+
+    @Test
+    fun `WHEN nimbus disabled and region is not yet known THEN status is Ineligible`() = runTest {
+        FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
+        val browserStore = BrowserStore(initialState = BrowserState(search = SearchState(region = null)))
+
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
+
+        assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
+    }
+
+    @Test
+    fun `GIVEN region is not yet known WHEN region resolves to an allowed region THEN status moves from Unknown to Eligible`() =
+        runTest {
+            FxNimbus.features.ipProtection.withCachedValue(
+                IpProtection(enabled = true, allowedRegions = listOf("US", "CA"))
+            )
+            val browserStore = BrowserStore(initialState = BrowserState(search = SearchState(region = null)))
+
+            val storage =
+                FenixIPProtectionEligibilityStorage(
+                    browserStore = browserStore,
+                    sharedPref = sharedPreferences,
+                    prefKey = prefKey,
+                    lifecycleOwner = mockk(relaxed = true),
+                )
+
+            assertEquals(EligibilityStatus.Unknown, storage.eligibilityStatus.first())
+
+            browserStore.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
+
+            assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
+        }
+
+    @Test
     fun `WHEN secret toggle is enabled THEN status is Eligible regardless of nimbus`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
         sharedPreferences.edit().putBoolean(prefKey, true).apply()
@@ -216,21 +273,5 @@ class FenixIPProtectionEligibilityStorageTest {
         browserStore.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
 
         assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
-    }
-
-    @Test
-    fun `GIVEN null region WHEN nimbus is enabled THEN status is UnsupportedRegion`() = runTest {
-        FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = true, allowedRegions = listOf("US")))
-        val browserStore = BrowserStore()
-
-        val storage =
-            FenixIPProtectionEligibilityStorage(
-                browserStore = browserStore,
-                sharedPref = sharedPreferences,
-                prefKey = prefKey,
-                lifecycleOwner = mockk(relaxed = true),
-            )
-
-        assertEquals(EligibilityStatus.UnsupportedRegion, storage.eligibilityStatus.first())
     }
 }

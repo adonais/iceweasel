@@ -321,15 +321,12 @@
 
 .picture-of-the-day-source {
   // The title; sits at the top-left of the card.
-  margin: 0;
   padding-block-start: var(--space-small);
   min-inline-size: 0;
   overflow: hidden;
   // The caption always sits on the dark transparent overlay on the photo. It stays white in both light and dark mode.
   // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
   color: var(--color-white);
-  font-size: var(--font-size-root);
-  font-weight: var(--font-weight);
   white-space: nowrap;
   text-overflow: ellipsis;
   // Legible over any image; a long localized string ellipsizes on one line.
@@ -439,6 +436,7 @@
 
     &:hover {
       background-color: var(--button-background-color-hover);
+      color: var(--button-text-color-hover);
 
       &::before {
         // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens

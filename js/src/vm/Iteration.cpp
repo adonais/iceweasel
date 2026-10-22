@@ -1298,7 +1298,7 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
     // The iterator is a snapshot so if indexed properties are added after this
     // point we don't need to do anything. However, the object might have sparse
     // elements now that can be densified later. To account for this, we set the
-    // maybe-in-iteration flag also in NativeObject::maybeDensifySparseElements.
+    // maybe-in-iteration flag also in NativeObject::densifySparseElements.
     //
     // In debug builds, AssertDenseElementsNotIterated is used to check the flag
     // is set correctly.

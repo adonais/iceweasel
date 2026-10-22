@@ -569,7 +569,7 @@ class TestFirefoxRefresh(MarionetteTestCase):
         result = self.runCode(
             """
           let { MigrationUtils } = ChromeUtils.importESModule(
-            "resource:///modules/MigrationUtils.sys.mjs"
+            "moz-src:///browser/components/migration/MigrationUtils.sys.mjs"
           );
           return MigrationUtils.isStartupMigration;
         """

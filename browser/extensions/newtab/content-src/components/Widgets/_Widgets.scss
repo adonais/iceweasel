@@ -219,8 +219,7 @@
     --widgets-small-card-height: var(--newtab-card-height-small);
 
     &:has(.lists),
-    &:has(.focus-timer),
-    &:has(.sports) {
+    &:has(.focus-timer) {
       display: grid;
       grid-template-columns: repeat(auto-fit, var(--widgets-card-width));
       gap: var(--widgets-grid-gap);
@@ -250,8 +249,7 @@
   --widgets-card-width: var(--newtab-card-width-medium);
 
   &:has(.lists),
-  &:has(.focus-timer),
-  &:has(.sports) {
+  &:has(.focus-timer) {
     @media(min-width: $break-point-widest) {
       --widgets-grid-gap: var(--space-large);
     }
@@ -285,6 +283,13 @@
   display: inline-block;
   margin-block-start: var(--space-medium);
   font-size: var(--font-size-small);
+}
+
+// Shared widget header typography.
+.newtab-widget-title {
+  margin: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
 }
 
 // @experiment(remove) { bug 2066527 }

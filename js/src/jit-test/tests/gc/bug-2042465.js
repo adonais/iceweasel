@@ -18,8 +18,6 @@ setJitCompilerOption("offthread-compilation.enable", 0);
 let g = newGlobal({newCompartment: true});
 g.eval('var s1 = Symbol("s1"); var s2 = Symbol("s2");');
 g.eval('addMarkObservers([s1, s2]);');
-let i1 = g.eval('getAtomMarkIndex(s1)');
-let i2 = g.eval('getAtomMarkIndex(s2)');
 
 // This zone references the symbols only as values of gray weak maps. The keys
 // are kept alive so the entries (and their symbol values) survive.
@@ -55,10 +53,6 @@ g.eval('s1 = undefined; s2 = undefined;');
 gc();
 assertEq(getMarks()[0], 'gray');
 assertEq(getMarks()[1], 'gray');
-assertEq(getAtomMarkColor(this, i1), 'gray');
-assertEq(getAtomMarkColor(this, i2), 'gray');
-assertEq(getAtomMarkColor(g, i1), 'gray');
-assertEq(getAtomMarkColor(g, i2), 'gray');
 
 // Restore the second zone's references to black references. This marks the
 // symbols black and updates the second zone's reference state. This zone's
@@ -66,10 +60,6 @@ assertEq(getAtomMarkColor(g, i2), 'gray');
 g.eval('s1 = grayRoot()[0]; s2 = grayRoot()[1]; undefined;');
 assertEq(getMarks()[0], 'black');
 assertEq(getMarks()[1], 'black');
-assertEq(getAtomMarkColor(this, i1), 'gray');
-assertEq(getAtomMarkColor(this, i2), 'gray');
-assertEq(getAtomMarkColor(g, i1), 'black');
-assertEq(getAtomMarkColor(g, i2), 'black');
 
 // Note: comparing a result against |g.s1| / |g.s2| would itself read the symbol
 // into this zone and mark it, so we only check the result is a symbol.
@@ -78,9 +68,7 @@ assertEq(getAtomMarkColor(g, i2), 'black');
 // marks the symbol black in this zone's atom marking bitmap.
 function readVM(m, k) { return m.get(k); }
 assertEq(typeof readVM(grayRoot()[0], key1), 'symbol');
-assertEq(getAtomMarkColor(this, i1), 'black');
 
 // JIT path: the same read via Ion. 
 readJit(grayRoot()[1], key2);
 assertEq(typeof globalThis.sink, 'symbol');
-assertEq(getAtomMarkColor(this, i2), 'black');

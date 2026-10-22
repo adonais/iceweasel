@@ -171,10 +171,7 @@ add_task(async function () {
    * A function that tests "Headers" panel contains correct information.
    */
   async function testHeaders(data, index) {
-    EventUtils.sendMouseEvent(
-      { type: "mousedown" },
-      document.querySelectorAll(".request-list-item")[index]
-    );
+    clickOnRequestRow(document.querySelectorAll(".request-list-item")[index]);
 
     // wait till all the summary section is loaded
     await waitUntil(() =>

@@ -17,7 +17,7 @@ The function has the following parameter:
 
 `file`
 
-: A pointer to a {ref}`PRFileDesc` object whose descriptor type is to be
+: A pointer to a {doc}`prfiledesc` object whose descriptor type is to be
   returned.
 
 ### Returns
@@ -42,16 +42,16 @@ The enumeration has the following enumerators:
 
 `PR_DESC_FILE`
 
-: The {ref}`PRFileDesc` object represents a normal file.
+: The {doc}`prfiledesc` object represents a normal file.
 
 `PR_DESC_SOCKET_TCP`
 
-: The {ref}`PRFileDesc` object represents a TCP socket.
+: The {doc}`prfiledesc` object represents a TCP socket.
 
 `PR_DESC_SOCKET_UDP`
 
-: The {ref}`PRFileDesc` object represents a UDP socket.
+: The {doc}`prfiledesc` object represents a UDP socket.
 
 `PR_DESC_LAYERED`
 
-: The {ref}`PRFileDesc` object is a layered file descriptor.
+: The {doc}`prfiledesc` object is a layered file descriptor.

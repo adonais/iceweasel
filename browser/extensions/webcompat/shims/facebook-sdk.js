@@ -381,25 +381,39 @@ if (!window.FB) {
 
   // If a page stores the window.FB reference of the shim, then we
   // want to have it proxy calls to the real SDK once we've unshimmed.
-  function ensureProxiedToUnshimmed(obj) {
+  // Each level resolves along its own path, so a reference the page kept to
+  // a nested object like FB.Event also reaches the real SDK, and whatever
+  // the real SDK does not define falls back to the stub.
+  function ensureProxiedToUnshimmed(obj, path = []) {
+    const unshimmedTarget = () =>
+      haveUnshimmed
+        ? path.reduce((target, key) => target?.[key], window.FB)
+        : undefined;
     const shim = {};
     for (const key in obj) {
       const value = obj[key];
       if (typeof value === "function") {
         shim[key] = function () {
-          if (haveUnshimmed) {
-            return window.FB[key].apply(window.FB, arguments);
+          const target = unshimmedTarget();
+          if (typeof target?.[key] === "function") {
+            return target[key].apply(target, arguments);
           }
           return value.apply(this, arguments);
         };
       } else if (typeof value !== "object" || value === null) {
         shim[key] = value;
       } else {
-        shim[key] = ensureProxiedToUnshimmed(value);
+        shim[key] = ensureProxiedToUnshimmed(value, [...path, key]);
       }
     }
     return new Proxy(shim, {
-      get: (shimmed, key) => (haveUnshimmed ? window.FB : shimmed)[key],
+      get: (shimmed, key) => (unshimmedTarget() ?? shimmed)[key],
+      set: (shimmed, key, val) => {
+        // Reflect.set rather than assignment, so a write the real SDK
+        // rejects cannot throw into the page.
+        Reflect.set(unshimmedTarget() ?? shimmed, key, val);
+        return true;
+      },
     });
   }
 

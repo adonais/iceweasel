@@ -42,3 +42,6 @@ full:
             - type: file
               name: public/code-review/clang-tidy.json
               path: /builds/worker/clang-tidy.json
+            - type: file
+              name: public/profile_resource-usage.json
+              path: /builds/worker/profile_resource-usage.json

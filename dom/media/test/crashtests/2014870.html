@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
+<html class="reftest-wait">
+<head><meta charset="utf-8"><title>crash test</title></head>
 <body>
 <script>
+// fMP4 init segment (timescale 44100)
 const INIT = "AAAAGGZ0eXBpc281AAAAAWRhc2hpc281AAAAOmZyZWVJc29NZWRpYSBGaWxlIFByb2R1Y2VkIHdpdGggR1BBQyAwLjUuMS1ERVYtcmV2NTI5NAAAAqltb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAAPoAAAAAAABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAOG12ZXgAAAAQbWVoZAAAAAAAAAf7AAAAIHRyZXgAAAAAAAAAAQAAAAEAAAQAAAAAAAAAAAAAAAGcdHJhawAAAFx0a2hkAAAADwAAAADQBbUZAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAQAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAABOG1kaWEAAAAgbWRoZAAAAAAAAAAAAAAAAAAArEQAAAAAVcQAAAAAAC1oZGxyAAAAAAAAAABzb3VuAAAAAAAAAAAAAAAAU291bmRIYW5kbGVyAAAAAONtaW5mAAAAEHNtaGQAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAKdzdGJsAAAAW3N0c2QAAAAAAAAAAQAAAEttcDRhAAAAAAAAAAEAAAAAAAAAAAACABAAAAAArEQAAAAAACdlc2RzAAAAAAMZAAEABBFAFQAAAAAB9AAAAOPDBQISCAYBAgAAABBzdHRzAAAAAAAAAAAAAAAQc3RzYwAAAAAAAAAAAAAAFHN0c3oAAAAAAAAAAAAAAAAAAAAQc3RjbwAAAAAAAAAAAAAAYXVkdGEAAABZbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAsaWxzdAAAACSpdG9vAAAAHGRhdGEAAAABAAAAAExhdmY1NS44LjEwMA==";
+
+// Media segment with tfdt base_decode_time = 8820000000000000000 (timescale 44100)
 const MEDIA = "AAAAhG1vb2YAAAAQbWZoZAAAAAAAAAABAAAAbHRyYWYAAAAUdGZoZAACACAAAAABAgAAAAAAABR0ZmR0AQAAAHpm70UG8gAAAAAAPHRydW4AAAIBAAAACgAAAIgAAACTAAAAaQAAAHAAAAByAAAAbAAAAHQAAABxAAAAbwAAAG4AAAB1AAAEiW1kYXTeBAAAbGliZmFhYyAxLjI4AAACpCsTUHAkCRhkCgqjM8fEuXJLLkqJEiOB9Pp9Pp9Pp9Pp9Ppu+m76fT6BOmQnTIT/yRUf/67WzmSiRaGBgb5cYuMUUUUUUUURRRREIooiGrVq1GrVqGrVANWqAatWoGrVqBqgBqgBqgBqgBq1AaoAatQGrVAGrUBq1AatUAatQHABEhUJ5hkKhII3CqmG83vv1/f/f4641d3NLF1dRKkH0+n0+nnz/Tz8/o8888888889P3rf/WPfirHnma9bXra9c2vWa9czXrGucxr1yGtNI1iUkZzAJESYJzAmSBQACYEwgAmAKgWACJwBDhUIqFIphkKhII3UVplV3m99+v7/7/XHGtXdySJdRJW+A5tnNzbOdf6u27btp5555555555e+bv1F66uiedW/e372/fdv33b99zfvub73L76bxv3gve4Lt4CiheoAoQXASAEAAUUuAuAuAuUBUHAAQYVCEhSQYZCYSCIyCM1XVTe6re8579f3/z9+uNcS7u5KaqZqr5ljn5+17Xtf9Pa9/f3vPPPPPPPPPT9LX/ip/udGl4a9bXra9czzzw165mvWNc5DXrDXrmGvWDNMBOYGMCYJgE6AAFAmEQEwBUJgFgOAPgVCaIiDIVCOG95VZVVm988+/9/9vrzrWtS7tJLxJU3NDX09PT09PT09PTR+l/pf6f1f1w/Sv9DH0b0P6xf1i9kXs2GzZF7NkTZsGzYGzQGzYBcsijewARiqEQF7FASAEABYC4RAJgFgAL8AQoVCGiSGgZCoSEISELQCJSrpVVW87558f9P9vv51rV3cuSVdEvFjjx4+j6Po+j6Po+jL6MvoxRRRRRY9DX+5T6uEwRRFFEWrUiiIRRENWqBq1QNWqA1ag1QqEIVVKwqCCoQVCAIJigKACAEAAqBILgFQOABEBUJCFISBkLhIQ2UKVdZm/HPj/j/f4861qakuXKl7XKqWPpr169evXr9L0pvSm9Kb0qKKKMPSR+YR59kxKig1FBtmxs2RbNkWzZE2bImzZEbI2GzYDZsBs2AjsRJCIL8AEbASAAKBYAIhYLgARAicAESFQnoGQqEijNSVRVZW99+P+P8/jrWr1LlxeXMWlaD5cePyy8cvyy5YssWWLLFliy46WZf2ufb2TBxiKKIooiiiiEURDVq1GrVU1aoINUKjVqqGrVUQhBUIVqIGkAIICsAoABUIARACoFgXEAkDgESFQnoGQqEhDYYKpmZvv1/r/t9+tavUmkay1SardwfT6fTz8/Pz8/PzT9E/RP0T9E/S3XK/+BH3YyPo2Po2P5Rfywnwwn8v5D+Uh/KwfytYZU1hhmkMMwYZpBMCMwREgtIAAkFgJ2AWCYFwACfARIVCegZCoSKISCMQqiqrN779f3/2+uuL1elyRmrrNVKWPl8vl8vls+Xy+Wyf5T/KfZPsn2XuLN3/Hn684o5p1TzzzzqnnnE8843795PPOpW+++hv33ub95Q33Cm+5QF6EC4LgYCi4YgACgXCAAVAoC4CoHA";
 
 function b64(s) {
@@ -12,30 +15,49 @@ function b64(s) {
   return a;
 }
 
-(async function() {
+function waitFor(target, events) {
+  return new Promise(function(resolve) {
+    var done = false;
+    function finish() { if (!done) { done = true; resolve(); } }
+    events.forEach(function(e) { target.addEventListener(e, finish, {once:true}); });
+  });
+}
+
+async function tryOffset(tsOffset) {
   try {
     var el = document.createElement('video');
     document.body.appendChild(el);
     var ms = new MediaSource();
     el.src = URL.createObjectURL(ms);
-    await new Promise(resolve => ms.addEventListener('sourceopen', resolve, {once:true}));
+    await waitFor(ms, ['sourceopen']);
     if (ms.readyState !== 'open') return;
 
     var sb = ms.addSourceBuffer('audio/mp4; codecs="mp4a.40.2"');
     sb.appendBuffer(b64(INIT));
-    await new Promise(resolve => {
-      sb.addEventListener('updateend', resolve, {once:true});
-      sb.addEventListener('error', resolve, {once:true});
-    });
+    await waitFor(sb, ['updateend', 'error']);
 
-    try { sb.timestampOffset = 9223372036854.773; } catch(e) { return; }
+    try { sb.timestampOffset = tsOffset; } catch(e) { return; }
 
     sb.appendBuffer(b64(MEDIA));
-    await new Promise(resolve => {
-      sb.addEventListener('updateend', resolve, {once:true});
-      sb.addEventListener('error', resolve, {once:true});
-    });
+    await waitFor(sb, ['updateend', 'error']);
   } catch(e) {}
+}
+
+(async function() {
+  var offsets = [
+    9223372036854.773,
+    5e12,
+    2e12,
+    1e12,
+    1e11,
+    9e9,
+  ];
+
+  for (var i = 0; i < offsets.length; i++) {
+    await tryOffset(offsets[i]);
+  }
+
+  document.documentElement.removeAttribute("class");
 })();
 </script>
 </body>

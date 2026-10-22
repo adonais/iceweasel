@@ -47,6 +47,7 @@
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
 #include "Visibility.h"
+#include "fmt/ostream.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Baseline.h"
@@ -366,6 +367,9 @@ class nsReflowStatus final {
 
 // Convert nsReflowStatus to a human-readable string.
 std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
+
+template <>
+struct fmt::formatter<nsReflowStatus> : fmt::ostream_formatter {};
 
 namespace mozilla {
 
@@ -2283,6 +2287,17 @@ class nsIFrame : public nsQueryFrame {
    * @see     WidgetGUIEvent
    * @see     nsEventStatus
    */
+  /**
+   * Select the word or the link at aContextMenuEvent's point, so that the
+   * context menu can act on it. Called from HandleEvent(), after the event
+   * has been dispatched to the page and before the system group listeners
+   * open the context menu, and only if the page did not cancel the event.
+   *
+   * @param aContextMenuEvent       Its message must be eContextMenu.
+   */
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HandleContextMenuEventToSelectWordOrLink(
+      const mozilla::WidgetMouseEvent& aContextMenuEvent);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
@@ -2352,6 +2367,38 @@ class nsIFrame : public nsQueryFrame {
       mozilla::WidgetMouseEvent& aSecondaryButtonEvent,
       const nsIContent& aContentAtEventPoint,
       int32_t aOffsetAtEventPoint) const;
+
+  /**
+   * Check whether aContextMenuEvent should select what it points at instead of
+   * leaving the selection alone.
+   *
+   * @param aFrameSelection         The nsFrameSelection which owns the
+   *                                selection to compare the event point with.
+   * @param aContextMenuEvent       Its message must be eContextMenu.
+   * @param aPoint                  The event point, relative to this frame.
+   * @param aContentAtEventPoint    The content node at the event point.
+   * @param aOffsetAtEventPoint     The offset in aContentAtEventPoint which
+   *                                aContextMenuEvent points at.
+   */
+  [[nodiscard]] bool SelectingWordOrLinkAtEventPointAllowed(
+      const nsFrameSelection& aFrameSelection,
+      const mozilla::WidgetMouseEvent& aContextMenuEvent, const nsPoint& aPoint,
+      const nsIContent& aContentAtEventPoint,
+      int32_t aOffsetAtEventPoint) const;
+
+  /**
+   * Select the whole text of the link containing aContentAtEventPoint, or the
+   * word at aPoint when it is not in a link.  A link is selected as a whole
+   * because the context menu acts on the link rather than on one of its words.
+   * Blink does the same in
+   * SelectionController::SelectClosestWordOrLinkFromMouseEvent() and WebKit in
+   * EventHandler::selectClosestContextualWordOrLinkFromHitTestResult().
+   *
+   * @param aPoint                  The event point, relative to this frame.
+   * @param aContentAtEventPoint    The content node at aPoint.
+   */
+  MOZ_CAN_RUN_SCRIPT nsresult SelectWordOrLinkAtPoint(
+      const nsPoint& aPoint, const nsIContent& aContentAtEventPoint);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD HandleMultiplePress(
       nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,
@@ -2639,6 +2686,18 @@ class nsIFrame : public nsQueryFrame {
    * Return true if this frame is the primary frame for mContent.
    */
   bool IsPrimaryFrame() const { return mIsPrimaryFrame; }
+
+  /**
+   * Return true if this frame is in a fixed-pos subtree that is replicated
+   * across pages (see nsCSSFrameConstructor::ReplicateFixedFrames), either as
+   * the original or as one of the copies.
+   */
+  bool IsInReplicatedFixedPosTree() const;
+  /**
+   * Returns true whether this frame hosts any potentially replicated fixed-pos
+   * elements that would escape `this`s subtree.
+   */
+  bool ContainsReplicatedFixedPosPlaceholders() const;
 
   void SetIsPrimaryFrame(bool aIsPrimary) {
     if (mIsPrimaryFrame == aIsPrimary) {
@@ -3053,7 +3112,8 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::StyleSize& aStyleBSize,
       const mozilla::StyleSize& aStyleMinBSize,
       const mozilla::StyleMaxSize& aStyleMaxBSize, nscoord aCBBSize,
-      nscoord aContentEdgeToBoxSizingBSize);
+      nscoord aContentEdgeToBoxSizingBSize, nscoord aMargin,
+      nscoord aBorderPadding);
 
  protected:
   /**
@@ -5107,9 +5167,8 @@ class nsIFrame : public nsQueryFrame {
   };
   ISizeComputationResult ComputeISizeValue(
       gfxContext* aRenderingContext, const mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aCBSize,
-      const mozilla::LogicalSize& aContentEdgeToBoxSizing,
-      nscoord aBoxSizingToMarginEdge, ExtremumLength aSize,
+      const mozilla::LogicalSize& aCBSize, const mozilla::LogicalSize& aMargin,
+      const mozilla::LogicalSize& aBorderPadding, ExtremumLength aSize,
       Maybe<nscoord> aAvailableISizeOverride,
       const mozilla::StyleSize& aStyleBSize,
       const mozilla::AspectRatio& aAspectRatio,
@@ -5130,6 +5189,10 @@ class nsIFrame : public nsQueryFrame {
    * This method doesn't handle 'auto' when aSize is of type StyleSize,
    * nor does it handle 'none' when aSize is of type StyleMaxSize.
    *
+   * @param aMargin the frame's margin, in both axes.
+   *
+   * @param aBorderPadding the frame's border and padding, in both axes.
+   *
    * @param aStyleBSize the style block size of the frame, used to compute
    * intrinsic inline size with aAspectRatio.
    *
@@ -5138,14 +5201,17 @@ class nsIFrame : public nsQueryFrame {
   template <typename SizeOrMaxSize>
   ISizeComputationResult ComputeISizeValue(
       gfxContext* aRenderingContext, const mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aCBSize,
-      const mozilla::LogicalSize& aContentEdgeToBoxSizing,
-      nscoord aBoxSizingToMarginEdge, const SizeOrMaxSize& aSize,
+      const mozilla::LogicalSize& aCBSize, const mozilla::LogicalSize& aMargin,
+      const mozilla::LogicalSize& aBorderPadding, const SizeOrMaxSize& aSize,
       const mozilla::StyleSize& aStyleBSize,
       const mozilla::AspectRatio& aAspectRatio,
       mozilla::ComputeSizeFlags aFlags = {}) {
     if (aSize.IsLengthPercentage()) {
-      return {ComputeISizeValue(aWM, aCBSize, aContentEdgeToBoxSizing,
+      const auto contentEdgeToBoxSizing =
+          StylePosition()->mBoxSizing == mozilla::StyleBoxSizing::BorderBox
+              ? aBorderPadding
+              : mozilla::LogicalSize(aWM);
+      return {ComputeISizeValue(aWM, aCBSize, contentEdgeToBoxSizing,
                                 aSize.AsLengthPercentage())};
     }
     auto length = ToExtremumLength(aSize);
@@ -5156,9 +5222,9 @@ class nsIFrame : public nsQueryFrame {
           aSize.AsFitContentFunction().Resolve(aCBSize.ISize(aWM)));
     }
     return ComputeISizeValue(
-        aRenderingContext, aWM, aCBSize, aContentEdgeToBoxSizing,
-        aBoxSizingToMarginEdge, length.valueOr(ExtremumLength::MinContent),
-        availbleISizeOverride, aStyleBSize, aAspectRatio, aFlags);
+        aRenderingContext, aWM, aCBSize, aMargin, aBorderPadding,
+        length.valueOr(ExtremumLength::MinContent), availbleISizeOverride,
+        aStyleBSize, aAspectRatio, aFlags);
   }
 
   DisplayItemArray& DisplayItems() { return mDisplayItems; }

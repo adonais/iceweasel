@@ -107,8 +107,6 @@
     <string name="preferences_debug_settings_hide_collections_ui" translatable="false">Hide Collections UI</string>
     <!-- Label for migrating Collections to Tab Groups -->
     <string name="preferences_debug_settings_migrate_collections_to_tab_groups" translatable="false">Migrate Collections to Tab Groups</string>
-    <!-- Label for enabling Add Shortcuts improvement -->
-    <string name="preferences_debug_settings_add_shortcuts_improvement" translatable="false">Enable Add Shortcuts Improvement</string>
     <!-- Label for showing more shortcuts -->
     <string name="preferences_debug_settings_show_more_shortcuts" translatable="false">Show More Shortcuts</string>
     <!-- Label for enabling Homepage Weather Widget -->
@@ -213,6 +211,10 @@
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
     <string name="preferences_debug_settings_app_zygote" translatable="false">Enable Isolated Processes with Zygote Preloading (requires restart)</string>
 
+    <!-- Labels for the Power Saving Mode options in secret settings. -->
+    <string name="preferences_debug_settings_power_saving_mode_auto" translatable="false">Enable Power Saving Mode automatically (follows OS battery saver)</string>
+    <string name="preferences_debug_settings_power_saving_mode_manual" translatable="false">Enable Power Saving Mode manually</string>
+
     <!-- Label for enabling uninstall survey in secret settings. -->
     <string name="preferences_debug_settings_uninstall_survey">Enable Uninstall Survey</string>
 
@@ -222,7 +224,9 @@
     <!-- Label for using the new PDF viewer tools in secret settings. -->
     <string name="preferences_debug_settings_use_new_pdf_tools" translatable="false">Use New PDF Tools</string>
 
-    <!-- Label for the defaults section and reset action in secret settings. -->
+    <string name="preferences_debug_settings_use_account_settings_new_ui" translatable="false">Use new Account Settings UI</string>
+
+  <!-- Label for the defaults section and reset action in secret settings. -->
     <string name="preferences_debug_settings_reset_defaults" translatable="false">Reset switches to defaults</string>
     <string name="preferences_debug_settings_reset_defaults_message" translatable="false">This will reset all toggle switches to their defaults. Custom Glean Server and Remote Settings Server are not affected.</string>
     <string name="preferences_debug_settings_reset_defaults_confirm" translatable="false">Reset</string>

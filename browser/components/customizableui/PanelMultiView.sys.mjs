@@ -2154,6 +2154,11 @@ export var PanelView = class extends AssociatedToNode {
           details
         );
         target.dispatchEvent(dispEvent);
+        dispEvent = new event.target.documentGlobal.MouseEvent(
+          "mouseup",
+          details
+        );
+        target.dispatchEvent(dispEvent);
         // This event will trigger a command event too.
         dispEvent = new event.target.documentGlobal.PointerEvent(
           "click",

@@ -205,14 +205,12 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
       // The `withContextMenu` call below, synthesises the `contextmenu` event,
       // however it doesn't synthesise the `mousedown`. This would mean that
       // `UrlbarInput.#preventClickSelectsAll` would never be set, to prevent
-      // selecting all the on right click. Hence we trigger the `mousedown` here
-      // to ensure that is set, and not select all when right-clicking.
+      // selecting all the on right click. Hence we synthesize the `mousedown`
+      // and `mouseup` of the right click here to ensure that is set, and not
+      // select all when right-clicking.
       EventUtils.synthesizeMouseAtCenter(
         window.gURLBar.inputField,
-        {
-          type: "mousedown",
-          button: 2,
-        },
+        { button: 2 },
         window
       );
     }

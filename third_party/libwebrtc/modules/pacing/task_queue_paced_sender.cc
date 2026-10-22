@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -94,7 +95,7 @@ void TaskQueuePacedSender::EnsureStarted() {
 }
 
 void TaskQueuePacedSender::CreateProbeClusters(
-    std::vector<ProbeClusterConfig> probe_cluster_configs) {
+    std::span<const ProbeClusterConfig> probe_cluster_configs) {
   RTC_DCHECK_RUN_ON(task_queue_);
   pacing_controller_.CreateProbeClusters(probe_cluster_configs);
 

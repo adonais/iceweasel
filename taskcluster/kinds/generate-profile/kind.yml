@@ -179,6 +179,50 @@ tasks:
                   extract: false
                 - artifact: target.crashreporter-symbols.zip
 
+    android-aarch64-nightlyasrelease/opt:
+        description: "Android Aarch64 Nightly-As-Release Profile Generation"
+        shipping-phase: build
+        shipping-product: fennec
+        index:
+            product: mobile
+            job-name: android-aarch64-nightlyasrelease-profile
+        treeherder:
+            platform: android-aarch64-nightlyasrelease/opt
+        worker-type: b-osx-arm64
+        worker:
+            chain-of-trust: true
+            max-run-time: 2700
+            env:
+                WORKING_DIR: "/opt/worker/tasks"
+                PYTHONPATH: "testing/marionette/client:testing/mozbase/mozinfo:testing/mozbase/mozfile:testing/mozbase/mozhttpd:testing/mozbase/mozprofile:testing/mozbase/mozlog:testing/mozbase/mozdevice:testing/mozbase/moznetwork:testing/mozbase/mozprocess:testing/mozbase/mozsystemmonitor:third_party/python"
+            artifacts:
+                - type: directory
+                  name: public/build
+                  path: checkouts/gecko/artifacts/
+        run:
+            using: run-task
+            checkout: true
+            cwd: '{checkout}'
+            command: >-
+                python3 testing/mozharness/scripts/android_emulator_pgo.py
+                --installer-path=$MOZ_FETCHES_DIR/geckoview-test_runner.apk
+                --config=android/android_common.py
+                --config=android/android-aarch64-profile-generation-macos.py
+                --config=android/android_pgo.py
+        dependencies:
+            instrumented-build-android-aarch64-nightlyasrelease/opt: instrumented-build-android-aarch64-nightlyasrelease/opt
+        fetches:
+            toolchain:
+                - macosx64-aarch64-clang
+                - macosx64-aarch64-minidump-stackwalk
+                - android-sdk-macos
+                - android-avd-arm64-macos
+                - android-system-image-arm64-macos
+            instrumented-build-android-aarch64-nightlyasrelease/opt:
+                - artifact: geckoview-test_runner.apk
+                  extract: false
+                - artifact: target.crashreporter-symbols.zip
+
     android-arm-shippable/opt:
         description: "Android ARM Profile Generation"
         shipping-phase: build

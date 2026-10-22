@@ -85,6 +85,15 @@ class FuzzyParser(BaseTryParser):
             },
         ],
         [
+            ["--include-duplicates"],
+            {
+                "action": "store_true",
+                "default": False,
+                "help": "Include tasks copied from other kinds by the duplicate "
+                "transforms, such as the -appservices-in-tree tasks.",
+            },
+        ],
+        [
             ["--show-chunk-numbers"],
             {
                 "action": "store_true",
@@ -135,6 +144,7 @@ def run(
     exact=False,
     closed_tree=False,
     disable_target_task_filter=False,
+    include_duplicates=False,
     push_to_vcs=False,
     show_chunk_numbers=False,
     new_test_config=False,
@@ -174,6 +184,13 @@ def run(
             task_name: task
             for task_name, task in all_tasks.items()
             if filter_by_uncommon_try_tasks(task_name)
+        }
+
+    if not include_duplicates:
+        all_tasks = {
+            task_name: task
+            for task_name, task in all_tasks.items()
+            if "duplicate-of" not in task.attributes
         }
 
     if try_config_params.get("try_task_config", {}).get("worker-types", []):

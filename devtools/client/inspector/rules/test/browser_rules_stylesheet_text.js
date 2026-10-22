@@ -83,7 +83,6 @@ const TESTS = [
           {
             name: "unsupported",
             value: "green",
-            overridden: true,
             valid: false,
             dirty: true,
           },
@@ -166,7 +165,6 @@ const TESTS = [
           {
             name: "bar",
             value: "blue",
-            overridden: true,
             valid: false,
             dirty: false, // Bug 2053087: this prop should be dirty as it was renamed
           },

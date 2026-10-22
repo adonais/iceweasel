@@ -17,16 +17,60 @@
 //! the inner level deliberately has no free list - if a store allocated for
 //! itself the two sides would diverge with nothing able to notice.
 
-// Nothing feeds a store yet: the scene builder thread starts driving the
-// allocator and applying deltas in the next part of this series.
+// Handles are only minted once a primitive type moves its interning into the
+// display list builder, so until then the store's read side has no caller.
 #![allow(dead_code)]
 
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use api::interning::{BuildId, BuilderId};
-use api::PipelineId;
+use api::{FontRenderMode, IdNamespace, PipelineId};
+use glyph_rasterizer::SharedFontResources;
 use std::marker::PhantomData;
 use std::{fmt, ops};
+
+/// Every follower store the render backend holds, one line each: the field
+/// name (the same one `enumerate_dl_interned_types!` in `webrender_api` uses
+/// for the delta), the content key type, the value the store holds for it,
+/// the profiler gauge set from the store's size, and the field of the
+/// interning memory report it is accounted under.
+///
+/// Adding a type here and to the api-side list is all the plumbing a
+/// primitive needs on the receiving side; see `doc/dl-builder-interning.md`.
+#[macro_export]
+macro_rules! enumerate_dl_stores {
+    ($macro_name: ident) => {
+        $macro_name! {
+        }
+    }
+}
+
+/// The follower stores the scene builder itself reads, in the same shape as
+/// `enumerate_dl_stores!` minus the gauge. Most types need none: scene
+/// building only consumes a handle. Clips will, since clip chain building,
+/// slice partitioning and hit testing read the clip's key.
+#[macro_export]
+macro_rules! enumerate_scene_dl_stores {
+    ($macro_name: ident) => {
+        $macro_name! {
+        }
+    }
+}
+
+/// What a store needs to turn a content key into the value it holds.
+pub struct DlResolveContext<'a> {
+    /// The id namespace the display list carrying the delta was submitted
+    /// with, for validating any resource key the interned item names.
+    pub id_namespace: IdNamespace,
+    pub fonts: &'a SharedFontResources,
+    pub default_font_render_mode: FontRenderMode,
+}
+
+/// A store value that can be built from its content key. Done where the delta
+/// is applied, once per interned entry rather than once per scene build.
+pub trait DlResolve<K>: Sized {
+    fn resolve(key: &K, ctx: &DlResolveContext) -> Self;
+}
 
 /// Dense index identifying one content display list builder's slot space.
 /// Recycled when its pipeline goes away, so it stays small enough to index an
@@ -134,6 +178,8 @@ impl<K> DlHandle<K> {
 }
 
 /// What the scene builder tracks for each content display list builder.
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct BuilderState {
     namespace: DlNamespace,
     /// The builder whose stream we are following, once one has claimed this
@@ -172,6 +218,8 @@ pub enum DeltaAction {
 /// the namespace its slots live in, and where its delta stream has got to.
 /// Lives on the scene builder; content knows nothing about either, so there is
 /// no allocation round trip.
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Default)]
 pub struct DlBuilderMap {
     by_pipeline: FastHashMap<PipelineId, BuilderState>,
@@ -199,6 +247,14 @@ impl DlBuilderMap {
             .get(pipeline_id)
             .unwrap_or_else(|| panic!("no namespace for {:?}", pipeline_id));
         (namespace, self.generations[namespace.0 as usize])
+    }
+
+    /// Every namespace currently assigned to a pipeline, with its generation,
+    /// including those whose release `take_removals` still owes.
+    pub fn live_namespaces(&self) -> impl Iterator<Item = (DlNamespace, u32)> + '_ {
+        self.by_pipeline.values().map(move |state| {
+            (state.namespace, self.generations[state.namespace.0 as usize])
+        })
     }
 
     fn bump_generation(&mut self, namespace: DlNamespace) {
@@ -375,8 +431,54 @@ pub enum DlOp<T> {
     Close(DlNamespace),
 }
 
+/// Turn one type's delta into store ops. Adds before removes, which cannot
+/// conflict within a delta: a slot this build frees is only ever handed out
+/// again by a later one.
+pub fn resolve_into<K, T>(
+    ops: &mut Vec<DlOp<T>>,
+    namespace: DlNamespace,
+    delta: &api::interning::InternOps<K>,
+    mut resolve: impl FnMut(&K) -> T,
+) {
+    for add in &delta.adds {
+        ops.push(DlOp::Insert {
+            namespace,
+            slot: add.slot,
+            value: resolve(&add.key),
+        });
+    }
+
+    for &slot in &delta.removes {
+        ops.push(DlOp::Remove { namespace, slot });
+    }
+}
+
+/// Adds and removes in one resolved op list. A close is not counted: it drops a
+/// whole namespace at once, and totalling its slots would cost a lookup per op
+/// for a number nothing acts on.
+pub fn count_dl_ops<T>(ops: &[DlOp<T>]) -> (usize, usize) {
+    let mut insertions = 0;
+    let mut removals = 0;
+
+    for op in ops {
+        match op {
+            DlOp::Insert { .. } => insertions += 1,
+            DlOp::Remove { .. } => removals += 1,
+            DlOp::Open(..) | DlOp::Close(..) => {}
+        }
+    }
+
+    (insertions, removals)
+}
+
 /// Two-level store fed by the content interner's delta: an outer array indexed
 /// by namespace, an inner array indexed by content slot.
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(
+    any(feature = "capture", feature = "replay"),
+    serde(bound(serialize = "T: serde::Serialize", deserialize = "T: serde::Deserialize<'de>"))
+)]
 pub struct DlStore<K, T> {
     /// `None` is a namespace that was never opened or has been closed. Closing
     /// drops a pipeline's entire slot array at once, which is what handles
@@ -393,6 +495,8 @@ pub struct DlStore<K, T> {
     _marker: PhantomData<K>,
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 struct Entry<T> {
     /// See `DlStore::uid`. Assigned when the entry is inserted and fixed for as
@@ -474,6 +578,43 @@ impl<K, T> DlStore<K, T> {
             .filter(|slots| slots.is_some())
             .unwrap_or_else(|| panic!("namespace {} is not open", namespace.0));
         *slots = None;
+    }
+
+    /// Bring the set of open namespaces into line with a builder map restored
+    /// from the same capture. The two are snapshotted by different threads at
+    /// different moments, so the store can lag the map by the display lists
+    /// that were in flight: namespaces the map has and the store lacks are
+    /// opened empty, ones only the store has are closed, and the generations
+    /// are taken from the map. Entries cannot be recovered the same way, since
+    /// their keys live in the content process.
+    pub fn reconcile(&mut self, builders: &DlBuilderMap) {
+        let live: Vec<(DlNamespace, u32)> = builders.live_namespaces().collect();
+
+        for (index, slots) in self.namespaces.iter_mut().enumerate() {
+            if slots.is_some() && !live.iter().any(|(ns, _)| ns.0 as usize == index) {
+                *slots = None;
+            }
+        }
+
+        for (namespace, generation) in live {
+            let index = namespace.0 as usize;
+            if index >= self.namespaces.len() {
+                self.namespaces.resize_with(index + 1, || None);
+            }
+            if self.namespaces[index].is_none() {
+                self.namespaces[index] = Some(Vec::new());
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                if index >= self.generations.len() {
+                    self.generations.resize(index + 1, 0);
+                }
+                self.generations[index] = generation;
+            }
+            #[cfg(not(debug_assertions))]
+            let _ = generation;
+        }
     }
 
     pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T) {
@@ -625,6 +766,38 @@ mod tests {
         store.insert(DlNamespace(0), 0, 200);
 
         store.get(stale);
+    }
+
+    #[test]
+    fn reconcile_matches_open_namespaces_to_the_builder_map() {
+        // The store snapshot lags the map by one pipeline's arrival and one
+        // pipeline's release.
+        let mut alloc = DlBuilderMap::default();
+        let stale = alloc.get_or_alloc(pipeline(1)).0;
+        let kept = alloc.get_or_alloc(pipeline(2)).0;
+
+        let mut store = store();
+        store.open(stale);
+        store.open(kept);
+        store.insert(kept, 0, 100);
+        let handle = h(&store, kept, 0);
+
+        alloc.remove_pipeline(pipeline(1));
+        alloc.take_removals();
+        let fresh = alloc.get_or_alloc(pipeline(3)).0;
+        assert_eq!(fresh, stale, "expected the released namespace to be reused");
+        let late = alloc.get_or_alloc(pipeline(4)).0;
+
+        store.reconcile(&alloc);
+
+        assert_eq!(store.get(handle), Some(&100), "a surviving entry was lost");
+        assert_eq!(store.len(), 1);
+        store.insert(late, 0, 200);
+        store.insert(fresh, 0, 300);
+        store.close(late);
+        store.close(fresh);
+        store.close(kept);
+        assert_eq!(store.len(), 0);
     }
 
     #[test]

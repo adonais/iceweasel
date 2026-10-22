@@ -21,12 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let URLs, dates, today;
 
 add_setup(async () => {
-  // test_history_context_menu opens the legacy bookmarks sidebar panel and
-  // inspects its tree view, so opt out of the updated bookmarks panel here.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
   const historyInfo = await populateHistory();
   URLs = historyInfo.URLs;
   dates = historyInfo.dates;
@@ -696,8 +690,9 @@ add_task(async function test_history_context_menu() {
   await promiseTabOpened;
 
   info("Add new bookmark");
+  const bookmarkURL = rows[0].mainEl.href;
   let bookmarkName;
-  await withBookmarksDialog(
+  const bookmarkGuid = await withBookmarksDialog(
     false,
     async () => {
       // Open the context menu.
@@ -712,22 +707,18 @@ add_task(async function test_history_context_menu() {
       EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
     }
   );
-  await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
-  let tree =
-    SidebarController.browser.contentDocument.getElementById("bookmarks-view");
-  let toolbarKey = tree._view._nodeDetails
-    .keys()
-    .find(key => key.includes("toolbar"));
-  let toolbar = tree._view._nodeDetails.get(toolbarKey);
-  await BrowserTestUtils.waitForMutationCondition(
-    toolbar,
-    { attributes: true, attributeFilter: "hasChildren" },
-    () => toolbar.hasChildren
+  Assert.ok(bookmarkGuid, "A bookmark was created for the page.");
+  const bookmark = await PlacesUtils.bookmarks.fetch(bookmarkGuid);
+  Assert.equal(
+    bookmark.title,
+    bookmarkName,
+    "The bookmark has the expected title."
   );
-  toolbar.containerOpen = true;
-  let vals = [];
-  tree._view._nodeDetails.values().forEach(val => vals.push(val.title));
-  ok(vals.includes(bookmarkName), "Bookmark entry exists");
+  Assert.equal(
+    bookmark.url,
+    bookmarkURL,
+    "The bookmark points to the page URL."
+  );
   await PlacesUtils.bookmarks.eraseEverything();
 
   cleanUpExtraTabs();

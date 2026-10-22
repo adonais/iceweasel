@@ -23,7 +23,7 @@ add_task(async function () {
 
   info("selecting first request");
   const firstRequestItem = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequestItem);
+  clickOnRequestRow(firstRequestItem);
 
   info("switching to response panel");
   const waitForRespPanel = waitForDOM(

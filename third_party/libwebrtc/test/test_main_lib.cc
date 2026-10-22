@@ -22,6 +22,8 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/test/metrics/chrome_perf_dashboard_metrics_exporter.h"
@@ -30,6 +32,7 @@
 #include "api/test/metrics/metrics_exporter.h"
 #include "api/test/metrics/metrics_set_proto_file_exporter.h"
 #include "api/test/metrics/stdout_metrics_exporter.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/event_tracer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_adapter.h"
@@ -106,6 +109,60 @@ ABSL_FLAG(std::string,
 ABSL_FLAG(bool, logs, true, "print logs to stderr");
 ABSL_FLAG(bool, verbose, false, "verbose logs to stderr");
 
+namespace webrtc {
+
+bool AbslParseFlag(absl::string_view text,
+                   LoggingSeverity* severity,
+                   std::string* error) {
+  RTC_DCHECK(severity);
+  RTC_DCHECK(error);
+  if (absl::EqualsIgnoreCase(text, "verbose")) {
+    *severity = LS_VERBOSE;
+    return true;
+  }
+  if (absl::EqualsIgnoreCase(text, "info")) {
+    *severity = LS_INFO;
+    return true;
+  }
+  if (absl::EqualsIgnoreCase(text, "warning")) {
+    *severity = LS_WARNING;
+    return true;
+  }
+  if (absl::EqualsIgnoreCase(text, "error")) {
+    *severity = LS_ERROR;
+    return true;
+  }
+  if (absl::EqualsIgnoreCase(text, "none")) {
+    *severity = LS_NONE;
+    return true;
+  }
+  *error = absl::StrCat("unknown log level: ", text);
+  return false;
+}
+
+std::string AbslUnparseFlag(LoggingSeverity severity) {
+  switch (severity) {
+    case LS_VERBOSE:
+      return "verbose";
+    case LS_INFO:
+      return "info";
+    case LS_WARNING:
+      return "warning";
+    case LS_ERROR:
+      return "error";
+    case LS_NONE:
+      return "none";
+  }
+  return "unknown";
+}
+
+}  // namespace webrtc
+
+ABSL_FLAG(webrtc::LoggingSeverity,
+          log_level,
+          webrtc::LS_WARNING,
+          "Minimum log level: verbose, info, warning, error, none");
+
 ABSL_FLAG(std::string,
           trace_event,
           "",
@@ -152,13 +209,15 @@ class TestMainImpl : public TestMain {
 
     if (do_logging_init) {
       LoggingConfig config;
-      config.set_min_severity(LS_INFO);
-      config.set_debug_severity(LS_INFO);
-
+      LoggingSeverity severity = absl::GetFlag(FLAGS_log_level);
       if (absl::GetFlag(FLAGS_verbose)) {
-        config.set_min_severity(LS_VERBOSE);
-        config.set_debug_severity(LS_VERBOSE);
+        RTC_LOG(LS_WARNING)
+            << "Both --verbose and --log-level= flags are specified. "
+            << "Prefer using only --log-level.";
+        severity = LS_VERBOSE;
       }
+      config.set_min_severity(severity);
+      config.set_debug_severity(severity);
 
       config.set_log_to_stderr(absl::GetFlag(FLAGS_logs) ||
                                absl::GetFlag(FLAGS_verbose));

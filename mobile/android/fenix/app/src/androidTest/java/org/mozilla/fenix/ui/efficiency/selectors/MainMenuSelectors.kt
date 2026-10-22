@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import mozilla.components.compose.menu.R as MozacMenuR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -322,7 +323,7 @@ object MainMenuSelectors : SelectorContainer {
     val DEFAULT_BROWSER_BANNER_DISMISS =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
-            value = getStringResource(R.string.browser_menu_default_banner_dismiss_promotion),
+            value = getStringResource(MozacMenuR.string.mozac_menu_banner_dismiss_description),
             description = "Make Firefox your default banner dismiss button",
             groups = setOf(Group.HOME_BANNER, Group.HOME_PAGE_MAIN_MENU_ITEMS),
         )

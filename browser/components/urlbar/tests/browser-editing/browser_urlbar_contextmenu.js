@@ -215,9 +215,13 @@ add_task(async function menu_button_on_openable_rows() {
   });
   Assert.deepEqual(
     await promiseMenuDescription(),
-    ["tab", "container-tab", "window", "private-window"].map(openIn => ({
-      openIn,
-    })),
+    [
+      ...["tab", "container-tab", "window", "private-window"].map(openIn => ({
+        openIn,
+      })),
+      "separator",
+      { command: "toggle-keyboard-accessible" },
+    ],
     "The bookmark has no commands of its own, so its menu only opens it"
   );
   gURLBar.view.resultMenu.hide(undefined, { force: true });
@@ -353,6 +357,13 @@ add_task(async function no_context_menu() {
 });
 
 add_task(async function keep_view_open_on_context_menu_mousedown() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   let menu = await openContextMenuOnFirstResult();
   Assert.ok(
     gURLBar.view.isOpen,
@@ -360,18 +371,23 @@ add_task(async function keep_view_open_on_context_menu_mousedown() {
   );
 
   info("Mouse down on a context menu item");
-  EventUtils.synthesizeMouseAtCenter(
-    menu.querySelector('[data-open-in="tab"]'),
-    { type: "mousedown" }
-  );
+  let menuItem = menu.querySelector('[data-open-in="tab"]');
+  EventUtils.synthesizeMouseAtCenter(menuItem, { type: "mousedown" });
 
   Assert.ok(
     gURLBar.view.isOpen,
     "The view stays open after a mousedown on the context menu"
   );
 
-  menu.hide(undefined, { force: true });
+  let onNewTab = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "https://example.com/"
+  );
+  info("Release the mouse to complete the click");
+  EventUtils.synthesizeMouseAtCenter(menuItem, { type: "mouseup" });
+  BrowserTestUtils.removeTab(await onNewTab);
   gURLBar.view.close();
+  await PlacesUtils.history.clear();
 });
 
 add_task(async function on_switch_to_tab() {
@@ -512,6 +528,10 @@ async function openContextMenu(row) {
   EventUtils.synthesizeMouseAtCenter(row, {
     button: 2,
     type: "contextmenu",
+  });
+  EventUtils.synthesizeMouseAtCenter(row, {
+    button: 2,
+    type: "mouseup",
   });
   await onShown;
 

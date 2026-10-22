@@ -603,6 +603,7 @@ FinderHighlighter.prototype = {
       .writingMode.startsWith("horizontal");
     let yStart = window.scrollY - window.scrollMinY;
     let xStart = window.scrollX - window.scrollMinX;
+    let pageDimensions = null;
 
     let hasRanges = false;
     if (window) {
@@ -619,17 +620,16 @@ FinderHighlighter.prototype = {
         );
 
         let rangeCount = findSelection.rangeCount;
-        if (rangeCount > 0) {
-          hasRanges = true;
+        if (!rangeCount) {
+          continue;
         }
+        hasRanges = true;
 
         // No need to calculate the mark positions if there is no visible scrollbar.
         if (window.scrollMaxY > window.scrollMinY && !onHorizontalScrollbar) {
-          // Use the body's scrollHeight if available.
-          let scrollHeight =
-            window.document.body?.scrollHeight ||
-            window.document.documentElement.scrollHeight;
-          let yAdj = (window.scrollMaxY - window.scrollMinY) / scrollHeight;
+          pageDimensions ??= this._getWindowDimensions(window);
+          let yAdj =
+            (window.scrollMaxY - window.scrollMinY) / pageDimensions.height;
 
           for (let r = 0; r < rangeCount; r++) {
             let rect = findSelection.getRangeAt(r).getBoundingClientRect();
@@ -640,11 +640,9 @@ FinderHighlighter.prototype = {
           window.scrollMaxX > window.scrollMinX &&
           onHorizontalScrollbar
         ) {
-          // Use the body's scrollWidth if available.
-          let scrollWidth =
-            window.document.body?.scrollWidth ||
-            window.document.documentElement.scrollWidth;
-          let xAdj = (window.scrollMaxX - window.scrollMinX) / scrollWidth;
+          pageDimensions ??= this._getWindowDimensions(window);
+          let xAdj =
+            (window.scrollMaxX - window.scrollMinX) / pageDimensions.width;
 
           for (let r = 0; r < rangeCount; r++) {
             let rect = findSelection.getRangeAt(r).getBoundingClientRect();

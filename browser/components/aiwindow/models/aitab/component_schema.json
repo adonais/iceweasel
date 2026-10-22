@@ -248,7 +248,7 @@
         },
         "rows": {
           "$ref": "#/$defs/DynamicArray",
-          "description": "Row data. Item shape: an object keyed by the column `key`s. Bind to an array in the data model."
+          "description": "Row data. Item shape: an object keyed by the column `key`s, plus an optional `href`: the URL of the page the item came from, shown as a source chip. Bind to an array in the data model."
         }
       }
     },

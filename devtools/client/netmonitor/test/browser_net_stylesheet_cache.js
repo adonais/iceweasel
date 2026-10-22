@@ -57,7 +57,7 @@ add_task(async function () {
     requestData.details
   );
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
 
   const wait = waitForDOM(document, "#responseHeaders");
   clickOnSidebarTab(document, "headers");

@@ -1211,7 +1211,8 @@ class CEnum:
 def ensureInfallibleIsSound(methodOrAttribute):
     if not methodOrAttribute.infallible:
         return
-    if methodOrAttribute.realtype.kind not in [
+    ty = unaliasType(methodOrAttribute.realtype)
+    if ty.kind not in [
         "builtin",
         "interface",
         "forward",
@@ -1274,9 +1275,7 @@ def ensureBuiltinClassIfNeeded(methodOrAttribute):
     # parameters are always passed indirectly, so do not impact calling
     # conventions.
     def typeNeedsBuiltinclass(type):
-        inner = type
-        while inner.kind == "typedef":
-            inner = inner.realtype
+        inner = unaliasType(type)
         return (
             inner.kind == "native"
             and inner.specialtype is None

@@ -30,7 +30,7 @@ add_task(async function () {
 
   info("selecting first request");
   const firstRequestItem = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequestItem);
+  clickOnRequestRow(firstRequestItem);
 
   info("switching to response panel");
   const waitForRespPanel = waitForDOM(
@@ -88,10 +88,7 @@ add_task(async function () {
   await waitForHTMLRequest;
 
   info("Click on HTML request and wait for raw HTML response to be displayed");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await waitFor(() => getRawResponseCodeMirrorElement(document));
   ok(true, "Raw response is displayed");
   ok(!getHtmlPreviewElement(document), "The html preview is not displayed");
@@ -120,10 +117,7 @@ add_task(async function () {
   info(
     "Click on HTML request and wait for rendered HTML response to be displayed"
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await waitFor(() => getHtmlPreviewElement(document));
   ok(true, "The html preview is displayed");
   ok(

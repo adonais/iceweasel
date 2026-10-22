@@ -26,7 +26,7 @@ struct AddConstIf {
 
 template <typename T>
 struct AddConstIf<true, T> {
-  using type = typename std::add_const<T>::type;
+  using type = std::add_const_t<T>;
 };
 
 }  // namespace detail

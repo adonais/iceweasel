@@ -103,7 +103,7 @@ export const Screenshots = {
    * @param link {object} Link object to update
    * @param url {string} Url to get a screenshot of
    * @param property {string} Name of property on object to set
-   @ @param onScreenshot {function} Callback for when the screenshot loads
+   * @param onScreenshot {function} Callback for when the screenshot loads
    */
   async maybeCacheScreenshot(link, url, property, onScreenshot) {
     // If there are only private windows open, do not collect screenshots

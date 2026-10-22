@@ -11,23 +11,24 @@
   &[hidden] {
     display: none;
   }
-}
-.card {
-  background-color: var(--background-color-warning);
-  padding: var(--space-large);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-small);
-  align-self: stretch;
-  border-radius: var(--border-radius-medium);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    --card-background-color: var(--background-color-warning);
+  }
 
   @media -moz-pref("browser.nova.enabled") {
-    background-color: transparent;
-    align-items: flex-start;
+    --card-border: var(--border-width) solid var(--border-color);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  align-self: stretch;
+
+  @media -moz-pref("browser.nova.enabled") {
     gap: var(--space-medium);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-large);
   }
 }
 
@@ -73,5 +74,11 @@
   @media -moz-pref("browser.nova.enabled") {
     width: var(--size-image-medium);
     display: revert;
+  }
+}
+
+.action-buttons {
+  @media -moz-pref("browser.nova.enabled") {
+    align-self: flex-start;
   }
 }

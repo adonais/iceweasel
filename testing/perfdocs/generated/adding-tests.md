@@ -560,6 +560,23 @@ See the
 [AWSY documentation](https://firefox-source-docs.mozilla.org/testing/perfdocs/awsy.html#awsy)
 for the full set of fields and configuration options.
 
+## Alert Emails
+
+A suite in the Perfherder data can list up to 8 addresses in
+`alertNotifyEmails` (see `testing/performance/common/performance-artifact-schema.json`).
+Perfherder emails them for every alert on that suite or its subtests,
+alongside sheriff triage. Adding `"monitor": true` makes the suite alert on
+every repository except try without sheriff triage, leaving the emails as the
+only notification.
+
+```
+PERFHERDER_DATA: {"framework": {"name": "build_metrics"}, "suites": [{"name": "decision",
+  "value": 42, "monitor": true, "alertNotifyEmails": ["you@mozilla.com"], "subtests": []}]}
+```
+
+No harness exposes this as a test setting yet, so only code that writes its
+own `PERFHERDER_DATA` can use it, such as the build time metrics in `testing/mozharness/mozharness/mozilla/building/buildbase.py`.
+
 ## Running Tests in CI
 
 To run your test in CI you need to add a task definition under the

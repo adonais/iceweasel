@@ -421,7 +421,6 @@ class CheckedInt {
     return tmp;
   }
 
- private:
   /**
    * The !=, <, <=, >, >= operators are disabled:
    * see the comment on operator==.

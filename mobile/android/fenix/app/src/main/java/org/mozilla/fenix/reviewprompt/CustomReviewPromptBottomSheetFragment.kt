@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -106,5 +107,22 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         store.dispatch(CustomReviewPromptAction.Dismissed)
+    }
+
+    companion object {
+        private const val TAG = "CustomReviewPromptBottomSheetFragment"
+
+        /**
+         * Shows the custom review prompt, unless it is already shown.
+         *
+         * @param fragment The [Fragment] whose fragment manager shows the prompt.
+         */
+        fun showPrompt(fragment: Fragment) {
+            if (fragment.parentFragmentManager.findFragmentByTag(TAG) != null) {
+                return
+            }
+
+            CustomReviewPromptBottomSheetFragment().showNow(fragment.parentFragmentManager, TAG)
+        }
     }
 }

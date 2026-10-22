@@ -10,7 +10,9 @@ import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.AppAndSystemHelper.isDefaultPinnedShortcutsOnHomepage
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
+import org.mozilla.fenix.helpers.Constants.defaultPinnedShortcutTitles
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
@@ -57,17 +59,13 @@ class SettingsHomepageTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1564859
     @Test
     fun verifyShortcutOptionTest() {
-        // en-US defaults
-        val defaultTopSites =
-            arrayOf(
-                "Wikipedia",
-                "Google",
-            )
         val genericURL = mockWebServer.getGenericAsset(1)
 
         homeScreen(composeTestRule) {
-                defaultTopSites.forEach { item ->
-                    verifyExistingTopSitesTabs(item)
+                if (isDefaultPinnedShortcutsOnHomepage()) {
+                    defaultPinnedShortcutTitles.forEach { item ->
+                        verifyExistingTopSitesTabs(item)
+                    }
                 }
             }
             .openThreeDotMenu {}
@@ -77,7 +75,7 @@ class SettingsHomepageTest {
             }
             .goBack {}
             .goBack(composeTestRule) {
-                defaultTopSites.forEach { item ->
+                defaultPinnedShortcutTitles.forEach { item ->
                     verifyNotExistingTopSiteItem(item)
                 }
             }

@@ -12,6 +12,8 @@
 #include "mozilla/image/FetchDecodedImage.h"
 #include "nsIHttpChannel.h"
 #include "nsNetUtil.h"
+#include "nsString.h"
+#include "nsWhitespaceTokenizer.h"
 
 extern mozilla::LazyLogModule gMediaControlLog;
 
@@ -148,19 +150,116 @@ void MediaMetadata::SetArtwork(JSContext* aCx,
   mMetadataChangeEvent.Notify();
 }
 
+namespace {
+
+// Parses an ASCII digit run in range 1..kMaxArtworkDimension; rejects empty
+// input, non-digits, zero, values exceeding kMaxArtworkDimension and overflow.
+bool ParseArtworkDimension(const nsAString& aStr, int32_t* aOut) {
+  MOZ_ASSERT(aOut);
+  if (aStr.IsEmpty()) {
+    return false;
+  }
+  for (size_t i = 0; i < aStr.Length(); ++i) {
+    if (aStr[i] < u'0' || aStr[i] > u'9') {
+      return false;
+    }
+  }
+  nsresult rv = NS_OK;
+  int32_t value = aStr.ToInteger(&rv);
+  if (NS_FAILED(rv) || value <= 0 || value > kMaxArtworkDimension) {
+    return false;
+  }
+  *aOut = value;
+  return true;
+}
+
+struct ArtworkFetchOrderComparator {
+  const nsTArray<int64_t>& mAreas;
+  explicit ArtworkFetchOrderComparator(const nsTArray<int64_t>& aAreas)
+      : mAreas(aAreas) {}
+  bool LessThan(const size_t& aLeft, const size_t& aRight) const {
+    return mAreas[aLeft] > mAreas[aRight];
+  }
+};
+
+}  // namespace
+
+// Parses the 'sizes' attribute of a MediaImage (such as "any", "60x60", or
+// "60x60 120x120") as a space-separated sequence of tokens. Tokens matching
+// "any" (ASCII case-insensitive) indicate scalable/vector artwork and are
+// assigned kAnyArtworkArea (INT64_MAX) so they are selected first. Tokens
+// matching <width>x<height> (ASCII case-insensitive 'x'/'X') are limited to
+// kMaxArtworkDimension (1024). Returns the maximum area among valid entries,
+// or 0 if empty or unparseable.
+int64_t GetMediaArtworkArea(const nsAString& aSizes) {
+  int64_t maxArea = 0;
+  nsWhitespaceTokenizer tokenizer(aSizes);
+  while (tokenizer.hasMoreTokens()) {
+    const nsDependentSubstring token = tokenizer.nextToken();
+    if (token.LowerCaseEqualsLiteral("any")) {
+      maxArea = std::max(maxArea, kAnyArtworkArea);
+      continue;
+    }
+    int32_t xPos = token.FindChar(u'x');
+    if (xPos == kNotFound) {
+      xPos = token.FindChar(u'X');
+    }
+    if (xPos <= 0 || static_cast<size_t>(xPos) + 1 >= token.Length()) {
+      continue;
+    }
+    const size_t xPosU = static_cast<size_t>(xPos);
+    int32_t width = 0;
+    if (!ParseArtworkDimension(Substring(token, 0, xPosU), &width)) {
+      continue;
+    }
+    int32_t height = 0;
+    if (!ParseArtworkDimension(Substring(token, xPosU + 1), &height)) {
+      continue;
+    }
+    int64_t area = int64_t(width) * int64_t(height);
+    if (area > maxArea) {
+      maxArea = area;
+    }
+  }
+  return maxArea;
+}
+
+CopyableTArray<size_t> GetMediaArtworkFetchOrder(
+    const MediaMetadataBase& aMetadata) {
+  CopyableTArray<size_t> order;
+  nsTArray<int64_t> areas;
+  for (size_t i = 0; i < aMetadata.mArtwork.Length(); ++i) {
+    order.AppendElement(i);
+    areas.AppendElement(GetMediaArtworkArea(aMetadata.mArtwork[i].mSizes));
+  }
+  // Stable so artworks without usable sizes keep page order. Only the fetch
+  // order changes; mArtwork keeps page order for JS and IPC.
+  order.StableSort(ArtworkFetchOrderComparator(areas));
+  return order;
+}
+
 RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
-    const MediaMetadataBase& aMetadata, Document* aDoc, const size_t aIndex) {
-  if (aIndex >= aMetadata.mArtwork.Length()) {
+    const MediaMetadataBase& aMetadata, Document* aDoc,
+    const nsTArray<size_t>& aOrder, size_t aPos) {
+  MOZ_ASSERT(aDoc);
+  MOZ_ASSERT(aOrder.Length() == aMetadata.mArtwork.Length());
+  if (aOrder.Length() != aMetadata.mArtwork.Length() ||
+      aPos >= aOrder.Length()) {
     // No image loaded successfully, but still resolve without
     // any image data.
     LOG("FetchArtwork loaded no image.");
     return MediaMetadataBasePromise::CreateAndResolve(aMetadata, __func__);
   }
+  const size_t realIndex = aOrder[aPos];
+  MOZ_ASSERT(realIndex < aMetadata.mArtwork.Length());
+  if (realIndex >= aMetadata.mArtwork.Length()) {
+    return FetchArtwork(aMetadata, aDoc, aOrder, aPos + 1);
+  }
 
   nsCOMPtr<nsIURI> uri;
-  if (NS_WARN_IF(NS_FAILED(
-          NS_NewURI(getter_AddRefs(uri), aMetadata.mArtwork[aIndex].mSrc)))) {
-    return FetchArtwork(aMetadata, aDoc, aIndex + 1);
+  if (NS_WARN_IF(NS_FAILED(NS_NewURI(getter_AddRefs(uri),
+                                     aMetadata.mArtwork[realIndex].mSrc)))) {
+    return FetchArtwork(aMetadata, aDoc, aOrder, aPos + 1);
   }
 
   nsCOMPtr<nsIChannel> channel;
@@ -168,13 +267,13 @@ RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
           NS_NewChannel(getter_AddRefs(channel), uri, aDoc,
                         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
                         nsIContentPolicy::TYPE_INTERNAL_IMAGE))) {
-    return FetchArtwork(aMetadata, aDoc, aIndex + 1);
+    return FetchArtwork(aMetadata, aDoc, aOrder, aPos + 1);
   }
 
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel)) {
     auto referrerInfo = MakeRefPtr<ReferrerInfo>(*aDoc);
     if (NS_FAILED(httpChannel->SetReferrerInfo(referrerInfo))) {
-      return FetchArtwork(aMetadata, aDoc, aIndex + 1);
+      return FetchArtwork(aMetadata, aDoc, aOrder, aPos + 1);
     }
   }
 
@@ -182,7 +281,8 @@ RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [metadata = aMetadata, doc = RefPtr{aDoc},
-           aIndex](already_AddRefed<imgIContainer> aImage) {
+           order = CopyableTArray<size_t>(aOrder), pos = aPos,
+           realIndex](already_AddRefed<imgIContainer> aImage) {
             nsCOMPtr<imgIContainer> image(std::move(aImage));
             // The promise should only be resolved for decoded images, so using
             // FLAG_SYNC_DECODE is just a precaution.
@@ -193,23 +293,27 @@ RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
               if (RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
                       surface->GetDataSurface()) {
                 MediaMetadataBase data(metadata);
-                data.mArtwork[aIndex].mDataSurface = dataSurface;
+                data.mArtwork[realIndex].mDataSurface = dataSurface;
                 LOG("FetchArtwork successfully loaded and decoded an image.");
                 return MediaMetadataBasePromise::CreateAndResolve(data,
                                                                   __func__);
               }
             }
-            return FetchArtwork(metadata, doc, aIndex + 1);
+            return FetchArtwork(metadata, doc, order, pos + 1);
           },
-          [metadata = aMetadata, doc = RefPtr{aDoc}, aIndex](nsresult aStatus) {
-            return FetchArtwork(metadata, doc, aIndex + 1);
+          [metadata = aMetadata, doc = RefPtr{aDoc},
+           order = CopyableTArray<size_t>(aOrder),
+           pos = aPos](nsresult aStatus) {
+            return FetchArtwork(metadata, doc, order, pos + 1);
           });
 }
 
 RefPtr<MediaMetadataBasePromise> MediaMetadata::LoadMetadataArtwork(
     Document* aDoc) {
   MOZ_ASSERT(aDoc);
-  return FetchArtwork(*this, aDoc, 0);
+  // Try the largest artwork first so high-resolution artwork is preferred.
+  CopyableTArray<size_t> order = GetMediaArtworkFetchOrder(*this);
+  return FetchArtwork(*this, aDoc, order, 0);
 }
 
 static nsIURI* GetEntryBaseURL() {

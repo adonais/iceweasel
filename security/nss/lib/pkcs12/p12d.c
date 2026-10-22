@@ -1557,6 +1557,9 @@ SEC_PKCS12DecoderVerify(SEC_PKCS12DecoderContext *p12dcx)
     rv = SEC_ASN1DecoderFinish(p12dcx->pfxA1Dcx);
     p12dcx->pfxA1Dcx = NULL;
     if (rv != SECSuccess) {
+        /* The PFX is incomplete, so the bags are too. */
+        p12dcx->errorValue = PORT_GetError();
+        p12dcx->error = PR_TRUE;
         return rv;
     }
 #ifdef UNSAFE_FUZZER_MODE
@@ -2719,7 +2722,7 @@ SEC_PKCS12DecoderGetCerts(SEC_PKCS12DecoderContext *p12dcx)
     sec_PKCS12SafeBag **safeBags;
     int i;
 
-    if (!p12dcx || !p12dcx->safeBags || !p12dcx->safeBags[0]) {
+    if (!p12dcx || p12dcx->error || !p12dcx->safeBags || !p12dcx->safeBags[0]) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }

@@ -597,3 +597,142 @@ add_task(async function test_run_perf_scenario_observes_generator_lifecycles() {
     await cleanup();
   }
 });
+
+/**
+ * This test case ensures MOZ_ML_LLAMA_HWINFERENCE routes llama.cpp engines to
+ * TextGenerationEngine, observes its text-only streams through the engine's own
+ * token metrics, and suffixes every series.
+ */
+add_task(async function test_run_perf_scenario_observes_hwinference_engines() {
+  const { TextGenerationEngine } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ml/textgeneration/TextGenerationEngine.sys.mjs"
+  );
+  const pref = "browser.ml.llama.hwInference";
+  const createStub = perfTestSinon
+    .stub(TextGenerationEngine, "create")
+    .callsFake(async pipelineOptions => {
+      const engine = Object.create(TextGenerationEngine.prototype);
+      engine.pipelineOptions = pipelineOptions;
+      return engine;
+    });
+  const runWithGeneratorStub = perfTestSinon
+    .stub(TextGenerationEngine.prototype, "runWithGenerator")
+    .callsFake(async function* () {
+      await TestUtils.waitForTick();
+      yield { text: "A", tokens: [], isPrompt: false };
+      await TestUtils.waitForTick();
+      yield { text: "B", tokens: [], isPrompt: false };
+      yield { text: "", tokens: [], isPrompt: false };
+      return {
+        resourcesBefore: { cpuTime: 1, memory: 2 * 1024 * 1024 },
+        resourcesAfter: { cpuTime: 2, memory: 3 * 1024 * 1024 },
+        metrics: {
+          decodingTime: 10,
+          inputTokens: 2,
+          outputTokens: 4,
+          tokensPerSecond: 400,
+        },
+      };
+    });
+  const prefValue = Services.prefs.getBoolPref(pref);
+  let message;
+
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info(value) {
+      message = value;
+    },
+  });
+
+  Services.env.set("MOZ_ML_LLAMA_HWINFERENCE", "1");
+
+  try {
+    await MLPerfTestUtils.runPerfScenario({
+      metricPrefix: "TEST",
+      engines: [{ featureId: "link-preview" }],
+      async scenario() {
+        Assert.ok(
+          Services.prefs.getBoolPref(pref),
+          "The scenario runs with llama.cpp routed to HWInference"
+        );
+
+        const engine = await createEngine({
+          backend: "llama.cpp",
+          featureId: "link-preview",
+          taskName: "text-generation",
+          modelId: "Mozilla/test-llama",
+          modelFile: "model.gguf",
+        });
+
+        Assert.ok(
+          engine instanceof TextGenerationEngine,
+          "The llama.cpp engine is served by TextGenerationEngine"
+        );
+
+        for await (const chunk of engine.runWithGenerator({})) {
+          info(`chunk: ${chunk.text}`);
+        }
+
+        return { duration: 5 };
+      },
+      coldIterations: 0,
+      warmIterations: 0,
+      memoryIterations: 0,
+    });
+
+    const metrics = JSON.parse(message.replace("perfMetrics | ", ""));
+    const metricsByName = new Map(metrics.map(metric => [metric.name, metric]));
+
+    Assert.ok(
+      metrics.every(metric => metric.name.endsWith("-first-use-HWINF")),
+      "Every series carries the HWInference tag"
+    );
+
+    for (const name of [
+      "engine-creation-time",
+      "engine-run-time",
+      "time-to-first-token",
+    ]) {
+      Assert.equal(
+        metricsByName.get(`TEST-${name}-first-use-HWINF`).values.length,
+        1,
+        `${name} is reported for the HWInference engine`
+      );
+    }
+
+    for (const [name, expectedValue] of [
+      ["output-tokens", 4],
+      ["tokens-per-second", 400],
+      ["decoding-time", 10],
+      ["input-tokens", 2],
+      ["memory-after-run", 3],
+    ]) {
+      Assert.deepEqual(
+        metricsByName.get(`TEST-${name}-first-use-HWINF`).values,
+        [expectedValue],
+        `${name} comes from the engine-reported run`
+      );
+    }
+
+    Assert.equal(
+      Services.prefs.getBoolPref(pref),
+      prefValue,
+      "The HWInference pref is restored"
+    );
+    Assert.equal(
+      TextGenerationEngine.create,
+      createStub,
+      "HWInference engine creation interception is restored"
+    );
+    Assert.equal(
+      TextGenerationEngine.prototype.runWithGenerator,
+      runWithGeneratorStub,
+      "HWInference engine run observation is restored"
+    );
+  } finally {
+    Services.env.set("MOZ_ML_LLAMA_HWINFERENCE", "");
+    runWithGeneratorStub.restore();
+    createStub.restore();
+  }
+});

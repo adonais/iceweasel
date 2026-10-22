@@ -39,10 +39,7 @@ async function verifyHeaders(monitor) {
   info("Check if Request-Headers and Response-Headers are sorted");
 
   const wait = waitForDOM(document, ".headers-overview");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   await waitForRequestData(store, ["requestHeaders", "responseHeaders"]);

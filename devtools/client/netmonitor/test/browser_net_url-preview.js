@@ -23,10 +23,7 @@ add_task(async function () {
   await performRequests(monitor, tab, 12);
 
   let wait = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   // Expand preview
@@ -34,10 +31,7 @@ add_task(async function () {
 
   // Select the second request
   wait = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
   await wait;
 
   // Test that the url is still expanded
@@ -55,10 +49,7 @@ add_task(async function () {
 
   // Select the third request
   wait = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[2]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[2]);
   await wait;
 
   // Test that the url is still collapsed
@@ -110,10 +101,7 @@ add_task(async function () {
   await netWorkEvent;
 
   let urlPreview = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   let urlPreviewValue = (await urlPreview)[0].textContent;
 
   ok(
@@ -122,10 +110,7 @@ add_task(async function () {
   );
 
   urlPreview = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
 
   urlPreviewValue = (await urlPreview)[0].textContent;
   ok(
@@ -134,10 +119,7 @@ add_task(async function () {
   );
 
   urlPreview = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[2]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[2]);
 
   urlPreviewValue = (await urlPreview)[0].textContent;
   ok(
@@ -161,10 +143,7 @@ add_task(async function () {
   await toggleUrlPreview(false, monitor);
 
   urlPreview = waitForDOM(document, "#headers-panel .url-preview", 1);
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[3]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[3]);
 
   urlPreviewValue = (await urlPreview)[0].textContent;
   ok(

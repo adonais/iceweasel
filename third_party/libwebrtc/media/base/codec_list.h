@@ -12,6 +12,7 @@
 #define MEDIA_BASE_CODEC_LIST_H_
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 #include "api/rtc_error.h"
@@ -35,10 +36,10 @@ class CodecList {
 
   // Creates a codec list on untrusted data. If successful, the
   // resulting CodecList satisfies all the CodecList invariants.
-  static RTCErrorOr<CodecList> Create(const std::vector<Codec>& codecs);
+  static RTCErrorOr<CodecList> Create(std::span<const Codec> codecs);
   // Creates a codec list on trusted data. Only for use when
   // the codec list is generated from internal code.
-  static CodecList CreateFromTrustedData(const std::vector<Codec>& codecs) {
+  static CodecList CreateFromTrustedData(std::span<const Codec> codecs) {
     return CodecList(codecs);
   }
   // Inserts a codec into the list if it was not already present.
@@ -82,8 +83,8 @@ class CodecList {
 
  private:
   // Creates a codec list on trusted data.
-  explicit CodecList(const std::vector<Codec>& codecs) {
-    codecs_ = codecs;
+  explicit CodecList(std::span<const Codec> codecs)
+      : codecs_(codecs.begin(), codecs.end()) {
     CheckConsistency();
   }
 

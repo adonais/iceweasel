@@ -5,6 +5,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <memory>
 #include "cryptohi.h"
@@ -314,6 +315,25 @@ TEST(RsaPkcs1Test, RequireNullParameter) {
   EXPECT_EQ(SECSuccess, rv);
 #else
   EXPECT_EQ(SECFailure, rv);
+#endif
+}
+
+// Bug 2068388: public exponents wider than 32 bits must be rejected.
+TEST(RsaPkcs1Test, KeyGenPublicExponentTooLarge) {
+#if ULONG_MAX <= PR_UINT32_MAX
+  GTEST_SKIP() << "unsigned long cannot hold an exponent above 32 bits";
+#else
+  PK11RSAGenParams rsa_params = {1024,
+                                 static_cast<unsigned long>(PR_UINT32_MAX) + 1};
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ASSERT_TRUE(slot);
+  SECKEYPublicKey* pub = nullptr;
+  ScopedSECKEYPrivateKey priv(
+      PK11_GenerateKeyPair(slot.get(), CKM_RSA_PKCS_KEY_PAIR_GEN, &rsa_params,
+                           &pub, false, false, nullptr));
+  EXPECT_FALSE(priv);
+  EXPECT_FALSE(pub);
+  EXPECT_EQ(SEC_ERROR_INVALID_ARGS, PORT_GetError());
 #endif
 }
 

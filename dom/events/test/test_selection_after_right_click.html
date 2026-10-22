@@ -54,6 +54,12 @@ SimpleTest.waitForFocus(async () => {
   const editableDiv = document.querySelector("div[contenteditable]");
   const input = document.querySelector("input");
 
+  // Selecting the word under the cursor replaces the caret move which this
+  // test checks, so it needs to stay off here.
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+
   // See also modifying-selection-with-non-primary-mouse-button.tentative.html?secondary for the basic behavior check.
   await SpecialPowers.pushPrefEnv({
     set: [

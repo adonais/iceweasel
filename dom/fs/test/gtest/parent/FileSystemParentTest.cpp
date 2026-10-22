@@ -73,7 +73,8 @@ void FileSystemParentTest::GetStaticDatabaseUsage(
             QM_TRY_INSPECT(
                 const ResultConnection& conn,
                 data::GetStorageConnection(GetTestOriginMetadata(),
-                                           /* aDirectoryLockId */ -1));
+                                           /* aDirectoryLockId */ -1,
+                                           /* aMaybeCipherKey */ Nothing()));
 
             return data::FileSystemDatabaseManager::GetUsage(
                 conn, GetTestOriginMetadata());

@@ -92,10 +92,10 @@ struct ContentClassifierFeature {
   Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
 
   // Optional predicate evaluated before classification. When non-null, the
-  // feature's engine is skipped for any request where this returns false.
-  // Allows features to restrict classification to a request subset without
-  // needing per-request engine variants.
-  bool (*mRequestFilter)(const ContentClassifierRequest&);
+  // feature's engine is skipped for any request where this returns false for
+  // the given mode. Allows features to restrict classification to a request
+  // subset without needing per-request engine variants.
+  bool (*mRequestFilter)(const ContentClassifierRequest&, ClassifyMode);
 
   // Optional callback invoked just before a matched channel is cancelled, after
   // SetBlockedContent and before aChannel->Cancel(). Null for most features.
@@ -286,14 +286,14 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   void RemoveBlocker();
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
-  // aIndependentEngines makes every engine evaluate its own rules in
-  // isolation; matched_rule is not threaded across engines. Used by the
-  // annotate phase so MaybeAnnotateChannel can attribute matches to every
-  // feature whose rules actually fired. The cancel phase passes false so
-  // trailing exception engines see the propagated matched_rule.
+  // Cancel threads matched_rule across engines so trailing exception engines
+  // see an earlier hit. Annotate evaluates every engine in isolation so
+  // MaybeAnnotateChannel can attribute matches to every feature whose rules
+  // fired, and also classifies top-level documents. Which requests a feature
+  // considers in each mode is decided by its mRequestFilter.
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
+      const ContentClassifierRequest& aRequest, ClassifyMode aMode)
       MOZ_REQUIRES(mLock);
 
   // Take a fresh pref snapshot, decide which active features need to be

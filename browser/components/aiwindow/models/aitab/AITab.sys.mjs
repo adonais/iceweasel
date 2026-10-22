@@ -6,13 +6,24 @@
 /** @import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs" */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import {
+  expandUrlTokens,
+  stripUnresolvedUrlTokens,
+  UrlTokenizer,
+} from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AITabStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
+  ConversationStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   GetPageContent: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   buildConversation:
+    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
+  buildEngineForFeature:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
@@ -60,26 +71,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
-// The external AITab viewer's base URL, or null when the pref is empty or does
-// not hold an https URL. The generate_aitab chat tool returns a link to this
-// viewer with the surface in the hash fragment; when this is null the tool
-// reports that the viewer is not configured.
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "viewerBaseURL",
-  "browser.smartwindow.aitab.viewerURL",
-  "",
-  null,
-  prefValue => {
-    const parsed = URL.parse(prefValue.trim());
-    if (parsed?.protocol != "https:") {
-      return null;
-    }
-    parsed.hash = "";
-    return parsed.href;
-  }
-);
-
 // Packaged A2UI component catalog (see models/aitab/jar.mn). The service
 // produces a validated surface only.
 //
@@ -102,7 +93,40 @@ const PAGE_BREAK = "\n\n<----- PAGE BREAK ---->\n\n";
 
 const MAX_AITAB_URLS = 20;
 
+// Surface properties the browser navigates to or loads. The model may only
+// fill them with URL tokens it was given (see expandSurfaceUrlTokens).
+const LINK_FIELDS = new Set(["href", "image"]);
+// Nesting limit for walking model output in expandSurfaceUrlTokens. Surfaces
+// are flat adjacency lists, so real ones stay far below this.
+const MAX_EXPAND_RECURSION_DEPTH = 32;
+
+// Heading for the `rawContent` section, so the model can tell content handed to
+// it directly apart from text extracted from a fetched page.
+const RAW_CONTENT_HEADING = "## Provided content (not fetched from a URL)";
+// Heading for the `modifyInstructions` section. A modification continues the
+// conversation that produced the page, so this marks which turn's surface the
+// instructions apply to: the one the model wrote last.
+const MODIFY_CONTENT_HEADING =
+  "## Instructions for modifications from previous response";
+
+// Cap on each free-text parameter the model fills in (`focus` and
+// `modifyInstructions`). Both re-enter the generation prompt, and nothing the
+// model is told bounds how much it writes into them.
+const MAX_INSTRUCTION_CHARS = 1500;
+
+// Ceiling on the generation history handed to the model. A modification only
+// ever adds to that history — the surface it wrote, plus the turn asking for
+// the next change — and past roughly this much the output degrades, so the
+// request is refused rather than answered badly.
+const MAX_HISTORY_CHARS = 100000;
+
 const CANCELED_ERROR = "page generation was canceled";
+
+// The viewer page for AITab pages. The `page` query string parameter names the
+// slug the page data is loaded from.
+const AITAB_VIEWER_BASE = "about:smartpage?page=";
+
+const HISTORY_LIMIT_ERROR = "No more modifications are supported";
 
 /**
  * A JSON Schema object from the catalog: a component's property schema, one of
@@ -266,12 +290,16 @@ const CANCELED_ERROR = "page generation was canceled";
  * display. Not sent to the viewer, which only receives the surface.
  *
  * @typedef {object} AITabMetadata
- * @property {string} id - Slug of `title` (see `#slugify`).
+ * @property {string} id - Slug of `title` (see `#slugify`), or the slug being
+ *   revised when this generation modified an existing page.
+ * @property {string} toolConvId - Id of the conversation the surface was
+ *   composed in, in the ConversationStore. Stored alongside the page so a
+ *   later modification can continue that exchange, and so deleting the page
+ *   can clear it.
  * @property {string} title - The surface's Header title, falling back to the
  *   user's focus, the single source page's title, then a localized default.
  * @property {string} howCreated - How the page was generated.
  * @property {AITabContext} context - What the page was generated from.
- * @property {A2UIComponent[]} components - The surface's components.
  */
 
 /**
@@ -286,7 +314,8 @@ const CANCELED_ERROR = "page generation was canceled";
  * prompt templates to render into it.
  *
  * @typedef {object} PromptSet
- * @property {Conversation} conversation - Conversation wired to the aitab model.
+ * @property {Conversation} conversation - Conversation wired to the aitab
+ *   model: the one being continued, or a fresh one.
  * @property {string} system - System-instructions template, taking `{schemas}`.
  * @property {string} user - User-data template, taking `{focus}` and `{pageContent}`.
  */
@@ -713,41 +742,42 @@ export class AITab {
   }
 
   /**
-   * Build the external viewer URL for a validated surface. The JSON is placed
-   * in the hash fragment so it is never sent to the viewer host.
+   * Build the viewer URL for a stored page. The page data stays in the
+   * database and is loaded from the slug, so nothing about the page travels
+   * in the URL.
    *
-   * @param {string} viewerBase - Pref-configured base URL (https only).
-   * @param {A2UISurface} surface - The validated surface.
+   * @param {string} slug - The persisted page's slug.
    * @returns {string}
    */
-  static buildViewerURL(viewerBase, surface) {
-    const url = new URL(viewerBase);
-    url.hash = encodeURIComponent(JSON.stringify(surface));
-    return url.href;
+  static buildViewerURL(slug) {
+    return `${AITAB_VIEWER_BASE}${slug}`;
   }
 
   /**
-   * The validated viewer base URL, or null when the viewer is not configured.
+   * Generate an AITab from a list of URLs, content handed over inline, or both.
+   * Each URL's readable content is pulled via get_page_content, then an LLM
+   * composes a structured A2UI surface that is validated against the packaged
+   * catalog. The validated surface and its derived metadata are returned to the
+   * caller — nothing is persisted and no HTML is assembled here (rendering
+   * happens in about:smartpage). If generation fails, an `error` string
+   * describing the problem is returned instead.
    *
-   * @returns {string|null}
-   */
-  static getViewerBaseURL() {
-    return lazy.viewerBaseURL;
-  }
-
-  /**
-   * Generate an AITab from a list of URLs. Each URL's readable content is
-   * pulled via get_page_content, then an LLM composes a structured A2UI surface
-   * that is validated against the packaged catalog. The validated surface and
-   * its derived metadata are returned to the caller — nothing is persisted and
-   * no HTML is assembled here (rendering happens in the external viewer). If
-   * generation fails, an `error` string describing the problem is returned
-   * instead.
+   * `modifySlug` revises a stored page instead of writing a new one: the
+   * conversation that composed that page is loaded and continued, so the model
+   * edits the surface it already wrote rather than being handed it back as
+   * source content. Only a page belonging to `conversation` can be revised.
    *
    * @param {object} options
-   * @param {string[]} options.urlList - The URLs to include, already expanded
+   * @param {string[]} [options.urlList] - The URLs to include, already expanded
    *   from URL tokens by the tool dispatcher. Trims at MAX_AITAB_URLS urls.
-   * @param {string} [options.focus] - What the user wants the page to focus on.
+   * @param {string} [options.focus] - What the user wants the page to focus
+   *   on. Cut to MAX_INSTRUCTION_CHARS.
+   * @param {string} [options.rawContent] - Content supplied inline rather than
+   *   fetched, appended to the source text as its own PAGE_BREAK section.
+   *   Shares the same source-text budget as the pages.
+   * @param {string} [options.modifySlug] - Slug of the stored page to revise.
+   * @param {string} [options.modifyInstructions] - What to change about it.
+   *   Cut to MAX_INSTRUCTION_CHARS.
    * @param {AbortSignal} [options.signal] - Cancels the generation. Checked at
    *   every await boundary here and in #generateStructuredSurface, and passed to
    *   the page extractions so they can be torn down early.
@@ -756,80 +786,76 @@ export class AITab {
    *   surface, or an error description.
    */
   static async generateAITab(
-    { urlList, focus = "", signal } = {},
+    {
+      urlList,
+      focus = "",
+      rawContent,
+      modifySlug,
+      modifyInstructions,
+      signal,
+    } = {},
     conversation
   ) {
     const urls = Array.isArray(urlList)
       ? urlList.filter(url => typeof url == "string").slice(0, MAX_AITAB_URLS)
       : [];
+    const rawText = typeof rawContent == "string" ? rawContent.trim() : "";
+    const slug = typeof modifySlug == "string" ? modifySlug.trim() : "";
 
-    if (!urls.length) {
-      return { error: "no URLs were provided to build a page from" };
+    // A modification already has a page to work from, so it needs no material
+    // of its own; anything else has to bring something to build one out of.
+    if (!urls.length && !rawText && !slug) {
+      return { error: "no URLs or content were provided to build a page from" };
     }
 
     if (signal?.aborted) {
       return { error: CANCELED_ERROR };
     }
 
-    // Pull the readable content for each requested URL (order-aligned with
-    // urls).
-    const contents = await lazy.GetPageContent.getPageContent(
-      { url_list: urls, signal },
-      conversation
-    );
+    // Resolved before any content is fetched: a slug that names no page of
+    // this conversation's is the model's mistake to correct, not work to pay
+    // for.
+    let prior = null;
+    if (slug) {
+      prior = await AITab.#loadPageToModify(slug, conversation);
+      if (prior.error) {
+        return { error: prior.error };
+      }
 
-    if (signal?.aborted) {
-      return { error: CANCELED_ERROR };
+      if (signal?.aborted) {
+        return { error: CANCELED_ERROR };
+      }
     }
 
-    // Split the source-text budget evenly across the requested tabs so the
-    // model prompt stays bounded no matter how many tabs are included.
-    const perTabBudget = Math.floor(SOURCE_TEXT_BUDGET / urls.length);
+    const sources = await AITab.#collectSources({
+      urls,
+      rawText,
+      conversation,
+      signal,
+    });
 
-    /** @type {AITabSource[]} */
-    const urlsUsed = [];
-    const sourceParts = [];
-    for (const [index, url] of urls.entries()) {
-      // Prefer the open tab's title for the heading; fall back to the URL.
-      const tab = lazy.GetPageContent.getTabWithURL(url);
-      const heading = tab?.label || url;
-      const text = contents[index] ?? "";
-      // Best-effort og:image lookup ("" when none cached), gated on the same
-      // access-control decision as the page text so a refused URL leaks no
-      // image either.
-      const imageUrl = lazy.GetPageContent.isContentAllowed(url, conversation)
-        ? await AITab.#getPageImage(url)
-        : "";
-      urlsUsed.push({
-        url,
-        title: heading,
-        favIconUrl: `page-icon:${url}`,
-        imageUrl: imageUrl || null,
-        extractedText: text,
-      });
-      // Trim each page's text to its share of the budget before sending to the
-      // model.
-      const budgetedText =
-        text.length > perTabBudget ? text.slice(0, perTabBudget) : text;
-      // Omit the Image: line when absent so the model never echoes an empty
-      // value.
-      const head = imageUrl
-        ? `## ${heading}\nURL: ${url}\nImage: ${imageUrl}\n\n`
-        : `## ${heading}\nURL: ${url}\n\n`;
-      sourceParts.push(`${head}${budgetedText}`);
+    if (sources.error) {
+      return sources;
     }
+    const { urlsUsed, sourceText } = sources;
 
-    if (signal?.aborted) {
-      return { error: CANCELED_ERROR };
+    const focusText = AITab.#capped(focus);
+
+    // Compose the surface with the LLM. Modification instructions only mean
+    // something alongside the conversation they revise, so they are dropped
+    // when there is no page to modify. With no new sources to carry it, the
+    // focus is the only place a modification's request can be, so it stands in
+    // for missing instructions.
+    let instructions = "";
+    if (prior) {
+      instructions =
+        AITab.#capped(modifyInstructions) || (sourceText ? "" : focusText);
     }
-
-    const focusText = focus.trim();
-
-    // Compose the surface with the LLM. Pages are separated by an explicit
-    // page-break marker in the prompt.
     const structured = await AITab.#generateStructuredSurface({
-      sourceText: sourceParts.join(PAGE_BREAK),
+      sourceText,
       focus: focusText,
+      modifyInstructions: instructions,
+      priorConversation: prior?.conversation,
       signal,
     });
 
@@ -860,7 +886,12 @@ export class AITab {
       conversation?.serpUrlsForAnonymousFetch ?? []
     );
 
-    toolConversation
+    // Awaited, not fired and forgotten: the stored page points back at this
+    // row through its tool_conv_id, and a modification can only continue the
+    // exchange once it has landed. A failure still yields a usable page, so it
+    // is logged rather than failing the generation.
+    toolConversation.updatedDate = Date.now();
+    await toolConversation
       .save()
       .catch(error =>
         lazy.console.error(`Could not save tool conversation: ${error}`)
@@ -876,24 +907,204 @@ export class AITab {
 
     const title =
       AITab.#titleFromSurface(structured.surface) ||
+      // A revision that comes back untitled keeps the title it had, which is
+      // more specific than anything this turn could fall back to.
+      prior?.page.title ||
       focusText ||
       (urls.length === 1 && urlsUsed[0].title) ||
       lazy.l10n.formatValueSync("ai-tab-default-page-title");
 
     /** @type {AITabMetadata} */
     const metadata = {
-      id: AITab.#slugify(title),
+      id: prior ? prior.page.slug : AITab.#slugify(title),
+      toolConvId: toolConversation.id,
       title,
       howCreated: "chat",
       context: {
-        creationPrompt: focusText,
-        urlsUsed,
+        creationPrompt: prior?.page.context?.creationPrompt || focusText,
+        // A revision keeps the sources the page was already built from: the
+        // turn that asked for it may have brought no URLs of its own.
+        urlsUsed: AITab.#mergeSources(prior?.page.context?.urlsUsed, urlsUsed),
         relevantMemories: [],
       },
-      components: structured.surface.components || [],
     };
 
     return { metadata, surface: structured.surface };
+  }
+
+  /**
+   * A model-supplied free-text parameter, trimmed and cut to
+   * MAX_INSTRUCTION_CHARS.
+   *
+   * @param {*} text - The parameter as the model sent it, which is not
+   *   guaranteed to be a string.
+   * @returns {string}
+   */
+  static #capped(text) {
+    return typeof text == "string"
+      ? text.trim().slice(0, MAX_INSTRUCTION_CHARS)
+      : "";
+  }
+
+  /**
+   * Read the material a surface is composed from: the readable text of each
+   * requested URL, plus any content handed over inline, laid out as the
+   * prompt's source sections and separated by PAGE_BREAK.
+   *
+   * @param {object} options
+   * @param {string[]} options.urls - URLs to read, in the requested order.
+   * @param {string} options.rawText - Content supplied inline, or "".
+   * @param {ChatConversation} options.conversation - Gates each URL's access
+   *   check, so a page the chat may not read contributes nothing.
+   * @param {AbortSignal} [options.signal] - Cancels the extractions.
+   * @returns {Promise<{urlsUsed: AITabSource[], sourceText: string}
+   *   |{error: string}>} The sources in the order requested and the text for
+   *   the prompt, or a description of why there is nothing to build from.
+   */
+  static async #collectSources({ urls, rawText, conversation, signal }) {
+    // Pull the readable content for each requested URL (order-aligned with
+    // urls). Structured results, so a refusal is distinguishable from page
+    // text rather than being composed into the page as if it were content.
+    let contents = [];
+    if (urls.length) {
+      contents = await lazy.GetPageContent.getPageContent(
+        { url_list: urls, signal },
+        conversation
+      );
+
+      if (signal?.aborted) {
+        return { error: CANCELED_ERROR };
+      }
+
+      // Nothing readable: report it instead of generating a page whose only
+      // source material is the refusal. A partial read still generates, from
+      // whichever URLs were allowed.
+      if (!contents.some(result => result.ok)) {
+        return { error: "none of the requested pages could be read" };
+      }
+    }
+
+    // Split the source-text budget evenly across the sections the prompt will
+    // carry — one per requested tab, plus one for inline content — so the model
+    // prompt stays bounded no matter how many tabs are included. A modification
+    // can bring neither, in which case there is nothing to budget.
+    const sections = urls.length + (rawText ? 1 : 0);
+    const perTabBudget = Math.floor(SOURCE_TEXT_BUDGET / (sections || 1));
+
+    /** @type {AITabSource[]} */
+    const urlsUsed = [];
+    const sourceParts = [];
+    for (const [index, url] of urls.entries()) {
+      // Prefer the open tab's title for the heading; fall back to the URL.
+      const tab = lazy.GetPageContent.getTabWithURL(url);
+      const heading = tab?.label || url;
+      const text = contents[index]?.content ?? "";
+      // Best-effort og:image lookup ("" when none cached), gated on the same
+      // access-control decision as the page text so a refused URL leaks no
+      // image either.
+      const imageUrl = lazy.GetPageContent.isContentAllowed(url, conversation)
+        ? await AITab.#getPageImage(url)
+        : "";
+      urlsUsed.push({
+        url,
+        title: heading,
+        favIconUrl: `page-icon:${url}`,
+        imageUrl: imageUrl || null,
+        extractedText: text,
+      });
+
+      // Trim each page's text to its share of the budget before sending to the
+      // model.
+      const budgetedText =
+        text.length > perTabBudget ? text.slice(0, perTabBudget) : text;
+      const headLines = [`## ${heading}`, `URL: ${url}`];
+      // Omit the Image: line when absent so the model never echoes an empty
+      // value.
+      if (imageUrl) {
+        headLines.push(`Image: ${imageUrl}`);
+      }
+      sourceParts.push(`${headLines.join("\n")}\n\n${budgetedText}`);
+    }
+
+    if (signal?.aborted) {
+      return { error: CANCELED_ERROR };
+    }
+
+    if (rawText) {
+      sourceParts.push(
+        `${RAW_CONTENT_HEADING}\n\n${rawText.slice(0, perTabBudget)}`
+      );
+    }
+
+    return { urlsUsed, sourceText: sourceParts.join(PAGE_BREAK) };
+  }
+
+  /**
+   * Load the stored page a modification names, along with the conversation that
+   * composed it. The stored conversation carries its messages, URL ledgers and
+   * security flags but no engine; #resolvePromptSet attaches one.
+   *
+   * Only a page belonging to `conversation` can be loaded: slugs are visible in
+   * page URLs, so without that check a model could be talked into rewriting a
+   * page from an unrelated chat. Keying the lookup on the chat conversation
+   * would also file the new version under the wrong slug.
+   *
+   * @param {string} slug
+   * @param {ChatConversation} conversation - The chat that owns the page.
+   * @returns {Promise<{page: object, conversation: Conversation}
+   *   |{error: string}>}
+   */
+  static async #loadPageToModify(slug, conversation) {
+    let page;
+    let priorConversation;
+    try {
+      page = await lazy.AITabStore.getBySlug(slug);
+      if (page?.toolConvId) {
+        priorConversation = await lazy.ConversationStore.findConversationById(
+          page.toolConvId
+        );
+      }
+    } catch (error) {
+      lazy.console.error("could not load the page to modify", slug, error);
+      return { error: `the page "${slug}" could not be loaded` };
+    }
+
+    if (!page || page.convId !== conversation?.id) {
+      return { error: `this conversation has no page with the slug "${slug}"` };
+    }
+
+    // The surface to revise lives in that conversation's assistant message, so
+    // without the exchange there is nothing to modify — regenerating is the
+    // only way forward.
+    if (!priorConversation?.messageCount) {
+      return {
+        error:
+          `the conversation that generated "${slug}" is no longer available, ` +
+          `so it can only be generated again from scratch`,
+      };
+    }
+
+    return { page, conversation: priorConversation };
+  }
+
+  /**
+   * The source list for a revised page: everything it was already built from,
+   * then whatever this turn added, deduplicated by URL so a page re-read on a
+   * later turn is listed once, with its newest extraction.
+   *
+   * @param {AITabSource[]} [previous] - Sources from the stored page.
+   * @param {AITabSource[]} added - Sources read on this turn.
+   * @returns {AITabSource[]}
+   */
+  static #mergeSources(previous, added) {
+    if (!Array.isArray(previous) || !previous.length) {
+      return added;
+    }
+    const byUrl = new Map(previous.map(source => [source?.url, source]));
+    for (const source of added) {
+      byUrl.set(source.url, source);
+    }
+    return Array.from(byUrl.values());
   }
 
   /**
@@ -1035,8 +1246,6 @@ export class AITab {
    * Extract a JSON object from the model's text output, tolerating markdown
    * code fences or surrounding prose.
    *
-   * Internal, but not private: the xpcshell test exercises it directly.
-   *
    * @param {string} text
    * @returns {A2UISurface|null} The candidate surface, not yet validated
    *   against the catalog.
@@ -1065,27 +1274,204 @@ export class AITab {
   }
 
   /**
-   * Ask the model for a validated surface for the given source content.
-   * Returns the validated surface on success, or an object with an `error`
-   * string describing why generation failed.
+   * Expand the URL tokens in a parsed model surface back into full URLs.
+   * Tokens inside free text are expanded, or removed when hallucinated. Link
+   * fields (see LINK_FIELDS) must hold exactly one known token; an item whose
+   * `href` does not is dropped, and any other invalid link field is removed,
+   * so a URL the model was never given can't become a link or image.
+   *
+   * @param {any} value - A parsed surface, or a value nested in one.
+   * @param {UrlTokenizer} urlTokenizer - The tokenizer used for the prompt.
+   * @param {number} [recursionDepth] - Nesting level of `value`; callers
+   *   leave it unset.
+   * @returns {any} A detokenized copy, or undefined when `value` is dropped or
+   *   nested deeper than MAX_EXPAND_RECURSION_DEPTH.
+   */
+  static expandSurfaceUrlTokens(value, urlTokenizer, recursionDepth = 0) {
+    if (typeof value == "string") {
+      return stripUnresolvedUrlTokens(
+        expandUrlTokens(value, urlTokenizer.tokenToUrl)
+      );
+    }
+    if (recursionDepth > MAX_EXPAND_RECURSION_DEPTH) {
+      return undefined;
+    }
+    if (Array.isArray(value)) {
+      return value
+        .map(item =>
+          AITab.expandSurfaceUrlTokens(item, urlTokenizer, recursionDepth + 1)
+        )
+        .filter(item => item !== undefined);
+    }
+    if (!value || typeof value != "object") {
+      return value;
+    }
+    const result = {};
+    for (const [key, sub] of Object.entries(value)) {
+      if (LINK_FIELDS.has(key)) {
+        const url = urlTokenizer.resolveExactToken(sub);
+        if (url) {
+          result[key] = url;
+        } else if (key == "href") {
+          lazy.console.warn("dropping item with unknown link", sub);
+          return undefined;
+        }
+        continue;
+      }
+      const expanded = AITab.expandSurfaceUrlTokens(
+        sub,
+        urlTokenizer,
+        recursionDepth + 1
+      );
+      if (expanded !== undefined) {
+        result[key] = expanded;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * The inverse of expandSurfaceUrlTokens: replace the URLs in a stored surface
+   * with tokens, so a surface the model wrote on an earlier turn can be handed
+   * back to it under this turn's tokenizer.
+   *
+   * @param {any} value - A surface, or a value nested in one.
+   * @param {UrlTokenizer} urlTokenizer - The tokenizer for this request.
+   * @param {number} [recursionDepth] - Nesting level of `value`; callers
+   *   leave it unset.
+   * @returns {any} A tokenized copy, or undefined when `value` is nested deeper
+   *   than MAX_EXPAND_RECURSION_DEPTH.
+   */
+  static tokenizeSurfaceUrls(value, urlTokenizer, recursionDepth = 0) {
+    if (typeof value == "string") {
+      return urlTokenizer.tokenizeText(value);
+    }
+    if (recursionDepth > MAX_EXPAND_RECURSION_DEPTH) {
+      return undefined;
+    }
+    if (Array.isArray(value)) {
+      return value
+        .map(item =>
+          AITab.tokenizeSurfaceUrls(item, urlTokenizer, recursionDepth + 1)
+        )
+        .filter(item => item !== undefined);
+    }
+    if (!value || typeof value != "object") {
+      return value;
+    }
+    const result = {};
+    for (const [key, sub] of Object.entries(value)) {
+      const tokenized =
+        LINK_FIELDS.has(key) && typeof sub == "string"
+          ? urlTokenizer.formatToken(sub)
+          : AITab.tokenizeSurfaceUrls(sub, urlTokenizer, recursionDepth + 1);
+      if (tokenized !== undefined) {
+        result[key] = tokenized;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * The conversation's messages as they are sent to the model. They are stored
+   * with full URLs, as chat messages are, and tokenized here under one
+   * tokenizer, so a continued conversation's earlier turns share the token map
+   * the reply is expanded with.
+   *
+   * @param {Conversation} conversation
+   * @param {UrlTokenizer} urlTokenizer - The tokenizer for this request.
+   * @returns {object[]} Messages in the chat-completions format.
+   */
+  static #tokenizedMessages(conversation, urlTokenizer) {
+    return conversation.getMessagesInChatCompletionsFormat().map(message => {
+      if (message.role == "system" || typeof message.content != "string") {
+        return message;
+      }
+      const surface =
+        message.role == "assistant"
+          ? AITab.parsePageConfig(message.content)
+          : null;
+      const content = surface
+        ? JSON.stringify(AITab.tokenizeSurfaceUrls(surface, urlTokenizer))
+        : urlTokenizer.tokenizeText(message.content);
+      return { ...message, content };
+    });
+  }
+
+  /**
+   * Ask the model for a validated surface for the given source content, either
+   * in a conversation of its own or as the next turn of `priorConversation`.
+   * Returns the validated surface and the conversation that produced it on
+   * success, or an object with an `error` string describing why generation
+   * failed.
    *
    * @param {object} options Options, as detailed in the Tool specification for AITab
    * @param {string} [options.focus] Focus of page information.
    * @param {string} options.sourceText Page content separated by PAGE_BREAK_TOKEN
+   * @param {string} [options.modifyInstructions] What to change about the
+   *   surface `priorConversation` already produced.
+   * @param {Conversation} [options.priorConversation] The conversation to
+   *   continue; a fresh one is built when there is none.
    * @param {AbortSignal} [options.signal] - Cancels the generation.
-   * @returns {Promise<{surface: A2UISurface} | {error: string}>}
+   * @returns {Promise<{surface: A2UISurface, conversation: Conversation}
+   *   | {error: string}>}
    */
-  static async #generateStructuredSurface({ sourceText, focus, signal }) {
+  static async #generateStructuredSurface({
+    sourceText,
+    focus,
+    modifyInstructions,
+    priorConversation,
+    signal,
+  }) {
     try {
       const { env } = await AITab.loadAssets();
 
-      const { conversation, system, user } = await AITab.#resolvePromptSet();
+      const { conversation, system, user } =
+        await AITab.#resolvePromptSet(priorConversation);
+      // An upsert at index 0, so a continued conversation is re-pointed at
+      // today's catalog rather than the one it was first generated against.
       conversation.setSystemMessage(
         lazy.renderPrompt(system, { schemas: AITab.#schemaText(env) })
       );
-      conversation.addUserMessage(
-        lazy.renderPrompt(user, { focus: focus ?? "", pageContent: sourceText })
-      );
+
+      // A modification can arrive with nothing new to read. Rendering the
+      // source-content template around an empty body would read as "the
+      // sources are gone", so it is left out and only the instructions go in.
+      const userParts = [];
+      if (sourceText) {
+        userParts.push(
+          lazy.renderPrompt(user, {
+            focus: focus ?? "",
+            pageContent: sourceText,
+          })
+        );
+      }
+      if (modifyInstructions) {
+        userParts.push(`${MODIFY_CONTENT_HEADING}\n\n${modifyInstructions}`);
+      }
+      if (!userParts.length) {
+        return { error: "nothing was provided to change the page with" };
+      }
+      conversation.addUserMessage(userParts.join(PAGE_BREAK));
+
+      // URLs only reach the model as tokens, so any link it emits can be traced
+      // back to a URL it was actually given.
+      const urlTokenizer = new UrlTokenizer();
+      const args = AITab.#tokenizedMessages(conversation, urlTokenizer);
+
+      // Measured on the wire format, so this is the payload run() sends rather
+      // than an estimate of it. Only a continued conversation can reach the
+      // ceiling: a first generation is one capped turn against a fixed system
+      // message.
+      if (priorConversation) {
+        const history = JSON.stringify(args);
+        if (history.length > MAX_HISTORY_CHARS) {
+          lazy.console.warn(
+            `refusing to modify: history is ${history.length} chars`
+          );
+          return { error: HISTORY_LIMIT_ERROR };
+        }
+      }
 
       if (signal?.aborted) {
         return { error: CANCELED_ERROR };
@@ -1095,6 +1481,7 @@ export class AITab {
       // cannot be structured-cloned to the engine actor, so the model call can
       // only be abandoned once it resolves.
       const response = await conversation.run({
+        args,
         fxAccountToken: await lazy.openAIEngine.getFxAccountToken(),
       });
 
@@ -1111,11 +1498,12 @@ export class AITab {
         return { error: "the model returned an empty response" };
       }
 
-      const surface = AITab.parsePageConfig(text);
-      if (!surface) {
+      const parsed = AITab.parsePageConfig(text);
+      if (!parsed) {
         lazy.console.error("model did not return valid JSON:", text);
         return { error: "the model did not return valid JSON" };
       }
+      const surface = AITab.expandSurfaceUrlTokens(parsed, urlTokenizer);
 
       const result = AITab.buildSurface(surface, env);
       if (!result.ok) {
@@ -1124,6 +1512,12 @@ export class AITab {
           error: "the generated page did not match the required format",
         };
       }
+
+      // Record what the model wrote, with its URLs expanded as the user turn's
+      // are. `run()` does not add its own reply, and a later modification
+      // continues this conversation to revise this surface, so without this
+      // there would be nothing there to revise.
+      conversation.addAssistantMessage(JSON.stringify(result.surface));
 
       lazy.console.debug("structured surface validated successfully");
       return { surface: result.surface, conversation };
@@ -1141,12 +1535,22 @@ export class AITab {
    * A genuine failure propagates and is surfaced as a generation error by the
    * caller.
    *
+   * @param {Conversation} [existing] - Conversation to render the templates
+   *   into, for a modification, which gets an aitab engine attached; a fresh
+   *   one is built when there is none.
    * @returns {Promise<PromptSet>}
    */
-  static async #resolvePromptSet() {
-    const conversation = await lazy.buildConversation(
-      lazy.MODEL_FEATURES.AITAB
-    );
+  static async #resolvePromptSet(existing) {
+    let conversation = existing;
+    if (conversation) {
+      const { engine, parameters } = await lazy.buildEngineForFeature(
+        lazy.MODEL_FEATURES.AITAB
+      );
+      conversation.engine = engine;
+      conversation.parameters = parameters;
+    } else {
+      conversation = await lazy.buildConversation(lazy.MODEL_FEATURES.AITAB);
+    }
     const [{ prompt: system }, { prompt: user }] = await Promise.all([
       lazy.loadPrompt(lazy.MODEL_FEATURES.AITAB, {
         module: "system-instructions",

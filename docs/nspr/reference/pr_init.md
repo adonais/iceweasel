@@ -15,7 +15,7 @@ void PR_Init(
 
 ### Parameters
 
-{ref}`PR_Init` has the following parameters:
+{doc}`pr_init` has the following parameters:
 
 `type`
 
@@ -32,10 +32,10 @@ void PR_Init(
 ## Description
 
 NSPR is now implicitly initialized, usually by the first NSPR function
-called by a program. {ref}`PR_Init` is necessary only if a program has
+called by a program. {doc}`pr_init` is necessary only if a program has
 specific initialization-sequencing requirements.
 
-Call {ref}`PR_Init` as follows:
+Call {doc}`pr_init` as follows:
 
 ```{code}
 PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);

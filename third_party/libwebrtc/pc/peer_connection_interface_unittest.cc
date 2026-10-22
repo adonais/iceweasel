@@ -616,10 +616,8 @@ class MockTrackObserver : public ObserverInterface {
 class PeerConnectionFactoryForTest : public PeerConnectionFactory {
  public:
   static scoped_refptr<PeerConnectionFactoryForTest>
-  CreatePeerConnectionFactoryForTest(Thread* network_thread,
-                                     Thread* worker_thread) {
+  CreatePeerConnectionFactoryForTest(Thread* network_thread) {
     PeerConnectionFactoryDependencies dependencies;
-    dependencies.worker_thread = worker_thread;
     dependencies.network_thread = network_thread;
     dependencies.signaling_thread = Thread::Current();
     // Use fake audio device module since we're only testing the interface
@@ -665,7 +663,6 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
 
     PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = network_thread_.get();
-    dependencies.worker_thread = worker_thread_.get();
     dependencies.signaling_thread = Thread::Current();
     dependencies.socket_factory = network_thread_->socketserver();
     dependencies.adm =
@@ -4014,11 +4011,8 @@ class PeerConnectionMediaConfigTest : public ::testing::Test {
     network_thread_ = Thread::CreateWithSocketServer();
     network_thread_->SetName("NetworkThread", nullptr);
     ASSERT_TRUE(network_thread_->Start());
-    worker_thread_ = Thread::Create();
-    worker_thread_->SetName("WorkerThread", nullptr);
-    ASSERT_TRUE(worker_thread_->Start());
     pcf_ = PeerConnectionFactoryForTest::CreatePeerConnectionFactoryForTest(
-        network_thread_.get(), worker_thread_.get());
+        network_thread_.get());
   }
   MediaConfig TestCreatePeerConnection(const RTCConfiguration& config) {
     PeerConnectionDependencies pc_dependencies(&observer_);
@@ -4030,7 +4024,6 @@ class PeerConnectionMediaConfigTest : public ::testing::Test {
   }
 
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   test::RunLoop signaling_thread_;
   scoped_refptr<PeerConnectionFactoryForTest> pcf_;
   MockPeerConnectionObserver observer_;

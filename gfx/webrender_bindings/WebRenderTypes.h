@@ -797,6 +797,9 @@ struct ByteBuffer {
 struct BuiltDisplayList {
   wr::VecU8 dl_items;
   wr::VecU8 dl_spatial_tree;
+  // Encoded delta for the items this display list's builder interned. See
+  // gfx/wr/webrender/doc/dl-builder-interning.md.
+  wr::VecU8 dl_interner_delta;
   wr::BuiltDisplayListDescriptor dl_desc;
 };
 

@@ -12,9 +12,9 @@ android {
 }
 
 dependencies {
+    api project(':components:browser-menu')
     api libs.androidx.browser
 
-    implementation project(':components:browser-menu')
     implementation project(':components:browser-state')
     implementation project(':components:browser-toolbar')
     implementation project(':components:concept-engine')

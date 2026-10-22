@@ -8,7 +8,9 @@
 
 #include "nsContentPolicy.h"
 
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -31,13 +33,15 @@ NS_IMPL_ISUPPORTS(nsContentPolicy, nsIContentPolicy)
 
 static mozilla::LazyLogModule gConPolLog("nsContentPolicy");
 
-nsresult NS_NewContentPolicy(nsIContentPolicy** aResult) {
-  *aResult = new nsContentPolicy;
-  NS_ADDREF(*aResult);
-  return NS_OK;
-}
-
 nsContentPolicy::nsContentPolicy() : mPolicies(NS_CONTENTPOLICY_CATEGORY) {}
+
+nsresult nsContentPolicy::Init() {
+  nsresult rv;
+  mCSPService = mozilla::components::CSPService::Service(&rv);
+  MOZ_TRY(rv);
+  mMixedContentBlocker = mozilla::components::MixedContentBlocker::Service(&rv);
+  return rv;
+}
 
 nsContentPolicy::~nsContentPolicy() = default;
 
@@ -80,20 +84,12 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
 #endif
 
   nsCOMPtr<mozilla::dom::Document> doc;
-  nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext);
-  if (node) {
+  if (nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext)) {
     doc = node->OwnerDoc();
-  }
-  if (!doc) {
+  } else {
     doc = do_QueryInterface(requestingContext);
   }
 
-  /*
-   * Enumerate mPolicies and ask each of them, taking the logical AND of
-   * their permissions.
-   */
-  nsresult rv;
-  const nsCOMArray<nsIContentPolicy>& entries = mPolicies.GetCachedEntries();
   if (doc) {
     if (nsCOMPtr<nsIContentSecurityPolicy> csp =
             PolicyContainer::GetCSP(doc->GetPolicyContainer())) {
@@ -101,18 +97,30 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
     }
   }
 
-  int32_t count = entries.Count();
-  for (int32_t i = 0; i < count; i++) {
-    /* check the appropriate policy */
-    rv = (entries[i]->*policyMethod)(contentLocation, loadInfo, decision);
+  /*
+   * mPolicies is enumerated in unspecified (hashtable) order and the first
+   * rejection stops the enumeration, which would suppress the reporting side
+   * effects of CSP and the mixed content blocker. Consult those two up front,
+   * in a defined order.
+   */
+  auto rejects = [&](nsIContentPolicy* policy) {
+    // Check the appropriate policy.
+    nsresult rv = (policy->*policyMethod)(contentLocation, loadInfo, decision);
+    return NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision);
+  };
 
-    if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
-      /* policy says no, no point continuing to check */
+  if (rejects(mCSPService) || rejects(mMixedContentBlocker)) {
+    return NS_OK;
+  }
+
+  const nsCOMArray<nsIContentPolicy>& entries = mPolicies.GetCachedEntries();
+  for (int32_t i = 0; i < entries.Count(); ++i) {
+    if (rejects(entries[i])) {
       return NS_OK;
     }
   }
 
-  // everyone returned failure, or no policies: sanitize result
+  // Everyone returned failure, or no policies: sanitize result
   *decision = nsIContentPolicy::ACCEPT;
   return NS_OK;
 }

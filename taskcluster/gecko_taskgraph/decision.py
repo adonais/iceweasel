@@ -34,7 +34,7 @@ from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
-from .util.hg import get_hg_revision_branch, get_hg_revision_info
+from .util.hg import get_hg_revision_metadata
 from .util.partials import populate_release_history
 from .util.taskcluster import insert_index
 from .util.taskgraph import find_decision_task, find_existing_tasks_from_previous_kinds
@@ -161,7 +161,7 @@ PER_PROJECT_PARAMETERS = {
         "release_type": "nightly",
     },
     "staging-firefox": {
-        "target_tasks_method": "default",
+        "target_tasks_method": "firefox_pull_request_tasks",
     },
     # the default parameters are used for projects that do not match above.
     "default": {
@@ -196,6 +196,27 @@ def full_task_graph_to_manifests_by_task(full_task_json):
 
         manifests_by_task[label].extend(manifests)
     return manifests_by_task
+
+
+def build_decision_perfherder_data(trust_domain, params_time, taskgraph_time):
+    suite = {
+        "name": "decision",
+        "value": params_time + taskgraph_time,
+        "lowerIsBetter": True,
+        "subtests": [
+            {"name": "parameters", "value": params_time, "lowerIsBetter": True},
+            {"name": "taskgraph", "value": taskgraph_time, "lowerIsBetter": True},
+        ],
+    }
+    if trust_domain == "gecko":
+        suite["monitor"] = True
+        suite["alertNotifyEmails"] = ["release+gecko-decision-alerts@mozilla.com"]
+    else:
+        suite["shouldAlert"] = False
+    return {
+        "framework": {"name": "build_metrics"},
+        "suites": [suite],
+    }
 
 
 def taskgraph_decision(options, parameters):
@@ -260,9 +281,6 @@ def taskgraph_decision(options, parameters):
         # see https://bugzilla.mozilla.org/show_bug.cgi?id=1989038 for additional
         # details
 
-        # this is just a test to check whether the from_json() function is working
-        _, _ = TaskGraph.from_json(full_task_json)
-
         # write out the target task set to allow reproducing this as input
         write_artifact("target-tasks.json", list(tgg.target_task_set.tasks.keys()))
 
@@ -287,6 +305,7 @@ def taskgraph_decision(options, parameters):
             taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
             taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
             scripts_dir / "robustcheckout.py": ARTIFACTS_DIR,
+            scripts_dir / "run-task-setup.py": ARTIFACTS_DIR,
         }
         for target, dest in to_copy.items():
             shutil.copy2(target, dest)
@@ -334,28 +353,24 @@ def get_decision_parameters(graph_config, options):
     repo_path = os.getcwd()
     repo = get_repository(repo_path)
 
-    try:
-        commit_message = repo.get_commit_message()
-    except UnicodeDecodeError:
-        commit_message = ""
-
     # Set some vcs specific parameters
     if parameters["repository_type"] == "hg":
+        metadata = get_hg_revision_metadata(GECKO, parameters["head_rev"])
+        commit_message = metadata["desc"]
         parameters["head_git_repository"] = GIT_BACKING_REPO
-        if head_git_rev := get_hg_revision_info(
-            GECKO, revision=parameters["head_rev"], info="extras.git_commit"
-        ):
+        if head_git_rev := metadata["extras"].get("git_commit"):
             parameters["head_git_rev"] = head_git_rev
-
-        parameters["hg_branch"] = get_hg_revision_branch(
-            GECKO, revision=parameters["head_rev"]
-        )
+        parameters["hg_branch"] = metadata["branch"]
 
         parameters["files_changed"] = sorted(
             get_changed_files(parameters["head_repository"], parameters["head_rev"])
         )
 
     elif parameters["repository_type"] == "git":
+        try:
+            commit_message = repo.get_commit_message()
+        except UnicodeDecodeError:
+            commit_message = ""
         # `files_changed` is derived further down, once parameter overrides had a
         # chance to correct `base_rev`.
         parameters["hg_branch"] = None

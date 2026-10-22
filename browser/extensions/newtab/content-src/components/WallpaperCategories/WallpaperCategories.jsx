@@ -7,12 +7,10 @@ import { connect } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
-import {
-  calculateTheme,
-  createThumbnail,
-} from "lib/Wallpapers/WallpaperThemeUtils.mjs";
+import { calculateTheme } from "lib/Wallpapers/WallpaperThemeUtils.mjs";
 import { WALLPAPER_CATEGORIES } from "content-src/lib/constants.mjs";
 import { isWallpaperLibraryEnabled } from "lib/Wallpapers/WallpaperLibraryPref.mjs";
+import { getWallpaperURL } from "lib/Wallpapers/WallpaperFileNames.mjs";
 
 // A second save can start before the first one's reply arrives. The id keeps
 // that older reply from moving focus to the wrong image.
@@ -140,8 +138,6 @@ export class _WallpaperCategories extends React.PureComponent {
     this.categoryRef = []; // store references for wallpaper category list
     this.wallpaperRef = []; // store reference for wallpaper selection list
     this.savedWallpaperRef = []; // store references for the "Your images" list
-    this.scaledThumbnails = new Set(); // library images already scaled here
-    this.unmounted = false;
     this.pendingUploadId = null;
     this.uploadStartedFromTile = false;
     this.arrowButtonRef = React.createRef(); // Used to focus arrow button when category opens
@@ -159,8 +155,6 @@ export class _WallpaperCategories extends React.PureComponent {
       pendingRemoveIndex: null,
       pendingRemoveFilename: null,
       savedFocusIndex: 0,
-      // Object URLs for the picker thumbnails, keyed by filename.
-      thumbnailUrls: {},
     };
   }
 
@@ -168,55 +162,20 @@ export class _WallpaperCategories extends React.PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia(
       "(prefers-color-scheme: dark)"
     );
-    this.requestThumbnails();
-    this.syncThumbnailUrls();
-  }
-
-  componentWillUnmount() {
-    this.unmounted = true;
-    this.revokeThumbnailUrls(this.state.thumbnailUrls);
+    this.requestLibrary();
   }
 
   componentDidUpdate(prevProps) {
     this.focusAfterRemoval();
     this.focusAfterUpload();
 
-    const wantsThumbnails = !!this.props.panelShowing && this.libraryEnabled;
-    const wantedThumbnails =
+    const showing = !!this.props.panelShowing && this.libraryEnabled;
+    const wasShowing =
       !!prevProps.panelShowing &&
       isWallpaperLibraryEnabled(prevProps.Prefs.values);
 
-    if (wantsThumbnails !== wantedThumbnails) {
-      if (wantsThumbnails) {
-        this.requestThumbnails();
-      } else {
-        this.dropThumbnails();
-      }
-    }
-
-    if (
-      this.props.Wallpapers.customWallpaperThumbnails !==
-      prevProps.Wallpapers.customWallpaperThumbnails
-    ) {
-      this.syncThumbnailUrls();
-    }
-
-    // An upload or a removal changes the library, so the thumbnails for it are
-    // stale. Compared by filename, so a fresh array holding the same images
-    // does not ask forever. The applied pref is the second trigger: a page
-    // restored from the startup cache never sees the library broadcast. Only
-    // when there is nothing to show, because applying leaves the library alone
-    // and re-fetched bytes mint new blob URLs that every tile has to reload.
-    const appliedFilename =
-      this.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
-    const prevAppliedFilename =
-      prevProps.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
-    if (
-      (appliedFilename !== prevAppliedFilename && !this.hasThumbnails()) ||
-      this.libraryFilenames(this.props.Wallpapers.customWallpapers) !==
-        this.libraryFilenames(prevProps.Wallpapers.customWallpapers)
-    ) {
-      this.requestThumbnails();
+    if (showing && !wasShowing) {
+      this.requestLibrary();
     }
 
     // A CTA can deep-link into a specific wallpaper category by dispatching
@@ -399,125 +358,15 @@ export class _WallpaperCategories extends React.PureComponent {
     }
   }
 
-  // Which images the library holds, as one comparable string.
-  libraryFilenames(wallpapers) {
-    return (wallpapers || []).map(wallpaper => wallpaper.filename).join("|");
-  }
-
-  // The library lives in a folder the page cannot load from, so the picker asks
-  // for the thumbnail bytes and turns them into object URLs here.
-  // A startup cache restore leaves this empty, or holding plain objects that
-  // createObjectURL rejects. Either way there is nothing to paint.
-  hasThumbnails() {
-    return (this.props.Wallpapers.customWallpaperThumbnails || []).some(
-      ({ file }) => file instanceof globalThis.Blob
-    );
-  }
-
-  requestThumbnails() {
-    // The picker is mounted on every new tab, so asking on mount would read the
-    // whole library once per tab, for a panel nobody opened.
+  // A page restored from the startup cache never sees the library broadcast,
+  // so what it holds can be out of date. Opening the panel reads it again.
+  requestLibrary() {
     if (!this.props.panelShowing || !this.libraryEnabled) {
       return;
     }
     this.props.dispatch(
-      ac.OnlyToMain({ type: at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST })
+      ac.OnlyToMain({ type: at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST })
     );
-  }
-
-  revokeThumbnailUrls(urls) {
-    for (const url of Object.values(urls || {})) {
-      globalThis.URL?.revokeObjectURL(url);
-    }
-  }
-
-  syncThumbnailUrls() {
-    if (!this.props.panelShowing || !this.libraryEnabled) {
-      this.dropThumbnails();
-      return;
-    }
-    const thumbnails = this.props.Wallpapers.customWallpaperThumbnails || [];
-    const next = {};
-    for (const { filename, file } of thumbnails) {
-      // A startup cache restore rebuilds these from JSON, where a Blob comes
-      // back as a plain object that createObjectURL rejects.
-      if (file instanceof globalThis.Blob) {
-        next[filename] = globalThis.URL.createObjectURL(file);
-      }
-    }
-    const previous = this.state.thumbnailUrls;
-    this.setState({ thumbnailUrls: next }, () =>
-      this.revokeThumbnailUrls(previous)
-    );
-    this.scaleMissingThumbnails(thumbnails);
-  }
-
-  // Anything saved without a page to scale it, a migrated wallpaper or one
-  // rescued when it was retired, arrives full size and marked. Scaling runs
-  // here and the result goes back to be stored.
-  async scaleMissingThumbnails(thumbnails) {
-    for (const { filename, file, needsThumbnail } of thumbnails) {
-      if (
-        !needsThumbnail ||
-        this.scaledThumbnails.has(filename) ||
-        !(file instanceof globalThis.Blob)
-      ) {
-        continue;
-      }
-      // Checked again after the await. This component stays mounted on every
-      // new tab, so closing the panel is the only signal that the work is no
-      // longer wanted, and a large library takes many turns to get through.
-      if (this.unmounted || !this.props.panelShowing || !this.libraryEnabled) {
-        return;
-      }
-      // The set means done or in flight. Anything that does not finish has to
-      // come back out, or reopening the panel would skip it for good.
-      this.scaledThumbnails.add(filename);
-      let sent = false;
-      try {
-        const thumbnail = await createThumbnail(globalThis, file);
-        if (
-          this.unmounted ||
-          !this.props.panelShowing ||
-          !this.libraryEnabled
-        ) {
-          return;
-        }
-        this.props.dispatch(
-          ac.OnlyToMain({
-            type: at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE,
-            data: { filename, thumbnail },
-          })
-        );
-        sent = true;
-      } catch (e) {
-        console.error("Failed to make a thumbnail for a saved image", e);
-      } finally {
-        if (!sent) {
-          this.scaledThumbnails.delete(filename);
-        }
-      }
-    }
-  }
-
-  dropThumbnails() {
-    if (!(this.props.Wallpapers.customWallpaperThumbnails || []).length) {
-      return;
-    }
-    // Local dispatch, so the bytes leave this tab's state as well. Nothing
-    // renders them again until the panel is reopened.
-    this.props.dispatch({
-      type: at.WALLPAPERS_CUSTOM_THUMBNAILS_SET,
-      data: [],
-    });
-    const previous = this.state.thumbnailUrls;
-    this.setState({ thumbnailUrls: {} }, () =>
-      this.revokeThumbnailUrls(previous)
-    );
-  }
-
-  thumbnailUrl(filename) {
-    return this.state.thumbnailUrls[filename];
   }
 
   get libraryEnabled() {
@@ -633,8 +482,8 @@ export class _WallpaperCategories extends React.PureComponent {
     );
   }
 
-  // The answer to one upload, so it is stale once acted on. Local dispatch, the
-  // same way the thumbnail bytes leave this tab.
+  // The answer to one upload, so it is stale once acted on. Local dispatch,
+  // since no other tab is waiting on it.
   clearUploadResult() {
     this.props.dispatch({ type: at.WALLPAPER_UPLOAD_RESULT, data: null });
   }
@@ -870,15 +719,6 @@ export class _WallpaperCategories extends React.PureComponent {
           return;
         }
 
-        // Scaled here; the parent stores the result it receives. A failure only
-        // costs the tile its preview, so the save goes on.
-        let thumbnail;
-        try {
-          thumbnail = await createThumbnail(globalThis, file);
-        } catch (e) {
-          console.error("Failed to make a wallpaper thumbnail", e);
-        }
-
         const requestId = String(++uploadRequestSeq);
         this.pendingUploadId = requestId;
         // The first save turns the "Add an image" tile into the folder, and the
@@ -891,7 +731,7 @@ export class _WallpaperCategories extends React.PureComponent {
         this.props.dispatch(
           ac.OnlyToMain({
             type: at.WALLPAPER_UPLOAD,
-            data: { file, theme, thumbnail, requestId },
+            data: { file, theme, requestId },
           })
         );
 
@@ -999,11 +839,22 @@ export class _WallpaperCategories extends React.PureComponent {
           const removeArgs = JSON.stringify(
             fallbackName ? { name: fallbackName } : { number }
           );
-          const url = this.thumbnailUrl(filename);
+          const url = getWallpaperURL(filename, this.libraryEnabled);
           const id = `your-images-${filename}`;
           const isApplied = applied?.filename === filename;
           return (
             <div className="your-images-item" key={filename}>
+              {url && (
+                <img
+                  className="your-images-preview"
+                  src={url}
+                  alt=""
+                  aria-hidden="true"
+                  draggable="false"
+                  loading="lazy"
+                  style={{ objectPosition: position }}
+                />
+              )}
               <input
                 ref={el => {
                   if (el) {
@@ -1013,14 +864,6 @@ export class _WallpaperCategories extends React.PureComponent {
                 onChange={() => this.handleSavedWallpaper(wallpaper, index)}
                 onFocus={() => this.setState({ savedFocusIndex: index })}
                 onKeyDown={e => this.handleSavedWallpaperKeyDown(e, index)}
-                style={
-                  url
-                    ? {
-                        backgroundImage: `url(${url})`,
-                        backgroundPosition: position,
-                      }
-                    : {}
-                }
                 type="radio"
                 name="wallpaper-your-images"
                 id={id}
@@ -1246,25 +1089,38 @@ export class _WallpaperCategories extends React.PureComponent {
         fluent_id = this.categoryFluentID(category);
       }
       let style = {};
-      // Thumbnails arrive from the parent after the panel opens, so the
-      // folder has nothing to show for a moment on the first open.
+      let folderPreview = null;
       let folderHasPreview = false;
       if (isYourImagesFolder) {
-        // The applied image and its URL reach the page ahead of the
-        // library, so prefer them. A library thumbnail can still be the
-        // previous image, which would show the wrong picture entirely.
+        // The applied image and its URL reach the page ahead of the library,
+        // so prefer them. The library can still name the previous image,
+        // which would show the wrong picture entirely.
         const appliedUrl =
           prefs["newtabWallpapers.wallpaper"] === "custom"
             ? this.props.Wallpapers.uploadedWallpaper
             : null;
         const preview = this.appliedSavedWallpaper || savedWallpapers[0];
-        const previewUrl = appliedUrl || this.thumbnailUrl(preview.filename);
+        const previewUrl =
+          appliedUrl || getWallpaperURL(preview.filename, this.libraryEnabled);
         if (previewUrl) {
           folderHasPreview = true;
-          style.backgroundImage = `url(${previewUrl})`;
-          style.backgroundPosition = appliedUrl
-            ? prefs["newtabWallpapers.customWallpaper.position"] || "center"
-            : preview.position;
+          // An img for the same reason the tiles in the folder are: a CSS
+          // background holds a full resolution decode of the photo.
+          folderPreview = (
+            <img
+              className="your-images-preview"
+              src={previewUrl}
+              alt=""
+              aria-hidden="true"
+              draggable="false"
+              style={{
+                objectPosition: appliedUrl
+                  ? prefs["newtabWallpapers.customWallpaper.position"] ||
+                    "center"
+                  : preview.position,
+              }}
+            />
+          );
         }
       } else if (thumbnail?.wallpaperUrl) {
         style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
@@ -1335,7 +1191,9 @@ export class _WallpaperCategories extends React.PureComponent {
                 ? activeCategory === category
                 : undefined
             }
-          />
+          >
+            {folderPreview}
+          </button>
           <label
             id={`${category}-label`}
             htmlFor={category}

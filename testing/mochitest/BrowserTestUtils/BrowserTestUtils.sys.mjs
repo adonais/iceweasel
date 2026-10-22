@@ -2188,6 +2188,23 @@ export var BrowserTestUtils = {
   },
 
   /**
+   * Waits until every tab in the window has finished opening.
+   *
+   * @param {Window} win
+   * @returns {Promise<void>}
+   */
+  allTabOpenAnimationsFinished(win) {
+    let { gBrowser } = win;
+    return TestUtils.waitForCondition(
+      () =>
+        gBrowser.tabs.every(tab =>
+          gBrowser.tabContainer.openAnimationFinished(tab)
+        ),
+      "Tabs are fully open"
+    );
+  },
+
+  /**
    * Create enough tabs to cause a tab overflow in the given window.
    *
    * @param {Function|null} registerCleanupFunction
@@ -2266,10 +2283,7 @@ export var BrowserTestUtils = {
     // overflowing. A tab only takes up its share of the scrollport once it is
     // fully open, so measuring before then would badly overshoot.
     while (gBrowser.tabs.length < MAX_TABS_FOR_OVERFLOW) {
-      await TestUtils.waitForCondition(
-        () => Array.from(gBrowser.tabs).every(tab => tab._fullyOpen),
-        "Tabs are fully open"
-      );
+      await this.allTabOpenAnimationsFinished(win);
       let missingSpace = overflowTarget - overflowAmount();
       if (missingSpace < 0) {
         break;

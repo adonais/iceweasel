@@ -24,9 +24,17 @@ ChromeUtils.defineLazyGetter(lazy, "userAgent", () => {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "shutdownTimeout",
+  "asyncShutdownCrashTimeout",
   "toolkit.asyncshutdown.crash_timeout"
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "asyncShutdownCrashAdditionalWait",
+  "toolkit.asyncshutdown.crash_timeout_additional_wait"
+);
+
+const TIMEOUT_SHUTDOWN_EXTRA_WAIT = 3000;
 
 // List of capabilities which are only relevant for Webdriver Classic.
 export const WEBDRIVER_CLASSIC_CAPABILITIES = [
@@ -492,7 +500,7 @@ export class Capabilities extends Map {
       ["moz:platformVersion", Services.sysinfo.getProperty("version")],
       ["moz:processID", lazy.AppInfo.processID],
       ["moz:profile", maybeProfile()],
-      ["moz:shutdownTimeout", lazy.shutdownTimeout],
+      ["moz:shutdownTimeout", getShutdownTimeout()],
     ];
 
     if (!isBidi) {
@@ -880,6 +888,17 @@ export class Capabilities extends Map {
         );
     }
   }
+}
+
+function getShutdownTimeout() {
+  // Clients should wait at least this long before forcefully terminating
+  // Firefox. This gives the shutdown hang monitor enough time to detect
+  // and terminate the process in case of a shutdown hang.
+  return (
+    lazy.asyncShutdownCrashTimeout +
+    lazy.asyncShutdownCrashAdditionalWait +
+    TIMEOUT_SHUTDOWN_EXTRA_WAIT
+  );
 }
 
 function getWebDriverBrowserName() {

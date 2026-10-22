@@ -190,6 +190,7 @@ enum TwoByteOpcodeID {
   OP2_MOVSHDUP_VpsWps = 0x16,
   OP2_MOVHPS_VqEq = 0x16,
   OP2_MOVHPS_EqVq = 0x17,
+  OP2_RDSSP = 0x1E,
   OP2_MOVAPD_VsdWsd = 0x28,
   OP2_MOVAPS_VsdWsd = 0x28,
   OP2_MOVAPS_WsdVsd = 0x29,
@@ -277,6 +278,7 @@ enum TwoByteOpcodeID {
   OP2_SHLD_GvEv = 0xA5,
   OP2_SHRD = 0xAC,
   OP2_SHRD_GvEv = 0xAD,
+  OP2_INCSSP = 0xAE,
   OP_FENCE = 0xAE,
   OP2_IMUL_GvEv = 0xAF,
   OP2_CMPXCHG_GvEb = 0xB0,
@@ -479,6 +481,10 @@ enum GroupOpcodeID {
   GROUP5_OP_CALLN = 2,
   GROUP5_OP_JMPN = 4,
   GROUP5_OP_PUSH = 6,
+
+  GROUP15_OP_INCSSP = 5,
+
+  GROUP21_OP_RDSSP = 1,
 
   FILD_OP_64 = 5,
 

@@ -12,12 +12,6 @@ use {
     serde_json,
 };
 
-// runtimeobject and propsys are not automatically linked correctly
-#[cfg(windows)]
-#[link(name = "runtimeobject")]
-#[link(name = "propsys")]
-extern "C" {}
-
 // Writing to stdout/stderr should only fail with parent fatal errors (like BrokenPipe), in which
 // case there's no point in trying to print related error information, panicking, etc.
 macro_rules! quiet_println {

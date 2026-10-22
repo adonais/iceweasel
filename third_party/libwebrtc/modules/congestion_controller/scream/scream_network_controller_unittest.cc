@@ -1038,5 +1038,55 @@ TEST(ScreamControllerTest,
   }
 }
 
+TEST(ScreamControllerTest, PacingRateClampedToMinTotalAllocatedBitrate) {
+  SimulatedClock clock(Timestamp::Seconds(1'234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  NetworkControllerConfig config(env);
+  config.constraints.starting_rate = DataRate::KilobitsPerSec(100);
+  config.stream_based_config.min_total_allocated_bitrate =
+      DataRate::KilobitsPerSec(200);
+  config.stream_based_config.max_total_allocated_bitrate =
+      DataRate::KilobitsPerSec(500);
+  ScreamNetworkController scream_controller(config);
+
+  NetworkControlUpdate update = scream_controller.OnNetworkAvailability(
+      {.at_time = clock.CurrentTime(), .network_available = true});
+  ASSERT_TRUE(update.pacer_config.has_value());
+  // Pacing rate should be at least min_total_allocated_bitrate * kPacingFactor
+  // = 200 * 1.1 = 220 kbps.
+  EXPECT_EQ(update.pacer_config->data_window,
+            DataRate::KilobitsPerSec(200) * kPacingFactor *
+                PacerConfig::kDefaultTimeInterval);
+}
+
+TEST(ScreamControllerTest, PacingRateUpdatesOnStreamsConfigChange) {
+  SimulatedClock clock(Timestamp::Seconds(1'234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  NetworkControllerConfig config(env);
+  config.constraints.starting_rate = DataRate::KilobitsPerSec(100);
+  config.stream_based_config.max_total_allocated_bitrate =
+      DataRate::KilobitsPerSec(500);
+  ScreamNetworkController scream_controller(config);
+
+  NetworkControlUpdate update = scream_controller.OnNetworkAvailability(
+      {.at_time = clock.CurrentTime(), .network_available = true});
+  ASSERT_TRUE(update.pacer_config.has_value());
+  EXPECT_EQ(update.pacer_config->data_window,
+            DataRate::KilobitsPerSec(100) * kPacingFactor *
+                PacerConfig::kDefaultTimeInterval);
+
+  StreamsConfig streams_config;
+  streams_config.at_time = clock.CurrentTime();
+  streams_config.min_total_allocated_bitrate = DataRate::KilobitsPerSec(300);
+  streams_config.max_total_allocated_bitrate = DataRate::KilobitsPerSec(500);
+
+  NetworkControlUpdate stream_update =
+      scream_controller.OnStreamsConfig(streams_config);
+  ASSERT_TRUE(stream_update.pacer_config.has_value());
+  EXPECT_EQ(stream_update.pacer_config->data_window,
+            DataRate::KilobitsPerSec(300) * kPacingFactor *
+                PacerConfig::kDefaultTimeInterval);
+}
+
 }  // namespace
 }  // namespace webrtc

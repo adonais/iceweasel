@@ -1132,6 +1132,21 @@ function assertNotCheckerboarded(utils, scrollerId, msgPrefix) {
   utils.restoreNormalRefresh();
 }
 
+function collectOverscrolledIds() {
+  const apzData =
+    SpecialPowers.getDOMWindowUtils(window).getCompositorAPZTestData()
+      .additionalData;
+  return apzData
+    .filter(data =>
+      SpecialPowers.wrap(data).value.split(",").includes("overscrolled")
+    )
+    .map(data => SpecialPowers.wrap(data).key);
+}
+
+function isOverscrolled(aIds, aScrollId) {
+  return aIds.some(id => String(id) === String(aScrollId));
+}
+
 async function waitToClearOutAnyPotentialScrolls(aWindow) {
   await promiseFrame(aWindow);
   await promiseFrame(aWindow);

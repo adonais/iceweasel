@@ -11,6 +11,7 @@
 #include "modules/pacing/task_queue_paced_sender.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -356,12 +357,12 @@ TEST(TaskQueuePacedSenderTest, ProbingOverridesCoalescingWindow) {
   // Add 10 packets. The first should be sent immediately since the buffers
   // are clear. This will also trigger the probe to start.
   EXPECT_CALL(packet_router, SendPacket).Times(AtLeast(1));
-  pacer.CreateProbeClusters(
-      {{.at_time = time_controller.GetClock()->CurrentTime(),
-        .target_data_rate = kPacingDataRate * 2,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 5,
-        .id = 17}});
+  pacer.CreateProbeClusters(std::array{
+      ProbeClusterConfig{.at_time = time_controller.GetClock()->CurrentTime(),
+                         .target_data_rate = kPacingDataRate * 2,
+                         .target_duration = TimeDelta::Millis(15),
+                         .target_probe_count = 5,
+                         .id = 17}});
   pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 10));
   time_controller.AdvanceTime(TimeDelta::Zero());
   ::testing::Mock::VerifyAndClearExpectations(&packet_router);
@@ -411,12 +412,12 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSentTime) {
   // packets the probe needs.
   const DataRate kProbeRate = 2 * kPacingDataRate;
   const int kProbeClusterId = 1;
-  pacer.CreateProbeClusters(
-      {{.at_time = time_controller.GetClock()->CurrentTime(),
-        .target_data_rate = kProbeRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 4,
-        .id = kProbeClusterId}});
+  pacer.CreateProbeClusters(std::array{
+      ProbeClusterConfig{.at_time = time_controller.GetClock()->CurrentTime(),
+                         .target_data_rate = kProbeRate,
+                         .target_duration = TimeDelta::Millis(15),
+                         .target_probe_count = 4,
+                         .id = kProbeClusterId}});
 
   // Expected size for each probe in a cluster is twice the expected bits sent
   // during min_probe_delta.
@@ -474,13 +475,13 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   const int kProbeClusterId = 1;
   DataRate kProbingRate = kPacingDataRate * 10;
 
-  pacer.CreateProbeClusters(
-      {{.at_time = time_controller.GetClock()->CurrentTime(),
-        .target_data_rate = kProbingRate,
-        .target_duration = TimeDelta::Millis(15),
-        .min_probe_delta = kMinProbeDelta,
-        .target_probe_count = 5,
-        .id = kProbeClusterId}});
+  pacer.CreateProbeClusters(std::array{
+      ProbeClusterConfig{.at_time = time_controller.GetClock()->CurrentTime(),
+                         .target_data_rate = kProbingRate,
+                         .target_duration = TimeDelta::Millis(15),
+                         .min_probe_delta = kMinProbeDelta,
+                         .target_probe_count = 5,
+                         .id = kProbeClusterId}});
 
   // Advance time less than PacingController::kMinSleepTime, probing packets
   // for the first millisecond should be sent immediately. Min delta between
@@ -643,12 +644,12 @@ TEST(TaskQueuePacedSenderTest, ProbingStopDuringSendLoop) {
   const int kProbeClusterId = 1;
   const DataRate kProbingRate = kPacingDataRate;
 
-  pacer.CreateProbeClusters(
-      {{.at_time = time_controller.GetClock()->CurrentTime(),
-        .target_data_rate = kProbingRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 4,
-        .id = kProbeClusterId}});
+  pacer.CreateProbeClusters(std::array{
+      ProbeClusterConfig{.at_time = time_controller.GetClock()->CurrentTime(),
+                         .target_data_rate = kProbingRate,
+                         .target_duration = TimeDelta::Millis(15),
+                         .target_probe_count = 4,
+                         .id = kProbeClusterId}});
 
   const int kPacketsToSend = 100;
   const TimeDelta kPacketsPacedTime =

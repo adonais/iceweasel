@@ -287,6 +287,8 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
         AudioCodecSpecificVariant{std::move(codecSpecificBinaryBlob)};
   }
 
+  SetOpusOutputChannels(*this);
+
   return NS_OK;
 }
 

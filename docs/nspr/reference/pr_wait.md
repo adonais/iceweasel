@@ -18,13 +18,13 @@ The function has the following parameter:
 
 `mon`
 
-: A reference to an existing structure of type {ref}`PRMonitor`. The
+: A reference to an existing structure of type {doc}`prmonitor`. The
   monitor object referenced must be one for which the calling thread
   currently holds the lock.
 
 `ticks`
 
-: The amount of time (in {ref}`PRIntervalTime` units) that the thread is
+: The amount of time (in {doc}`printervaltime` units) that the thread is
   willing to wait for an explicit notification before being
   rescheduled.
 
@@ -41,9 +41,9 @@ The function returns one of the following values:
 
 ## Description
 
-A call to {ref}`PR_Wait` causes the thread to release the monitor's lock,
-just as if it had called {ref}`PR_ExitMonitor` as many times as it had
-called {ref}`PR_EnterMonitor`. This has the effect of making the monitor
+A call to {doc}`pr_wait` causes the thread to release the monitor's lock,
+just as if it had called {doc}`pr_exitmonitor` as many times as it had
+called {doc}`pr_entermonitor`. This has the effect of making the monitor
 available to other threads. When the wait is over, the thread regains
 control of the monitor's lock with the same entry count it had before
 the wait began.
@@ -70,7 +70,7 @@ In pseudo-code, the sequence is as follows:
 
 A thread can be resumed from a wait for a variety of reasons. The most
 obvious is that it was notified by another thread. If the value of
-timeout is not `PR_INTERVAL_NO_TIMEOUT`, {ref}`PR_Wait` resumes execution
+timeout is not `PR_INTERVAL_NO_TIMEOUT`, {doc}`pr_wait` resumes execution
 after the specified interval has expired. If a timeout value is used,
 the Boolean expression must include elapsed time as part of the
 monitored data.

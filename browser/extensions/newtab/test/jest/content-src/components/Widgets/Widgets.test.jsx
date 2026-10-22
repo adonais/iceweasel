@@ -69,7 +69,6 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_SPORTS_WIDGET_ENABLED = "widgets.sportsWidget.enabled";
 const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
 const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
@@ -127,6 +126,25 @@ describe("<Widgets>", () => {
     );
     expect(container.querySelector(".widgets-container")).toBeInTheDocument();
     expect(container.querySelector(".lists.widget")).toBeInTheDocument();
+  });
+
+  // @experiment(remove) { bug 2078816 }
+  it("should leave out the widget the first content slot shows", () => {
+    const state = widgetsState({
+      "nova.enabled": true,
+      "feeds.section.topstories": true,
+      "feeds.system.topstories": true,
+      "pageLayouts.variant": "widget-first-content-slot",
+      "pageLayouts.widgetFirstContentSlot.widget": "crossword",
+      [PREF_WIDGETS_ENABLED]: true,
+      [PREF_WIDGETS_LISTS_ENABLED]: true,
+      [PREF_WIDGETS_SYSTEM_LISTS_ENABLED]: true,
+      [PREF_WIDGETS_CROSSWORD_ENABLED]: true,
+      "widgets.system.crossword.enabled": true,
+    });
+    const { container } = renderWidgets(state);
+    expect(container.querySelector(".lists.widget")).toBeInTheDocument();
+    expect(container.querySelector(".crossword")).not.toBeInTheDocument();
   });
 
   it("should render and show <FocusTimer> if timer prefs are enabled", () => {
@@ -241,11 +259,10 @@ describe("<Widgets> handleHideAllWidgets", () => {
   }
 
   function expectAllWidgetPrefsDisabled(calls) {
-    expect(calls).toHaveLength(9);
+    expect(calls).toHaveLength(8);
     for (const name of [
       PREF_WIDGETS_LISTS_ENABLED,
       PREF_WIDGETS_TIMER_ENABLED,
-      PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
       PREF_WIDGETS_CLOCKS_ENABLED,
       PREF_WIDGETS_PRIVACY_ENABLED,
       PREF_WIDGETS_CROSSWORD_ENABLED,
@@ -648,7 +665,6 @@ describe("<Widgets> handleToggleMaximize", () => {
       [PREF_WIDGETS_TIMER_ENABLED]: true,
       [PREF_WIDGETS_SYSTEM_TIMER_ENABLED]: true,
       "widgets.system.weather.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
       "widgets.system.clocks.enabled": true,
       "widgets.system.weatherForecast.enabled": true,
       "weather.display": "detailed",
@@ -728,8 +744,6 @@ describe("<Widgets> handleToggleMaximize", () => {
         novaState({
           "widgets.weather.enabled": true,
           "widgets.system.weather.enabled": true,
-          "widgets.sportsWidget.enabled": true,
-          "widgets.system.sportsWidget.enabled": true,
           "widgets.clocks.enabled": true,
           "widgets.system.clocks.enabled": true,
         })
@@ -1063,28 +1077,6 @@ describe("<Widgets> overflow detection", () => {
     // Sizes don't affect the count.
     expect(section.hasAttribute("data-overflow-3")).toBe(true);
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
-  });
-});
-
-// Bug 2063657: the sports widget is retired; removed in bug 2063656.
-describe("<Widgets> retired sports widget", () => {
-  it("never renders, whatever the prefs and trainhopConfig say", () => {
-    const state = makeNovaWidgetState([["lists", "medium"]], {
-      "widgets.sportsWidget.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
-      "widgets.sportsWidget.size": "medium",
-      trainhopConfig: {
-        widgets: { sportsWidgetEnabled: true },
-        widgetsSettings: { sportsWidgetVisible: true },
-      },
-    });
-    const { container } = renderWidgets(state);
-    expect(
-      container.querySelector('[data-widget-id="lists"]')
-    ).toBeInTheDocument();
-    expect(
-      container.querySelector('[data-widget-id="sportsWidget"]')
-    ).not.toBeInTheDocument();
   });
 });
 

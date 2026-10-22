@@ -8,9 +8,9 @@ arithmetic.
 The header file `prdtoa.h` declares these functions. The functions
 are:
 
-> - {ref}`PR_strtod`
-> - {ref}`PR_dtoa`
-> - {ref}`PR_cnvtf`
+> - {doc}`pr_strtod`
+> - {doc}`pr_dtoa`
+> - {doc}`pr_cnvtf`
 
 # References
 

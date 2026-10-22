@@ -141,31 +141,6 @@ ResultStatus LlamaBackend::Reinitialize(const LlamaModelOptions& aOptions,
   }
 
   mModelOptions = aOptions;
-  mLib->llama_log_set(
-      [](ggml_log_level level, const char* text, void* /* user_data */) {
-        switch (level) {
-          case GGML_LOG_LEVEL_NONE:
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Disabled, ("%s", text));
-            break;
-          case GGML_LOG_LEVEL_DEBUG:
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Debug, ("%s", text));
-            break;
-          case GGML_LOG_LEVEL_INFO:
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Info, ("%s", text));
-            break;
-          case GGML_LOG_LEVEL_WARN:
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Warning, ("%s", text));
-            break;
-          case GGML_LOG_LEVEL_ERROR:
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Error, ("%s", text));
-            break;
-          default:
-            // Handles GGML_LOG_LEVEL_CONT or unexpected levels
-            MOZ_LOG(gLlamaBackendLog, LogLevel::Verbose, ("%s", text));
-            break;
-        }
-      },
-      nullptr);
 
   LOGV("{}: Initializing the model", __PRETTY_FUNCTION__);
 

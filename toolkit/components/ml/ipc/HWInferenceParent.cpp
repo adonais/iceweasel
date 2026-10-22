@@ -3,11 +3,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ModelFileUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTHashSet.h"
+#include "HWInferenceLog.h"
 #include "HWInferenceParent.h"
+#include "HWInferenceProcess.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/ipc/FileDescriptor.h"
@@ -44,12 +47,9 @@
 
 namespace mozilla::hwinference {
 
-extern LazyLogModule gHWInferenceLog;
 #define LOGE(...) MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Error, __VA_ARGS__)
 #define LOGD(...) MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Debug, __VA_ARGS__)
 #define LOGV(...) MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Verbose, __VA_ARGS__)
-
-StaticRefPtr<HWInferenceParent> HWInferenceParent::sInstance;
 
 static StaticAutoPtr<nsTHashSet<nsCString>> sMockInstalledModels;
 
@@ -172,86 +172,55 @@ class ModelDownloadCallbacks final
 NS_IMPL_ISUPPORTS(ModelDownloadCallbacks, nsIMLModelDownloadProgressCallback,
                   nsIMLModelDownloadCompletionCallback)
 
-/* static */
-RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
-  AssertIsOnMainThread();
-
-  // Evict an instance bound to a process that is no longer the current one.
-  // PHWInference is separate from PUtilityProcess, so it keeps reporting
-  // CanSend() for a main-thread dispatch after the peer died, and handing it
-  // out in that window would have StartUtility resolve on a doomed actor.
-  // Comparing the bound process also covers process death, not just
-  // CleanShutdown.
-  if (sInstance && sInstance->mUtilityParent) {
-    RefPtr<ipc::UtilityProcessManager> upm =
-        ipc::UtilityProcessManager::GetIfExists();
-    if (!upm || upm->GetProcessParent(ipc::SandboxingKind::HW_INFERENCE) !=
-                    sInstance->mUtilityParent) {
-      LOGD("{} - evicting instance bound to a gone process", __func__);
-      RefPtr<HWInferenceParent> stale = sInstance;
-      sInstance = nullptr;
-      // Synchronously runs ActorDestroy, so CanSend() is false on return.
-      stale->Close();
-    }
-  }
-
-  if (!sInstance) {
-    sInstance = new HWInferenceParent();
-    ClearOnShutdown(&sInstance);
-  }
-  return sInstance;
+template <typename Send>
+void HWInferenceParent::SendWhenReady(Send&& aSend) {
+  WhenReady()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self = RefPtr{this}, send = std::forward<Send>(aSend)]() mutable {
+        if (!send(*self)) {
+          LOGD("Failed to send the endpoint to HWInference");
+        }
+      },
+      []() { LOGD("HWInference never came up: dropping the endpoint"); });
 }
 
-/* static */
 void HWInferenceParent::StartContentSpeechRecognition(
     Endpoint<PSpeechRecognitionParent>&& aEndpoint,
     dom::ContentParentId aChildId) {
-  RefPtr<HWInferenceParent> self = GetSingleton();
-  self->WhenReady()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self, endpoint = std::move(aEndpoint), aChildId]() mutable {
-        if (!self->SendNewContentSpeechRecognition(std::move(endpoint),
-                                                   aChildId)) {
-          LOGD("Failed to send endpoint to utility process");
-        }
-      },
-      []() {
-        LOGD("HWInference never came up: dropping the speech endpoint");
-      });
+  SendWhenReady([endpoint = std::move(aEndpoint),
+                 aChildId](HWInferenceParent& aSelf) mutable {
+    return aSelf.SendNewContentSpeechRecognition(std::move(endpoint), aChildId);
+  });
+}
+
+void HWInferenceParent::StartTextGeneration(
+    Endpoint<PTextGenerationChild>&& aEndpoint,
+    const ipc::FileDescriptor& aModel, const TextGenerationOptions& aOptions) {
+  SendWhenReady([endpoint = std::move(aEndpoint), model = aModel,
+                 options = aOptions](HWInferenceParent& aSelf) mutable {
+    return aSelf.SendNewTextGeneration(std::move(endpoint), model, options);
+  });
 }
 
 void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
-  LOGD("{}", __func__);
+  LOGD("{} - reason={}", __func__, static_cast<int>(aReason));
   // A no-op once bound: let go of anyone waiting on an actor that never made it
   // to its process.
   mReadyPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
-  mUtilityParent = nullptr;
-  // Only clear ourselves: a late ActorDestroy from a superseded instance must
-  // not evict the replacement created after it.
-  if (sInstance == this) {
-    sInstance = nullptr;
+  if (mOwner) {
+    mOwner->OnActorDestroyed(this, aReason);
   }
 }
 
 nsresult HWInferenceParent::BindToUtilityProcess(
     const RefPtr<ipc::UtilityProcessParent>& aUtilityParent) {
   LOGD("{}", __func__);
-  Endpoint<hwinference::PHWInferenceParent> parentEnd;
-  Endpoint<hwinference::PHWInferenceChild> childEnd;
-  MOZ_ALWAYS_SUCCEEDS(PHWInference::CreateEndpoints(
-      ipc::EndpointProcInfo::Current(), aUtilityParent->OtherEndpointProcInfo(),
-      &parentEnd, &childEnd));
-
-  LOGD("Sending StartHWInferenceService to utility process");
-  if (!aUtilityParent->SendStartHWInferenceService(std::move(childEnd))) {
-    LOGE("Failed to send StartHWInferenceService");
-    MOZ_ASSERT(false, "StartHWInference service failure");
+  if (!aUtilityParent->SendPHWInferenceConstructor(this)) {
+    LOGE("Failed to construct the HWInference actor");
+    MOZ_ASSERT(false, "HWInference actor construction failure");
     return NS_ERROR_FAILURE;
   }
 
-  LOGD("StartHWInferenceService sent successfully, binding parent endpoint");
-  MOZ_ALWAYS_TRUE(parentEnd.Bind(this));
-  mUtilityParent = aUtilityParent;
   mReadyPromise->Resolve(true, __func__);
   return NS_OK;
 }
@@ -513,57 +482,6 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   resolver->AuthorizeDownload(model, revision, filename, window, progressToken,
                               callback);
   return IPC_OK();
-}
-
-static nsresult BlobJSObjectToFileDescriptor(JSContext* aCx,
-                                             JS::Handle<JS::Value> aValue,
-                                             ipc::FileDescriptor* aDesc) {
-  if (!aValue.isObject()) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  RefPtr<dom::Blob> blob;
-  nsresult rv = UNWRAP_OBJECT(Blob, &aValue.toObject(), blob);
-  if (NS_FAILED(rv)) {
-    LOGE("BlobJSObjectToFileDescriptor - ERROR: Failed to unwrap Blob: {}", rv);
-    return rv;
-  }
-
-  ErrorResult errorResult;
-  nsCOMPtr<nsIInputStream> stream;
-  blob->CreateInputStream(getter_AddRefs(stream), errorResult);
-  if (errorResult.Failed()) {
-    LOGE(
-        "BlobJSObjectToFileDescriptor - ERROR: Failed to create input stream "
-        "from blob");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  nsCOMPtr<nsIFileMetadata> fileMetadata = do_QueryInterface(stream);
-  if (!fileMetadata) {
-    LOGE(
-        "BlobJSObjectToFileDescriptor - ERROR: Stream doesn't support "
-        "nsIFileMetadata");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  PRFileDesc* fileDesc;
-  nsresult getRv = fileMetadata->GetFileDescriptor(&fileDesc);
-  if (NS_FAILED(getRv)) {
-    LOGE("BlobJSObjectToFileDescriptor - ERROR: GetFileDescriptor failed: {}",
-         getRv);
-    return getRv;
-  }
-
-  ipc::FileDescriptor fd(ipc::FileDescriptor::PlatformHandleType(
-      PR_FileDesc2NativeHandle(fileDesc)));
-  if (!fd.IsValid()) {
-    LOGE("BlobJSObjectToFileDescriptor - ERROR: Failed to get native handle");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  *aDesc = std::move(fd);
-  return NS_OK;
 }
 
 ipc::IPCResult HWInferenceParent::RecvGetModelFile(

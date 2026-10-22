@@ -356,6 +356,8 @@ void js::FillImmutableFlagsFromCompileOptionsForTopLevel(
 
   flags.setFlag(ImmutableFlags::TreatAsRunOnce, options.isRunOnce);
   flags.setFlag(ImmutableFlags::NoScriptRval, options.noScriptRval);
+  flags.setFlag(ImmutableFlags::AllowRedeclaringExistingLexicalBinding,
+                options.allowRedeclaringExistingLexicalBinding);
 }
 
 void js::FillImmutableFlagsFromCompileOptionsForFunction(
@@ -378,11 +380,15 @@ bool js::CheckCompileOptionsMatch(const ReadOnlyCompileOptions& options,
   bool forceStrict = !!(flags & uint32_t(ImmutableFlags::ForceStrict));
   bool hasNonSyntacticScope =
       !!(flags & uint32_t(ImmutableFlags::HasNonSyntacticScope));
+  bool allowRedeclaringExistingLexicalBinding = !!(
+      flags & uint32_t(ImmutableFlags::AllowRedeclaringExistingLexicalBinding));
   bool noScriptRval = !!(flags & uint32_t(ImmutableFlags::NoScriptRval));
   bool treatAsRunOnce = !!(flags & uint32_t(ImmutableFlags::TreatAsRunOnce));
 
   return options.selfHostingMode == selfHosted &&
          options.noScriptRval == noScriptRval &&
+         options.allowRedeclaringExistingLexicalBinding ==
+             allowRedeclaringExistingLexicalBinding &&
          options.isRunOnce == treatAsRunOnce &&
          options.forceStrictMode() == forceStrict &&
          options.nonSyntacticScope == hasNonSyntacticScope;

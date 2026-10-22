@@ -13,6 +13,8 @@ allowed-tools:
   - Bash(git rebase:*)
   - Bash(git reset:*)
   - Bash(git apply:*)
+  - Bash(git add:*)
+  - Bash(git mv:*)
   - Bash(jj log:*)
   - Bash(jj show:*)
   - Bash(jj diff:*)
@@ -33,13 +35,17 @@ allowed-tools:
 # Splitting a commit into reviewable pieces
 
 Split without changing the final tree. Every prefix of the result has to leave
-the tree building, linting and passing tests, and no commit may mention a
-concept that only a later commit introduces.
+the tree building, linting and passing tests, and no commit's code or comments
+may mention a concept that only a later commit introduces; its message may say
+what it prepares for.
 
-Pick the cuts by the rules below, then follow the mechanics for this
-checkout's version control system. Use jj where the checkout has a `.jj`
-directory at its root: it rebases descendants for you and records conflicts
-instead of halting. Do not fall back to git commands there even if available.
+Pick the cuts by the rules below. Before the first commit or rebase, read the
+mechanics reference for this checkout's version control system in full: it
+holds the procedure, the whole-tree restore that makes the last piece free
+and the rules for editing at a rebase stop, none of which this file repeats.
+Use jj where the checkout has a `.jj` directory at its root: it rebases
+descendants for you and records conflicts instead of halting. Do not fall back
+to git commands there even if available.
 
 - Jujutsu (jj): `references/jj.md`
 - git: `references/git.md`
@@ -53,8 +59,21 @@ code it replaces, so both go in the **same** commit.
   one commit, old-out and new-in side by side.
 - A genuine **shape change**, such as an IPDL message or a data-format swap, is
   a separate commit, again with old and new together.
+- A **renamed file** whose content also changes is two commits, even when the
+  rename exists only to serve the change: the rename, with only the edits that
+  update what names the old file (inside the file as well as outside it), then
+  the change. Git stores no renames; its diff pairs a deleted path with an
+  added one only when their contents are at least half the same, so a rename
+  folded into a rewrite shows as a whole-file deletion beside a whole-file
+  addition, with no diff between them, and blame and `git log --follow` stop
+  at the new name. The target's diff hides such a pair the same way; the
+  mechanics reference says how to find one.
 - A piece that both moves and changes behavior is split into the neutral move
   and the behavior change.
+- A piece that changes what existing code observes goes in one commit with
+  that code's adaptation, even where no build or test would fail without it.
+  Check each piece in both directions: what its new code needs from the pieces
+  below it, and what existing code sees change once it lands.
 
 ## A cut may need code that neither end state contains
 

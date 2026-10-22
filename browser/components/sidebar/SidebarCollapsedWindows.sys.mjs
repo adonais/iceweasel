@@ -16,7 +16,7 @@ const PREF = "sidebar.openTabsPanel.collapsedWindows";
  * Process-wide owner of the per-window collapsed state for the sidebar Open
  * Tabs panel.
  *
- * State is keyed by the SessionStore window id (`window.__SSi`) and persisted
+ * State is keyed by the SessionStore window id (`SessionStore.getWindowId`) and persisted
  * to the `sidebar.openTabsPanel.collapsedWindows` pref as a JSON object whose
  * keys are window ids and whose values are `true` for collapsed cards. Entries
  * are dropped when a window closes or when a hydration sweep finds an entry

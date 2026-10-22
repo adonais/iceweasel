@@ -1087,3 +1087,141 @@ add_task(async function test_window_swap() {
     }
   );
 });
+
+/**
+ * Tests that a delegated request whose principal is a cross-origin subframe's
+ * own principal grants the request in flight but leaves no browser-scoped
+ * permission behind, while an equivalent top-level request still gets one.
+ */
+add_task(async function test_temporary_permission_delegate_principal() {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com",
+    },
+    async function (browser) {
+      const kTestNotificationID = "test-notification";
+      const kTestMessage = "Test message";
+      // Deliberately not the key the tasks above use: they leave permissions
+      // set on this origin until the file-level cleanup runs.
+      const kDelegatePermissionKey = "test-delegate-permission-key";
+
+      // Drives the generic PermissionUI prompt-action path with the given
+      // delegate principal, answering Allow with "Remember" unchecked.
+      async function allowWithoutRemembering(delegatePrincipal) {
+        let mockRequest = makeMockPermissionRequest(browser);
+        mockRequest.principal = delegatePrincipal;
+        mockRequest.getDelegatePrincipal = () => delegatePrincipal;
+
+        class TestPrompt extends PermissionUI.PermissionPromptForRequest {
+          get request() {
+            return mockRequest;
+          }
+          get notificationID() {
+            return kTestNotificationID;
+          }
+          get permissionKey() {
+            return kDelegatePermissionKey;
+          }
+          get message() {
+            return kTestMessage;
+          }
+          get promptActions() {
+            return [
+              {
+                label: "Allow",
+                accessKey: "M",
+                action: SitePermissions.ALLOW,
+              },
+            ];
+          }
+          get popupOptions() {
+            return {
+              checkbox: {
+                label: "Remember this decision",
+                show: true,
+                checked: false,
+              },
+            };
+          }
+        }
+
+        let shownPromise = BrowserTestUtils.waitForEvent(
+          PopupNotifications.panel,
+          "popupshown"
+        );
+        new TestPrompt().prompt();
+        await shownPromise;
+        await clickMainAction();
+        return mockRequest;
+      }
+
+      let topPrincipal = browser.contentPrincipal;
+      let framePrincipal =
+        Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+          "https://example.org"
+        );
+
+      registerCleanupFunction(function () {
+        for (let principal of [framePrincipal, topPrincipal]) {
+          SitePermissions.removeFromPrincipal(
+            principal,
+            kDelegatePermissionKey,
+            browser
+          );
+        }
+      });
+
+      let frameRequest = await allowWithoutRemembering(framePrincipal);
+
+      Assert.ok(
+        frameRequest._allowed,
+        "The subframe's request should still have been allowed"
+      );
+      Assert.equal(
+        Services.perms.getAllForBrowser(framePrincipal, browser.browserId)
+          .length,
+        0,
+        "Should not store a browser-scoped permission under the subframe principal"
+      );
+      Assert.equal(
+        Services.perms.getAllForBrowser(topPrincipal, browser.browserId).length,
+        0,
+        "Should not redirect the subframe's grant onto the top-level principal"
+      );
+      Assert.equal(
+        PermissionTestUtils.getPermissionObject(
+          framePrincipal.URI,
+          kDelegatePermissionKey
+        ),
+        null,
+        "Should not store a persistent permission for the subframe either"
+      );
+      Assert.equal(
+        SitePermissions.getForPrincipal(
+          framePrincipal,
+          kDelegatePermissionKey,
+          browser
+        ).state,
+        SitePermissions.UNKNOWN,
+        "A second request from the subframe should prompt again"
+      );
+
+      let topRequest = await allowWithoutRemembering(topPrincipal);
+
+      Assert.ok(topRequest._allowed, "The top-level request should be allowed");
+      Assert.deepEqual(
+        SitePermissions.getForPrincipal(
+          topPrincipal,
+          kDelegatePermissionKey,
+          browser
+        ),
+        {
+          state: SitePermissions.ALLOW,
+          scope: SitePermissions.SCOPE_TEMPORARY,
+        },
+        "A top-level request should still get a browser-scoped permission"
+      );
+    }
+  );
+});

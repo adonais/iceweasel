@@ -123,7 +123,9 @@ pub enum Arg {
     RemoteAllowOrigins,
 
     /// --remote-allow-system-access allows the remote agent to access privileged
-    /// contexts.
+    /// contexts. The argument was removed in Firefox 159, which only supports the
+    /// MOZ_REMOTE_ALLOW_SYSTEM_ACCESS environment variable.
+    /// This can be removed once Firefox 158 and earlier are no longer supported.
     RemoteAllowSystemAccess,
 
     /// --remote-debugging-port enables the Remote Agent in the application

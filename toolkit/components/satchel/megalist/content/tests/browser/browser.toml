@@ -23,24 +23,14 @@ skip-if = [
 ["browser_passwords_list_alerts.js"]
 
 ["browser_passwords_multiple_windows.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1974557
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1974557
-  "os == 'win' && os_version == '11.26100' && opt", # Bug 1974557
-  "os == 'win' && os_version == '11.26200' && opt", # Bug 1974557
-]
+
+["browser_passwords_policy_disable_reveal.js"]
 
 ["browser_passwords_primary_password.js"]
-skip-if = [
-  "tsan", # Bug 1949014
-]
 
 ["browser_passwords_remove_all_notification.js"]
 
 ["browser_passwords_sidebar.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2062461
-]
 ["browser_passwords_sidebar_import_from_csv.js"]
 
 ["browser_passwords_update_login.js"]

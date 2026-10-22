@@ -72,13 +72,15 @@ Disk: SSD 251 GB (251,000,193,024 bytes)
 
 #### Apple Silicon (M4)
 
-Apple Silicon Mac Minis running macOS 15. They also host the Android arm64 emulator tests.
+Apple Silicon Mac Minis running macOS 15. They also host the Android arm64 emulator tests. A small number of the same machines run macOS 27 and are dedicated to Safari testing.
 
 * **Worker pools, and their platforms**:
   * `releng-hardware/gecko-t-osx-1500-m4`
     * `test-android-em-14-arm64-shippable/opt`
     * `test-macosx1500-aarch64-nightlyasrelease/opt`
     * `test-macosx1500-aarch64-shippable/opt`
+  * `releng-hardware/gecko-t-osx-2700-m4`
+    * `test-macosx2700-aarch64-shippable/opt`
 
 ```text
 Model Name: Mac mini
@@ -160,6 +162,7 @@ The devices are split across two device farms: a subset of the performance tests
     * `test-android-hw-a55-14-0-aarch64-shippable/opt`
     * `test-android-hw-a55-14-0-aarch64/opt`
   * `proj-autophone/gecko-t-lambda-perf-a55`
+    * `test-android-hw-a55-14-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-a55-14-0-aarch64-shippable/opt`
     * `test-android-hw-a55-14-0-aarch64/opt`
 
@@ -184,6 +187,7 @@ More Info: https://www.phonemore.com/specs/samsung/galaxy-a55/
 * **Machines**: 4 devices total
 * **Worker pools, and their platforms**:
   * `proj-autophone/gecko-t-bitbar-gw-perf-s24`
+    * `test-android-hw-s24-14-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-s24-14-0-aarch64-shippable/opt`
   * `proj-autophone/gecko-t-bitbar-gw-unit-s24`
 
@@ -208,6 +212,7 @@ More Info: https://www.phonemore.com/specs/samsung/galaxy-s24/sm-s921bds-128gb/
 * **Machines**: 4 devices total
 * **Worker pools, and their platforms**:
   * `proj-autophone/gecko-t-bitbar-gw-perf-p6`
+    * `test-android-hw-p6-13-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-p6-13-0-aarch64-shippable/opt`
   * `proj-autophone/gecko-t-bitbar-gw-unit-p6`
 
@@ -270,7 +275,7 @@ Memory: 16 GB
 
 ## Try Runs and Wait Times
 
-Given that our tests run on hardware, there's a limited amount of devices that can be used to run them. This means that it's very likely that a try run (e.g. tests scheduled by {ref}`Mach Try Perf`) will be delayed waiting for capacity to free up. This limited capacity is also why there is a limit of 600 tasks that can be scheduled with `mach try perf`.
+Given that our tests run on hardware, there's a limited amount of devices that can be used to run them. This means that it's very likely that a try run (e.g. tests scheduled by {doc}`mach-try-perf`) will be delayed waiting for capacity to free up. This limited capacity is also why there is a limit of 600 tasks that can be scheduled with `mach try perf`.
 
 Something to keep in mind is that try runs have a low priority, and our production branches (e.g. autoland/mozilla-central) have a higher priority. On days when there are more pushes to those branches, try runs will hit more delays. The platforms also have different capacities available to them which will change how long you have to wait for tests to start on them. **To find out how many tasks are currently pending, or running across all platforms** [see this redash query](https://sql.telemetry.mozilla.org/queries/98004#241985) **or consult the graph below.**
 

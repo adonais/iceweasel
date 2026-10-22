@@ -235,7 +235,7 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
   scoped_refptr<PeerConnectionTestWrapper> CreatePc(
       absl::string_view field_trials = "") {
     auto pc_wrapper = make_ref_counted<PeerConnectionTestWrapper>(
-        "pc", env_, &pss_, background_thread_.get(), background_thread_.get());
+        "pc", env_, &pss_, background_thread_.get());
     pc_wrapper->CreatePc({}, CreateBuiltinAudioEncoderFactory(),
                          CreateBuiltinAudioDecoderFactory(),
                          CreateTestFieldTrialsPtr(field_trials));
@@ -3166,7 +3166,7 @@ class PeerConnectionEncodingsFakeCodecsIntegrationTest
         std::make_unique<FakeWebRtcVideoDecoderFactory>();
     video_decoder_factory->AddSupportedVideoCodecType("H265");
     auto pc_wrapper = make_ref_counted<PeerConnectionTestWrapper>(
-        "pc", env_, &pss_, background_thread_.get(), background_thread_.get());
+        "pc", env_, &pss_, background_thread_.get());
     pc_wrapper->CreatePc(
         {}, CreateBuiltinAudioEncoderFactory(),
         CreateBuiltinAudioDecoderFactory(), std::move(video_encoder_factory),
@@ -3204,7 +3204,7 @@ class PeerConnectionEncodingsFakeCodecsIntegrationTest
                         {"profile-level-id", "f4001f"}},  // recvonly
                        {ScalabilityMode::kL1T1}));
     auto pc_wrapper = make_ref_counted<PeerConnectionTestWrapper>(
-        "pc", env_, &pss_, background_thread_.get(), background_thread_.get());
+        "pc", env_, &pss_, background_thread_.get());
     pc_wrapper->CreatePc(
         {}, CreateBuiltinAudioEncoderFactory(),
         CreateBuiltinAudioDecoderFactory(), std::move(video_encoder_factory),

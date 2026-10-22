@@ -185,7 +185,12 @@ InternalRequest::InternalRequest(const IPCInternalRequest& aIPCRequest)
 
   if (body) {
     if (body->type() == BodyStreamVariant::TParentToChildStream) {
-      mBodyStream = body->get_ParentToChildStream().get_RemoteLazyInputStream();
+      const auto& stream = body->get_ParentToChildStream();
+      if (stream.type() == ParentToChildStream::TIPCStream) {
+        mBodyStream = DeserializeIPCStream(stream.get_IPCStream());
+      } else {
+        mBodyStream = stream.get_RemoteLazyInputStream();
+      }
     }
     if (body->type() == BodyStreamVariant::TChildToParentStream) {
       mBodyStream =

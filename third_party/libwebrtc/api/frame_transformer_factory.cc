@@ -31,6 +31,7 @@
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -76,10 +77,17 @@ std::unique_ptr<TransformableVideoFrameInterface> CreateOutgoingVideoFrame(
     std::optional<int64_t> absolute_capture_timestamp_ms,
     const std::vector<uint32_t>& csrcs,
     VideoCodecType codec_type,
-    std::optional<Timestamp> presentation_timestamp) {
+    std::optional<Timestamp> presentation_timestamp,
+    uint16_t width,
+    uint16_t height) {
+  RTC_DCHECK_GT(width, 0);
+  RTC_DCHECK_GT(height, 0);
+
   RTPVideoHeader video_header;
   video_header.codec = codec_type;
   video_header.frame_type = frame_type;
+  video_header.width = width;
+  video_header.height = height;
 
   // init video_type_header variant
   switch (codec_type) {
@@ -106,6 +114,8 @@ std::unique_ptr<TransformableVideoFrameInterface> CreateOutgoingVideoFrame(
   encoded_image.SetEncodedData(
       EncodedImageBuffer::Create(payload_data.data(), payload_data.size()));
   encoded_image.set_frame_type(frame_type);
+  encoded_image._encodedWidth = width;
+  encoded_image._encodedHeight = height;
   if (absolute_capture_timestamp_ms.has_value()) {
     encoded_image.capture_time_ms_ = *absolute_capture_timestamp_ms;
   }

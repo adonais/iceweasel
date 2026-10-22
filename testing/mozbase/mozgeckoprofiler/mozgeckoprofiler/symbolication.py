@@ -1,15 +1,16 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import gzip
-import json
+import atexit
 import os
 import platform
+import shutil
 import signal
 import subprocess
 import tempfile
 import time
 import zipfile
+from functools import cache
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -26,18 +27,21 @@ SYMBOL_SERVER_TIMEOUT = 60  # seconds
 SAMPLY_WAIT_TIMEOUT = 60  # seconds
 
 
-def get_extracted_symbols(work_dir=None):
+@cache
+def get_extracted_symbols():
+    """Return a directory of Breakpad symbols, or None if there is none.
+
+    The result is computed once per process. In automation the symbols zip is
+    unpacked into a temporary directory that this module owns and removes at
+    exit, so a task that symbolicates several profiles unpacks it once.
+    """
     try:
         if "MOZ_AUTOMATION" in os.environ:
             base_path = os.environ["MOZ_FETCHES_DIR"]
             symbol_zip = Path(base_path) / "target.crashreporter-symbols.zip"
             if symbol_zip.exists():
-                if work_dir is None:
-                    raise ValueError(
-                        "work_dir must be provided in MOZ_AUTOMATION environment"
-                    )
-                breakpad_symbol_dir = Path(work_dir) / "breakpad_symbols"
-                breakpad_symbol_dir.mkdir(exist_ok=True)
+                breakpad_symbol_dir = Path(tempfile.mkdtemp(prefix="breakpad_symbols"))
+                atexit.register(shutil.rmtree, breakpad_symbol_dir, ignore_errors=True)
                 with zipfile.ZipFile(symbol_zip, "r") as zipf:
                     zipf.extractall(breakpad_symbol_dir)
                 LOG.info(f"Extracted symbols to {breakpad_symbol_dir}")
@@ -83,13 +87,24 @@ def _validate_symbolication_deps(paths_to_validate):
     return True
 
 
-def symbolicate_profile(profile_json, symbol_dir=None):
-    """Symbolicate a Gecko profile in place, using samply and profiler-edit.
+def symbolicate_profile_file(in_path, out_path, symbol_dir=None):
+    """Symbolicate a Gecko profile, using samply and profiler-edit.
+
+    The profile is never read into this process: both tools work on file paths,
+    and profiler-edit writes out_path with the compression that its extension
+    implies (gzipped when the name ends in ".gz", plain otherwise).
 
     Args:
-        profile_json (dict): The profile to symbolicate, mutated in place.
+        in_path (path): The profile to symbolicate. Gzipped when its name
+            ends in ".gz", plain otherwise, which is how samply reads it.
+        out_path (path): Where to write the symbolicated profile. Removed
+            again if symbolication fails, so that a partial profile is never
+            left behind.
         symbol_dir (path): Directory of Breakpad symbols to use. When omitted,
             it is looked up with get_extracted_symbols().
+
+    Returns:
+        bool: Whether a complete symbolicated profile was written to out_path.
     """
 
     # Check if running in CI
@@ -115,48 +130,46 @@ def symbolicate_profile(profile_json, symbol_dir=None):
         node_path,
     ]):
         LOG.info("Symbolication dependencies not available, skipping symbolication.")
-        return
+        return False
 
+    out_path = Path(out_path)
     try:
-        with tempfile.TemporaryDirectory() as work_dir:
+        if symbol_dir is None:
+            symbol_dir = get_extracted_symbols()
             if symbol_dir is None:
-                symbol_dir = get_extracted_symbols(work_dir)
-                if symbol_dir is None:
-                    LOG.warning(
-                        f"Symbol directory not found. Attempting to symbolicate with {BREAKPAD_SYMBOL_SERVER}"
-                    )
+                LOG.warning(
+                    f"Symbol directory not found. Attempting to symbolicate with {BREAKPAD_SYMBOL_SERVER}"
+                )
 
-            unsym_profile = Path(work_dir, "unsym_profile.json")
-            unsym_profile.write_text(
-                json.dumps(profile_json, ensure_ascii=False), encoding="utf-8"
-            )
-            sym_profile = Path(work_dir) / "sym_profile.json.gz"
-
-            # Load unsymbolicated profile with samply
-            samply_cmd = [
-                samply_path,
-                "load",
-                str(unsym_profile),
-                "--no-open",
-            ]
-            if symbol_dir:
-                samply_cmd.extend([
-                    "--breakpad-symbol-dir",
-                    str(symbol_dir),
-                ])
+        # Load the unsymbolicated profile with samply, which serves the symbols
+        # that profiler-edit then asks for. samply needs the profile itself: it
+        # resolves requests that don't carry a debugName and breakpadId through
+        # the library paths recorded in it.
+        samply_cmd = [
+            samply_path,
+            "load",
+            str(in_path),
+            "--no-open",
+        ]
+        if symbol_dir:
             samply_cmd.extend([
-                "--breakpad-symbol-server",
-                BREAKPAD_SYMBOL_SERVER,
+                "--breakpad-symbol-dir",
+                str(symbol_dir),
             ])
+        samply_cmd.extend([
+            "--breakpad-symbol-server",
+            BREAKPAD_SYMBOL_SERVER,
+        ])
 
-            LOG.info(f"Running samply command: {samply_cmd}")
-            samply_process = subprocess.Popen(
-                samply_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
+        LOG.info(f"Running samply command: {samply_cmd}")
+        samply_process = subprocess.Popen(
+            samply_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
 
+        try:
             # Tail output for timeout seconds to obtain symbol server url
             server_url = ""
             start = time.time()
@@ -172,14 +185,19 @@ def symbolicate_profile(profile_json, symbol_dir=None):
                             f"Server timed out after exceeding {SYMBOL_SERVER_TIMEOUT} seconds. Time elapsed : {timeout} seconds."
                         )
 
+            if not server_url:
+                raise RuntimeError(
+                    "samply exited without reporting a symbol server URL."
+                )
+
             profiler_edit_cmd = [
                 node_path,
                 "--max-old-space-size=8192",
                 str(profiler_edit_path),
                 "-i",
-                str(unsym_profile),
+                str(in_path),
                 "-o",
-                str(sym_profile),
+                str(out_path),
                 "--symbolicate-with-server",
                 server_url,
             ]
@@ -193,35 +211,35 @@ def symbolicate_profile(profile_json, symbol_dir=None):
             ) as profiler_edit_process:
                 for line in profiler_edit_process.stdout:
                     LOG.info(f"profiler-edit {line.strip()}")
-
-            # Terminate samply server
+        finally:
             if platform.system() == "Windows":
                 samply_process.terminate()
             else:
                 samply_process.send_signal(signal.SIGINT)  # ctrl-c shutdown
 
-            samply_process.wait(timeout=SAMPLY_WAIT_TIMEOUT)
+            try:
+                samply_process.wait(timeout=SAMPLY_WAIT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                samply_process.kill()
+                samply_process.wait()
 
-            if sym_profile.exists():
-                # Load profile json into memory and mutate profile
-                is_gzipped = False
-                with sym_profile.open("rb") as f:
-                    gzip_magic_number = b"\x1f\x8b"
-                    if f.read(2) == gzip_magic_number:
-                        is_gzipped = True
+        # Check the return code - only checking for the file existence is not enough,
+        # because a terminated profiler-edit process (e.g. due to out-of-memory) may
+        # leave a partial file behind.
+        if profiler_edit_process.returncode != 0:
+            raise RuntimeError(
+                f"profiler-edit exited with status {profiler_edit_process.returncode}."
+            )
 
-                if is_gzipped:
-                    with gzip.open(sym_profile, "rt", encoding="utf-8") as f:
-                        sym = json.load(f)
-                else:
-                    with sym_profile.open("r", encoding="utf-8") as f:
-                        sym = json.load(f)
-
-                profile_json.clear()
-                profile_json.update(sym)
+        return out_path.exists()
 
     except Exception:
-        LOG.critical(
+        # Log a warning.
+        # This is a warning and not an error because we don't want to fail a job whose
+        # tests passed, just because we failed to symbolicate the profile.
+        LOG.warning(
             "Profile symbolication with Samply and profiler-edit failed.",
             exc_info=True,
         )
+        out_path.unlink(missing_ok=True)
+        return False

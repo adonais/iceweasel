@@ -189,6 +189,11 @@ class SVGContextPaint : public RefCounted<SVGContextPaint> {
 
     bool IsSolidColor() const { return mPaintType == Tag::Color; }
 
+    nscolor AsSolidColor() const {
+      MOZ_ASSERT(IsSolidColor(), "Must be solid color");
+      return mPaintDefinition.mColor;
+    }
+
     void SetPattern(gfxPattern* aPattern, const gfxMatrix& aCTM) {
       mPaintType = Tag::Pattern;
       mPaintDefinition.mPattern = aPattern;

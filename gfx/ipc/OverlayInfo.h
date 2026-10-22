@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include "X11UndefineNone.h"
+
 namespace IPC {
 template <typename>
 struct ParamTraits;

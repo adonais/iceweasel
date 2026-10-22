@@ -106,7 +106,7 @@ class CodeCoverageMixin(SingleTestMixin):
             build_mozinfo = json.load(f)
 
         self.prefix = build_mozinfo["topsrcdir"]
-        self.path_to_gcnos = build_mozinfo["topobjdir"]
+        self.path_to_gcnos = os.path.join(self.grcov_dir, "gcno")
 
         strip_count = len(list(filter(None, self.prefix.split("/"))))
         os.environ["GCOV_PREFIX_STRIP"] = str(strip_count)

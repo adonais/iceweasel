@@ -154,36 +154,16 @@ export const LinkMenuOptions = {
           : {}),
       })),
     }),
-    impression: ac.ImpressionStats({
-      source: eventSource,
-      block: 0,
-      tiles: tiles.map((site, index) => ({
-        id: site.guid,
-        pos: pos + index,
-        ...(site.shim && site.shim.delete ? { shim: site.shim.delete } : {}),
-      })),
-    }),
     userEvent: "BLOCK",
   }),
 
   // This is the "Dismiss" action for leaderboard/billboard ads.
-  BlockAdUrl: (site, pos, eventSource) => ({
+  BlockAdUrl: site => ({
     id: "newtab-menu-dismiss",
     icon: "dismiss",
     action: ac.AlsoToMain({
       type: at.BLOCK_URL,
       data: [site],
-    }),
-    impression: ac.ImpressionStats({
-      source: eventSource,
-      block: 0,
-      tiles: [
-        {
-          id: site.guid,
-          pos,
-          ...(site.shim && site.shim.save ? { shim: site.shim.save } : {}),
-        },
-      ],
     }),
     userEvent: "BLOCK",
   }),

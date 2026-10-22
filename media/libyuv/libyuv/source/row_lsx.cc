@@ -930,19 +930,14 @@ void ARGBMultiplyRow_LSX(const uint8_t* src_argb0,
                          int width) {
   int x;
   int len = width / 4;
-  __m128i zero = __lsx_vldi(0);
+  __m128i half = __lsx_vldi(0x480);
   __m128i src0, src1, dst0, dst1;
-  __m128i tmp0, tmp1, tmp2, tmp3;
 
   for (x = 0; x < len; x++) {
     DUP2_ARG2(__lsx_vld, src_argb0, 0, src_argb1, 0, src0, src1);
-    tmp0 = __lsx_vilvl_b(src0, src0);
-    tmp1 = __lsx_vilvh_b(src0, src0);
-    tmp2 = __lsx_vilvl_b(zero, src1);
-    tmp3 = __lsx_vilvh_b(zero, src1);
-    dst0 = __lsx_vmuh_hu(tmp0, tmp2);
-    dst1 = __lsx_vmuh_hu(tmp1, tmp3);
-    dst0 = __lsx_vpickev_b(dst1, dst0);
+    dst0 = __lsx_vmaddwev_h_bu(half, src0, src1);
+    dst1 = __lsx_vmaddwod_h_bu(half, src0, src1);
+    dst0 = __lsx_vpackod_b(dst1, dst0);
     __lsx_vst(dst0, dst_argb, 0);
     src_argb0 += 16;
     src_argb1 += 16;
@@ -2284,7 +2279,7 @@ void RAWToRGB24Row_LSX(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
     src2 = __lsx_vld(src_raw, 32);
     DUP2_ARG3(__lsx_vshuf_b, src1, src0, shuf0, src1, src0, shuf1, dst0, dst1);
     dst2 = __lsx_vshuf_b(src1, src2, shuf2);
-    dst1 = __lsx_vinsgr2vr_b(dst1, src_raw[32], 0x0E);
+    dst1 = __lsx_vextrins_b(dst1, src2, 0xE0);
     __lsx_vst(dst0, dst_rgb24, 0);
     __lsx_vst(dst1, dst_rgb24, 16);
     __lsx_vst(dst2, dst_rgb24, 32);
@@ -2650,10 +2645,10 @@ void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
                          int width,
                          const struct ArgbConstants* c) {
   static const int8_t shuff[64] = {
-      0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23,
-      24, 26, 27, 29, 30, 0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15,
-      1, 0, 4, 0, 7, 0, 10, 0, 13, 0, 16, 0, 19, 0, 22, 0,
-      25, 0, 28, 0, 31, 0, 2, 0, 5, 0, 8, 0, 11, 0, 14, 0,
+      0,  2,  3,  5,  6,  8, 9,  11, 12, 14, 15, 17, 18, 20, 21, 23,
+      24, 26, 27, 29, 30, 0, 1,  3,  4,  6,  7,  9,  10, 12, 13, 15,
+      1,  0,  4,  0,  7,  0, 10, 0,  13, 0,  16, 0,  19, 0,  22, 0,
+      25, 0,  28, 0,  31, 0, 2,  0,  5,  0,  8,  0,  11, 0,  14, 0,
   };
   asm volatile(
       "vldrepl.b      $vr0,  %3,    0             \n\t"  // load rgbconstants

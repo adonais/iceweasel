@@ -1,0 +1,23 @@
+diff --git a/media/ffvpx/libavutil/vulkan.c b/media/ffvpx/libavutil/vulkan.c
+--- a/media/ffvpx/libavutil/vulkan.c
++++ b/media/ffvpx/libavutil/vulkan.c
+@@ -19,9 +19,9 @@
+  */
+ 
+ #include "config.h"
++#include <stdlib.h>
+ #include "avassert.h"
+ #include "mem.h"
+-#include "random_seed.h"
+ #include "refstruct.h"
+ 
+ #include "vulkan.h"
+@@ -387,7 +387,7 @@ static AVOnce exec_pool_phase_seeded = AV_ONCE_INIT;
+ 
+ static void exec_pool_phase_seed(void)
+ {
+-    uint32_t seed = av_get_random_seed();
++    uint32_t seed = rand();
+     for (int i = 0; i < FF_ARRAY_ELEMS(exec_pool_phase); i++)
+         atomic_store_explicit(&exec_pool_phase[i], seed, memory_order_relaxed);
+ }

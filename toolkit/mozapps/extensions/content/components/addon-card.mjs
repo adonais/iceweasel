@@ -108,8 +108,8 @@ export class AddonCard extends AboutAddonsHTMLElement {
   static get markup() {
     return `
       <template>
-        <div class="card addon">
-          <theme-preview></theme-preview>
+        <moz-card class="card addon">
+          <theme-preview slot="cover-image"></theme-preview>
           <div class="addon-card-collapsed">
             <img class="card-heading-icon addon-icon" alt="" />
             <div class="card-contents">
@@ -193,7 +193,7 @@ export class AddonCard extends AboutAddonsHTMLElement {
           </moz-message-bar>
           <moz-message-bar class="addon-card-message" align="center" hidden>
           </moz-message-bar>
-        </div>
+        </moz-card>
       </template>
     `;
   }

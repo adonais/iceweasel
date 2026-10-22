@@ -13,6 +13,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import mozilla.components.feature.listentopage.PlaybackPhase
+import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.feature.listentopage.Voice
 import mozilla.components.feature.listentopage.playback.ArticleDisplayData
@@ -48,7 +49,7 @@ private const val FAKE_ENGINE_ERROR = -1
  */
 class FakeSpeechSynthesizer(
     override val maxInputLength: Int = 4000,
-    private val voices: List<Voice> = listOf(Voice(id = "voice-1", locale = Locale.US)),
+    private var voices: List<Voice> = listOf(Voice(id = "voice-1", locale = Locale.US)),
     override val enginePackageName: String = "com.example.tts",
     private val audioDirectory: File? = null,
     private val audioDuration: Duration = 5.seconds,
@@ -95,12 +96,22 @@ class FakeSpeechSynthesizer(
         voiceRequests.add(langTag)
         return voices
     }
+
+    /**
+     * Updates the set of available voices. Used for testing voice language updates.
+     *
+     * @param newVoices The new set of voices to return
+     */
+    fun updateVoices(newVoices: List<Voice>) {
+        this.voices = newVoices
+    }
 }
 
 /**
  * A fake implementation of [AudioFileCache] for use in tests and Compose previews.
  *
- * It names files without creating them, so nothing has to clean up after it.
+ * It names files without creating them, so nothing has to clean up after it. Having no disk to ask, it takes every file
+ * it has not been told is gone to be present, and [reclaim] is how a test tells it otherwise.
  *
  * @property cleared Whether [clear] has been called.
  * @property deleted Every file it was asked to delete, in order.
@@ -109,14 +120,47 @@ class FakeAudioFileCache : AudioFileCache {
     var cleared = false
     val deleted = mutableListOf<File>()
 
-    override suspend fun create(key: String): File = File("/audio/$key.wav")
+    // Every file this has heard of, so that clearing can take away files it never named itself: the engine writes
+    // into this directory without going through create(), exactly as the platform one does.
+    private val known = mutableSetOf<File>()
+    private val missing = mutableSetOf<File>()
+
+    override suspend fun create(key: String): File =
+        File("/audio/$key.wav").also {
+            known.add(it)
+            missing.remove(it)
+        }
+
+    override suspend fun exists(file: File): Boolean {
+        known.add(file)
+
+        return file !in missing
+    }
 
     override suspend fun delete(file: File) {
         deleted.add(file)
+        known.add(file)
+        missing.add(file)
     }
 
     override suspend fun clear() {
         cleared = true
+        missing.addAll(known)
+    }
+
+    /**
+     * Takes [files] away behind the cache's back, as the system reclaiming the cache directory does.
+     *
+     * Nothing is recorded, because the point of it is that the session is never told.
+     */
+    fun reclaim(vararg files: File) {
+        known.addAll(files)
+        missing.addAll(files)
+    }
+
+    /** Takes away every file this has heard of, as the system emptying the cache directory does. */
+    fun reclaimEverything() {
+        missing.addAll(known)
     }
 }
 
@@ -129,21 +173,25 @@ class FakeAudioFileCache : AudioFileCache {
  * @property queued Every file it was asked to queue behind what is playing, in order. A caller's joins are only gapless
  *   for the chunks that reach this rather than [played], which replaces what is playing.
  * @property displayData What each file in the playlist says it is, in the order the files were handed over.
+ * @property paused How many times [pause] has been called.
  * @property resumed How many times [resume] has been called.
  * @property released Whether [release] has been called.
  * @property status What to report about the playback. Set it to drive a caller's monitoring, including changes no
  *   command of theirs asked for.
  * @property positionMs The position to report as reached.
  * @property seekedTo Every position it was asked to move to, in order.
+ * @property playbackSpeedSet Every speed it was asked to read at, in order.
  */
 class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
     val played = mutableListOf<File>()
     val queued = mutableListOf<File>()
     val displayDataList = mutableListOf<ArticleDisplayData>()
+    var paused = 0
     var resumed = 0
     val seekedTo = mutableListOf<Long>()
     val seekedToItem = mutableListOf<Pair<Int, Long>>()
     val restartedAt = mutableListOf<Pair<File, Long>>()
+    val playbackSpeedSet = mutableListOf<PlaybackSpeed>()
     var released = false
 
     override val status = MutableStateFlow(PlaybackState())
@@ -156,7 +204,7 @@ class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
         played.add(file)
         displayDataList.add(articleDisplayData)
 
-        status.value = PlaybackState(phase = PlaybackPhase.Buffering)
+        status.value = PlaybackState(phase = PlaybackPhase.Buffering, speed = status.value.speed)
     }
 
     override suspend fun enqueue(file: File) {
@@ -165,10 +213,14 @@ class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
         displayDataList.add(displayData)
     }
 
-    override suspend fun pause() = Unit
+    override suspend fun pause() {
+        paused += 1
+        status.value = PlaybackState(phase = PlaybackPhase.Paused, speed = status.value.speed)
+    }
 
     override suspend fun resume() {
         resumed += 1
+        status.value = PlaybackState(phase = PlaybackPhase.Buffering, speed = status.value.speed)
     }
 
     override suspend fun seekTo(positionMs: Long) {
@@ -182,6 +234,11 @@ class FakePlaybackController(var positionMs: Long = 0L) : PlaybackController {
     override suspend fun restartAt(file: File, positionMs: Long) {
         restartedAt.add(file to positionMs)
         played.add(file)
+    }
+
+    override suspend fun setSpeed(speed: PlaybackSpeed) {
+        playbackSpeedSet.add(speed)
+        status.value = status.value.copy(speed = speed)
     }
 
     override suspend fun release() {

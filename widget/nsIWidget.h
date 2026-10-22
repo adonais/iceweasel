@@ -1254,9 +1254,6 @@ class nsIWidget : public nsSupportsWeakReference {
    */
   virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe);
 
-  // Returns true if |aPanInput| event was used for SwipeTracker, false
-  // otherwise.
-  bool MayStartSwipeForNonAPZ(const mozilla::PanGestureInput& aPanInput);
   void TrackScrollEventAsSwipe(const mozilla::PanGestureInput& aSwipeStartEvent,
                                uint32_t aAllowedDirections,
                                uint64_t aInputBlockId);
@@ -1267,7 +1264,7 @@ class nsIWidget : public nsSupportsWeakReference {
   SwipeInfo SendMayStartSwipe(const mozilla::PanGestureInput& aSwipeStartEvent);
   // Returns a WidgetWheelEvent which needs to be handled by APZ regardless of
   // whether |aPanInput| event was used for SwipeTracker or not.
-  mozilla::WidgetWheelEvent MayStartSwipeForAPZ(
+  mozilla::WidgetWheelEvent MayStartSwipe(
       const mozilla::PanGestureInput& aPanInput,
       const mozilla::layers::APZEventResult& aApzResult);
 
@@ -1993,6 +1990,18 @@ class nsIWidget : public nsSupportsWeakReference {
   /**
    * This is used for native menu system testing.
    *
+   * Returns the key equivalent carried by the native menu item built from the
+   * element with id aElementId, as "<modifiers>|<key>", or the empty string if
+   * it has none. Fails if no menu item was built from that element.
+   */
+  virtual nsresult GetNativeMenuItemKeyEquivalent(const nsAString& aElementId,
+                                                  nsAString& aResult) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  /**
+   * This is used for native menu system testing.
+   *
    * Updates a native menu at the position specified by the index string.
    * The index string is a string of positive integers separated by the "|"
    * (pipe) character.
@@ -2430,13 +2439,6 @@ class nsIWidget : public nsSupportsWeakReference {
   // if the window is fully occluded (rendering may be paused in response)
   bool mIsFullyOccluded;
   bool mNeedFastSnaphot;
-  // This flag is only used when APZ is off. It indicates that the current pan
-  // gesture was processed as a swipe. Sometimes the swipe animation can finish
-  // before momentum events of the pan gesture have stopped firing, so this
-  // flag tells us that we shouldn't allow the remaining events to cause
-  // scrolling. It is reset to false once a new gesture starts (as indicated by
-  // a PANGESTURE_(MAY)START event).
-  bool mCurrentPanGestureBelongsToSwipe;
 
   mozilla::widget::PiPType mPiPType;
 

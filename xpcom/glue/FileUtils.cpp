@@ -339,9 +339,9 @@ void mozilla::ReadAhead(mozilla::filedesc_t aFd, const size_t aOffset,
   // Restore the file pointer
   SetFilePointerEx(aFd, fpOriginal, nullptr, FILE_BEGIN);
 
-#elif defined(LINUX) && !defined(ANDROID)
+#elif defined(LINUX)
 
-  readahead(aFd, aOffset, aCount);
+  posix_fadvise(aFd, aOffset, aCount, POSIX_FADV_WILLNEED);
 
 #elif defined(XP_MACOSX)
 

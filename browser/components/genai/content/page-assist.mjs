@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
 });
 
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 /**
  * A custom element for managing the page assistant input.

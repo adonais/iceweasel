@@ -4,11 +4,25 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 158.0 (In Development)
+# 160.0 (In Development)
+* **ui-richtext**
+    * 🆕 Added `StreamingParser`, which parses a markdown document as it arrives in chunks, reparsing only the part of it that can still change. [Bug 2059255](https://bugzilla.mozilla.org/show_bug.cgi?id=2059255)
+* **browser-engine-gecko**
+    * Download filenames from `onExternalResponse` are now validated by Gecko with the same rules as desktop, so `GeckoEngineSession` no longer applies the `String.sanitizeFileName` helper from **support-ktx** to them. [Bug 1822968](https://bugzilla.mozilla.org/show_bug.cgi?id=1822968)
+
+# 159.0
+* **feature-readerview**
+    * 🆕 Added `ReaderViewFeature.colorSchemeOverride`, which forces reader view to be displayed with a given `ColorScheme` without overwriting the one the user configured. [Bug 2069110](https://bugzilla.mozilla.org/show_bug.cgi?id=2069110)
+* **concept-engine**, **browser-engine-gecko**, **browser-engine-system**, **browser-state**, **feature-app-links**
+    * ⚠️ **Breaking change**: `EngineSession.Observer.onLaunchIntentRequest` and `AppIntentState` take a `sourceUrl`, the URL of the page the launch was requested from, or null when the launch was not requested from a page. [Bug 2068801](https://bugzilla.mozilla.org/show_bug.cgi?id=2068801)
+
+# 158.0
 * **feature-accounts-push**
     * 🆕 Added a `SendTabUseCases.SendToDeviceUseCase` overload that takes a list of devices, sending every tab to every device. [Bug 2056922](https://bugzilla.mozilla.org/show_bug.cgi?id=2056922)
 * **service-pocket**
     * ⚠️ **Breaking change**: Removed `useMerinoClient` from `ContentRecommendationsRequestConfig`. The content recommendations are always fetched with the Merino client. [Bug 2069992](https://bugzilla.mozilla.org/show_bug.cgi?id=2069992)
+* **support-base**
+    * 🆕 Added `PowerManagerInfoProvider.isPowerSaveMode`, which reports whether the device is in power save (battery saver) mode. [Bug 2068693](https://bugzilla.mozilla.org/show_bug.cgi?id=2068693)
 
 # 157.0
 

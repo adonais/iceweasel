@@ -227,7 +227,6 @@ async function setupLnaServer() {
 async function setupLnaPrefs() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["permissions.manager.defaultsUrl", ""],
       ["network.websocket.delay-failed-reconnects", false],
       ["network.websocket.max-connections", 1000],
       ["network.lna.block_trackers", true],

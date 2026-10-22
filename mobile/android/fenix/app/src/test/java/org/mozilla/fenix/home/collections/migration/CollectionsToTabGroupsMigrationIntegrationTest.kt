@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -34,6 +34,7 @@ import org.mozilla.fenix.utils.Settings
 @RunWith(AndroidJUnit4::class)
 class CollectionsToTabGroupsMigrationIntegrationTest {
 
+    private val testDispatcher = StandardTestDispatcher()
     private val dateTimeProvider = FakeDateTimeProvider()
 
     private lateinit var tabGroupDatabase: RoomDatabase
@@ -48,6 +49,7 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
         tabGroupRepository =
             createTestTabGroupRepository(
                 database = tabGroupDatabase,
+                ioDispatcher = testDispatcher,
                 dateTimeProvider = dateTimeProvider,
             )
         browserStore = BrowserStore()
@@ -66,10 +68,11 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
     }
 
     @After
-    fun teardown() = runTest {
-        tabCollectionStorage.getCollectionsList().forEach { tabCollectionStorage.removeCollection(it) }
-        tabGroupDatabase.close()
-    }
+    fun teardown() =
+        runTest(testDispatcher) {
+            tabCollectionStorage.getCollectionsList().forEach { tabCollectionStorage.removeCollection(it) }
+            tabGroupDatabase.close()
+        }
 
     private fun migration() =
         CollectionsToTabGroupsMigration(
@@ -80,12 +83,12 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
             engine = FakeEngine(),
             filesDir = testContext.filesDir,
             dateTimeProvider = dateTimeProvider,
-            ioDispatcher = UnconfinedTestDispatcher(),
+            ioDispatcher = testDispatcher,
         )
 
     @Test
     fun `GIVEN stored collections WHEN collections to tab groups migration runs THEN their tabs are restored into closed tab groups`() =
-        runTest {
+        runTest(testDispatcher) {
             tabCollectionStorage.createCollection(
                 title = "Recipes",
                 sessions =
@@ -134,7 +137,7 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
 
     @Test
     fun `GIVEN a collection was migrated WHEN collection to tab group migration runs again THEN the collection is not migrated again`() =
-        runTest {
+        runTest(testDispatcher) {
             tabCollectionStorage.createCollection(
                 title = "Recipes",
                 sessions =
@@ -159,7 +162,7 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
 
     @Test
     fun `GIVEN a collection was migrated in an interrupted run WHEN the migration runs again THEN only the remaining collection is migrated`() =
-        runTest {
+        runTest(testDispatcher) {
             val recipesId =
                 requireNotNull(
                     tabCollectionStorage.createCollection(
@@ -187,7 +190,7 @@ class CollectionsToTabGroupsMigrationIntegrationTest {
 
     @Test
     fun `GIVEN tab groups feature is disabled WHEN collection to tab group migration runs THEN the collections are left untouched`() =
-        runTest {
+        runTest(testDispatcher) {
             settings.tabGroupsEnabled = false
             tabCollectionStorage.createCollection(
                 title = "Recipes",

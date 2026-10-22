@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -15,7 +13,7 @@ class CodebergHost(BaseHost):
         )
         codeberg_api += self.repo_url.path[1:]
         codeberg_api += "/git/commits"
-        req = requests.get("/".join([codeberg_api, revision]))
+        req = self.session.get("/".join([codeberg_api, revision]))
         req.raise_for_status()
         info = req.json()
         return (info["sha"], info["created"])

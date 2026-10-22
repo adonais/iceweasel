@@ -212,6 +212,9 @@ add_task(async function test_skip_count_is_true() {
 
   assertSERPTelemetry([
     {
+      impression: {
+        prescan: "found",
+      },
       adImpressions: [],
     },
   ]);

@@ -16,10 +16,12 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "api/audio/audio_device.h"
 #include "api/audio/builtin_audio_processing_builder.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -37,6 +39,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/create_frame_generator.h"
 #include "api/test/simulated_network.h"
+#include "api/test/time_controller.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/time_delta.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -58,6 +61,9 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/network/sent_packet.h"
+#include "rtc_base/null_socket_server.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "test/create_test_environment.h"
@@ -75,9 +81,131 @@
 namespace webrtc {
 namespace test {
 
+// Packet receiver bridge that is invoked on a transport thread and marshals
+// packet delivery calls across to the network thread asynchronously, decoupling
+// packet parsing/delivery from the transport thread.
+class TransportToNetworkPacketBridge : public PacketReceiver {
+ public:
+  TransportToNetworkPacketBridge(TaskQueueBase* network_thread,
+                                 PacketReceiver* receiver)
+      : network_thread_(network_thread), receiver_(receiver) {}
+  ~TransportToNetworkPacketBridge() override = default;
+
+  void DeliverRtcpPacket(CopyOnWriteBuffer packet) override {
+    if (!receiver_)
+      return;
+    if (network_thread_->IsCurrent()) {
+      receiver_->DeliverRtcpPacket(std::move(packet));
+    } else {
+      network_thread_->PostTask(
+          [receiver = receiver_, packet = std::move(packet)]() mutable {
+            receiver->DeliverRtcpPacket(std::move(packet));
+          });
+    }
+  }
+
+  void DeliverRtpPacket(MediaType media_type,
+                        RtpPacketReceived packet,
+                        absl_nonnull OnUndemuxablePacketHandler
+                            undemuxable_packet_handler) override {
+    if (!receiver_)
+      return;
+    if (network_thread_->IsCurrent()) {
+      receiver_->DeliverRtpPacket(media_type, std::move(packet),
+                                  std::move(undemuxable_packet_handler));
+    } else {
+      network_thread_->PostTask(
+          [receiver = receiver_, media_type, packet = std::move(packet),
+           handler = std::move(undemuxable_packet_handler)]() mutable {
+            receiver->DeliverRtpPacket(media_type, std::move(packet),
+                                       std::move(handler));
+          });
+    }
+  }
+
+ protected:
+  TaskQueueBase* const network_thread_;
+
+ private:
+  PacketReceiver* const receiver_;
+};
+
+// Transport and packet receiver bridge for sender streams. Invoked on Call's
+// send/pacing thread to forward outgoing packets to the underlying send
+// transport while marshaling received packets and OnSentPacket notifications
+// across to the network thread.
+class SendingTransportToNetworkPacketBridge
+    : public TransportToNetworkPacketBridge,
+      public Transport {
+ public:
+  SendingTransportToNetworkPacketBridge(TaskQueueBase* network_thread,
+                                        PacketReceiver* receiver,
+                                        Call* send_call,
+                                        Transport* send_transport,
+                                        const Environment& env)
+      : TransportToNetworkPacketBridge(network_thread, receiver),
+        send_call_(send_call),
+        send_transport_(send_transport),
+        env_(env) {
+    if (send_call_) {
+      network_thread_->PostTask([send_call = send_call_]() {
+        send_call->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+        send_call->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+      });
+    }
+  }
+
+  bool SendRtp(std::span<const uint8_t> packet,
+               const PacketOptions& options) override {
+    bool sent = send_transport_->SendRtp(packet, options);
+    if (sent && send_call_) {
+      PacketInfo packet_info;
+      packet_info.included_in_feedback = options.included_in_feedback;
+      packet_info.included_in_allocation = options.included_in_allocation;
+      packet_info.packet_size_bytes = packet.size();
+      packet_info.packet_type = PacketType::kData;
+      SentPacketInfo sent_packet(
+          options.packet_id, env_.clock().TimeInMilliseconds(), packet_info);
+      network_thread_->PostTask([send_call = send_call_, sent_packet]() {
+        send_call->OnSentPacket(sent_packet);
+      });
+    }
+    return sent;
+  }
+
+  bool SendRtcp(std::span<const uint8_t> packet,
+                const PacketOptions& options) override {
+    return send_transport_->SendRtcp(packet, options);
+  }
+
+ private:
+  Call* const send_call_;
+  Transport* const send_transport_;
+  const Environment& env_;
+};
+
+namespace {
+CreateTestEnvironmentOptions GetTestEnvironmentOptions(
+    TimeController* time_controller,
+    const FieldTrials* field_trials) {
+  CreateTestEnvironmentOptions options{.field_trials = field_trials};
+  if (time_controller != nullptr) {
+    options.time = time_controller;
+  }
+  return options;
+}
+}  // namespace
+
 CallTest::CallTest(FieldTrials field_trials)
-    : field_trials_(std::move(field_trials)),
-      env_(CreateTestEnvironment({.field_trials = &field_trials_})),
+    : CallTest(/*time_controller=*/static_cast<TimeController*>(nullptr),
+               std::move(field_trials)) {}
+
+CallTest::CallTest(TimeController* time_controller, FieldTrials field_trials)
+    : owned_time_controller_(nullptr),
+      time_controller_(time_controller),
+      field_trials_(std::move(field_trials)),
+      env_(CreateTestEnvironment(
+          GetTestEnvironmentOptions(time_controller_, &field_trials_))),
       send_env_(env_),
       recv_env_(env_),
       audio_send_config_(/*send_transport=*/nullptr),
@@ -101,11 +229,27 @@ CallTest::CallTest(FieldTrials field_trials)
       num_flexfec_streams_(0),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
-      network_thread_(Thread::CreateWithSocketServer()),
+      network_thread_(time_controller_ != nullptr
+                          ? time_controller_->CreateThread(
+                                "CallNetwork",
+                                std::make_unique<NullSocketServer>())
+                          : Thread::CreateWithSocketServer()),
+      transport_thread_(time_controller_ != nullptr
+                            ? time_controller_->CreateThread("CallTransport")
+                            : Thread::Create()),
       task_queue_(env_.task_queue_factory().CreateTaskQueue(
           "CallTestTaskQueue",
           TaskQueueFactory::Priority::kNormal)) {
-  network_thread_->Start();
+  if (time_controller_ == nullptr) {
+    network_thread_->Start();
+    transport_thread_->Start();
+  }
+}
+
+CallTest::CallTest(std::unique_ptr<TimeController> time_controller,
+                   FieldTrials field_trials)
+    : CallTest(time_controller.get(), std::move(field_trials)) {
+  owned_time_controller_ = std::move(time_controller);
 }
 
 CallTest::~CallTest() = default;
@@ -146,6 +290,7 @@ void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
 }
 
 void CallTest::RunBaseTest(BaseTest* test) {
+  test->SetTimeController(time_controller_);
   SendTask(task_queue(), [this, test]() {
     num_video_streams_ = test->GetNumVideoStreams();
     num_audio_streams_ = test->GetNumAudioStreams();
@@ -185,8 +330,17 @@ void CallTest::RunBaseTest(BaseTest* test) {
       CreateReceiverCall(std::move(recv_config));
     }
     test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
-    CreateReceiveTransport(test->GetReceiveTransportConfig(), test);
-    CreateSendTransport(test->GetSendTransportConfig(), test);
+    PacketReceiver* send_receiver =
+        test->ShouldCreateReceivers()
+            ? (receiver_call_ ? receiver_call_->Receiver() : nullptr)
+            : (sender_call_ ? sender_call_->Receiver() : nullptr);
+    PacketReceiver* receive_receiver =
+        test->ShouldCreateReceivers()
+            ? (sender_call_ ? sender_call_->Receiver() : nullptr)
+            : nullptr;
+    CreateReceiveTransport(test->GetReceiveTransportConfig(), test,
+                           receive_receiver);
+    CreateSendTransport(test->GetSendTransportConfig(), test, send_receiver);
     test->OnTransportCreated(send_transport_.get(), send_simulated_network_,
                              receive_transport_.get(),
                              receive_simulated_network_);
@@ -195,14 +349,10 @@ void CallTest::RunBaseTest(BaseTest* test) {
         receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
         receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
       });
-    } else {
-      // Sender-only call delivers to itself.
-      send_transport_->SetReceiver(sender_call_->Receiver());
-      receive_transport_->SetReceiver(nullptr);
     }
 
     CreateSendConfig(num_video_streams_, num_audio_streams_,
-                     num_flexfec_streams_, send_transport_.get());
+                     num_flexfec_streams_, send_transport_bridge_.get());
     if (test->ShouldCreateReceivers()) {
       CreateMatchingReceiveConfigs();
     }
@@ -249,9 +399,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
     Stop();
     test->OnStreamsStopped();
     DestroyStreams();
-    send_transport_.reset();
-    receive_transport_.reset();
-
     frame_generator_capturer_ = nullptr;
     DestroyCalls();
 
@@ -320,28 +467,29 @@ void CallTest::CreateReceiverCall(CallConfig config) {
 }
 
 void CallTest::DestroyCalls() {
+  send_transport_.reset();
+  receive_transport_.reset();
+  send_transport_bridge_.reset();
+  receive_transport_bridge_.reset();
+
+  // Flush any pending packet delivery or OnSentPacket tasks on the network
+  // thread before destroying the Call instances.
+  network_thread()->BlockingCall([]() {});
+
   if (sender_call_) {
     TaskQueueBase* worker = sender_call_->worker_thread();
     if (worker->IsCurrent()) {
-      send_transport_.reset();
       sender_call_.reset();
     } else {
-      SendTask(worker, [this]() {
-        send_transport_.reset();
-        sender_call_.reset();
-      });
+      SendTask(worker, [this]() { sender_call_.reset(); });
     }
   }
   if (receiver_call_) {
     TaskQueueBase* worker = receiver_call_->worker_thread();
     if (worker->IsCurrent()) {
-      receive_transport_.reset();
       receiver_call_.reset();
     } else {
-      SendTask(worker, [this]() {
-        receive_transport_.reset();
-        receiver_call_.reset();
-      });
+      SendTask(worker, [this]() { receiver_call_.reset(); });
     }
   }
 }
@@ -441,6 +589,15 @@ void CallTest::SetReceiveUlpFecConfig(
   receive_config->rtp
       .rtx_associated_payload_types[VideoTestConstants::kRtxRedPayloadType] =
       VideoTestConstants::kRedPayloadType;
+}
+
+void CallTest::CreateSendConfig(size_t num_video_streams,
+                                size_t num_audio_streams,
+                                size_t num_flexfec_streams) {
+  CreateSendConfig(num_video_streams, num_audio_streams, num_flexfec_streams,
+                   send_transport_bridge_
+                       ? static_cast<Transport*>(send_transport_bridge_.get())
+                       : static_cast<Transport*>(send_transport_.get()));
 }
 
 void CallTest::CreateSendConfig(size_t num_video_streams,
@@ -693,29 +850,50 @@ void CallTest::CreateFlexfecStreams() {
 
 void CallTest::CreateSendTransport(const BuiltInNetworkBehaviorConfig& config,
                                    RtpRtcpObserver* observer) {
-  PacketReceiver* receiver =
-      receiver_call_ ? receiver_call_->Receiver() : nullptr;
+  CreateSendTransport(config, observer,
+                      receiver_call_ ? receiver_call_->Receiver() : nullptr);
+}
 
+void CallTest::CreateSendTransport(const BuiltInNetworkBehaviorConfig& config,
+                                   RtpRtcpObserver* observer,
+                                   PacketReceiver* receiver) {
   auto network = std::make_unique<SimulatedNetwork>(config);
   send_simulated_network_ = network.get();
+  auto fake_network_pipe = std::make_unique<FakeNetworkPipe>(
+      &env_.clock(), std::move(network), nullptr);
+  FakeNetworkPipe* fake_network_pipe_ptr = fake_network_pipe.get();
   send_transport_ = std::make_unique<PacketTransport>(
-      env_, network_thread_.get(), sender_call_.get(), observer,
-      test::PacketTransport::kSender, payload_type_map_,
-      std::make_unique<FakeNetworkPipe>(&env_.clock(), std::move(network),
-                                        receiver),
+      env_, transport_thread_.get(), nullptr, observer,
+      PacketTransport::kSender, payload_type_map_, std::move(fake_network_pipe),
       rtp_extensions_, rtp_extensions_);
+  send_transport_bridge_ =
+      std::make_unique<SendingTransportToNetworkPacketBridge>(
+          network_thread_.get(), receiver, sender_call_.get(),
+          send_transport_.get(), env_);
+  fake_network_pipe_ptr->SetReceiver(send_transport_bridge_.get());
 }
 
 void CallTest::CreateReceiveTransport(
     const BuiltInNetworkBehaviorConfig& config,
     RtpRtcpObserver* observer) {
+  CreateReceiveTransport(config, observer,
+                         sender_call_ ? sender_call_->Receiver() : nullptr);
+}
+
+void CallTest::CreateReceiveTransport(
+    const BuiltInNetworkBehaviorConfig& config,
+    RtpRtcpObserver* observer,
+    PacketReceiver* receiver) {
+  receive_transport_bridge_ = std::make_unique<TransportToNetworkPacketBridge>(
+      network_thread_.get(), receiver);
+
   auto network = std::make_unique<SimulatedNetwork>(config);
   receive_simulated_network_ = network.get();
   receive_transport_ = std::make_unique<PacketTransport>(
-      env_, network_thread_.get(), nullptr, observer,
-      test::PacketTransport::kReceiver, payload_type_map_,
+      env_, transport_thread_.get(), nullptr, observer,
+      PacketTransport::kReceiver, payload_type_map_,
       std::make_unique<FakeNetworkPipe>(&env_.clock(), std::move(network),
-                                        sender_call_->Receiver()),
+                                        receive_transport_bridge_.get()),
       rtp_extensions_, rtp_extensions_);
 }
 

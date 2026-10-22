@@ -9,6 +9,8 @@ prefs = [
   "browser.mini-window.log=true",
 ]
 
+["browser_chooser_panel.js"]
+
 ["browser_cropped_navigation.js"]
 
 ["browser_framing.js"]
@@ -18,6 +20,12 @@ prefs = [
 ["browser_open_close.js"]
 
 ["browser_origin_close.js"]
+
+["browser_overlap.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Wayland doesn't let windows move themselves
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # X11/XWayland report unreliable window positions
+]
 
 ["browser_placement.js"]
 
@@ -30,6 +38,8 @@ prefs = [
 ["browser_sessionstore.js"]
 
 ["browser_sidebar.js"]
+
+["browser_telemetry.js"]
 
 ["browser_toolbar.js"]
 

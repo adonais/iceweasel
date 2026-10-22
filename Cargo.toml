@@ -167,7 +167,7 @@ uniffi_pipeline = "0.32"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=70.2.0"
+glean = "=70.2.1"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -227,10 +227,6 @@ mozilla-central-workspace-hack = { path = "build/workspace-hack" }
 # windows-targets replacement. It avoids the large dependencies of the original
 # crate, which we don't really need as we require MSVC anyways.
 windows-targets = { path = "build/rust/windows-targets" }
-
-# windows-link replacement that doesn't use raw-dylibs, which have problems on
-# the i686-pc-windows-gnu target.
-windows-link = { path = "build/rust/windows-link" }
 
 # Patch windows to use a non-vendored local copy of the crate.
 windows = { path = "build/rust/windows" }
@@ -313,8 +309,6 @@ procfs-core = { path = "build/rust/procfs-core" }
 # Patch rustc-hash 1.1.0 to 2.1.1
 rustc-hash = { path = "build/rust/rustc-hash" }
 
-# Patch memoffset from 0.8.0 to 0.9.0 since it's compatible and it avoids duplication
-memoffset = { path = "build/rust/memoffset" }
 
 # Patch `hashbrown` 0.13.* to depend on 0.15.*
 hashbrown_0_13 = { package = "hashbrown", path = "build/rust/hashbrown-0.13" }
@@ -392,6 +386,8 @@ harfbuzz-sys = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a
 harfbuzz = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a23a98772a197291d04af93f7041b7093d95" }
 # Also vendor `harfbuzz-traits` to keep cargo-vendor happy.
 harfbuzz-traits = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a23a98772a197291d04af93f7041b7093d95" }
+# Fix https://github.com/rusticstuff/simdutf8/issues/129
+simdutf8 = { git = "https://github.com/hsivonen/simdutf8", rev = "9c38ac5d3761ebf53578a92bd90a76cdc08c162b" }
 
 # objc 0.2.7 + fa7ca43b862861dd1cd000d7ad01e6e0266cda13
 objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
@@ -427,7 +423,7 @@ ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e9477
 zip = { path = "third_party/rust/zip" }
 
 # Unpublished changes
-cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "ddccc070a0261cb94195ed0f74095c67b86a8550" }
+cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "3a1d1c7a2980ab59d4e5fed7fe666dcbe265d132" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
@@ -440,8 +436,6 @@ libdbus-sys = { path = "third_party/rust/libdbus-sys" }
 # slower on PGO builds. See bug 2043090.
 jxl_simd = { path = "third_party/rust/jxl_simd" }
 
-# gleam 0.15.1 + https://github.com/servo/gleam/pull/235
-gleam = { git = "https://github.com/jamienicol/gleam", rev = "68ca4e5cc31135b843af07ff213a94b9ddce64cf" }
 # gl_generator 0.14.0 + https://github.com/rust-windowing/gl-rs/pull/566
 gl_generator = { git = "https://github.com/jamienicol/gl-rs", rev = "71c792dbfe0ec5caeb242fc90937e19098386342" }
 

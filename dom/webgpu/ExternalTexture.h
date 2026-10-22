@@ -233,8 +233,7 @@ class ExternalTextureSourceHost {
   // Called prior to submitting commands which read from this external texture
   // source. This can be used to wait on a fence, for example. If this returns
   // false, the commands must *not* be submitted.
-  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aDeviceId,
-                           RawId aQueueId);
+  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aQueueId);
 
  private:
   ExternalTextureSourceHost(Span<const RawId> aTextureIds,

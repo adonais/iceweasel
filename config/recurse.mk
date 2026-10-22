@@ -108,8 +108,8 @@ $(current_tier_targets): %/$(CURRENT_TIER):
 $(addsuffix /Makefile,$(CURRENT_DIRS)) $(addsuffix /backend.mk,$(CURRENT_DIRS)):
 
 ifeq ($(CURRENT_TIER),export)
-# At least build/export requires config/export for buildid, but who knows what
-# else, so keep this global dependency to make config/export first for now.
+# config/export builds the STL and system wrappers. Keep it first until the
+# export consumers are audited.
 $(addsuffix /$(CURRENT_TIER),$(filter-out config,$(CURRENT_DIRS))): config/$(CURRENT_TIER)
 
 # The export tier requires nsinstall, which is built from config. So every
@@ -195,10 +195,6 @@ endif
 
 # Interdependencies that moz.build world don't know about yet for compilation.
 # Note some others are hardcoded or "guessed" in recursivemake.py and emitter.py
-ifdef MOZ_USING_WASM_SANDBOXING
-dom/media/ogg/target-objects extensions/spellcheck/hunspell/glue/target-objects gfx/thebes/target-objects parser/expat/target-objects parser/htmlparser/target-objects gfx/ots/src/target-objects: security/rlbox/pre-compile
-dom/media/target-objects dom/media/mediasink/target-objects: media/libsoundtouch/src/pre-compile
-endif
 
 # Most things are built during compile (target/host), but some things happen during export
 # Those need to depend on config/export for system wrappers.

@@ -326,7 +326,8 @@ class VideoEncoderInterface {
   };
 
   struct TemporalUnitSettings {
-    VideoCodecMode content_hint = VideoCodecMode::kRealtimeVideo;
+    VideoTrackInterface::ContentHint content_hint =
+        VideoTrackInterface::ContentHint::kNone;
     Timestamp presentation_timestamp;
   };
 
@@ -369,14 +370,18 @@ These settings are provided for each temporal unit to be encoded.
 
 ```cpp
 struct TemporalUnitSettings {
-  VideoCodecMode content_hint = VideoCodecMode::kRealtimeVideo;
+  VideoTrackInterface::ContentHint content_hint =
+      VideoTrackInterface::ContentHint::kNone;
   Timestamp presentation_timestamp;
 };
 ```
 
-- **`content_hint`**: Indicates if the content is primarily real-time video or
-  screen sharing (e.g., `VideoCodecMode::kRealtimeVideo`,
-  `VideoCodecMode::kScreenshare`).
+- **`content_hint`**: Indicates the content type of the video track
+  (`VideoTrackInterface::ContentHint` from `api/media_stream_interface.h`):
+  - `ContentHint::kNone` / `ContentHint::kFluid`: Camera/motion video (default
+    tuning).
+  - `ContentHint::kDetailed` / `ContentHint::kText`: Detailed or text screen
+    content (screen tuning with palette mode enabled).
 - **`presentation_timestamp`**: When the frame is meant to be presented. Only
   used in CBR mode, where it determines how much buffer levels should be
   adjusted between encoded frames.

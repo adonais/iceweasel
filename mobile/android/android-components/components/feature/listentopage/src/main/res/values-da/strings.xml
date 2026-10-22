@@ -39,6 +39,12 @@
   <string name="mozac_feature_listentopage_notification_playback_speed_1_75">Afspilningshastighed 75 procent hurtigere</string>
   <!-- Content description of the playback control notification, when the playback is set to 2 times (double) the normal reading speed. -->
   <string name="mozac_feature_listentopage_notification_playback_speed_2">Afspilning indstillet til dobbelt hastighed</string>
+  <!-- Error text shown on the Listen to Page media player when the text-to-speech engine fails to convert the article into spoken audio -->
+  <string name="mozac_feature_listentopage_error_audio_not_available">Lyd ikke tilgængelig</string>
+  <!-- Error text shown on the Listen to Page media player when the player encounters an error partway through playing the audio. -->
+  <string name="mozac_feature_listentopage_error_could_not_finish_playing_audio">Kunne ikke afslutte afspilning af lyd. Prøv igen.</string>
+  <!-- Error text shown on the Listen to Page media player when no voice options are available to play the audio. -->
+  <string name="mozac_feature_listentopage_error_voice_options_not_available">Stemmevalg er ikke tilgængelig</string>
   <!-- Listen to Page media player: content description for the button that closes the player. -->
   <string name="mozac_feature_listentopage_close">Luk</string>
   <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->
@@ -59,4 +65,8 @@
     Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
   -->
   <string name="mozac_feature_listentopage_change_speed">skifte afspilningshastighed</string>
+  <!-- Playback speed menu item, such as "1.5×". %1$s is the multiplier already formatted with the decimal separator of the locale. -->
+  <string name="mozac_feature_listentopage_playback_speed_option">%1$s×</string>
+  <!-- Playback speed menu item for the normal reading speed, which is also the default speed. "1×" means one times the normal speed. -->
+  <string name="mozac_feature_listentopage_playback_speed_option_default">1× (Standard)</string>
 </resources>

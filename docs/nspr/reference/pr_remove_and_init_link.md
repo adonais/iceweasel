@@ -18,6 +18,6 @@ PR_REMOVE_AND_INIT_LINK (PRCList *elemp);
 
 ## Description
 
-{ref}`PR_REMOVE_AND_INIT_LINK` removes the specified element from its
+{doc}`pr_remove_and_init_link` removes the specified element from its
 circular list and initializes the links of the element to point to
 itself.

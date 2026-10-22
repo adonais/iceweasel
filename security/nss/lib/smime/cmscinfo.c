@@ -83,6 +83,7 @@ NSS_CMSContentInfo_Destroy(NSSCMSContentInfo *cinfo)
     }
     if (cinfo->bulkkey) {
         PK11_FreeSymKey(cinfo->bulkkey);
+        cinfo->bulkkey = NULL;
     }
 }
 

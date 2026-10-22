@@ -16,17 +16,17 @@ PRStatus PR_NewThreadPrivateIndex(
 
 ### Parameters
 
-{ref}`PR_NewThreadPrivateIndex` has the following parameters:
+{doc}`pr_newthreadprivateindex` has the following parameters:
 
 `newIndex`
 
 : On output, an index that is valid for all threads in the process. You
-  use this index with {ref}`PR_SetThreadPrivate` and
-  {ref}`PR_GetThreadPrivate`.
+  use this index with {doc}`pr_setthreadprivate` and
+  {doc}`pr_getthreadprivate`.
 
 `destructor`
 
-: Specifies a destructor function {ref}`PRThreadPrivateDTOR` for the
+: Specifies a destructor function {doc}`prthreadprivatedtor` for the
   private data associated with the index. This function can be
   specified as `NULL`.
 
@@ -39,19 +39,19 @@ The function returns one of the following values:
 
 ## Description
 
-If {ref}`PR_NewThreadPrivateIndex` is successful, every thread in the same
+If {doc}`pr_newthreadprivateindex` is successful, every thread in the same
 process is capable of associating private data with the new index. Until
 the data for an index is actually set, the value of the private data at
-that index is `NULL`. You pass this index to {ref}`PR_SetThreadPrivate`
-and {ref}`PR_GetThreadPrivate` to set and retrieve data associated with the
+that index is `NULL`. You pass this index to {doc}`pr_setthreadprivate`
+and {doc}`pr_getthreadprivate` to set and retrieve data associated with the
 index.
 
 When you allocate the index, you may also register a destructor function
-of type {ref}`PRThreadPrivateDTOR`. If a destructor function is registered
+of type {doc}`prthreadprivatedtor`. If a destructor function is registered
 with a new index, it will be called at one of two times, as long as the
 private data is not `NULL`:
 
-- when replacement private data is set with {ref}`PR_SetThreadPrivate`
+- when replacement private data is set with {doc}`pr_setthreadprivate`
 - when a thread exits
 
 The index maintains independent data values for each binding thread. A

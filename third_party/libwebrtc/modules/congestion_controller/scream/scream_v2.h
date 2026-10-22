@@ -131,7 +131,7 @@ class ScreamV2 {
  private:
   void UpdateL4SAlpha(const ScreamFeedback& parsed);
   void UpdateRefWindow(const ScreamFeedback& parsed);
-  void UpdateFeedbackHoldTime(const ScreamFeedback& parsed);
+  void UpdateFeedbackHoldTime(TimeDelta feedback_hold_time);
   void UpdateTargetRate(const ScreamFeedback& parsed);
   void UpdateReceiveRate(const ScreamFeedback& parsed);
 

@@ -85,13 +85,17 @@ class ReviewPromptMiddleware(
     }
 
     private fun handleReviewPromptCheck(store: Store<AppState, AppAction>) {
-        // We shouldn't show the review prompt if continuous onboarding is in progress.
-        if (continuousOnboardingInProgress()) {
+        if (store.state.reviewPrompt != ReviewPromptState.Unknown) {
+            // We only want to try to show it once to avoid unnecessary disk reads.
             return
         }
 
-        if (store.state.reviewPrompt != ReviewPromptState.Unknown) {
-            // We only want to try to show it once to avoid unnecessary disk reads.
+        // We shouldn't show the review prompt if continuous onboarding is in progress. This check runs on every
+        // HomeFragment.onStart(), and continuous onboarding can complete while its last stage is still on screen, so
+        // set the state to not eligible instead of leaving it unknown.
+        // The state lives as long as the app process, so the prompt is only re-evaluated on the next cold start.
+        if (continuousOnboardingInProgress()) {
+            store.dispatch(DoNotShowReviewPrompt)
             return
         }
 

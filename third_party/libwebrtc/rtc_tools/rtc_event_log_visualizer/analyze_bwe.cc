@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1219,7 +1220,7 @@ void CreateReceiveSideBweSimulationGraph(const ParsedRtcEventLog& parsed_log,
   using RtpPacketType = LoggedRtpPacketIncoming;
   class RembInterceptor {
    public:
-    void SendRemb(uint32_t bitrate_bps, std::vector<uint32_t> ssrcs) {
+    void SendRemb(uint32_t bitrate_bps, std::span<const uint32_t> ssrcs) {
       last_bitrate_bps_ = bitrate_bps;
       bitrate_updated_ = true;
     }

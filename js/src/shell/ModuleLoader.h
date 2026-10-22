@@ -41,9 +41,10 @@ class ModuleLoader {
   static bool LoadResolved(JSContext* cx, HandleValue hostDefined);
   static bool LoadRejected(JSContext* cx, HandleValue hostDefined,
                            HandleValue error);
-  static bool DynamicImportLoadResolved(JSContext* cx, HandleValue hostDefined);
-  static bool DynamicImportLoadRejected(JSContext* cx, HandleValue hostDefined,
-                                        HandleValue error);
+  static bool DynamicImportLoadResolved(JSContext* cx, unsigned argc,
+                                        Value* vp);
+  static bool DynamicImportLoadRejected(JSContext* cx, unsigned argc,
+                                        Value* vp);
   bool loadImportedModule(JSContext* cx, HandleValue referrer,
                           HandleObject moduleRequest, HandleValue payload);
   bool populateImportMeta(JSContext* cx, JS::HandleObject moduleRecord,
@@ -77,6 +78,15 @@ class ModuleLoader {
 
   // The slot stored in ImportMetaResolve function.
   enum { ModulePrivateSlot = 0, SlotCount };
+
+  static const uint32_t LoadReactionHostDefinedSlot = 0;
+
+  // The number of args in the dynamic import reactions.
+  static const uint32_t DynamicImportLoadResolvedNumArgs = 0;
+  static const uint32_t DynamicImportLoadRejectedNumArgs = 1;
+
+  // The index of the 'error' argument in DynamicImportLoadRejected.
+  static const uint32_t DynamicImportLoadRejectedErrorArg = 0;
 
   // The number of args in ImportMetaResolve.
   static const uint32_t ImportMetaResolveNumArgs = 1;

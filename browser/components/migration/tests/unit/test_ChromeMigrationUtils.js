@@ -1,7 +1,7 @@
 "use strict";
 
 const { ChromeMigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeMigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
 );
 
 // Setup chrome user data path for all platforms.
@@ -83,5 +83,122 @@ add_task(async function test_getLastUsedProfileId_function() {
     profileId,
     "Default",
     "The last used profile ID should be Default."
+  );
+});
+
+add_task(function test_mergeBookmarkChildren_empty() {
+  Assert.deepEqual(
+    ChromeMigrationUtils.mergeBookmarkChildren([]),
+    [],
+    "No inputs should give an empty result."
+  );
+  Assert.deepEqual(
+    ChromeMigrationUtils.mergeBookmarkChildren([undefined, null, []]),
+    [],
+    "Missing or empty children arrays should be skipped."
+  );
+});
+
+add_task(function test_mergeBookmarkChildren_single() {
+  let children = [
+    { type: "url", name: "A", url: "https://a.example/" },
+    {
+      type: "folder",
+      name: "F",
+      children: [{ type: "url", name: "B", url: "https://b.example/" }],
+    },
+    { type: "folder", name: "NoChildren" },
+  ];
+  Assert.deepEqual(
+    ChromeMigrationUtils.mergeBookmarkChildren([undefined, children]),
+    [
+      { type: "url", name: "A", url: "https://a.example/" },
+      {
+        type: "folder",
+        name: "F",
+        children: [{ type: "url", name: "B", url: "https://b.example/" }],
+      },
+      { type: "folder", name: "NoChildren", children: [] },
+    ],
+    "A single input should be passed through unchanged (modulo children)."
+  );
+});
+
+add_task(function test_mergeBookmarkChildren_merges_folders() {
+  let local = [
+    { type: "url", name: "Local", url: "https://local.example/" },
+    {
+      type: "folder",
+      name: "Shared",
+      children: [
+        { type: "url", name: "L1", url: "https://l1.example/" },
+        {
+          type: "folder",
+          name: "Nested",
+          children: [{ type: "url", name: "LN", url: "https://ln.example/" }],
+        },
+      ],
+    },
+    { type: "folder", name: "LocalOnly", children: [] },
+  ];
+  let account = [
+    {
+      type: "folder",
+      name: "Shared",
+      children: [
+        {
+          type: "folder",
+          name: "Nested",
+          children: [{ type: "url", name: "AN", url: "https://an.example/" }],
+        },
+        { type: "url", name: "A1", url: "https://a1.example/" },
+      ],
+    },
+    { type: "url", name: "Account", url: "https://account.example/" },
+    { type: "folder", name: "AccountOnly", children: [] },
+  ];
+  let localCopy = structuredClone(local);
+  let accountCopy = structuredClone(account);
+
+  Assert.deepEqual(
+    ChromeMigrationUtils.mergeBookmarkChildren([local, account]),
+    [
+      { type: "url", name: "Local", url: "https://local.example/" },
+      {
+        type: "folder",
+        name: "Shared",
+        children: [
+          { type: "url", name: "L1", url: "https://l1.example/" },
+          {
+            type: "folder",
+            name: "Nested",
+            children: [
+              { type: "url", name: "LN", url: "https://ln.example/" },
+              { type: "url", name: "AN", url: "https://an.example/" },
+            ],
+          },
+          { type: "url", name: "A1", url: "https://a1.example/" },
+        ],
+      },
+      { type: "folder", name: "LocalOnly", children: [] },
+      { type: "url", name: "Account", url: "https://account.example/" },
+      { type: "folder", name: "AccountOnly", children: [] },
+    ],
+    "Same-named folders should be merged recursively, keeping first-seen order."
+  );
+  Assert.deepEqual(local, localCopy, "First input should not be modified.");
+  Assert.deepEqual(
+    account,
+    accountCopy,
+    "Second input should not be modified."
+  );
+});
+
+add_task(function test_mergeBookmarkChildren_keeps_duplicate_urls() {
+  let bookmark = { type: "url", name: "Dup", url: "https://dup.example/" };
+  Assert.deepEqual(
+    ChromeMigrationUtils.mergeBookmarkChildren([[bookmark], [bookmark]]),
+    [bookmark, bookmark],
+    "URL items are concatenated without de-duplication."
   );
 });

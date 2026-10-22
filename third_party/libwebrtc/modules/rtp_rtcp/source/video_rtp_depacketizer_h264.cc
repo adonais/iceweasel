@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <span>
 #include <utility>
@@ -145,8 +146,15 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
               // Stap-A Length includes payload data and type header.
               size_t rewritten_size =
                   output_buffer.size() - start_offset + H264::kNaluTypeSize;
+              if (rewritten_size > std::numeric_limits<uint16_t>::max()) {
+                RTC_LOG(LS_WARNING)
+                    << "Rewritten SPS NAL unit too large for STAP-A packet: "
+                    << rewritten_size;
+                return std::nullopt;
+              }
               ByteWriter<uint16_t>::WriteBigEndian(
-                  &output_buffer[length_field_offset], rewritten_size);
+                  &output_buffer[length_field_offset],
+                  static_cast<uint16_t>(rewritten_size));
             }
 
             // Append rest of packet.
@@ -156,9 +164,12 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
             [[fallthrough]];
           case SpsVuiRewriter::ParseResult::kVuiOk:
             RTC_DCHECK(sps);
+            RTC_DCHECK(H264::IsValidResolution(sps->width, sps->height));
             nalu.sps_id = sps->id;
-            parsed_payload->video_header.width = sps->width;
-            parsed_payload->video_header.height = sps->height;
+            parsed_payload->video_header.width =
+                static_cast<uint16_t>(sps->width);
+            parsed_payload->video_header.height =
+                static_cast<uint16_t>(sps->height);
             parsed_payload->video_header.frame_type =
                 VideoFrameType::kVideoFrameKey;
             break;

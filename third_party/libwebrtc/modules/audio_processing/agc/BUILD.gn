@@ -95,8 +95,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("agc_manager_direct_unittest") {
-    testonly = true
+  rtc_cc_test("agc_manager_direct_unittest") {
     sources = [ "agc_manager_direct_unittest.cc" ]
     deps = [
       ":agc",
@@ -116,10 +115,13 @@ if (rtc_include_tests) {
       "../../../test:test_support",
     ]
     configs += [ "..:apm_debug_dump" ]
+    data_deps = [ "../../../resources:audio_processing_unittests_data" ]
+    if (is_ios) {
+      deps += [ "../../../resources:audio_processing_unittests_bundle_data" ]
+    }
   }
 
-  rtc_library("loudness_histogram_unittest") {
-    testonly = true
+  rtc_cc_test("loudness_histogram_unittest") {
     sources = [ "loudness_histogram_unittest.cc" ]
     deps = [
       ":level_estimation",
@@ -129,14 +131,9 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/strings:string_view",
     ]
     configs += [ "..:apm_debug_dump" ]
-  }
-
-  rtc_library("agc_unittests") {
-    testonly = true
-    sources = []
-    deps = [
-      ":agc_manager_direct_unittest",
-      ":loudness_histogram_unittest",
-    ]
+    data_deps = [ "../../../resources:audio_processing_unittests_data" ]
+    if (is_ios) {
+      deps += [ "../../../resources:audio_processing_unittests_bundle_data" ]
+    }
   }
 }

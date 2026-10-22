@@ -123,6 +123,8 @@ export class ScreenshotsOverlay {
       popAttributes,
       reselectAttributes,
       miniWindowCancelAttributes,
+      miniWindowOverlayHeader,
+      miniWindowOverlayInstructions,
     ] = lazy.overlayLocalization.formatMessagesSync([
       { id: "screenshots-cancel-button" },
       { id: "screenshots-component-cancel-button" },
@@ -139,7 +141,15 @@ export class ScreenshotsOverlay {
       { id: "screenshots-component-mini-window-button" },
       { id: "screenshots-component-reselect-button" },
       { id: "screenshots-component-mini-window-cancel-button" },
+      { id: "mini-window-overlay-header" },
+      { id: "mini-window-overlay-instructions" },
     ]);
+
+    let instructionsMarkup =
+      this.mode === SELECTION_MODES.MINI_WINDOW
+        ? `<h1 class="preview-header">${miniWindowOverlayHeader.value}</h1>
+            <div class="preview-instructions">${miniWindowOverlayInstructions.value}</div>`
+        : `<div class="preview-instructions">${instructions.value}</div>`;
 
     let buttonsContainerMarkup =
       this.mode === SELECTION_MODES.MINI_WINDOW
@@ -158,7 +168,10 @@ export class ScreenshotsOverlay {
         <div id="screenshots-component">
           <div id="preview-container" hidden>
             <div id="face-container" tabindex="0" role="button" aria-label="${previewFaceAriaLabel.attributes[0].value}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+              ${
+                this.mode === SELECTION_MODES.MINI_WINDOW
+                  ? `<img id="mini-window-preview-logo" src="chrome://browser/content/miniwindow/assets/mini-window.svg" alt=""/>`
+                  : `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
                 <g>
                   <path d="M11.4.9v2.9h-6c-.9 0-1.5.8-1.5 1.5v6H.8V3.8C.8 2.1 2.2.7 3.9.7h7.6v.2z" class="face-line-color"/>
                   <path d="M63.2 11.4h-3.1v-6c0-.8-.6-1.5-1.5-1.5h-6v-3h7.6c1.7 0 3.1 1.4 3.1 3.1z" class="face-line-color"/>
@@ -170,10 +183,10 @@ export class ScreenshotsOverlay {
                   <ellipse id="leftPupil" cx="25" cy="30" class="face-pupil-color" rx="3" ry="3"/>
                   <ellipse id="rightPupil" cx="45" cy="30" class="face-pupil-color" rx="3" ry="3"/>
                 </g>
-              </svg>
-
+              </svg>`
+              }
             </div>
-            <div class="preview-instructions">${instructions.value}</div>
+            ${instructionsMarkup}
             <button class="screenshots-button ghost-button" id="screenshots-cancel-button" title="${cancelAttributes.attributes[0].value}" aria-label="${cancelAttributes.attributes[1].value}">${cancelLabel.value}</button>
           </div>
           <div id="hover-highlight" hidden></div>
@@ -478,7 +491,7 @@ export class ScreenshotsOverlay {
       case "mini-window-cancel-button":
         this.cancelOverlay();
         break;
-      case "reselect":
+      case "reselect-button":
         this.reselectRegion();
         break;
     }
@@ -1740,6 +1753,10 @@ export class ScreenshotsOverlay {
    * @param {number} clientY The y position relative to the viewport
    */
   drawPreviewEyes(clientX, clientY) {
+    // Mini-window mode shows a static logo instead.
+    if (!this.leftEye) {
+      return;
+    }
     let { clientWidth, clientHeight } = this.windowDimensions.dimensions;
     const xpos = Math.floor((10 * (clientX - clientWidth / 2)) / clientWidth);
     const ypos = Math.floor((10 * (clientY - clientHeight / 2)) / clientHeight);

@@ -41,6 +41,7 @@ using namespace mozilla::hal;
 
 #ifdef XP_WIN
 #  include <process.h>
+#  include <windows.h>
 #  define getpid _getpid
 #else
 #  include <unistd.h>
@@ -416,6 +417,13 @@ void ProcessPriorityManagerImpl::Init() {
   // about it. We'll manage only subprocesses' priorities using the process
   // priority manager.
   SetProcessPriorityIfEnabled(getpid(), PROCESS_PRIORITY_PARENT_PROCESS);
+
+#ifdef XP_WIN
+  if (StaticPrefs::
+          dom_ipc_processPriorityManager_foregroundRaisesMainThreadPriority()) {
+    ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+  }
+#endif
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {

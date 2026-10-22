@@ -212,6 +212,16 @@ export var TelemetryEnvironment = {
     gActiveExperimentStartupBuffer = new Map();
     return getGlobal();
   },
+
+  /**
+   * Intended for use in tests only.
+   *
+   * Returns the Promise for the most recent default-browser check.
+   *
+   */
+  testIsDefaultBrowser() {
+    return getGlobal()._isDefaultBrowserPromise;
+  },
 };
 
 const RECORD_PREF_STATE = TelemetryEnvironment.RECORD_PREF_STATE;
@@ -570,6 +580,10 @@ function EnvironmentCache() {
   // entries until the session is restored.
   this._sessionWasRestored = false;
 
+  // Set when a default-browser check starts after session restore, allowing
+  // tests to await its completion.
+  this._isDefaultBrowserPromise = null;
+
   // A map of listeners that will be called on environment changes.
   this._changeListeners = new Map();
 
@@ -843,10 +857,10 @@ EnvironmentCache.prototype = {
    *
    * @param aPreferences A map of preferences names and their recording policy.
    */
-  _watchPreferences(aPreferences) {
+  async _watchPreferences(aPreferences) {
     this._stopWatchingPrefs();
     this._watchedPrefs = aPreferences;
-    this._updateSettings();
+    await this._updateSettings();
     this._startWatchingPrefs();
   },
 
@@ -1162,12 +1176,13 @@ EnvironmentCache.prototype = {
   /**
    * Determine if we're the default browser.
    *
+   * @async
    * @returns null on error, true if we are the default browser, or false otherwise.
    */
-  _isDefaultBrowser() {
-    let isDefault = (service, ...args) => {
+  async _isDefaultBrowser() {
+    let isDefault = async (service, ...args) => {
       try {
-        return !!service.isDefaultBrowser(...args);
+        return await service.isDefaultBrowserAsync(...args);
       } catch (ex) {
         this._log.error(
           "_isDefaultBrowser - Could not determine if default browser",
@@ -1206,22 +1221,32 @@ EnvironmentCache.prototype = {
     }
   },
 
-  _updateDefaultBrowser() {
+  async _updateDefaultBrowser() {
     if (AppConstants.platform === "android") {
       return;
     }
+
+    if (!this._sessionWasRestored) {
+      this._log.trace("_updateDefaultBrowser - ignoring early call");
+      return;
+    }
+
     // Make sure to have a settings section.
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
-    this._currentEnvironment.settings.isDefaultBrowser = this
-      ._sessionWasRestored
-      ? this._isDefaultBrowser()
-      : null;
+
+    this._isDefaultBrowserPromise = this._isDefaultBrowser();
+    this._currentEnvironment.settings.isDefaultBrowser =
+      await this._isDefaultBrowserPromise;
+
+    Glean.browser.defaultAtLaunch.set(
+      this._currentEnvironment.settings.isDefaultBrowser
+    );
   },
 
   /**
    * Update the cached settings data.
    */
-  _updateSettings() {
+  async _updateSettings() {
     let updateChannel = null;
     try {
       updateChannel = Utils.getUpdateChannel();
@@ -1251,7 +1276,7 @@ EnvironmentCache.prototype = {
     if (AppConstants.MOZ_BUILD_APP == "browser") {
       this._updateAttribution();
     }
-    this._updateDefaultBrowser();
+    await this._updateDefaultBrowser();
     this._updateSearchEngine();
     this._loadAsyncUpdateSettingsFromCache();
 
@@ -1260,9 +1285,6 @@ EnvironmentCache.prototype = {
     );
     Glean.blocklist.enabled.set(
       Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true)
-    );
-    Glean.browser.defaultAtLaunch.set(
-      this._currentEnvironment.settings.isDefaultBrowser
     );
     // Services.appinfo.launcherProcessState is not available in all build
     // configurations, in which case an exception may be thrown.

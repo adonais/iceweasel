@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tests for overscroll-behavior during overscroll handoff</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="application/javascript" src="apz_test_utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+  <script type="application/javascript">
+
+var prefs = [
+  ["apz.overscroll.enabled", true],
+  ["apz.overscroll.test_async_scroll_offset.enabled", true],
+  ["apz.test.logging_enabled", true],
+  ["apz.overscroll.damping", 10.0], /* Make overscroll animations slower */
+];
+
+var subtests = [
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=auto&sub=auto",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=auto&sub=contain",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=auto&sub=chain",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=auto&sub=none",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=none&sub=auto",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=none&sub=contain",
+    prefs },
+  {"file": "helper_overscroll_behavior_two_scrollers.html?root=none&sub=chain",
+    prefs },
+  {"file": "helper_overscroll_behavior_three_scrollers.html?root=auto&middle=auto&innermost=auto",
+    prefs },
+  {"file": "helper_overscroll_behavior_three_scrollers.html?root=none&middle=auto&innermost=auto",
+    prefs },
+  {"file": "helper_overscroll_behavior_three_scrollers.html?root=none&middle=none&innermost=auto",
+    prefs },
+  {"file": "helper_overscroll_behavior_three_scrollers.html?root=none&middle=auto&innermost=none",
+    prefs },
+  {"file": "helper_overscroll_behavior_pan_during_overscroll_animation.html",
+    prefs },
+];
+
+if (isApzEnabled()) {
+  SimpleTest.waitForExplicitFinish();
+  window.onload = function() {
+    runSubtestsSeriallyInFreshWindows(subtests)
+    .then(SimpleTest.finish, SimpleTest.finishWithFailure);
+  };
+}
+
+  </script>
+</head>
+<body>
+</body>
+</html>

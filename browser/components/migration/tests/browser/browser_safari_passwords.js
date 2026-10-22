@@ -4,13 +4,13 @@
 "use strict";
 
 const { SafariProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/SafariProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/SafariProfileMigrator.sys.mjs"
 );
 const { LoginCSVImport } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginCSVImport.sys.mjs"
 );
 const { MigrationWizardChild } = ChromeUtils.importESModule(
-  "resource:///actors/MigrationWizardChild.sys.mjs"
+  "moz-src:///browser/components/migration/MigrationWizardChild.sys.mjs"
 );
 
 const TEST_FILE_PATH = getTestFilePath("dummy_file.csv");

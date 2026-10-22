@@ -19,15 +19,13 @@ extern crate wasm_smith;
 use arbitrary::Unstructured;
 use wasm_smith::{Config, Module};
 
-use std::ptr;
-
 #[no_mangle]
 pub unsafe extern "C" fn gluesmith(
-    data: *mut u8,
+    data: *const u8,
     len: usize,
-    out: *mut u8,
-    maxlen: usize,
-) -> usize {
+    out_bytes: *mut *mut u8,
+    out_bytes_len: *mut usize,
+) -> bool {
     let buf: &[u8] = std::slice::from_raw_parts(data, len);
 
     let mut u = Unstructured::new(buf);
@@ -47,19 +45,11 @@ pub unsafe extern "C" fn gluesmith(
     };
     let module = match Module::new(config, &mut u) {
         Ok(m) => m,
-        Err(_e) => return 0,
+        Err(_e) => return false,
     };
 
-    let wasm_bytes = module.to_bytes();
-
-    let src_len = wasm_bytes.len();
-
-    if src_len > maxlen {
-        return 0;
-    }
-
-    let src_ptr = wasm_bytes.as_ptr();
-    ptr::copy_nonoverlapping(src_ptr, out, src_len);
-
-    return src_len;
+    let bytes_slice = Box::leak(module.to_bytes().into_boxed_slice());
+    out_bytes.write(bytes_slice.as_mut_ptr());
+    out_bytes_len.write(bytes_slice.len());
+    true
 }

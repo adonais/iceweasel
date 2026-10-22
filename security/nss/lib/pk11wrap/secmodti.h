@@ -72,8 +72,6 @@ struct PK11SlotInfoStr {
     int askpw;           /* what our password options are */
     int timeout;         /* If we're ask_timeout, what is our timeout time is
                           * seconds */
-    int authTransact;    /* allow multiple authentications off one password if
-                          * they are all part of the same transaction */
     PRTime authTime;     /* when were we last authenticated */
     int minPassword;     /* smallest legal password */
     int maxPassword;     /* largest legal password */
@@ -106,11 +104,13 @@ struct PK11SlotInfoStr {
     CK_FLAGS RSAInfoFlags;
     PRBool protectedAuthPath;
     PRBool isActiveCard;
-    PRIntervalTime lastLoginCheck;
     unsigned int lastState;
-    /* for Stan */
-    NSSToken *nssToken;
+
+    /* nssTokenLock protects nssToken and lastLoginCheck */
     PRLock *nssTokenLock;
+    NSSToken *nssToken;
+    PRIntervalTime lastLoginCheck;
+
     /* the tokeninfo struct */
     CK_TOKEN_INFO tokenInfo;
     /* fast mechanism lookup */

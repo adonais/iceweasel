@@ -875,6 +875,64 @@ describe("ContentTiles component", () => {
     wrapper.unmount();
   });
 
+  const CAROUSEL_TILE = {
+    type: "single-select",
+    selected: "test1",
+    data: [
+      {
+        id: "test1",
+        type: "carousel-card",
+        pill: { label: { raw: "test1 pill" }, icon: "chrome://test/one.svg" },
+        label: { raw: "test1 label" },
+      },
+      {
+        id: "test2",
+        type: "carousel-card",
+        pill: { label: { raw: "test2 pill" } },
+        label: { raw: "test2 label" },
+      },
+    ],
+  };
+
+  it("should select and scroll the card when a pill is chosen", () => {
+    const scrollIntoView = sandbox.stub(Element.prototype, "scrollIntoView");
+
+    wrapper = mount(
+      <ContentTiles
+        content={{ tiles: CAROUSEL_TILE }}
+        setActiveSingleSelectSelection={setActiveSingleSelectSelection}
+        activeSingleSelectSelections={{ "single-select-0": "test1" }}
+        handleAction={handleAction}
+      />
+    );
+    wrapper.find("CarouselNav").prop("onSelect")("test2");
+
+    assert.calledWithExactly(
+      setActiveSingleSelectSelection.lastCall,
+      "test2",
+      "single-select-0"
+    );
+    assert.calledWithMatch(scrollIntoView, { inline: "center" });
+    assert.notCalled(handleAction);
+    wrapper.unmount();
+  });
+
+  it("should pass pill_nav_label through unwrapped", () => {
+    wrapper = mount(
+      <ContentTiles
+        content={{
+          tiles: { ...CAROUSEL_TILE, pill_nav_label: { raw: "Highlights" } },
+        }}
+        setActiveSingleSelectSelection={setActiveSingleSelectSelection}
+        handleAction={handleAction}
+      />
+    );
+    assert.deepEqual(wrapper.find("CarouselNav").prop("navLabel"), {
+      raw: "Highlights",
+    });
+    wrapper.unmount();
+  });
+
   it("should apply styles to label element", () => {
     const TEST_STYLE = { marginBlock: "5px" };
     const tileData = {

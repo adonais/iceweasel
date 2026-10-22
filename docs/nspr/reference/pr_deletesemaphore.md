@@ -17,8 +17,8 @@ The function has the following parameter:
 `name`
 
 : The name of a semaphore that was previously created via a call to
-  {ref}`PR_OpenSemaphore`.
+  {doc}`pr_opensemaphore`.
 
 ### Returns
 
-{ref}`PRStatus`
+{doc}`prstatus`

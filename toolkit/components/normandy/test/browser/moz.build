@@ -5,19 +5,3 @@
 BROWSER_CHROME_MANIFESTS += [
     "browser.toml",
 ]
-
-addons = [
-    "normandydriver-a-1.0",
-    "normandydriver-b-1.0",
-    "normandydriver-a-2.0",
-]
-
-output_dir = OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.components.normandy.test.browser.addons
-
-for addon in addons:
-    indir = "addons/%s" % addon
-    xpi = "%s.xpi" % indir
-
-    GeneratedFile(xpi, script="../create_xpi.py", inputs=[indir])
-
-    output_dir += ["!%s" % xpi]

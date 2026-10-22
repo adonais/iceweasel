@@ -262,13 +262,14 @@ static auto GMPCapabilitiesToString() {
 /* static */
 void GeckoMediaPluginServiceChild::UpdateGMPCapabilities(
     nsTArray<GMPCapabilityData>&& aCapabilities) {
+  bool registerShutdownClear = false;
   {
     // The mutex should unlock before sending the "gmp-changed" observer
     // service notification.
     StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
     if (!sGMPCapabilities) {
       sGMPCapabilities = new nsTArray<GMPCapabilityAndVersion>();
-      ClearOnShutdown(&sGMPCapabilities);
+      registerShutdownClear = true;
     }
     sGMPCapabilities->Clear();
     for (const GMPCapabilityData& plugin : aCapabilities) {
@@ -277,6 +278,14 @@ void GeckoMediaPluginServiceChild::UpdateGMPCapabilities(
 
     GMP_LOG_DEBUG("{}::{} {{{}}}", __CLASS__, __FUNCTION__,
                   GMPCapabilitiesToString().get());
+  }
+
+  if (registerShutdownClear) {
+    // Clear under the lock, as HasCapabilityForAPI can run on any thread.
+    RunOnShutdown([] {
+      StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
+      sGMPCapabilities = nullptr;
+    });
   }
 
   // Fire a notification so that any MediaKeySystemAccess
@@ -312,25 +321,28 @@ void GeckoMediaPluginServiceChild::BeginShutdown() {
   RemoveShutdownBlockerIfNeeded();
 }
 
-NS_IMETHODIMP
-GeckoMediaPluginServiceChild::HasPluginForAPI(const nsACString& aAPI,
-                                              const nsTArray<nsCString>& aTags,
-                                              bool* aHasPlugin) {
+/* static */
+bool GeckoMediaPluginServiceChild::HasCapabilityForAPI(
+    const nsACString& aAPI, const nsTArray<nsCString>& aTags) {
   StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
   if (!sGMPCapabilities) {
-    *aHasPlugin = false;
-    return NS_OK;
+    return false;
   }
 
   nsCString api(aAPI);
   for (const GMPCapabilityAndVersion& plugin : *sGMPCapabilities) {
     if (GMPCapability::Supports(plugin.mCapabilities, api, aTags)) {
-      *aHasPlugin = true;
-      return NS_OK;
+      return true;
     }
   }
+  return false;
+}
 
-  *aHasPlugin = false;
+NS_IMETHODIMP
+GeckoMediaPluginServiceChild::HasPluginForAPI(const nsACString& aAPI,
+                                              const nsTArray<nsCString>& aTags,
+                                              bool* aHasPlugin) {
+  *aHasPlugin = HasCapabilityForAPI(aAPI, aTags);
   return NS_OK;
 }
 

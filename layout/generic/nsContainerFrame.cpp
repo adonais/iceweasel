@@ -1967,7 +1967,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     if (styleBSizeConsideringOverrides->BehavesLikeStretchOnBlockAxis() &&
         aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
       // We've got a 'stretch' BSize; resolve it to a length:
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
+      nscoord stretchBSize = nsLayoutUtils::ComputeStretchSize(
           aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
           stylePos->mBoxSizing);
       // Note(dshin): This allocates.
@@ -2011,10 +2011,6 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::BorderBox
                                    ? aBorderPadding
                                    : LogicalSize(aWM);
-  const nscoord boxSizingToMarginEdgeISize = aMargin.ISize(aWM) +
-                                             aBorderPadding.ISize(aWM) -
-                                             boxSizingAdjust.ISize(aWM);
-
   // We don't expect these initial values of iSize/bSize to be used, but this
   // silences a GCC warning about them being uninitialized.
   nscoord minISize, maxISize, minBSize, maxBSize, iSize = 0, bSize = 0;
@@ -2047,9 +2043,9 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   Maybe<nscoord> iSizeToFillCB;
   Maybe<nscoord> bSizeToFillCB;
   if (!isAutoOrMaxContentISize) {
-    iSize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
-                              boxSizingToMarginEdgeISize, *styleISize,
-                              *styleBSize, aspectRatio, aFlags)
+    iSize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, aMargin,
+                              aBorderPadding, *styleISize, *styleBSize,
+                              aspectRatio, aFlags)
                 .mISize;
   } else if (MOZ_UNLIKELY(isGridItem) &&
              !parentFrame->IsMasonry(aWM, LogicalAxis::Inline)) {
@@ -2084,22 +2080,20 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       flexItemMainAxis && *flexItemMainAxis == LogicalAxis::Inline;
   const auto maxISizeCoord = stylePos->MaxISize(aWM, anchorResolutionParams);
   if (!maxISizeCoord->IsNone() && !isFlexItemInlineAxisMainAxis) {
-    maxISize =
-        ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
-                          boxSizingToMarginEdgeISize, *maxISizeCoord,
-                          *styleBSize, aspectRatio, aFlags)
-            .mISize;
+    maxISize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, aMargin,
+                                 aBorderPadding, *maxISizeCoord, *styleBSize,
+                                 aspectRatio, aFlags)
+                   .mISize;
   } else {
     maxISize = nscoord_MAX;
   }
 
   const auto minISizeCoord = stylePos->MinISize(aWM, anchorResolutionParams);
   if (!minISizeCoord->IsAuto() && !isFlexItemInlineAxisMainAxis) {
-    minISize =
-        ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
-                          boxSizingToMarginEdgeISize, *minISizeCoord,
-                          *styleBSize, aspectRatio, aFlags)
-            .mISize;
+    minISize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, aMargin,
+                                 aBorderPadding, *minISizeCoord, *styleBSize,
+                                 aspectRatio, aFlags)
+                   .mISize;
   } else {
     // Treat "min-width: auto" as 0.
     // NOTE: Technically, "auto" is supposed to behave like "min-content" on

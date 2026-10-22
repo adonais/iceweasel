@@ -264,7 +264,7 @@ class Connection final : public mozIStorageConnection,
   // overload delegates to it using the shared mDBConn. Async callers pass
   // their own captured native connection pointer to avoid racing with
   // AsyncClose() which can null mDBConn on the main thread.
-  inline bool transactionInProgress(const SQLiteMutexAutoLock& aProofOfLock,
+  inline bool transactionInProgress(const SQLiteMutexAutoLock& /*aProofOfLock*/,
                                     sqlite3* aNativeConnection) {
     return aNativeConnection &&
            !static_cast<bool>(::sqlite3_get_autocommit(aNativeConnection));

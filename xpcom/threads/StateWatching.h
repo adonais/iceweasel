@@ -148,10 +148,10 @@ class Watchable : public WatchTarget {
     return *this;
   }
 
- private:
   Watchable(const Watchable& aOther) = delete;
   Watchable& operator=(const Watchable& aOther) = delete;
 
+ private:
   T mValue;
 };
 

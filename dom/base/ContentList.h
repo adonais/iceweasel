@@ -69,8 +69,6 @@ class BaseContentList : public NodeList {
 
   void Reset() { mElements.Clear(); }
 
-  virtual int32_t IndexOf(nsIContent* aContent, bool aDoFlush);
-
   JSObject* WrapObject(JSContext* cx,
                        JS::Handle<JSObject*> aGivenProto) override = 0;
 
@@ -250,12 +248,10 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
    *              our root.
    * @param aLiveList Whether the created list should be a live list observing
    *                  mutations to the DOM tree.
-   * @param aKnownParserCreated Whether the element is known to be parser
-   *                  created, even if not in the document yet.
    */
   ContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
               nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom, bool aDeep = true,
-              bool aLiveList = true, bool aKnownParserCreated = false);
+              bool aLiveList = true);
 
   /**
    * @param aRootNode The node under which to limit our search.
@@ -274,15 +270,12 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
    *                             sensitive to attribute changes.
    * @param aLiveList Whether the created list should be a live list observing
    *                  mutations to the DOM tree.
-   * @param aKnownParserCreated Whether the element is known to be parser
-   *                  created, even if not in the document yet.
    */
   ContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
               nsContentListDestroyFunc aDestroyFunc, void* aData,
               bool aDeep = true, nsAtom* aMatchAtom = nullptr,
               int32_t aMatchNameSpaceId = kNameSpaceID_None,
-              bool aFuncMayDependOnAttr = true, bool aLiveList = true,
-              bool aKnownParserCreated = false);
+              bool aFuncMayDependOnAttr = true, bool aLiveList = true);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -292,33 +285,21 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
  public:
   // BaseContentList overrides
-  int32_t IndexOf(nsIContent* aContent, bool aDoFlush) override;
   int32_t IndexOf(nsIContent* aContent) override;
   nsINode* GetParentObject() override { return mRootNode; }
 
-  uint32_t Length() final { return Length(true); }
+  uint32_t Length() final;
   Element* Item(uint32_t aIndex) final;
-  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override {
-    Element* item = NamedItem(aName, true);
-    aFound = !!item;
-    return item;
-  }
+  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
   void GetSupportedNames(nsTArray<nsString>& aNames) override {
     GetSupportedNames(aNames, nullptr);
   }
 
   void GetSupportedNames(nsTArray<nsString>& aNames,
                          FilterElementWithName aFilter) {
-    BringSelfUpToDate(true);
+    BringSelfUpToDate();
     HTMLCollection::GetSupportedNames(aNames, aFilter);
   }
-
-  using HTMLCollection::NamedItem;
-
-  // ContentList public methods
-  uint32_t Length(bool aDoFlush);
-  Element* Item(uint32_t aIndex, bool aDoFlush);
-  Element* NamedItem(const nsAString& aName, bool aDoFlush);
 
   // nsIMutationObserver
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -372,7 +353,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
   inline void InvalidateNamedItemsCacheForInsertion(Element&);
   inline void InvalidateNamedItemsCacheForDeletion(Element&);
 
-  void EnsureNamedItemsCacheValid(bool aDoFlush);
+  void EnsureNamedItemsCacheValid();
 
   /**
    * Returns whether the element matches our criterion
@@ -436,7 +417,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
    * If state is not LIST_UP_TO_DATE, fully populate ourselves with
    * all the nodes we can find.
    */
-  void BringSelfUpToDate(bool aDoFlush);
+  void BringSelfUpToDate();
 
   /**
    * To be called from non-destructor locations that want to remove from caches.
@@ -492,10 +473,6 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
    * attributes.
    */
   bool mFuncMayDependOnAttr : 1;
-  /**
-   * Whether we actually need to flush to get our state correct.
-   */
-  bool mFlushesNeeded : 1;
   /**
    * Whether the ownerDocument of our root node at list creation time was an
    * HTML document.  Only needed when we're doing a namespace/atom match, not

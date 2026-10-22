@@ -25,7 +25,6 @@ import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
 import org.junit.Assume.assumeThat
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -934,7 +933,6 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
-    @Ignore("Forward selection is lost on the Java side, see bug 2067617")
     @Test
     fun inputConnection_selectionByArrowKey() {
         setupContent("")
@@ -957,18 +955,12 @@ class TextInputDelegateTest : BaseSessionTest() {
             )
         ic.sendKeyEvent(shiftKey)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
-        processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
-        processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
-        // No way to get notification for selection on Java side. So sync shadow text
-        syncShadowText(ic)
         assertSelection("Set backward select using key event", ic, 3, 0)
 
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
-        // No way to get notification for selection on Java side. So sync shadow text
-        syncShadowText(ic)
         assertSelectionAt("Reset selection using key event", ic, 0)
 
         // forward selection test
@@ -983,13 +975,9 @@ class TextInputDelegateTest : BaseSessionTest() {
             )
         ic.sendKeyEvent(shiftKey)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT)
-        processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT)
-        processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
-        // No way to get notification for selection on Java side. So sync shadow text
-        syncShadowText(ic)
         assertSelection("Set forward select using key event", ic, 0, 3)
     }
 

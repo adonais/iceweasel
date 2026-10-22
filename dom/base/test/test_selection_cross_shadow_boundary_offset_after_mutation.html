@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+<script>
+SimpleTest.waitForExplicitFinish();
+
+// After Selection.extend() moves a cross-shadow selection into another shadow
+// tree, and the focus node is then re-parented and its data replaced, the
+// cross-shadow range's boundary offsets must stay within their containers.
+function run() {
+  const sel = getSelection();
+
+  const SR2 = document.getElementById("host2").attachShadow({ mode: "open" });
+  SR2.innerHTML = "<span>pp</span><span id='s2'></span>";
+  const s2 = SR2.querySelector("#s2");
+  const t2 = document.createTextNode("A".repeat(640));
+  s2.appendChild(t2);
+
+  const SR1 = document.getElementById("host1").attachShadow({ mode: "open" });
+  SR1.innerHTML = "<span id='s1'>111111</span>";
+  const t1 = SR1.querySelector("#s1").firstChild;
+
+  // "lightsp" is light-DOM content of #c1, so the common ancestor of the
+  // cross-shadow selection is #c1, which does not cover the #c2 tree.
+  const L = document.getElementById("lightsp").firstChild;
+  document.body.offsetHeight;
+
+  // Cross-shadow selection within #c1: light DOM text -> SR1 text.
+  sel.setBaseAndExtent(L, 0, t1, 3);
+
+  // Move the focus into the other shadow tree, at offset 600 of t2.
+  sel.extend(t2, 600);
+
+  // Re-parent t2's container elsewhere in the composed document.
+  s2.remove();
+  document.getElementById("park").appendChild(s2);
+
+  // Replace t2's 640 characters with 8.
+  t2.data = "\f\f\f\f\f\f\f\f";
+
+  const composed = sel.getComposedRanges({ shadowRoots: [SR1, SR2] })[0];
+
+  // A live range's boundary offset must never exceed its container's length.
+  const maxOffset = (container) =>
+      container.nodeType === Node.TEXT_NODE
+          ? container.length
+          : container.childNodes.length;
+
+  ok(composed.startOffset <= maxOffset(composed.startContainer),
+     `start offset ${composed.startOffset} must not exceed container length ` +
+     `${maxOffset(composed.startContainer)} (${composed.startContainer.nodeName})`);
+  ok(composed.endOffset <= maxOffset(composed.endContainer),
+     `end offset ${composed.endOffset} must not exceed container length ` +
+     `${maxOffset(composed.endContainer)} (${composed.endContainer.nodeName})`);
+
+  SimpleTest.finish();
+}
+</script>
+<body onload="SimpleTest.waitForFocus(run);">
+  <div id="park" style="display:none"></div>
+  <div id="c2"><div id="host2"></div></div>
+  <div id="c1"><span id="lightsp">LLLL</span><div id="host1"></div></div>
+</body>

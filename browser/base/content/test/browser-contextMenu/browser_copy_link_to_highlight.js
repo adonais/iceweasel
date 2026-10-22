@@ -10,6 +10,9 @@ add_setup(async function () {
     set: [
       ["privacy.query_stripping.strip_list", "stripParam"],
       ["privacy.query_stripping.strip_on_share.enabled", true],
+      // Right-clicking text selects the word under the cursor on macOS, which
+      // would add a selection this test does not expect.
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 

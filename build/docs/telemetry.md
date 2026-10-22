@@ -13,7 +13,7 @@ You can adjust your telemetry settings by editing your
 ## Glean Telemetry
 
 Mozbuild reports data using [Glean](https://mozilla.github.io/glean/) via
-{ref}`mach-telemetry`. The metrics collected are documented {ref}`here<metrics>`.
+{ref}`mach-telemetry`. The metrics collected are documented {doc}`here </mach/metrics>`.
 
 ## Error Reporting
 

@@ -1,8 +1,8 @@
 # PRSeekWhence
 
 Specifies how to interpret the `offset` parameter in setting the file
-pointer associated with the `fd` parameter for the {ref}`PR_Seek` and
-{ref}`PR_Seek64` functions.
+pointer associated with the `fd` parameter for the {doc}`pr_seek` and
+{doc}`pr_seek64` functions.
 
 ## Syntax
 

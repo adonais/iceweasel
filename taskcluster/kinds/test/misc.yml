@@ -12,8 +12,14 @@ task-defaults:
 geckoview-junit:
     description: "Geckoview junit run"
     suite: geckoview-junit
-    variants: ["geckoview-fission", "no-fission", "geckoview-zygote"]
-    treeherder-symbol: gv-junit
+    variants:
+        - geckoview-fission
+        - no-fission
+        - geckoview-isolated-process
+        - geckoview-isolated-process+no-fission
+        - geckoview-zygote
+    treeherder-symbol: gv-junit()
+    treeherder-group-variants: true
     loopback-video: true
     target: geckoview-androidTest.apk
     max-run-time:
@@ -25,8 +31,17 @@ geckoview-junit:
             geckoview-fission: ['trunk']
             no-fission: built-projects
             geckoview-zygote: []
+            geckoview-isolated-process:
+                by-test-platform:
+                    android-em.*/debug: built-projects
+                    default: []
+            geckoview-isolated-process+no-fission:
+                by-test-platform:
+                    android-em.*/debug: built-projects
+                    default: []
             default: []
     tier: default
+    chunks: 4
     mozharness:
         script: android_emulator_unittest.py
         config:
@@ -67,6 +82,7 @@ test-verify:
     allow-software-gl-layers: false
     variants:
         - no-fission
+        - geckoview-isolated-process+no-fission
     run-on-projects:
         by-variant:
             no-fission:
@@ -78,6 +94,11 @@ test-verify:
                     .*-wayland.*: []
                     # do not run on mozilla-central, beta or release: usually just confirms earlier results
                     android.*: ['integration']
+                    default: []
+            geckoview-isolated-process+no-fission:
+                by-test-platform:
+                    # do not run on mozilla-central, beta or release: usually just confirms earlier results
+                    android.*/debug: ['integration']
                     default: []
             default:
                 by-test-platform:

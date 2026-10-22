@@ -50,7 +50,7 @@ Slide decks:
 
 Links for "Editor, Lint, & More" talk:
 
-- {ref}`Linting`
+- {doc}`/code-quality/lint/index`
 - {ref}`lint-vcs-hook`
 - <https://eslint.org/docs/user-guide/integrations>
 

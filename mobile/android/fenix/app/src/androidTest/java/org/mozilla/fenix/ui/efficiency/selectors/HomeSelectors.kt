@@ -22,6 +22,7 @@ object HomeSelectors : SelectorContainer {
         RECENT_BOOKMARKS_SECTION,
         PRIVATE_BROWSING_HOME_SCREEN,
         TOP_SITE_ITEM,
+        HOME_SCREEN_UI,
     }
 
     val TOP_SITES_LIST =
@@ -69,6 +70,16 @@ object HomeSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.content_description_private_browsing),
             description = "Private browsing button",
+            groups = setOf(Group.PRIVATE_BROWSING),
+        )
+
+    // Shown on the private browsing homepage header only under the Private Mode and Stories entry-point
+    // experiment (isPrivateModeAndStoriesEntryPointEnabled); tapping it returns to normal browsing.
+    val PRIVATE_BROWSING_HOME_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.content_description_normal_browsing),
+            description = "Private browsing homepage Home button",
             groups = setOf(Group.PRIVATE_BROWSING),
         )
 
@@ -128,6 +139,23 @@ object HomeSelectors : SelectorContainer {
             groups = setOf(Group.PRIVATE_BROWSING_HOME_SCREEN),
         )
 
+    val PRIVATE_BROWSING_INFO_CARD_DESCRIPTION =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.felt_privacy_info_card_subtitle_3),
+            description = "Private browsing info card description",
+            groups = setOf(Group.PRIVATE_BROWSING_HOME_SCREEN),
+        )
+
+    // The learn more link is a Compose LinkText wrapped in a Box tagged with this test tag; the tag is the reliable
+    // handle for both asserting the link is shown and clicking it (matching the legacy robot's click by tag).
+    val PRIVATE_BROWSING_LEARN_MORE_LINK =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG,
+            value = "homepage.private.browsing.learn.more.link",
+            description = "Private browsing 'Who might be able to see my activity?' learn more link",
+        )
+
     @Suppress("FunctionName")
     fun TOP_SITE_ITEM(topSiteTitle: String = "") =
         Selector(
@@ -157,5 +185,39 @@ object HomeSelectors : SelectorContainer {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = searchTerm,
             description = "'$searchTerm' search group",
+        )
+
+    // The "blocked trackers" widget pill. We assert this (a COMPOSE_BY_TAG handle) rather than the card's
+    // label text because the label is state-dependent: a fresh homepage reads "Help catch trackers" while a
+    // homepage that has blocked at least one tracker reads "You're protected". The protectionStatusPill tag
+    // (TRACKERS_BLOCKED_CARD) is present in both states, so it is a stable, state-independent presence check;
+    // asserting either label would flake as soon as the tracker count changes.
+    val TRACKERS_BLOCKED_CARD =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG,
+            value = "trackersBlockedCard.protectionStatusPill",
+            description = "Blocked trackers widget pill",
+            groups = setOf(Group.HOME_SCREEN_UI),
+        )
+
+    // Private-browsing button in the experimental homepage header (left side). Only rendered when
+    // isPrivateModeAndStoriesEntryPointEnabled is on, so it is not a page-identity anchor.
+    val PRIVATE_MODE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG,
+            value = "private.browsing.homepage.button",
+            description = "Private browsing homepage button",
+            groups = setOf(Group.HOME_SCREEN_UI),
+        )
+
+    // Stories entry point in the experimental homepage header (right side). Only rendered when
+    // isPrivateModeAndStoriesEntryPointEnabled and showPocketRecommendationsFeature (Pocket) are both on,
+    // so it is not a page-identity anchor.
+    val STORIES_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.homepage_all_stories),
+            description = "Stories button",
+            groups = setOf(Group.HOME_SCREEN_UI),
         )
 }

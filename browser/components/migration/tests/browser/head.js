@@ -14,7 +14,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/InternalTestingProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/InternalTestingProfileMigrator.sys.mjs"
 );
 const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"

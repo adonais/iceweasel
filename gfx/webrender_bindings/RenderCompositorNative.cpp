@@ -323,7 +323,6 @@ void RenderCompositorNative::UnbindNativeLayer() {
 }
 
 void RenderCompositorNative::CreateSurface(wr::NativeSurfaceId aId,
-                                           wr::DeviceIntPoint aVirtualOffset,
                                            wr::DeviceIntSize aTileSize,
                                            bool aIsOpaque) {
   MOZ_RELEASE_ASSERT(mSurfaces.find(aId) == mSurfaces.end());

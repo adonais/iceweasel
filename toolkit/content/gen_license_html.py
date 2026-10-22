@@ -57,6 +57,20 @@ def leads_paths(notice):
     return TRAILING_MARKUP.sub("", notice).endswith(":")
 
 
+CODE = re.compile(r"<code>\s*([^<]*?)\s*</code>")
+
+
+def notice_names_paths(notice, paths):
+    """Whether a notice already names every path the license covers.
+
+    Most notices read "This license applies to files in the directory
+    <code>third_party/rust/nom</code>.", which a coverage list would only
+    repeat.
+    """
+    named = {name.rstrip("/") for name in CODE.findall(notice)}
+    return all(path.rstrip("/") in named for path in paths)
+
+
 def read_blocks(paths):
     blocks = dict.fromkeys(APP_BLOCKS, "")
     for name, path in zip(APP_BLOCKS, paths):
@@ -79,9 +93,18 @@ def render(template_path, licenses, substs, blocks=None):
         if not license.get("html"):
             license["text"] = html.escape(license["text"], quote=False)
         license["notice_leads_paths"] = leads_paths(license.get("notice") or "")
+        license["notice_names_paths"] = notice_names_paths(
+            license.get("notice") or "", license.get("paths") or []
+        )
 
+    acknowledgements = [
+        l["acknowledgement"]
+        for l in sorted(licenses, key=lambda l: l["id"])
+        if l.get("acknowledgement")
+    ]
     return Template(filename=template_path, output_encoding=None).render(
         licenses=sorted(licenses, key=sort_key),
+        acknowledgements=acknowledgements,
         config=substs,
         **(blocks or dict.fromkeys(APP_BLOCKS, "")),
     )

@@ -926,6 +926,7 @@ add_task(async function resultMenu() {
       "urlbar-result-menu-dont-show-flight-status2",
       "urlbar-result-menu-manage-firefox-suggest2",
       "urlbar-result-menu-learn-more2",
+      "urlbar-view-context-menu-skip-menu-with-tab",
     ],
     "The result menu should contain the expected commands"
   );

@@ -215,6 +215,26 @@ bool IsDefaultPlaybackDeviceMono() {
   return CubebUtils::MaxNumberOfChannels() == 1;
 }
 
+void SetOpusOutputChannels(AudioInfo& aInfo) {
+  if (!aInfo.mCodecSpecificConfig.is<OpusCodecSpecificData>()) {
+    return;
+  }
+  aInfo.mCodecSpecificConfig.as<OpusCodecSpecificData>().mOutputChannels =
+      DecideAudioPlaybackChannels(aInfo);
+}
+
+uint32_t AudioPlaybackChannels(const AudioInfo& aInfo) {
+  if (aInfo.mCodecSpecificConfig.is<OpusCodecSpecificData>()) {
+    uint32_t channels =
+        aInfo.mCodecSpecificConfig.as<OpusCodecSpecificData>().mOutputChannels;
+    if (channels) {
+      return channels;
+    }
+    MOZ_ASSERT_UNREACHABLE("Opus config has no playback channel count");
+  }
+  return DecideAudioPlaybackChannels(aInfo);
+}
+
 bool IsVideoContentType(const nsCString& aContentType) {
   constexpr auto video = "video"_ns;
   return FindInReadable(video, aContentType);

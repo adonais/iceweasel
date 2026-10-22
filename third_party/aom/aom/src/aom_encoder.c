@@ -179,6 +179,9 @@ aom_codec_err_t aom_codec_encode(aom_codec_ctx_t *ctx, const aom_image_t *img,
   else if (img && ((img->fmt & AOM_IMG_FMT_HIGHBITDEPTH) != 0) !=
                       ((ctx->init_flags & AOM_CODEC_USE_HIGHBITDEPTH) != 0)) {
     res = AOM_CODEC_INVALID_PARAM;
+    ctx->priv->err_detail =
+        "img is high bit-depth and codec was not initialized with "
+        "AOM_CODEC_USE_HIGHBITDEPTH, or vice versa.";
 #if ULONG_MAX > UINT32_MAX
   } else if (duration > UINT32_MAX) {
     res = AOM_CODEC_INVALID_PARAM;

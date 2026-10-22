@@ -35,13 +35,13 @@ The function has the following parameters:
 
 ### Returns
 
-{ref}`PRStatus`
+{doc}`prstatus`
 
 ### Description
 
-{ref}`PR_ProcessAttrSetInheritableFileMap` connects the {ref}`PRFileMap` to
-{ref}`PRProcessAttr` with `shmname`. A subsequent call to
-`PR_CreateProcess` makes the {ref}`PRFileMap` importable by the child
+{doc}`pr_processattrsetinheritablefilemap` connects the {doc}`prfilemap` to
+{doc}`prprocessattr` with `shmname`. A subsequent call to
+`PR_CreateProcess` makes the {doc}`prfilemap` importable by the child
 process.
 
 :::{note}

@@ -7,7 +7,6 @@ const fs = require("fs");
 const { mkdir } = require("shelljs");
 const path = require("path");
 const { pathToFileURL } = require("url");
-const chalk = require("chalk");
 
 const DEFAULT_OPTIONS = {
   // Glob leading from CWD to the parent of the intended prerendered directory.
@@ -176,7 +175,7 @@ function templateHTML(options) {
 function writeFiles(destPath, filesMap, options) {
   for (const [file, templater] of filesMap) {
     fs.writeFileSync(path.join(destPath, file), templater({ options }));
-    console.log(chalk.green(`✓ ${file}`));
+    console.log(`✓ ${file}`);
   }
 }
 

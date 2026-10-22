@@ -16,6 +16,7 @@
 
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Point.h"  // for IntSize
 #include "mozilla/gfx/Types.h"  // for SurfaceFormat
@@ -164,12 +165,15 @@ class RemoteTextureRecycleBin final {
  * a given top-level protocol, without having to directly refer to the original
  * top-level protocol.
  */
-class RemoteTextureTxnScheduler final {
+class RemoteTextureTxnScheduler final
+    : public SupportsThreadSafeWeakPtr<RemoteTextureTxnScheduler> {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteTextureTxnScheduler)
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(RemoteTextureTxnScheduler)
 
   static already_AddRefed<RemoteTextureTxnScheduler> Create(
       mozilla::ipc::IProtocol* aProtocol);
+
+  ~RemoteTextureTxnScheduler();
 
   void NotifyTxn(RemoteTextureTxnId aTxnId);
 
@@ -178,7 +182,6 @@ class RemoteTextureTxnScheduler final {
 
   RemoteTextureTxnScheduler(base::ProcessId aForPid, RemoteTextureTxnType aType)
       : mForPid(aForPid), mType(aType) {}
-  ~RemoteTextureTxnScheduler();
 
   bool WaitForTxn(const MonitorAutoLock& aProofOfLock,
                   RemoteTextureOwnerId aOwnerId, RemoteTextureTxnId aTxnId);
@@ -493,7 +496,7 @@ class RemoteTextureMap {
       mRemoteTextureHostWrapperHolders;
 
   std::map<std::pair<base::ProcessId, RemoteTextureTxnType>,
-           RemoteTextureTxnScheduler*>
+           ThreadSafeWeakPtr<RemoteTextureTxnScheduler>>
       mTxnSchedulers;
 
   static StaticAutoPtr<RemoteTextureMap> sInstance;

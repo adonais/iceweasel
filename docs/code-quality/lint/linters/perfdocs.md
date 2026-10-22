@@ -25,7 +25,7 @@ Documentation can be regenerated for performance tests by using the `--generate`
 
 ## Configuration
 
-There are no configuration options available. It scans the full source tree, looking for folders named `perfdocs`, validates their content, and regenerates the documentation (if `--generate` is provided). This has been implemented for all performance testing harnesses, and the documentation generated gets displayed in {ref}`Performance Testing`.
+There are no configuration options available. It scans the full source tree, looking for folders named `perfdocs`, validates their content, and regenerates the documentation (if `--generate` is provided). This has been implemented for all performance testing harnesses, and the documentation generated gets displayed in {doc}`/testing/perfdocs/index`.
 
 In the `perfdocs` folders, there needs to be an `index.md` file and it needs to contain the string `{documentation}` in some location in the file which is where the test documentation will be placed. The folders must also have a `config.yml` file following this schema:
 

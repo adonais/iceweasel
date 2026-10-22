@@ -156,6 +156,11 @@ class Watchtower {
     }
     return watchProtoChangeSlow(cx, obj);
   }
+
+  // Invalidating Ion scripts that bake in values from the global lexical
+  // environment when a REPL-mode redeclaration changes them.
+  static void watchGlobalLexicalRedeclaration(JSContext* cx,
+                                              Handle<NativeObject*> obj);
 };
 
 }  // namespace js

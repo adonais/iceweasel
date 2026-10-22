@@ -109,6 +109,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       // feedback.
       PacketRouter* packet_router,
       const VideoReceiveStreamInterface::Config* config,
+      TimeDelta max_wait_for_keyframe,
       ReceiveStatistics* rtp_receive_statistics,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RtcpCnameCallback* rtcp_cname_callback,
@@ -239,6 +240,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   void SetLossNotificationEnabled(bool enabled);
 
   void SetNackHistory(TimeDelta history);
+  void SetMaxWaitForKeyframe(TimeDelta max_wait_for_keyframe);
 
   int ulpfec_payload_type() const;
   int red_payload_type() const;
@@ -354,6 +356,13 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   StashResult OnReceivedPayloadData(
       const RtpPacketReceived& rtp_packet,
       absl_nonnull std::unique_ptr<video_coding::PacketBuffer::Packet>& packet);
+
+  // Returns nullopt for packets dropped during sequence number recovery.
+  // `video_header` is null for padding and FEC packets.
+  std::optional<int64_t> UnwrapSequenceNumberOrRecover(
+      const RtpPacketReceived& rtp_packet,
+      const RTPVideoHeader* absl_nullable video_header)
+      RTC_RUN_ON(worker_queue_);
 
   // Entry point doing non-stats work for a received packet. Called
   // for the same packet both before and after RED decapsulation.
@@ -507,6 +516,14 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   SeqNumUnwrapper<uint16_t> rtp_seq_num_unwrapper_
       RTC_GUARDED_BY(worker_queue_);
+  std::optional<int64_t> newest_media_seq_num_ RTC_GUARDED_BY(worker_queue_);
+  std::optional<uint32_t> newest_media_rtp_timestamp_
+      RTC_GUARDED_BY(worker_queue_);
+  bool waiting_for_keyframe_after_seq_num_discontinuity_
+      RTC_GUARDED_BY(worker_queue_) = false;
+  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(worker_queue_);
+  Timestamp next_keyframe_request_for_seq_num_discontinuity_
+      RTC_GUARDED_BY(worker_queue_) = Timestamp::MinusInfinity();
 
   struct StashedPacket {
     RtpPacketReceived rtp_packet;

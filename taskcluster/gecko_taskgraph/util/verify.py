@@ -373,6 +373,8 @@ def verify_test_packaging(task, taskgraph, scratch_pad, graph_config, parameters
             bool(parameters.get("target-kinds")),
             # manifest scheduling is enabled
             parameters["test_manifest_loader"] != "default",
+            # tests that don't support artifact builds have been dropped
+            parameters["try_task_config"].get("use-artifact-builds", False),
         ))
 
         test_env = parameters["try_task_config"].get("env", {})

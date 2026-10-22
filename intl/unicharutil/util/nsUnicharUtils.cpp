@@ -173,27 +173,26 @@ uint32_t ToNaked(uint32_t aChar) {
 }
 
 void ToNaked(nsAString& aString) {
-  uint32_t i = 0;
-  while (i < aString.Length()) {
-    uint32_t ch = aString[i];
-    if (i < aString.Length() - 1 && IsSurrogatePair(ch, aString[i + 1])) {
-      ch = SurrogateToUCS4(ch, aString[i + 1]);
-      if (unicode::IsCombiningDiacritic(ch)) {
-        aString.Cut(i, 2);
-      } else {
+  char16_t* const buf = aString.BeginWriting();
+  const uint32_t len = aString.Length();
+  uint32_t out = 0;
+  for (uint32_t pos = 0; pos < len; pos++) {
+    uint32_t ch = buf[pos];
+    if (pos < len - 1 && IsSurrogatePair(ch, buf[pos + 1])) {
+      ch = SurrogateToUCS4(ch, buf[++pos]);
+      if (!unicode::IsCombiningDiacritic(ch)) {
         ch = unicode::GetNaked(ch);
         NS_ASSERTION(!IsInBMP(ch), "stripping crossed BMP/SMP boundary!");
-        aString.Replace(i++, 1, HighSurrogate(ch));
-        aString.Replace(i++, 1, LowSurrogate(ch));
+        buf[out++] = HighSurrogate(ch);
+        buf[out++] = LowSurrogate(ch);
       }
       continue;
     }
-    if (unicode::IsCombiningDiacritic(ch)) {
-      aString.Cut(i, 1);
-    } else {
-      aString.Replace(i++, 1, ToNaked(ch));
+    if (!unicode::IsCombiningDiacritic(ch)) {
+      buf[out++] = ToNaked(ch);
     }
   }
+  aString.SetLength(out);
 }
 
 int32_t nsCaseInsensitiveStringComparator(const char16_t* lhs,

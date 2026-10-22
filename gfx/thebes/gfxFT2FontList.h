@@ -14,9 +14,6 @@ namespace mozilla {
 namespace dom {
 class SystemFontListEntry;
 };
-namespace gfx {
-class FTUserFontData;
-};
 };  // namespace mozilla
 
 class FontNameCache;
@@ -28,7 +25,6 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   friend class gfxFT2FontList;
 
   using FontListEntry = mozilla::dom::SystemFontListEntry;
-  using FTUserFontData = mozilla::gfx::FTUserFontData;
 
  public:
   explicit FT2FontEntry(const nsACString& aFaceName)
@@ -72,7 +68,7 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   void CheckForBrokenFont(const nsACString& aFamilyKey);
 
   already_AddRefed<mozilla::gfx::SharedFTFace> GetFTFace(bool aCommit = false);
-  FTUserFontData* GetUserFontData() override;
+  FontData* GetUserFontData() override;
 
   FT_MM_Var* GetMMVar() override;
 

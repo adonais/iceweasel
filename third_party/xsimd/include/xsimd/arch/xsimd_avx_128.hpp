@@ -25,7 +25,7 @@ namespace xsimd
         using namespace types;
 
         // broadcast
-        template <class A, class T, class = std::enable_if_t<std::is_same<T, float>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_same_v<T, float>>>
         XSIMD_INLINE batch<T, A> broadcast(T val, requires_arch<avx_128>) noexcept
         {
             return _mm_broadcast_ss(&val);
@@ -105,10 +105,10 @@ namespace xsimd
 
         // Masks that lower to plain moves go to sse2; the rest gain nothing on a
         // single register, so take the runtime path.
-        template <class A, class T, bool... Values, class Mode, class = std::enable_if_t<std::is_floating_point<T>::value>>
+        template <class A, class T, bool... Values, class Mode, class = std::enable_if_t<std::is_floating_point_v<T>>>
         XSIMD_INLINE batch<T, A> load_masked(T const* mem, batch_bool_constant<T, A, Values...> mask, convert<T>, Mode, requires_arch<avx_128>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(detail::lowers_to_plain_moves(mask))
+            if constexpr (detail::lowers_to_plain_moves(mask))
             {
                 return load_masked(mem, mask, convert<T> {}, Mode {}, sse2 {});
             }
@@ -134,10 +134,10 @@ namespace xsimd
 
         // 4/8-byte ints: bitcast to same-width float, reuse the vmaskmov path.
         template <class A, class T, class Mode>
-        XSIMD_INLINE std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
+        XSIMD_INLINE std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
         load_masked(T const* mem, batch_bool<T, A> mask, convert<T>, Mode, requires_arch<avx_128>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
                 return bitwise_cast<T>(batch<float, A>(_mm_maskload_ps(reinterpret_cast<float const*>(mem), __m128i(mask))));
             }
@@ -147,10 +147,10 @@ namespace xsimd
             }
         }
 
-        template <class A, class T, bool... Values, class Mode, class = std::enable_if_t<std::is_floating_point<T>::value>>
+        template <class A, class T, bool... Values, class Mode, class = std::enable_if_t<std::is_floating_point_v<T>>>
         XSIMD_INLINE void store_masked(T* mem, batch<T, A> const& src, batch_bool_constant<T, A, Values...> mask, Mode, requires_arch<avx_128>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(detail::lowers_to_plain_moves(mask))
+            if constexpr (detail::lowers_to_plain_moves(mask))
             {
                 store_masked(mem, src, mask, Mode {}, sse2 {});
             }
@@ -176,10 +176,10 @@ namespace xsimd
 
         // 4/8-byte ints: bitcast to same-width float, reuse the vmaskmov path.
         template <class A, class T, class Mode>
-        XSIMD_INLINE std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8), void>
+        XSIMD_INLINE std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8), void>
         store_masked(T* mem, batch<T, A> const& src, batch_bool<T, A> mask, Mode, requires_arch<avx_128>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
                 _mm_maskstore_ps(reinterpret_cast<float*>(mem), __m128i(mask), bitwise_cast<float>(src));
             }
@@ -210,13 +210,15 @@ namespace xsimd
         template <class A, uint32_t V0, uint32_t V1, uint32_t V2, uint32_t V3>
         XSIMD_INLINE batch<float, A> swizzle(batch<float, A> const& self, batch_constant<uint32_t, A, V0, V1, V2, V3>, requires_arch<avx_128>) noexcept
         {
-            return _mm_permute_ps(self, detail::mod_shuffle(V0, V1, V2, V3));
+            constexpr auto mask = detail::mod_shuffle(V0, V1, V2, V3);
+            return _mm_permute_ps(self, mask);
         }
 
         template <class A, uint32_t V0, uint32_t V1>
         XSIMD_INLINE batch<double, A> swizzle(batch<double, A> const& self, batch_constant<uint64_t, A, V0, V1>, requires_arch<avx_128>) noexcept
         {
-            return _mm_permute_pd(self, detail::mod_shuffle(V0, V1));
+            constexpr auto mask = detail::mod_shuffle(V0, V1);
+            return _mm_permute_pd(self, mask);
         }
 
     }

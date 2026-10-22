@@ -973,7 +973,7 @@ async function extractMonitorPageContent(
 ) {
   throwIfAborted(signal);
   const results = await withAbortSignal(
-    lazy.GetPageContent.getPageContentResults(
+    lazy.GetPageContent.getPageContent(
       { url_list: urls, signal },
       conversation
     ),

@@ -9,7 +9,7 @@ import { thompsonSampleSort } from "resource://newtab/lib/SmartShortcutsRanker/T
  *
  * @param {number[]} hist Defines histogram of counts
  * @param {number} t Time/Index we are interpolating to
- * @returns {normed: number} Normalized number
+ * @returns {number} Normalized number
  */
 export function interpolateWrappedHistogram(hist, t) {
   if (!hist.length) {
@@ -95,8 +95,8 @@ export function sumNorm(vec) {
  * over a feature, this is stored in the shortcut cache
  *
  * @param {number[]} vals scores to normalize
- * @param {object} normobj Dictionary of storing info for running mean var
- * @returns {[number, obj]} normalized features and the updated object
+ * @param {object} input_normobj Dictionary of storing info for running mean var
+ * @returns {[number, object]} normalized features and the updated object
  */
 export function normUpdate(vals, input_normobj) {
   if (!vals.length) {

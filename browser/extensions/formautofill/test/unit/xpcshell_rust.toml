@@ -30,6 +30,3 @@ prefs = [
 ]
 
 ["test_getRecords.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1729554
-]

@@ -67,6 +67,16 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
     if (mFlags.CameFromAnotherProcess()) {
       return true;
     }
+    if (ShouldBeDispatchedByTextEventDispatcher()) {
+      // The commands which related to text editing must be dispatched by
+      // TextEventDispatcher.
+      return mDispatchedByTextEventDispatcher;
+    }
+    // The other events can be dispatched by widget directly.
+    return true;
+  }
+
+  [[nodiscard]] bool ShouldBeDispatchedByTextEventDispatcher() const {
     switch (mMessage) {
       case eContentCommandCut:
       case eContentCommandCopy:
@@ -77,12 +87,9 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
       case eContentCommandInsertText:
       case eContentCommandReplaceText:
       case eContentCommandPasteTransferable:
-        // The commands which related to text editing must be dispatched by
-        // TextEventDispatcher.
-        return mDispatchedByTextEventDispatcher;
-      default:
-        // The other events can be dispatched by widget directly.
         return true;
+      default:
+        return false;
     }
   }
 

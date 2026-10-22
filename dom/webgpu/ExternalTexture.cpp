@@ -1204,7 +1204,6 @@ ExternalTextureSourceHost::GetExternalTextureDescriptor(
 }
 
 bool ExternalTextureSourceHost::OnBeforeQueueSubmit(WebGPUParent* aParent,
-                                                    RawId aDeviceId,
                                                     RawId aQueueId) {
 #if defined(XP_WIN)
   // Wait on the write fence provided by the decoder, if any, to ensure we don't
@@ -1225,8 +1224,8 @@ bool ExternalTextureSourceHost::OnBeforeQueueSubmit(WebGPUParent* aParent,
     if (fenceHandle) {
       const bool success =
           ffi::wgpu_server_device_wait_fence_from_shared_handle(
-              aParent->GetContext(), aDeviceId, aQueueId,
-              fenceHandle->GetHandle(), fenceValue);
+              aParent->GetContext(), aQueueId, fenceHandle->GetHandle(),
+              fenceValue);
       if (success) {
         // No need to wait next time
         mFenceId.reset();

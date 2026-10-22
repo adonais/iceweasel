@@ -6,6 +6,9 @@
 const { AboutNewTab } = ChromeUtils.importESModule(
   "resource:///modules/AboutNewTab.sys.mjs"
 );
+const { NewTabUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/NewTabUtils.sys.mjs"
+);
 const { UrlbarProviderTopSites } = ChromeUtils.importESModule(
   "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs"
 );
@@ -58,6 +61,7 @@ add_task(async function noTrailingSlash() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.HISTORY,
@@ -110,6 +114,7 @@ add_task(async function redirectChain() {
         uri: PINNED_URL,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.HISTORY,
@@ -145,6 +150,7 @@ add_task(async function history() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.HISTORY,
@@ -166,6 +172,7 @@ add_task(async function history() {
         uri: url,
         isPinned: true,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         iconUri: "page-icon:" + url,
         providerName: UrlbarProviderTopSites.name,
@@ -186,6 +193,7 @@ add_task(async function history() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.HISTORY,
@@ -278,6 +286,7 @@ add_task(async function visitedBookmark() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -299,6 +308,7 @@ add_task(async function visitedBookmark() {
         uri: url,
         isPinned: true,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -319,6 +329,7 @@ add_task(async function visitedBookmark() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -386,6 +397,7 @@ add_task(async function visitedBookmark() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.HISTORY,
@@ -426,6 +438,7 @@ add_task(async function unvisitedBookmark() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -447,6 +460,7 @@ add_task(async function unvisitedBookmark() {
         uri: url,
         isPinned: true,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -466,6 +480,7 @@ add_task(async function unvisitedBookmark() {
         uri: url,
         isPinned: false,
         isSponsored: false,
+        isBlockable: true,
         tags: null,
         providerName: UrlbarProviderTopSites.name,
         source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -623,5 +638,249 @@ async function doTest({ topSite, makeExpectedResult }) {
     matches: expectedResult ? [expectedResult] : [],
   });
 
+  sandbox.restore();
+}
+
+add_task(async function historyDismiss() {
+  let topSite = makeTopSiteData({
+    url: "https://example.org/history",
+    type: "history",
+  });
+  await PlacesTestUtils.addVisits(topSite.url);
+
+  await doDismissalTest({
+    topSite,
+    selType: "dismiss",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
+      topSite,
+      isBlockable: true,
+    }),
+    expectResultRemoval: true,
+    expectTopSiteRemoval: true,
+    expectVisitRemoval: false,
+  });
+
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function historyRemoval() {
+  let topSite = makeTopSiteData({
+    url: "https://example.org/history",
+    type: "history",
+  });
+  await PlacesTestUtils.addVisits(topSite.url);
+
+  await doDismissalTest({
+    topSite,
+    selType: "remove_history",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
+      topSite,
+      isBlockable: true,
+    }),
+    expectResultRemoval: true,
+    expectTopSiteRemoval: false,
+    expectVisitRemoval: true,
+  });
+
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function bookmarkDismiss() {
+  let topSite = makeTopSiteData({
+    url: "https://example.org/bookmark",
+    type: "history",
+  });
+  await PlacesTestUtils.addVisits(topSite.url);
+  await PlacesTestUtils.addBookmarkWithDetails({ uri: topSite.url });
+
+  await doDismissalTest({
+    topSite,
+    selType: "dismiss",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+      topSite,
+      isBlockable: true,
+    }),
+    expectResultRemoval: true,
+    expectTopSiteRemoval: true,
+    expectVisitRemoval: false,
+  });
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function bookmarkRemoval() {
+  let topSite = makeTopSiteData({
+    url: "https://example.org/bookmark",
+    type: "history",
+  });
+  await PlacesTestUtils.addVisits(topSite.url);
+  await PlacesTestUtils.addBookmarkWithDetails({ uri: topSite.url });
+
+  await doDismissalTest({
+    topSite,
+    selType: "remove_history",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
+      topSite,
+      isBlockable: true,
+    }),
+    expectResultRemoval: true,
+    expectTopSiteRemoval: false,
+    expectVisitRemoval: true,
+  });
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function otherDismiss() {
+  let topSite = makeTopSiteData({
+    url: "https://example.org/other",
+  });
+  await PlacesTestUtils.addVisits(topSite.url);
+
+  await doDismissalTest({
+    topSite,
+    selType: "dismiss",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+      topSite,
+    }),
+    expectResultRemoval: false,
+    expectTopSiteRemoval: false,
+    expectVisitRemoval: false,
+  });
+
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function otherRemoval() {
+  let topSite = makeTopSiteData({ url: "https://example.org/other" });
+  await PlacesTestUtils.addVisits(topSite.url);
+
+  await doDismissalTest({
+    topSite,
+    selType: "remove_history",
+    expectedResult: makeResult({
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+      topSite,
+    }),
+    expectResultRemoval: false,
+    expectTopSiteRemoval: false,
+    expectVisitRemoval: false,
+  });
+
+  await PlacesUtils.history.clear();
+});
+
+function makeTopSiteData({ url, type }) {
+  return {
+    url,
+    title: "test",
+    favicon: "page-icon:" + url,
+    type,
+  };
+}
+
+function makeResult({ source, topSite, isBlockable = undefined }) {
+  return new UrlbarResult({
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source,
+    heuristic: false,
+    payload: {
+      url: topSite.url,
+      title: topSite.title,
+      icon: topSite.favicon,
+      isBlockable,
+      isPinned: false,
+      isSponsored: false,
+    },
+  });
+}
+
+async function doDismissalTest({
+  topSite,
+  selType,
+  expectedResult,
+  expectResultRemoval,
+  expectTopSiteRemoval,
+  expectVisitRemoval,
+}) {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(AboutNewTab, "getTopSites").returns([topSite]);
+
+  let context = createContext("", {
+    providers: [UrlbarProviderTopSites.name],
+    isPrivate: false,
+  });
+
+  await check_results({
+    context,
+    matches: [expectedResult],
+  });
+
+  let result = context.results[0];
+  if (expectResultRemoval) {
+    Assert.deepEqual(
+      result.commands,
+      [
+        {
+          name: "dismiss",
+          l10n: { id: "urlbar-result-menu-remove-top-site" },
+        },
+        {
+          name: "remove_history",
+          l10n: { id: "urlbar-result-menu-remove-from-history2" },
+        },
+      ],
+      "The result commands are correct"
+    );
+  } else {
+    Assert.ok(!result.commands, "There are no the result commands expectedly");
+  }
+
+  let childController = UrlbarTestUtils.mockChildController();
+  childController.setView({ clearTopSitesCache() {} });
+  let controller = childController.parentController;
+  let removeResultStub = sinon.stub(controller, "removeResult");
+
+  let provider = ProvidersManager.getInstanceForSap("urlbar").getProvider(
+    result.providerName
+  );
+  await provider.onEngagement(context, controller, { result, selType });
+
+  if (expectResultRemoval) {
+    Assert.ok(
+      removeResultStub.calledOnceWithExactly(result),
+      "The dismissed result should be passed to removeResult()"
+    );
+  } else {
+    Assert.ok(removeResultStub.notCalled, "The result should not be removed");
+  }
+
+  if (expectVisitRemoval) {
+    await TestUtils.waitForCondition(
+      async () => !(await PlacesUtils.history.hasVisits(topSite.url)),
+      "Waiting for the visits to be removed"
+    );
+  } else {
+    await PlacesTestUtils.promiseAsyncUpdates();
+    Assert.ok(
+      await PlacesUtils.history.hasVisits(topSite.url),
+      "The visits should be kept"
+    );
+  }
+
+  Assert.equal(
+    NewTabUtils.blockedLinks.isBlocked({ url: topSite.url }),
+    expectTopSiteRemoval,
+    "The top site should be removed only when expected"
+  );
+
+  NewTabUtils.blockedLinks.unblock({ url: topSite.url });
   sandbox.restore();
 }

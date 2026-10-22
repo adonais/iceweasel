@@ -20,17 +20,7 @@ newtab-unit-tests:
     description: newtab unit tests
     treeherder:
         symbol: node(newtab)
-    require-build:
-        by-project:
-            autoland:
-                linux2404-64/opt: build-linux64/opt
-            try:
-                linux2404-64/opt: build-linux64/opt
-            default:
-                linux2404-64/opt: build-linux64-shippable/opt
     fetches:
-        build:
-            - target.tar.xz
         toolchain:
             - linux64-node
             - node-modules
@@ -41,7 +31,7 @@ newtab-unit-tests:
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
             cd /builds/worker/checkouts/gecko/browser/extensions/newtab &&
             cp -r $MOZ_FETCHES_DIR/newtab/node_modules node_modules &&
-            FIREFOX_BIN=$MOZ_FETCHES_DIR/firefox/firefox PATH=$PATH:$MOZ_FETCHES_DIR/node/bin node bin/try-runner.js
+            PATH=$PATH:$MOZ_FETCHES_DIR/node/bin node bin/try-runner.js
     when:
         files-changed:
             - "browser/extensions/newtab/**"
@@ -57,15 +47,7 @@ newtab-unit-tests-ccov:
             - name: public/code-coverage-grcov.zip
               path: /builds/worker/checkouts/gecko/browser/extensions/newtab/logs/coverage/code-coverage-grcov.zip
               type: file
-    require-build:
-        by-project:
-            try:
-                linux2404-64/opt: build-linux64/opt
-            default:
-                linux2404-64/opt: build-linux64-shippable/opt
     fetches:
-        build:
-            - target.tar.xz
         toolchain:
             - linux64-node
             - node-modules
@@ -76,7 +58,7 @@ newtab-unit-tests-ccov:
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
             cd /builds/worker/checkouts/gecko/browser/extensions/newtab &&
             cp -r $MOZ_FETCHES_DIR/newtab/node_modules node_modules &&
-            FIREFOX_BIN=$MOZ_FETCHES_DIR/firefox/firefox PATH=$PATH:$MOZ_FETCHES_DIR/node/bin node bin/try-runner.js
+            PATH=$PATH:$MOZ_FETCHES_DIR/node/bin node bin/try-runner.js
     # This should only run on mozilla-central, as the bot will only parse mozilla-central
     # coverage anyways.
     run-on-projects: ["mozilla-central"]

@@ -145,7 +145,7 @@ describe("<Lists>", () => {
       container
         .querySelector("moz-button.lists-panel-button")
         .getAttribute("data-l10n-id")
-    ).toBe("newtab-widget-lists-menu-button");
+    ).toBe("newtab-widget-lists-open-menu-button");
     expect(
       container
         .querySelector(".task-item moz-button")

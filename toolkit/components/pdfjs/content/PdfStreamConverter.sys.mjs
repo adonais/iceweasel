@@ -710,6 +710,7 @@ class ChromeActions {
       blobUrl,
       originalUrl,
       filename,
+      isModified: data.isModified === true,
     });
   }
 

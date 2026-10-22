@@ -2,8 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-box-group.tagmap.d.ts" />
+
 import { html, ifDefined, staticHtml, literal } from "../vendor/lit.all.mjs";
-import { MozLitElement } from "../lit-utils.mjs";
+import { MozLitElement, hasModifierKey } from "../lit-utils.mjs";
+import { MozBoxItem } from "chrome://global/content/elements/moz-box-item.mjs";
 
 export const GROUP_TYPES = {
   list: "list",
@@ -34,7 +37,7 @@ export const GROUP_TYPES = {
  *  cross the shadow boundary.
  */
 
-export default class MozBoxGroup extends MozLitElement {
+export class MozBoxGroup extends MozLitElement {
   #tabbable = true;
 
   static properties = {
@@ -262,7 +265,7 @@ export default class MozBoxGroup extends MozLitElement {
 
     // Plain arrows are for navigation between rows. Any modifier
     // means this isn't a navigation key.
-    if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) {
+    if (hasModifierKey(event)) {
       return;
     }
 
@@ -283,16 +286,28 @@ export default class MozBoxGroup extends MozLitElement {
       case "ArrowDown": {
         event.preventDefault();
         let nextItem = allItems[currentPosition + 1];
-        nextItem?.focus(event);
+        this.#focusItem(nextItem, event);
         break;
       }
       case "Up":
       case "ArrowUp": {
         event.preventDefault();
         let prevItem = allItems[currentPosition - 1];
-        prevItem?.focus(event);
+        this.#focusItem(prevItem, event);
         break;
       }
+    }
+  }
+
+  /**
+   * @param {Element | undefined} item
+   * @param {KeyboardEvent} event
+   */
+  #focusItem(item, event) {
+    if (item instanceof MozBoxItem) {
+      item.focusFromEvent(event);
+    } else if (item instanceof HTMLElement) {
+      item.focus();
     }
   }
 

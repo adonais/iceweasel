@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 // Tests the `quick-suggest` ping using only offline (remote settings)
-// suggestions.
+// suggestions. This ping is recorded only for AMP suggestions.
 
 "use strict";
 
@@ -10,6 +10,8 @@ const SUGGESTION = QuickSuggestTestUtils.ampRemoteSettings();
 
 const index = 1;
 const position = index + 1;
+const advertiser = SUGGESTION.advertiser.toLowerCase();
+const source = "rust";
 
 // Trying to avoid timeouts in TV mode.
 requestLongerTimeout(3);
@@ -30,10 +32,8 @@ add_setup(async function () {
   });
 });
 
-add_task(async function amp() {
+add_task(async function basic() {
   let matchType = "firefox-suggest";
-  let advertiser = SUGGESTION.advertiser.toLowerCase();
-  let source = "rust";
 
   // Make sure `improveSuggestExperience` is recorded correctly.
   for (let onlineAvailable of [false, true]) {
@@ -63,6 +63,8 @@ add_task(async function amp() {
           isClicked: false,
           reportingUrl: SUGGESTION.impression_url,
           suggestionId: SUGGESTION.suggestion_id,
+          experimentName: "",
+          experimentBranch: "",
         },
         click: [
           {
@@ -80,6 +82,8 @@ add_task(async function amp() {
             isClicked: true,
             reportingUrl: SUGGESTION.impression_url,
             suggestionId: SUGGESTION.suggestion_id,
+            experimentName: "",
+            experimentBranch: "",
           },
           {
             pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
@@ -95,6 +99,8 @@ add_task(async function amp() {
             contextId: "",
             reportingUrl: SUGGESTION.click_url,
             suggestionId: SUGGESTION.suggestion_id,
+            experimentName: "",
+            experimentBranch: "",
           },
         ],
         commands: [
@@ -116,6 +122,8 @@ add_task(async function amp() {
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
                 suggestionId: SUGGESTION.suggestion_id,
+                experimentName: "",
+                experimentBranch: "",
               },
               {
                 pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
@@ -131,6 +139,8 @@ add_task(async function amp() {
                 contextId: "",
                 iabCategory: SUGGESTION.iab_category,
                 suggestionId: SUGGESTION.suggestion_id,
+                experimentName: "",
+                experimentBranch: "",
               },
             ],
           },
@@ -152,6 +162,8 @@ add_task(async function amp() {
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
                 suggestionId: SUGGESTION.suggestion_id,
+                experimentName: "",
+                experimentBranch: "",
               },
             ],
           },
@@ -165,8 +177,6 @@ add_task(async function amp() {
 // higher-placement sponsored, a.k.a sponsored priority, sponsored best match
 add_task(async function sponsoredBestMatch() {
   let matchType = "best-match";
-  let advertiser = SUGGESTION.advertiser.toLowerCase();
-  let source = "rust";
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.quicksuggest.sponsoredPriority", true]],
@@ -189,6 +199,8 @@ add_task(async function sponsoredBestMatch() {
       isClicked: false,
       reportingUrl: SUGGESTION.impression_url,
       suggestionId: SUGGESTION.suggestion_id,
+      experimentName: "",
+      experimentBranch: "",
     },
     click: [
       {
@@ -206,6 +218,8 @@ add_task(async function sponsoredBestMatch() {
         isClicked: true,
         reportingUrl: SUGGESTION.impression_url,
         suggestionId: SUGGESTION.suggestion_id,
+        experimentName: "",
+        experimentBranch: "",
       },
       {
         pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
@@ -221,6 +235,8 @@ add_task(async function sponsoredBestMatch() {
         contextId: "",
         reportingUrl: SUGGESTION.click_url,
         suggestionId: SUGGESTION.suggestion_id,
+        experimentName: "",
+        experimentBranch: "",
       },
     ],
     commands: [
@@ -242,6 +258,8 @@ add_task(async function sponsoredBestMatch() {
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
             suggestionId: SUGGESTION.suggestion_id,
+            experimentName: "",
+            experimentBranch: "",
           },
           {
             pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
@@ -257,6 +275,8 @@ add_task(async function sponsoredBestMatch() {
             contextId: "",
             iabCategory: SUGGESTION.iab_category,
             suggestionId: SUGGESTION.suggestion_id,
+            experimentName: "",
+            experimentBranch: "",
           },
         ],
       },
@@ -278,6 +298,8 @@ add_task(async function sponsoredBestMatch() {
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
             suggestionId: SUGGESTION.suggestion_id,
+            experimentName: "",
+            experimentBranch: "",
           },
         ],
       },
@@ -285,3 +307,165 @@ add_task(async function sponsoredBestMatch() {
   });
   await SpecialPowers.popPrefEnv();
 });
+
+// The ping should record the name (slug) and branch of the active `urlbar`
+// Nimbus experiment or rollout.
+add_task(async function nimbus_experiment_treatment() {
+  await doNimbusTest({
+    isRollout: false,
+    slug: "test-ping-offline-experiment",
+    branchSlug: "treatment",
+  });
+});
+
+add_task(async function nimbus_experiment_control() {
+  await doNimbusTest({
+    isRollout: false,
+    slug: "test-ping-offline-experiment",
+    branchSlug: "control",
+  });
+});
+
+add_task(async function nimbus_rollout() {
+  await doNimbusTest({
+    isRollout: true,
+    slug: "test-ping-offline-rollout",
+    branchSlug: "control",
+  });
+});
+
+async function doNimbusTest({ isRollout, slug, branchSlug }) {
+  let matchType = "firefox-suggest";
+
+  let nimbusCleanup = await UrlbarTestUtils.initNimbusFeature(
+    {},
+    { isRollout, slug, branchSlug }
+  );
+
+  await doQuickSuggestPingTest({
+    index,
+    suggestion: SUGGESTION,
+    impressionOnly: {
+      pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
+      matchType,
+      advertiser,
+      blockId: SUGGESTION.id.toString(),
+      improveSuggestExperience: false,
+      position,
+      suggestedIndex: "-1",
+      suggestedIndexRelativeToGroup: true,
+      requestId: undefined,
+      source,
+      contextId: "",
+      isClicked: false,
+      reportingUrl: SUGGESTION.impression_url,
+      suggestionId: SUGGESTION.suggestion_id,
+      experimentName: slug,
+      experimentBranch: branchSlug,
+    },
+    click: [
+      {
+        pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
+        matchType,
+        advertiser,
+        blockId: SUGGESTION.id.toString(),
+        improveSuggestExperience: false,
+        position,
+        suggestedIndex: "-1",
+        suggestedIndexRelativeToGroup: true,
+        requestId: undefined,
+        source,
+        contextId: "",
+        isClicked: true,
+        reportingUrl: SUGGESTION.impression_url,
+        suggestionId: SUGGESTION.suggestion_id,
+        experimentName: slug,
+        experimentBranch: branchSlug,
+      },
+      {
+        pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
+        matchType,
+        advertiser,
+        blockId: SUGGESTION.id.toString(),
+        improveSuggestExperience: false,
+        position,
+        suggestedIndex: "-1",
+        suggestedIndexRelativeToGroup: true,
+        requestId: undefined,
+        source,
+        contextId: "",
+        reportingUrl: SUGGESTION.click_url,
+        suggestionId: SUGGESTION.suggestion_id,
+        experimentName: slug,
+        experimentBranch: branchSlug,
+      },
+    ],
+    commands: [
+      {
+        command: "dismiss",
+        pings: [
+          {
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
+            matchType,
+            advertiser,
+            blockId: SUGGESTION.id.toString(),
+            improveSuggestExperience: false,
+            position,
+            suggestedIndex: "-1",
+            suggestedIndexRelativeToGroup: true,
+            requestId: undefined,
+            source,
+            contextId: "",
+            isClicked: false,
+            reportingUrl: SUGGESTION.impression_url,
+            suggestionId: SUGGESTION.suggestion_id,
+            experimentName: slug,
+            experimentBranch: branchSlug,
+          },
+          {
+            pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
+            matchType,
+            advertiser,
+            blockId: SUGGESTION.id.toString(),
+            improveSuggestExperience: false,
+            position,
+            suggestedIndex: "-1",
+            suggestedIndexRelativeToGroup: true,
+            requestId: undefined,
+            source,
+            contextId: "",
+            iabCategory: SUGGESTION.iab_category,
+            suggestionId: SUGGESTION.suggestion_id,
+            experimentName: slug,
+            experimentBranch: branchSlug,
+          },
+        ],
+      },
+      {
+        command: "manage",
+        pings: [
+          {
+            pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
+            matchType,
+            advertiser,
+            blockId: SUGGESTION.id.toString(),
+            improveSuggestExperience: false,
+            position,
+            suggestedIndex: "-1",
+            suggestedIndexRelativeToGroup: true,
+            requestId: undefined,
+            source,
+            contextId: "",
+            isClicked: false,
+            reportingUrl: SUGGESTION.impression_url,
+            suggestionId: SUGGESTION.suggestion_id,
+            experimentName: slug,
+            experimentBranch: branchSlug,
+          },
+        ],
+      },
+    ],
+  });
+
+  await nimbusCleanup();
+}

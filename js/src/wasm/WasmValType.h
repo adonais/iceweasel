@@ -850,7 +850,7 @@ class PackedType : public T {
     }
 #endif
 #ifdef ENABLE_WASM_JSPI
-    if (isContRef() || isNoCont()) {
+    if (isRefType() && refType().isContHierarchy()) {
       return false;
     }
 #endif

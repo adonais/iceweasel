@@ -18,8 +18,6 @@ config = {
         "XPCOM_DEBUG_BREAK": "stack-and-abort",
         "TINDERBOX_OUTPUT": "1",
     },
-    "app_name": "tools/rusttests",
-    "mozconfig_variant": "rusttests",
     "disable_package_metrics": True,
     #######################
 }

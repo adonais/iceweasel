@@ -108,7 +108,7 @@ export var UsageReporting = {
       Glean.usage.appDisplayVersion.set(lazy.ClientEnvironmentBase.version);
       Glean.usage.appChannel.set(lazy.ClientEnvironmentBase.channel);
       Glean.usage.isDefaultBrowser.set(
-        lazy.ClientEnvironmentBase.isDefaultBrowser
+        await lazy.ClientEnvironmentBase.isDefaultBrowser
       );
       Glean.usage.distributionId.set(lazy.ClientEnvironmentBase.distribution);
       // Get profile firstUse (ms) and convert to µs for recording

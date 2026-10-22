@@ -7,8 +7,12 @@
 def GenerateWebCompatAddonFiles(preprocessed_interventions, relsrcpath="", outpath=""):
     GeneratedFile(
         outpath + "run.js",
+        *[
+            f"{outpath}injections/generated/{generated_filename}"
+            for generated_filename in preprocessed_interventions
+        ],
         script=relsrcpath + "codegen.py",
-        entry_point="generate_run_js",
+        entry_point="generate_run_js_and_files",
         inputs=[
             relsrcpath + "run.js",
             relsrcpath + "data/interventions",
@@ -16,14 +20,3 @@ def GenerateWebCompatAddonFiles(preprocessed_interventions, relsrcpath="", outpa
         ],
         flags=preprocessed_interventions,
     )
-
-    for generated_filename in preprocessed_interventions:
-        GeneratedFile(
-            f"{outpath}injections/generated/{generated_filename}",
-            script=relsrcpath + "codegen.py",
-            entry_point=f"generate_file",
-            inputs=[
-                f"{relsrcpath}data/interventions",
-                relsrcpath + "codegen.py",
-            ],
-        )

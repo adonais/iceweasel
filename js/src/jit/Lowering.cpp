@@ -1191,7 +1191,7 @@ void LIRGenerator::visitTest(MTest* test) {
 
 #if defined(ENABLE_JIT_SIMD) &&                            \
     (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
-     defined(JS_CODEGEN_ARM64))
+     defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64))
   // Check if the operand for this test is an any_true/all_true SIMD operation.
   // If it is, we want to emit an LWasmReduceAndBranchSimd128 node to avoid
   // generating an intermediate boolean result.
@@ -1656,6 +1656,9 @@ void LIRGenerator::lowerBitOp(JSOp op, MBinaryInstruction* ins) {
     MOZ_ASSERT(lhs->type() == MIRType::Int32);
     MOZ_ASSERT(rhs->type() == MIRType::Int32);
     ReorderCommutative(&lhs, &rhs, ins);
+    if (lowerForALUWithShiftedOperand(op, ins, lhs, rhs)) {
+      return;
+    }
     lowerForALU(new (alloc()) LBitOpI(op), ins, lhs, rhs);
     return;
   }
@@ -2317,6 +2320,9 @@ void LIRGenerator::visitAdd(MAdd* ins) {
   if (ins->type() == MIRType::Int32) {
     MOZ_ASSERT(lhs->type() == MIRType::Int32);
     ReorderCommutative(&lhs, &rhs, ins);
+    if (lowerForALUWithShiftedOperand(JSOp::Add, ins, lhs, rhs)) {
+      return;
+    }
     LAddI* lir = new (alloc()) LAddI;
 
     if (ins->fallible()) {
@@ -2380,6 +2386,9 @@ void LIRGenerator::visitSub(MSub* ins) {
       return;
     }
 
+    if (lowerForALUWithShiftedOperand(JSOp::Sub, ins, lhs, rhs)) {
+      return;
+    }
     LSubI* lir = new (alloc()) LSubI;
     if (ins->fallible()) {
       assignSnapshot(lir, ins->bailoutKind());

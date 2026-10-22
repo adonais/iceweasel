@@ -572,9 +572,9 @@ class TextEditor final : public EditorBase,
   HandlePasteAsQuotation(AutoEditActionDataSetter& aEditActionData,
                          nsIClipboard::ClipboardType aClipboardType,
                          DataTransfer* aDataTransfer) final;
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandlePasteTransferable(AutoEditActionDataSetter& aEditActionData,
-                          nsITransferable& aTransferable) final;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandlePasteTransferable(
+      AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable,
+      DataTransfer* aDataTransfer) final;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) final;

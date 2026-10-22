@@ -625,7 +625,7 @@ export var DownloadIntegration = {
               // Use the path to the part-file if a part file is involved.
               // We haven't moved it yet.
               filePath: download.target.partFilePath || download.target.path,
-              sha256Digest: download.saver.getSha256Hash(),
+              sha256Digest: download.saver.getSha256HashHex(),
             }
           ),
         ],

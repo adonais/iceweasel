@@ -105,6 +105,7 @@ UPLOAD_FILES= \
   $(call QUOTED_WILDCARD,$(topobjdir)/$(MOZ_BUILD_APP)/installer/windows/instgen/setup-stub.exe) \
   $(call QUOTED_WILDCARD,$(topsrcdir)/toolchains.json) \
   $(call QUOTED_WILDCARD,$(topobjdir)/sbom.json) \
+  $(call QUOTED_WILDCARD,$(topobjdir)/sbom-build-tooling.json) \
   $(call QUOTED_WILDCARD,$(topobjdir)/config.status) \
   $(call QUOTED_WILDCARD,$(topobjdir)/licenses.json) \
   $(if $(UPLOAD_EXTRA_FILES), $(foreach f, $(UPLOAD_EXTRA_FILES), $(wildcard $(DIST)/$(f))))

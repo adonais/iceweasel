@@ -11,6 +11,10 @@ const { SecurityProperties } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
 );
 
+const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
+);
+
 const { getRemoteClient } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
@@ -175,4 +179,59 @@ add_task(async function test_renders_selected_tabs_without_current_tab() {
   } finally {
     await mentionedTab.cleanup();
   }
+});
+
+add_task(async function test_renders_tab_group_members_under_their_group() {
+  const out = await buildBrowserContextPrompt("generic", {
+    contextMentions: [
+      { type: "tabGroup", groupId: "group-id", label: "Group label" },
+      {
+        type: "tab",
+        url: "https://example.com/ungrouped",
+        label: "Ungrouped tab",
+      },
+      {
+        type: "tab",
+        url: "https://example.com/member",
+        label: "Member tab",
+        groupId: "group-id",
+        groupLabel: "Group label",
+      },
+    ],
+    securityProperties: new SecurityProperties(),
+  });
+
+  Assert.ok(
+    out.includes(
+      `- Tab group: ${sanitizeUntrustedContent("Group label")}\n` +
+        `  - URL: https://example.com/member\n` +
+        `    Title: ${sanitizeUntrustedContent("Member tab")}`
+    ),
+    "A group member is nested under its sanitized group label"
+  );
+  Assert.ok(
+    out.includes(`\n- URL: https://example.com/ungrouped`),
+    "A mention without a group is not indented"
+  );
+  Assert.ok(!out.includes("group-id"), "The group id does not reach the model");
+});
+
+add_task(async function test_renders_an_unnamed_tab_group() {
+  const out = await buildBrowserContextPrompt("generic", {
+    contextMentions: [
+      {
+        type: "tab",
+        url: "https://example.com/member",
+        label: "Member tab",
+        groupId: "group-id",
+        groupLabel: "",
+      },
+    ],
+    securityProperties: new SecurityProperties(),
+  });
+
+  Assert.ok(
+    out.includes(`- Tab group\n  - URL: https://example.com/member`),
+    "An unnamed group is rendered without a label"
+  );
 });

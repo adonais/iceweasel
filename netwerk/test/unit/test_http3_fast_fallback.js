@@ -1162,3 +1162,69 @@ add_task(
     });
   }
 );
+
+// When the http3 backup timer fires, the transaction must be dispatched on the
+// backup connection it just established instead of opening another one.
+add_task(async function testH3BackupTimerReusesBackupConnection() {
+  const host = "test.backup_reuse.org";
+
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  Services.obs.notifyObservers(null, "network:reset-http3-excluded-list");
+  Services.dns.clearCache(true);
+
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
+  Services.prefs.clearUserPref(
+    "network.http.max-persistent-connections-per-server"
+  );
+  Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", false);
+  Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", false);
+  Services.prefs.setBoolPref("network.http.http3.enable", true);
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+  Services.prefs.clearUserPref(
+    "network.http.http3.parallel_fallback_conn_limit"
+  );
+  Services.prefs.setIntPref("network.http.http3.backup_timer_delay", 100);
+  Services.prefs.setIntPref("network.trr.mode", 3);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${trrServer.port()}/dns-query`
+  );
+  Services.prefs.setCharPref(
+    "network.http.http3.alt-svc-mapping-for-testing",
+    `${host};h3=:${h3Port}`
+  );
+
+  await trrServer.registerDoHAnswers(host, "A", {
+    answers: [
+      {
+        name: host,
+        ttl: 55,
+        type: "A",
+        flush: false,
+        data: "127.0.0.1",
+      },
+    ],
+  });
+
+  // Resolve up front so the DoH connection is not counted below.
+  await new TRRDNSListener(host, { expectedAnswer: "127.0.0.1" });
+
+  let sessionsBefore = await trrServer.sessionCount();
+
+  let chan = makeChan(`https://${host}:${h2Port}/server-timing`);
+  let [req] = await channelOpenPromise(chan);
+  Assert.equal(req.protocolVersion, "h2");
+  let internal = req.QueryInterface(Ci.nsIHttpChannelInternal);
+  Assert.equal(internal.remotePort, h2Port);
+
+  let sessionsAfter = await trrServer.sessionCount();
+  Assert.equal(
+    sessionsAfter - sessionsBefore,
+    1,
+    "the transaction was dispatched on the backup connection"
+  );
+
+  Services.prefs.clearUserPref(
+    "network.http.http3.alt-svc-mapping-for-testing"
+  );
+});

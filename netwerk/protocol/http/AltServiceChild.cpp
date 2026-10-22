@@ -56,7 +56,7 @@ void AltServiceChild::ClearHostMapping(nsHttpConnectionInfo* aCi) {
   LOG(("AltServiceChild::ClearHostMapping ci=%s", aCi->HashKey().get()));
   MOZ_ASSERT(aCi);
 
-  RefPtr<nsHttpConnectionInfo> ci = aCi->Clone();
+  RefPtr<nsHttpConnectionInfo> ci = aCi;
   auto task = [ci{std::move(ci)}]() {
     if (!EnsureAltServiceChild()) {
       return;

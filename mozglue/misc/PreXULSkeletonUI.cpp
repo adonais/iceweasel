@@ -1554,8 +1554,8 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
       "new-tab", "new-window",
 
       // To the extent possible, we want to ensure that existing tests cover the
-      // skeleton UI, so we need to allow marionette and its required arguments
-      "marionette", "remote-allow-system-access",
+      // skeleton UI, so we need to allow marionette
+      "marionette",
 
       // These will cause the content area to appear different, but won't
       // meaningfully affect the chrome

@@ -17,6 +17,7 @@
 #include "secasn1.h"
 #include "secasn1t.h"
 #include "secerr.h"
+#include "secitem.h"
 #include "secport.h"
 
 using nss_test::Bytes;
@@ -627,4 +628,121 @@ TEST_F(SECASN1DecodeTest, StreamingDecoderInputSizeLimitCanBeDisabled) {
       ctx, reinterpret_cast<const char*>(kInput), sizeof(kInput));
   EXPECT_EQ(rv, SECSuccess);
   EXPECT_EQ(SECSuccess, SEC_ASN1DecoderFinish(ctx));
+}
+
+// clang-format off
+const unsigned char kNestedConstructedOctetString[] = {
+    0x24, 0x80,             // indefinite-length constructed OCTET STRING
+      0x24, 0x03,           // definite-length constructed OCTET STRING
+        0x04, 0x01, 0x41,
+      0x00, 0x00,
+};
+
+const unsigned char kSplitConstructedOctetString[] = {
+    0x24, 0x80,             // indefinite-length constructed OCTET STRING
+      0x04, 0x01, 0x41,
+      0x04, 0x01, 0x42,
+      0x00, 0x00,
+};
+
+const unsigned char kNestedIndefiniteOctetString[] = {
+    0x24, 0x80,             // indefinite-length constructed OCTET STRING
+      0x24, 0x80,           // indefinite-length constructed OCTET STRING
+        0x04, 0x01, 0x41,
+      0x00, 0x00,
+      0x04, 0x01, 0x42,
+      0x00, 0x00,
+};
+
+const unsigned char kNestedIndefiniteOctetStringWithBadSubstring[] = {
+    0x24, 0x80,             // indefinite-length constructed OCTET STRING
+      0x24, 0x80,           // indefinite-length constructed OCTET STRING
+        0x04, 0x01, 0x41,
+      0x00, 0x00,
+      0x02, 0x01, 0x00,     // INTEGER is not a valid substring
+      0x00, 0x00,
+};
+
+const unsigned char kConstructedOctetStringWithBadSubstring[] = {
+    0x24, 0x80,             // indefinite-length constructed OCTET STRING
+      0x24, 0x03,           // definite-length constructed OCTET STRING
+        0x02, 0x01, 0x00,   // INTEGER is not a valid substring
+      0x00, 0x00,
+};
+// clang-format on
+
+// Decoding without an arena is supported, so the caller owns and frees the
+// output. Anything the decoder leaves behind must therefore be safe to pass to
+// SECITEM_FreeItem, whether the decode succeeded or failed.
+
+TEST_F(SECASN1DecodeTest, NoArenaNestedConstructedOctetString) {
+  SECItem input = {siBuffer,
+                   const_cast<unsigned char*>(kNestedConstructedOctetString),
+                   sizeof(kNestedConstructedOctetString)};
+  SECItem output = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECSuccess,
+            SEC_ASN1DecodeItem(nullptr, &output,
+                               SEC_ASN1_GET(SEC_OctetStringTemplate), &input));
+  EXPECT_EQ(1U, output.len);
+  ASSERT_NE(nullptr, output.data);
+  EXPECT_EQ(0x41, output.data[0]);
+  SECITEM_FreeItem(&output, PR_FALSE);
+}
+
+TEST_F(SECASN1DecodeTest, NoArenaSplitConstructedOctetString) {
+  SECItem input = {siBuffer,
+                   const_cast<unsigned char*>(kSplitConstructedOctetString),
+                   sizeof(kSplitConstructedOctetString)};
+  SECItem output = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECSuccess,
+            SEC_ASN1DecodeItem(nullptr, &output,
+                               SEC_ASN1_GET(SEC_OctetStringTemplate), &input));
+  ASSERT_EQ(2U, output.len);
+  ASSERT_NE(nullptr, output.data);
+  EXPECT_EQ(0x41, output.data[0]);
+  EXPECT_EQ(0x42, output.data[1]);
+  SECITEM_FreeItem(&output, PR_FALSE);
+}
+
+TEST_F(SECASN1DecodeTest, NoArenaNestedIndefiniteOctetString) {
+  SECItem input = {siBuffer,
+                   const_cast<unsigned char*>(kNestedIndefiniteOctetString),
+                   sizeof(kNestedIndefiniteOctetString)};
+  SECItem output = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECSuccess,
+            SEC_ASN1DecodeItem(nullptr, &output,
+                               SEC_ASN1_GET(SEC_OctetStringTemplate), &input));
+  ASSERT_EQ(2U, output.len);
+  ASSERT_NE(nullptr, output.data);
+  EXPECT_EQ(0x41, output.data[0]);
+  EXPECT_EQ(0x42, output.data[1]);
+  SECITEM_FreeItem(&output, PR_FALSE);
+}
+
+TEST_F(SECASN1DecodeTest, NoArenaNestedIndefiniteOctetStringFailure) {
+  SECItem input = {
+      siBuffer,
+      const_cast<unsigned char*>(kNestedIndefiniteOctetStringWithBadSubstring),
+      sizeof(kNestedIndefiniteOctetStringWithBadSubstring)};
+  SECItem output = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECFailure,
+            SEC_ASN1DecodeItem(nullptr, &output,
+                               SEC_ASN1_GET(SEC_OctetStringTemplate), &input));
+  EXPECT_EQ(nullptr, output.data);
+  EXPECT_EQ(0U, output.len);
+  SECITEM_FreeItem(&output, PR_FALSE);
+}
+
+TEST_F(SECASN1DecodeTest, NoArenaConstructedOctetStringFailure) {
+  SECItem input = {
+      siBuffer,
+      const_cast<unsigned char*>(kConstructedOctetStringWithBadSubstring),
+      sizeof(kConstructedOctetStringWithBadSubstring)};
+  SECItem output = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECFailure,
+            SEC_ASN1DecodeItem(nullptr, &output,
+                               SEC_ASN1_GET(SEC_OctetStringTemplate), &input));
+  EXPECT_EQ(nullptr, output.data);
+  EXPECT_EQ(0U, output.len);
+  SECITEM_FreeItem(&output, PR_FALSE);
 }

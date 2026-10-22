@@ -364,6 +364,11 @@ def setup_browsertime(config, tasks):
                     "macosx64-geckodriver",
                     "macosx64-aarch64-node",
                 ],
+                "macosx2700.*": [
+                    "browsertime",
+                    "macosx64-geckodriver",
+                    "macosx64-aarch64-node",
+                ],
                 "windows.*aarch64.*": [
                     "browsertime",
                     "win32-geckodriver",
@@ -385,6 +390,7 @@ def setup_browsertime(config, tasks):
                 "macosx1470.*": ["mac64-ffmpeg-7.1"],
                 "macosx1400.*": ["mac64-ffmpeg-7.1"],
                 "macosx1500.*": ["mac64-ffmpeg-7.1"],
+                "macosx2700.*": ["mac64-ffmpeg-7.1"],
                 "windows.*aarch64.*": ["win64-ffmpeg-7.1"],
                 "windows.*-64.*": ["win64-ffmpeg-7.1"],
             },
@@ -655,6 +661,11 @@ def handle_tier(config, tasks):
     """Set the tier based on policy for all test descriptions that do not
     specify a tier otherwise."""
     for task in tasks:
+        if "-appservices/" in task["test-platform"]:
+            task["tier"] = 3
+            yield task
+            continue
+
         if "tier" in task:
             resolve_keyed_by(
                 task,
@@ -717,7 +728,6 @@ def handle_tier(config, tasks):
                 "android-em-14-x86_64-shippable-lite/opt",
                 "android-em-14-x86_64-lite/opt",
                 "android-em-14-x86_64/debug",
-                "android-em-14-x86_64/debug-isolated-process",
                 "android-em-14-x86-shippable/opt",
                 "android-em-14-x86/opt",
             ]:
@@ -848,7 +858,7 @@ class PlatformSchema(Schema, kw_only=True):
 class BuildSchema(Schema, kw_only=True, forbid_unknown_fields=False):
     """Build configuration schema."""
 
-    type: Literal["opt", "debug", "debug-isolated-process"]
+    type: Literal["opt", "debug"]
     asan: Optional[bool] = None
     ccov: Optional[bool] = None
     clang_trunk: Optional[bool] = None
@@ -1121,10 +1131,11 @@ def add_gecko_profile_symbolication_deps(config, tasks):
 
     for task in tasks:
         extra_options = task.get("mozharness", {}).get("extra-options", [])
-        has_gecko_profile_option = any(
-            "--gecko-profile" in option for option in extra_options
+        has_profiling_option = any(
+            "--gecko-profile" in option or "--extra-profiler-run" in option
+            for option in extra_options
         )
-        gecko_profile = gecko_profile_from_try or has_gecko_profile_option
+        gecko_profile = gecko_profile_from_try or has_profiling_option
 
         if gecko_profile and task["suite"] in ["talos", "raptor"]:
             fetches = task.setdefault("fetches", {})
@@ -1133,10 +1144,12 @@ def add_gecko_profile_symbolication_deps(config, tasks):
             if "profiler-node-tools" not in fetch_toolchains:
                 fetch_toolchains.append("profiler-node-tools")
 
-            symbols_zip = "target.crashreporter-symbols.zip"
-            fetch_builds = fetches.setdefault("build", [])
-            if not any(f.get("artifact") == symbols_zip for f in fetch_builds):
-                fetch_builds.append({"artifact": symbols_zip, "extract": False})
+            # Unless we're running an "external browser" (e.g. Chrome), fetch Firefox symbols.
+            if not is_external_browser(task["try-name"]):
+                symbols_zip = "target.crashreporter-symbols.zip"
+                fetch_builds = fetches.setdefault("build", [])
+                if not any(f.get("artifact") == symbols_zip for f in fetch_builds):
+                    fetch_builds.append({"artifact": symbols_zip, "extract": False})
 
             test_platform = task["test-platform"]
 
@@ -1276,4 +1289,16 @@ def resolve_openh264_version(config, tasks):
                 for key in ("artifact", "dest"):
                     if key in fetch:
                         fetch[key] = fetch[key].format(openh264_version=version)
+        yield task
+
+
+@transforms.add
+def set_perfherder_extra_options(config, tasks):
+    for task in tasks:
+        options = [task["attributes"]["unittest_suite"]]
+        variant = task["attributes"].get("unittest_variant")
+        if variant:
+            options.append(variant)
+        env = task.setdefault("worker", {}).setdefault("env", {})
+        env.setdefault("PERFHERDER_EXTRA_OPTIONS", " ".join(options))
         yield task

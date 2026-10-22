@@ -5,7 +5,7 @@
 import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSwitcher.mjs";
 import { UrlbarChildController } from "chrome://browser/content/urlbar/UrlbarChildController.mjs";
 import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 import { UrlbarQueryContext } from "chrome://browser/content/urlbar/UrlbarQueryContext.mjs";
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
@@ -17,7 +17,8 @@ import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
  * @import { SuggestBackendMerino } from "moz-src:///browser/components/urlbar/private/SuggestBackendMerino.sys.mjs"
  * @import { PartialSearchEngine } from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
  * @import { BrowserSearchTelemetry } from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
- * @import { UrlbarLoadRequest } from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ * @import { UrlbarLoadRequest, LoadURLParams } from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ * @import { UrlbarAutofillData } from "chrome://browser/content/urlbar/UrlbarResult.mjs"
  */
 
 /**
@@ -30,9 +31,9 @@ import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
  * @typedef {object} AutofillPlaceholder
  * @property {string} value
  *   The autofill value.
- * @property {"origin" | "url" | "adaptive_url" | "adaptive_origin"} type
+ * @property {UrlbarAutofillData["type"]} [type]
  *   The autofill type.
- * @property {string} adaptiveHistoryInput
+ * @property {string} [adaptiveHistoryInput]
  *   If the type is "adaptive_url" or "adaptive_origin", this is the matching
  *   input value from adaptive history.
  * @property {number} selectionStart
@@ -41,6 +42,40 @@ import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
  *   The selectionEnd at the time of autofill.
  * @property {string} [untrimmedValue]
  *   The untrimmed value including the protocol.
+ */
+
+/**
+ * A search mode stored by setSearchMode.
+ * Either `engineName`, `source`, or both must be present.
+ *
+ * @typedef {object} SearchMode
+ * @property {string} [engineName]
+ *   The name of a search engine to restrict to.
+ * @property {Values<typeof UrlbarShared.RESULT_SOURCE>} [source]
+ *   A result source to restrict to.
+ * @property {string} entry
+ *   How search mode was entered. This is recorded in event telemetry.
+ *   One of the values in {@link UrlbarShared.SEARCH_MODE_ENTRY}.
+ * @property {boolean} isPreview
+ *   If true, we will preview search mode. Search mode preview does not record
+ *   telemetry and has slighly different UI behavior. The preview is exited in
+ *   favor of full search mode when a query is executed. False should be
+ *   passed if the caller needs to enter search mode but expects it will not
+ *   be interacted with right away.
+ * @property {"keyword" | "symbol"} [restrictType]
+ *   How the user typed the restriction. Set when the mode came from a restrict
+ *   keyword or symbol.
+ * @property {boolean} [isGeneralPurposeEngine]
+ *   Whether the engine is a general-purpose search engine. Set for
+ *   engine search modes.
+ */
+
+/**
+ * Partial SearchMode object used to enter search mode.
+ * `entry` defaults to "other" and `isPreview` to true.
+ * `isGeneralPurposeEngine` is set depending on the search engine.
+ *
+ * @typedef {Partial<Omit<SearchMode, "isGeneralPurposeEngine">>} SearchModeInput
  */
 
 const lazy = typeof ChromeUtils != "undefined" ? {} : null;
@@ -115,14 +150,17 @@ function parseMarkupToFragment(markup) {
   if (doc.documentElement.localName == "parsererror") {
     throw new Error("not well-formed XML");
   }
-  let fragment = doc.documentElement.content;
+  let fragment = /** @type {HTMLTemplateElement} */ (doc.documentElement)
+    .content;
   // The markup is indented, and keeping the whitespace between elements as text
   // nodes changes the accessibility tree the input exposes.
   let walker = doc.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+  /** @type {Text[]} */
   let blank = [];
   while (walker.nextNode()) {
-    if (!walker.currentNode.data.trim()) {
-      blank.push(walker.currentNode);
+    let node = /** @type {Text} */ (walker.currentNode);
+    if (!node.data.trim()) {
+      blank.push(node);
     }
   }
   blank.forEach(node => node.remove());
@@ -130,7 +168,8 @@ function parseMarkupToFragment(markup) {
 }
 
 /**
- * Implements the text input part of the address bar UI.
+ * Implements the text input part of search access points. Each access point
+ * extends this class (e.g. `UrlbarInput`, `SearchbarInput`).
  */
 export class UrlbarInputBase extends HTMLElement {
   static get #markup() {
@@ -192,8 +231,7 @@ ${
       </div>
       <div class="urlbarView"
            popover="manual"
-           role="group"
-           tooltip="aHTMLTooltip">
+           role="group">
         <div class="urlbarView-background"/>
         <div class="urlbarView-results"
              role="listbox"/>
@@ -284,10 +322,22 @@ ${
   valueIsTyped = false;
 
   // Properties accessed in tests.
+  /** @type {Promise<void|UrlbarQueryContext>} */
   lastQueryContextPromise = Promise.resolve();
 
   /** @type {AutofillPlaceholder|null} */
   _autofillPlaceholder = null;
+
+  /**
+   * Created on Enter keydown and resolved on keyup or blur, so that
+   * input is held back until the load has started.
+   *
+   * @type {PromiseWithResolvers<number | void> & {
+   *   loadedContent?: boolean,
+   *   inputEpoch?: number,
+   * } | null}
+   */
+  _keyDownEnterDeferred = null;
 
   _resultForCurrentValue = null;
   _untrimmedValue = "";
@@ -388,7 +438,7 @@ ${
       this.#populateSlots();
     }
 
-    this.panel = this.querySelector(".urlbarView");
+    this.panel = /** @type {HTMLElement} */ (this.querySelector(".urlbarView"));
     this._inputContainer = this.querySelector(".urlbar-input-container");
     this.inputField = /** @type {HTMLInputElement} */ (
       this.querySelector(".urlbar-input")
@@ -495,7 +545,7 @@ ${
   }
 
   /**
-   * Hook for subclass-specific initialization work, called during {@link #init}.
+   * Hook for subclass-specific initialization work, called during `#init`.
    * Default no-op.
    */
   sapInit() {}
@@ -656,10 +706,12 @@ ${
       return;
     }
 
-    this._initStripOnShare();
     this._initPasteAndGo();
     if (this.#isAddressbar && UrlbarContentUtils.getPlatform() == "macosx") {
+      // The share group handles the strip-on-share item on macOS.
       this.#initShareURL();
+    } else {
+      this._initStripOnShare();
     }
     if (this.#isAddressbar) {
       this._initAutofillDismiss();
@@ -742,10 +794,15 @@ ${
     return this.#sapName;
   }
 
+  get isSidebarMode() {
+    return false;
+  }
+
   /**
    * Whether this is a bar dedicated to search.
    *
-   * @see {UrlbarShared.isSearchbarSAP}
+   * See `UrlbarShared.isSearchbarSAP`.
+   *
    * @type {boolean}
    */
   get isSearchbarSAP() {
@@ -1224,10 +1281,10 @@ ${
    * Handles an event which might open text or a URL. If the event requires
    * doing so, handleCommand forwards it to handleNavigation.
    *
-   * @param {Event} [event] The event triggering the open.
+   * @param {MouseEvent | KeyboardEvent} [event] The event triggering the open.
    */
   handleCommand(event = null) {
-    let isMouseEvent = UrlbarShared.isInstance(event, MouseEvent);
+    const isMouseEvent = UrlbarShared.isInstance(event, MouseEvent);
     if (isMouseEvent && event.button == 2) {
       // Do nothing for right clicks.
       return;
@@ -1295,6 +1352,13 @@ ${
     ) {
       return null;
     }
+    if (
+      !result &&
+      this._resultForCurrentValue?.type == UrlbarShared.RESULT_TYPE.URL &&
+      UrlbarShared.navigationInSearchModeEnabled(this.#sapName)
+    ) {
+      return null;
+    }
     return this.controller.engineStore.getEngineByName(
       this.searchMode.engineName
     );
@@ -1331,12 +1395,12 @@ ${
    * only needs to carry an id and name -- the parent resolves the full engine
    * from the id -- so this stays content-safe for a message-path `<moz-urlbar>`.
    *
-   * @param {PartialSearchEngine} engine The engine to search.
+   * @param {PartialSearchEngine|SearchEngine} engine The engine to search.
    * @param {string} searchString The string to search for.
    * @param {string} where Where the SERP will open.
    * @param {object} details
    * @param {?Event} details.event The triggering event.
-   * @param {?Element} details.element The picked view element, if any.
+   * @param {?HTMLElement} details.element The picked view element, if any.
    * @param {string} details.selType The engagement's selection type.
    * @param {string} details.typedValue The value the engagement records.
    * @param {?UrlbarResult} details.result The result Enter acted on, if any.
@@ -1380,7 +1444,7 @@ ${
    *
    * @param {object} options
    *   Options for the navigation.
-   * @param {Event} [options.event]
+   * @param {MouseEvent | KeyboardEvent} [options.event]
    *   The event triggering the open.
    * @param {HandleNavigationOneOffParams} [options.oneOffParams]
    *   Optional. Pass if this navigation was triggered by a one-off. Practically
@@ -2260,7 +2324,7 @@ ${
    * @param {string} [options.urlOverride]
    *   Normally the URL is taken from `result.payload.url`, but if `urlOverride`
    *   is specified, it's used instead. See `#getValueFromResult()`.
-   * @param {Element} [options.element]
+   * @param {HTMLElement} [options.element]
    *   The element that was selected or picked, if available. For results that
    *   have multiple selectable children, the value may be taken from a child
    *   element rather than the result. See `#getValueFromResult()`.
@@ -2579,9 +2643,9 @@ ${
    *   use it as its query.
    * @param {object} [options]
    *   Object options
-   * @param {PartialSearchEngine} [options.searchEngine]
+   * @param {PartialSearchEngine|SearchEngine} [options.searchEngine]
    *   Search engine to use when the search is using a known alias.
-   * @param {UrlbarShared.SEARCH_MODE_ENTRY} [options.searchModeEntry]
+   * @param {string} [options.searchModeEntry]
    *   If provided, we will record this parameter as the search mode entry point
    *   in Telemetry. Consumers should provide this if they expect their call
    *   to enter search mode.
@@ -2640,11 +2704,17 @@ ${
         value = value.slice(1);
       }
     } else if (
-      Object.values(UrlbarShared.RESTRICT_TOKENS).includes(firstToken)
+      /** @type {string[]} */ (
+        Object.values(UrlbarShared.RESTRICT_TOKENS)
+      ).includes(firstToken)
     ) {
       this.searchMode = null;
       // If the entire value is a restricted token, append a space.
-      if (Object.values(UrlbarShared.RESTRICT_TOKENS).includes(value)) {
+      if (
+        /** @type {string[]} */ (
+          Object.values(UrlbarShared.RESTRICT_TOKENS)
+        ).includes(value)
+      ) {
         value += " ";
       }
     }
@@ -2674,11 +2744,10 @@ ${
    * Returns a search mode object if a token should enter search mode when
    * typed. This does not handle engine aliases.
    *
-   * @param {Values<typeof UrlbarShared.RESTRICT_TOKENS>} token
+   * @param {string} token
    *   A restriction token to convert to search mode.
-   * @returns {?object}
-   *   A search mode object. Null if search mode should not be entered. See
-   *   setSearchMode documentation for details.
+   * @returns {?SearchModeInput}
+   *   Null if search mode should not be entered.
    */
   searchModeForToken(token) {
     if (token == UrlbarShared.RESTRICT_TOKENS.SEARCH) {
@@ -2808,9 +2877,8 @@ ${
    *   mode will be returned since it takes precedence.  If this argument is
    *   true, then only confirmed search mode will be returned, or null if
    *   search mode hasn't been confirmed.
-   * @returns {?object}
-   *   A search mode object or null if the browser/window is not in search mode.
-   *   See setSearchMode documentation.
+   * @returns {?SearchMode}
+   *   Null if the browser/window is not in search mode.
    */
   getSearchMode(browser, confirmedOnly = false) {
     let modes = this.#getSearchModesObject(browser);
@@ -2830,21 +2898,8 @@ ${
    * Searchbar: Sets the window-global search mode.
    * If the given browser is selected, then this will also enter search mode.
    *
-   * @param {object} searchMode
-   *   A search mode object.
-   * @param {string} searchMode.engineName
-   *   The name of the search engine to restrict to.
-   * @param {Values<typeof UrlbarShared.RESULT_SOURCE>} searchMode.source
-   *   A result source to restrict to.
-   * @param {string} searchMode.entry
-   *   How search mode was entered. This is recorded in event telemetry. One of
-   *   the values in UrlbarShared.SEARCH_MODE_ENTRY.
-   * @param {boolean} [searchMode.isPreview]
-   *   If true, we will preview search mode. Search mode preview does not record
-   *   telemetry and has slighly different UI behavior. The preview is exited in
-   *   favor of full search mode when a query is executed. False should be
-   *   passed if the caller needs to enter search mode but expects it will not
-   *   be interacted with right away. Defaults to true.
+   * @param {?SearchModeInput} searchMode
+   *   The search mode to enter, or null to exit search mode.
    * @param {MozBrowser} browser
    *   The browser for which to set search mode.
    *   Pass the selected browser for the searchbar.
@@ -2877,25 +2932,34 @@ ${
       isPreview = true,
     } = searchMode || {};
 
-    searchMode = null;
+    if (!UrlbarShared.SEARCH_MODE_ENTRY.has(entry)) {
+      // If we see this value showing up in telemetry, we should review
+      // search mode's entry points.
+      entry = "other";
+    }
+
+    /** @type {?SearchMode} */
+    let newSearchMode = null;
 
     if (engineName) {
-      searchMode = {
+      newSearchMode = {
         engineName,
         isGeneralPurposeEngine: engine.isGeneralPurposeEngine,
+        entry,
+        isPreview,
       };
       if (source) {
-        searchMode.source = source;
-      } else if (searchMode.isGeneralPurposeEngine) {
+        newSearchMode.source = source;
+      } else if (newSearchMode.isGeneralPurposeEngine) {
         // History results for general-purpose search engines are often not
         // useful, so we hide them in search mode. See bug 1658646 for
         // discussion.
-        searchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
+        newSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
       }
     } else if (source) {
       let sourceName = UrlbarShared.getResultSourceName(source);
       if (sourceName) {
-        searchMode = { source };
+        newSearchMode = { source, entry, isPreview };
       } else {
         console.error(`Unrecognized source: ${source}`);
       }
@@ -2903,29 +2967,19 @@ ${
 
     let modes = this.#getSearchModesObject(browser);
 
-    if (searchMode) {
-      searchMode.isPreview = isPreview;
-      if (UrlbarShared.SEARCH_MODE_ENTRY.has(entry)) {
-        searchMode.entry = entry;
-      } else {
-        // If we see this value showing up in telemetry, we should review
-        // search mode's entry points.
-        searchMode.entry = "other";
-      }
-
-      if (!searchMode.isPreview) {
-        modes.confirmed = searchMode;
+    if (newSearchMode) {
+      if (!newSearchMode.isPreview) {
+        modes.confirmed = newSearchMode;
         delete modes.preview;
       } else {
-        modes.preview = searchMode;
+        modes.preview = newSearchMode;
+      }
+      if (restrictType) {
+        newSearchMode.restrictType = restrictType;
       }
     } else {
       delete modes.preview;
       delete modes.confirmed;
-    }
-
-    if (restrictType) {
-      searchMode.restrictType = restrictType;
     }
 
     // The address bar keeps a search mode per browser, so it only enters search
@@ -2934,14 +2988,14 @@ ${
       !this.#isAddressbar ||
       browser == this.window.gBrowser.selectedBrowser
     ) {
-      this._updateSearchModeUI(searchMode);
-      if (searchMode) {
+      this._updateSearchModeUI(newSearchMode);
+      if (newSearchMode) {
         // Set userTypedValue to the query string so that it's properly restored
         // when switching back to the current tab and across sessions.
         this.userTypedValue = this.untrimmedValue;
         this.valueIsTyped = true;
-        if (!searchMode.isPreview && !areSearchModesSame) {
-          this.parentController.recordSearchMode(searchMode);
+        if (!newSearchMode.isPreview && !areSearchModesSame) {
+          this.parentController.recordSearchMode(newSearchMode);
         }
       }
     }
@@ -2952,8 +3006,8 @@ ${
   /**
    * @typedef {object} SearchModesObject
    *
-   * @property {object} [preview] preview search mode
-   * @property {object} [confirmed] confirmed search mode
+   * @property {SearchMode} [preview] preview search mode
+   * @property {SearchMode} [confirmed] confirmed search mode
    */
 
   /**
@@ -3092,6 +3146,7 @@ ${
    */
   #searchModeApplied = Promise.resolve();
 
+  /** @returns {?SearchMode} */
   get searchMode() {
     if (this.#isAddressbar && !this.window.gBrowser) {
       // Only the address bar keys search mode by browser, and it has no
@@ -3102,7 +3157,7 @@ ${
     return this.getSearchMode(this.window.gBrowser?.selectedBrowser);
   }
 
-  set searchMode(searchMode) {
+  set searchMode(/** @type {?SearchModeInput} */ searchMode) {
     this.#searchModeApplied = this.setSearchMode(
       searchMode,
       this.window.gBrowser?.selectedBrowser
@@ -3874,7 +3929,7 @@ ${
       if (event.type == "keydown") {
         this._actionOverrideKeyCount++;
         this.toggleAttribute("action-override", true);
-        this.view.panel.setAttribute("action-override", true);
+        this.view.panel.toggleAttribute("action-override", true);
       } else if (
         this._actionOverrideKeyCount &&
         --this._actionOverrideKeyCount == 0
@@ -3907,7 +3962,7 @@ ${
    * Records search telemetry for a search and adds it to form history.
    *
    * @param {object} options
-   * @param {PartialSearchEngine} options.engine
+   * @param {PartialSearchEngine|SearchEngine} options.engine
    *   The engine to record the query for.
    * @param {string} options.query
    *   The search query.
@@ -4119,19 +4174,6 @@ ${
   }
 
   /**
-   * @typedef {object} LoadURLParams
-   *   The parameters related to how and where the result will be opened.
-   *   Further supported parameters are listed in UrlbarChildController.mjs#loadURL.
-   *
-   * @property {object} [triggeringPrincipal]
-   *   The principal that the action was triggered from.
-   * @property {boolean} [allowInheritPrincipal]
-   *   Whether the principal can be inherited.
-   * @property {nsILoadInfo.SchemelessInputType} [schemelessInput]
-   *   Whether the search/URL term was without an explicit scheme.
-   */
-
-  /**
    * @typedef {object} LoadURLResultDetails
    *   Details of the selected result, if any.
    *
@@ -4174,7 +4216,8 @@ ${
     let keyDownEnterDeferred;
     if (
       this._keyDownEnterDeferred &&
-      event?.keyCode === KeyEvent.DOM_VK_RETURN &&
+      UrlbarShared.isInstance(event, KeyboardEvent) &&
+      event.keyCode === KeyEvent.DOM_VK_RETURN &&
       where === "current"
     ) {
       // In this case, we move the focus to the browser that loads the content
@@ -4426,50 +4469,62 @@ ${
       after: "edit-contextmenu-copy",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
-        let stripOnShare = this.document.createXULElement("menuitem");
-        this.document.l10n.setAttributes(
-          stripOnShare,
-          "text-action-copy-clean-link"
-        );
-        stripOnShare.setAttribute("anonid", "strip-on-share");
-        stripOnShare.id = "strip-on-share";
-
-        // Register listener that returns the stripped url or falls back
-        // to the original url if nothing can be stripped.
-        stripOnShare.addEventListener("command", () => {
-          let strippedURI = this.#stripURI();
-          lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
-        });
-
-        fragment.appendChild(stripOnShare);
+        fragment.appendChild(this.#createStripOnShareItem());
         return fragment;
       },
-      // Hide the menu item if there is nothing to copy.
       onShowing: (input, [stripOnShare]) => {
-        // feature is not enabled
-        if (
-          !UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")
-        ) {
-          stripOnShare.setAttribute("hidden", true);
-          return;
-        }
-        let controller =
-          this.document.commandDispatcher.getControllerForCommand("cmd_copy");
-        if (
-          !controller.isCommandEnabled("cmd_copy") ||
-          !this.#isClipboardURIValid()
-        ) {
-          stripOnShare.setAttribute("hidden", true);
-          return;
-        }
-        stripOnShare.removeAttribute("hidden");
-        if (!this.#canStrip()) {
-          stripOnShare.setAttribute("disabled", true);
-          return;
-        }
-        stripOnShare.removeAttribute("disabled");
+        this.#updateStripOnShareItem(stripOnShare);
       },
     });
+  }
+
+  /**
+   * Builds the strip-on-share menuitem. On macOS the addressbar appends it to
+   * the share group instead of registering its own item set.
+   *
+   * @returns {Element} A newly created menuitem
+   */
+  #createStripOnShareItem() {
+    let stripOnShare = this.document.createXULElement("menuitem");
+    this.document.l10n.setAttributes(
+      stripOnShare,
+      "text-action-copy-clean-link"
+    );
+    stripOnShare.setAttribute("anonid", "strip-on-share");
+    stripOnShare.id = "strip-on-share";
+
+    // Register listener that returns the stripped url or falls back
+    // to the original url if nothing can be stripped.
+    stripOnShare.addEventListener("command", () => {
+      let strippedURI = this.#stripURI();
+      lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
+    });
+
+    return stripOnShare;
+  }
+
+  // Hide the menu item if there is nothing to copy.
+  #updateStripOnShareItem(stripOnShare) {
+    // feature is not enabled
+    if (!UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")) {
+      stripOnShare.setAttribute("hidden", true);
+      return;
+    }
+    let controller =
+      this.document.commandDispatcher.getControllerForCommand("cmd_copy");
+    if (
+      !controller.isCommandEnabled("cmd_copy") ||
+      !this.#isClipboardURIValid()
+    ) {
+      stripOnShare.setAttribute("hidden", true);
+      return;
+    }
+    stripOnShare.removeAttribute("hidden");
+    if (!this.#canStrip()) {
+      stripOnShare.setAttribute("disabled", true);
+      return;
+    }
+    stripOnShare.removeAttribute("disabled");
   }
 
   _initPasteAndGo() {
@@ -4647,7 +4702,7 @@ ${
   }
 
   /**
-   * Initializes the share URL context menu item.
+   * Initializes the share group: Share…, Create QR Code and Copy Clean Link.
    * This is only shown on the addressbar and only on macOS.
    */
   #initShareURL() {
@@ -4656,26 +4711,42 @@ ${
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
         fragment.appendChild(this.document.createXULElement("menuseparator"));
+
+        let shareItem = this.document.createXULElement("menuitem");
+        shareItem.classList.add("share-tab-url-item", "share-mac-picker-item");
+        this.document.l10n.setAttributes(shareItem, "urlbar-share-url");
+        shareItem.addEventListener("command", () => {
+          lazy.SharingUtils.shareOnMacPicker(shareItem);
+        });
+        fragment.appendChild(shareItem);
+
+        let qrCodeItem = this.document.createXULElement("menuitem");
+        qrCodeItem.classList.add("share-qrcode-item");
+        qrCodeItem.id = "share-qrcode";
+        this.document.l10n.setAttributes(qrCodeItem, "menu-file-share-qrcode3");
+        qrCodeItem.addEventListener("command", () => {
+          lazy.SharingUtils.showQRCode(qrCodeItem);
+        });
+        fragment.appendChild(qrCodeItem);
+        fragment.appendChild(this.#createStripOnShareItem());
+
         return fragment;
       },
-      onShowing: (input, items) => {
-        let [separator] = items;
-        let gBrowser = this.window.gBrowser;
-        let browser = gBrowser?.selectedBrowser;
-        if (!browser) {
-          return;
-        }
-        lazy.SharingUtils.ensureShareMenu(
-          browser,
-          gBrowser.selectedTabs.length > 1
-            ? gBrowser.selectedTabs.map(t => t.linkedBrowser)
-            : null,
-          separator
+      onShowing: (input, [, shareItem, qrCodeItem, stripOnShare]) => {
+        this.#updateStripOnShareItem(stripOnShare);
+        let browser = this.window.gBrowser?.selectedBrowser;
+        let browserRef = browser ? Cu.getWeakReference(browser) : null;
+        shareItem.contextBrowserToShare = browserRef;
+        shareItem.browsersToShare = null;
+        qrCodeItem.contextBrowserToShare = browserRef;
+        let shareable =
+          !!lazy.SharingUtils.getLinkToShare(shareItem).urlToShare;
+        shareItem.toggleAttribute("disabled", !shareable);
+        qrCodeItem.hidden = !Services.prefs.getBoolPref(
+          "browser.shareqrcode.enabled",
+          false
         );
-        // ensureShareMenu inserts the share menu after the separator. Claim it
-        // so it's hidden along with the separator when the menu opens on
-        // another input.
-        items[1] = separator.nextElementSibling;
+        qrCodeItem.toggleAttribute("disabled", !shareable);
       },
     });
   }
@@ -4687,12 +4758,15 @@ ${
    * We use the observer service, so that we don't need to load extra facilities
    * if they aren't being used, e.g. WebNavigation.
    *
-   * @param {UrlbarResult} result
+   * @param {LoadURLResultDetails} result
    *   Details of the result that was selected, if any.
    */
   #notifyStartNavigation(result) {
     if (this.#isAddressbar) {
-      Services.obs.notifyObservers({ result }, "urlbar-user-start-navigation");
+      Services.obs.notifyObservers(
+        /** @type {any} */ ({ result }),
+        "urlbar-user-start-navigation"
+      );
     }
   }
 
@@ -4705,8 +4779,8 @@ ${
    * @param {string} [entry]
    *   If provided, this will be recorded as the entry point into search mode.
    *   See setSearchMode() documentation for details.
-   * @returns {object} A search mode object. Null if search mode should not be
-   *   entered. See setSearchMode documentation for details.
+   * @returns {?SearchModeInput}
+   *   The search mode to enter, or null if search mode should not be entered.
    */
   _searchModeForResult(result, entry = null) {
     // Search mode is determined by the result's keyword or engine.
@@ -4767,8 +4841,8 @@ ${
   /**
    * Updates the UI so that search mode is either entered or exited.
    *
-   * @param {object} searchMode
-   *   See setSearchMode documentation.  If null, then search mode is exited.
+   * @param {?SearchMode} searchMode
+   *   The search mode to display, or null to exit search mode.
    */
   _updateSearchModeUI(searchMode) {
     let { engineName, source, isGeneralPurposeEngine } = searchMode || {};
@@ -5491,7 +5565,7 @@ ${
       this.#compositionHadText = true;
     }
 
-    this.toggleAttribute("usertyping", value);
+    this.toggleAttribute("usertyping", !!value);
     this.removeAttribute("actiontype");
 
     if (
@@ -5667,7 +5741,7 @@ ${
       if (this.getAttribute("pageproxystate") == "valid") {
         this.setPageProxyState("invalid");
       }
-      this.toggleAttribute("usertyping", this._untrimmedValue);
+      this.toggleAttribute("usertyping", !!this._untrimmedValue);
 
       // Fix up cursor/selection:
       let newCursorPos = oldStart.length + pasteData.length;
@@ -5899,7 +5973,9 @@ ${
     try {
       if (keyDownEnterDeferred.loadedContent) {
         try {
-          const browserId = await keyDownEnterDeferred.promise;
+          const browserId = /** @type {number} */ (
+            await keyDownEnterDeferred.promise
+          );
           // The parent focuses the loading browser if it's still selected,
           // since only it can reach the browser element and the chrome window.
           let { focused } = await this.parentController.focusBrowser(browserId);
@@ -6588,6 +6664,7 @@ class AddSearchEngineHelper {
     let engines = this.engines;
 
     this.contextSeparator.collapsed = !engines.length;
+    /** @type {Element} */
     let curElt = this.contextSeparator;
     // Remove the previous items, if any.
     for (let elt of this.#contextItems) {

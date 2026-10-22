@@ -7,6 +7,7 @@
 #ifndef mozilla_PerfectHash_h
 #define mozilla_PerfectHash_h
 
+#include <cstdint>
 #include <type_traits>
 
 namespace mozilla {

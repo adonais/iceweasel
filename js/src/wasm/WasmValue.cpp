@@ -29,7 +29,6 @@
 #include "wasm/WasmGcObject.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmLog.h"
-#include "wasm/WasmStacks.h"
 #include "wasm/WasmTypeDef.h"
 
 #include "vm/JSObject-inl.h"
@@ -284,6 +283,14 @@ bool CheckArrayRefValue(JSContext* cx, HandleValue v, MutableHandleAnyRef vp) {
 
 bool CheckTypeRefValue(JSContext* cx, const TypeDef* typeDef, HandleValue v,
                        MutableHandleAnyRef vp) {
+#ifdef ENABLE_WASM_JSPI
+  if (typeDef->isContType()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_VAL_TYPE);
+    return false;
+  }
+#endif
+
   if (v.isNull()) {
     vp.set(AnyRef::null());
     return true;
@@ -303,13 +310,6 @@ bool CheckTypeRefValue(JSContext* cx, const TypeDef* typeDef, HandleValue v,
         return true;
       }
     }
-#ifdef ENABLE_WASM_JSPI
-    if (obj.is<wasm::ContObject>() && typeDef->isContType()) {
-      // TODO: skipping type check to get JS-PI working.
-      vp.set(AnyRef::fromJSObject(obj));
-      return true;
-    }
-#endif
   }
 
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,

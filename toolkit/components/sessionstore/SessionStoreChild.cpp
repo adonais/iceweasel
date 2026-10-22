@@ -73,8 +73,10 @@ already_AddRefed<SessionStoreChild> SessionStoreChild::GetOrCreate(
         new SessionStoreParent(browsingContext, sessionStore);
     ManagedEndpoint<PSessionStoreParent> endpoint =
         inProcessChild->OpenPSessionStoreEndpoint(sessionStoreChild);
-    inProcessParent->BindPSessionStoreEndpoint(std::move(endpoint),
-                                               sessionStoreParent);
+    if (!inProcessParent->BindPSessionStoreEndpoint(std::move(endpoint),
+                                                    sessionStoreParent)) {
+      return nullptr;
+    }
   } else {
     MOZ_DIAGNOSTIC_ASSERT(!aOwnerElement);
     RefPtr<BrowserChild> browserChild =

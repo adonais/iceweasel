@@ -1,4 +1,4 @@
-/** @import MozSelect, {MozOption} from "../../../../toolkit/content/widgets/moz-select/moz-select.mjs" */
+/** @import { MozSelect, MozOption } from "../../../../toolkit/content/widgets/moz-select/moz-select.mjs" */
 
 const { HandlerServiceTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/HandlerServiceTestUtils.sys.mjs"

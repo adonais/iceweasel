@@ -13,9 +13,17 @@
 #include "jit/Simulator.h"
 
 #if defined(__linux__) && !defined(JS_SIMULATOR_LOONG64)
+#  if __has_include(<asm/hwcap.h>) && __has_include(<sys/auxv.h>)
+#    define USE_HWCAP
+#  endif
 #  if __has_include(<larchintrin.h>)
 #    define USE_LARCHINTRIN
 #  endif
+#endif
+
+#ifdef USE_HWCAP
+#  include <asm/hwcap.h>
+#  include <sys/auxv.h>
 #endif
 
 #ifdef USE_LARCHINTRIN
@@ -83,31 +91,69 @@ FloatRegisters::Code FloatRegisters::FromName(const char* name) {
 }
 
 FloatRegisterSet FloatRegister::ReduceSetForPush(const FloatRegisterSet& s) {
-#ifdef ENABLE_JIT_SIMD
-#  error "Needs more careful logic if SIMD is enabled"
+  SetType all = s.bits();
+
+#if defined(ENABLE_JIT_SIMD)
+  SetType set128b =
+      (all & FloatRegisters::AllSimd128Mask) >> FloatRegisters::ShiftSimd128;
+  SetType doubleSet =
+      (all & FloatRegisters::AllDoubleMask) >> FloatRegisters::ShiftDouble;
+  SetType singleSet =
+      (all & FloatRegisters::AllSingleMask) >> FloatRegisters::ShiftSingle;
+
+  // A register that is present as a 128-bit register is pushed once, as a
+  // 16-byte value; singles and doubles are pushed as 8-byte values.
+  SetType set64b = (singleSet | doubleSet) & ~set128b;
+
+  SetType reduced = (set128b << FloatRegisters::ShiftSimd128) |
+                    (set64b << FloatRegisters::ShiftDouble);
+#else
+  SetType doubleSet =
+      (all & FloatRegisters::AllDoubleMask) >> FloatRegisters::ShiftDouble;
+  SetType singleSet =
+      (all & FloatRegisters::AllSingleMask) >> FloatRegisters::ShiftSingle;
+
+  SetType set64b = singleSet | doubleSet;
+
+  SetType reduced = set64b << FloatRegisters::ShiftDouble;
 #endif
 
-  LiveFloatRegisterSet ret;
-  for (FloatRegisterIterator iter(s); iter.more(); ++iter) {
-    ret.addUnchecked(FromCode((*iter).encoding()));
-  }
-  return ret.set();
+  return FloatRegisterSet(reduced);
 }
 
 uint32_t FloatRegister::GetPushSizeInBytes(const FloatRegisterSet& s) {
-#ifdef ENABLE_JIT_SIMD
-#  error "Needs more careful logic if SIMD is enabled"
-#endif
+  SetType all = s.bits();
 
-  return s.size() * sizeof(double);
+#if defined(ENABLE_JIT_SIMD)
+  SetType set128b =
+      (all & FloatRegisters::AllSimd128Mask) >> FloatRegisters::ShiftSimd128;
+  SetType doubleSet =
+      (all & FloatRegisters::AllDoubleMask) >> FloatRegisters::ShiftDouble;
+  SetType singleSet =
+      (all & FloatRegisters::AllSingleMask) >> FloatRegisters::ShiftSingle;
+
+  SetType set64b = (singleSet | doubleSet) & ~set128b;
+
+  return set128b.size() * SizeOfSimd128 + set64b.size() * sizeof(double);
+#else
+  SetType doubleSet =
+      (all & FloatRegisters::AllDoubleMask) >> FloatRegisters::ShiftDouble;
+  SetType singleSet =
+      (all & FloatRegisters::AllSingleMask) >> FloatRegisters::ShiftSingle;
+
+  SetType set64b = singleSet | doubleSet;
+
+  return set64b.size() * sizeof(double);
+#endif
 }
 
 uint32_t FloatRegister::getRegisterDumpOffsetInBytes() {
-#ifdef ENABLE_JIT_SIMD
-#  error "Needs more careful logic if SIMD is enabled"
+#if defined(ENABLE_JIT_SIMD)
+  static_assert(sizeof(FloatRegisters::RegisterContent) == 16);
+#else
+  static_assert(sizeof(FloatRegisters::RegisterContent) == 8);
 #endif
-
-  return encoding() * sizeof(double);
+  return encoding() * sizeof(FloatRegisters::RegisterContent);
 }
 
 void FlushICache(void* code, size_t size) {
@@ -145,6 +191,7 @@ static LOONG64Extensions ExtensionsFromISA(LOONG64ISA isa) {
       extensions += LOONG64Extension::Lamcas;
       [[fallthrough]];
     case LOONG64ISA::LA64V1_0:
+      extensions += LOONG64Extension::Lsx;
       break;
   }
   return extensions;
@@ -162,12 +209,28 @@ static LOONG64Extensions ParseLOONG64ISA(std::string_view sv) {
 }
 
 static LOONG64Extensions ComputeLOONG64Extensions() {
+#if defined(USE_HWCAP)
+  // the toolchain doesn't yet know about them.
+  enum LOONG64HwCap : uint64_t {
+    LOONG64_HWCAP_LSX = (1ULL << 4),
+  };
+
+  // Assert the hardcoded feature bits match HWCAP_LOONGARCH_*.
+#  ifdef HWCAP_LOONGARCH_LSX
+  static_assert(HWCAP_LOONGARCH_LSX == LOONG64_HWCAP_LSX);
+#  endif
+#endif
+
   LOONG64Extensions extensions{};
 
 #if defined(JS_SIMULATOR_LOONG64)
   extensions += LOONG64Extension::LamBh;
   extensions += LOONG64Extension::Lamcas;
-#elif defined(USE_LARCHINTRIN)
+  // The simulator does not support LSX yet.
+#else
+#  if defined(USE_LARCHINTRIN)
+  // Some features are not exposed via HWCAP. Use raw CPUCFG instruction for
+  // them.
   const LOONGCpucfg2 cpucfg2 = LOONGCpucfg2(__cpucfg(2));
 
   if (cpucfg2.LamBh()) {
@@ -176,6 +239,16 @@ static LOONG64Extensions ComputeLOONG64Extensions() {
   if (cpucfg2.Lamcas()) {
     extensions += LOONG64Extension::Lamcas;
   }
+#  endif
+#  if defined(USE_HWCAP)
+  // Some features need kernel support for context preservation. These must be
+  // detected via HWCAP.
+  const uint64_t hwcap = getauxval(AT_HWCAP);
+
+  if (hwcap & LOONG64_HWCAP_LSX) {
+    extensions += LOONG64Extension::Lsx;
+  }
+#  endif
 #endif
 
   return extensions;

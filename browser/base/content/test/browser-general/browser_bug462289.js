@@ -133,7 +133,7 @@ function step5() {
   setTimeout(step6, 0);
 }
 
-function step6() {
+async function step6() {
   is(
     gBrowser.selectedTab,
     tab2,
@@ -145,7 +145,10 @@ function step6() {
     "middle-button mousedown on selected tab2 does not activate tab"
   );
 
-  gBrowser.removeTab(tab2);
+  info("Releasing the middle button, which closes tab2.");
+  let tabClosed = BrowserTestUtils.waitForEvent(tab2, "TabClose");
+  EventUtils.synthesizeMouseAtCenter(tab2, { button: 1, type: "mouseup" });
+  await tabClosed;
   gBrowser.removeTab(tab1);
 
   finish();

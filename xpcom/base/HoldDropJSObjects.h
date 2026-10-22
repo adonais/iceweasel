@@ -114,38 +114,38 @@ struct HoldDropJSObjectsWithKeyHelper<T, true> {
 **/
 template <class T>
 void HoldJSObjects(T* aHolder) {
-  static_assert(!std::is_base_of<nsCycleCollectionParticipant, T>::value,
+  static_assert(!std::is_base_of_v<nsCycleCollectionParticipant, T>,
                 "Don't call this on the CC participant but on the object that "
                 "it's for (in an Unlink implementation it's usually stored in "
                 "a variable named 'tmp').");
   static_assert(
-      !std::is_base_of<JSHolderBase, T>::value,
+      !std::is_base_of_v<JSHolderBase, T>,
       "Use HoldJSObjectsWithKey for classes derived from JSHolderBase.");
   HoldDropJSObjectsHelper<T>::Hold(aHolder);
 }
 
 template <class T>
 void DropJSObjects(T* aHolder) {
-  static_assert(!std::is_base_of<nsCycleCollectionParticipant, T>::value,
+  static_assert(!std::is_base_of_v<nsCycleCollectionParticipant, T>,
                 "Don't call this on the CC participant but on the object that "
                 "it's for (in an Unlink implementation it's usually stored in "
                 "a variable named 'tmp').");
   static_assert(
-      !std::is_base_of<JSHolderBase, T>::value,
+      !std::is_base_of_v<JSHolderBase, T>,
       "Use HoldJSObjectsWithKey for classes derived from JSHolderBase.");
   HoldDropJSObjectsHelper<T>::Drop(aHolder);
 }
 
 template <class T>
 void HoldJSObjectsWithKey(T* aHolder) {
-  static_assert(!std::is_base_of<nsWrapperCache, T>::value,
+  static_assert(!std::is_base_of_v<nsWrapperCache, T>,
                 "Use HoldJSObjects for classes derived from nsWrapperCache.");
   HoldDropJSObjectsWithKeyHelper<T>::Hold(aHolder);
 }
 
 template <class T>
 void DropJSObjectsWithKey(T* aHolder) {
-  static_assert(!std::is_base_of<nsWrapperCache, T>::value,
+  static_assert(!std::is_base_of_v<nsWrapperCache, T>,
                 "Use HoldJSObjects for classes derived from nsWrapperCache.");
   HoldDropJSObjectsWithKeyHelper<T>::Drop(aHolder);
 }

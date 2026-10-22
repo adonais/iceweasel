@@ -24,6 +24,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu as MaterialDropdownMenu
 import androidx.compose.material3.DropdownMenuItem as MaterialDropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBoxScope
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +50,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.Dropdown2
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.modifier.thenConditional
@@ -105,6 +108,59 @@ fun DropdownMenu(
         Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
         val density = LocalDensity.current
 
+        LaunchedEffect(Unit) {
+            if (expanded) {
+                menuItems
+                    .indexOfFirst {
+                        it is MenuItem.CheckableItem && it.isChecked
+                    }
+                    .takeIf { it != -1 }
+                    ?.let { index ->
+                        val scrollPosition = with(density) { MenuItemHeight.toPx() * index }.toInt()
+                        scrollState.scrollTo(scrollPosition)
+                    }
+            }
+        }
+    }
+}
+
+/**
+ * A dropdown menu that displays a list of [MenuItem]s. The menu can be expanded or collapsed and is displayed as a
+ * popup anchored to the menu button that triggers it.
+ *
+ * Only to be used with [Dropdown2].
+ *
+ * @param menuItems the list of [MenuItem]s to display in the menu.
+ * @param expanded whether or not the menu is expanded.
+ * @param modifier [Modifier] to be applied to the menu.
+ * @param scrollState [ScrollState] used by the menu's content for vertical scrolling.
+ * @param onDismissRequest Invoked when the user requests to dismiss the menu, such as by tapping outside the menu's
+ *   bounds.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExposedDropdownMenuBoxScope.AnchoredDropdownMenu(
+    menuItems: List<MenuItem>,
+    expanded: Boolean,
+    modifier: Modifier = Modifier,
+    scrollState: ScrollState = rememberScrollState(),
+    onDismissRequest: () -> Unit,
+) {
+    ExposedDropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        scrollState = scrollState,
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
+        DropdownMenuContent(
+            menuItems = menuItems,
+            onDismissRequest = onDismissRequest,
+        )
+        Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
+
+        val density = LocalDensity.current
         LaunchedEffect(Unit) {
             if (expanded) {
                 menuItems

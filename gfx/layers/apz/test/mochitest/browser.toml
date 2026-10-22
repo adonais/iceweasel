@@ -54,6 +54,12 @@ run-if = [
   "os != 'mac'", # On Mac popup windows having no remote content doesn't have the compositor
 ]
 
+["browser_test_displayport_in_select_dropdown.js"]
+support-files = ["helper_bug2041504_select.html"]
+run-if = [
+  "os != 'mac'", # On Mac popup windows having no remote content doesn't have the compositor
+]
+
 ["browser_test_key_press_in_popup.js"]
 support-files = [
   "helper_popup_menu_in_parent_process-2.html"
@@ -92,9 +98,6 @@ run-if = [
 
 ["browser_test_position_sticky.js"]
 support-files = ["helper_position_sticky_flicker.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks", # bug 1924676
-]
 
 ["browser_test_reset_scaling_zoom.js"]
 support-files = ["helper_test_reset_scaling_zoom.html"]

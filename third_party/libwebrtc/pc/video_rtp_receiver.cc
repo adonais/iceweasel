@@ -24,10 +24,8 @@
 #include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
-#include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
@@ -39,6 +37,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -47,20 +46,23 @@ VideoRtpReceiver::VideoRtpReceiver(
     absl::string_view receiver_id,
     std::vector<std::string> stream_ids,
     absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
-    VideoMediaReceiveChannelInterface* media_channel)
+    VideoMediaReceiveChannelInterface* media_channel,
+    Clock* clock)
     : VideoRtpReceiver(worker_thread,
                        receiver_id,
                        CreateStreamsFromIds(std::move(stream_ids)),
                        std::move(enable_sframe_at_owner),
-                       media_channel) {}
+                       media_channel,
+                       clock) {}
 
 VideoRtpReceiver::VideoRtpReceiver(
     Thread* worker_thread,
     absl::string_view receiver_id,
     const std::vector<scoped_refptr<MediaStreamInterface>>& streams,
     absl::AnyInvocable<RTCError()> enable_sframe_at_owner,
-    VideoMediaReceiveChannelInterface* media_channel)
-    : RtpReceiverBase(worker_thread, std::move(enable_sframe_at_owner)),
+    VideoMediaReceiveChannelInterface* media_channel,
+    Clock* clock)
+    : RtpReceiverBase(worker_thread, std::move(enable_sframe_at_owner), clock),
       id_(receiver_id),
       media_channel_(media_channel),
       source_(make_ref_counted<VideoRtpTrackSource>(&source_callback_)),
@@ -241,15 +243,6 @@ void VideoRtpReceiver::SetStreams(
   streams_ = streams;
 }
 
-void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
-  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  observer_ = observer;
-  // Deliver any notifications the observer may have missed by being set late.
-  if (received_first_packet_ && observer_) {
-    observer_->OnFirstPacketReceived(media_type());
-  }
-}
-
 void VideoRtpReceiver::SetJitterBufferMinimumDelay(
     std::optional<double> delay_seconds) {
   RTC_DCHECK_RUN_ON(worker_thread_);
@@ -307,31 +300,6 @@ void VideoRtpReceiver::SetMediaChannel_w(
 
   if (!media_channel)
     source_->ClearCallback();
-}
-
-void VideoRtpReceiver::NotifyFirstPacketReceived(uint32_t ssrc) {
-  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  if (observer_) {
-    observer_->OnFirstPacketReceived(media_type());
-  }
-  received_first_packet_ = true;
-}
-
-void VideoRtpReceiver::NotifyFirstPacketReceivedAfterReceptiveChange(
-    uint32_t ssrc) {
-  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  if (observer_) {
-    observer_->OnFirstPacketReceivedAfterReceptiveChange(media_type());
-  }
-}
-
-std::vector<RtpSource> VideoRtpReceiver::GetSources() const {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  auto current_ssrc = ssrc();
-  if (!media_channel_ || !current_ssrc.has_value()) {
-    return {};
-  }
-  return media_channel_->GetSources(current_ssrc.value());
 }
 
 absl::AnyInvocable<void() &&> VideoRtpReceiver::GetSetupForMediaChannel(

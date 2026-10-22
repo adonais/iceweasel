@@ -91,8 +91,6 @@
 
 #include "SSLServerCertVerification.h"
 
-#include <cstring>
-
 #include "CertVerifier.h"
 #include "CryptoTask.h"
 #include "ExtendedValidation.h"
@@ -382,7 +380,7 @@ static nsresult OverrideAllowedForHost(
 // Prohibit changing the server cert only if we negotiated SPDY,
 // in order to support SPDY's cross-origin connection pooling.
 static SECStatus BlockServerCertChangeForSpdy(
-    NSSSocketControl* socketControl, const UniqueCERTCertificate& serverCert) {
+    NSSSocketControl* socketControl, const nsTArray<uint8_t>& serverCertDER) {
   if (!socketControl->IsHandshakeCompleted()) {
     // first handshake on this connection, not a
     // renegotiation.
@@ -423,9 +421,7 @@ static SECStatus BlockServerCertChangeForSpdy(
     PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
     return SECFailure;
   }
-  if (certDER.Length() == serverCert->derCert.len &&
-      memcmp(certDER.Elements(), serverCert->derCert.data, certDER.Length()) ==
-          0) {
+  if (certDER == serverCertDER) {
     return SECSuccess;
   }
 
@@ -940,30 +936,24 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
 
   NSSSocketControl* socketInfo = static_cast<NSSSocketControl*>(arg);
 
-  UniqueCERTCertificate serverCert(SSL_PeerCertificate(fd));
+  UniqueSECItemArray peerCertChain;
+  SECStatus rv =
+      SSL_PeerCertificateChainDER(fd, TempPtrToSetter(&peerCertChain));
 
-  if (!checkSig || isServer || !socketInfo || !serverCert) {
+  if (!checkSig || isServer || !socketInfo || rv != SECSuccess ||
+      !peerCertChain || peerCertChain->len == 0) {
     PR_SetError(PR_INVALID_STATE_ERROR, 0);
     return SECFailure;
   }
   socketInfo->SetFullHandshake();
 
-  if (BlockServerCertChangeForSpdy(socketInfo, serverCert) != SECSuccess) {
-    return SECFailure;
-  }
-
-  UniqueSECItemArray peerCertChain;
-  SECStatus rv =
-      SSL_PeerCertificateChainDER(fd, TempPtrToSetter(&peerCertChain));
-  if (rv != SECSuccess) {
-    PR_SetError(PR_INVALID_STATE_ERROR, 0);
-    return SECFailure;
-  }
-  MOZ_ASSERT(peerCertChain,
-             "AuthCertificateHook: peerCertChain unexpectedly null");
-
   nsTArray<nsTArray<uint8_t>> peerCertsBytes =
       CreateCertBytesArray(peerCertChain);
+
+  if (BlockServerCertChangeForSpdy(socketInfo, peerCertsBytes[0]) !=
+      SECSuccess) {
+    return SECFailure;
+  }
 
   // SSL_PeerStapledOCSPResponses will never return a non-empty response if
   // OCSP stapling wasn't enabled because libssl wouldn't have let the server

@@ -44,6 +44,7 @@
 #include "api/units/time_delta.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/encoded_image.h"
+#include "api/video/resolution.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
@@ -74,6 +75,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
@@ -86,6 +88,8 @@
 #include "test/platform_video_capturer.h"
 #include "test/test_flags.h"
 #include "test/testsupport/file_utils.h"
+#include "test/testsupport/pendulum_frame_generator.h"
+#include "test/testsupport/switching_frame_reader.h"
 #include "test/testsupport/y4m_frame_generator.h"
 #include "test/video_renderer.h"
 #include "test/video_test_constants.h"
@@ -1061,11 +1065,47 @@ VideoQualityTest::CreateFrameGenerator(size_t video_idx) {
   const size_t kWidth = 1850;
   const size_t kHeight = 1110;
   std::unique_ptr<test::FrameGeneratorInterface> frame_generator;
-  if (params_.screenshare[video_idx].generate_slides) {
+  if (params_.video[video_idx].pendulum.has_value()) {
+    const auto& pendulum = *params_.video[video_idx].pendulum;
+    test::PendulumFrameGenerator::Config config;
+    config.target_resolution = {.width = params_.video[video_idx].width,
+                                .height = params_.video[video_idx].height};
+    config.fps = params_.video[video_idx].fps;
+    config.source_image_path = pendulum.image_path;
+    config.source_resolution = {
+        .width = static_cast<size_t>(pendulum.image_width),
+        .height = static_cast<size_t>(pendulum.image_height)};
+    config.min_zoom = pendulum.min_zoom;
+    config.max_zoom = pendulum.max_zoom;
+    config.zoom_speed = pendulum.zoom_speed;
+    config.noise_level = pendulum.noise_level;
+    return test::CreatePendulumFrameGenerator(config);
+  } else if (params_.screenshare[video_idx].generate_slides) {
     frame_generator = test::CreateSlideFrameGenerator(
         kWidth, kHeight,
         params_.screenshare[video_idx].slide_change_interval *
             params_.video[video_idx].fps);
+  } else if (!params_.video[video_idx].clip_paths.empty() ||
+             params_.video[video_idx].camera_switching_interval >
+                 TimeDelta::Zero() ||
+             (!params_.video[video_idx].clip_path.empty() &&
+              params_.video[video_idx].clip_path.find(',') !=
+                  std::string::npos)) {
+    std::vector<std::string> paths = params_.video[video_idx].clip_paths;
+    if (paths.empty() && !params_.video[video_idx].clip_path.empty()) {
+      tokenize(params_.video[video_idx].clip_path, ',', &paths);
+    }
+    if (!paths.empty()) {
+      TimeDelta interval =
+          params_.video[video_idx].camera_switching_interval > TimeDelta::Zero()
+              ? params_.video[video_idx].camera_switching_interval
+              : TimeDelta::Seconds(2);
+      Resolution res = {
+          .width = static_cast<int>(params_.video[video_idx].width),
+          .height = static_cast<int>(params_.video[video_idx].height)};
+      frame_generator = test::CreateSwitchingFrameGenerator(
+          paths, res, params_.video[video_idx].fps, interval);
+    }
   } else if (!params_.video[video_idx].clip_path.empty()) {
     RTC_CHECK_GE(params_.video[video_idx].clip_path.size(), 4)
         << "Clip path must have a three letter file ending.";
@@ -1144,6 +1184,43 @@ void VideoQualityTest::CreateCapturers() {
           static_cast<int>(params_.video[video_idx].width),
           static_cast<int>(params_.video[video_idx].height),
           test::FrameGeneratorInterface::OutputType::kNV12, std::nullopt);
+    } else if (params_.video[video_idx].pendulum.has_value()) {
+      const auto& pendulum = *params_.video[video_idx].pendulum;
+      test::PendulumFrameGenerator::Config config;
+      config.target_resolution = {.width = params_.video[video_idx].width,
+                                  .height = params_.video[video_idx].height};
+      config.fps = params_.video[video_idx].fps;
+      config.source_image_path = pendulum.image_path;
+      config.source_resolution = {
+          .width = static_cast<size_t>(pendulum.image_width),
+          .height = static_cast<size_t>(pendulum.image_height)};
+      config.min_zoom = pendulum.min_zoom;
+      config.max_zoom = pendulum.max_zoom;
+      config.zoom_speed = pendulum.zoom_speed;
+      config.noise_level = pendulum.noise_level;
+      frame_generator = test::CreatePendulumFrameGenerator(config);
+    } else if (!params_.video[video_idx].clip_paths.empty() ||
+               params_.video[video_idx].camera_switching_interval >
+                   TimeDelta::Zero() ||
+               (!params_.video[video_idx].clip_path.empty() &&
+                params_.video[video_idx].clip_path.find(',') !=
+                    std::string::npos)) {
+      std::vector<std::string> paths = params_.video[video_idx].clip_paths;
+      if (paths.empty() && !params_.video[video_idx].clip_path.empty()) {
+        tokenize(params_.video[video_idx].clip_path, ',', &paths);
+      }
+      if (!paths.empty()) {
+        TimeDelta interval =
+            params_.video[video_idx].camera_switching_interval >
+                    TimeDelta::Zero()
+                ? params_.video[video_idx].camera_switching_interval
+                : TimeDelta::Seconds(2);
+        Resolution res = {
+            .width = static_cast<int>(params_.video[video_idx].width),
+            .height = static_cast<int>(params_.video[video_idx].height)};
+        frame_generator = test::CreateSwitchingFrameGenerator(
+            paths, res, params_.video[video_idx].fps, interval);
+      }
     } else if (params_.video[video_idx].clip_path.empty()) {
       video_sources_[video_idx] = test::CreateVideoCapturer(
           params_.video[video_idx].width, params_.video[video_idx].height,

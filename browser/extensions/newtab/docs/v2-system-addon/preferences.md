@@ -138,14 +138,6 @@ A list of endpoints that are allowed to be used by Discovery Stream for remote c
 
 If this is `false` the default hardcoded layout is used, and if it's `true` then an alternate hardcoded layout (that currently simulates the older AS experience) is used.
 
-### `browser.newtabpage.activity-stream.discoverystream.rec.impressions`
-
-- Type: `string (JSON)`
-- Default: `{}`
-- Pref Type: AS
-
-Programmatically generated hash table where the keys are recommendation IDs and the values are timestamps representing the first impression.
-
 ### `browser.newtabpage.activity-stream.discoverystream.spoc.impressions`
 
 - Type: `string (JSON)`

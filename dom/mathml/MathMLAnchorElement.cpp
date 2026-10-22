@@ -11,7 +11,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(MathMLAnchorElement, MathMLElement)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(MathMLAnchorElement, MathMLElement, mRelList)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MathMLAnchorElement)
   NS_INTERFACE_MAP_ENTRY(Link)
@@ -38,6 +38,34 @@ void MathMLAnchorElement::GetLinkTargetImpl(nsAString& aTarget) {
   if (aTarget.IsEmpty()) {
     GetBaseTarget(aTarget);
   }
+}
+
+nsDOMTokenList* MathMLAnchorElement::RelList() {
+  if (!mRelList) {
+    mRelList =
+        new nsDOMTokenList(this, nsGkAtoms::rel, sAnchorAndFormRelValues);
+  }
+  return mRelList;
+}
+
+bool MathMLAnchorElement::ParseAttribute(int32_t aNamespaceID,
+                                         nsAtom* aAttribute,
+                                         const nsAString& aValue,
+                                         nsIPrincipal* aMaybeScriptedPrincipal,
+                                         nsAttrValue& aResult) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aAttribute == nsGkAtoms::rel) {
+      aResult.ParseAtomArray(aValue);
+      return true;
+    }
+
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
+  }
+
+  return MathMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                       aMaybeScriptedPrincipal, aResult);
 }
 
 NS_IMPL_ELEMENT_CLONE(MathMLAnchorElement)

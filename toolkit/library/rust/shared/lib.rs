@@ -110,6 +110,9 @@ extern crate trust_anchors;
 extern crate osclientcerts;
 
 #[cfg(not(target_os = "android"))]
+extern crate remotecerts;
+
+#[cfg(not(target_os = "android"))]
 extern crate gkrust_uniffi_components;
 
 #[cfg(all(feature = "uniffi_fixtures", not(target_os = "android")))]

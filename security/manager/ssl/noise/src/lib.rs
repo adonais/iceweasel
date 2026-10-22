@@ -11,6 +11,7 @@ extern crate xpcom;
 pub mod base10;
 #[macro_use]
 mod channel;
+pub mod discovery;
 mod ec;
 mod error;
 mod handshake;

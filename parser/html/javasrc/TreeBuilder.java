@@ -4537,6 +4537,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             int bookmark = formattingEltListPos;
             int nodePos = furthestBlockPos;
             StackNode<T> lastNode = furthestBlock; // weak ref
+            // CPPONLY: sanitizerDeferRedirect(furthestBlock.node);
             int j = 0;
             for (;;) {
                 ++j;
@@ -4599,9 +4600,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 // } XXX AAA CHANGE
                 // When the sanitizer replaces the clone with its children,
                 // the spec does not move lastNode into it, so that lastNode
-                // keeps both its position and its identity, and redirects the
-                // content of the clone to the common ancestor instead.
-                // CPPONLY: if (!sanitizerRedirectsClone(node.node, insertionCommonAncestor)) {
+                // keeps both its position and its identity. The clone's
+                // content is redirected to wherever the next kept clone, or
+                // failing that the common ancestor, gets lastNode.
+                // CPPONLY: if (!sanitizerRedirectsClone(node.node)) {
+                // CPPONLY: sanitizerRedirectPending(node.node);
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, nodeFromStackWithBlinkCompat(nodePos));
                 lastNode = node;
@@ -4612,14 +4615,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             if (commonAncestor.isFosterParenting()) {
                 fatal();
                 detachFromParent(lastNode.node);
-                insertIntoFosterParent(lastNode.node
-                        // CPPONLY: , furthestBlock.node
-                        );
+                insertIntoFosterParent(lastNode.node);
             } else {
-                // The content of a furthest block that the sanitizer replaced
-                // with its children follows the content it already has, so it
-                // goes wherever lastNode goes.
-                // CPPONLY: sanitizerRedirectFurthestBlock(furthestBlock.node, insertionCommonAncestor);
+                // The content of elements the sanitizer replaced with their
+                // children follows the content they already have, so it goes
+                // wherever lastNode goes.
+                // CPPONLY: sanitizerRedirectPending(insertionCommonAncestor);
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, insertionCommonAncestor);
             }
@@ -4648,6 +4649,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             // furthestBlockPos is now off by one and points to the slot after
             // it
             insertIntoStack(formattingClone, furthestBlockPos);
+            // Elements the sanitizer replaced with their children that sit
+            // below the furthest block in the stack now have the clone
+            // between them and the block, so their content goes into the
+            // clone from here on.
+            // CPPONLY: sanitizerRedirectBelowFormattingClone(furthestBlockPos);
         }
         return true;
     }
@@ -4967,20 +4973,18 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         return instance;
     }
 
-    private void insertIntoFosterParent(T child
-            // CPPONLY: , T furthestBlock
-            ) throws SAXException {
+    private void insertIntoFosterParent(T child) throws SAXException {
         int tablePos = findLastOrRoot(TreeBuilder.TABLE);
         int templatePos = findLastOrRoot(TreeBuilder.TEMPLATE);
 
         if (templatePos >= tablePos) {
-            // CPPONLY: sanitizerRedirectFurthestBlock(furthestBlock, stack[templatePos].node);
+            // CPPONLY: sanitizerRedirectPending(stack[templatePos].node);
             appendElement(child, stack[templatePos].node);
             return;
         }
 
         StackNode<T> node = stack[tablePos];
-        // CPPONLY: sanitizerRedirectFurthestBlockToFosterParent(furthestBlock, node.node, stack[tablePos - 1].node);
+        // CPPONLY: sanitizerRedirectPendingToFosterParent(node.node, stack[tablePos - 1].node);
         insertFosterParentedChild(child, node.node, stack[tablePos - 1].node);
     }
 

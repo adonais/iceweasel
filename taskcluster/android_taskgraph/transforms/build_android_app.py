@@ -13,6 +13,8 @@ from android_taskgraph.build_config import get_variant
 
 transforms = TransformSequence()
 
+SBOM_BUILD_TYPES = ("nightly", "beta", "release")
+
 
 @transforms.add
 def add_common_config(config, tasks):
@@ -168,8 +170,61 @@ def build_gradle_command(config, tasks):
         if task["run"].pop("track-apk-size", False):
             gradle_command.append(f"apkSize{variant_name}")
 
+        if task["run"].pop("track-build-times", False):
+            series = task["name"]
+            if package_command != "assemble":
+                series = f"{series}-{package_command}"
+            gradle_command.append(f"-PbuildMetricsPerfherderOptions={series}")
+
         task["run"]["gradlew"] = gradle_command
 
+        yield task
+
+
+@transforms.add
+def add_sbom(config, tasks):
+    """Describe what the shipping Fenix APKs package in an SBOM.
+
+    The build-bundle tasks package the same variant, so one document per
+    channel is enough.
+    """
+    for task in tasks:
+        run = task["run"]
+        if (
+            config.kind != "build-apk"
+            or run.get("gradle-build") != "fenix"
+            or run.get("gradle-build-type") not in SBOM_BUILD_TYPES
+            # A test build ships nothing.
+            or run.get("test-build-type")
+            # Nor does one built on the non-shippable GeckoView, like nobp.
+            or not config.kind_dependencies_tasks[
+                task["dependencies"]["build-fat-aar"]
+            ].attributes.get("shippable")
+        ):
+            yield task
+            continue
+
+        variant = run["gradle-build-name"]
+        run["gradlew"].append(
+            f":app:writeRuntimeDependencies{variant[0].upper()}{variant[1:]}"
+        )
+        sbom = "/builds/worker/workspace/obj-build/sbom.json"
+        run.setdefault("post-gradlew", []).append([
+            "/builds/worker/checkouts/gecko/mach",
+            "sbom",
+            "--product-name",
+            "Fenix",
+            "--gradle-runtime-dependencies",
+            "/builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/"
+            f"app/sbom/{variant}-runtime-dependencies.json",
+            "-o",
+            sbom,
+        ])
+        task.setdefault("worker", {}).setdefault("artifacts", []).append({
+            "type": "file",
+            "name": "public/build/sbom.json",
+            "path": sbom,
+        })
         yield task
 
 

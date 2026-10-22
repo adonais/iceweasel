@@ -206,11 +206,6 @@ PeerConfigurer* PeerConfigurer::SetAudioMixer(
   return this;
 }
 
-PeerConfigurer* PeerConfigurer::SetUseNetworkThreadAsWorkerThread() {
-  components_->worker_thread = components_->network_thread;
-  return this;
-}
-
 PeerConfigurer* PeerConfigurer::SetRtcEventLogPath(absl::string_view path) {
   params_->rtc_event_log_path = std::string(path);
   return this;

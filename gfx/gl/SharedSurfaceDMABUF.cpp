@@ -23,7 +23,7 @@ UniquePtr<SharedSurface_DMABUF> SharedSurface_DMABUF::Create(
       DMABUF_SCANOUT | DMABUF_TEXTURE | DMABUF_USE_MODIFIERS | DMABUF_ALPHA);
   surface = DMABufSurfaceRGBA::CreateDMABufSurface(desc.gl, desc.size.width,
                                                    desc.size.height, flags);
-  if (!surface || !surface->CreateTexture(desc.gl)) {
+  if (!surface || !surface->CreateTextures(desc.gl)) {
     return nullptr;
   }
   const auto tex = surface->GetTexture();
@@ -96,7 +96,7 @@ bool SurfaceFactory_DMABUF::CanCreateSurface(GLContext& gl) {
         "SurfaceFactory_DMABUF::CanCreateSurface() failed to import surface."));
     return false;
   }
-  if (!importedSurface->CreateTexture(&gl)) {
+  if (!importedSurface->CreateTextures(&gl)) {
     LOGDMABUF(
         ("SurfaceFactory_DMABUF::CanCreateSurface() failed to create texture "
          "over surface."));

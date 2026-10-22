@@ -6,11 +6,17 @@ package org.mozilla.conventions
 
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
+import org.gradle.api.flow.FlowProviders
+import org.gradle.api.flow.FlowScope
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.testing.Test
+import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.kotlin.dsl.always
 import org.gradle.kotlin.dsl.create
 import java.io.File
+import java.util.UUID
+import javax.inject.Inject
 
 private data class AutoPublishConfig(
     val propertyName: String,
@@ -22,10 +28,20 @@ private data class AutoPublishConfig(
 // which comes with a "py" launcher and respects the shebang line to specify the version.
 private val isWindows = System.getProperty("os.name").lowercase().contains("windows")
 
-class SettingsPlugin : Plugin<Settings> {
+abstract class SettingsPlugin : Plugin<Settings> {
     private val logger = Logging.getLogger(SettingsPlugin::class.java)
 
+    @get:Inject
+    protected abstract val buildEventsListenerRegistry: BuildEventsListenerRegistry
+
+    @get:Inject
+    protected abstract val flowScope: FlowScope
+
+    @get:Inject
+    protected abstract val flowProviders: FlowProviders
+
     override fun apply(settings: Settings) {
+        val configStartMs = System.currentTimeMillis()
         val extension = settings.extensions.create<SettingsExtension>("mozilla")
         extension.disableAndroidComponentsTasks.convention(
             settings.startParameter.projectProperties["disableAndroidComponentsTasks"]?.toBoolean() ?: false
@@ -51,6 +67,7 @@ class SettingsPlugin : Plugin<Settings> {
         }
 
         configureAcTestAndLintDisabling(settings, extension)
+        initializeBuildMetrics(settings, configStartMs)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -117,6 +134,42 @@ class SettingsPlugin : Plugin<Settings> {
                     task.enabled = false
                 }
             }
+        }
+    }
+
+    private fun initializeBuildMetrics(settings: Settings, configStartMs: Long) {
+        val rootGradle = generateSequence(settings.gradle) { it.parent }.last()
+        val outputDir = rootGradle.startParameter.projectProperties["buildMetricsOutputDir"] ?: return
+        val buildId = UUID.randomUUID().toString()
+
+        ConfiguredBuilds.recordConfigStart(buildId)
+        rootGradle.taskGraph.whenReady {
+            ConfiguredBuilds.recordConfigEnd(buildId, System.currentTimeMillis())
+        }
+
+        // Register a task listener for all builds
+        val buildMetricsProvider = rootGradle.sharedServices.registerIfAbsent(
+            "buildMetricsService",
+            BuildMetricsService::class.java
+        ) {
+            parameters.outputDir.set(outputDir)
+            rootGradle.startParameter.projectProperties["buildMetricsFileSuffix"]?.let { parameters.fileSuffix.set(it) }
+            parameters.buildId.set(buildId)
+            parameters.configStartMs.set(configStartMs)
+        }
+
+        buildEventsListenerRegistry.onTaskCompletion(buildMetricsProvider)
+
+        val perfherderOptions = rootGradle.startParameter.projectProperties["buildMetricsPerfherderOptions"] ?: return
+        val instanceType = settings.providers.environmentVariable("TASKCLUSTER_INSTANCE_TYPE").orNull
+        flowScope.always(ReportBuildTimes::class) {
+            parameters.service.set(buildMetricsProvider)
+            parameters.failed.set(flowProviders.buildWorkResult.map { it.failure.isPresent })
+            parameters.extraOptions.set(
+                perfherderOptions.split(" ").filter { it.isNotBlank() } +
+                    listOfNotNull(instanceType?.let { "taskcluster-$it" })
+            )
+            parameters.outputDir.set(outputDir)
         }
     }
 

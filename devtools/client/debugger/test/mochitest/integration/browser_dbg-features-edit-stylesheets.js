@@ -63,7 +63,7 @@ add_task(async function testEditingStyleSheets() {
     "Select the style sheet"
   );
   const color = "powderblue";
-  is(getEditorContent(dbg), `body { background-color: ${color}; }`);
+  await assertEditorContent(dbg, `body { background-color: ${color}; }`);
 
   info("Change the value of the background color property in the editor");
   await editSelectedSourceContent(dbg, 1, 35, color.length, "green");
@@ -74,7 +74,7 @@ add_task(async function testEditingStyleSheets() {
     return currentBgColor == "rgb(0, 128, 0)";
   });
   ok(bgColorChanged, "The background color is now green");
-  is(getEditorContent(dbg), `body { background-color: green; }`);
+  await assertEditorContent(dbg, `body { background-color: green; }`);
 
   info(
     "Assert that the changes to the stylesheet content are persisted after switching sources"
@@ -85,7 +85,7 @@ add_task(async function testEditingStyleSheets() {
   info("Switch back to the stylesheet");
   await selectSource(dbg, "style.css");
 
-  is(getEditorContent(dbg), `body { background-color: green; }`);
+  await assertEditorContent(dbg, `body { background-color: green; }`);
   currentBgColor = await getCurrentPageStylePropertyValue("backgroundColor");
   is(currentBgColor, "rgb(0, 128, 0)", "The background color is still green");
 });
@@ -136,5 +136,21 @@ add_task(async function testInspectorDebuggerStyleEdits() {
   info(
     "Check that the content of the stylesheet is updated based on the inspector changes"
   );
-  is(getEditorContent(dbg), `body { background-color: red; }`);
+  await assertEditorContent(dbg, `body { background-color: red; }`);
 });
+
+/**
+ * Assert the debugger's editor content asynchronously.
+ *
+ * @param {Debugger} dbg
+ *     The debugger frontend instance.
+ * @param {string} expectedContent
+ *     The expected editor content.
+ */
+async function assertEditorContent(dbg, expectedContent) {
+  info(
+    "Wait for the debugger content to match expectation: " + expectedContent
+  );
+  await waitFor(() => getEditorContent(dbg) == expectedContent);
+  is(getEditorContent(dbg), expectedContent);
+}

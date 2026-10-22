@@ -90,7 +90,7 @@ class NavigationToolbarExpandedTest : BaseTest(LaunchConfig(shouldUseExpandedToo
         setScreenOrientation(orientationRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333183
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333213
     @SmokeTest
     @Test
     fun verifyTheExpandedToolbarNewTabButtonInLandscapeModeTest() {
@@ -113,7 +113,7 @@ class NavigationToolbarExpandedTest : BaseTest(LaunchConfig(shouldUseExpandedToo
         setScreenOrientation(orientationRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333184
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333214
     @SmokeTest
     @Test
     fun verifyTheExpandedToolbarTabTrayButtonInLandscapeModeTest() {
@@ -135,7 +135,7 @@ class NavigationToolbarExpandedTest : BaseTest(LaunchConfig(shouldUseExpandedToo
         setScreenOrientation(orientationRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333185
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333178
     @SmokeTest
     @Test
     fun verifyTheExpandedToolbarMainMenuButtonInLandscapeModeTest() {

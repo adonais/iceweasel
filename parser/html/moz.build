@@ -114,6 +114,13 @@ elif (
         "nsHtml5TokenizerALUStubs.cpp",
         "nsHtml5TokenizerSIMD.cpp",
     ]
+elif (
+    CONFIG["TARGET_CPU"] == "loongarch64" and CONFIG["TARGET_ENDIANNESS"] == "little"
+) and (CONFIG["CC_TYPE"] != "gcc" or int(CONFIG["CC_VERSION"].split(".")[0]) >= 12):
+    UNIFIED_SOURCES += [
+        "nsHtml5TokenizerALU.cpp",
+        "nsHtml5TokenizerSIMD.cpp",
+    ]
 else:
     UNIFIED_SOURCES += [
         "nsHtml5TokenizerALU.cpp",

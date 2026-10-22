@@ -29134,24 +29134,6 @@
       "last_modified": 1576536532946
     },
     {
-      "schema": 1576535550809,
-      "derHash": "U5wT1vJzElL5ndK69D1AVZxGxYV1jE/EQQx+xILb7Wk=",
-      "subject": "CN=OneSignSSL ECC DV Secure Server CA,O=One Sign Pte. Ltd.,L=Singapore,ST=Singapore,C=SG",
-      "subjectDN": "MH8xCzAJBgNVBAYTAlNHMRIwEAYDVQQIEwlTaW5nYXBvcmUxEjAQBgNVBAcTCVNpbmdhcG9yZTEbMBkGA1UEChMST25lIFNpZ24gUHRlLiBMdGQuMSswKQYDVQQDEyJPbmVTaWduU1NMIEVDQyBEViBTZWN1cmUgU2VydmVyIENB",
-      "whitelist": false,
-      "attachment": {
-        "hash": "0e21e684e88796f0f844928dd52cc107b1280c4c7eae78e1934ca07301495bb1",
-        "size": 1313,
-        "filename": "8vM1dUqGdSXi2UQvVgGUGNw0L1p0-y-yK8MC0MVE9Zs=.pem",
-        "location": "security-state-staging/intermediates/86301532-3955-416c-9e34-7bcb144c4837.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "8vM1dUqGdSXi2UQvVgGUGNw0L1p0+y+yK8MC0MVE9Zs=",
-      "crlite_enrolled": false,
-      "id": "e0e26920-5001-4bb2-b934-8e6f0697161c",
-      "last_modified": 1576536532763
-    },
-    {
       "schema": 1576536109129,
       "derHash": "ehQrGl4WIVGDoT6ECoYqQ34pPZNmkh2wfttU8TisDXg=",
       "subject": "CN=TrustAsia OV SSL CA - C3,O=TrustAsia Technologies Inc.,C=CN",
@@ -30232,5 +30214,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1792421822401
+  "timestamp": 1792465022155
 }

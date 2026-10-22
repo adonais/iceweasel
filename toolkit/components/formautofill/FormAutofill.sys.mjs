@@ -49,6 +49,8 @@ const AUTOFILL_REFILL_ON_SITE_CLEARING_VALUE_PREF =
   "extensions.formautofill.heuristics.refillOnSiteClearingFields";
 const AUTOFILL_REFILL_ON_SITE_CLEARING_VALUE_TIMEOUT_PREF =
   "extensions.formautofill.heuristics.refillOnSiteClearingFields.timeout";
+const SUPPRESS_UNRECOGNIZED_AUTOCOMPLETE_PREF =
+  "extensions.formautofill.suppressUnrecognizedAutocomplete.enabled";
 
 export const FormAutofill = {
   ENABLED_AUTOFILL_ADDRESSES_PREF,
@@ -266,6 +268,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
   "isAutofillAddressesCaptureEnabled",
   ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "suppressUnrecognizedAutocomplete",
+  SUPPRESS_UNRECOGNIZED_AUTOCOMPLETE_PREF,
+  false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,

@@ -219,8 +219,9 @@ add_task(async function test_themes_mode_a11y_label() {
   );
   await segmentedControl.updateComplete;
   await win.document.l10n.translateFragment(segmentedControl);
+  await segmentedControl.updateComplete;
   Assert.ok(
-    segmentedControl.getAttribute("aria-label"),
+    segmentedControl.ariaLabel,
     "aboutaddons-themes-mode segmented control should have an associated aria-label"
   );
 

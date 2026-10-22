@@ -1,8 +1,8 @@
 # PR_NETDB_BUF_SIZE
 
 Recommended size to use when specifying a scratch buffer for
-{ref}`PR_GetHostByName`, {ref}`PR_GetHostByAddr`, {ref}`PR_GetProtoByName`, or
-{ref}`PR_GetProtoByNumber`.
+{doc}`pr_gethostbyname`, {doc}`pr_gethostbyaddr`, {doc}`pr_getprotobyname`, or
+{doc}`pr_getprotobynumber`.
 
 ## Syntax
 

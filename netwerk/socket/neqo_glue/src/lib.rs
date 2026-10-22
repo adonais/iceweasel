@@ -41,7 +41,8 @@ use neqo_http3::{
 use neqo_transport::{
     stream_id::StreamType, streams::SendGroupId, CongestionControl, Connection,
     ConnectionParameters, Error as TransportError, HyStartCssBaseline, Output, OutputBatch,
-    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats, StreamId, Version,
+    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats, StreamDataLimit, StreamId,
+    Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -50,7 +51,7 @@ use nserror::{
     NS_ERROR_NET_RESET, NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED,
     NS_ERROR_OUT_OF_MEMORY, NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK,
 };
-use nss_rs::{agent::CertificateCompressor, init, PRErrorCode};
+use nss_rs::{cert::CertificateCompressor, init, PRErrorCode};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 use uuid::Uuid;
@@ -167,6 +168,26 @@ extern "C" {
     pub fn moz_netaddr_get_network_order_ip(arg: *const NetAddr) -> u32;
     pub fn moz_netaddr_get_ipv6(arg: *const NetAddr) -> *const u8;
     pub fn moz_netaddr_get_network_order_port(arg: *const NetAddr) -> u16;
+}
+
+extern "C" {
+    fn moz_mock_network_udp_send_would_block(family: u16, addr: *const u8, port: u16) -> bool;
+}
+
+fn mock_udp_send_would_block(dest: SocketAddr) -> bool {
+    if !static_prefs::pref!("network.socket.attach_mock_network_layer") {
+        return false;
+    }
+    unsafe {
+        match dest.ip() {
+            IpAddr::V4(v4) => {
+                moz_mock_network_udp_send_would_block(AF_INET_U16, v4.octets().as_ptr(), dest.port())
+            }
+            IpAddr::V6(v6) => {
+                moz_mock_network_udp_send_would_block(AF_INET6_U16, v6.octets().as_ptr(), dest.port())
+            }
+        }
+    }
 }
 
 fn netaddr_to_socket_addr(arg: *const NetAddr) -> Result<SocketAddr, nsresult> {
@@ -490,7 +511,7 @@ impl NeqoHttp3Conn {
             .congestion_control(cc_algorithm)
             .slow_start(slow_start)
             .max_data(max_data)
-            .max_stream_data(StreamType::BiDi, false, max_stream_data)
+            .max_stream_data(StreamDataLimit::BiDiLocal, max_stream_data)
             .grease(static_prefs::pref!("security.tls.grease_http3_enable"))
             .sni_slicing(static_prefs::pref!("network.http.http3.sni-slicing"))
             .idle_timeout(Duration::from_secs(idle_timeout.into()))
@@ -1396,7 +1417,12 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                     };
                 }
 
-                match conn.socket.as_mut().expect("non NSPR IO").send(&dg) {
+                let send_result = if mock_udp_send_would_block(dg.destination()) {
+                    Err(io::Error::from(io::ErrorKind::WouldBlock))
+                } else {
+                    conn.socket.as_mut().expect("non NSPR IO").send(&dg)
+                };
+                match send_result {
                     Ok(()) => {}
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         conn.increment_would_block_tx();
@@ -1706,7 +1732,6 @@ const fn crypto_error_code(err: &nss_rs::Error) -> u64 {
         nss_rs::Error::Aead => 1,
         nss_rs::Error::CertificateLoading => 2,
         nss_rs::Error::CreateSslSocket => 3,
-        nss_rs::Error::Hkdf => 4,
         nss_rs::Error::Internal => 5,
         nss_rs::Error::IntegerOverflow => 6,
         nss_rs::Error::InvalidEpoch => 7,
@@ -2215,6 +2240,7 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::DataWritable { stream_id } => Http3Event::DataWritable {
                 stream_id: stream_id.as_u64(),
             },
+            Http3ClientEvent::OutgoingDatagramSpaceAvailable => Http3Event::NoEvent,
             Http3ClientEvent::StopSending { stream_id, error } => Http3Event::StopSending {
                 stream_id: stream_id.as_u64(),
                 error,

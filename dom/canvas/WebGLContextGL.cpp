@@ -1593,4 +1593,21 @@ void WebGLContext::SampleCoverage(GLclampf value, WebGLboolean invert) {
   gl->fSampleCoverage(value, invert);
 }
 
+void WebGLContext::ClipControlEXT(const GLenum origin, const GLenum depth) {
+  const FuncScope funcScope(*this, "clipControlEXT");
+  if (IsContextLost()) return;
+  MOZ_RELEASE_ASSERT(IsExtensionEnabled(WebGLExtensionID::EXT_clip_control));
+
+  if (origin != LOCAL_GL_LOWER_LEFT && origin != LOCAL_GL_UPPER_LEFT) {
+    ErrorInvalidEnumArg("origin", origin);
+    return;
+  }
+  if (depth != LOCAL_GL_NEGATIVE_ONE_TO_ONE && depth != LOCAL_GL_ZERO_TO_ONE) {
+    ErrorInvalidEnumArg("depth", depth);
+    return;
+  }
+
+  gl->fClipControl(origin, depth);
+}
+
 }  // namespace mozilla

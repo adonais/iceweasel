@@ -19,7 +19,7 @@ This code style currently applies to the components living in the following dire
 - `dom/workers`
 
 In the long-term, the code is intended to use the
-{ref}`Mozilla Coding Style <Coding style>`,
+{doc}`Mozilla Coding Style </code-quality/coding-style/index>`,
 which references the [Google C++ Coding Style](https://google.github.io/styleguide/cppguide.html).
 
 However, large parts of the code were written before rules and in particular

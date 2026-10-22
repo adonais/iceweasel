@@ -178,13 +178,13 @@ rather than the browser's. It covers neither `pinned`, which has `TabPinned` and
 | `TabBrowserInserted` | `<tab>` | `insertedOnTabCreation` | The tab's browser has been injected into `tabpanels` and wired to a progress listener. |
 | `TabBrowserDiscarded` | `<tab>` | — | The tab's browser has been destroyed and replaced with lazy substitutes. |
 | `BeforeTabRemotenessChange` / `TabRemotenessChange` | `<tab>` | — | Either side of swapping the tab's browser for one in a different content process. |
-| `TabClose` | `<tab>` | `adoptedBy`, `skipSessionStore`, `metricsContext` | The tab is committed to closing, before any teardown. `adoptedBy` is the tab in another window taking it over. |
-| `TabSelect` | `<tab>` | `previousTab` | The tab became the selected one. Suppressed while the tabbrowser is in preview mode. |
+| `TabClose` | `<tab>` | `adoptedBy`, `skipSessionStore`, `inMultiselection`, `metricsContext` | The tab is committed to closing, before any teardown. `adoptedBy` is the tab in another window taking it over. `inMultiselection` is true when the tab closes as one of a set of tabs closed together, which Session Restore reopens together. |
+| `TabSelect` | `<tab>` | `previousTab`, `previousTabInAdoptedSplitView` | The tab became the selected one. Suppressed while the tabbrowser is in preview mode. `previousTabInAdoptedSplitView` is true when the previous tab is leaving for another window as part of a split view moved there as a whole. |
 | `TabSwitchDone` | `<tabpanels>` | — | The switcher has finished and torn itself down, which is later than `TabSelect` — that fires when the selection changes, this when the switch is visually over. Almost every consumer is a test waiting for a switch to settle; the one in product is `tab-hover-preview.mjs`, re-enabling the tab transitions it suppressed for the duration. `Tabbrowser` dispatches it itself only when e10s is disabled, in which case there is no `TabSwitched`. |
 | `TabAttrModified` | `<tab>` | `changed` | One of the tab's state attributes changed; see above. |
 | `TabPinned` / `TabUnpinned` | `<tab>` | `metricsContext` | The tab was pinned or unpinned. |
 | `TabShow` / `TabHide` | `<tab>` | — | The tab's `hidden` attribute changed, through `showTab` and `hideTab` or a session restore. A collapsed group's tabs are not hidden in this sense: they count as invisible through `tab.visible` without either event firing. |
-| `TabMove` | `<tab>` | `previousTabState`, `currentTabState`, `metricsContext` | The tab's index, group or split view changed. Each state carries `tabIndex`, `elementIndex` for a visible tab, and `tabGroupId` and `splitViewId` where they apply. |
+| `TabMove` | `<tab>` | `previousTabState`, `currentTabState`, `metricsContext`, `adoptingSplitView` | The tab's index, group or split view changed. Each state carries `tabIndex`, `elementIndex` for a visible tab, and `tabGroupId` and `splitViewId` where they apply. `adoptingSplitView` is true while a split view moves to another window as a whole: its tabs join a new split view there, and when it was the last thing in the old window, the tab still in the old split view is moved out of it as that window closes. Each of these changes `splitViewId`, though the split view keeps its id across windows. |
 | `TabMultiSelect` | `<tabs>` | — | A batch of multi-select changes finished with something worth reporting. It is dispatched on the strip itself rather than on any one tab, since it reports the selection as a whole. |
 | `TabFindInitialized` | `<tab>` | — | A findbar was created for the tab. |
 
@@ -220,7 +220,7 @@ and exists for an ASRouter onboarding trigger.
 
 | Event | `detail` | Fires when |
 | --- | --- | --- |
-| `TabGroupCreate` | `isAdoptingGroup` when the group came from another window | The group element initialized. Once per element, so a group moved between windows produces a second one. |
+| `TabGroupCreate` | `adopting`, true when the group came from another window | The group element initialized. Once per element, so a group moved between windows produces a second one. |
 | `TabGrouped` / `TabUngrouped` | the tab | A tab joined or left the group. |
 | `TabGroupCollapse` / `TabGroupExpand` | — | The group's `collapsed` state changed, before the animation. |
 | `TabGroupUpdate` | — | The group's label or color changed to a different value. |
@@ -228,7 +228,7 @@ and exists for an ASRouter onboarding trigger.
 | `TabGroupUngroup` | `metricsContext` | `ungroupTabs` is about to move every tab out of the group. |
 | `TabGroupSaved` | `metricsContext` | The group has been handed to session store as a saved group. |
 | `TabGroupRemoveRequested` | `skipSessionStore`, `metricsContext` | `removeTabGroup` is about to close the group's tabs, while they are still members, which is what lets session store record them. |
-| `TabGroupRemoved` | — | The group's last tab left, just before the element removes itself. |
+| `TabGroupRemoved` | `adopting`, true when the group is moving to another window | The group's last tab left, just before the element removes itself. |
 
 ## Events that are internal plumbing
 

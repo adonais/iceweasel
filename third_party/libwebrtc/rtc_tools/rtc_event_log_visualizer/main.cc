@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -167,10 +168,10 @@ int main(int argc, char* argv[]) {
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
 
   // Print RTC_LOG warnings and errors even in release builds.
-  if (webrtc::LogMessage::GetLogToDebug() > webrtc::LS_WARNING) {
-    webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
-  }
-  webrtc::LogMessage::SetLogToStderr(true);
+  webrtc::LoggingConfig logging_config;
+  logging_config.set_min_severity(webrtc::LS_WARNING);
+  logging_config.set_debug_severity(webrtc::LS_WARNING);
+  webrtc::InitializeLogging(std::move(logging_config));
 
   const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
   webrtc::Environment env = webrtc::CreateEnvironment(

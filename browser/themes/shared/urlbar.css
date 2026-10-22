@@ -39,8 +39,8 @@
      sides the input's own background doesn't cover. The view's margin is part
      of it because the surface wraps the view's margin box, not its border
      box. */
-  --urlbarView-joint-background-outset-inline: calc(var(--urlbar-background-overhang-open) + var(--urlbarView-margin-inline));
-  --urlbarView-joint-background-outset-block: calc(var(--urlbar-background-overhang-open) + var(--urlbarView-margin-block));
+  --urlbarview-joint-background-outset-inline: calc(var(--urlbar-background-overhang-open) + var(--urlbarview-margin-inline));
+  --urlbarview-joint-background-outset-block: calc(var(--urlbar-background-overhang-open) + var(--urlbarview-margin-block));
 
   /* The container's block padding, which the popover takes as its offset from
      the container's border box. */
@@ -71,8 +71,8 @@
        below as if the trust panel was enabled. */
     --urlbar-container-min-width: 275px;
   }
-  &[mini-window] {
-    /* The address bar is read-only in mini-window mode. */
+  &[cropped-mini-window] {
+    /* A cropped mini window's address bar is read-only */
     --urlbar-background-color: transparent;
   }
   /* Enabling the trust panel saves up to two icons in the front part of the
@@ -95,25 +95,10 @@
    other teams. Each should be removed after its token has been imported. */
 .urlbar,
 #searchbar {
-  --chrome-box-shadow: rgba(89, 57, 168, 0.15);
-
-  @media (prefers-color-scheme: dark) {
-    --chrome-box-shadow: rgba(152, 113, 255, 0.15);
-  }
-
-  @media not -moz-pref("browser.nova.enabled") {
-    --chrome-box-shadow: rgba(0, 0, 0, 0.13);
-  }
-
-  /* In high contrast mode, align the urlbar buttons (page actions, identity
-     block, go/clear buttons, result menu/action buttons) with the toolbar
-     buttons by borrowing the ghost-button hover/active colors. */
+  --chrome-box-shadow: rgba(0, 0, 0, 0.13);
   @media -moz-pref("browser.nova.enabled") {
-    @media (prefers-contrast) {
-      --urlbar-box-background-color-hover: var(--button-background-color-ghost-hover);
-      --urlbar-box-background-color-active: var(--button-background-color-ghost-active);
-      --urlbar-box-text-color-hover: var(--button-text-color-ghost-hover);
-      --urlbar-box-text-color-active: var(--button-text-color-ghost-active);
+    @media not ((-moz-native-theme) or (forced-colors)) {
+      --chrome-box-shadow: light-dark(rgba(89, 57, 168, 0.15), rgba(152, 113, 255, 0.15));
     }
   }
 }
@@ -273,17 +258,15 @@ toolbar[inactive="true"] .urlbar,
   /* When the input isn't in a toolbar, it can't use a background that may have
      significant transparency since it counts on the toolbar background behind
      it. */
-  --urlbar-background-color: var(--input-text-background-color);
-  --urlbar-background-color-focus: var(--input-text-background-color);
+  --urlbar-background-color: var(--input-background-color);
+  --urlbar-background-color-focus: var(--input-background-color);
   --toolbar-field-text-color: var(--input-text-color);
   --toolbar-field-text-color-focus: var(--input-text-color);
   --toolbar-field-border-color: var(--border-color-deemphasized);
 
-  /* The selected row's background and text have to stay a pair, so both come
-     from the list item tokens. The action text follows the input. */
-  --urlbarview-background-color-selected: var(--background-color-list-item-hover);
-  --urlbarview-text-color-selected: var(--text-color-list-item-hover);
-  --urlbarview-text-color-action: var(--input-text-color);
+  /* The action text follows the toolbar field text color, which the token on
+     the root would resolve before the override above. */
+  --urlbarview-text-color-action: var(--toolbar-field-text-color);
 }
 
 /* Variant B of the New Tab search bar puts the search engine button on its own
@@ -608,7 +591,7 @@ toolbar[inactive="true"] .urlbar,
        past it. */
     overflow-clip-margin: var(--urlbar-joint-background-shadow-margin);
 
-    max-height: min(calc(100% - var(--urlbarView-joint-background-outset-block)), 100vh);
+    max-height: min(calc(100% - var(--urlbarview-joint-background-outset-block)), 100vh);
   }
 }
 
@@ -620,7 +603,7 @@ toolbar[inactive="true"] .urlbar,
   display: block;
   position: absolute;
   z-index: -1;
-  inset-inline: calc(-1 * var(--urlbarView-joint-background-outset-inline));
+  inset-inline: calc(-1 * var(--urlbarview-joint-background-outset-inline));
   background-color: var(--urlbar-background-color-focus);
   background-clip: border-box;
   border: var(--urlbar-background-border-open);
@@ -628,7 +611,7 @@ toolbar[inactive="true"] .urlbar,
   box-shadow: var(--urlbar-background-box-shadow-open);
 
   .urlbar > .urlbarView > & {
-    inset-block: calc(-1 * var(--urlbarView-margin-block) - var(--urlbar-joint-background-overlap)) calc(-1 * var(--urlbarView-joint-background-outset-block));
+    inset-block: calc(-1 * var(--urlbarview-margin-block) - var(--urlbar-joint-background-overlap)) calc(-1 * var(--urlbarview-joint-background-outset-block));
     border-start-start-radius: 0;
     border-start-end-radius: 0;
     clip-path: inset(
@@ -820,6 +803,7 @@ toolbar[inactive="true"] .urlbar,
 
   #urlbar[focused] > .urlbar-input-container > & {
     background-color: var(--urlbar-box-background-color-focus);
+    color: var(--urlbar-box-text-color-focus);
   }
 
   #urlbar[searchmode] > .urlbar-input-container > & {
@@ -1045,7 +1029,7 @@ toolbar[inactive="true"] .urlbar,
     height: 16px;
   }
 
-  .urlbar-background {
+  #urlbar > .urlbar-background {
     background-image: repeating-linear-gradient(-45deg, rgba(255, 60, 60, 0.25) 0 25px, rgba(175, 0, 0, 0.25) 25px 50px);
 
     background-attachment: fixed;
@@ -1184,6 +1168,7 @@ toolbar[inactive="true"] .urlbar,
 
   :where(#urlbar[focused]) & {
     background-color: var(--urlbar-box-background-color-focus);
+    color: var(--urlbar-box-text-color-focus);
   }
 
   &:hover {
@@ -1353,6 +1338,15 @@ toolbar[inactive="true"] .urlbar,
   --button-min-height: 100%;
   --button-font-weight: normal;
   --focus-outline-offset: var(--focus-outline-inset);
+
+  --button-background-color-muted: var(--urlbar-box-background-color);
+  --button-background-color-muted-hover: var(--urlbar-box-background-color-hover);
+  --button-background-color-muted-active: var(--urlbar-box-background-color-active);
+  --button-background-color-muted-selected: var(--urlbar-box-background-color-active);
+  --button-text-color-muted: var(--urlbar-box-text-color);
+  --button-text-color-muted-hover: var(--urlbar-box-text-color-hover);
+  --button-text-color-muted-active: var(--urlbar-box-text-color-active);
+  --button-text-color-muted-selected: var(--urlbar-box-text-color-active);
 
   /* The button fills the host; sizing to its label would potentially let it
      overflow the input container. */

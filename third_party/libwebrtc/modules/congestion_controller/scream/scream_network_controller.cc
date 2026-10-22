@@ -169,6 +169,9 @@ NetworkControlUpdate ScreamNetworkController::OnStreamsConfig(
       streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
     return CreateFirstUpdate(msg.at_time);
   }
+  if (first_update_created_) {
+    return CreateUpdate(msg.at_time);
+  }
   return NetworkControlUpdate();
 }
 
@@ -203,11 +206,18 @@ NetworkControlUpdate ScreamNetworkController::OnTransportPacketsFeedback(
   return CreateUpdate(msg.feedback_time);
 }
 
+DataRate ScreamNetworkController::GetPacingRate() const {
+  DataRate min_pacing_rate =
+      streams_config_.min_total_allocated_bitrate.value_or(DataRate::Zero()) *
+      params_.pacing_factor.Get();
+  return std::max(scream_->pacing_rate(), min_pacing_rate);
+}
+
 double ScreamNetworkController::CalculateCwndReduceRatio() const {
   double cwnd_reduce_ratio = 0.0;
-  if (scream_->pacing_rate() > DataRate::Zero() &&
-      !pacer_queue_size_.IsZero()) {
-    TimeDelta pacing_delay = pacer_queue_size_ / scream_->pacing_rate();
+  DataRate pacing_rate = GetPacingRate();
+  if (pacing_rate > DataRate::Zero() && !pacer_queue_size_.IsZero()) {
+    TimeDelta pacing_delay = pacer_queue_size_ / pacing_rate;
     TimeDelta min_delay = params_.min_pacing_delay_for_pushback.Get();
     TimeDelta max_delay = params_.max_pacing_delay_for_pushback.Get();
     if (max_delay > min_delay) {
@@ -223,8 +233,9 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now) {
   bool is_bandwidth_limited = !scream_->is_application_limited();
   double cwnd_reduce_ratio = CalculateCwndReduceRatio();
 
-  TimeDelta pacing_delay = (scream_->pacing_rate() > DataRate::Zero())
-                               ? (pacer_queue_size_ / scream_->pacing_rate())
+  DataRate pacing_rate = GetPacingRate();
+  TimeDelta pacing_delay = (pacing_rate > DataRate::Zero())
+                               ? (pacer_queue_size_ / pacing_rate)
                                : TimeDelta::Zero();
   bool is_congested = data_in_flight_ > scream_->max_data_in_flight();
 
@@ -308,7 +319,7 @@ std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig(
         target_rate < max_padding_rate ? target_rate : DataRate::Zero();
   }
 
-  DataRate pacing_rate = scream_->pacing_rate();
+  DataRate pacing_rate = GetPacingRate();
   if (padding_rate != reported_padding_rate_ ||
       pacing_rate != reported_pacing_rate_ ||
       current_pacing_window_ != pacing_window) {

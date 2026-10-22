@@ -1321,3 +1321,10 @@ PK11_IsAEAD;
 ;+    local:
 ;+       *;
 ;+};
+;+NSS_3.131 { 	# NSS 3.131 release
+;+    global:
+CERT_GetDERCertTrust;
+_PK11_DERPrivateKeyToPrivateKeyInfo;
+;+    local:
+;+       *;
+;+};

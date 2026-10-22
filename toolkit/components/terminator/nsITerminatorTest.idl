@@ -15,7 +15,8 @@ interface nsITerminatorTest : nsISupports
   [implicit_jscontext] jsval getTicksForShutdownPhases();
 
   /**
-    * Shorten the watchdog's deadline to aTicks heartbeats.
+    * Shorten the watchdog's deadline to aTicks heartbeats. The resulting
+    * crash is expected by the test, so no shutdown hang profile is saved.
    */
   void setTicksBeforeCrash(in unsigned long aTicks);
 };

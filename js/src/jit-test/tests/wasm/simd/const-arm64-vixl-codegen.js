@@ -8,8 +8,10 @@ var lead = `0x[0-9a-f]+ +[0-9a-f]{8} +`;
 var prefix = `${lead}sub     sp, sp, #0x.. \\(..\\)
 ${lead}str     x23, \\[sp, #..\\]`;
 
+var literal = `${lead}ldr     q0, pc\\+[0-9]+ \\(addr 0x[0-9a-f]+\\)`;
+
 var suffix =
-`${lead}b       #\\+0x18 \\(addr 0x.*\\)
+`${lead}b       #\\+0x[0-9a-f]+ \\(addr 0x.*\\)
 ${lead}brk     #0xf000`;
 
 for ( let [bits, expected, values] of [
@@ -44,37 +46,24 @@ ${suffix}
 `,
      [0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0]],
 
-    // If high == low but the value is more complex then a constant load
-    // plus a dup is sufficient.  x16 is the designated temp.
+    // Anything else is loaded from the constant pool.
     ['i32x4 1 2 1 2', `
 ${prefix}
-${lead}mov     x16, #0x1
-${lead}movk    x16, #0x2, lsl #32
-${lead}dup     v0\\.2d, x16
+${literal}
 ${suffix}
 `,
      [1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0]],
 
-    // If high != low then we degenerate to a more complicated pattern: dup the low value
-    // and then overwrite the high part with the high value.
     ['i32x4 1 2 2 1', `
 ${prefix}
-${lead}mov     x16, #0x1
-${lead}movk    x16, #0x2, lsl #32
-${lead}dup     v0\\.2d, x16
-${lead}mov     x16, #0x2
-${lead}movk    x16, #0x1, lsl #32
-${lead}mov     v0\\.d\\[1\\], x16
+${literal}
 ${suffix}
 `,
      [1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0]],
 
-    // Things are not always bleak, and vixl finds a way.
     ['i32x4 1 1 2 2', `
 ${prefix}
-${lead}movi    v0\\.4s, #0x1, lsl #0
-${lead}mov     x16, #0x200000002
-${lead}mov     v0\\.d\\[1\\], x16
+${literal}
 ${suffix}
 `,
      [1, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0]],

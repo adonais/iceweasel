@@ -17,10 +17,6 @@ fn check_win_api() -> u32 {
     unsafe { GetLastError() }
 }
 
-// TODO: drop once windows-sys names its own import libraries (Bug 2071329).
-#[link(name = "winhttp")]
-unsafe extern "system" {}
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("WinHttpWebSocketCompleteUpgrade failed: {0}")]

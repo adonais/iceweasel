@@ -59,34 +59,41 @@ void av1_dealloc_mb_wiener_var_pred_buf(ThreadData *td) {
 
 void av1_init_mb_wiener_var_buffer(AV1_COMP *cpi) {
   AV1_COMMON *cm = &cpi->common;
+  const int current_size = cpi->frame_info.mi_rows * cpi->frame_info.mi_cols;
 
   // This block size is also used to determine number of workers in
   // multi-threading. If it is changed, one needs to change it accordingly in
   // "compute_num_ai_workers()".
   cpi->weber_bsize = BLOCK_8X8;
 
-  if (cpi->oxcf.enable_rate_guide_deltaq) {
-    if (cpi->mb_weber_stats && cpi->prep_rate_estimates &&
-        cpi->ext_rate_distribution)
-      return;
-  } else {
-    if (cpi->mb_weber_stats) return;
+  if (cpi->mb_weber_stats && cpi->mb_weber_stats_alloc_size < current_size) {
+    aom_free(cpi->mb_weber_stats);
+    cpi->mb_weber_stats = NULL;
+    aom_free(cpi->prep_rate_estimates);
+    cpi->prep_rate_estimates = NULL;
+    aom_free(cpi->ext_rate_distribution);
+    cpi->ext_rate_distribution = NULL;
+    cpi->mb_weber_stats_alloc_size = 0;
   }
 
-  CHECK_MEM_ERROR(cm, cpi->mb_weber_stats,
-                  aom_calloc(cpi->frame_info.mi_rows * cpi->frame_info.mi_cols,
-                             sizeof(*cpi->mb_weber_stats)));
+  if (!cpi->mb_weber_stats) {
+    CHECK_MEM_ERROR(cm, cpi->mb_weber_stats,
+                    aom_calloc(current_size, sizeof(*cpi->mb_weber_stats)));
+    cpi->mb_weber_stats_alloc_size = current_size;
+  }
 
   if (cpi->oxcf.enable_rate_guide_deltaq) {
-    CHECK_MEM_ERROR(
-        cm, cpi->prep_rate_estimates,
-        aom_calloc(cpi->frame_info.mi_rows * cpi->frame_info.mi_cols,
-                   sizeof(*cpi->prep_rate_estimates)));
+    if (!cpi->prep_rate_estimates) {
+      CHECK_MEM_ERROR(cm, cpi->prep_rate_estimates,
+                      aom_calloc(cpi->mb_weber_stats_alloc_size,
+                                 sizeof(*cpi->prep_rate_estimates)));
+    }
 
-    CHECK_MEM_ERROR(
-        cm, cpi->ext_rate_distribution,
-        aom_calloc(cpi->frame_info.mi_rows * cpi->frame_info.mi_cols,
-                   sizeof(*cpi->ext_rate_distribution)));
+    if (!cpi->ext_rate_distribution) {
+      CHECK_MEM_ERROR(cm, cpi->ext_rate_distribution,
+                      aom_calloc(cpi->mb_weber_stats_alloc_size,
+                                 sizeof(*cpi->ext_rate_distribution)));
+    }
   }
 }
 
@@ -103,7 +110,8 @@ static int64_t get_satd(AV1_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
 
   for (int row = mi_row; row < mi_row + mi_high; row += mi_step) {
     for (int col = mi_col; col < mi_col + mi_wide; col += mi_step) {
-      if (row >= cm->mi_params.mi_rows || col >= cm->mi_params.mi_cols)
+      if (row < 0 || col < 0 || row >= cm->mi_params.mi_rows ||
+          col >= cm->mi_params.mi_cols)
         continue;
 
       satd += cpi->mb_weber_stats[(row / mi_step) * mb_stride + (col / mi_step)]
@@ -112,10 +120,10 @@ static int64_t get_satd(AV1_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
     }
   }
 
-  if (mb_count) satd = (int)(satd / mb_count);
+  if (mb_count) satd = satd / mb_count;
   satd = AOMMAX(1, satd);
 
-  return (int)satd;
+  return satd;
 }
 
 static int64_t get_sse(AV1_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
@@ -131,7 +139,8 @@ static int64_t get_sse(AV1_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
 
   for (int row = mi_row; row < mi_row + mi_high; row += mi_step) {
     for (int col = mi_col; col < mi_col + mi_wide; col += mi_step) {
-      if (row >= cm->mi_params.mi_rows || col >= cm->mi_params.mi_cols)
+      if (row < 0 || col < 0 || row >= cm->mi_params.mi_rows ||
+          col >= cm->mi_params.mi_cols)
         continue;
 
       distortion +=
@@ -141,10 +150,10 @@ static int64_t get_sse(AV1_COMP *const cpi, BLOCK_SIZE bsize, int mi_row,
     }
   }
 
-  if (mb_count) distortion = (int)(distortion / mb_count);
+  if (mb_count) distortion = distortion / mb_count;
   distortion = AOMMAX(1, distortion);
 
-  return (int)distortion;
+  return distortion;
 }
 
 static double get_max_scale(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
@@ -158,7 +167,8 @@ static double get_max_scale(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
 
   for (int row = mi_row; row < mi_row + mi_high; row += mi_step) {
     for (int col = mi_col; col < mi_col + mi_wide; col += mi_step) {
-      if (row >= cm->mi_params.mi_rows || col >= cm->mi_params.mi_cols)
+      if (row < 0 || col < 0 || row >= cm->mi_params.mi_rows ||
+          col >= cm->mi_params.mi_cols)
         continue;
       const WeberStats *weber_stats =
           &cpi->mb_weber_stats[(row / mi_step) * mb_stride + (col / mi_step)];
@@ -186,7 +196,8 @@ static int get_window_wiener_var(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
 
   for (int row = mi_row; row < mi_row + mi_high; row += mi_step) {
     for (int col = mi_col; col < mi_col + mi_wide; col += mi_step) {
-      if (row >= cm->mi_params.mi_rows || col >= cm->mi_params.mi_cols)
+      if (row < 0 || col < 0 || row >= cm->mi_params.mi_rows ||
+          col >= cm->mi_params.mi_cols)
         continue;
 
       const WeberStats *weber_stats =
@@ -206,6 +217,7 @@ static int get_window_wiener_var(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
     }
   }
 
+  if (mb_count == 0) return 1;
   sb_wiener_var =
       (int)(((base_num + base_reg) / (base_den + base_reg)) / mb_count);
   sb_wiener_var = AOMMAX(1, sb_wiener_var);
@@ -690,16 +702,20 @@ void av1_set_mb_wiener_variance(AV1_COMP *cpi) {
 
 static int get_rate_guided_quantizer(const AV1_COMP *const cpi,
                                      BLOCK_SIZE bsize, int mi_row, int mi_col) {
+  const AV1_COMMON *const cm = &cpi->common;
   // Calculation uses 8x8.
   const int mb_step = mi_size_wide[cpi->weber_bsize];
   // Accumulate to 16x16
   const int block_step = mi_size_wide[BLOCK_16X16];
   double sb_rate_hific = 0.0;
   double sb_rate_uniform = 0.0;
-  for (int row = mi_row; row < mi_row + mi_size_wide[bsize];
+  for (int row = mi_row; row < mi_row + mi_size_high[bsize];
        row += block_step) {
-    for (int col = mi_col; col < mi_col + mi_size_high[bsize];
+    for (int col = mi_col; col < mi_col + mi_size_wide[bsize];
          col += block_step) {
+      if (row < 0 || col < 0 || row >= cm->mi_params.mi_rows ||
+          col >= cm->mi_params.mi_cols)
+        continue;
       sb_rate_hific +=
           cpi->ext_rate_distribution[(row / mb_step) * cpi->frame_info.mi_cols +
                                      (col / mb_step)];
@@ -708,6 +724,10 @@ static int get_rate_guided_quantizer(const AV1_COMP *const cpi,
         for (int c = 0; c < block_step; c += mb_step) {
           const int this_row = row + r;
           const int this_col = col + c;
+          if (this_row < 0 || this_col < 0 ||
+              this_row >= cm->mi_params.mi_rows ||
+              this_col >= cm->mi_params.mi_cols)
+            continue;
           sb_rate_uniform +=
               cpi->prep_rate_estimates[(this_row / mb_step) *
                                            cpi->frame_info.mi_cols +
@@ -727,7 +747,6 @@ static int get_rate_guided_quantizer(const AV1_COMP *const cpi,
   double min_max_scale = AOMMAX(1.0, get_max_scale(cpi, bsize, mi_row, mi_col));
   scale = 1.0 / AOMMIN(1.0 / scale, min_max_scale);
 
-  const AV1_COMMON *const cm = &cpi->common;
   const int base_qindex = cm->quant_params.base_qindex;
   int offset =
       av1_get_deltaq_offset(cm->seq_params->bit_depth, base_qindex, scale);
@@ -774,12 +793,19 @@ int av1_get_sbq_perceptual_ai(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
 
 void av1_init_mb_ur_var_buffer(AV1_COMP *cpi) {
   AV1_COMMON *cm = &cpi->common;
+  const int current_size = cpi->frame_info.mb_rows * cpi->frame_info.mb_cols;
 
-  if (cpi->mb_delta_q) return;
+  if (cpi->mb_delta_q && cpi->mb_delta_q_alloc_size < current_size) {
+    aom_free(cpi->mb_delta_q);
+    cpi->mb_delta_q = NULL;
+    cpi->mb_delta_q_alloc_size = 0;
+  }
 
-  CHECK_MEM_ERROR(cm, cpi->mb_delta_q,
-                  aom_calloc(cpi->frame_info.mb_rows * cpi->frame_info.mb_cols,
-                             sizeof(*cpi->mb_delta_q)));
+  if (!cpi->mb_delta_q) {
+    CHECK_MEM_ERROR(cm, cpi->mb_delta_q,
+                    aom_calloc(current_size, sizeof(*cpi->mb_delta_q)));
+    cpi->mb_delta_q_alloc_size = current_size;
+  }
 }
 
 #if CONFIG_TFLITE

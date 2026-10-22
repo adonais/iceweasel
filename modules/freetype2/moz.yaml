@@ -10,16 +10,25 @@ origin:
 
   url: https://gitlab.freedesktop.org/freetype/freetype
 
-  release: VER-2-14-3 (2026-03-22T16:07:10+01:00).
-  revision: VER-2-14-3
+  release: d5d4bef0c6d5363931d346a6b2380317a32b8601 (2026-10-06T10:11:29.000-04:00).
+  revision: d5d4bef0c6d5363931d346a6b2380317a32b8601
 
   license: FTL
   license-file: LICENSE.TXT
 
+updatebot:
+  maintainer-phab: jfkthame
+  maintainer-bz: jfkthame@gmail.com
+  try-preset: freetype
+  tasks:
+    - type: vendoring
+      enabled: true
+      frequency: 1 week
+
 vendoring:
   url: https://gitlab.freedesktop.org/freetype/freetype
   source-hosting: gitlab
-  tracking: tag
+  tracking: commit
 
   exclude:
     - ".**"
@@ -32,6 +41,7 @@ vendoring:
     - Makefile
     - meson.build
     - meson_options.txt
+    - mkfile
     - MSBuild.rsp
     - MSBuild.sln
     - objs
@@ -41,8 +51,3 @@ vendoring:
 
   keep:
     - moz.build
-
-  patches:
-    - patches/0001-Bug-2032039-colr-blend-layer-mono-source.patch
-    - patches/0002-Bug-2032043-cherry-pick-upstream-1803559c.patch
-    - patches/0003-Bug-2038537-truetype-interpreter-fixes.patch

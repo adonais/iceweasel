@@ -10,6 +10,9 @@ add_task(async function () {
     "viewsourceTestingPerm",
     Services.perms.ALLOW_ACTION
   );
+  registerCleanupFunction(() =>
+    Services.perms.removeFromPrincipal(principal, "viewsourceTestingPerm")
+  );
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,

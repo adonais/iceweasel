@@ -15,8 +15,6 @@ import org.mozilla.fenix.utils.Settings
  *
  * @property topSites List of [TopSite] to display.
  * @property colors The color set defined by [TopSiteColors] used to style a top site.
- * @property isAddShortcutEnabled Whether the "Add shortcut" tile is enabled. When expanded it is shown after the last
- *   shortcut, matching the shortcuts library. When collapsed it is only shown if it fits in the truncated grid.
  * @property isExpandToggleEnabled Whether the control that expands and collapses the section is enabled.
  * @property showShortcutsLibraryButton Whether to show the header button that opens the shortcuts library. Hidden while
  *   the expand/collapse experiment is active, as that control supersedes it.
@@ -24,7 +22,6 @@ import org.mozilla.fenix.utils.Settings
 internal data class TopSiteState(
     val topSites: List<TopSite>,
     val colors: TopSiteColors,
-    val isAddShortcutEnabled: Boolean = false,
     val isExpandToggleEnabled: Boolean = false,
     val showShortcutsLibraryButton: Boolean = true,
 ) {
@@ -50,7 +47,6 @@ internal data class TopSiteState(
                     TopSiteState(
                         topSites = topSites,
                         colors = TopSiteColors.colors(wallpaperState = appState.wallpaperState),
-                        isAddShortcutEnabled = settings.enableAddShortcutsImprovement,
                         isExpandToggleEnabled = settings.showMoreShortcuts,
                         showShortcutsLibraryButton = !settings.showMoreShortcuts,
                     )

@@ -364,6 +364,7 @@
     <string name="pref_key_is_user_moloco_attributed" translatable="false">pref_key_is_user_moloco_attributed</string>
     <string name="pref_key_is_user_rakuten_attributed" translatable="false">pref_key_is_user_rakuten_attributed</string>
     <string name="pref_key_is_user_skyflag_attributed" translatable="false">pref_key_is_user_skyflag_attributed</string>
+    <string name="pref_key_is_user_quora_attributed" translatable="false">pref_key_is_user_quora_attributed</string>
     <string name="pref_key_is_user_pairing_campaign_attributed" translatable="false">pref_key_is_user_pairing_campaign_attributed</string>
     <string name="pref_key_referral_ping_submitted" translatable="false">pref_key_referral_ping_submitted</string>
     <string name="pref_key_referral_code" translatable="false">pref_key_referral_code</string>
@@ -484,7 +485,6 @@
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
     <string name="pref_key_enable_universal_edge_to_edge_wallpapers" translatable="false">pref_key_enable_universal_edge_to_edge_wallpapers</string>
     <string name="pref_key_enable_ads_client_for_stories" translatable="false">pref_key_enable_ads_client_for_stories</string>
-    <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_show_more_shortcuts" translatable="false">pref_key_show_more_shortcuts</string>
     <string name="pref_key_enable_homepage_weather_widget" translatable="false">pref_key_enable_homepage_weather_widget</string>
     <string name="pref_key_show_homepage_weather_widget" translatable="false">pref_key_show_homepage_weather_widget</string>
@@ -495,6 +495,8 @@
     <string name="pref_key_enable_lna_feature_enabled" translatable="false">pref_key_enable_lna_feature_enabled</string>
     <string name="pref_key_enable_isolated_process" translatable="false">pref_key_enable_isolated_process</string>
     <string name="pref_key_enable_app_zygote_process" translatable="false">pref_key_enable_app_zygote_process</string>
+    <string name="pref_key_power_saving_mode_auto_enabled" translatable="false">pref_key_power_saving_mode_auto_enabled</string>
+    <string name="pref_key_power_saving_mode_manually_enabled" translatable="false">pref_key_power_saving_mode_manually_enabled</string>
     <string name="pref_key_enable_persistent_onboarding" translatable="false">pref_key_enable_persistent_onboarding</string>
     <string name="pref_key_show_debug_info" translatable="false">pref_key_show_debug_info</string>
     <string name="pref_key_enable_uninstall_survey" translatable="false">pref_key_enable_uninstall_survey</string>
@@ -503,6 +505,7 @@
     <string name="pref_key_enable_oled_theme" translatable="false">pref_key_enable_oled_theme</string>
     <string name="pref_key_enable_pdf_tools" translatable="false">pref_key_enable_pdf_tools</string>
     <string name="pref_key_enable_menu_customization" translatable="false">pref_key_enable_menu_customization</string>
+    <string name="pref_key_enable_account_settings_new_ui" translatable="false">pref_key_enable_account_settings_new_ui</string>
     <!-- Preference for the feature flag -->
     <string name="pref_key_enable_shake_to_summarize" translatable="false">pref_key_enable_shake_to_summarize</string>
     <string name="pref_key_enable_weekly_privacy_notification" translatable="false">pref_key_enable_weekly_privacy_notification</string>
@@ -656,4 +659,7 @@
     <string name="pref_key_webcompat_reporter_enhancements" translatable="false">pref_key_webcompat_reporter_enhancements</string>
 
     <string name="pref_key_deleted_report_site_domains_datastore" translatable="false">pref_key_deleted_report_site_domains_datastore</string>
+
+    <!--  Power Saving Mode  -->
+    <string name="pref_key_last_known_power_save_mode" translatable="false">pref_key_last_known_power_save_mode</string>
 </resources>

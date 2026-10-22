@@ -40,7 +40,9 @@
           "value": "{toggle.border.color.active}"
         },
         "on-pressed": {
-          "value": "{background.color.box.@base}"
+          "@base": {
+            "value": "{background.color.box.@base}"
+          }
         }
       }
     }

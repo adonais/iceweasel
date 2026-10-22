@@ -4,34 +4,30 @@
 
 package org.mozilla.focus.menu.home
 
-import android.content.Context
-import mozilla.components.browser.menu.BrowserMenuBuilder
-import mozilla.components.browser.menu.item.BrowserMenuImageText
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuItemsGroup
+import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 
-/** The overflow menu shown on the start/home screen. */
-class HomeMenu(
-    private val context: Context,
-    private val onItemTapped: ((HomeMenuItem) -> Unit),
-) {
-    /** Returns a [BrowserMenuBuilder] for the home screen overflow menu. */
-    fun getMenuBuilder(): BrowserMenuBuilder {
-        val help =
-            BrowserMenuImageText(
-                label = context.getString(R.string.menu_help),
-                imageResource = iconsR.drawable.mozac_ic_help_circle_24,
-            ) {
-                onItemTapped.invoke(HomeMenuItem.Help)
-            }
+private const val HOME_GROUP_ID = "home"
 
-        val settings =
-            BrowserMenuImageText(
-                label = context.getString(R.string.menu_settings),
-                imageResource = iconsR.drawable.mozac_ic_settings_24,
-            ) {
-                onItemTapped.invoke(HomeMenuItem.Settings)
-            }
-        return BrowserMenuBuilder(items = listOf(help, settings))
-    }
+/** The items to show in the menu of the start/home screen, none of which depend on the state of the application. */
+fun homeMenuGroups(): List<MenuItemsGroup> {
+    val help =
+        StandardMenuItem(
+            title = Text.Resource(R.string.menu_help),
+            icon = MenuItemIconRes(iconsR.drawable.mozac_ic_help_circle_24),
+            onClickEvent = HomeMenuItemTapped(HomeMenuItem.Help),
+        )
+
+    val settings =
+        StandardMenuItem(
+            title = Text.Resource(R.string.menu_settings),
+            icon = MenuItemIconRes(iconsR.drawable.mozac_ic_settings_24),
+            onClickEvent = HomeMenuItemTapped(HomeMenuItem.Settings),
+        )
+
+    return listOf(MenuItemsGroup.Row(HOME_GROUP_ID, listOf(help, settings)))
 }

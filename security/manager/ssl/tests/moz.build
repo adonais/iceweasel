@@ -12,4 +12,11 @@ TEST_DIRS += [
 XPCSHELL_TESTS_MANIFESTS += ["unit/xpcshell.toml"]
 
 if not CONFIG["MOZ_NO_SMART_CARDS"]:
-    XPCSHELL_TESTS_MANIFESTS += ["unit/xpcshell-smartcards.toml"]
+    # xpcshell-smartcards-remote duplicates some of the tests listed in
+    # xpcshell-smartcards-plain, and uses `dupe-manifest = true` to do so. The
+    # -remote variant must sort alphabetically after the -plain variant for
+    # this to work.
+    XPCSHELL_TESTS_MANIFESTS += ["unit/xpcshell-smartcards-plain.toml"]
+
+    if CONFIG["NIGHTLY_BUILD"]:
+        XPCSHELL_TESTS_MANIFESTS += ["unit/xpcshell-smartcards-remote.toml"]

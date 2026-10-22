@@ -21,7 +21,7 @@ class XdgConfigHomeTestCase(MarionetteTestCase):
         self.homedir = self.get_home_root()
 
         self._env = os.environ.copy()
-        self._env.update({"HOME": self.homedir})
+        self._env.update({"HOME": self.homedir, "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"})
 
         self.process_handler = None
 
@@ -35,7 +35,6 @@ class XdgConfigHomeTestCase(MarionetteTestCase):
             self.bin,
             "--headless",
             "-marionette",
-            "-remote-allow-system-access",
         ]
 
         self.marionette.quit(in_app=False)

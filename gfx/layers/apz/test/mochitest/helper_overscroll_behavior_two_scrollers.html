@@ -1,0 +1,98 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests which scroll container takes the overscroll effect when two nested
+  scroll containers have the (root, sub) overscroll-behavior given by the
+  `root` and `sub` query parameters
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  html {
+    overscroll-behavior: auto;
+  }
+  #subframe {
+    width: 400px;
+    height: 90vh;
+    overflow-y: scroll;
+  }
+  #subframe-content {
+    height: 400vh;
+    width: 100%;
+  }
+  #root-spacer {
+    height: 200vh;
+  }
+</style>
+<div id="subframe">
+  <div id="subframe-content"></div>
+</div>
+<div id="root-spacer"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const rootOverscrollBehavior = params.get("root");
+  const subOverscrollBehavior = params.get("sub");
+  const combination = `(${rootOverscrollBehavior}, ${subOverscrollBehavior})`;
+
+  const subScroller = document.getElementById("subframe");
+
+  document.documentElement.style.overscrollBehavior = rootOverscrollBehavior;
+  subScroller.style.overscrollBehavior = subOverscrollBehavior;
+
+  async function test() {
+    const rootScrollId =
+      SpecialPowers.DOMWindowUtils.getViewId(document.scrollingElement);
+    const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
+
+    is(subScroller.scrollTop, 0, "The sub scroll container starts at the top");
+    is(document.scrollingElement.scrollTop, 0,
+       "The root scroll container starts at the top");
+
+    // Pan upward. Neither scroll container has room to scroll that way, so an
+    // overscroll effect is the only thing that can happen.
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.updatePhase);
+
+    await promiseApzFlushedRepaints();
+
+    const overscrolled = collectOverscrolledIds();
+    const subOverscrolled = isOverscrolled(overscrolled, subScrollId);
+    const rootOverscrolled = isOverscrolled(overscrolled, rootScrollId);
+    if ((rootOverscrollBehavior == "auto" && subOverscrollBehavior == "auto") ||
+        (rootOverscrollBehavior == "auto" && subOverscrollBehavior == "chain")) {
+      ok(!subOverscrolled,
+         `The sub scroll container should not be overscrolled ${combination}`);
+      ok(rootOverscrolled,
+         `The root scroll container should be overscrolled ${combination}`);
+    } else if ((rootOverscrollBehavior == "auto" && subOverscrollBehavior == "contain") ||
+               (rootOverscrollBehavior == "none" && subOverscrollBehavior == "auto") ||
+               (rootOverscrollBehavior == "none" && subOverscrollBehavior == "contain")) {
+      ok(subOverscrolled,
+           `The sub scroll container should be overscrolled ${combination}`);
+      ok(!rootOverscrolled,
+         `The root scroll container should not be overscrolled ${combination}`);
+    } else if ((rootOverscrollBehavior == "auto" && subOverscrollBehavior == "none") ||
+               (rootOverscrollBehavior == "none" && subOverscrollBehavior == "chain")) {
+      ok(!subOverscrolled,
+         `The sub scroll container should not be overscrolled ${combination}`);
+      ok(!rootOverscrolled,
+         `The root scroll container should not be overscrolled ${combination}`);
+    } else {
+      // Test aborts.
+      ok(false, `There is no expectation for ${combination}`);
+    }
+
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+  }
+
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+</script>

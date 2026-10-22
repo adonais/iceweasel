@@ -2773,14 +2773,8 @@ bool RestReplacer::escapes(MInstruction* ins) {
       }
 
       case MDefinition::Opcode::GuardShape: {
-        const Shape* shape = rest()->shape();
-        if (!shape) {
-          JitSpew(JitSpew_Escape, "No shape defined.");
-          return true;
-        }
-
         auto* guard = def->toGuardShape();
-        if (shape != guard->shape()) {
+        if (rest()->shape() != guard->shape()) {
           JitSpewDef(JitSpew_Escape, "has a non-matching guard shape\n", def);
           return true;
         }

@@ -9,9 +9,9 @@ import android.graphics.BitmapFactory
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.components.browser.state.action.BrowserAction
@@ -122,8 +122,6 @@ class SearchMiddleware(
         }
     }
 
-    // SuppressWarnings will be removed when [BundleStorage] is entirely removed.
-    @SuppressWarnings("LongMethod")
     private fun loadSearchEngines(
         store: Store<BrowserState, BrowserAction>,
         region: RegionState,
@@ -131,9 +129,6 @@ class SearchMiddleware(
     ) = scope.launch {
         val migrationValues = migration?.getValuesToMigrate()
         performCustomSearchEnginesMigration(migrationValues)
-
-        val regionBundle: Deferred<BundleStorage.Bundle>
-        val allAdditionalSearchEngines: Deferred<List<SearchEngine>>
 
         if (searchEngineSelectorRepository != null) {
             val shouldRebuildSearchConfiguration =
@@ -148,54 +143,71 @@ class SearchMiddleware(
                 store.dispatch(SearchConfigurationAvailabilityChanged(false))
                 return@launch
             }
-
-            val result =
-                async(ioDispatcher) {
-                    searchEngineSelectorRepository.load(
-                        region = region,
-                        distribution = distribution,
-                        searchExtraParams = searchExtraParams,
-                        coroutineContext = ioDispatcher,
-                    )
-                }
-            regionBundle = async {
-                result
-                    .await()
-                    .copy(
-                        list = result.await().list.filter { !it.isOptional },
-                        searchEnvironmentId = result.await().searchEnvironmentId,
-                    )
-            }
-            allAdditionalSearchEngines = async { result.await().list.filter { it.isOptional } }
-        } else {
-            regionBundle =
-                async(ioDispatcher) {
-                    bundleStorage.load(
-                        region = region,
-                        distribution = distribution,
-                        searchExtraParams = searchExtraParams,
-                        coroutineContext = ioDispatcher,
-                    )
-                }
-            allAdditionalSearchEngines =
-                async(ioDispatcher) {
-                    bundleStorage.load(
-                        ids = additionalBundledSearchEngineIds,
-                        searchExtraParams = searchExtraParams,
-                        coroutineContext = ioDispatcher,
-                    )
-                }
         }
 
-        val customSearchEngines = async(ioDispatcher) { customStorage.loadSearchEngineList() }
-        val hiddenSearchEngineIds = async(ioDispatcher) { metadataStorage.getHiddenSearchEngines() }
-        val disabledSearchEngineIds = async(ioDispatcher) { metadataStorage.getDisabledSearchEngineIds() }
-        val additionalSearchEngineIds = async(ioDispatcher) { metadataStorage.getAdditionalSearchEngines() }
+        // Start all independent metadata and search engine bundle fetches in parallel.
+        val customSearchEnginesDeferred = async { customStorage.loadSearchEngineList() }
+        val hiddenSearchEngineIdsDeferred = async { metadataStorage.getHiddenSearchEngines() }
+        val disabledSearchEngineIdsDeferred = async { metadataStorage.getDisabledSearchEngineIds() }
+        val additionalSearchEngineIdsDeferred = async { metadataStorage.getAdditionalSearchEngines() }
 
+        val (regionBundle, allAdditionalSearchEngines) = fetchSearchEngineBundles(region, distribution)
+
+        val hiddenSearchEngineIds = hiddenSearchEngineIdsDeferred.await()
+        val additionalSearchEngineIds = additionalSearchEngineIdsDeferred.await()
+        val customSearchEngines = customSearchEnginesDeferred.await()
+        val disabledSearchEngineIds = disabledSearchEngineIdsDeferred.await()
+
+        val filteredEngines =
+            filterSearchEngines(
+                regionBundle = regionBundle,
+                allAdditionalSearchEngines = allAdditionalSearchEngines,
+                hiddenSearchEngineIds = hiddenSearchEngineIds,
+                additionalSearchEngineIds = additionalSearchEngineIds,
+            )
+
+        performDefaultSearchEngineMigration(
+            migrationValues,
+            filteredEngines.filteredRegionSearchEngines + customSearchEngines + filteredEngines.additionalSearchEngines,
+        )
+
+        val userChoiceDeferred = async { metadataStorage.getUserSelectedSearchEngine() }
+        val userPrivateChoiceDeferred = async { metadataStorage.getUserSelectedPrivateSearchEngine() }
+
+        val action =
+            buildSetSearchEnginesAction(
+                regionBundle = regionBundle,
+                customSearchEngines = customSearchEngines,
+                hiddenSearchEngines = filteredEngines.hiddenSearchEngines,
+                disabledSearchEngineIds = disabledSearchEngineIds,
+                filteredRegionSearchEngines = filteredEngines.filteredRegionSearchEngines,
+                regionSearchEngineIds = filteredEngines.regionSearchEngineIds,
+                additionalSearchEngines = filteredEngines.additionalSearchEngines,
+                additionalAvailableSearchEngines = filteredEngines.additionalAvailableSearchEngines,
+                userChoice = userChoiceDeferred.await(),
+                userPrivateChoice = userPrivateChoiceDeferred.await(),
+            )
+        store.dispatch(action)
+    }
+
+    private data class FilteredEngines(
+        val hiddenSearchEngines: List<SearchEngine>,
+        val filteredRegionSearchEngines: List<SearchEngine>,
+        val regionSearchEngineIds: List<String>,
+        val additionalSearchEngines: List<SearchEngine>,
+        val additionalAvailableSearchEngines: List<SearchEngine>,
+    )
+
+    private fun filterSearchEngines(
+        regionBundle: BundleStorage.Bundle,
+        allAdditionalSearchEngines: List<SearchEngine>,
+        hiddenSearchEngineIds: List<String>,
+        additionalSearchEngineIds: List<String>,
+    ): FilteredEngines {
         val hiddenSearchEngines = mutableListOf<SearchEngine>()
         val filteredRegionSearchEngines =
-            regionBundle.await().list.filter { searchEngine ->
-                if (hiddenSearchEngineIds.await().contains(searchEngine.id)) {
+            regionBundle.list.filter { searchEngine ->
+                if (hiddenSearchEngineIds.contains(searchEngine.id)) {
                     hiddenSearchEngines.add(searchEngine)
                     false
                 } else {
@@ -203,42 +215,90 @@ class SearchMiddleware(
                 }
             }
 
-        val regionSearchEngineIds = regionBundle.await().list.map { searchEngine -> searchEngine.id }
+        val regionSearchEngineIds = regionBundle.list.map { searchEngine -> searchEngine.id }
 
-        val additionalSearchEngines =
-            allAdditionalSearchEngines.await().filter { searchEngine ->
-                searchEngine.id in additionalSearchEngineIds.await() && searchEngine.id !in regionSearchEngineIds
-            }
+        val additionalSearchEngines = allAdditionalSearchEngines.filter { searchEngine ->
+            searchEngine.id in additionalSearchEngineIds && searchEngine.id !in regionSearchEngineIds
+        }
 
-        val additionalAvailableSearchEngines =
-            allAdditionalSearchEngines.await().filter { searchEngine ->
-                searchEngine.id !in additionalSearchEngineIds.await() && searchEngine.id !in regionSearchEngineIds
-            }
+        val additionalAvailableSearchEngines = allAdditionalSearchEngines.filter { searchEngine ->
+            searchEngine.id !in additionalSearchEngineIds && searchEngine.id !in regionSearchEngineIds
+        }
 
-        performDefaultSearchEngineMigration(
-            migrationValues,
-            filteredRegionSearchEngines + customSearchEngines.await() + additionalSearchEngines,
+        return FilteredEngines(
+            hiddenSearchEngines = hiddenSearchEngines,
+            filteredRegionSearchEngines = filteredRegionSearchEngines,
+            regionSearchEngineIds = regionSearchEngineIds,
+            additionalSearchEngines = additionalSearchEngines,
+            additionalAvailableSearchEngines = additionalAvailableSearchEngines,
         )
-        val userChoice = async(ioDispatcher) { metadataStorage.getUserSelectedSearchEngine() }
-        val userPrivateChoice = async(ioDispatcher) { metadataStorage.getUserSelectedPrivateSearchEngine() }
+    }
 
-        val action =
-            SearchAction.SetSearchEnginesAction(
-                regionSearchEngines = filteredRegionSearchEngines,
-                regionDefaultSearchEngineId = regionBundle.await().defaultSearchEngineId,
-                userSelectedSearchEngineId = userChoice.await()?.searchEngineId,
-                userSelectedSearchEngineName = userChoice.await()?.searchEngineName,
-                userSelectedPrivateSearchEngineId = userPrivateChoice.await()?.searchEngineId,
-                userSelectedPrivateSearchEngineName = userPrivateChoice.await()?.searchEngineName,
-                customSearchEngines = customSearchEngines.await(),
-                hiddenSearchEngines = hiddenSearchEngines,
-                disabledSearchEngineIds = disabledSearchEngineIds.await(),
-                additionalSearchEngines = additionalSearchEngines,
-                additionalAvailableSearchEngines = additionalAvailableSearchEngines,
-                regionSearchEnginesOrder = regionSearchEngineIds,
-                searchEnginesConfigurationId = regionBundle.await().searchEnvironmentId,
-            )
-        store.dispatch(action)
+    private suspend fun fetchSearchEngineBundles(
+        region: RegionState,
+        distribution: String?,
+    ): Pair<BundleStorage.Bundle, List<SearchEngine>> = coroutineScope {
+        if (searchEngineSelectorRepository != null) {
+            val result =
+                searchEngineSelectorRepository.load(
+                    region = region,
+                    distribution = distribution,
+                    searchExtraParams = searchExtraParams,
+                    coroutineContext = ioDispatcher,
+                )
+
+            val regionBundle = result.copy(list = result.list.filter { !it.isOptional })
+            val allAdditionalSearchEngines = result.list.filter { it.isOptional }
+            regionBundle to allAdditionalSearchEngines
+        } else {
+            val regionBundleDeferred = async {
+                bundleStorage.load(
+                    region = region,
+                    distribution = distribution,
+                    searchExtraParams = searchExtraParams,
+                    coroutineContext = ioDispatcher,
+                )
+            }
+            val allAdditionalSearchEnginesDeferred = async {
+                bundleStorage.load(
+                    ids = additionalBundledSearchEngineIds,
+                    searchExtraParams = searchExtraParams,
+                    coroutineContext = ioDispatcher,
+                )
+            }
+
+            regionBundleDeferred.await() to allAdditionalSearchEnginesDeferred.await()
+        }
+    }
+
+    @SuppressWarnings("LongParameterList")
+    private fun buildSetSearchEnginesAction(
+        regionBundle: BundleStorage.Bundle,
+        customSearchEngines: List<SearchEngine>,
+        hiddenSearchEngines: List<SearchEngine>,
+        disabledSearchEngineIds: List<String>,
+        filteredRegionSearchEngines: List<SearchEngine>,
+        regionSearchEngineIds: List<String>,
+        additionalSearchEngines: List<SearchEngine>,
+        additionalAvailableSearchEngines: List<SearchEngine>,
+        userChoice: MetadataStorage.UserChoice?,
+        userPrivateChoice: MetadataStorage.UserChoice?,
+    ): SearchAction.SetSearchEnginesAction {
+        return SearchAction.SetSearchEnginesAction(
+            regionSearchEngines = filteredRegionSearchEngines,
+            regionDefaultSearchEngineId = regionBundle.defaultSearchEngineId,
+            userSelectedSearchEngineId = userChoice?.searchEngineId,
+            userSelectedSearchEngineName = userChoice?.searchEngineName,
+            userSelectedPrivateSearchEngineId = userPrivateChoice?.searchEngineId,
+            userSelectedPrivateSearchEngineName = userPrivateChoice?.searchEngineName,
+            customSearchEngines = customSearchEngines,
+            hiddenSearchEngines = hiddenSearchEngines,
+            disabledSearchEngineIds = disabledSearchEngineIds,
+            additionalSearchEngines = additionalSearchEngines,
+            additionalAvailableSearchEngines = additionalAvailableSearchEngines,
+            regionSearchEnginesOrder = regionSearchEngineIds,
+            searchEnginesConfigurationId = regionBundle.searchEnvironmentId,
+        )
     }
 
     /**

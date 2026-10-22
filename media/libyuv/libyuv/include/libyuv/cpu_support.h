@@ -29,6 +29,9 @@ extern "C" {
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
+#if !defined(LIBYUV_MSAN)
+#define LIBYUV_MSAN 1
+#endif
 #if !defined(LIBYUV_DISABLE_NEON)
 #define LIBYUV_DISABLE_NEON
 #endif
@@ -38,8 +41,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_SVE)
 #define LIBYUV_DISABLE_SVE
 #endif
-#if !defined(LIBYUV_DISABLE_X86)
-#define LIBYUV_DISABLE_X86
+#if !defined(LIBYUV_ENABLE_ROWWIN)
+#define LIBYUV_ENABLE_ROWWIN
 #endif
 #endif  // __has_feature(memory_sanitizer)
 #endif  // defined(__has_feature)

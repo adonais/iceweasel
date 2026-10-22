@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import {
   actionTypes as at,
   actionCreators as ac,
@@ -36,6 +38,9 @@ const MAX_LIFETIME_CAP = 500; // Guard against misconfiguration on the server
 const DISCOVERY_STREAM_PREF = "discoverystream.config";
 
 export class TopStoriesFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor(ds) {
     // Use discoverystream config pref default values for fast path and
     // if needed lazy load activity stream top stories feed based on

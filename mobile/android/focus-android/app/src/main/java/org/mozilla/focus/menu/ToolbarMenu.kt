@@ -4,9 +4,6 @@
 
 package org.mozilla.focus.menu
 
-import mozilla.components.browser.menu.BrowserMenuBuilder
-import mozilla.components.browser.menu.item.BrowserMenuItemToolbar
-
 /**
  * Interface representing the toolbar menu in the application.
  *
@@ -50,6 +47,9 @@ interface ToolbarMenu {
         /** Finds text within the current page. */
         object FindInPage : Item()
 
+        /** Reports the current page as broken, through the WebCompat Reporter extension. */
+        object ReportSiteIssue : Item()
+
         /** Adds the current page to the home screen. */
         object AddToHomeScreen : Item()
 
@@ -87,6 +87,9 @@ interface ToolbarMenu {
         /** Finds text within the current page in the custom tab. */
         object FindInPage : CustomTabItem()
 
+        /** Reports the current page as broken, through the WebCompat Reporter extension. */
+        object ReportSiteIssue : CustomTabItem()
+
         /** Adds the current page in the custom tab to the home screen. */
         object AddToHomeScreen : CustomTabItem()
 
@@ -96,7 +99,4 @@ interface ToolbarMenu {
         /** Opens the current page from the custom tab in an external app. */
         object OpenInApp : CustomTabItem()
     }
-
-    val menuBuilder: BrowserMenuBuilder
-    val menuToolbar: BrowserMenuItemToolbar
 }

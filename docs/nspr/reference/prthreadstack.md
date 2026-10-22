@@ -8,11 +8,11 @@ browsers, its use is discouraged since it could be removed at any
 time. Try to avoid using it.
 :::
 
-The opaque {ref}`PRThreadStack` structure is only used in the third
-argument "`PRThreadStack *stack`" to the {ref}`PR_AttachThread` function.
+The opaque {doc}`prthreadstack` structure is only used in the third
+argument "`PRThreadStack *stack`" to the {doc}`pr_attachthread` function.
 The '`stack`' argument is now obsolete and ignored by
-{ref}`PR_AttachThread`. You should pass `NULL` as the 'stack' argument to
-{ref}`PR_AttachThread`.
+{doc}`pr_attachthread`. You should pass `NULL` as the 'stack' argument to
+{doc}`pr_attachthread`.
 
 (definition)=
 

@@ -21,10 +21,12 @@
 #include "api/dtls_transport_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/rtp/rtp_source.h"
+#include "api/units/timestamp.h"
 #include "media/base/media_channel.h"
 #include "pc/rtp_receiver.h"
 #include "test/gmock.h"
@@ -100,6 +102,10 @@ class MockRtpReceiverInternal : public RtpReceiverInternal {
   MOCK_METHOD(void,
               SetStreams,
               (const std::vector<webrtc::scoped_refptr<MediaStreamInterface>>&),
+              (override));
+  MOCK_METHOD(void,
+              OnFrameDelivered,
+              (const RtpPacketInfos&, Timestamp),
               (override));
   MOCK_METHOD(int, AttachmentId, (), (const, override));
 };

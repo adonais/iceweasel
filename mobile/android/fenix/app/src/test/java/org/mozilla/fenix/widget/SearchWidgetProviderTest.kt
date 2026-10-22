@@ -4,10 +4,13 @@
 
 package org.mozilla.fenix.widget
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.view.View
+import android.widget.FrameLayout
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -191,6 +194,73 @@ class SearchWidgetProviderTest {
         assertNotNull(widgetProvider.createLensSearchIntent(context))
     }
 
+    @Test
+    fun `GIVEN the widget was drawn without the lens button WHEN it is redrawn with and then without a lens intent THEN the lens button is shown and then hidden`() {
+        val widgetProvider = SearchWidgetProvider()
+        val view =
+            widgetProvider.createLargeRemoteViews(lensSearchIntent = null).apply(testContext, FrameLayout(testContext))
+        assertEquals(View.GONE, view.findViewById<View>(R.id.button_search_widget_lens).visibility)
+
+        widgetProvider.createLargeRemoteViews(lensSearchIntent = pendingIntent()).reapply(testContext, view)
+        assertEquals(View.VISIBLE, view.findViewById<View>(R.id.button_search_widget_lens).visibility)
+
+        widgetProvider.createLargeRemoteViews(lensSearchIntent = null).reapply(testContext, view)
+        assertEquals(View.GONE, view.findViewById<View>(R.id.button_search_widget_lens).visibility)
+    }
+
+    @Test
+    fun `GIVEN lens is enabled WHEN the medium or large widget is laid out with or without voice search THEN the lens button sits beside the mic or at the end and does not cover the app icon`() {
+        val widgetProvider = SearchWidgetProvider()
+        listOf(R.layout.search_widget_medium, R.layout.search_widget_large).forEach { layout ->
+            listOf(true, false).forEach { voiceEnabled ->
+                val case = "layout=${testContext.resources.getResourceEntryName(layout)}, voiceEnabled=$voiceEnabled"
+                val view =
+                    widgetProvider
+                        .createRemoteViews(
+                            testContext,
+                            layout,
+                            pendingIntent(),
+                            if (voiceEnabled) pendingIntent() else null,
+                            pendingIntent(),
+                            "Search",
+                        )
+                        .apply(testContext, FrameLayout(testContext))
+                view.measure(
+                    View.MeasureSpec.makeMeasureSpec(WIDGET_WIDTH_PX, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(WIDGET_HEIGHT_PX, View.MeasureSpec.EXACTLY),
+                )
+                view.layout(0, 0, WIDGET_WIDTH_PX, WIDGET_HEIGHT_PX)
+
+                val icon = view.findViewById<View>(R.id.button_search_widget_new_tab_icon)
+                val text = view.findViewById<View>(R.id.button_search_widget_new_tab)
+                val voice = view.findViewById<View>(R.id.button_search_widget_voice)
+                val lens = view.findViewById<View>(R.id.button_search_widget_lens)
+                val end = WIDGET_WIDTH_PX - view.paddingEnd
+                if (voiceEnabled) {
+                    assertEquals(case, end, voice.right)
+                    assertEquals(case, voice.left, lens.right)
+                } else {
+                    assertEquals(case, end, lens.right)
+                }
+                assertTrue(case, lens.left >= icon.right)
+                assertEquals(case, lens.left, text.right)
+                assertTrue(case, text.left < text.right)
+            }
+        }
+    }
+
+    private fun SearchWidgetProvider.createLargeRemoteViews(lensSearchIntent: PendingIntent?) =
+        createRemoteViews(
+            testContext,
+            R.layout.search_widget_large,
+            pendingIntent(),
+            null,
+            lensSearchIntent,
+            "Search",
+        )
+
+    private fun pendingIntent() = PendingIntent.getActivity(testContext, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+
     private fun contextWithDefaultEngine(engineId: String): Context {
         val searchState =
             SearchState(
@@ -287,3 +357,6 @@ class SearchWidgetProviderTest {
         assertEquals(true, Metrics.searchWidgetInstalled.testGetValue())
     }
 }
+
+private const val WIDGET_WIDTH_PX = 800
+private const val WIDGET_HEIGHT_PX = 150

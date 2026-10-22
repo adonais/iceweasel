@@ -2,11 +2,11 @@
 
 ## Coding style
 
-{ref}`black` is the tool used to reformat the Python code.
+{doc}`/code-quality/lint/linters/black` is the tool used to reformat the Python code.
 
 ## Linting
 
-The Python linting is done by {ref}`ruff` which includes rules from `flake8` and `pylint`.
+The Python linting is done by {doc}`/code-quality/lint/linters/ruff` which includes rules from `flake8` and `pylint`.
 It is executed by mozlint both at review phase and in the CI.
 
 ## Indentation
@@ -53,7 +53,7 @@ Four spaces in Python code.
   [mozext](https://hg.mozilla.org/hgcustom/version-control-tools/file/default/hgext/mozext)
   Mercurial extension, and address every issue reported on commit
   or the output of `hg critic`.
-- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/). Please run {ref}`black` for this.
+- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/). Please run {doc}`/code-quality/lint/linters/black` for this.
 - Do not place statements on the same line as `if/elif/else`
   conditionals to form a one-liner.
 - Global vars, please avoid them at all cost.

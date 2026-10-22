@@ -120,7 +120,7 @@ inline nsresult CallQueryInterface(T* aSource, DestinationType** aDestination) {
   // the canonical nsISupports pointer with CallQueryInterface.
   static_assert(
       !(std::is_same_v<DestinationType, T> ||
-        std::is_base_of<DestinationType, T>::value) ||
+        std::is_base_of_v<DestinationType, T>) ||
           std::is_same_v<DestinationType, nsISupports>,
       "don't use CallQueryInterface for compile-time-determinable casts");
 

@@ -236,6 +236,8 @@ add_task(async function test_link_preview_with_long_press() {
   is(stub.firstCall.args[1], TEST_LINK_URL, "preview test link");
   is(stub.firstCall.args[2], "long_press", "source set for long press");
 
+  window.dispatchEvent(new MouseEvent("mouseup"));
+
   stub.restore();
 });
 

@@ -1119,31 +1119,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "compositor"
-version = "0.1.0"
-dependencies = [
- "compositor-wayland",
- "compositor-windows",
- "gleam",
- "webrender",
-]
-
-[[package]]
-name = "compositor-wayland"
-version = "0.1.0"
-dependencies = [
- "cc",
- "pkg-config",
-]
-
-[[package]]
-name = "compositor-windows"
-version = "0.1.0"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2270,17 +2245,18 @@ dependencies = [
 
 [[package]]
 name = "gleam"
-version = "0.15.1"
-source = "git+https://github.com/jamienicol/gleam?rev=68ca4e5cc31135b843af07ff213a94b9ddce64cf#68ca4e5cc31135b843af07ff213a94b9ddce64cf"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8265d389bd9817de31d5ee7e783f288ff94d5007b51474332b61015eb346c8e1"
 dependencies = [
  "gl_generator",
 ]
 
 [[package]]
 name = "glean"
-version = "70.2.0"
+version = "70.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8032ff773d88bbfee2a14b4fe3a875adb10068695d3ea0f3ce2aa33efaf9b28"
+checksum = "1a75a8cfc27ecee273cf19b4aaf8b50e916b137f6a3d2b4f1c13c59eae0e21ee"
 dependencies = [
  "crossbeam-channel",
  "glean-core",
@@ -2293,9 +2269,9 @@ dependencies = [
 
 [[package]]
 name = "glean-core"
-version = "70.2.0"
+version = "70.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c976fc97fd10188c77961b748e446170acb0bbecbc4aa74ca9a3602197d38a2a"
+checksum = "a9fb076df739ce5d2eff3a2cc723cc23e1f90d9d9f07dc46365962745cb3c286"
 dependencies = [
  "android_logger 0.12.0",
  "bincode",
@@ -5613,12 +5589,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab16f14aed21ee8bfd8ec22513f7287cd4a91aa92e44edfe2c17ddd004e92607"
 
 [[package]]
-name = "topological-sort"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa7c7f42dea4b1b99439786f5633aeb9c14c1b53f75e282803c2ec2ad545873c"
-
-[[package]]
 name = "tower"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6269,7 +6239,6 @@ dependencies = [
  "svg_fmt",
  "swgl",
  "tokio",
- "topological-sort",
  "tracy-rs",
  "url",
  "webrender_api",
@@ -6300,6 +6269,7 @@ name = "webrender_api"
 version = "0.62.0"
 dependencies = [
  "app_units",
+ "bincode",
  "bitflags 2.11.0",
  "byteorder",
  "crossbeam-channel",

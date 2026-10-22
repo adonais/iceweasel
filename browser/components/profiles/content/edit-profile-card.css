@@ -36,13 +36,21 @@
   margin-bottom: var(--space-xsmall);
 }
 
+#theme-group::part(label) {
+  font-weight: var(--font-weight);
+}
+
+#theme-group::part(inputs) {
+  margin-block-start: var(--space-xsmall);
+}
+
 #profile-name {
   width: min(400px, 100%);
   margin: 0;
   padding-inline: var(--space-medium);
   padding-block: 1px;
-  min-height: var(--input-text-min-height);
-  border: var(--input-text-border);
+  min-height: var(--input-min-height);
+  border: var(--input-border);
 
   &:focus-visible {
     outline-offset: unset;

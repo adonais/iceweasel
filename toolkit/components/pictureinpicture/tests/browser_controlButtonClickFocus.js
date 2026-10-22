@@ -144,17 +144,17 @@ add_task(async function test_space_activates_panel_controls() {
         "Subtitles toggle should have focus after opening the panel"
       );
 
-      let wasChecked = subtitlesToggle.checked;
+      let wasPressed = subtitlesToggle.pressed;
       let toggleChanged = BrowserTestUtils.waitForEvent(
         subtitlesToggle,
-        "change"
+        "toggle"
       );
       EventUtils.synthesizeKey(" ", {}, pipWin);
       await toggleChanged;
 
       Assert.notEqual(
-        subtitlesToggle.checked,
-        wasChecked,
+        subtitlesToggle.pressed,
+        wasPressed,
         "Space should flip the subtitles toggle"
       );
       Assert.ok(

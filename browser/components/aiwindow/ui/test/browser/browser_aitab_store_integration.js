@@ -3,6 +3,12 @@
 
 "use strict";
 
+/* import-globals-from head_aitab.js */
+Services.scriptloader.loadSubScript(
+  getRootDirectory(gTestPath) + "head_aitab.js",
+  this
+);
+
 const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 const UNKNOWN_SLUG = "unknown-slug";
 const STORED_SLUG = "stored-slug";
@@ -52,13 +58,12 @@ describe("about:smartpage store integration", () => {
       Assert.equal(
         page.status,
         "unavailable",
-        "An unknown slug produces the unavailable state"
+        "An unknown slug produces the unavailable error state"
       );
       Assert.equal(page.page, null, "No page data is returned");
-      Assert.equal(
-        element.shadowRoot.querySelector(".aitab-status")?.dataset.l10nId,
-        "ai-tab-page-unavailable",
-        "The unavailable message is rendered"
+      Assert.ok(
+        element.shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered"
       );
     });
   });
@@ -71,13 +76,12 @@ describe("about:smartpage store integration", () => {
         convId: "stored-conversation",
         slug: STORED_SLUG,
         title: "Stored AI Tab",
-        components: [
-          {
-            type: "text",
-            layout: "summary",
-            title: "Stored component",
+        components: {
+          surface: {
+            components: [],
+            dataModel: {},
           },
-        ],
+        },
       });
     });
 

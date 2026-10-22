@@ -67,6 +67,9 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property wallpaperState The [WallpaperState] to display in the [HomeFragment].
  * @property standardSnackbarError A snackbar error message to display.
  * @property readerViewState The [ReaderViewState] to display.
+ * @property isPowerSavingModeActive Whether Power Saving Mode is currently active.
+ * @property powerSavingModeReaderViewTabIds The IDs of the tabs whose current reader view was forced by Power Saving
+ *   Mode.
  * @property snackbarState The [SnackbarState] to display.
  * @property supportedMenuNotifications The set of currently active [SupportedMenuNotifications].
  * @property showFindInPage Whether or not to show the find in page feature.
@@ -109,6 +112,8 @@ data class AppState(
     val wallpaperState: WallpaperState = WallpaperState.default,
     val standardSnackbarError: StandardSnackbarError? = null,
     val readerViewState: ReaderViewState = ReaderViewState.None,
+    val isPowerSavingModeActive: Boolean = false,
+    val powerSavingModeReaderViewTabIds: Set<String> = emptySet(),
     val snackbarState: SnackbarState = SnackbarState.None(),
     val supportedMenuNotifications: Set<SupportedMenuNotifications> = emptySet(),
     val showFindInPage: Boolean = false,

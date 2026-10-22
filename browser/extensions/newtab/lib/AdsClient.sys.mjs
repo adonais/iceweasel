@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import {MozAdsCacheConfig, MozAdsCallbackOptions, MozAdsClient, MozAdsRequestOptions, MozAdsTelemetry} from "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs"
+ */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
@@ -249,7 +253,7 @@ export class _AdsClient {
          * lazy.MozAdsEnvironment.Prod()`
          */
         .environment(
-          lazy.MozAdsEnvironment.PROD
+          lazy.MozAdsEnvironment.PROD !== undefined
             ? lazy.MozAdsEnvironment.PROD
             : new lazy.MozAdsEnvironment.Prod()
         )

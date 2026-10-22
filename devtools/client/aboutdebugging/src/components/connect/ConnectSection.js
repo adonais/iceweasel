@@ -5,6 +5,7 @@
 "use strict";
 
 const {
+  createElement,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
@@ -35,9 +36,11 @@ class ConnectSection extends PureComponent {
   render() {
     const { headerButton, extraContent } = this.props;
 
-    return dom.section(
+    return createElement(
+      "moz-card",
       {
-        className: `card connect-section ${this.props.className || ""}`,
+        // "className" does not get applied as "class" on web components
+        class: `connect-section ${this.props.className || ""}`,
       },
       dom.header(
         {

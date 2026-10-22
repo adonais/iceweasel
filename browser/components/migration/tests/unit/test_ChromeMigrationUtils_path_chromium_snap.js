@@ -4,7 +4,7 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { ChromeMigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeMigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
 );
 
 const SUB_DIRECTORIES = {

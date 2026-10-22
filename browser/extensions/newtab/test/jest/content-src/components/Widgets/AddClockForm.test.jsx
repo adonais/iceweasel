@@ -478,25 +478,17 @@ describe("<AddClockForm>", () => {
       expect(props.onCancel).toHaveBeenCalled();
     });
 
-    it("calls onCancel when focus moves outside the form", async () => {
+    it("does not call onCancel when focus moves outside the form", async () => {
       const { container, props } = await renderForm();
       const form = container.querySelector(".clocks-add-form");
       const outside = document.createElement("button");
       document.body.appendChild(outside);
       try {
         fireEvent.blur(form, { relatedTarget: outside });
-        expect(props.onCancel).toHaveBeenCalled();
+        expect(props.onCancel).not.toHaveBeenCalled();
       } finally {
         outside.remove();
       }
-    });
-
-    it("does not call onCancel when relatedTarget is null (window blur)", async () => {
-      const { container, props } = await renderForm();
-      fireEvent.blur(container.querySelector(".clocks-add-form"), {
-        relatedTarget: null,
-      });
-      expect(props.onCancel).not.toHaveBeenCalled();
     });
   });
 

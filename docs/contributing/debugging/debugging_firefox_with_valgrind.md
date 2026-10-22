@@ -116,7 +116,7 @@ To run a mochitest under Valgrind, use the following command.
 ```
 
 Where `$VALGRIND_OPTIONS` are the options described
-{ref}`above <Debugging Firefox With Valgrind>`. You might also
+{doc}`above <debugging_firefox_with_valgrind>`. You might also
 need `--trace-children=yes` to trace into child processes.
 
 As of December 2014 it is possible to do a complete run of

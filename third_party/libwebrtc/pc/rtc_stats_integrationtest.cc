@@ -65,17 +65,13 @@ class RTCStatsIntegrationTest : public ::testing::Test {
  public:
   RTCStatsIntegrationTest()
       : env_(CreateTestEnvironment()),
-        network_thread_(new Thread(&virtual_socket_server_)),
-        worker_thread_(Thread::Create()) {
+        network_thread_(new Thread(&virtual_socket_server_)) {
     RTC_CHECK(network_thread_->Start());
-    RTC_CHECK(worker_thread_->Start());
 
     caller_ = make_ref_counted<PeerConnectionTestWrapper>(
-        "caller", env_, &virtual_socket_server_, network_thread_.get(),
-        worker_thread_.get());
+        "caller", env_, &virtual_socket_server_, network_thread_.get());
     callee_ = make_ref_counted<PeerConnectionTestWrapper>(
-        "callee", env_, &virtual_socket_server_, network_thread_.get(),
-        worker_thread_.get());
+        "callee", env_, &virtual_socket_server_, network_thread_.get());
   }
 
   void StartCall() { StartCall(""); }
@@ -162,7 +158,6 @@ class RTCStatsIntegrationTest : public ::testing::Test {
   // constructed/destructed in the correct order.
   VirtualSocketServer virtual_socket_server_;
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   scoped_refptr<PeerConnectionTestWrapper> caller_;
   scoped_refptr<PeerConnectionTestWrapper> callee_;
 };

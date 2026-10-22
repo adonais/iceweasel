@@ -246,7 +246,6 @@ PeerScenarioClient::PeerScenarioClient(
       endpoints_(CreateEndpoints(net, config.endpoints)),
       signaling_thread_(signaling_thread),
       log_writer_factory_(std::move(log_writer_factory)),
-      worker_thread_(net->time_controller()->CreateThread("worker")),
       handlers_(config.handlers),
       observer_(new LambdaPeerConnectionObserver(&handlers_)) {
   handlers_.on_track.push_back(
@@ -280,7 +279,6 @@ PeerScenarioClient::PeerScenarioClient(
   PeerConnectionFactoryDependencies pcf_deps;
   pcf_deps.network_thread = manager->network_thread();
   pcf_deps.signaling_thread = signaling_thread_;
-  pcf_deps.worker_thread = worker_thread_.get();
   pcf_deps.socket_factory = manager->socket_factory();
   pcf_deps.network_manager = manager->ReleaseNetworkManager();
   pcf_deps.event_log_factory = std::make_unique<RtcEventLogFactory>();

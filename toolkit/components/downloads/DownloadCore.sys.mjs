@@ -2337,6 +2337,15 @@ DownloadSaver.prototype = {
     throw new Error("Not implemented.");
   },
 
+  /**
+   * Returns the SHA-256 hash of the downloaded file as a lowercase hex string,
+   * or an empty string if the hash isn't available.
+   */
+  getSha256HashHex() {
+    const hash = this.getSha256Hash();
+    return hash ? Uint8Array.from(hash, c => c.charCodeAt(0)).toHex() : "";
+  },
+
   getSignatureInfo() {
     throw new Error("Not implemented.");
   },

@@ -21,7 +21,12 @@ void RemoteCDMChild::Destroy() {
   mProxy = nullptr;
 }
 
-void RemoteCDMChild::ActorDestroy(ActorDestroyReason aWhy) { mProxy = nullptr; }
+void RemoteCDMChild::ActorDestroy(ActorDestroyReason aWhy) {
+  if (aWhy == AbnormalShutdown && mProxy) {
+    mProxy->Terminated();
+  }
+  mProxy = nullptr;
+}
 
 mozilla::ipc::IPCResult RemoteCDMChild::RecvProvision(
     const RemoteCDMProvisionRequestIPDL& aRequest,

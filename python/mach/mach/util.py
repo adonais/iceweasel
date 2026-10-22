@@ -76,7 +76,37 @@ def get_state_dir(
         with (state_dir / "topsrcdir.txt").open(mode="w") as fh:
             fh.write(str(topsrcdir))
 
+        # A new checkout (e.g. a git worktree) is a good time to get rid of the
+        # state dirs of checkouts that have since been deleted.
+        remove_orphaned_state_dirs(state_dir.parent)
+
     return str(state_dir)
+
+
+def remove_orphaned_state_dirs(srcdirs_dir: Path):
+    """Remove the checkout-scoped state dirs whose checkout no longer exists.
+
+    A state dir is only removed if the parent of its recorded topsrcdir still
+    exists, so that checkouts on a temporarily unavailable drive are kept.
+    """
+    import shutil
+
+    try:
+        state_dirs = list(srcdirs_dir.iterdir())
+    except OSError:
+        return
+
+    for state_dir in state_dirs:
+        try:
+            topsrcdir = Path((state_dir / "topsrcdir.txt").read_text().strip())
+        except OSError:
+            continue
+        if not topsrcdir.is_absolute() or topsrcdir.exists():
+            continue
+        if not topsrcdir.parent.is_dir():
+            continue
+        print(f"Removing state directory of deleted checkout {topsrcdir}: {state_dir}")
+        shutil.rmtree(state_dir, ignore_errors=True)
 
 
 MACHRC_NAMES = ("machrc", ".machrc")

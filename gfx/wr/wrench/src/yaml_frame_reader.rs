@@ -449,6 +449,11 @@ impl YamlFrameReader {
         &self.yaml_path
     }
 
+    /// The number of transactions sent so far.
+    pub fn frame_count(&self) -> u32 {
+        self.frame_count
+    }
+
     pub fn new_from_args(args: &clap::ArgMatches) -> YamlFrameReader {
         let yaml_file = args.value_of("INPUT").map(PathBuf::from).unwrap();
         YamlFrameReader::new(&yaml_file)
@@ -1767,6 +1772,7 @@ impl YamlFrameReader {
                 ("scrollbar-container", PrimitiveFlags::IS_SCROLLBAR_CONTAINER),
                 ("prefer-compositor-surface", PrimitiveFlags::PREFER_COMPOSITOR_SURFACE),
                 ("checkerboard-background", PrimitiveFlags::CHECKERBOARD_BACKGROUND),
+                ("antialiased", PrimitiveFlags::ANTIALISED),
                 ("rasterized-for-rect", PrimitiveFlags::RASTERIZED_FOR_RECT),
             ] {
                 if let Some(value) = item[key].as_bool() {

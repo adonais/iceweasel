@@ -821,29 +821,45 @@ void MacroAssembler::preserveWrapper(Register wrapper, Register scratchSuccess,
 }
 
 void MacroAssembler::copySlotsFromTemplate(
-    Register obj, const TemplateNativeObject& templateObj, uint32_t start,
-    uint32_t end) {
-  uint32_t nfixed = std::min(templateObj.numFixedSlots(), end);
-  for (unsigned i = start; i < nfixed; i++) {
+    Register obj, Register temp, const TemplateNativeObject& templateObj,
+    uint32_t start, uint32_t end) {
+  auto slotValue = [&](uint32_t i) {
     // Template objects are not exposed to script and therefore immutable.
     // However, regexp template objects are sometimes used directly (when
     // the cloning is not observable), and therefore we can end up with a
     // non-zero lastIndex. Detect this case here and just substitute 0, to
     // avoid racing with the main thread updating this slot.
-    Value v;
     if (templateObj.isRegExpObject() && i == RegExpObject::lastIndexSlot()) {
-      v = Int32Value(0);
-    } else {
-      v = templateObj.getSlot(i);
+      return Int32Value(0);
     }
-    storeValue(v, Address(obj, NativeObject::getFixedSlotOffset(i)));
+    return templateObj.getSlot(i);
+  };
+
+  uint32_t nfixed = std::min(templateObj.numFixedSlots(), end);
+  for (uint32_t i = start; i < nfixed;) {
+    Value v = slotValue(i);
+    Address addr(obj, NativeObject::getFixedSlotOffset(i));
+
+    uint32_t runEnd = i + 1;
+    if (!v.isGCThing()) {
+      while (runEnd < nfixed && slotValue(runEnd) == v) {
+        runEnd++;
+      }
+    }
+
+    if (runEnd - i > 1) {
+      fillSlotsWithConstantValue(addr, temp, i, runEnd, v);
+    } else {
+      storeValue(v, addr);
+    }
+    i = runEnd;
   }
 }
 
 void MacroAssembler::fillSlotsWithConstantValue(Address base, Register temp,
                                                 uint32_t start, uint32_t end,
                                                 const Value& v) {
-  MOZ_ASSERT(v.isUndefined() || IsUninitializedLexical(v));
+  MOZ_ASSERT(!v.isGCThing());
 
   if (start >= end) {
     return;
@@ -1052,7 +1068,7 @@ void MacroAssembler::initGCSlots(Register obj, Register temp,
                 startOfUninitialized == startOfUndefined);
 
   // Copy over any preserved reserved slots.
-  copySlotsFromTemplate(obj, templateObj, 0, startOfUninitialized);
+  copySlotsFromTemplate(obj, temp, templateObj, 0, startOfUninitialized);
 
   // Fill the rest of the fixed slots with undefined and uninitialized.
   size_t offset = NativeObject::getFixedSlotOffset(startOfUninitialized);
@@ -2005,8 +2021,7 @@ void MacroAssembler::lookupStaticString(Register ch1, Register ch2,
   branch32(Assembler::Equal, ch2, Imm32(StaticStrings::INVALID_SMALL_CHAR),
            fail);
 
-  lshift32(Imm32(StaticStrings::SMALL_CHAR_BITS), ch1);
-  add32(ch2, ch1);
+  lshift32ThenAdd(Imm32(StaticStrings::SMALL_CHAR_BITS), ch2, ch1);
 
   // Look up the string from the computed index.
   movePtr(ImmPtr(&staticStrings.length2StaticTable), dest);
@@ -3122,10 +3137,9 @@ void MacroAssembler::emitMegamorphicCacheLookupByValueCommon(
   // outEntryPtr = ((outEntryPtr >> 3) + scratchHash) ^ (outEntryPtr >> 13)
   rshiftPtr(Imm32(MegamorphicCache::ShapeHashShift1), outEntryPtr);
   addPtr(outEntryPtr, scratchHash);
-  rshiftPtr(Imm32(MegamorphicCache::ShapeHashShift2 -
-                  MegamorphicCache::ShapeHashShift1),
-            outEntryPtr);
-  xorPtr(scratchHash, outEntryPtr);
+  rshiftPtrThenXor(Imm32(MegamorphicCache::ShapeHashShift2 -
+                         MegamorphicCache::ShapeHashShift1),
+                   scratchHash, outEntryPtr);
 
   // outEntryPtr %= MegamorphicCache::NumEntries
   constexpr size_t cacheSize = MegamorphicCache::NumEntries;
@@ -3342,12 +3356,11 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
   // outEntryPtr = obj->shape()
   loadPtr(Address(obj, JSObject::offsetOfShape()), scratch3);
 
-  movePtr(scratch3, scratch2);
-
   // scratch3 = (scratch3 >> 3) ^ (scratch3 >> 13) + idHash
-  rshiftPtr(Imm32(MegamorphicSetPropCache::ShapeHashShift1), scratch3);
-  rshiftPtr(Imm32(MegamorphicSetPropCache::ShapeHashShift2), scratch2);
-  xorPtr(scratch2, scratch3);
+  rshiftPtr(Imm32(MegamorphicSetPropCache::ShapeHashShift1), scratch3,
+            scratch2);
+  rshiftPtrThenXor(Imm32(MegamorphicSetPropCache::ShapeHashShift2), scratch2,
+                   scratch3);
 
   if constexpr (std::is_same_v<IdType, ValueOperand>) {
     loadAtomOrSymbolAndHash(id, scratch1, scratch2, &cacheMiss);
@@ -10652,10 +10665,8 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
     add64(v1, v0);
 
     // mV1 = RotateLeft(mV1, 13);
-    rotateLeft64(Imm32(13), v1, v1, InvalidReg);
-
     // mV1 ^= mV0;
-    xor64(v0, v1);
+    rotateLeft64ThenXor(Imm32(13), v0, v1);
 
     // mV0 = RotateLeft(mV0, 32);
     rotateLeft64(Imm32(32), v0, v0, InvalidReg);
@@ -10664,28 +10675,22 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
     add64(v3, v2);
 
     // mV3 = RotateLeft(mV3, 16);
-    rotateLeft64(Imm32(16), v3, v3, InvalidReg);
-
     // mV3 ^= mV2;
-    xor64(v2, v3);
+    rotateLeft64ThenXor(Imm32(16), v2, v3);
 
     // mV0 = WrappingAdd(mV0, mV3);
     add64(v3, v0);
 
     // mV3 = RotateLeft(mV3, 21);
-    rotateLeft64(Imm32(21), v3, v3, InvalidReg);
-
     // mV3 ^= mV0;
-    xor64(v0, v3);
+    rotateLeft64ThenXor(Imm32(21), v0, v3);
 
     // mV2 = WrappingAdd(mV2, mV1);
     add64(v1, v2);
 
     // mV1 = RotateLeft(mV1, 17);
-    rotateLeft64(Imm32(17), v1, v1, InvalidReg);
-
     // mV1 ^= mV2;
-    xor64(v2, v1);
+    rotateLeft64ThenXor(Imm32(17), v2, v1);
 
     // mV2 = RotateLeft(mV2, 32);
     rotateLeft64(Imm32(32), v2, v2, InvalidReg);

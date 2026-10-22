@@ -174,6 +174,7 @@ import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.perf.StartupTimeline
+import org.mozilla.fenix.reviewprompt.CustomReviewPromptBottomSheetFragment
 import org.mozilla.fenix.reviewprompt.ShowReviewPromptBinding
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
@@ -1423,7 +1424,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                     promptController = requireComponents.playStoreReviewPromptController,
                     activityRef = WeakReference(activity),
                     uiScope = viewLifecycleOwner.lifecycleScope,
-                    navigationDirection = { findNavController().navigate(it) },
+                    showCustomReviewPrompt = { CustomReviewPromptBottomSheetFragment.showPrompt(this) },
                 ),
             owner = viewLifecycleOwner,
             view = view,
@@ -1594,6 +1595,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
             appStore = requireComponents.appStore,
             navControllerRef = WeakReference(findNavController()),
             settings = requireComponents.settings,
+            defaultTopSitesProvider = requireComponents.core.defaultTopSitesProvider,
             addTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
             selectTabUseCase = requireComponents.useCases.tabsUseCases.selectTab,
             fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,

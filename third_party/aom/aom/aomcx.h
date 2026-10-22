@@ -1639,7 +1639,7 @@ enum aome_enc_control_id {
    */
   AV1E_GET_GOP_INFO = 174,
 
-  /*!\brief Codec control function to validate HBD input.
+  /*!\brief Codec control function to validate HBD input, int parameter.
    *
    * AV1 allows the encoder to validate the high bitdepth (HBD) input and
    * ensure that every pixel is within the valid range. To disable/enable,
@@ -1647,7 +1647,8 @@ enum aome_enc_control_id {
    */
   AOME_SET_VALIDATE_HBD_INPUT = 175,
 
-  /*!\brief Codec control function to toggle loopfilter mode_ref_delta_enabled.
+  /*!\brief Codec control function to toggle loopfilter mode_ref_delta_enabled,
+   * int parameter.
    *
    * - 0 = disable
    * - 1 = enable (default)
@@ -1776,8 +1777,18 @@ typedef enum {
 typedef enum {
   AOM_TUNE_PSNR = 0,
   AOM_TUNE_SSIM = 1,
-  /* NOTE: enums 2 and 3 unused */
+  /* NOTE: enums 2, 3 unused */
+  /** Tune for Vmaf with preprocessing
+   *
+   * \deprecated This value is unsupported and will be removed in a future
+   * release.
+   */
   AOM_TUNE_VMAF_WITH_PREPROCESSING = 4,
+  /** Tune for Vmaf without preprocessing
+   *
+   * \deprecated This value is unsupported and will be removed in a future
+   * release.
+   */
   AOM_TUNE_VMAF_WITHOUT_PREPROCESSING = 5,
   AOM_TUNE_VMAF_MAX_GAIN = 6,
   AOM_TUNE_VMAF_NEG_MAX_GAIN = 7,

@@ -13,6 +13,7 @@ namespace jit {
 
 class MoveEmitterLOONG64 {
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
+  void emitSimd128Move(const MoveOperand& from, const MoveOperand& to);
   void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& from, const MoveOperand& to,
                      MoveOp::Type type);

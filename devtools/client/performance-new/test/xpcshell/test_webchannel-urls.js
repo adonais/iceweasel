@@ -5,7 +5,7 @@
 "use strict";
 
 const { validateProfilerWebChannelUrl } = ChromeUtils.importESModule(
-  "resource:///modules/DevToolsStartup.sys.mjs"
+  "moz-src:///devtools/startup/DevToolsStartup.sys.mjs"
 );
 
 add_task(function test() {

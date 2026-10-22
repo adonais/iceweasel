@@ -35,3 +35,22 @@ const chips = [
 export const Default = () => html`
   <ai-grouped-chip-container .chips=${chips}></ai-grouped-chip-container>
 `;
+
+// A tab group contributes an icon in the group's color instead of a favicon.
+export const WithTabGroup = () => html`
+  <link
+    rel="stylesheet"
+    href="chrome://browser/skin/tabbrowser/tab.tokens.css"
+  />
+  <ai-grouped-chip-container
+    .chips=${[
+      {
+        type: "tabGroup",
+        groupId: "group-1",
+        label: "Trip planning",
+        color: "blue",
+      },
+      ...chips.slice(0, 2),
+    ]}
+  ></ai-grouped-chip-container>
+`;

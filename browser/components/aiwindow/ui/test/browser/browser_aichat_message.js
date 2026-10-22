@@ -293,6 +293,95 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
   }
 });
 
+add_task(async function test_user_message_tab_group_mention_renders_icon() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:aichatcontent"
+  );
+  const browser = tab.linkedBrowser;
+
+  try {
+    await SpecialPowers.spawn(browser, [], async () => {
+      if (content.document.readyState !== "complete") {
+        await ContentTaskUtils.waitForEvent(content, "load");
+      }
+
+      await content.customElements.whenDefined("ai-chat-message");
+      await content.customElements.whenDefined("ai-website-chip");
+
+      const doc = content.document;
+      const markdown =
+        "Summarize [Trip planning](mention:?href=group%3Agroup-1&color=blue)";
+
+      const el = doc.createElement("ai-chat-message");
+      doc.body.appendChild(el);
+      const elJS = el.wrappedJSObject || el;
+
+      el.setAttribute("data-message-role", "user");
+      elJS.message = markdown;
+      el.setAttribute("message", markdown);
+
+      await ContentTaskUtils.waitForCondition(
+        () => el.shadowRoot?.querySelector(".message-user ai-website-chip"),
+        "the tab group mention should become a chip"
+      );
+
+      const chip = el.shadowRoot.querySelector(".message-user ai-website-chip");
+      await ContentTaskUtils.waitForCondition(
+        () => !!chip.shadowRoot,
+        "chip should have a shadowRoot"
+      );
+
+      const icon = chip.shadowRoot.querySelector("tab-group-icon");
+      Assert.ok(icon, "a tab group mention renders a tab group icon");
+      Assert.equal(
+        icon.shadowRoot.textContent.trim(),
+        "T",
+        "the icon shows the group label's initial"
+      );
+      const probe = doc.createElement("div");
+      probe.style.backgroundColor = "var(--tab-group-blue)";
+      doc.body.appendChild(probe);
+      const expectedColor = content.getComputedStyle(probe).backgroundColor;
+      probe.remove();
+
+      const iconColor = content.getComputedStyle(icon).backgroundColor;
+      Assert.equal(
+        iconColor,
+        expectedColor,
+        "the icon is tinted with the group color"
+      );
+      Assert.notEqual(
+        iconColor,
+        "rgba(0, 0, 0, 0)",
+        "the group color resolves rather than falling back to transparent"
+      );
+      Assert.ok(
+        !chip.shadowRoot.querySelector("img.chip-icon"),
+        "and shows no favicon"
+      );
+      Assert.ok(
+        !chip.shadowRoot.querySelector("a.chip"),
+        "and is not a link, since a tab group has no URL"
+      );
+      Assert.equal(
+        chip.shadowRoot.querySelector(".chip-label").textContent.trim(),
+        "Trip planning",
+        "the chip shows the group label"
+      );
+
+      el.remove();
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
 add_task(
   async function test_user_message_website_mentions_url_length_validation() {
     await SpecialPowers.pushPrefEnv({

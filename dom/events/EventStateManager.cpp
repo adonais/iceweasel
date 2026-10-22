@@ -643,6 +643,8 @@ EventStateManager* EventStateManager::sActiveESM = nullptr;
 EventStateManager* EventStateManager::sCursorSettingManager = nullptr;
 constinit AutoWeakFrame EventStateManager::sLastDragOverFrame{};
 LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint = kInvalidRefPoint;
+Maybe<CSSIntPoint> EventStateManager::sLastRealScreenPoint;
+bool EventStateManager::sRestorePointerAfterUnlock = false;
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
 LayoutDeviceIntPoint EventStateManager::sLastRefPointOfRawUpdate =
     kInvalidRefPoint;
@@ -1077,6 +1079,9 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             .extract());
     sLastClientPoint = RoundedToInt(Event::GetClientCoords(
         aPresContext, aEvent, aEvent->mRefPoint, CSSDoublePoint{0, 0}));
+    if (!aEvent->mFlags.mIsSynthesizedForTests) {
+      sLastRealScreenPoint = Some(sLastScreenPoint);
+    }
   }
 
   *aStatus = nsEventStatus_eIgnore;
@@ -5834,9 +5839,11 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
                                  : nsIWidget::NativePointerLockMode::Regular);
 
   // Store the last known ref point so we can reposition the pointer after
-  // unlock.
+  // unlock. Don't reposition it if we've only seen synthesized events.
+  sRestorePointerAfterUnlock = sLastRealScreenPoint.isSome();
   sPreLockScreenPoint = LayoutDeviceIntPoint::Round(
-      sLastScreenPoint * aPresContext->CSSToDevPixelScale());
+      sLastRealScreenPoint.valueOr(sLastScreenPoint) *
+      aPresContext->CSSToDevPixelScale());
 
   // Fire a synthetic mouse move to ensure event state is updated. We first
   // set the mouse to the center of the window, so that the mouse event
@@ -5963,10 +5970,16 @@ void EventStateManager::ReleaseLockedPointer(nsIWidget* aWidget) {
 
   LayoutDeviceIntPoint preLockScreenPoint = sPreLockScreenPoint;
   sPreLockScreenPoint = kInvalidRefPoint;
+  const bool restorePointer = sRestorePointerAfterUnlock;
+  sRestorePointerAfterUnlock = false;
 
   if (aWidget) {
     // Deactivate native pointer lock on platforms where it is required
     aWidget->UnlockNativePointer();
+
+    if (!restorePointer) {
+      return;
+    }
 
     // Unlocking, so return pointer to the original position by firing a
     // synthetic mouse event. We first reset sLastRefPoint and
@@ -7383,6 +7396,12 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
     return NS_OK;
   }
 
+  if (aEvent->ShouldCheckEnabledOnly()) {
+    aEvent->mIsEnabled = !activeEditor->IsReadonly();
+    aEvent->mSucceeded = true;
+    return NS_OK;
+  }
+
   nsresult rv = activeEditor->InsertTextAsAction(aEvent->mString.ref());
   aEvent->mIsEnabled = rv != NS_SUCCESS_DOM_NO_OPERATION;
   aEvent->mSucceeded = NS_SUCCEEDED(rv);
@@ -7459,6 +7478,12 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   }
   if (!aEvent->mSelection.mReplaceSrcString.Equals(targetStr)) {
     aEvent->mSucceeded = false;
+    return NS_OK;
+  }
+
+  if (aEvent->ShouldCheckEnabledOnly()) {
+    aEvent->mIsEnabled = !activeEditor->IsReadonly();
+    aEvent->mSucceeded = true;
     return NS_OK;
   }
 

@@ -36,10 +36,6 @@ support-files = ["file_httpsonly_speculative_connect.html"]
 support-files = ["file_iframe_buttons.html"]
 
 ["browser_iframe_test.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1735565
-  "os == 'win' && arch == 'x86_64'", # Bug 1735565
-]
 support-files = ["file_iframe_test.sjs"]
 
 ["browser_navigation.js"]

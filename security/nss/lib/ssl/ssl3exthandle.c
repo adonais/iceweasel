@@ -727,13 +727,13 @@ ssl3_EncodeSessionTicket(sslSocket *ss, const NewSessionTicket *ticket,
         goto loser;
 
     /* client identity */
-    if (ss->opt.requestCertificate && ss->sec.ci.sid->peerCert) {
+    if (ss->opt.requestCertificate && ss->sec.ci.sid->peerCertDER.data) {
         rv = sslBuffer_AppendNumber(&plaintext, CLIENT_AUTH_CERTIFICATE, 1);
         if (rv != SECSuccess)
             goto loser;
         rv = sslBuffer_AppendVariable(&plaintext,
-                                      ss->sec.ci.sid->peerCert->derCert.data,
-                                      ss->sec.ci.sid->peerCert->derCert.len, 2);
+                                      ss->sec.ci.sid->peerCertDER.data,
+                                      ss->sec.ci.sid->peerCertDER.len, 2);
         if (rv != SECSuccess)
             goto loser;
     } else {
@@ -1168,11 +1168,10 @@ ssl_CreateSIDFromTicket(sslSocket *ss, const SECItem *rawTicket,
 
     /* Copy over client cert from session ticket if there is one. */
     if (parsedTicket->peer_cert.data != NULL) {
-        PORT_Assert(!sid->peerCert);
-        sid->peerCert = CERT_NewTempCertificate(ss->dbHandle,
-                                                &parsedTicket->peer_cert,
-                                                NULL, PR_FALSE, PR_TRUE);
-        if (!sid->peerCert) {
+        PORT_Assert(!sid->peerCertDER.data);
+        rv = SECITEM_CopyItem(NULL, &sid->peerCertDER,
+                              &parsedTicket->peer_cert);
+        if (rv != SECSuccess) {
             goto loser;
         }
     }

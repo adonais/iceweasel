@@ -36,7 +36,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
-  CoveragePing: "resource://gre/modules/CoveragePing.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   TelemetryArchive: "resource://gre/modules/TelemetryArchive.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
@@ -835,9 +834,6 @@ var Impl = {
           // The init sequence is forced to run on shutdown for short sessions and
           // we don't want to start everything.
           if (!this._shuttingDown) {
-            // Send coverage ping.
-            await lazy.CoveragePing.startup();
-
             // Start the untrusted modules ping, which reports events where
             // untrusted modules were loaded into the Firefox process.
             if (AppConstants.platform == "win") {

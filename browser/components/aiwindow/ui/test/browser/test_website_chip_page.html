@@ -5,11 +5,14 @@
     <title>AI Window website chip test</title>
     <script type="module" src="test_website_chip.mjs">
     </script>
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
+    <link rel="stylesheet" href="chrome://browser/content/aiwindow/ai-window-shared.css">
     <link rel="localization" href="browser/aiWindow.ftl">
   </head>
   <body>
     <ai-website-chip id="test-inline-chip" type="in-line"></ai-website-chip>
     <ai-website-chip id="test-context-chip" type="context-chip" label="Example Site" iconSrc="chrome://branding/content/icon16.png" removable></ai-website-chip>
     <ai-website-chip id="test-context-chip-link" type="context-chip" label="Mozilla" iconSrc="chrome://branding/content/icon16.png" href="https://mozilla.org" removable></ai-website-chip>
+    <ai-website-chip id="test-group-chip" type="context-chip" label="Trip planning" isTabGroup tabGroupColor="blue" removable></ai-website-chip>
   </body>
 </html>

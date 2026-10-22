@@ -21,7 +21,7 @@ class nsHtml5StreamParserPtr {
     assign_assuming_AddRef(rawPtr);
   }
   void** begin_assignment() {
-    assign_assuming_AddRef(0);
+    assign_assuming_AddRef(nullptr);
     return reinterpret_cast<void**>(&mRawPtr);
   }
   void assign_assuming_AddRef(nsHtml5StreamParser* newPtr) {
@@ -45,7 +45,7 @@ class nsHtml5StreamParserPtr {
   }
   // Constructors
   nsHtml5StreamParserPtr()
-      : mRawPtr(0)
+      : mRawPtr(nullptr)
   // default constructor
   {}
   nsHtml5StreamParserPtr(const nsHtml5StreamParserPtr& aSmartPtr)
@@ -97,7 +97,7 @@ class nsHtml5StreamParserPtr {
   {
     NS_ASSERTION(rhs, "Null pointer passed to forget!");
     *rhs = mRawPtr;
-    mRawPtr = 0;
+    mRawPtr = nullptr;
   }
   nsHtml5StreamParser* get() const
   /*
@@ -120,7 +120,7 @@ class nsHtml5StreamParserPtr {
     return get();
   }
   nsHtml5StreamParser* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN {
-    MOZ_ASSERT(mRawPtr != 0,
+    MOZ_ASSERT(mRawPtr != nullptr,
                "You can't dereference a NULL nsHtml5StreamParserPtr with "
                "operator->().");
     return get();
@@ -140,7 +140,7 @@ class nsHtml5StreamParserPtr {
 
  public:
   nsHtml5StreamParser& operator*() const {
-    MOZ_ASSERT(mRawPtr != 0,
+    MOZ_ASSERT(mRawPtr != nullptr,
                "You can't dereference a NULL nsHtml5StreamParserPtr with "
                "operator*().");
     return *get();

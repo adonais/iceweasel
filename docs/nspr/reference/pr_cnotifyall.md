@@ -18,7 +18,7 @@ The function has the following parameter:
 `address`
 
 : The address of the monitored object. The calling thread must be in
-  the monitor at the time {ref}`PR_CNotifyAll` is called.
+  the monitor at the time {doc}`pr_cnotifyall` is called.
 
 ### Returns
 
@@ -30,6 +30,6 @@ The function has the following parameter:
 ## Description
 
 Using the value specified in the address parameter to find a monitor in
-the monitor cache, {ref}`PR_CNotifyAll` notifies all threads waiting for
+the monitor cache, {doc}`pr_cnotifyall` notifies all threads waiting for
 the monitor's state to change. All of the threads waiting on the state
 change are then scheduled to reenter the monitor.

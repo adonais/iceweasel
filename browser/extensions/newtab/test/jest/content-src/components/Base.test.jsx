@@ -1671,8 +1671,6 @@ function renderNova(overrides = {}, stateOverrides = {}) {
         "widgets.focusTimer.enabled": false,
         "widgets.system.clocks.enabled": false,
         "widgets.clocks.enabled": false,
-        "widgets.system.sportsWidget.enabled": false,
-        "widgets.sportsWidget.enabled": false,
         ...overrides,
       },
     },
@@ -1758,8 +1756,6 @@ describe("<Base> Nova hides Logo when no sections are enabled", () => {
       "widgets.clocks.enabled": true,
       "widgets.system.focusTimer.enabled": true,
       "widgets.focusTimer.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
-      "widgets.sportsWidget.enabled": true,
     });
     expect(
       container.querySelector(".logo-and-wordmark-wrapper")
@@ -1777,8 +1773,6 @@ describe("<Base> Nova hides Logo when no sections are enabled", () => {
       "widgets.clocks.enabled": true,
       "widgets.system.focusTimer.enabled": true,
       "widgets.focusTimer.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
-      "widgets.sportsWidget.enabled": true,
     });
     expect(
       container.querySelector(".container.nova-enabled.logo-in-content")
@@ -2103,6 +2097,24 @@ describe("<BaseContent> wallpaper transitions (Bug 2057217)", () => {
       "--newtab-wallpaper",
       expect.anything()
     );
+  });
+
+  // Bug 2072941: a replacement upload clears the applied URL while the file is
+  // written, so this is the ordinary case, not an edge one.
+  it("keeps a painted wallpaper up when the applied URL is cleared", async () => {
+    const inst = makeInstance({ wallpaper: "custom", uploadedWallpaper: null });
+    document.body.style.setProperty(
+      "--newtab-wallpaper",
+      "url(previous-wallpaper.jpg)"
+    );
+    setPropertySpy.mockClear();
+
+    await inst.updateWallpaper();
+
+    expect(document.body.style.getPropertyValue("--newtab-wallpaper")).toBe(
+      "url(previous-wallpaper.jpg)"
+    );
+    expect(setPropertySpy).not.toHaveBeenCalled();
   });
 
   it("crops a saved wallpaper the way its position pref says", async () => {

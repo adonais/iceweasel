@@ -8,9 +8,11 @@ include FetchTypes;
 include NeckoChannelParams;
 
 include "mozilla/dom/ServiceWorkerIPCUtils.h";
+include "mozilla/ipc/IPCStreamUtils.h";
 
 using mozilla::dom::ServiceWorkerState from "mozilla/dom/ServiceWorkerBinding.h";
 using mozilla::TimeStamp from "mozilla/TimeStamp.h";
+using mozilla::ipc::EagerIPCStream from "mozilla/ipc/EagerIPCStream.h";
 
 namespace mozilla {
 namespace dom {
@@ -166,6 +168,7 @@ struct ParentToParentSynthesizeResponseArgs {
 
 struct ResetInterceptionArgs {
   FetchEventTimeStamps timeStamps;
+  EagerIPCStream? uploadStream;
 };
 
 struct CancelInterceptionArgs {

@@ -36,6 +36,12 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
   enum class WireProtocol {
     kDtls,
     kDtlsSrtp,
+    // DTLS-only transport that additionally frames every payload with a small
+    // transport header (packet type + transport sequence number). This is the
+    // wire-format foundation for carrying congestion-control feedback inside
+    // the DTLS records; the feedback codec itself is not part of this mode yet.
+    // See DtlsPacketProcessor.
+    kDtlsWithFeedback,
   };
 
   using PacketId = uint32_t;

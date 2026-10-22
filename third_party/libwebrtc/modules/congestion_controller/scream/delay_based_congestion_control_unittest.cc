@@ -261,6 +261,43 @@ TEST(DelayBasedCongestionControlTest,
       0.01);
 }
 
+TEST(DelayBasedCongestionControlTest,
+     PacketsSentOutsideBurstDoNotReduceRefWindowScaleFactor) {
+  SimulatedClock clock(Timestamp::Seconds(1234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  ScreamV2Parameters params(env.field_trials());
+  DelayBasedCongestionControl delay_controller(params);
+
+  // Feed packets with 50ms delay difference, but sent 100ms apart (> 25ms burst
+  // delta).
+  for (int i = 0; i < 10; ++i) {
+    clock.AdvanceTime(TimeDelta::Millis(100));
+    TransportPacketsFeedback msg;
+    msg.feedback_time = clock.CurrentTime();
+
+    PacketResult packet1;
+    packet1.receive_time = clock.CurrentTime() - TimeDelta::Millis(50);
+    packet1.sent_packet.send_time =
+        clock.CurrentTime() - TimeDelta::Millis(150);
+    packet1.sent_packet.sequence_number = i * 2;
+
+    PacketResult packet2;
+    packet2.receive_time = clock.CurrentTime();
+    packet2.sent_packet.send_time = clock.CurrentTime() - TimeDelta::Millis(50);
+    packet2.sent_packet.sequence_number = i * 2 + 1;
+
+    msg.packet_feedbacks.push_back(packet1);
+    msg.packet_feedbacks.push_back(packet2);
+    delay_controller.Update(ParseScreamFeedback(msg, params), /*alr=*/false);
+  }
+
+  // Because send delta is 100ms > 25ms, latency_difference is 0 and scale
+  // factor remains 1.0.
+  EXPECT_DOUBLE_EQ(
+      delay_controller.ref_window_scale_factor_due_to_latency_difference(),
+      1.0);
+}
+
 TEST(DelayBasedCongestionControlTest, RttDecaysSlowerInAlr) {
   SimulatedClock clock(Timestamp::Seconds(1234));
   Environment env = CreateTestEnvironment({.time = &clock});
@@ -351,6 +388,43 @@ TEST(DelayBasedCongestionControlTest, RttIncreasesSlowerInAlr) {
 
 // TODO: bugs.webrtc.org/447037083 - add tests for clock drift in feedback NTP
 // time.
+
+TEST(DelayBasedCongestionControlTest,
+     LatencyDifferenceWithNegativeOneWayDelay) {
+  SimulatedClock clock(Timestamp::Seconds(1234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  DelayBasedCongestionControl delay_controller(
+      ScreamV2Parameters(env.field_trials()));
+
+  // Send packets where receiver clock is behind sender clock (negative OWD),
+  // but there is zero latency variation between packets.
+  for (int i = 0; i < 50; ++i) {
+    clock.AdvanceTime(TimeDelta::Millis(10));
+    TransportPacketsFeedback msg;
+    msg.feedback_time = clock.CurrentTime();
+
+    PacketResult packet1;
+    packet1.receive_time = clock.CurrentTime();
+    packet1.sent_packet.send_time =
+        clock.CurrentTime() + TimeDelta::Millis(100);
+    packet1.sent_packet.sequence_number = i * 2;
+
+    PacketResult packet2;
+    packet2.receive_time = clock.CurrentTime();
+    packet2.sent_packet.send_time =
+        clock.CurrentTime() + TimeDelta::Millis(100);
+    packet2.sent_packet.sequence_number = i * 2 + 1;
+
+    msg.packet_feedbacks.push_back(packet1);
+    msg.packet_feedbacks.push_back(packet2);
+    delay_controller.Update(ParseScreamFeedback(msg), /*alr=*/false);
+  }
+
+  EXPECT_EQ(delay_controller.latency_difference_avg(), TimeDelta::Zero());
+  EXPECT_DOUBLE_EQ(
+      delay_controller.ref_window_scale_factor_due_to_latency_difference(),
+      1.0);
+}
 
 }  // namespace
 }  // namespace webrtc

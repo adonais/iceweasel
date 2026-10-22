@@ -11,9 +11,16 @@ import {
 } from "chrome://browser/content/aiwindow/modules/AgentCommands.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
+import {
+  CONTEXT_MENTION_TYPE,
+  getTabGroupMentionId,
+  parseTabGroupMentionId,
+} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 
 /**
  * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
+ * @import {ContextMentionType} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs"
+ * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
  * @typedef {import("../../aiwindow/ui/components/smartwindow-panel-list/smartwindow-panel-list.mjs").SmartwindowPanelList} SmartwindowPanelList
  */
 
@@ -63,11 +70,24 @@ function isAgentCommandAvailable() {
  * @returns {boolean}
  */
 export function isAgentCommand(value) {
+  return getAgentCommandId(value) !== null;
+}
+
+/**
+ * The leading agent command id in the input, e.g. "watch", or null when the
+ * input does not begin with a known command.
+ *
+ * @param {string} value - Raw smartbar input
+ * @returns {?string}
+ */
+export function getAgentCommandId(value) {
   if (!isAgentCommandAvailable()) {
-    return false;
+    return null;
   }
   const parsed = parseAgentCommand(value);
-  return !!parsed && AGENT_COMMAND_ITEMS.has(parsed.command);
+  return parsed && AGENT_COMMAND_ITEMS.has(parsed.command)
+    ? parsed.command
+    : null;
 }
 
 /**
@@ -99,9 +119,11 @@ const PLACEHOLDER_HINT_L10N_IDS = [
 
 /**
  * @typedef {object} TabMention
- * @property {string} id - Mention ID
- * @property {string} [label] - Tab title
+ * @property {string} id - Mention ID: a tab URL or `group:<groupId>`
+ * @property {ContextMentionType} [type] - Mention type
+ * @property {string} [label] - Tab title or tab group label
  * @property {string} [icon] - Tab icon
+ * @property {TabGroupColor} [color] - Tab group color
  * @property {string} [l10nId] - Fluent l10n ID for localized items
  * @property {object} [l10nArgs] - Arguments for l10n
  */
@@ -127,7 +149,8 @@ const PLACEHOLDER_HINT_L10N_IDS = [
  */
 function getMentionSuggestions(mentionSearch, searchString) {
   try {
-    // Deduplicate by URL, keeping first occurrence (prioritizes open tabs, then most recent)
+    // Deduplicate by mention id, keeping the first occurrence
+    // (prioritizes open tabs, then most recent)
     const seen = new Set();
     const deduplicated = mentionSearch
       .startQuery(searchString)
@@ -153,13 +176,32 @@ function getMentionSuggestions(mentionSearch, searchString) {
         icon,
       }));
 
+    let tabGroupItems = mentionSearch
+      .getTabGroups()
+      .map(({ id, label, color }) => ({
+        id: getTabGroupMentionId(id),
+        type: CONTEXT_MENTION_TYPE.TAB_GROUP,
+        label,
+        color,
+      }))
+      .filter(item => !seen.has(item.id) && seen.add(item.id))
+      .slice(0, UrlbarPrefs.get("mentions.maxGroupResults"));
+
+    /** @type {TabMentionGroup[]} */
+    let groups = [];
+    if (tabGroupItems.length) {
+      groups.push({
+        headerL10nId: "smartbar-mentions-list-tab-groups-label",
+        items: tabGroupItems,
+      });
+    }
+    groups.push({
+      headerL10nId: "smartbar-mentions-list-recent-tabs-label",
+      items: deduplicated,
+    });
+
     return {
-      groups: [
-        {
-          headerL10nId: "smartbar-mentions-list-recent-tabs-label",
-          items: deduplicated,
-        },
-      ],
+      groups,
       totalCount: deduplicated.length,
     };
   } catch (e) {
@@ -312,8 +354,12 @@ function setupMentionsPlugin(editorElement, panelList) {
     nodeView: node => [
       "ai-website-chip",
       {
-        href: node.attrs.id,
-        iconSrc: `page-icon:${node.attrs.id}`,
+        ...(node.attrs.type == CONTEXT_MENTION_TYPE.TAB_GROUP
+          ? { isTabGroup: true, tabGroupColor: node.attrs.color ?? "" }
+          : {
+              href: node.attrs.id,
+              iconSrc: `page-icon:${node.attrs.id}`,
+            }),
         label: node.attrs.label,
         type: "in-line",
       },
@@ -390,7 +436,10 @@ function setupMentionsPlugin(editorElement, panelList) {
     if (panelList.getAttribute("data-triggered-by") === COMMAND_TRIGGER) {
       return;
     }
-    const { id, label, icon } = e.detail;
+    let { id, type, label, icon, color } = e.detail;
+    let isTabGroup = type == CONTEXT_MENTION_TYPE.TAB_GROUP;
+    // The labels match the mention_type metric.
+    let mentionType = isTabGroup ? "tab_group" : "tab";
 
     // TODO: Bug 2064550 - use dataset instead
     const isContextButtonTrigger =
@@ -402,15 +451,25 @@ function setupMentionsPlugin(editorElement, panelList) {
     // add the mention to the context header.
     if (isContextButtonTrigger) {
       const tabsPreselected = smartbarInput.contextWebsitesCount;
-      smartbarInput.addContextMention({
-        type: "tab",
-        url: id,
-        label,
-        iconSrc: icon,
-      });
+      smartbarInput.addContextMention(
+        isTabGroup
+          ? {
+              type: CONTEXT_MENTION_TYPE.TAB_GROUP,
+              groupId: parseTabGroupMentionId(id),
+              label,
+              color,
+            }
+          : {
+              type: CONTEXT_MENTION_TYPE.TAB,
+              url: id,
+              label,
+              iconSrc: icon,
+            }
+      );
       Glean.smartWindow.addTabsSelection.record({
         chat_id,
         location: smartbarInput.sapLocation,
+        mention_type: mentionType,
         message_seq: String(message_seq),
         tabs_available: String(
           panelList.groups.reduce((sum, group) => sum + group.items.length, 0)
@@ -425,6 +484,7 @@ function setupMentionsPlugin(editorElement, panelList) {
         chat_id,
         length: label.length,
         location: smartbarInput.sapLocation,
+        mention_type: mentionType,
         mentions_available: panelList.groups.reduce(
           (sum, group) => sum + group.items.length,
           0
@@ -433,9 +493,12 @@ function setupMentionsPlugin(editorElement, panelList) {
       });
       plugin.mentions.insert(
         {
-          type: "tab",
+          type: isTabGroup
+            ? CONTEXT_MENTION_TYPE.TAB_GROUP
+            : CONTEXT_MENTION_TYPE.TAB,
           id,
           label,
+          color,
         },
         latestMentionData?.range.from ?? 0,
         latestMentionData?.range.to ?? 1
@@ -543,6 +606,19 @@ function setupCommandsPlugin(editorElement, panelList) {
     if (!latestCommandData) {
       return;
     }
+
+    const { chat_id, message_seq } = smartbarInput.conversationTelemetryInfo;
+    Glean.smartWindow.agentCommandSelect.record({
+      agent: id,
+      chat_id,
+      commands_available: String(
+        panelList.groups.reduce((sum, group) => sum + group.items.length, 0)
+      ),
+      location: smartbarInput.sapLocation,
+      message_seq: String(message_seq),
+      source: "manual",
+    });
+
     onExitPalette();
     smartbarInput.submitChat(null, `/${id}`, submitType);
   };
@@ -626,9 +702,22 @@ function setupCommandsPlugin(editorElement, panelList) {
       if (!isLeadingCommand()) {
         return;
       }
-      // TODO: Bug 2060584 - record command telemetry
       latestCommandData = data;
       isHandlingCommands = updatePanel(data.text.substring(1));
+
+      if (isHandlingCommands) {
+        const { chat_id, message_seq } =
+          smartbarInput.conversationTelemetryInfo;
+        Glean.smartWindow.agentCommandStart.record({
+          chat_id,
+          commands_available: String(
+            panelList.groups.reduce((sum, group) => sum + group.items.length, 0)
+          ),
+          location: smartbarInput.sapLocation,
+          message_seq: String(message_seq),
+          source: "manual",
+        });
+      }
     },
     onChange: data => {
       if (!isLeadingCommand()) {

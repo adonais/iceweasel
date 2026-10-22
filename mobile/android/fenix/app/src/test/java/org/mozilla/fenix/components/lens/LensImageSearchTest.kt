@@ -153,21 +153,6 @@ class LensImageSearchTest {
         }
 
     @Test
-    fun `GIVEN an image whose permission was revoked WHEN searching THEN the SecurityException is handled and LensDismissed is dispatched`() =
-        runTest(testDispatcher) {
-            coEvery { uploader.upload(any(), any()) } throws SecurityException("revoked")
-
-            lensImageSearch.searchWithImage(imageUri, source = "photo_picker")
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            verify { appStore.dispatch(LensAction.LensDismissed) }
-            val events = GoogleLens.searchCompleted.testGetValue()
-            assertNotNull(events)
-            assertEquals("false", events.last().extra?.get("succeeded"))
-            assertEquals("photo_picker", events.last().extra?.get("source"))
-        }
-
-    @Test
     fun `GIVEN a camera image WHEN the upload succeeds THEN the searchCompleted event records the source and status code`() =
         runTest(testDispatcher) {
             coEvery { uploader.upload(any(), any()) } returns
@@ -247,6 +232,39 @@ class LensImageSearchTest {
             assertNotNull(events)
             assertEquals(1, events.size)
             assertEquals("context_menu", events.last().extra?.get("source"))
+        }
+
+    @Test
+    fun `GIVEN an already uploaded private result WHEN openResult is called THEN it is opened in a new private tab and LensResultAvailable is dispatched`() {
+        lensImageSearch.openResult(resultUrl, isPrivate = true)
+
+        verifyResultOpened(private = true)
+        verify { appStore.dispatch(LensAction.LensResultAvailable(resultUrl)) }
+        assertNull(GoogleLens.searchCompleted.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN an upload is in flight WHEN openResult is called THEN only the opened result is shown`() =
+        runTest(testDispatcher) {
+            val inFlightResultUrl = "https://lens.google.com/results?in_flight"
+            val pendingUpload = CompletableDeferred<LensImageUploader.UploadResult>()
+            coEvery { uploader.upload(any(), any()) } coAnswers { pendingUpload.await() }
+
+            lensImageSearch.searchWithImage(imageUri, source = "camera")
+            testDispatcher.scheduler.advanceUntilIdle()
+            lensImageSearch.openResult(resultUrl, isPrivate = false)
+            pendingUpload.complete(LensImageUploader.UploadResult(resultUrl = inFlightResultUrl, httpStatusCode = 200))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verifyResultOpened(private = false)
+            verify(exactly = 0) {
+                browserUseCases.loadUrlOrSearch(
+                    searchTermOrURL = inFlightResultUrl,
+                    newTab = any(),
+                    private = any(),
+                    flags = any(),
+                )
+            }
         }
 
     @Test

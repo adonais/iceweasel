@@ -917,7 +917,7 @@ static bool math_sign(JSContext* cx, unsigned argc, Value* vp) {
 double js::math_cbrt_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
   // fdlibm_cbrt can return a non-canonical NaN when the thread has FTZ/DAZ
-  // enabled (see --disable-main-thread-denormals), so canonicalize the result.
+  // enabled, so canonicalize the result.
   return JS::CanonicalizeNaN(fdlibm_cbrt(x));
 }
 

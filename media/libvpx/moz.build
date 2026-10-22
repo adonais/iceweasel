@@ -145,7 +145,7 @@ for f in SOURCES:
         if 'sve2.c' in f:
             SOURCES[f].flags += ['-march=armv9-a+sve2']
         if 'lsx.c' in f:
-            SOURCES[f].flags += ['-mlsx']
+            SOURCES[f].flags += CONFIG['LSX_FLAGS']
 
 # Suppress warnings in third-party code.
 CFLAGS += [

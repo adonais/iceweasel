@@ -123,9 +123,6 @@ skip-if = [
 ]
 
 ["browser_styleeditor_filesave_original.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
-]
 
 ["browser_styleeditor_filter.js"]
 fail-if = [
@@ -255,7 +252,3 @@ fail-if = [
 ["browser_styleeditor_xul.js"]
 
 ["browser_toolbox_styleeditor.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929428
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929428, Bug 2028047
-]

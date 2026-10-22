@@ -87,8 +87,8 @@ nsLoadGroup::~nsLoadGroup() {
 ////////////////////////////////////////////////////////////////////////////////
 // nsISupports methods:
 
-NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsILoadGroupChild, nsIRequest,
-                  nsISupportsPriority, nsISupportsWeakReference, nsIObserver)
+NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsIRequest, nsISupportsPriority,
+                  nsISupportsWeakReference, nsIObserver)
 
 ////////////////////////////////////////////////////////////////////////////////
 // nsIRequest methods:
@@ -309,7 +309,8 @@ nsLoadGroup::GetLoadFlags(uint32_t* aLoadFlags) {
 
 NS_IMETHODIMP
 nsLoadGroup::SetLoadFlags(uint32_t aLoadFlags) {
-  mLoadFlags = aLoadFlags;
+  MOZ_ASSERT(!(aLoadFlags & ~kInheritedLoadFlags));
+  mLoadFlags = aLoadFlags & kInheritedLoadFlags;
   return NS_OK;
 }
 
@@ -355,11 +356,8 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
   // Inherit the group load flags from the default load request
   if (mDefaultLoadRequest) {
     mDefaultLoadRequest->GetLoadFlags(&mLoadFlags);
-    //
-    // Mask off any bits that are not part of the nsIRequest flags.
-    // in particular, nsIChannel::LOAD_DOCUMENT_URI...
-    //
-    mLoadFlags &= nsIRequest::LOAD_INHERIT_MASK;
+    // Mask off any bits that we don't want to inherit.
+    mLoadFlags &= kInheritedLoadFlags;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
     mDefaultLoadIsTimed = timedChannel != nullptr;
@@ -690,9 +688,6 @@ nsLoadGroup::GetRequestContextID(uint64_t* aRCID) {
   return NS_OK;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// nsILoadGroupChild methods:
-
 NS_IMETHODIMP
 nsLoadGroup::GetParentLoadGroup(nsILoadGroup** aParentLoadGroup) {
   *aParentLoadGroup = nullptr;
@@ -709,20 +704,13 @@ nsLoadGroup::SetParentLoadGroup(nsILoadGroup* aParentLoadGroup) {
 }
 
 NS_IMETHODIMP
-nsLoadGroup::GetChildLoadGroup(nsILoadGroup** aChildLoadGroup) {
-  *aChildLoadGroup = do_AddRef(this).take();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsLoadGroup::GetRootLoadGroup(nsILoadGroup** aRootLoadGroup) {
   // first recursively try the root load group of our parent
-  nsCOMPtr<nsILoadGroupChild> ancestor = do_QueryReferent(mParentLoadGroup);
+  nsCOMPtr<nsILoadGroup> ancestor = do_QueryReferent(mParentLoadGroup);
   if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
 
   // next recursively try the root load group of our own load grop
-  ancestor = do_QueryInterface(mLoadGroup);
-  if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
+  if (mLoadGroup) return mLoadGroup->GetRootLoadGroup(aRootLoadGroup);
 
   // finally just return this
   *aRootLoadGroup = do_AddRef(this).take();
@@ -1046,21 +1034,17 @@ void nsLoadGroup::TelemetryReportChannel(nsITimedChannel* aTimedChannel,
 
 nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
                                      nsLoadFlags& outFlags) {
-  nsresult rv;
+  MOZ_ASSERT(!(mLoadFlags & ~kInheritedLoadFlags));
   nsLoadFlags flags, oldFlags;
-
-  rv = aRequest->GetLoadFlags(&flags);
+  nsresult rv = aRequest->GetLoadFlags(&flags);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
   oldFlags = flags;
 
-  // Inherit some bits...
-  flags |= mLoadFlags & kInheritedLoadFlags;
-
-  // ... and force the default flags.
-  flags |= mDefaultLoadFlags;
+  // Force our load flags plus the default ones.
+  flags |= mLoadFlags | mDefaultLoadFlags;
 
   if (flags != oldFlags) {
     rv = aRequest->SetLoadFlags(flags);
@@ -1072,10 +1056,9 @@ nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
 
 nsresult nsLoadGroup::MergeDefaultLoadFlags(nsIRequest* aRequest,
                                             nsLoadFlags& outFlags) {
-  nsresult rv;
   nsLoadFlags flags, oldFlags;
 
-  rv = aRequest->GetLoadFlags(&flags);
+  nsresult rv = aRequest->GetLoadFlags(&flags);
   if (NS_FAILED(rv)) {
     return rv;
   }

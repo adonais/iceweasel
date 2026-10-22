@@ -18,7 +18,7 @@ Whether you're an external contributor or a Mozilla employee, the process to get
 
 * You find a bug to work on (*note: we use bugs to track 'broken' things, new features and even discussions*). See {doc}`/contributing/filing-good-bugs` and [DevTools bugs and issue trackers](./bugs-issues.md).
 * Work on the bug, then {ref}`write and submit a patch <write-a-patch>`.
-* {ref}`Request a review <Getting reviews>` for your code. DevTools patches go to `#devtools-reviewers`.
+* {doc}`Request a review </contributing/reviews>` for your code. DevTools patches go to `#devtools-reviewers`.
 * Land the code in the repository.
 * And you've contributed—well done 😀
 

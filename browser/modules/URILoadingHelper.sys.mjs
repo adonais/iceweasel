@@ -81,7 +81,9 @@ function openInWindow(url, params, sourceWindow) {
   } = params;
   const chromelessDimensions =
     chromeless && width && height ? `,width=${width},height=${height}` : "";
-  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close${chromelessDimensions}`;
+  // Ensures new chromeless windows appear in the current view instead of
+  // restoring a persisted fullscreen sizemode and taking a Space of their own.
+  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close,suppressinitialfullscreen${chromelessDimensions}`;
   let features = `chrome,dialog=no,${chromeless ? CHROMELESS_FEATURES : "all"}`;
   if (params.private) {
     features += ",private";
@@ -398,89 +400,91 @@ export const URILoadingHelper = {
    *                  Where to open the URL, from the list above.
    * @param {object}  params
    *                  Options for the load, in the five groups above.
-   * @param {boolean} params.private
+   * @param {boolean} [params.private]
    *                  Load the URL in a private window.
-   * @param {boolean} params.forceNonPrivate
+   * @param {boolean} [params.forceNonPrivate]
    *                  Force the load to happen in non-private windows.
-   * @param {boolean} params.relatedToCurrent
+   * @param {boolean} [params.relatedToCurrent]
    *                  Whether new tabs should go immediately next to the current tab.
-   * @param {Element} params.targetBrowser
+   * @param {Element} [params.targetBrowser]
    *                  The browser to use for the load. Only used if where == "current".
-   * @param {boolean} params.inBackground
+   * @param {boolean} [params.inBackground]
    *                  If explicitly true or false, whether to switch to the tab immediately.
    *                  If null, will switch to the tab if ``forceForeground`` was true. If
    *                  neither is passed, will defer to the user preference browser.tabs.loadInBackground.
-   * @param {boolean} params.forceForeground
+   * @param {boolean} [params.forceForeground]
    *                  Ignore the user preference and load in the foreground.
-   * @param {boolean} params.allowPinnedTabHostChange
+   * @param {boolean} [params.allowPinnedTabHostChange]
    *                  Allow even a pinned tab to change hosts.
-   * @param {boolean} params.allowPopups
+   * @param {boolean} [params.allowPopups]
    *                  whether the link is allowed to open in a popup window (ie one with no browser
    *                  chrome)
-   * @param {boolean} params.skipTabAnimation
+   * @param {boolean} [params.skipTabAnimation]
    *                  Skip the tab opening animation.
-   * @param {Element} params.openerBrowser
+   * @param {Element} [params.openerBrowser]
    *                  The browser that started the load.
-   * @param {boolean} params.avoidBrowserFocus
+   * @param {boolean} [params.avoidBrowserFocus]
    *                  Don't focus the browser element immediately after starting
    *                  the load. Used by the URL bar to avoid leaking user input
    *                  into web content, see bug 1641287.
-   * @param {boolean} params.allowThirdPartyFixup
+   * @param {boolean} [params.allowThirdPartyFixup]
    *                  Allow transforming the 'url' into a search query.
-   * @param {nsIInputStream} params.postData
+   * @param {nsIInputStream} [params.postData]
    *                  Data to post as part of the request.
-   * @param {nsIReferrerInfo} params.referrerInfo
+   * @param {nsIReferrerInfo} [params.referrerInfo]
    *                  Referrer info for the request.
-   * @param {boolean} params.indicateErrorPageLoad
+   * @param {boolean} [params.indicateErrorPageLoad]
    *                  Whether docshell should throw an exception (i.e. return non-NS_OK)
    *                  if the load fails.
-   * @param {string}  params.charset
+   * @param {string}  [params.charset]
    *                  Character set to use for the load. Only honoured for tabs.
    *                  Legacy argument - do not use.
-   * @param {SchemelessInputType}  params.schemelessInput
+   * @param {SchemelessInputType}  [params.schemelessInput]
    *                  Whether the search/URL term was without an explicit scheme.
-   * @param {boolean} params.forceAllowDataURI
+   * @param {boolean} [params.forceAllowDataURI]
    *                  Force allow a data URI to load as a toplevel load.
-   * @param {number}  params.userContextId
+   * @param {number}  [params.userContextId]
    *                  The userContextId (container identifier) to use for the load.
    *                  If where is "current" and the specified userContextId differs, a new tab is opened instead.
-   * @param {boolean} params.allowInheritPrincipal
+   * @param {boolean} [params.allowInheritPrincipal]
    *                  Allow the load to inherit the triggering principal.
-   * @param {boolean} params.forceAboutBlankViewerInCurrent
+   * @param {boolean} [params.forceAboutBlankViewerInCurrent]
    *                  Force load an about:blank page first. Only used if
    *                  allowInheritPrincipal is passed or no URL was provided.
-   * @param {nsIPrincipal} params.triggeringPrincipal
+   * @param {nsIPrincipal} [params.triggeringPrincipal]
    *                  Triggering principal to pass to docshell for the load.
-   * @param {nsIPrincipal} params.originPrincipal
+   * @param {nsIPrincipal} [params.originPrincipal]
    *                  Origin principal to pass to docshell for the load.
-   * @param {nsIPrincipal} params.originStoragePrincipal
+   * @param {nsIPrincipal} [params.originStoragePrincipal]
    *                  Storage principal to pass to docshell for the load.
-   * @param {string}  params.triggeringRemoteType
+   * @param {string}  [params.triggeringRemoteType]
    *                  The remoteType triggering this load.
-   * @param {nsIPolicyContainer} params.policyContainer
+   * @param {nsIPolicyContainer} [params.policyContainer]
    *                  The policyContainer that should apply to the load.
-   * @param {boolean} params.hasValidUserGestureActivation
+   * @param {boolean} [params.hasValidUserGestureActivation]
    *                  Indicates if a valid user gesture caused this load. This
    *                  informs e.g. popup blocker decisions.
-   * @param {boolean} params.fromExternal
+   * @param {boolean} [params.fromExternal]
    *                  Indicates the load was started outside of the browser,
    *                  e.g. passed on the commandline or through OS mechanisms.
-   * @param {boolean} params.aswebauth
+   * @param {boolean} [params.aswebauth]
    *                  Marks a new window as an ASWebAuthenticationSession auth
    *                  window so that it is not tracked by session restore. Only
    *                  used when where == "window" or "chromeless".
-   * @param {Function} params.resolveOnNewTabCreated
+   * @param {Function} [params.resolveOnNewTabCreated]
    *                   This callback will be called when a new tab is created.
-   * @param {Function} params.resolveOnContentBrowserCreated
+   * @param {Function} [params.resolveOnContentBrowserCreated]
    *                   This callback will be called with the content browser once it's created.
-   * @param {object}   params.globalHistoryOptions
+   * @param {object}   [params.globalHistoryOptions]
    *                   Used by places to keep track of search related metadata for loads.
-   * @param {number}   params.frameID
+   * @param {number}   [params.frameID]
    *                   Used by webextensions for their loads.
-   * @param {boolean}  params.isContentWindowPrivate
+   * @param {boolean}  [params.isContentWindowPrivate]
    *                   Save content as coming from a private window.
-   * @param {Document} params.initiatingDoc
+   * @param {Document} [params.initiatingDoc]
    *                   Used to determine where to prompt for a filename.
+   * @param {boolean} [params.initiatedByURLBar]
+   *                   Indicates that the load was started by the addressbar or searchbar.
    */
   openLinkIn(window, url, where, params) {
     if (!where || !url) {

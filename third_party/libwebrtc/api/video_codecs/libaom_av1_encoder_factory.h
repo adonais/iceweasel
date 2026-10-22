@@ -19,7 +19,7 @@
 #include "api/video_codecs/video_encoder_interface.h"
 
 namespace webrtc {
-class LibaomAv1EncoderFactory final : VideoEncoderFactoryInterface {
+class LibaomAv1EncoderFactory final : public VideoEncoderFactoryInterface {
  public:
   std::string CodecName() const override;
   std::string ImplementationName() const override;

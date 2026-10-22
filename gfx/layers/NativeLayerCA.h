@@ -331,6 +331,11 @@ struct NativeLayerCARepresentation {
   CALayer* mRoundedClipCALayer = nullptr;   // strong
   CALayer* mContentCALayer = nullptr;       // strong
   CALayer* mOpaquenessTintLayer = nullptr;  // strong
+  // Opaque black layer under a DRM video's content layer. Compositions that
+  // leave out the capture-protected content layer (OS snapshots, including
+  // the one macOS animates for the fullscreen transition) show it instead of
+  // whatever lies behind the video. It never holds video pixels.
+  CALayer* mProtectedBackingLayer = nullptr;  // strong
 
 #ifdef NIGHTLY_BUILD
   bool mLogNextVideoSurface = false;

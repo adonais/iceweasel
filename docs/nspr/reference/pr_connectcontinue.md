@@ -16,12 +16,12 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a socket.
+: A pointer to a {doc}`prfiledesc` object representing a socket.
 
 `out_flags`
 
 : The out_flags field of the poll descriptor returned by
-  [PR_Poll()](PR_Poll).
+  [PR_Poll()](pr_poll.md).
 
 ### Returns
 

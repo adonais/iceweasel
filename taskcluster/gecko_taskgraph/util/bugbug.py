@@ -30,6 +30,10 @@ CT_LOW = 0.7
 CT_MEDIUM = 0.8
 CT_HIGH = 0.9
 
+# The confidence levels of the preset thresholds, for which bugbug can return the thresholds to
+# use with its current models.
+CT_LEVELS = {CT_LOW: "low", CT_MEDIUM: "medium", CT_HIGH: "high"}
+
 GROUP_TRANSLATIONS = {
     "testing/web-platform/tests": "",
     "testing/web-platform/mozilla/tests": "/_mozilla",
@@ -42,6 +46,25 @@ def translate_group(group):
             return group.replace(prefix, value)
 
     return group
+
+
+def get_confidence_threshold(data, kind, confidence_threshold):
+    """Return the threshold to use for the "tasks" or "groups" (`kind`) of a bugbug reply.
+
+    The scale of the confidences depends on bugbug's models, so bugbug returns the thresholds
+    matching the preset ones (computed when training its models) in "confidence_thresholds".
+    Other thresholds, or preset ones when bugbug didn't return any, are used as they are.
+    """
+    level = CT_LEVELS.get(confidence_threshold)
+    if level is None:
+        return confidence_threshold
+
+    return (
+        data
+        .get("confidence_thresholds", {})
+        .get(kind, {})
+        .get(level, confidence_threshold)
+    )
 
 
 class BugbugTimeoutException(Exception):

@@ -1,7 +1,7 @@
 # PRProtoEnt
 
-Protocol entry returned by {ref}`PR_GetProtoByName` and
-{ref}`PR_GetProtoByNumber`.
+Protocol entry returned by {doc}`pr_getprotobyname` and
+{doc}`pr_getprotobynumber`.
 
 ## Syntax
 

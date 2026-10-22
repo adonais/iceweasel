@@ -13,6 +13,7 @@
 #include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsCRT.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -105,6 +106,7 @@ nsresult nsIDNService::Init() {
   InitDigitConfusables();
   InitCyrillicLatinConfusables();
   InitThaiLatinConfusables();
+  InitAllowedLimitedUseScripts();
   return NS_OK;
 }
 
@@ -232,6 +234,22 @@ void nsIDNService::InitThaiLatinConfusables() {
   mThaiLatinConfusables.Insert(0x0E40);  // เ
   mThaiLatinConfusables.Insert(0x0E41);  // แ
   mThaiLatinConfusables.Insert(0x0E50);  // ๐
+}
+
+void nsIDNService::InitAllowedLimitedUseScripts() {
+  nsAutoCString allowed;
+  if (NS_FAILED(Preferences::GetCString(
+          "network.idn.allowed_limited_use_scripts", allowed))) {
+    return;
+  }
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(allowed, ',').ToRange()) {
+    nsAutoCString tokStr(token);
+    Script script = UnicodeProperties::GetScriptCodeFromString(tokStr.get());
+    if (script != Script::UNKNOWN) {
+      mAllowedLimitedUseScripts.AppendElement(script);
+    }
+  }
 }
 
 nsIDNService::nsIDNService() { MOZ_ASSERT(NS_IsMainThread()); }
@@ -419,11 +437,22 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
   while (current != end) {
     char32_t ch = *current++;
 
-    IdentifierType idType = GetIdentifierType(ch);
-    if (idType == IDTYPE_RESTRICTED) {
-      return false;
+    IdentifierStatus idStatus = GetIdentifierStatus(ch);
+    if (idStatus == IDSTATUS_RESTRICTED) {
+      // Check for codepoint with Identifier_Type of LimitedUse (only)
+      // that belongs to one of the Allowed Limited Use Scripts.
+      // (See https://bugzilla.mozilla.org/show_bug.cgi?id=1648889)
+      if (UnicodeProperties::HasSingleIdentifierType(
+              ch, UnicodeProperties::IdentifierType::LimitedUse) &&
+          mAllowedLimitedUseScripts.Contains(
+              UnicodeProperties::GetScriptCode(ch))) {
+        // Override the original RESTRICTED status.
+        idStatus = IDSTATUS_ALLOWED;
+      } else {
+        return false;
+      }
     }
-    MOZ_ASSERT(idType == IDTYPE_ALLOWED);
+    MOZ_ASSERT(idStatus == IDSTATUS_ALLOWED);
 
     // Check for mixed script
     Script script = UnicodeProperties::GetScriptCode(ch);

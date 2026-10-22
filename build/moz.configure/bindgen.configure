@@ -338,6 +338,11 @@ def basic_bindgen_cflags(
         ],
     }.get(target.os, [])
 
+    # bindgen passes the windows-gnullvm Rust target to clang unchanged, which
+    # clang rejects. https://github.com/rust-lang/rust-bindgen/pull/3505
+    if target.abi == "mingw":
+        args.append(f"--target={target.alias}")
+
     if compiler_info.type == "clang-cl":
         args += [
             # To enable the builtin __builtin_offsetof so that CRT wouldn't

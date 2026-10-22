@@ -12,7 +12,7 @@ void PR_SetConcurrency(PRUintn numCPUs);
 
 ### Parameter
 
-{ref}`PR_SetConcurrency` has one parameter:
+{doc}`pr_setconcurrency` has one parameter:
 
 `numCPUs`
 
@@ -23,7 +23,7 @@ void PR_SetConcurrency(PRUintn numCPUs);
 Setting concurrency controls the number of virtual processors that NSPR
 uses to implement its `M x N` threading model. The `M x N` model is
 not available on all host systems. On those where it is not available,
-{ref}`PR_SetConcurrency` is ignored.
+{doc}`pr_setconcurrency` is ignored.
 
 Virtual processors are actually*global* threads, each of which is
 designed to support an arbitrary number of*local* threads. Since

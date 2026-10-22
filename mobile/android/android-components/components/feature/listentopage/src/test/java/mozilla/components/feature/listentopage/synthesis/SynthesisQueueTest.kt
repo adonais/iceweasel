@@ -24,8 +24,9 @@ import mozilla.components.feature.listentopage.fakes.FakeAudioFileCache
 import mozilla.components.feature.listentopage.fakes.FakeSpeechSynthesizer
 import mozilla.components.feature.listentopage.playback.AUDIO_WINDOW_RADIUS
 import mozilla.components.feature.listentopage.playback.ChunkAudio
+import mozilla.components.feature.listentopage.playback.DirectoryAudioFileCache
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -223,7 +224,7 @@ class SynthesisQueueTest {
         val queue =
             SynthesisQueue(
                 synthesizer = engine,
-                audio = ChunkAudio(cache),
+                audio = ChunkAudio(DirectoryAudioFileCache({ temporaryFolder.root }, Dispatchers.Unconfined)),
                 chunker = TextChunker.android(),
                 workDispatcher = Dispatchers.Unconfined,
                 elapsedMs = { testScheduler.currentTime },
@@ -233,10 +234,68 @@ class SynthesisQueueTest {
         temporaryFolder.root.deleteRecursively()
 
         // The chunks still to come are unaffected, because the engine writes a new file and the directory comes back
-        // with it. Re-making the one that went is bug 2064868's, so until then its path is stale rather than refreshed
-        // and this asserts only that the article has somewhere to carry on from.
+        // with it. The chunk that was deleted reports a missing file, and will be recovered if it needs to be played
+        // again.
         assertNotNull(queue.audioFor(1))
-        assertFalse("The chunk that was reclaimed still reports a file", queue.fileFor(0)!!.exists())
+        assertNull("The chunk that was reclaimed still reports a file", queue.fileFor(0))
+        assertTrue("The chunk that was reclaimed was not made again", queue.audioFor(0)!!.exists())
+    }
+
+    @Test
+    fun `test that asking for a chunk deleted due to system recovery is remade`() = runTest {
+        val engine = FakeSpeechSynthesizer()
+        val queue = queueWith(engine)
+        queue.startReading(article(sentences = 200), "en-US")
+        val opening = queue.fileFor(0)
+
+        cache.reclaim(engine.files[0])
+
+        val remade = assertNotNull(queue.audioFor(0))
+        assertNotEquals(opening, remade)
+        assertEquals(2, engine.requests.size)
+    }
+
+    @Test
+    fun `test that a discarded chunk is made again rather than handed back`() = runTest {
+        val engine = FakeSpeechSynthesizer()
+        val queue = queueWith(engine)
+        queue.startReading(article(sentences = 200), "en-US")
+        val opening = queue.fileFor(0)
+
+        queue.discard(0)
+
+        val remade = assertNotNull(queue.audioFor(0))
+        assertNotEquals(opening, remade)
+        assertEquals(2, engine.requests.size)
+    }
+
+    @Test
+    fun `test that a chunk inside the window whose audio the system took is made again`() = runTest {
+        val engine = FakeSpeechSynthesizer()
+        val queue = queueWith(engine)
+        queue.startReading(article(sentences = 200), "en-US")
+        queue.moveWindowTo(playingChunk = 0)
+        val madeBefore = engine.requests.size
+
+        cache.reclaim(engine.files[1])
+        queue.moveWindowTo(playingChunk = 0)
+
+        assertEquals(madeBefore + 1, engine.requests.size)
+        assertNotNull(queue.fileFor(1))
+    }
+
+    @Test
+    fun `test that a chunk keeps its measured length after the system takes its audio`() = runTest {
+        val engine = FakeSpeechSynthesizer()
+        val queue = queueWith(engine)
+        queue.startReading(article(sentences = 200), "en-US")
+
+        cache.reclaim(engine.files[0])
+
+        // The chunk still lasts as long as it did, so the bar covering the article does not shorten because the
+        // system wanted the space back.
+        assertNull(queue.fileFor(0))
+        assertEquals(OPENING_AUDIO, queue.durationOf(0))
     }
 
     @Test

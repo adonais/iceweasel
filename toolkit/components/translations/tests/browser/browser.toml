@@ -56,9 +56,6 @@ support-files = [
 ["browser_about_translations_resize_sections_with_messages.js"]
 
 ["browser_about_translations_scheduling.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1821461
-]
 
 ["browser_about_translations_source_clear_button_functionality.js"]
 

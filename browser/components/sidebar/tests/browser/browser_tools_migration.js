@@ -206,3 +206,64 @@ add_task(async function test_resource_monitor_visibility_migration() {
     "resourcemonitor pref property is now marked as already shown."
   );
 });
+
+add_task(async function test_passwords_visibility_migration() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.main.tools", "syncedtabs,history"],
+      ["browser.contextual-password-manager.enabled", false],
+      [
+        "sidebar.newTool.migration.passwords",
+        JSON.stringify({
+          visibilityPref: "browser.contextual-password-manager.enabled",
+        }),
+      ],
+    ],
+  });
+
+  const sidebar = document.querySelector("sidebar-main");
+  is(
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").length,
+    2,
+    "Passwords is not yet added to sidebar.main.tools"
+  );
+  is(sidebar.toolButtons.length, 2, "Two tools are shown in the launcher");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contextual-password-manager.enabled", true]],
+  });
+
+  await SidebarTestUtils.showPanel(window, "viewCustomizeSidebar");
+  let customizeDocument = SidebarController.browser.contentDocument;
+  const customizeComponent =
+    customizeDocument.querySelector("sidebar-customize");
+  let passwordsInput = Array.from(customizeComponent.toolInputs).find(
+    input => input.id === "viewCPMSidebar"
+  );
+  ok(passwordsInput, "Passwords input exists in customize panel");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    passwordsInput,
+    { attributes: true, attributeFilter: ["checked"] },
+    () => passwordsInput.checked
+  );
+
+  is(
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").length,
+    3,
+    "Passwords was auto-added to sidebar.main.tools once its visibility pref flipped true"
+  );
+  is(
+    sidebar.toolButtons.length,
+    3,
+    "Three tools are now shown in the launcher"
+  );
+
+  let prefValue = JSON.parse(
+    Services.prefs.getStringPref("sidebar.newTool.migration.passwords")
+  );
+  ok(
+    prefValue.alreadyShown,
+    "passwords pref property is now marked as already shown."
+  );
+});

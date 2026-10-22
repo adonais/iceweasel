@@ -140,14 +140,14 @@ TEST_PLATFORMS = {
     Platforms.MACOSX.value: {
         "query": {
             Suites.PERFTEST.value: "'macosx",
-            "default": "'osx 'shippable",
+            "default": "!1470 'osx 'shippable",
         },
         "platform": Platforms.DESKTOP.value,
     },
     Platforms.DESKTOP.value: {
         "query": {
             Suites.PERFTEST.value: "!android",
-            "default": "!android 'shippable !-32 !clang",
+            "default": "!android 'shippable !-32 !clang !1470",
         },
         "platform": Platforms.DESKTOP.value,
     },
@@ -427,7 +427,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -440,7 +440,7 @@ def setup_perfparser():
                 "Pageload macosx": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -451,10 +451,10 @@ def setup_perfparser():
                     ]
                 },
                 "Resource Usage desktop": {
-                    "awsy": ["'awsy", "!android 'shippable !-32 !clang"],
+                    "awsy": ["'awsy", "!android 'shippable !-32 !clang !1470"],
                     "raptor": [
                         "'power 'osx",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -465,7 +465,7 @@ def setup_perfparser():
                     ],
                     "talos": [
                         "'talos 'xperf | 'tp5",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!profil",
                         "!swr",
                     ],
@@ -489,7 +489,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!profil",
                         "!chrom",
@@ -501,7 +501,7 @@ def setup_perfparser():
                 "Pageload macosx": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "!bytecode",
                         "!profil",
                         "!chrom",
@@ -513,7 +513,7 @@ def setup_perfparser():
                 "Pageload macosx live-sites": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "'live",
                         "!bytecode",
                         "!profil",
@@ -540,7 +540,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!profil",
                         "!chrom",
@@ -551,7 +551,7 @@ def setup_perfparser():
                 "Pageload macosx safari": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "'safari",
                         "!bytecode",
                         "!profil",
@@ -560,7 +560,7 @@ def setup_perfparser():
                 "Pageload macosx safari live-sites": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "'safari",
                         "'live",
                         "!bytecode",
@@ -580,7 +580,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -593,7 +593,7 @@ def setup_perfparser():
                 "Pageload macosx": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -617,7 +617,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!profil",
                         "!safari",
@@ -628,7 +628,7 @@ def setup_perfparser():
                 "Pageload macosx live-sites": {
                     "raptor": [
                         "'browsertime 'tp6",
-                        "'osx 'shippable",
+                        "!1470 'osx 'shippable",
                         "'live",
                         "!bytecode",
                         "!profil",
@@ -651,7 +651,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -684,7 +684,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!profil",
@@ -713,7 +713,7 @@ def setup_perfparser():
                 "Benchmarks desktop": {
                     "raptor": [
                         "'browsertime 'benchmark",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "!bytecode",
                         "!live",
                         "!safari",
@@ -724,7 +724,7 @@ def setup_perfparser():
                 "Talos PerfTests desktop profiling": {
                     "talos": [
                         "'talos",
-                        "!android 'shippable !-32 !clang",
+                        "!android 'shippable !-32 !clang !1470",
                         "'profil",
                         "!swr",
                     ]

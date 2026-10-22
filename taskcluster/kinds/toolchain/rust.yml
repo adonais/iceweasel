@@ -338,8 +338,8 @@ mingw32-rust-1.95:
             '--channel', '1.95.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'i686-unknown-linux-gnu',
-            '--target', 'i686-pc-windows-gnu',
-            '--target', 'x86_64-pc-windows-gnu',
+            '--target', 'i686-pc-windows-gnullvm',
+            '--target', 'x86_64-pc-windows-gnullvm',
             '--target', 'x86_64-unknown-linux-gnu',
         ]
         toolchain-alias:
@@ -606,8 +606,8 @@ mingw32-rust-nightly:
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'i686-unknown-linux-gnu',
-            '--target', 'i686-pc-windows-gnu',
-            '--target', 'x86_64-pc-windows-gnu',
+            '--target', 'i686-pc-windows-gnullvm',
+            '--target', 'x86_64-pc-windows-gnullvm',
             '--target', 'x86_64-unknown-linux-gnu',
         ]
         toolchain-alias:

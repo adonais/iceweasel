@@ -5,9 +5,8 @@
 #ifndef TimerThread_h_
 #define TimerThread_h_
 
-#include "mozilla/Monitor.h"
+#include "TimerThreadMonitor.h"
 #include "mozilla/ProfilerUtils.h"
-#include "mozilla/Span.h"
 #include "nsIObserver.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
@@ -15,184 +14,11 @@
 #include "nsThreadUtils.h"
 #include "nsTimerImpl.h"
 
-#if defined(XP_WIN)
-#  include <windows.h>
-#endif
-
 // Enable this to compute lots of interesting statistics and print them out when
 // PrintStatistics() is called.
 #define TIMER_THREAD_STATISTICS 0
 
 class TimerThread final : public mozilla::Runnable, public nsIObserver {
- private:
-#if defined(XP_WIN)
-  // HiResWindowsMonitor is a simple (Windows-only) implementaton of a monitor
-  // that uses a Windows waitable timer object and a Windows event object (along
-  // with a mutex) as its synchronization primitives. When precise firing is
-  // needed (as determined by the tolerance parameter when waiting) a special
-  // high-resolution waitable timer will be used. Otherwise a regular waitable
-  // timer will be used.
-  // NOTE: Although it's not documented by Microsoft at this moment (as far as I
-  // can tell), it seems that hi-res timers are fundamentally different under
-  // the hood and don't support a lot of the features that non-hi-res timers
-  // support. You cannot use names, callbacks or tolerances with them. The only
-  // mention I've seen of this is https://stackoverflow.com/questions/73647588.
-  class MOZ_CAPABILITY("monitor") HiResWindowsMonitor final {
-   public:
-    explicit HiResWindowsMonitor(const char* aName)
-        : mMutex(aName), mHandles{{
-            CreateWaitableTimerEx(nullptr, nullptr,
-                                  CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
-                                  TIMER_ALL_ACCESS),
-            CreateEvent(nullptr, FALSE, FALSE, nullptr),
-            CreateWaitableTimerEx(nullptr, nullptr, 0, TIMER_ALL_ACCESS)
-          }} {
-      // These are MOZ_RELEASE_ASSERT's because, if we fail to create either of
-      // those objects, we have no way to continue. GetHiResTimer() is not
-      // checked and could possibly be nullptr on old-enough versions of Windows
-      // that don't support high-res timers. We allow this and fall back to
-      // lo-res timers in that case.
-      MOZ_RELEASE_ASSERT(GetEvent() != nullptr);
-      MOZ_RELEASE_ASSERT(GetLoResTimer() != nullptr);
-    }
-
-    ~HiResWindowsMonitor() {
-      [[maybe_unused]] const BOOL b0 = CloseHandle(GetLoResTimer());
-      MOZ_ASSERT(b0 != 0);
-      [[maybe_unused]] const BOOL b1 = CloseHandle(GetEvent());
-      MOZ_ASSERT(b1 != 0);
-      if (GetHiResTimer()) {
-        [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
-        MOZ_ASSERT(b2 != 0);
-      }
-    }
-
-    MOZ_ALWAYS_INLINE void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
-
-    MOZ_ALWAYS_INLINE void Unlock() MOZ_CAPABILITY_RELEASE() {
-      mMutex.Unlock();
-    }
-
-    // Sleep until notified.
-    void Wait() MOZ_REQUIRES(this) {
-      Unlock();
-      WaitForSingleObject(GetEvent(), INFINITE);
-      Lock();
-    }
-
-   private:
-    void WaitHiRes(const LARGE_INTEGER* aDuration) MOZ_REQUIRES(this) {
-      const BOOL b = SetWaitableTimerEx(GetHiResTimer(), aDuration, 0, nullptr,
-                                        nullptr, nullptr, 0);
-      MOZ_RELEASE_ASSERT(b != 0);
-      mMutex.AssertCurrentThreadOwns();
-      Unlock();
-      const mozilla::Span<const HANDLE, 2> handles{GetHiResHandles()};
-      WaitForMultipleObjects(handles.size(), handles.data(), FALSE, INFINITE);
-      Lock();
-    }
-
-    void WaitLoRes(const LARGE_INTEGER* aDuration, const uint64_t aTolerance_ms)
-        MOZ_REQUIRES(this) {
-      const BOOL b = SetWaitableTimerEx(GetLoResTimer(), aDuration, 0, nullptr,
-                                        nullptr, nullptr, aTolerance_ms);
-      MOZ_RELEASE_ASSERT(b != 0);
-      mMutex.AssertCurrentThreadOwns();
-      Unlock();
-      const mozilla::Span<const HANDLE, 2> handles{GetLoResHandles()};
-      WaitForMultipleObjects(handles.size(), handles.data(), FALSE, INFINITE);
-      Lock();
-    }
-
-   public:
-    // Sleep for the specified number of microseconds or until notified.
-    void Wait(const uint64_t aDuration_us, const uint64_t aTolerance_ms)
-        MOZ_REQUIRES(this) {
-      // duration needs to be in "hundreds of nanoseconds", negative indicates
-      // value is relative rather than absolute
-      const LARGE_INTEGER duration{
-          .QuadPart = static_cast<int64_t>(aDuration_us) * -10LL};
-
-      if (aTolerance_ms <= sHiResThreshold_ms && GetHiResTimer()) {
-        WaitHiRes(&duration);
-      } else {
-        WaitLoRes(&duration, aTolerance_ms);
-      }
-    }
-
-    // Sleep for the specified number of microseconds or until notified.
-    // Negative waits are clamped to zero.
-    MOZ_ALWAYS_INLINE void Wait(const double aDuration_us,
-                                const double aTolerance_ms) MOZ_REQUIRES(this) {
-      const uint64_t duration_us =
-          static_cast<uint64_t>(std::max(aDuration_us, 0.0));
-      const uint64_t tolerance_ms =
-          static_cast<uint64_t>(std::max(aTolerance_ms, 0.0));
-      Wait(duration_us, tolerance_ms);
-    }
-
-    // Sleep for the specified duration or until notified. Negative waits are
-    // clamped to zero.
-    void Wait(mozilla::TimeDuration aDuration, mozilla::TimeDuration aTolerance)
-        MOZ_REQUIRES(this) {
-      if (aDuration != TimeDuration::Forever()) {
-        Wait(aDuration.ToMicroseconds(), aTolerance.ToMilliseconds());
-      } else {
-        Wait();
-      }
-    }
-
-    // Wake one thread waiting on the monitor.
-    MOZ_ALWAYS_INLINE void Notify() {
-      const BOOL b = SetEvent(GetEvent());
-      MOZ_RELEASE_ASSERT(b != 0);
-    }
-
-    void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
-      mMutex.AssertCurrentThreadOwns();
-    }
-
-    void AssertNotCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(!this) {
-      mMutex.AssertNotCurrentThreadOwns();
-    }
-
-   private:
-    // Waits with a tolerance at or below this threshold will use hi-res timers.
-    static constexpr uint64_t sHiResThreshold_ms = 16;
-
-    // Convenience functions for accessing the handles and not having to
-    // remember which is which.
-    MOZ_ALWAYS_INLINE HANDLE GetHiResTimer() const { return mHandles[0]; }
-    MOZ_ALWAYS_INLINE HANDLE GetEvent() const { return mHandles[1]; }
-    MOZ_ALWAYS_INLINE HANDLE GetLoResTimer() const { return mHandles[2]; }
-
-    // Returns a span corresponding to the HANDLEs that are needed for hi-res
-    // waiting.
-    MOZ_ALWAYS_INLINE mozilla::Span<const HANDLE, 2> GetHiResHandles() const {
-      return mozilla::Span<const HANDLE, 3>{mHandles}.Subspan<0, 2>();
-    }
-
-    // Returns a span corresponding to the HANDLEs that are needed for lo-res
-    // waiting.
-    MOZ_ALWAYS_INLINE mozilla::Span<const HANDLE, 2> GetLoResHandles() const {
-      return mozilla::Span<const HANDLE, 3>{mHandles}.Subspan<1, 2>();
-    }
-
-    mozilla::Mutex mMutex;
-    std::array<HANDLE, 3> mHandles;
-  };
-
-  typedef HiResWindowsMonitor TimerThreadMonitor;
-
-#else
-  typedef mozilla::Monitor TimerThreadMonitor;
-#endif
-
-  using TimerThreadMonitorAutoLock =
-      mozilla::MonitorAutoLockBase<TimerThreadMonitor>;
-  using TimerThreadMonitorAutoUnlock =
-      mozilla::MonitorAutoUnlockBase<TimerThreadMonitor>;
-
  public:
   typedef mozilla::MutexAutoLock MutexAutoLock;
   typedef mozilla::TimeStamp TimeStamp;
@@ -243,7 +69,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   // (optional) ThreadWrapper::sMutex ->
   // (optional) nsTimerImpl::mMutex   ->
   // TimerThread::mMonitor
-  TimerThreadMonitor mMonitor;
+  mozilla::TimerThreadMonitor mMonitor;
 
   bool mShutdown MOZ_GUARDED_BY(mMonitor);
   bool mWaiting MOZ_GUARDED_BY(mMonitor);
@@ -278,9 +104,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   };
 
   struct Entry final : EntryKey {
-    explicit Entry(nsTimerImpl& aTimerImpl)
+    explicit Entry(nsTimerImpl& aTimerImpl) MOZ_REQUIRES(aTimerImpl.mMutex)
         : EntryKey(aTimerImpl),
           mDelay(aTimerImpl.mDelay),
+          mFiringDelay(aTimerImpl.AcceptableFiringDelay()),
           mTimerImpl(&aTimerImpl) {}
 
     // No copies to not fiddle with mTimerImpl's ref-count.
@@ -300,6 +127,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 #endif
 
     TimeDuration mDelay;
+    TimeDuration mFiringDelay;
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
@@ -319,18 +147,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   // timer in mTimers along with a tolerance indicating the most that we can be
   // delayed and not violate the tolerances of any of the timers in the bundle.
   WakeupTime ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
-
-  // Computes how late a timer can acceptably fire.
-  // timerDuration is the duration of the timer whose delay we are calculating.
-  // Longer timers can tolerate longer firing delays.
-  // minDelay is an amount by which any timer can be delayed.
-  // This function will never return a value smaller than minDelay (unless this
-  // conflicts with maxDelay). maxDelay is the upper limit on the amount by
-  // which we will ever delay any timer. Takes precedence over minDelay if there
-  // is a conflict. (Zero will effectively disable timer coalescing.)
-  TimeDuration ComputeAcceptableFiringDelay(TimeDuration timerDuration,
-                                            TimeDuration minDelay,
-                                            TimeDuration maxDelay) const;
 
   // Fires and removes all timers in mTimers that are "due" to be fired,
   // according to the current time and the passed-in early firing tolerance.
@@ -353,11 +169,14 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   ProfilerThreadId mProfilerThreadId MOZ_GUARDED_BY(mMonitor);
 
-  // Time at which we were intending to wake up the last time that we slept.
-  // Is "null" if we have never slept or if our last sleep was "forever".
-  TimeStamp mIntendedWakeupTime;
+  // End of the wakeup window handed to the monitor the last time that we
+  // slept. Is "null" if we have never slept or if our last sleep was "forever".
+  TimeStamp mLatestIntendedWakeupTime;
 
 #if TIMER_THREAD_STATISTICS
+  // Start of that window, with the same "null" cases.
+  TimeStamp mIntendedWakeupTime;
+
   static constexpr size_t sTimersFiredPerWakeupBucketCount = 16;
   static inline constexpr std::array<size_t, sTimersFiredPerWakeupBucketCount>
       sTimersFiredPerWakeupThresholds = {

@@ -2,12 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
 
 export class NewTabMessaging {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.initialized = false;
     this.ASRouterDispatch = null;
@@ -168,6 +173,9 @@ export class NewTabMessaging {
         break;
       case at.UNINIT:
         this.uninit();
+        break;
+      case at.NEW_TAB_UNLOAD:
+        this.browserSet.delete(action._target?.browser);
         break;
       case at.MESSAGE_IMPRESSION:
         this.handleImpression(action.data);

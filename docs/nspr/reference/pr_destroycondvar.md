@@ -12,7 +12,7 @@ void PR_DestroyCondVar(PRCondVar *cvar);
 
 ### Parameter
 
-{ref}`PR_DestroyCondVar` has one parameter:
+{doc}`pr_destroycondvar` has one parameter:
 
 `cvar`
 
@@ -20,5 +20,5 @@ void PR_DestroyCondVar(PRCondVar *cvar);
 
 ## Description
 
-Before calling {ref}`PR_DestroyCondVar`, the caller is responsible for
+Before calling {doc}`pr_destroycondvar`, the caller is responsible for
 ensuring that the condition variable is no longer in use.

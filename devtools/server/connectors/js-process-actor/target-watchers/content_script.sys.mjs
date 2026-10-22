@@ -4,7 +4,7 @@
 
 import { ContentProcessWatcherRegistry } from "resource://devtools/server/connectors/js-process-actor/ContentProcessWatcherRegistry.sys.mjs";
 
-import { addDebuggerToGlobal } from "resource://gre/modules/jsdebugger.sys.mjs";
+import { addDebuggerToGlobal } from "moz-src:///devtools/platform/jsdebugger.sys.mjs";
 // This will inject `Debugger` in the global scope
 // eslint-disable-next-line mozilla/reject-globalThis-modification
 addDebuggerToGlobal(globalThis);

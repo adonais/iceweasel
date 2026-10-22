@@ -11,6 +11,7 @@
 #include "modules/pacing/pacing_controller.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -1748,17 +1749,17 @@ TEST_F(PacingControllerTest, ProbeClusterId) {
   const size_t kPacketSize = 1200;
 
   auto pacer = std::make_unique<PacingController>(&clock_, &callback, trials_);
-  pacer->CreateProbeClusters(std::vector<ProbeClusterConfig>(
-      {{.at_time = clock_.CurrentTime(),
-        .target_data_rate = kFirstClusterRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 5,
-        .id = 0},
-       {.at_time = clock_.CurrentTime(),
-        .target_data_rate = kSecondClusterRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 5,
-        .id = 1}}));
+  pacer->CreateProbeClusters(
+      std::array{ProbeClusterConfig{.at_time = clock_.CurrentTime(),
+                                    .target_data_rate = kFirstClusterRate,
+                                    .target_duration = TimeDelta::Millis(15),
+                                    .target_probe_count = 5,
+                                    .id = 0},
+                 ProbeClusterConfig{.at_time = clock_.CurrentTime(),
+                                    .target_data_rate = kSecondClusterRate,
+                                    .target_duration = TimeDelta::Millis(15),
+                                    .target_probe_count = 5,
+                                    .id = 1}});
   pacer->SetPacerConfig(PacerConfig::Create(
       clock_.CurrentTime(), /*send_rate=*/kTargetRate * kPaceMultiplier,
       /*pad_rate=*/kTargetRate));
@@ -1964,17 +1965,17 @@ TEST_F(PacingControllerTest, NoProbingWhilePaused) {
   pacer->SetPacerConfig(PacerConfig::Create(
       clock_.CurrentTime(), /*send_rate=*/kTargetRate * kPaceMultiplier,
       DataRate::Zero()));
-  pacer->CreateProbeClusters(std::vector<ProbeClusterConfig>(
-      {{.at_time = clock_.CurrentTime(),
-        .target_data_rate = kFirstClusterRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 5,
-        .id = 0},
-       {.at_time = clock_.CurrentTime(),
-        .target_data_rate = kSecondClusterRate,
-        .target_duration = TimeDelta::Millis(15),
-        .target_probe_count = 5,
-        .id = 1}}));
+  pacer->CreateProbeClusters(
+      std::array{ProbeClusterConfig{.at_time = clock_.CurrentTime(),
+                                    .target_data_rate = kFirstClusterRate,
+                                    .target_duration = TimeDelta::Millis(15),
+                                    .target_probe_count = 5,
+                                    .id = 0},
+                 ProbeClusterConfig{.at_time = clock_.CurrentTime(),
+                                    .target_data_rate = kSecondClusterRate,
+                                    .target_duration = TimeDelta::Millis(15),
+                                    .target_probe_count = 5,
+                                    .id = 1}});
 
   // Send at least one packet so probing can initate.
   SendAndExpectPacket(pacer.get(), RtpPacketMediaType::kVideo, ssrc,

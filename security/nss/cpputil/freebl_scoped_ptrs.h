@@ -8,9 +8,11 @@
 #define freebl_scoped_ptrs_h__
 
 #include <memory>
+
 #include "blapi.h"
 
 struct ScopedDelete {
+  void operator()(AESContext* ctx) { AES_DestroyContext(ctx, PR_TRUE); }
   void operator()(CMACContext* ctx) { CMAC_Destroy(ctx, PR_TRUE); }
 };
 
@@ -26,6 +28,7 @@ struct ScopedMaybeDelete {
 
 #define SCOPED(x) typedef std::unique_ptr<x, ScopedMaybeDelete<x> > Scoped##x
 
+SCOPED(AESContext);
 SCOPED(CMACContext);
 
 #undef SCOPED

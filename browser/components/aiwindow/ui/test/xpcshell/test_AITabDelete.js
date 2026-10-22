@@ -25,17 +25,23 @@ registerCleanupFunction(async () => {
 });
 
 /**
- * Creates a conversation and a two-version page belonging to it.
+ * Creates a two-version page along with the generation conversation that
+ * produced it. `conv_id` names the chat the page was requested in and lives in
+ * another database again; `tool_conv_id` names the generation conversation,
+ * the one in conversation-store.sqlite and the one a delete has to clear.
  *
- * @param {string} convId
+ * @param {string} convId - Chat the page belongs to.
  * @param {string} slug
+ * @returns {Promise<string>} Id of the generation conversation.
  */
 async function createTabWithConversation(convId, slug) {
+  const toolConvId = `tool-${convId}`;
   await ConversationStore.updateConversation(
-    new Conversation({ id: convId, feature: "aitab" })
+    new Conversation({ id: toolConvId, feature: "aitab" })
   );
-  await AITabStore.create({ convId, slug, title: "V1" });
-  await AITabStore.edit({ convId, slug, title: "V2" });
+  await AITabStore.create({ convId, toolConvId, slug, title: "V1" });
+  await AITabStore.edit({ convId, toolConvId, slug, title: "V2" });
+  return toolConvId;
 }
 
 add_task(async function setup() {
@@ -63,23 +69,27 @@ add_task(async function test_created_at_is_microseconds() {
 });
 
 add_task(async function test_delete_clears_both_stores() {
-  await createTabWithConversation("conv-both", "both-slug");
+  const toolConvId = await createTabWithConversation("conv-both", "both-slug");
 
   // Sanity: both sides exist before the delete, so the assertions below are
   // observing a real transition rather than an empty database.
-  Assert.ok(
-    await AITabStore.getBySlug("both-slug"),
-    "The page exists before deleting"
+  const page = await AITabStore.getBySlug("both-slug");
+  Assert.ok(page, "The page exists before deleting");
+  Assert.equal(
+    page.toolConvId,
+    toolConvId,
+    "The page names the conversation that produced it"
   );
   Assert.ok(
-    await ConversationStore.findConversationById("conv-both"),
+    await ConversationStore.findConversationById(toolConvId),
     "The conversation exists before deleting"
   );
 
   // The order AITabParent uses: pages first, conversation second. The page
-  // delete is keyed on slug, the conversation delete on conv_id.
+  // delete is keyed on slug, the conversation delete on the id the page
+  // carries.
   await AITabStore.deleteBySlug("both-slug");
-  await ConversationStore.deleteConversationById("conv-both");
+  await ConversationStore.deleteConversationById(page.toolConvId);
 
   Assert.equal(
     await AITabStore.getBySlug("both-slug"),
@@ -87,22 +97,25 @@ add_task(async function test_delete_clears_both_stores() {
     "The page no longer resolves by slug"
   );
   Assert.equal(
-    await ConversationStore.findConversationById("conv-both"),
+    await ConversationStore.findConversationById(toolConvId),
     null,
     "The conversation is gone too"
   );
 });
 
 add_task(async function test_deleting_conversation_alone_orphans_the_page() {
-  await createTabWithConversation("conv-orphan", "orphan-slug");
+  const toolConvId = await createTabWithConversation(
+    "conv-orphan",
+    "orphan-slug"
+  );
 
-  await ConversationStore.deleteConversationById("conv-orphan");
+  await ConversationStore.deleteConversationById(toolConvId);
 
   // This is why AITabParent cannot rely on the conversation delete alone: the
   // stores are different database files, so nothing cascades and the page
   // would still load by slug.
   Assert.equal(
-    await ConversationStore.findConversationById("conv-orphan"),
+    await ConversationStore.findConversationById(toolConvId),
     null,
     "The conversation is gone"
   );
@@ -113,11 +126,11 @@ add_task(async function test_deleting_conversation_alone_orphans_the_page() {
 });
 
 add_task(async function test_delete_is_scoped_to_one_conversation() {
-  await createTabWithConversation("conv-a", "slug-a");
-  await createTabWithConversation("conv-b", "slug-b");
+  const toolConvIdA = await createTabWithConversation("conv-a", "slug-a");
+  const toolConvIdB = await createTabWithConversation("conv-b", "slug-b");
 
   await AITabStore.deleteBySlug("slug-a");
-  await ConversationStore.deleteConversationById("conv-a");
+  await ConversationStore.deleteConversationById(toolConvIdA);
 
   Assert.equal(
     await AITabStore.getBySlug("slug-a"),
@@ -129,7 +142,7 @@ add_task(async function test_delete_is_scoped_to_one_conversation() {
     "The other conversation's page is untouched"
   );
   Assert.ok(
-    await ConversationStore.findConversationById("conv-b"),
+    await ConversationStore.findConversationById(toolConvIdB),
     "The other conversation is untouched"
   );
 });

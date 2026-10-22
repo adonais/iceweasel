@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Testing that the "paste" event for cmd_pasteTransferable exposes the transferable's data</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script>
+"use strict";
+
+// The clipboard is deliberately given different text from the transferable so
+// that exposing the clipboard to the "paste" event is detectable.
+const kClipboardText = "clipboard text";
+const kTransferableText = "transferable text";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  info("Waiting for initializing clipboard...");
+  await SimpleTest.promiseClipboardChange(
+    kClipboardText,
+    () => SpecialPowers.clipboardCopyString(kClipboardText)
+  );
+
+  const transferable =
+    SpecialPowers.Cc["@mozilla.org/widget/transferable;1"].createInstance(SpecialPowers.Ci.nsITransferable);
+  transferable.init(
+    SpecialPowers.wrap(window).docShell.QueryInterface(SpecialPowers.Ci.nsILoadContext)
+  );
+  const supportString =
+    SpecialPowers.Cc["@mozilla.org/supports-string;1"].createInstance(SpecialPowers.Ci.nsISupportsString);
+  supportString.data = kTransferableText;
+  transferable.setTransferData("text/plain", supportString);
+
+  function getValue(aElement) {
+    const tagName = aElement.tagName.toLowerCase();
+    if (tagName == "input" || tagName == "textarea") {
+      return aElement.value;
+    }
+    return aElement.textContent;
+  }
+  function setValue(aElement, aValue) {
+    const tagName = aElement.tagName.toLowerCase();
+    if (tagName == "input" || tagName == "textarea") {
+      aElement.value = aValue;
+      return;
+    }
+    aElement.innerHTML = aValue === "" ? "<br>" : aValue;
+  }
+
+  for (const selector of ["input", "textarea", "div[contenteditable]"]) {
+    const editableElement = document.querySelector(`#container > ${selector}`);
+    const editableElementDesc = `<${
+      editableElement.tagName.toLowerCase()
+    }${editableElement.hasAttribute("contenteditable") ? " contenteditable" : ""}>`;
+
+    (() => {
+      let exposedText = "not called";
+      editableElement.focus();
+      editableElement.addEventListener(
+        "paste",
+        event => {
+          exposedText = event.clipboardData.getData("text/plain");
+        },
+        {once: true}
+      );
+      SpecialPowers.doCommand(window, "cmd_pasteTransferable", transferable);
+      is(
+        exposedText,
+        kTransferableText,
+        `${editableElementDesc}: the "paste" event for cmd_pasteTransferable should expose the transferable's data rather than the clipboard`
+      );
+      setValue(editableElement, "");
+    })();
+
+    (() => {
+      editableElement.focus();
+      SpecialPowers.doCommand(window, "cmd_pasteTransferable", transferable);
+      is(
+        getValue(editableElement).replace(/\n/g, ""),
+        kTransferableText,
+        `${editableElementDesc}: cmd_pasteTransferable should insert the transferable's data when there is no "paste" event listener`
+      );
+      setValue(editableElement, "");
+    })();
+  }
+
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body>
+<div id="container"><input><textarea></textarea><div contenteditable><br></div></div>
+</body>
+</html>

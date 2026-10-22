@@ -18,6 +18,8 @@ class WebrtcGlobalParent : public PWebrtcGlobalParent {
   friend class WebrtcContentParents;
 
   bool mShutdown;
+  // Whether a stats history request to this process awaits its reply.
+  bool mHistoryRequestPending;
   nsTHashSet<nsString> mPcids;
 
   MOZ_IMPLICIT WebrtcGlobalParent();

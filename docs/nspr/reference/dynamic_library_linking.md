@@ -11,8 +11,8 @@ it appears as though they are dynamically loaded.
 
 These data types are defined for dynamic library linking:
 
-> - {ref}`PRLibrary`
-> - {ref}`PRStaticLinkTable`
+> - {doc}`prlibrary`
+> - {doc}`prstaticlinktable`
 
 (library-linking-functions)=
 
@@ -20,20 +20,20 @@ These data types are defined for dynamic library linking:
 
 The library linking functions are:
 
-> - {ref}`PR_SetLibraryPath`
-> - {ref}`PR_GetLibraryPath`
-> - {ref}`PR_GetLibraryName`
-> - {ref}`PR_FreeLibraryName`
-> - {ref}`PR_LoadLibrary`
-> - {ref}`PR_UnloadLibrary`
-> - {ref}`PR_FindSymbol`
-> - {ref}`PR_FindSymbolAndLibrary`
+> - {doc}`pr_setlibrarypath`
+> - {doc}`pr_getlibrarypath`
+> - {doc}`pr_getlibraryname`
+> - {doc}`pr_freelibraryname`
+> - {doc}`pr_loadlibrary`
+> - {doc}`pr_unloadlibrary`
+> - {doc}`pr_findsymbol`
+> - {doc}`pr_findsymbolandlibrary`
 
 (finding-symbols-defined-in-the-main-executable-program)=
 
 ### Finding Symbols Defined in the Main Executable Program
 
-{ref}`PR_LoadLibrary` cannot open a handle that references the main
+{doc}`pr_loadlibrary` cannot open a handle that references the main
 executable program. (This is admittedly an omission that should be
 fixed.) However, it is possible to look up symbols defined in the main
 executable program as follows.
@@ -45,10 +45,10 @@ void *funcPtr;
 funcPtr = PR_FindSymbolAndLibrary("FunctionName", &lib);
 ```
 
-When {ref}`PR_FindSymbolAndLibrary` returns, `funcPtr` is the value of
+When {doc}`pr_findsymbolandlibrary` returns, `funcPtr` is the value of
 the function pointer you want to look up, and the variable lib
 references the main executable program. You can then call
-{ref}`PR_FindSymbol` on lib to look up other symbols defined in the main
+{doc}`pr_findsymbol` on lib to look up other symbols defined in the main
 program. Remember to call `PR_UnloadLibrary(lib)` to close the library
 handle when you are done.
 

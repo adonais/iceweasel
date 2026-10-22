@@ -10,6 +10,7 @@ import { useSizeSubmenu } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { MoveSubmenu } from "../MoveSubmenu";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 
 const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(
   w => w.id === "pictureOfTheDay"
@@ -361,7 +362,7 @@ const PictureOfTheDay = ({
                 ></moz-badge>
               )}
               <p
-                className="picture-of-the-day-source"
+                className="newtab-widget-title picture-of-the-day-source"
                 data-l10n-id="newtab-picture-header-main"
               ></p>
             </div>
@@ -369,12 +370,10 @@ const PictureOfTheDay = ({
           </div>
         ) : null}
         <div className="picture-of-the-day-context-menu-wrapper">
-          <moz-button
+          <WidgetMenuButton
             className="picture-of-the-day-context-menu-button"
-            data-l10n-id="newtab-picture-widget-menu-button"
-            iconSrc="chrome://global/skin/icons/more.svg"
             menuId="picture-of-the-day-context-menu"
-            type="ghost"
+            l10nId="newtab-picture-widget-open-menu-button"
           />
           <panel-list
             className="panel-list-no-icons"

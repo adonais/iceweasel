@@ -275,9 +275,9 @@ for (let toBuffer of toBufferOpts) {
     assertNoWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi')])])));
     assertWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), moduleNameSubsection('boo')])], toBuffer)), nameWarning);
     // Unknown name subsection
-    assertNoWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [4, 0]])], toBuffer)));
-    assertWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [4, 1]])], toBuffer)), nameWarning);
-    assertNoWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [4, 1, 42]])], toBuffer)));
+    assertWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [99, 0]])], toBuffer)), nameWarning);
+    assertWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [99, 1]])], toBuffer)), nameWarning);
+    assertWarning(() => wasmEval(moduleWithSections([nameSection([moduleNameSubsection('hi'), [99, 1, 42]])], toBuffer)), nameWarning);
 
     // Provide a module name but no function names.
     assertErrorMessage(() => wasmEval(moduleWithSections([

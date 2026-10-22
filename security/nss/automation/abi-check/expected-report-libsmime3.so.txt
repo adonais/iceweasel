@@ -1,9 +1,52 @@
+1 function with some indirect sub-type change:
 
-5 Added functions:
-
-  [A] 'function SECStatus NSS_CMSDecoder_SetMaxInputSize(NSSCMSDecoderContext*, unsigned long int)'    {NSS_CMSDecoder_SetMaxInputSize@@NSS_3.130}
-  [A] 'function SECStatus SEC_PKCS12DecoderSetMaxElementLen(SEC_PKCS12DecoderContext*, unsigned long int)'    {SEC_PKCS12DecoderSetMaxElementLen@@NSS_3.130}
-  [A] 'function SECStatus SEC_PKCS12DecoderSetMaxInputSize(SEC_PKCS12DecoderContext*, unsigned long int)'    {SEC_PKCS12DecoderSetMaxInputSize@@NSS_3.130}
-  [A] 'function SECStatus SEC_PKCS7DecoderSetMaxElementLen(SEC_PKCS7DecoderContext*, unsigned long int)'    {SEC_PKCS7DecoderSetMaxElementLen@@NSS_3.130}
-  [A] 'function SECStatus SEC_PKCS7DecoderSetMaxInputSize(SEC_PKCS7DecoderContext*, unsigned long int)'    {SEC_PKCS7DecoderSetMaxInputSize@@NSS_3.130}
+  [C]'function PK11SymKey* NSS_CMSContentInfo_GetBulkKey(NSSCMSContentInfo*)' at cmscinfo.c:437:1 has some indirect sub-type changes:
+    parameter 1 of type 'NSSCMSContentInfo*' has sub-type changes:
+      in pointed to type 'typedef NSSCMSContentInfo' at cmst.h:54:1:
+        underlying type 'struct NSSCMSContentInfoStr' at cmst.h:128:1 changed:
+          type size hasn't changed
+          1 data member changes (2 filtered):
+            type of 'NSSCMSContent content' changed:
+             underlying type 'union NSSCMSContentUnion' at cmst.h:114:1 changed:
+               type size hasn't changed
+                1 data member changes (5 filtered):
+                  type of 'NSSCMSAuthEnvelopedData* authEnvelopedData' changed:
+                    in pointed to type 'typedef NSSCMSAuthEnvelopedData' at cmst.h:66:1:
+                      underlying type 'struct NSSCMSAuthEnvelopedDataStr' at cmst.h:281:1 changed:
+                        type size hasn't changed
+                        1 data member changes (4 filtered):
+                          type of 'NSSCMSRecipientInfo** recipientInfos' changed:
+                            in pointed to type 'NSSCMSRecipientInfo*':
+                              in pointed to type 'typedef NSSCMSRecipientInfo' at cmst.h:62:1:
+                                underlying type 'struct NSSCMSRecipientInfoStr' at cmst.h:457:1 changed:
+                      type size hasn't changed
+                      1 data member changes (1 filtered):
+                                    type of 'union {NSSCMSKeyTransRecipientInfo keyTransRecipientInfo; NSSCMSKeyAgreeRecipientInfo keyAgreeRecipientInfo; NSSCMSKEKRecipientInfo kekRecipientInfo; NSSCMSKeyTransRecipientInfoEx keyTransRecipientInfoEx;} ri' changed:
+                                      type size hasn't changed
+                                      1 data member change:
+                                        type of 'NSSCMSKeyTransRecipientInfoEx keyTransRecipientInfoEx' changed:
+                                          underlying type 'struct NSSCMSKeyTransRecipientInfoExStr' at cmst.h:324:1 changed:
+                                            type size hasn't changed
+                                            1 data member change:
+                                              type of 'SECKEYPublicKey* pubKey' changed:
+                                                in pointed to type 'typedef SECKEYPublicKey' at keythi.h:221:1:
+                                                  underlying type 'struct SECKEYPublicKeyStr' at keythi.h:205:1 changed:
+                               type size hasn't changed
+                               1 data member change:
+                                                      type of 'union {SECKEYRSAPublicKey rsa; SECKEYDSAPublicKey dsa; SECKEYDHPublicKey dh; SECKEYKEAPublicKey kea; SECKEYFortezzaPublicKey fortezza; SECKEYECPublicKey ec; SECKEYKyberPublicKey kyber; SECKEYMLDSAPublicKey mldsa;} u' changed:
+                                                        type size hasn't changed
+                                                        1 data member change:
+                                                      type of 'SECKEYMLDSAPublicKey mldsa' changed:
+                                                        underlying type 'struct SECKEYMLDSAPublicKeyStr' at keythi.h:196:1 changed:
+                                      type size hasn't changed
+                                      1 data member change:
+                                                                type of 'SECOidTag paramSet' changed:
+                                                                  underlying type 'enum SECOidTag' at secoidt.h:34:1 changed:
+                                           type size hasn't changed
+                                           2 enumerator deletions:
+                                                                      'SECOidTag::SEC_OID_ED25519_SIGNATURE' value '373'
+                                                                      'SECOidTag::SEC_OID_ED25519_PUBLIC_KEY' value '374'
+                                           2 enumerator insertions:
+                                                                      'SECOidTag::SEC_OID_RESERVED_OLD_EDSIG' value '373'
+                                                                      'SECOidTag::SEC_OID_ED25519' value '374'
 

@@ -77,6 +77,14 @@ button {
   overflow: hidden;
 }
 
+.shortcut {
+  margin-inline-start: var(--space-medium);
+
+  button:enabled > & {
+    color: var(--text-color-deemphasized);
+  }
+}
+
 :host([badged]) button::after {
   --panel-item-badge-size: 5px;
   --panel-item-badge-background-color: var(--color-accent-primary);

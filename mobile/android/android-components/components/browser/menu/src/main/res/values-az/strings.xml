@@ -11,4 +11,8 @@
   <string name="mozac_browser_menu_button">Menyu</string>
   <!-- Content description (not visible, for screen readers etc.): Indicates the overflow menu has a highlight -->
   <string name="mozac_browser_menu_highlighted">Vurğulanmış</string>
+  <!-- Label for extensions submenu section -->
+  <string name="mozac_browser_menu_extensions">Uzantılar</string>
+  <!-- Label for extensions sub menu item for extensions manager -->
+  <string name="mozac_browser_menu_extensions_manager">Uzantı Meneceri</string>
 </resources>

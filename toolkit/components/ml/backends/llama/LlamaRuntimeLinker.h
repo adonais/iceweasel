@@ -5,6 +5,7 @@
 #ifndef LlamaRuntimeLinker_h_
 #define LlamaRuntimeLinker_h_
 
+#include "mozilla/Atomics.h"
 #include "llama/llama.h"
 #include "ggml.h"
 #include "ggml-backend.h"
@@ -146,7 +147,8 @@ class LlamaRuntimeLinker {
     LinkStatus_SUCCEEDED,
   };
 
-  // Initialize the dynamic linker, returns true on success
+  // Initialize the dynamic linker, returns true on success. Thread-safe:
+  // concurrent callers wait for the one loading the library.
   static bool Init();
 
   // Get the llama library wrapper
@@ -162,7 +164,7 @@ class LlamaRuntimeLinker {
 
  private:
   static LlamaLibWrapper sLlamaLib;
-  static LinkStatus sLinkStatus;
+  static Atomic<LinkStatus> sLinkStatus;
 };
 
 }  // namespace mozilla::llama

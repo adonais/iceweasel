@@ -17,10 +17,11 @@ task-defaults:
             chrome:
                 - .*64.*shippable.*
             safari:
-                - .*macosx.*shippable.*
+                - macosx1470.*shippable.*
+                - macosx2700.*shippable.*
             safari-tp:
                 - macosx1400.*
-                - macosx1500(?!.*nightlyasrelease).*
+                - macosx2700.*
             custom-car:
                 - macosx1500.*shippable.*
                 - linux.*-64.*shippable.*
@@ -137,14 +138,6 @@ browsertime-tp6:
                                 macosx1470.*shippable.*: [trunk]
                                 default: []
                         default: []
-                twitch:
-                    by-app:
-                        firefox:
-                            by-test-platform:
-                                windows11-64-24h2.*shippable.*: []
-                                ^(?!windows11-64-24h2).*64(?!.*nightlyasrelease).*shippable.*: [trunk]
-                                default: []
-                        default: []
                 default:
                     by-app:
                         firefox:
@@ -171,14 +164,12 @@ browsertime-tp6:
             - linkedin
             - microsoft
             - netflix
-            - nytimes
             - office
             - outlook
             - paypal
             - pinterest
             - reddit
             - tumblr
-            - twitch
             - wikia
             - youtube
     tier:
@@ -197,7 +188,6 @@ browsertime-responsiveness:
         run-visual-metrics: true
         subtests:
             - cnn-nav
-            - [facebook-nav, fbnav]
             - [reddit-billgates-ama, rdt-ama]
             - [reddit-billgates-post-1, rdt-post-1]
             - [reddit-billgates-post-2, rdt-post-2]
@@ -375,14 +365,17 @@ browsertime-tp7:
 browsertime-benchmark:
     description: Raptor (browsertime) Benchmark tests
     raptor:
-        apps: [firefox, chrome, safari, safari-tp, custom-car]
+        apps:
+            by-test-platform:
+                macosx2700.*: [safari, safari-tp]
+                default: [firefox, chrome, safari, safari-tp, custom-car]
         subtests:
             by-variant:
                 no-nova:
                     - [speedometer3, sp3]
                 default:
                     by-test-platform:
-                        (macosx1400|macosx1500).*shippable.*:
+                        (macosx1400|macosx1500|macosx2700).*shippable.*:
                             by-app:
                                 safari-tp:
                                     - [speedometer3, sp3]
@@ -513,7 +506,7 @@ browsertime-benchmark:
                     safari-tp:
                         by-test-platform:
                             macosx1400.*: [mozilla-central]
-                            macosx1500.*: [mozilla-central]
+                            macosx2700.*: [mozilla-central]
                             default: []
                     default: []
             unity-webgl:
@@ -794,7 +787,6 @@ browsertime-tp6-live:
                     - pinterest
                     - reddit
                     - tumblr
-                    - twitch
                     # - twitter Perma fails on osx 10.15.7
                     - wikipedia
                     - yahoo-mail
@@ -821,7 +813,6 @@ browsertime-tp6-live:
                     - pinterest
                     - reddit
                     - tumblr
-                    - twitch
                     - twitter
                     - wikipedia
                     - yahoo-mail
@@ -848,7 +839,6 @@ browsertime-tp6-live:
                     - pinterest
                     - reddit
                     - tumblr
-                    - twitch
                     - twitter
                     - wikipedia
                     - yahoo-mail
@@ -1329,10 +1319,26 @@ browsertime-webcodecs:
     description: Raptor (browsertime) WebCodecs test
     mozharness:
         extra-options:
-            - --extra-profiler-run
+            by-app:
+                firefox:
+                    - --extra-profiler-run
+                default:
+                    by-test-platform:
+                        # Chrome's out-of-process video capture service crashes on Windows when capturing
+                        # from the fake camera, so run it in the browser process there.
+                        windows.*:
+                            - --extra-profiler-run
+                            - --browsertime-arg=chrome.args=--enable-features=RunVideoCaptureServiceInBrowserProcess
+                        default:
+                            - --extra-profiler-run
     run-on-projects:
         by-app:
-            firefox: [autoland, mozilla-central]
+            firefox:
+                by-test-platform:
+                    linux.*shippable.*: [autoland, mozilla-central]
+                    windows.*shippable.*: [autoland, mozilla-central]
+                    macosx1470.*shippable.*: [autoland, mozilla-central]
+                    default: []
             default: []
     tier:
         by-app:
@@ -1353,6 +1359,7 @@ browsertime-speculation-rules:
             - [prefetch-list-eager, pfl-eag]
             - [prefetch-list-moderate, pfl-mod]
             - [prefetch-list-conservative, pfl-con]
+            - [prefetch-list-inflight, pfl-inf]
     description: Raptor (browsertime) Speculation Rules prefetch pageload test
     limit-platforms:
         by-app:

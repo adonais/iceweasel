@@ -10,10 +10,6 @@
     --link-color: white;
     --link-color-hover: white;
     --link-color-active: white;
-    --in-content-banner-background: #f9f9fe;
-    --in-content-banner-text-color: #0c0c0d;
-    --button-background-color-hover: rgba(12, 12, 13, 0.1);
-    --button-background-color-active: rgba(12, 12, 13, 0.15);
 
     color-scheme: dark;
   }
@@ -175,8 +171,8 @@ content-search-handoff-ui {
 
 .search-banner {
   width: 100%;
-  background-color: var(--in-content-banner-background);
-  color: var(--in-content-banner-text-color);
+  background-color: var(--background-color-box);
+  color: var(--text-color);
 }
 
 .banner-body {
@@ -198,7 +194,6 @@ content-search-handoff-ui {
 .banner-body h1 {
   font-size: 18px;
   font-weight: var(--font-weight-bold);
-  color: var(--in-content-banner-text-color);
   line-height: 1em;
   margin: 7px 0;
 }

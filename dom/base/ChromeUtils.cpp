@@ -20,6 +20,7 @@
 #include "js/PropertyDescriptor.h"  // JS::PropertyDescriptor, JS_GetOwnPropertyDescriptorById
 #include "js/SavedFrameAPI.h"
 #include "js/Value.h"  // JS::Value, JS::StringValue
+#include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozJSModuleLoader.h"
 #include "mozilla/AwakeTimeStamp.h"
@@ -593,8 +594,7 @@ void ChromeUtils::ShallowClone(GlobalObject& aGlobal,
       id = valuesIds[i];
       value = values[i];
 
-      JS_MarkCrossZoneId(cx, id);
-      if (!JS_WrapValue(cx, &value) ||
+      if (!JS_WrapId(cx, &id) || !JS_WrapValue(cx, &value) ||
           !JS_SetPropertyById(cx, obj, id, value)) {
         return;
       }
@@ -1861,11 +1861,9 @@ void ChromeUtils::InvalidateResourceCache(GlobalObject& aGlobal,
 
 void ChromeUtils::GetCachedJavaScriptSource(
     GlobalObject& aGlobal, const nsACString& aKey, const nsACString& aURI,
-    const nsACString& aHintCharset, JS::MutableHandle<JS::Value> aRetval,
-    ErrorResult& aRv) {
+    JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
-  if (!SharedScriptCache::GetCachedScriptSource(cx, aKey, aURI, aHintCharset,
-                                                aRetval)) {
+  if (!SharedScriptCache::GetCachedScriptSource(cx, aKey, aURI, aRetval)) {
     aRv.NoteJSContextException(aGlobal.Context());
   }
 }

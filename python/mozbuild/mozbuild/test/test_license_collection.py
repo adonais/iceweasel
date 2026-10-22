@@ -57,13 +57,16 @@ class TestLicenseCollection(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def notice(self, license_id, relsrcdir="lib", paths=(), text=None):
+    def notice(
+        self, license_id, relsrcdir="lib", paths=(), text=None, acknowledgement=None
+    ):
         return DeclaredLicenseNotice(
             FakeContext(relsrcdir, self.config),
             license_id,
             f"{license_id} License",
             text or self.text,
             paths=paths,
+            acknowledgement=acknowledgement,
         )
 
     def coverage(self, license_id, relsrcdir="lib", paths=()):
@@ -87,6 +90,12 @@ class TestLicenseCollection(unittest.TestCase):
         self.assertEqual(records[0]["declared_in"], "lib")
         self.assertEqual(records[0]["text"], "NOTICE TEXT\n")
         self.assertFalse(records[0]["html"])
+
+    def test_acknowledgement_is_recorded(self):
+        collection = LicenseCollection()
+        collection.add(self.notice("zlib", acknowledgement="The zlib library"))
+        record = collection.records()[0]
+        self.assertEqual(record["acknowledgement"], "The zlib library")
 
     def test_html_notice_is_flagged_by_extension(self):
         collection = LicenseCollection()

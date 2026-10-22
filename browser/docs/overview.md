@@ -19,7 +19,7 @@ use less XUL and more standard HTML and CSS.
 
 Many of the UI widgets in use in the user interface are built as web components that can be reused.
 
-{ref}`Read more <Reusable UI widgets>`
+{doc}`Read more <components/storybook/docs/README.reusable-widgets.stories>`
 
 ## Tabbrowser
 
@@ -33,7 +33,7 @@ The address bar (varyingly also referred to as the Awesome Bar, or Quantum Bar) 
 entering web addresses including a popup with suggestions from various sources including history,
 bookmarks and search engines.
 
-{ref}`Read more <Address Bar>`
+{doc}`Read more <urlbar/index>`
 
 ## Search
 
@@ -46,27 +46,27 @@ The search service manages the list of search engines available in the address b
 The places component includes the database that stores history and bookmarks as well as a set of UI
 components that present those to the user.
 
-{ref}`Read more <Places>`
+{doc}`Read more <places/index>`
 
 ## Firefox Sync and Application Services
 
 Application services includes the sync engines and Firefox Accounts integration.
 
-{ref}`Read more <Services>`
+{doc}`Read more </services/index>`
 
 ## Developer Tools
 
 The developer tools support web developers when building webpages but as the Firefox UI is itself
 built using web technologies it is also possible to use the developer tools to debug the Firefox UI.
 
-{ref}`Read more <Firefox DevTools Contributor Docs>`
+{doc}`Read more </devtools/index>`
 
 ### Browser Toolbox
 
 The Browser Toolbox is a way to launch the developer tools in a separate process so that they can be
 used to debug the main browser UI.
 
-{ref}`Read more <Browser Toolbox>`
+{doc}`Read more </devtools-user/browser_toolbox/index>`
 
 ### Profiler
 
@@ -80,7 +80,7 @@ code, and reveal the underlying behavior of how code runs.
 The Windows installer for Firefox is built with NSIS. There are currently no installers for other
 operating systems.
 
-{ref}`Read more <Installer>`
+{doc}`Read more <installer/windows/installer/index>`
 
 ## Application Update
 
@@ -89,4 +89,4 @@ downloading them, verifying their integrity and then ultimately installing them.
 (bsdiff) is used to reduce the size of update files and update files are delivered in the
 bespoke mar (Mozilla ARchive) format.
 
-{ref}`Read more <Application Update>`
+{doc}`Read more </toolkit/mozapps/update/docs/index>`

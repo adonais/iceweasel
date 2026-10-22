@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+/** @import {AboutNewTabComponentRegistry} from "moz-src:///browser/components/newtab/AboutNewTabComponents.sys.mjs" */
+
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
   actionTypes as at,
@@ -11,18 +14,16 @@ import {
 const lazy = XPCOMUtils.declareLazy({
   AboutNewTabComponentRegistry:
     "moz-src:///browser/components/newtab/AboutNewTabComponents.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
-  return console.createInstance({
-    prefix: "ExternalComponentsFeed",
-    maxLogLevel: Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.externalComponents.log",
-      false
-    )
-      ? "Debug"
-      : "Warn",
-  });
+  logConsole: () =>
+    console.createInstance({
+      prefix: "ExternalComponentsFeed",
+      maxLogLevel: Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.externalComponents.log",
+        false
+      )
+        ? "Debug"
+        : "Warn",
+    }),
 });
 
 const TRAIN_HOPPING_COMPONENT_CONFIGURATIONS = [
@@ -94,6 +95,9 @@ const TRAIN_HOPPING_COMPONENT_CONFIGURATIONS = [
  * newtab page via the ExternalComponentWrapper React component.
  */
 export class ExternalComponentsFeed {
+  /** @type {Store} */
+  store = null;
+
   /**
    * The AboutNewTabComponentRegistry instance that tracks registered components.
    *

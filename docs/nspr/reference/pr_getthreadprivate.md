@@ -12,7 +12,7 @@ void* PR_GetThreadPrivate(PRUintn index);
 
 ### Parameter
 
-{ref}`PR_GetThreadPrivate` has the following parameters:
+{doc}`pr_getthreadprivate` has the following parameters:
 
 `index`
 
@@ -24,7 +24,7 @@ void* PR_GetThreadPrivate(PRUintn index);
 
 ## Description
 
-{ref}`PR_GetThreadPrivate` may be called at any time during a thread's
+{doc}`pr_getthreadprivate` may be called at any time during a thread's
 execution. A thread can get access only to its own per-thread private
 data. Do not delete the object that the private data refers to without
 first clearing the thread's value.

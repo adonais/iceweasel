@@ -491,6 +491,23 @@ const SEC_ASN1Template CERT_SignedDataTemplate[] = {
 
 SEC_ASN1_CHOOSER_IMPLEMENT(CERT_SignedDataTemplate)
 
+static SECOidTag
+seckey_CurveOidFromPrivKey(const SECKEYPrivateKey *privKey)
+{
+    SECItem params;
+    SECStatus rv;
+    SECOidTag tag;
+
+    rv = PK11_ReadAttribute(privKey->pkcs11Slot, privKey->pkcs11ID,
+                            CKA_EC_PARAMS, NULL, &params);
+    if (rv != SECSuccess) {
+        return SEC_OID_UNKNOWN;
+    }
+    tag = SECKEY_GetECCOid(&params);
+    SECITEM_FreeItem(&params, PR_FALSE);
+    return tag;
+}
+
 static SECStatus
 sec_DerSignData(PLArenaPool *arena, SECItem *result,
                 const unsigned char *buf, int len, SECKEYPrivateKey *pk,
@@ -528,6 +545,9 @@ sec_DerSignData(PLArenaPool *arena, SECItem *result,
                 break;
             case ecKey:
                 algID = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
+                break;
+            case edKey:
+                algID = seckey_CurveOidFromPrivKey(pk);
                 break;
             case mldsaKey:
                 algID = seckey_GetParameterSet(pk);
@@ -616,7 +636,7 @@ SGN_Digest(SECKEYPrivateKey *privKey,
         return SECFailure;
     }
 
-    if (privKey->keyType == mldsaKey) {
+    if ((privKey->keyType == mldsaKey) || (privKey->keyType == edKey)) {
         /* don't allow digest sign for mldsa. May be possible if mu
          * is enabled, in that case the hash must be the special mldsa
          * hash, which we don't have defined yet */
@@ -779,6 +799,19 @@ SEC_GetSignatureAlgorithmOidTag(KeyType keyType, SECOidTag hashAlgTag)
                 default:
                     break;
             }
+            break;
+        case edKey:
+            /* signature and curve are the same oid, just make sure
+             * it's valid */
+            switch (hashAlgTag) {
+                case SEC_OID_ED25519_SIGNATURE:
+                    /* add curve 448 here if/when we to support it */
+                    sigTag = hashAlgTag;
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }
@@ -797,20 +830,38 @@ SEC_GetSignatureAlgorithmOidTagByKey(const SECKEYPrivateKey *privKey, const SECK
     /* make sure we have only one key */
     if (privKey) {
         keyType = privKey->keyType;
-        /* for mldsa, the hash has to match the paramset anyway, so
-         * pass in the param set as the hash */
-        if (keyType == mldsaKey) {
-            hashAlgTag = seckey_GetParameterSet(privKey);
+        switch (keyType) {
+            case mldsaKey:
+                /* for mldsa, the hash has to match the paramset anyway, so
+                 * pass in the param set as the hash */
+                hashAlgTag = seckey_GetParameterSet(privKey);
+                break;
+            case edKey:
+                /* for ed, hash matches the curve, so we return the curve oid */
+                hashAlgTag = seckey_CurveOidFromPrivKey(privKey);
+                break;
+            default:
+                /* everything gets the hash from the caller, or will default */
+                break;
         }
     } else {
         /* the logic above should guarentee the following assert. */
         PORT_Assert(pubKey != NULL);
         PORT_Assert(privKey == NULL);
         keyType = pubKey->keyType;
-        /* for mldsa, the hash has to match the paramset anyway, so
-         * pass in the param set as the hash */
-        if (keyType == mldsaKey) {
-            hashAlgTag = pubKey->u.mldsa.paramSet;
+        switch (keyType) {
+            case mldsaKey:
+                /* for mldsa, the hash has to match the paramset anyway, so
+                 * pass in the param set as the hash */
+                hashAlgTag = pubKey->u.mldsa.paramSet;
+                break;
+            case edKey:
+                /* for ed, hash matches the curve, so we return the curve oid */
+                hashAlgTag = SECKEY_GetECCOid(&pubKey->u.ec.DEREncodedParams);
+                break;
+            default:
+                /* everything gets the hash from the caller, or will default */
+                break;
         }
     }
     return SEC_GetSignatureAlgorithmOidTag(keyType, hashAlgTag);

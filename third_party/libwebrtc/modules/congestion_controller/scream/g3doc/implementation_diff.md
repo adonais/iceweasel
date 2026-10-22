@@ -83,8 +83,8 @@ yet fully implemented.
     when the `LossEstimator` reports that the connection is `congested()`
     (congestion level >= 0.99) OR if queue delay is also detected. See
     [scream_v2.cc:L134-L139](https://webrtc.googlesource.com/src/+/master/modules/congestion_controller/scream/scream_v2.cc#134).
-  - **Impact on Window Increase:** When the congestion level is elevated ($\\ge
-    0.01$), the reference window increase is **blocked**, even if the current
+  - **Impact on Window Increase:** When the congestion level is elevated (>=
+    0.01), the reference window increase is **blocked**, even if the current
     feedback report contains zero packet loss. Because the congestion level
     decays by 0.5 per lossless RTT, it takes **2 full lossless RTTs** for the
     increase blocker to clear after congestion ends. This prevents the window
@@ -130,8 +130,11 @@ yet fully implemented.
        delay. See
        [delay_based_congestion_control.cc:L122](https://webrtc.googlesource.com/src/+/master/modules/congestion_controller/scream/delay_based_congestion_control.cc#122).
     2. `ref_window_scale_factor_due_to_latency_difference` (based on
-       `latency_difference_avg_`): Scales growth based on the difference between
-       max and min latency in feedback. See
+       `latency_difference_avg_`): Scales growth based on the latency difference
+       (`max_one_way_delay - min_one_way_delay`) calculated over the recent
+       burst / tail window (base window `BurstWindowMin`, default 25ms, extended
+       up to `BurstWindowMax`, default 50ms, if consecutive packets are sent
+       within `BurstWindowMaxGap`, default 3ms). See
        [delay_based_congestion_control.cc:L131](https://webrtc.googlesource.com/src/+/master/modules/congestion_controller/scream/delay_based_congestion_control.cc#131).
   - These factors are used in
     [scream_v2.cc](https://webrtc.googlesource.com/src/+/master/modules/congestion_controller/scream/scream_v2.cc)

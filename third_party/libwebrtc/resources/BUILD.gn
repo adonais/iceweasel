@@ -24,20 +24,7 @@ if (is_ios) {
   }
 }
 
-modules_unittests_resources = [
-  "audio_coding/neteq_opus.rtp",
-  "audio_coding/neteq_opus_dtx.rtp",
-  "audio_coding/neteq_universal_new.rtp",
-  "audio_coding/speech_4_channels_48k_one_second.wav",
-  "audio_coding/speech_mono_16kHz.pcm",
-  "audio_coding/speech_mono_32_48kHz.pcm",
-  "audio_coding/testfile16kHz.pcm",
-  "audio_coding/testfile32kHz.pcm",
-  "audio_coding/testfile_fake_stereo_32kHz.pcm",
-  "audio_coding/teststereo32kHz.pcm",
-  "audio_device/audio_short16.pcm",
-  "audio_device/audio_short44.pcm",
-  "audio_device/audio_short48.pcm",
+audio_processing_unittests_resources = [
   "audio_processing/aec3/noop_ml_aec_model_for_testing.tflite",
   "audio_processing/agc/agc_audio.pcm",
   "audio_processing/agc/agc_no_circular_buffer.dat",
@@ -83,8 +70,6 @@ modules_unittests_resources = [
   "far88_stereo.pcm",
   "far8_stereo.pcm",
   "far96_stereo.pcm",
-  "foreman_cif.yuv",
-  "foreman_cif_short.yuv",
   "near16_stereo.pcm",
   "near176_stereo.pcm",
   "near192_stereo.pcm",
@@ -97,6 +82,41 @@ modules_unittests_resources = [
   "near8_stereo.pcm",
   "near96_stereo.pcm",
   "ref03.aecdump",
+  "short_mixed_mono_48.dat",
+  "short_mixed_mono_48.pcm",
+  "short_mixed_mono_48_arm.dat",
+  "short_mixed_stereo_48.dat",
+  "short_mixed_stereo_48.pcm",
+]
+group("audio_processing_unittests_data") {
+  data = audio_processing_unittests_resources
+}
+if (is_ios) {
+  bundle_data("audio_processing_unittests_bundle_data") {
+    testonly = true
+    sources = audio_processing_unittests_resources
+    outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
+  }
+}
+
+modules_unittests_resources = [
+  "audio_coding/neteq_opus.rtp",
+  "audio_coding/neteq_opus_dtx.rtp",
+  "audio_coding/neteq_universal_new.rtp",
+  "audio_coding/speech_4_channels_48k_one_second.wav",
+  "audio_coding/speech_mono_16kHz.pcm",
+  "audio_coding/speech_mono_32_48kHz.pcm",
+  "audio_coding/testfile16kHz.pcm",
+  "audio_coding/testfile32kHz.pcm",
+  "audio_coding/testfile_fake_stereo_32kHz.pcm",
+  "audio_coding/teststereo32kHz.pcm",
+  "audio_device/audio_short16.pcm",
+  "audio_device/audio_short44.pcm",
+  "audio_device/audio_short48.pcm",
+  "foreman_cif.yuv",
+  "foreman_cif_short.yuv",
+  "near48_mono.pcm",
+  "near48_stereo.pcm",
   "remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_0_AST.bin",
   "remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_0_TOF.bin",
   "remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_1_AST.bin",
@@ -121,11 +141,6 @@ modules_unittests_resources = [
   "remote_bitrate_estimator/VideoSendersTest_BweTest_SteadyLoss_0_TOF.bin",
   "remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_AST.bin",
   "remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_TOF.bin",
-  "short_mixed_mono_48.dat",
-  "short_mixed_mono_48.pcm",
-  "short_mixed_mono_48_arm.dat",
-  "short_mixed_stereo_48.dat",
-  "short_mixed_stereo_48.pcm",
   "voice_engine/audio_tiny48.wav",
 ]
 group("modules_unittests_data") {

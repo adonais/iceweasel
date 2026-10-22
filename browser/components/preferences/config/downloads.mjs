@@ -958,9 +958,7 @@ export class ApplicationListItem {
   }
 
   async createNode() {
-    this.node = /** @type {MozBoxItem} */ (
-      document.createElement("moz-box-item")
-    );
+    this.node = document.createElement("moz-box-item");
 
     const iconSrc = this.handlerInfoWrapper._getIcon(16, 1);
     if (iconSrc) {
@@ -972,9 +970,7 @@ export class ApplicationListItem {
     let typeDescription = this.handlerInfoWrapper.typeDescription;
     await setLocalizedLabel(this.node, typeDescription);
 
-    this.actionsMenu = /** @type {MozSelect} */ (
-      document.createElement("moz-select")
-    );
+    this.actionsMenu = document.createElement("moz-select");
     this.actionsMenu.slot = "actions";
     this.actionsMenu.classList.add("actionsMenu");
     this.actionsMenu.disabled = Services.prefs.prefIsLocked(
@@ -1436,9 +1432,7 @@ const ApplicationsHandler = (function () {
      * @return {MozBoxItem}
      */
     _buildHeader() {
-      const headerElement = /** @type {MozBoxItem} */ (
-        document.createElement("moz-box-item")
-      );
+      const headerElement = document.createElement("moz-box-item");
       headerElement.slot = "header";
       this.typeColumn = document.createElement("label");
       this.typeColumn.setAttribute("data-l10n-id", "applications-type-heading");

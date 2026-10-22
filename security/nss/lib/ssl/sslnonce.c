@@ -188,8 +188,8 @@ ssl_DestroySID(sslSessionID *sid, PRBool freeIt)
     PORT_Free((void *)sid->peerID);
     PORT_Free((void *)sid->urlSvrName);
 
-    if (sid->peerCert) {
-        CERT_DestroyCertificate(sid->peerCert);
+    if (sid->peerCertDER.data) {
+        SECITEM_FreeItem(&sid->peerCertDER, PR_FALSE);
     }
     if (sid->peerCertStatus.items) {
         SECITEM_FreeArray(&sid->peerCertStatus, PR_FALSE);
@@ -563,13 +563,10 @@ ssl_DecodeResumptionToken(sslSessionID *sid, const PRUint8 *encodedToken,
         return SECFailure;
     }
     if (readerBuffer.len) {
-        PORT_Assert(!sid->peerCert);
+        PORT_Assert(!sid->peerCertDER.data);
         SECItem tempItem = { siBuffer, (unsigned char *)readerBuffer.buf,
                              readerBuffer.len };
-        sid->peerCert = CERT_NewTempCertificate(NULL, /* dbHandle */
-                                                &tempItem,
-                                                NULL, PR_FALSE, PR_TRUE);
-        if (!sid->peerCert) {
+        if (SECITEM_CopyItem(NULL, &sid->peerCertDER, &tempItem) != SECSuccess) {
             return SECFailure;
         }
     }
@@ -906,8 +903,8 @@ ssl_EncodeResumptionToken(sslSessionID *sid, sslBuffer *encodedTokenBuf)
         return SECFailure;
     }
 
-    rv = sslBuffer_AppendVariable(encodedTokenBuf, sid->peerCert->derCert.data,
-                                  sid->peerCert->derCert.len, 3);
+    rv = sslBuffer_AppendVariable(encodedTokenBuf, sid->peerCertDER.data,
+                                  sid->peerCertDER.len, 3);
     if (rv != SECSuccess) {
         return SECFailure;
     }

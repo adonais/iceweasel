@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsAtomHashKeys.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
@@ -73,6 +74,18 @@ struct nsKeyClass<RefPtr<nsAtom>> {
 template <>
 struct nsKeyClass<nsID> {
   using type = nsIDHashKey;
+};
+
+// NOTE: Tables using ThreadSafeWeakPtr as a key have no form of automatic entry
+// clean-up. The key will continue to exist, and even be able to be looked-up
+// using existing weak pointers, after the referenced object is destroyed.
+//
+// Callers must remove dead entries from the table (e.g. during `T`'s
+// destructor, or during a delayed clean-up iteration pass) to ensure that
+// inaccessible entries are not leaked.
+template <typename T>
+struct nsKeyClass<ThreadSafeWeakPtr<T>> {
+  using type = nsGenericHashKey<ThreadSafeWeakPtr<T>>;
 };
 
 }  // namespace mozilla::detail

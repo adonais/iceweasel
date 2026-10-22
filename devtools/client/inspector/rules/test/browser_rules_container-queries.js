@@ -102,8 +102,6 @@ const TEST_URI = `
 
 add_task(async function () {
   await pushPref("layout.css.style-queries.enabled", true);
-  // needed to check attr() in style()
-  await pushPref("layout.css.attr.enabled", true);
   await addTab(
     "https://example.com/document-builder.sjs?html=" +
       encodeURIComponent(TEST_URI)

@@ -4,23 +4,34 @@
 
 package org.mozilla.fenix.browser.menu
 
+import io.mockk.mockk
+import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
 
 class MoveToNormalTabsMenuItemProviderTest {
+    private val migratePrivateTab: TabsUseCases.MigratePrivateTabUseCase = mockk(relaxed = true)
+    private val menu = FakeMenuHost()
+
     @Test
     fun `GIVEN a private tab WHEN building the menu item THEN offer moving it to normal tabs`() {
-        val provider = MoveToNormalTabsMenuItemProvider(browserStore(isPrivate = true))
+        val provider = createProvider(browserStore(isPrivate = true))
 
         assertEquals(
             StandardMenuItem(
@@ -34,17 +45,57 @@ class MoveToNormalTabsMenuItemProviderTest {
 
     @Test
     fun `GIVEN a normal tab WHEN building the menu item THEN don't show it`() {
-        val provider = MoveToNormalTabsMenuItemProvider(browserStore(isPrivate = false))
+        val provider = createProvider(browserStore(isPrivate = false))
 
         assertNull(provider.itemFlow.value)
     }
 
     @Test
     fun `GIVEN there is no selected tab WHEN building the menu item THEN don't show it`() {
-        val provider = MoveToNormalTabsMenuItemProvider(BrowserStore())
+        val provider = createProvider(BrowserStore())
 
         assertNull(provider.itemFlow.value)
     }
+
+    @Test
+    fun `GIVEN a private tab WHEN clicking the item THEN close the menu and move the tab to normal tabs`() {
+        val provider = createProvider(browserStore(isPrivate = true))
+
+        provider.onEvent(MenuAction.MoveToNonPrivateTab, menu)
+
+        assertTrue(menu.isDismissed)
+        verify { migratePrivateTab(TAB_ID) }
+    }
+
+    @Test
+    fun `GIVEN no selected tab WHEN clicking the item THEN keep the menu open`() {
+        val provider = createProvider(BrowserStore())
+
+        provider.onEvent(MenuAction.MoveToNonPrivateTab, menu)
+
+        assertFalse(menu.isUsed)
+        verify(exactly = 0) { migratePrivateTab(any()) }
+    }
+
+    @Test
+    fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
+        val provider = createProvider(browserStore(isPrivate = true))
+
+        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+
+        assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+        assertFalse(provider.handles(MenuAction.FindInPage))
+    }
+
+    private fun createProvider(
+        browserStore: BrowserStore,
+        target: MenuTarget = MenuTarget.BrowserTab,
+    ) =
+        MoveToNormalTabsMenuItemProvider(
+            browserStore = browserStore,
+            target = target,
+            migratePrivateTab = migratePrivateTab,
+        )
 
     private fun browserStore(isPrivate: Boolean) =
         BrowserStore(

@@ -447,7 +447,7 @@ sequenceDiagram
   SR->>BE: SpeechRecognitionBackend::Available(langs)
   BE->>CC: AcquireHWInferenceProcess() (first user only)
   CC->>CP: PContent::AcquireHWInferenceProcess
-  CP->>UPM: AcquireContentHWInferenceProcess()
+  CP->>UPM: HWInferenceProcess::Content().Acquire()
   BE->>BE: Create PSpeechRecognition endpoints
   BE->>CC: CreateSpeechRecognition(parent endpoint)
   CC->>CP: PContent::CreateSpeechRecognition

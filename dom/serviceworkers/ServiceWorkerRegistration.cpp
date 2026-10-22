@@ -396,7 +396,7 @@ already_AddRefed<PushManager> ServiceWorkerRegistration::GetPushManager(
     }
 
     GlobalObject global(aCx, globalObject->GetGlobalJSObject());
-    mPushManager = PushManager::Constructor(
+    mPushManager = PushManager::Create(
         global, NS_ConvertUTF8toUTF16(mDescriptor.Scope()), aRv);
     if (aRv.Failed()) {
       return nullptr;

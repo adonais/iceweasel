@@ -6,14 +6,8 @@ prefs = [
 ]
 
 ["browser_CaptivePortalWatcher.js"]
-skip-if = [
-  "os == 'win'", # Bug 1313894
-]
 
 ["browser_CaptivePortalWatcher_1.js"]
-skip-if = [
-  "os == 'win'", # Bug 1313894
-]
 
 ["browser_captivePortalTabReference.js"]
 

@@ -192,6 +192,7 @@ class DrawTargetSkia : public DrawTarget {
     Matrix mMaskToDevice;
     CompositionOp mCompositionOp = CompositionOp::OP_OVER;
     bool mOldPermitSubpixelAA = false;
+    int mSaveCount = 0;
   };
   std::vector<PushedLayer> mPushedLayers;
 

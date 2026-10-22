@@ -4,7 +4,7 @@
 "use strict";
 
 const { FileMigratorBase } = ChromeUtils.importESModule(
-  "resource:///modules/FileMigrators.sys.mjs"
+  "moz-src:///browser/components/migration/FileMigrators.sys.mjs"
 );
 
 const DUMMY_FILEMIGRATOR_KEY = "dummy-file-migrator";

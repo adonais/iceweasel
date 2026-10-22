@@ -6,6 +6,7 @@
 #define nsDOMNavigationTiming_h_
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RelativeTimeline.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -204,10 +205,6 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
     return timing.forget();
   }
 
-  bool DocShellHasBeenActiveSinceNavigationStart() const {
-    return mDocShellHasBeenActiveSinceNavigationStart;
-  }
-
   bool WasActivatedFromNavigationalPrefetch() const {
     return mWasActivatedFromNavigationalPrefetch;
   }
@@ -216,6 +213,14 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   }
 
   mozilla::TimeStamp LoadEventEnd() { return mLoadEventEnd; }
+
+  // Whether the tab was foreground when this document's load event started.
+  // Asked of the tab at that moment rather than accumulated from activeness
+  // notifications, which depend on an edge having reached this object. Nothing
+  // if the load event never fired, which leaves no evidence either way.
+  mozilla::Maybe<bool> LoadedInForeground() const {
+    return mForegroundAtLoadEventStart;
+  }
 
  private:
   friend class nsDocShell;
@@ -228,6 +233,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp GetUnloadEventEndTimeStamp() const;
 
   bool IsTopLevelContentDocumentInContentProcess() const;
+
+  bool DocShellIsActive() const;
 
   // Should those be amended, the IPC serializer should be updated
   // accordingly.
@@ -259,8 +266,15 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   mozilla::TimeStamp mTTFI;
 
+  // Whether the docshell was active at navigation start and has not been
+  // backgrounded since. Only the paint metrics recorded in this class use it;
+  // LoadedInForeground() answers the same question without depending on an
+  // activeness notification having reached this object.
   bool mDocShellHasBeenActiveSinceNavigationStart;
   bool mWasActivatedFromNavigationalPrefetch = false;
+
+  // See LoadedInForeground().
+  mozilla::Maybe<bool> mForegroundAtLoadEventStart;
 
   friend struct IPC::ParamTraits<nsDOMNavigationTiming*>;
 };

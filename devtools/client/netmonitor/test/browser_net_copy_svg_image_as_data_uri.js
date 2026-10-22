@@ -23,10 +23,7 @@ add_task(async function () {
   });
   await wait;
 
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   EventUtils.sendMouseEvent(
     { type: "contextmenu" },
     document.querySelectorAll(".request-list-item")[0]

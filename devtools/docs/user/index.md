@@ -126,7 +126,7 @@ View and edit page content and layout. Visualize many aspects of the page includ
 
 See messages logged by a web page and interact with the page using JavaScript.
 
-### [JavaScript Debugger](debugger)
+### [JavaScript Debugger](debugger/index.md)
 
 ```{image} landingpage_debugger.png
 :alt: The all-new Debugger panel in Firefox 57.
@@ -176,7 +176,7 @@ See how your website or app will look and behave on different devices and networ
 
 Provides a means to access the page's accessibility tree, allowing you to check what's missing or otherwise needs attention.
 
-### [Application panel](application)
+### [Application panel](application/index.md)
 
 ```{image} just-application-panel.png
 :alt: Performance Tools in Firefox 57 Developer Tools.

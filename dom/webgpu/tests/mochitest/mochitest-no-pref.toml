@@ -38,5 +38,4 @@ skip-if = [
 skip-if = [
   "early_beta_or_earlier",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win'",
 ]

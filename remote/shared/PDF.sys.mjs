@@ -2,14 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
+  PollPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "printerName",
+  "remote.print.printer_name",
+  ""
+);
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
@@ -109,10 +119,22 @@ print.getPrintSettings = function (settings) {
 
   let cmToInches = cm => cm / 2.54;
   const printSettings = psService.createNewPrintSettings();
-  printSettings.isInitializedFromPrinter = true;
+  if (lazy.printerName) {
+    // Print through a system printer rather than Gecko's own PDF output, to
+    // test the platform printing code. The printer needs to produce PDF files.
+    const printerList = Cc["@mozilla.org/gfx/printerlist;1"].getService(
+      Ci.nsIPrinterList
+    );
+    printerList.initPrintSettingsFromPrinter(lazy.printerName, printSettings);
+    printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatNative;
+    // Use the custom paper size below, rather than the printer's default one.
+    printSettings.paperId = "";
+  } else {
+    printSettings.isInitializedFromPrinter = true;
+    printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
+    printSettings.printerName = "marionette";
+  }
   printSettings.isInitializedFromPrefs = true;
-  printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
-  printSettings.printerName = "marionette";
   printSettings.printSilent = true;
 
   // Setting the paperSizeUnit to kPaperSizeMillimeters doesn't work on mac
@@ -241,7 +263,11 @@ function parseRanges(ranges) {
   return rv;
 }
 
-print.printToBinaryString = async function (browsingContext, printSettings) {
+print.printToBytes = async function (browsingContext, printSettings) {
+  if (printSettings.outputFormat == Ci.nsIPrintSettings.kOutputFormatNative) {
+    return printToBytesThroughFile(browsingContext, printSettings);
+  }
+
   // Create a stream to write to.
   const stream = Cc["@mozilla.org/storagestream;1"].createInstance(
     Ci.nsIStorageStream
@@ -260,10 +286,53 @@ print.printToBinaryString = async function (browsingContext, printSettings) {
 
   inputStream.setInputStream(stream.newInputStream(0));
 
-  const available = inputStream.available();
-  const bytes = inputStream.readBytes(available);
+  const bytes = new Uint8Array(inputStream.available());
+  inputStream.readArrayBuffer(bytes.length, bytes.buffer);
 
   stream.close();
 
   return bytes;
 };
+
+// NOTE(emilio): This is rather hacky, but system printers can't print to a
+// stream so we can't just rely on print() resolving.
+async function printToBytesThroughFile(browsingContext, printSettings) {
+  // Don't create the file upfront, since printers may refuse to overwrite it.
+  const path = PathUtils.join(
+    PathUtils.tempDir,
+    `remote-print-${Services.uuid.generateUUID().toString().slice(1, -1)}.pdf`
+  );
+  printSettings.outputDestination = Ci.nsIPrintSettings.kOutputDestinationFile;
+  printSettings.toFileName = path;
+
+  try {
+    await browsingContext.print(printSettings);
+
+    // The print job might still be spooling, wait for the complete file.
+    return await lazy.PollPromise(
+      async (resolve, reject) => {
+        let contents;
+        try {
+          contents = await IOUtils.read(path);
+        } catch (e) {
+          reject();
+          return;
+        }
+        const tail = new TextDecoder().decode(contents.subarray(-32));
+        if (tail.trimEnd().endsWith("%%EOF")) {
+          resolve(contents);
+        } else {
+          reject();
+        }
+      },
+      {
+        errorMessage: `Timed out waiting for the printer to write ${path}`,
+        interval: 100,
+        throws: lazy.error.UnknownError,
+        timeout: 30000,
+      }
+    );
+  } finally {
+    await IOUtils.remove(path, { ignoreAbsent: true });
+  }
+}

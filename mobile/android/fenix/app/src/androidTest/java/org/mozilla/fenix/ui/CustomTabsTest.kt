@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
@@ -96,6 +97,12 @@ class CustomTabsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334762
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CustomTabsTest#copyCustomTabToolbarUrlTest"],
+        bug = 2078545,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun copyCustomTabToolbarUrlTest() {
         val customTabPage = mockWebServer.getGenericAsset(1)

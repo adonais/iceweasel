@@ -5,6 +5,8 @@
 #ifndef nsHtml5ByteReadable_h
 #define nsHtml5ByteReadable_h
 
+#include <cstdint>
+
 /**
  * A weak reference wrapper around a byte array.
  */

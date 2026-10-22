@@ -26,6 +26,7 @@ namespace wasm {
 // names are always ASCII, so this is safe.
 #  define ComponentName_Printf(n) \
     (int)(n).utf8Bytes().Length(), (n).utf8Bytes().data()
+#  define ComponentNameSpan_Printf(n) (int)(n).Length(), (n).data()
 
 // A "sort", or "kind", of item in the component model, used for all cases where
 // we must refer to a different item.
@@ -208,6 +209,12 @@ class ComponentType {
   ComponentType asBorrow() const;
   const ComponentFuncType& asFunc() const;
   const ComponentResourceType& asResource() const;
+
+  // Whether the type is any kind of resource type (defined or `(sub resource)`)
+  bool isAnyResource() const {
+    return kind_ == ComponentTypeKind::Resource ||
+           kind_ == ComponentTypeKind::SubResource;
+  }
 
   // Cheaply checks if two canonicalized component types are equal under the
   // rules of the component model. This is fully general and handles resource
@@ -397,10 +404,34 @@ struct ComponentName {
   CacheableName name;
   ComponentNameAttributes attributes;
 
+  uint8_t attributesLength;
+  uint32_t resourceNameLength;
+
   explicit ComponentName() = default;
   explicit ComponentName(CacheableName&& name,
-                         ComponentNameAttributes attributes)
-      : name(std::move(name)), attributes(attributes) {}
+                         ComponentNameAttributes attributes,
+                         uint8_t attributesLength, uint32_t resourceNameLength)
+      : name(std::move(name)),
+        attributes(attributes),
+        attributesLength(attributesLength),
+        resourceNameLength(resourceNameLength) {}
+
+  mozilla::Span<const char> resourceName() const {
+    MOZ_ASSERT(attributes.contains(ComponentNameAttribute::Constructor) ||
+               attributes.contains(ComponentNameAttribute::Method) ||
+               attributes.contains(ComponentNameAttribute::Static));
+    MOZ_ASSERT(resourceNameLength > 0);
+    return mozilla::Span<const char>(name.utf8Bytes().data() + attributesLength,
+                                     resourceNameLength);
+  };
+  bool getterForSetter(CacheableName* out) const;
+
+  bool operator==(const ComponentName& other) const {
+    return name == other.name;
+  }
+  bool operator==(mozilla::Span<const char> other) const {
+    return name.utf8Bytes() == other;
+  }
 };
 
 // A class which can be used to check if a set of component model names is
@@ -844,6 +875,7 @@ class ComponentExternDesc {
 static_assert(std::is_default_constructible_v<ComponentExternDesc>);
 
 class ComponentImport {
+  // Be aware that the Component::importsByName_ stores a view into this name.
   ComponentName name_;
   ComponentExternDesc externDesc_;
 
@@ -857,6 +889,7 @@ class ComponentImport {
 };
 
 class ComponentExport {
+  // Be aware that the Component::exportsByName_ stores a view into this name.
   ComponentName name_;
   ComponentExternDesc externDesc_;
 
@@ -889,6 +922,8 @@ class Component : public JS::WasmComponent {
   using AliasNameMap =
       mozilla::HashMap<ComponentSortIndex, CacheableName,
                        ComponentSortIndexHasher, SystemAllocPolicy>;
+  using ImportExportMap = mozilla::HashMap<mozilla::Span<const char>, size_t,
+                                           NameHasher, SystemAllocPolicy>;
 
  private:
   CoreModuleVector definedCoreModules_;
@@ -898,6 +933,15 @@ class Component : public JS::WasmComponent {
   CoreFuncVector definedCoreFuncs_;
   ImportVector imports_;
   ExportVector exports_;
+
+  // Because these maps exist to accelerate lookups in `imports_` and
+  // `exports_`, their keys are slices of the names stored in those vectors.
+  // Because the names are themselves vectors, the only thing that will ever
+  // invalidate a span is mutating the names themselves, which should never
+  // happen. Mutating the `imports_` and `exports_` vectors themselves is fine,
+  // but of course because they own the names, these maps share their lifetime.
+  ImportExportMap importsByName_;
+  ImportExportMap exportsByName_;
 
   ItemVector funcs_;
   ItemVector types_;
@@ -943,9 +987,13 @@ class Component : public JS::WasmComponent {
   // Accessors and adders for each index space
 
   const ImportVector& imports() const { return imports_; }
+  bool hasImportWithName(mozilla::Span<const char> name) const;
+  const ComponentImport& getImportByName(mozilla::Span<const char> name) const;
   [[nodiscard]] bool addImport(ComponentImport&& import);
 
   const ExportVector& exports() const { return exports_; }
+  bool hasExportWithName(mozilla::Span<const char> name) const;
+  const ComponentExport& getExportByName(mozilla::Span<const char> name) const;
   [[nodiscard]] bool addExport(ComponentExport&& exp);
 
   const ItemVector& funcs() const { return funcs_; }

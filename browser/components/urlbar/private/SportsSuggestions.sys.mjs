@@ -220,11 +220,11 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
 
       let iconUrl;
       if (item[itemKey]?.icon) {
-        iconUrl = UrlbarUtils.getRemoteIconUrl(
-          item[itemKey].icon,
-          lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
-          controller
-        );
+        iconUrl = UrlbarUtils.getRemoteImageUrl({
+          controller,
+          url: item[itemKey].icon,
+          size: lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+        });
       }
 
       memo[team] = {

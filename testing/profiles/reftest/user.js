@@ -108,6 +108,8 @@ user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
 user_pref("telemetry.fog.test.localhost_port", -1);
 user_pref("telemetry.fog.test.activity_limit", -1);
 user_pref("telemetry.fog.test.inactivity_limit", -1);
+// Slow down early "events" pings to make testing easier.
+user_pref("telemetry.fog.test.decelerate_early_events", true);
 user_pref("ui.caretBlinkTime", -1);
 user_pref("ui.caretWidth", 1);
 user_pref("ui.prefersReducedMotion", 0);

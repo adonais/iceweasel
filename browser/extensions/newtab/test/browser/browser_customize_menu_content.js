@@ -170,6 +170,7 @@ test_newtab({
     const prefs = [
       ["browser.newtabpage.activity-stream.system.showWeather", true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
+      ["browser.newtabpage.activity-stream.widgets.enabled", true],
       [
         "browser.newtabpage.activity-stream.widgets.system.weather.enabled",
         true,

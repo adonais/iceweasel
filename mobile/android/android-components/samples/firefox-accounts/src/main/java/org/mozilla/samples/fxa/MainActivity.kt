@@ -9,11 +9,11 @@ import android.os.Bundle
 import android.view.View
 import android.widget.CheckBox
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,7 +74,7 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         window.setupPersistentInsets(true)
 
         RustLog.enable()

@@ -16,6 +16,7 @@ import {
   resolveAutoMinimizeDelayMs,
   resolvePageLayoutVariant,
   resolvePopulatedSpaces,
+  selectFirstSlotWidget,
   resolveThematicDefaultSpace,
   resolveThematicSpaceSections,
   normalizeSpacesConfig,
@@ -374,6 +375,31 @@ describe("resolvePopulatedSpaces", () => {
       "activity"
     );
     expect(resolvePopulatedSpaces({})).toEqual([]);
+  });
+
+  describe("pageLayouts.spacesOrder", () => {
+    const all = { ...spaces, "feeds.section.highlights": true };
+
+    it("follows the pref", () => {
+      expect(
+        resolvePopulatedSpaces({
+          ...all,
+          "pageLayouts.spacesOrder": "activity,stories,widgets",
+        })
+      ).toEqual(["activity", "stories", "widgets"]);
+    });
+
+    it("prefers the trainhop array over the pref", () => {
+      expect(
+        resolvePopulatedSpaces({
+          ...all,
+          "pageLayouts.spacesOrder": "widgets,stories,activity",
+          trainhopConfig: {
+            pageLayouts: { spacesOrder: ["activity", "stories", "widgets"] },
+          },
+        })
+      ).toEqual(["activity", "stories", "widgets"]);
+    });
   });
 });
 
@@ -1032,5 +1058,56 @@ describe("widgets row ad variant", () => {
     expect(isSideBySideAssigned(assigned)).toBe(false);
     expect(isSpacesAssigned(assigned)).toBe(false);
     expect(isAutoMinimizeWidgetsAssigned(assigned)).toBe(false);
+  });
+});
+
+describe("selectFirstSlotWidget", () => {
+  const assigned = {
+    "nova.enabled": true,
+    "feeds.section.topstories": true,
+    "feeds.system.topstories": true,
+    "widgets.enabled": true,
+    "widgets.system.crossword.enabled": true,
+    "widgets.crossword.enabled": true,
+    "widgets.system.pictureOfTheDay.enabled": true,
+    "widgets.pictureOfTheDay.enabled": true,
+    "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.WIDGET_FIRST_CONTENT_SLOT,
+    "pageLayouts.widgetFirstContentSlot.widget": "crossword",
+  };
+
+  it("returns the widget from the pref", () => {
+    expect(selectFirstSlotWidget(assigned)).toBe("crossword");
+  });
+
+  it("prefers the widget from trainhop", () => {
+    expect(
+      selectFirstSlotWidget({
+        ...assigned,
+        trainhopConfig: {
+          pageLayouts: {
+            widgetFirstContentSlot: { widget: "pictureOfTheDay" },
+          },
+        },
+      })
+    ).toBe("pictureOfTheDay");
+  });
+
+  it.each([
+    ["outside the variant", { "pageLayouts.variant": "nova-full-width" }],
+    ["with no widget set", { "pageLayouts.widgetFirstContentSlot.widget": "" }],
+    [
+      "for an unknown widget",
+      { "pageLayouts.widgetFirstContentSlot.widget": "nope" },
+    ],
+    ["without Nova", { "nova.enabled": false }],
+    ["without stories", { "feeds.section.topstories": false }],
+    ["with widgets off", { "widgets.enabled": false }],
+    ["with the widget off", { "widgets.crossword.enabled": false }],
+    [
+      "when the widget isn't available",
+      { "widgets.system.crossword.enabled": false },
+    ],
+  ])("returns null %s", (_, overrides) => {
+    expect(selectFirstSlotWidget({ ...assigned, ...overrides })).toBe(null);
   });
 });

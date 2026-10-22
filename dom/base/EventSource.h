@@ -72,13 +72,14 @@ class EventSource final : public DOMEventTargetHelper {
 
   void Close();
 
+  // prevent bad usage
+  EventSource(const EventSource& x) = delete;
+  EventSource& operator=(const EventSource& x) = delete;
+
  private:
   EventSource(nsIGlobalObject* aGlobal,
               nsICookieJarSettings* aCookieJarSettings, bool aWithCredentials);
   virtual ~EventSource();
-  // prevent bad usage
-  EventSource(const EventSource& x) = delete;
-  EventSource& operator=(const EventSource& x) = delete;
 
   void AssertIsOnTargetThread() const {
     MOZ_ASSERT(NS_IsMainThread() == mIsMainThread);

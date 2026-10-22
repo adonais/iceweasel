@@ -10,6 +10,7 @@ import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
 import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 
 const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [
@@ -1025,12 +1026,10 @@ export const FocusTimer = ({
       <div className="newtab-widget-timer-notification-title-wrapper">
         <h2 data-l10n-id="newtab-widget-timer-notification-title"></h2>
         <div className="focus-timer-context-menu-wrapper">
-          <moz-button
+          <WidgetMenuButton
             className="focus-timer-context-menu-button"
-            iconSrc="chrome://global/skin/icons/more.svg"
             menuId="focus-timer-context-menu"
-            type="ghost"
-            data-l10n-id="newtab-widget-timer-menu-button"
+            l10nId="newtab-widget-timer-open-menu-button"
           />
           <panel-list
             className="panel-list-no-icons"

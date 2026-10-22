@@ -10,10 +10,13 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import mozilla.components.support.base.android.NotificationsDelegate
+import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.ids.SharedIdsHelper
 import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.IntentUtils
 import org.mozilla.fenix.utils.createBaseNotification
@@ -22,6 +25,31 @@ const val PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID = "org.mozilla.fenix.privacyrep
 
 private const val PRIVACY_REPORT_NOTIFICATION_TAG = "org.mozilla.fenix.privacyreport.tag"
 private const val PRIVACY_REPORT_PENDING_INTENT_TAG = "org.mozilla.fenix.privacyreport.pending_intent"
+
+/**
+ * The privacy report notification availability states.
+ *
+ * @property telemetryId The value recorded in telemetry for this state.
+ */
+internal enum class PrivacyReportNotificationAvailability(val telemetryId: String) {
+    /** Nothing stops the privacy report notification from being posted. */
+    AVAILABLE("available"),
+
+    /** Tracking protection was turned off after the worker was scheduled. */
+    TRACKING_PROTECTION_DISABLED("tracking_protection_disabled"),
+
+    /** The user turned off notifications for the whole app, so no notification can be posted. */
+    APP_NOTIFICATIONS_DISABLED("app_notifications_disabled"),
+
+    /** App notifications are on, but the user turned off the privacy report channel. */
+    CHANNEL_DISABLED("channel_disabled"),
+
+    /**
+     * App notifications are on, but the privacy report channel does not exist, so no notification can be posted. The
+     * channel is always created before this is checked, so this is likely caused by a programmer error.
+     */
+    CHANNEL_MISSING("channel_missing"),
+}
 
 /**
  * Ensures that the notification channel for the weekly privacy report exists, creating it if necessary, and returns its
@@ -61,6 +89,26 @@ fun ensurePrivacyReportNotificationChannelExists(context: Context): String {
 }
 
 /**
+ * Whether the weekly privacy report notification can currently be sent. If notification cannot be posted, then return
+ * the reason.
+ *
+ * @param context Used to retrieve the [NotificationManager].
+ */
+internal fun privacyReportNotificationAvailability(context: Context): PrivacyReportNotificationAvailability {
+    val notificationManager = NotificationManagerCompat.from(context)
+    val channel = notificationManager.getNotificationChannelCompat(PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID)
+
+    return when {
+        !notificationManager.areNotificationsEnabledSafe() ->
+            PrivacyReportNotificationAvailability.APP_NOTIFICATIONS_DISABLED
+        channel == null -> PrivacyReportNotificationAvailability.CHANNEL_MISSING
+        channel.importance == NotificationManagerCompat.IMPORTANCE_NONE ->
+            PrivacyReportNotificationAvailability.CHANNEL_DISABLED
+        else -> PrivacyReportNotificationAvailability.AVAILABLE
+    }
+}
+
+/**
  * Build and display the weekly privacy report notification.
  *
  * @param context Used to look up the [NotificationManager] system service and required string resources.
@@ -76,6 +124,7 @@ fun showPrivacyReportNotification(
         PRIVACY_REPORT_NOTIFICATION_TAG,
         SharedIdsHelper.getIdForTag(context, PRIVACY_REPORT_NOTIFICATION_TAG),
         buildPrivacyReportNotification(context, content),
+        onPermissionGranted = { TrackingProtection.privacyReportNotificationSent.record() },
     )
 }
 

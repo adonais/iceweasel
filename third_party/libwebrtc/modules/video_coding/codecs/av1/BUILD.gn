@@ -103,10 +103,13 @@ rtc_library("libaom_av1_encoder_v2") {
     "libaom_av1_encoder_v2.h",
   ]
   deps = [
+    "../..:video_coding_utility",
+    "../../../../api:media_stream_interface",
     "../../../../api:scoped_refptr",
     "../../../../api/units:data_rate",
     "../../../../api/units:data_size",
     "../../../../api/units:time_delta",
+    "../../../../api/units:timestamp",
     "../../../../api/video:resolution",
     "../../../../api/video:video_codec_constants",
     "../../../../api/video:video_frame",

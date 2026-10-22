@@ -697,11 +697,10 @@ class ScriptMixin(PlatformMixin):
                 # Bug 1301645 - BadZipfile: Bad CRC-32 for file ...
                 #    http://stackoverflow.com/questions/5624669/strange-badzipfile-bad-crc-32-problem/5626098#5626098
                 # Bug 1301802 - error: Error -3 while decompressing: invalid stored block lengths
-                bundle.extract(entry, path=extract_to)
+                fname = bundle.extract(entry, path=extract_to)
 
                 # ZipFile doesn't preserve permissions during extraction:
                 # http://bugs.python.org/issue15795
-                fname = os.path.realpath(os.path.join(extract_to, entry))
                 try:
                     # getinfo() can raise KeyError
                     mode = bundle.getinfo(entry).external_attr >> 16 & 0x1FF
@@ -2383,6 +2382,7 @@ class BaseScript(ScriptMixin, LogMixin):
             "framework": {"name": "mozharness"},
             "suites": [],
         }
+        extra_options = os.environ.get("PERFHERDER_EXTRA_OPTIONS", "").split()
         try:
             for action in self.all_actions:
                 if action not in self.actions:
@@ -2392,14 +2392,17 @@ class BaseScript(ScriptMixin, LogMixin):
                 start = time.monotonic()
                 self.run_action(action)
                 end = time.monotonic()
-                perfherder_data["suites"].append({
+                suite = {
                     "name": action,
                     "value": end - start,
                     "lowerIsBetter": True,
                     "unit": "s",
                     "shouldAlert": False,
                     "subtests": [],
-                })
+                }
+                if extra_options:
+                    suite["extraOptions"] = extra_options
+                perfherder_data["suites"].append(suite)
         except Exception:
             self.fatal("Uncaught exception: %s" % traceback.format_exc())
         finally:

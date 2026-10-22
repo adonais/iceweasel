@@ -843,6 +843,7 @@ extern const FFCodec ff_aac_mf_encoder;
 extern const FFCodec ff_ac3_mf_encoder;
 extern const FFCodec ff_amrnb_mediacodec_decoder;
 extern const FFCodec ff_amrwb_mediacodec_decoder;
+extern const FFCodec ff_flac_mediacodec_decoder;
 extern const FFCodec ff_h263_v4l2m2m_encoder;
 extern const FFCodec ff_libaom_av1_decoder;
 /* hwaccel hooks only, so prefer external decoders */
@@ -904,8 +905,10 @@ extern const FFCodec ff_mpeg4_cuvid_decoder;
 extern const FFCodec ff_mpeg4_mediacodec_decoder;
 extern const FFCodec ff_mpeg4_mediacodec_encoder;
 extern const FFCodec ff_mpeg4_v4l2m2m_encoder;
+extern const FFCodec ff_opus_mediacodec_decoder;
 extern const FFCodec ff_prores_videotoolbox_encoder;
 extern const FFCodec ff_vc1_cuvid_decoder;
+extern const FFCodec ff_vorbis_mediacodec_decoder;
 extern const FFCodec ff_vp8_cuvid_decoder;
 extern const FFCodec ff_vp8_mediacodec_decoder;
 extern const FFCodec ff_vp8_mediacodec_encoder;

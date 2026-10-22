@@ -213,7 +213,6 @@ class ChromeUtils {
   static void GetCachedJavaScriptSource(GlobalObject& aGlobal,
                                         const nsACString& aKey,
                                         const nsACString& aURI,
-                                        const nsACString& aHintCharset,
                                         JS::MutableHandle<JS::Value> aRetval,
                                         ErrorResult& aRv);
 

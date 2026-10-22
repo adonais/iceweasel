@@ -54,3 +54,5 @@ run-sequentially = ["os == 'mac'"] # frequent timeouts in parallel on Mac
 ["test_ext_scripting_updateContentScripts.js"]
 
 ["test_ext_service_worker_messaging.js"]
+
+["test_ext_web_accessible_workers.js"]

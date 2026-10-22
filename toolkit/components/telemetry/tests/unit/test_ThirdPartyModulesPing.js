@@ -126,6 +126,9 @@ add_task(async function test_send_ping() {
     "'sanitizationFailures' is 0"
   );
   Assert.equal(curProcInfo.trustTestFailures, 0, "'trustTestFailures' is 0");
+  // This is only ever incremented for child processes but this test inspects
+  // the browser process's own data, so it is always zero.
+  Assert.equal(curProcInfo.rejectedFiles, 0, "'rejectedFiles' is 0");
 
   Assert.equal(
     curProcInfo.combinedStacks.stacks.length,

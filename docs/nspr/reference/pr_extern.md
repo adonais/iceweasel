@@ -13,7 +13,7 @@ PR_EXTERN(type)prototype
 
 ## Description
 
-{ref}`PR_EXTERN` is used to define externally visible routines and globals.
+{doc}`pr_extern` is used to define externally visible routines and globals.
 For syntax details for each platform, see
 {searchfox}`prtypes.h <nsprpub/pr/include/prtypes.h>`.
 The macro includes the proper specifications to declare the target

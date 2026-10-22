@@ -786,6 +786,11 @@ export var PushServiceWebSocket = {
    */
   _handleNotificationReply(reply) {
     lazy.console.debug("handleNotificationReply()");
+    // Not acked on purpose, so the server sends it again next time
+    if (this._mainPushService.ignoresNewMessages) {
+      lazy.console.debug("handleNotificationReply: Ignoring new message");
+      return;
+    }
     if (this._dataEnabled) {
       this._handleDataUpdate(reply);
       return;

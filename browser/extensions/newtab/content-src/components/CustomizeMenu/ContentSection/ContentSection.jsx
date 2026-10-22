@@ -414,7 +414,7 @@ export class ContentSection extends React.PureComponent {
                       ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.stocks.enabled"
                       data-event-source="WIDGET_STOCKS"
-                      data-l10n-id="newtab-custom-widget-stocks-toggle"
+                      data-l10n-id="newtab-custom-widget-stocks-toggle2"
                     />
                   </div>
                 )}

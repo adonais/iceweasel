@@ -405,7 +405,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   bool MaybeQueueDrain(const MediaDataDecoder::DecodedData& aData);
 #ifdef MOZ_WIDGET_ANDROID
   void QueueResumeDrain();
-  void ResumeDrain();
+  void ResumeDrain() override;
 
   Atomic<bool> mShouldResumeDrain{false};
 #endif

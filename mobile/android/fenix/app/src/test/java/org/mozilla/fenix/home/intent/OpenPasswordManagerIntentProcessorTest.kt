@@ -7,6 +7,7 @@ package org.mozilla.fenix.home.intent
 import android.content.Intent
 import androidx.navigation.NavController
 import io.mockk.Called
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Assert.assertFalse
@@ -35,6 +36,8 @@ class OpenPasswordManagerIntentProcessorTest {
         navController = mockk(relaxed = true)
         out = mockk(relaxed = true)
         processor = OpenPasswordManagerIntentProcessor()
+
+        every { settings.isAutofillSupported } returns true
     }
 
     @Test
@@ -71,6 +74,22 @@ class OpenPasswordManagerIntentProcessorTest {
         assertTrue(processor.process(intent, navController, out, settings))
 
         verify { navController.navigate(NavGraphDirections.actionLoginsListFragment(), null) }
+        verify { out.removeExtra(HomeActivity.OPEN_PASSWORD_MANAGER) }
+    }
+
+    @Test
+    fun `GIVEN autofill is unsupported WHEN the intent is processed THEN it does not navigate to the password list fragment`() {
+        every { settings.isAutofillSupported } returns false
+
+        val intent =
+            Intent().apply {
+                action = PasswordManagerIntentProcessor.Companion.ACTION_OPEN_PASSWORD_MANAGER
+                putExtra(HomeActivity.OPEN_PASSWORD_MANAGER, true)
+            }
+
+        assertTrue(processor.process(intent, navController, out, settings))
+
+        verify(exactly = 0) { navController.navigate(NavGraphDirections.actionLoginsListFragment(), null) }
         verify { out.removeExtra(HomeActivity.OPEN_PASSWORD_MANAGER) }
     }
 

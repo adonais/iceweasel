@@ -78,7 +78,8 @@ function saveURL(
   aSourceDocument,
   aIsContentWindowPrivate,
   aPrincipal,
-  aSaveCompleteCallback
+  aSaveCompleteCallback,
+  aPreferSourceDirectory
 ) {
   internalSave(
     aURL,
@@ -97,7 +98,8 @@ function saveURL(
     null,
     aIsContentWindowPrivate,
     aPrincipal,
-    aSaveCompleteCallback
+    aSaveCompleteCallback,
+    aPreferSourceDirectory
   );
 }
 
@@ -275,6 +277,10 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
  *        privilege to load the URI with.
  * @param aSaveCompleteCallback [optional]
  *        A callback function to call when the save is complete.
+ * @param aPreferSourceDirectory [optional]
+ *        If true, the file picker opens in the source file's folder when it
+ *        is a local file (outside the temp directory) instead of the last-used
+ *        one.
  */
 function internalSave(
   aURL,
@@ -293,7 +299,8 @@ function internalSave(
   aCacheKey,
   aIsContentWindowPrivate,
   aPrincipal,
-  aSaveCompleteCallback
+  aSaveCompleteCallback,
+  aPreferSourceDirectory
 ) {
   if (aSkipPrompt == undefined) {
     aSkipPrompt = false;
@@ -352,7 +359,7 @@ function internalSave(
       fpParams,
       aSkipPrompt,
       relatedURI,
-      aOriginalURL || sourceURI
+      aPreferSourceDirectory ? aOriginalURL || sourceURI : null
     )
       .then(aDialogAccepted => {
         if (!aDialogAccepted) {
@@ -703,7 +710,9 @@ function initFileInfo(
  *        directory of the picker is retrieved from/stored in the
  *        Content Pref Service using this URI.
  * @param aSourceURI
- *        The source URI, used to prefer its parent directory for local files.
+ *        If provided, the picker prefers this URI's local parent directory
+ *        (unless it is under the temp directory). Otherwise the last-used
+ *        directory is used.
  * @returns {Promise<boolean>}
  *   Resolves to a boolean. When true, it indicates that the file picker dialog is
  *   accepted.
@@ -769,11 +778,10 @@ function promiseTargetFile(
     }
 
     // We must prompt for the file name explicitly.
-    // When the source is a local file, default to its own directory so it's
-    // easy to save it "in place": DownloadLastDir shares a single last-used
-    // directory across all file: URLs, which is rarely the right one.
-    let file = await getLocalSourceDirectory(aSourceURI);
-    // Otherwise, if we must prompt because we were asked to...
+    // Prefer the source directory for saving edits in place. DownloadLastDir
+    // groups all file: URLs under one key.
+    let file = aSourceURI ? await getLocalSourceDirectory(aSourceURI) : null;
+    // No source directory preference: use the last-used directory.
     if (!file && !useDownloadDir) {
       file = await downloadLastDir.getFileAsync(aRelatedURI);
     }
@@ -905,7 +913,6 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     let accepted = await promiseTargetFile(
       filepickerParams,
       true,
-      fileInfo.uri,
       fileInfo.uri
     );
     if (!accepted) {

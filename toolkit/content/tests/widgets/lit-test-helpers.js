@@ -97,6 +97,68 @@ class LitTestHelpers {
     await this.renderTarget.firstElementChild.updateComplete;
     return this.renderTarget;
   }
+
+  /**
+   * Verifies that arrow keys pressed with a modifier are ignored, then that a
+   * bare ArrowDown still navigates so the first checks cannot pass trivially.
+   *
+   * Keydown events are dispatched directly instead of synthesized. Browser
+   * shortcuts such as Alt+Left (Back) fire on keypress, which a dispatched
+   * keydown does not produce, so no combination navigates the test harness.
+   *
+   * @param {object} options
+   * @param {Element} options.target - Focused element to dispatch keydowns at.
+   *     Every arrow direction must navigate away from it when unmodified.
+   * @param {Function} options.getState - Returns the state arrow navigation
+   *     changes, e.g. the selected value.
+   * @param {Function} [options.afterKeydown] - Awaited after each keydown so
+   *     the element can update. Defaults to waiting for an animation frame.
+   */
+  async verifyModifiedArrowKeysIgnored({
+    target,
+    getState,
+    afterKeydown = () => new Promise(r => requestAnimationFrame(r)),
+  }) {
+    const sendKeydown = async (key, modifiers = {}) => {
+      let notPrevented = target.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key,
+          ...modifiers,
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+        })
+      );
+      await afterKeydown();
+      return notPrevented;
+    };
+
+    let initialState = getState();
+    let keys = ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"];
+    let modifierSets = [
+      { altKey: true },
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true, metaKey: true },
+    ];
+    for (let key of keys) {
+      for (let modifiers of modifierSets) {
+        let description = `${key} with ${Object.keys(modifiers).join("+")}`;
+        ok(
+          await sendKeydown(key, modifiers),
+          `${description} is not default prevented.`
+        );
+        is(getState(), initialState, `${description} does not navigate.`);
+      }
+    }
+
+    ok(
+      !(await sendKeydown("ArrowDown")),
+      "Bare ArrowDown is default prevented."
+    );
+    isnot(getState(), initialState, "Bare ArrowDown still navigates.");
+  }
 }
 
 /**

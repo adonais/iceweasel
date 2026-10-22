@@ -22,12 +22,14 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/call/audio_sink.h"
 #include "api/crypto/frame_decryptor_interface.h"
@@ -40,7 +42,6 @@
 #include "api/rtp_parameters.h"
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -258,6 +259,9 @@ class MediaSendChannelInterface {
   // Called whenever the list of sending SSRCs changes.
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
+  // Resets the encoder factory override for the given SSRC that was set via
+  // video/audio specific methods.
+  virtual void ResetEncoderFactoryOverride(uint32_t ssrc) = 0;
 };
 
 class MediaReceiveChannelInterface {
@@ -944,6 +948,15 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   GetStatsTask() = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
+  // Override encoder factory for a specific ssrc.
+  // Replaces the default encoder_factory in AudioSendStream::Config and
+  // Forces reconfiguration of the underlying AudioSendStream
+  virtual bool SetEncoderFactoryOverride(
+      uint32_t ssrc,
+      absl_nonnull scoped_refptr<AudioEncoderFactory> encoder_factory) {
+    return false;
+  }
+  void ResetEncoderFactoryOverride(uint32_t ssrc) override {}
 };
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -951,7 +964,6 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual bool SetReceiverParameters(const AudioReceiverParameters& params) = 0;
   // Get the receive parameters for the incoming stream identified by `ssrc`.
   virtual RtpParameters GetRtpReceiverParameters(uint32_t ssrc) const = 0;
-  virtual std::vector<RtpSource> GetSources(uint32_t ssrc) const = 0;
   // Retrieve the receive parameters for the default receive
   // stream, which is used when SSRCs are not signaled.
   virtual RtpParameters GetDefaultRtpReceiveParameters() const = 0;
@@ -1027,6 +1039,15 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   // so that it's getting the send stream stats separately by calling
   // GetStats(), and merges with BandwidthEstimationInfo by itself.
   virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
+  // Override encoder factory for a specific ssrc.
+  // Replaces the default encoder_factory in VideoSendStream::Config and
+  // forces reallocation of the underlying VideoSendStream
+  virtual bool SetEncoderFactoryOverride(
+      uint32_t ssrc,
+      absl_nonnull std::unique_ptr<VideoEncoderFactory> encoder_factory) {
+    return false;
+  }
+  void ResetEncoderFactoryOverride(uint32_t ssrc) override {}
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -1046,7 +1067,6 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   // RTCP feedback.
   virtual void RequestRecvKeyFrame(uint32_t ssrc) = 0;
 
-  virtual std::vector<RtpSource> GetSources(uint32_t ssrc) const = 0;
   // Set recordable encoded frame callback for `ssrc`
   virtual void SetRecordableEncodedFrameCallback(
       uint32_t ssrc,

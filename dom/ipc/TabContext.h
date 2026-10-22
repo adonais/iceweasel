@@ -137,6 +137,9 @@ class MaybeInvalidTabContext {
    */
   explicit MaybeInvalidTabContext(const IPCTabContext& aContext);
 
+  MaybeInvalidTabContext(const MaybeInvalidTabContext&) = delete;
+  MaybeInvalidTabContext& operator=(const MaybeInvalidTabContext&) = delete;
+
   /**
    * Was the IPCTabContext we received in our constructor valid?
    */
@@ -157,9 +160,6 @@ class MaybeInvalidTabContext {
   const TabContext& GetTabContext();
 
  private:
-  MaybeInvalidTabContext(const MaybeInvalidTabContext&) = delete;
-  MaybeInvalidTabContext& operator=(const MaybeInvalidTabContext&) = delete;
-
   const char* mInvalidReason;
   MutableTabContext mTabContext;
 };

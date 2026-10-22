@@ -458,6 +458,9 @@ async function cleanupPlaces() {
  * @param {boolean} [options.isSponsored]
  *   Whether the result is sponsored. Relevant to results from
  *   UrlbarProviderTopSites.
+ * @param {boolean} [options.isBlockable]
+ *   Whether the result can be dismissed. Pass a value to override the default,
+ *   which is based on the result's source.
  * @param {string} [options.providerName]
  *   The name of the provider offering this result. The test suite will not
  *   check which provider offered a result unless this option is specified.
@@ -476,6 +479,7 @@ function makeBookmarkResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
+    isBlockable = undefined,
     providerName = undefined,
   }
 ) {
@@ -509,6 +513,9 @@ function makeBookmarkResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
+  }
+  if (isBlockable !== undefined) {
+    payload.isBlockable = isBlockable;
   }
 
   return new UrlbarResult({
@@ -875,10 +882,10 @@ function makeSearchResult(
   }
 
   if (isRichSuggestion) {
-    payload.icon = UrlbarUtils.getRemoteIconUrl(
-      "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
-      UrlbarProviderSearchSuggestions.RICH_ICON_SIZE
-    );
+    payload.icon = UrlbarUtils.getRemoteImageUrl({
+      url: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+      size: UrlbarProviderSearchSuggestions.RICH_ICON_SIZE,
+    });
     payload.description = "description";
   }
 
@@ -929,6 +936,9 @@ function makeSearchResult(
  * @param {boolean} [options.isSponsored]
  *   Whether the result is sponsored. Relevant to results from
  *   UrlbarProviderTopSites.
+ * @param {boolean} [options.isBlockable]
+ *   Whether the result can be dismissed. Pass a value to override the default,
+ *   which is based on the result's source and provider.
  * @returns {UrlbarResult}
  */
 function makeVisitResult(
@@ -946,6 +956,7 @@ function makeVisitResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
+    isBlockable = undefined,
   }
 ) {
   let payload = {
@@ -979,6 +990,10 @@ function makeVisitResult(
     payload.helpUrl =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "awesome-bar-result-menu";
+  }
+
+  if (isBlockable !== undefined) {
+    payload.isBlockable = isBlockable;
   }
 
   if (iconUri) {
@@ -1127,6 +1142,7 @@ async function check_results({
     controller: {
       removeResult() {},
     },
+    clearTopSitesCache() {},
   });
 
   if (incompleteSearch) {

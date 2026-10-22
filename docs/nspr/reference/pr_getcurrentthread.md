@@ -17,7 +17,7 @@ Always returns a valid reference to the calling thread--a self-identity.
 ### Description
 
 The currently running thread may discover its own identity by calling
-{ref}`PR_GetCurrentThread`.
+{doc}`pr_getcurrentthread`.
 
 :::{note}
 This is the only safe way to establish the identity of a

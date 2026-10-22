@@ -117,6 +117,7 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBVersionChangeTransactionParent.h"
 #include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsParent.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/dom/quota/ArtificialFailure.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CachingDatabaseConnection.h"
 #include "mozilla/dom/quota/Client.h"
@@ -3349,7 +3350,7 @@ class DeleteDatabaseOp final : public FactoryRequestOp {
  private:
   ~DeleteDatabaseOp() override = default;
 
-  void LoadPreviousVersion(nsIFile& aDatabaseFile);
+  nsresult LoadPreviousVersion(nsIFile& aDatabaseFile);
 
   nsresult DatabaseOpen() override;
 
@@ -5890,6 +5891,9 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
   MOZ_ASSERT(!aDatabaseFilenameBase.IsEmpty());
 
   AUTO_PROFILER_LABEL("RemoveDatabaseFilesAndDirectory", DOM);
+
+  QM_TRY(ArtificialFailure(
+      nsIQuotaArtificialFailure::CATEGORY_REMOVE_DATABASE_FILES));
 
   QM_TRY_UNWRAP(auto markerFile,
                 CreateMarkerFile(aBaseDirectory, aDatabaseFilenameBase));
@@ -12599,12 +12603,16 @@ nsresult QuotaClient::GetUsageForOriginInternal(
                 GetDatabaseFilenames<ObsoleteFilenamesHandling::Include>(
                     *directory, aCanceled));
 
+  // Databases whose removal failed. Their remaining files still count towards
+  // quota, so that the removal retried later subtracts only what was added.
+  nsTHashSet<nsString> leftoverFilenames;
+
   if (aInitializing) {
     QM_TRY(CollectEachInRange(
         subdirsToProcess,
         [&directory, &obsoleteFilenames = obsoleteFilenames,
-         &databaseFilenames = databaseFilenames, aPersistenceType,
-         &aOriginMetadata](
+         &databaseFilenames = databaseFilenames, &leftoverFilenames,
+         aPersistenceType, &aOriginMetadata](
             const nsAString& subdirName) -> Result<Ok, nsresult> {
           // The directory must have the correct suffix.
           nsDependentSubstring subdirNameBase;
@@ -12630,13 +12638,14 @@ nsresult QuotaClient::GetUsageForOriginInternal(
                  Ok{});
 
           if (obsoleteFilenames.Contains(subdirNameBase)) {
-            // If this fails, it probably means we are in a serious situation.
-            // e.g. Filesystem corruption. Will handle this in bug 1521541.
-            QM_TRY(MOZ_TO_RESULT(RemoveDatabaseFilesAndDirectory(
-                       *directory, subdirNameBase, /* aQuotaManager */ nullptr,
-                       aPersistenceType, aOriginMetadata,
-                       /* aDatabaseName */ u""_ns)),
-                   Err(NS_ERROR_UNEXPECTED));
+            QM_WARNONLY_TRY(
+                MOZ_TO_RESULT(RemoveDatabaseFilesAndDirectory(
+                    *directory, subdirNameBase, /* aQuotaManager */ nullptr,
+                    aPersistenceType, aOriginMetadata,
+                    /* aDatabaseName */ u""_ns)),
+                ([&leftoverFilenames, &subdirNameBase](const auto&) {
+                  leftoverFilenames.Insert(subdirNameBase);
+                }));
 
             databaseFilenames.Remove(subdirNameBase);
             return Ok{};
@@ -12727,6 +12736,42 @@ nsresult QuotaClient::GetUsageForOriginInternal(
 
         *aUsageInfo += fileUsage;
       }
+    }
+  }
+
+  if (aUsageInfo) {
+    for (const auto& leftoverFilename : leftoverFilenames) {
+      if (aCanceled) {
+        break;
+      }
+
+      for (const auto& suffix : {kSQLiteSuffix, kSQLiteWALSuffix}) {
+        QM_TRY_INSPECT(
+            const auto& file,
+            CloneFileAndAppend(*directory, leftoverFilename + suffix));
+
+        QM_TRY_INSPECT(const int64_t& fileSize,
+                       QM_OR_ELSE_LOG_VERBOSE_IF(
+                           // Expression.
+                           MOZ_TO_RESULT_INVOKE_MEMBER(file, GetFileSize),
+                           // Predicate.
+                           IsFileNotFoundError,
+                           // Fallback.
+                           (ErrToOk<0, int64_t>)));
+        MOZ_ASSERT(fileSize >= 0);
+
+        *aUsageInfo += DatabaseUsageType(Some(uint64_t(fileSize)));
+      }
+
+      QM_TRY_INSPECT(
+          const auto& fmDirectory,
+          CloneFileAndAppend(
+              *directory, leftoverFilename + kFileManagerDirectoryNameSuffix));
+
+      QM_TRY_INSPECT(const auto& fileUsage,
+                     DatabaseFileManager::GetUsage(fmDirectory));
+
+      *aUsageInfo += fileUsage;
     }
   }
 
@@ -15120,7 +15165,8 @@ nsresult FactoryOp::Open() {
                                Client::IDB, databaseId);
 
     databaseId.Append('*');
-    databaseId.Append(NS_ConvertUTF16toUTF8(mDatabaseName.ref()));
+    databaseId.Append(NS_ConvertUTF16toUTF8(GetDatabaseFilenameBase(
+        mDatabaseName.ref(), mOriginMetadata.mIsPrivate)));
 
     mDatabaseId = Some(std::move(databaseId));
 
@@ -16683,7 +16729,7 @@ void OpenDatabaseOp::VersionChangeOp::Cleanup() {
   TransactionDatabaseOperationBase::Cleanup();
 }
 
-void DeleteDatabaseOp::LoadPreviousVersion(nsIFile& aDatabaseFile) {
+nsresult DeleteDatabaseOp::LoadPreviousVersion(nsIFile& aDatabaseFile) {
   AssertIsOnIOThread();
   MOZ_ASSERT(mState == State::DatabaseWorkOpen);
   MOZ_ASSERT(!mPreviousVersion);
@@ -16695,7 +16741,7 @@ void DeleteDatabaseOp::LoadPreviousVersion(nsIFile& aDatabaseFile) {
   nsCOMPtr<mozIStorageService> ss =
       do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
+    return NS_OK;
   }
 
   IndexedDatabaseManager* const idm = IndexedDatabaseManager::Get();
@@ -16724,46 +16770,40 @@ void DeleteDatabaseOp::LoadPreviousVersion(nsIFile& aDatabaseFile) {
   // Pass -1 as the directoryLockId to disable quota checking, since we might
   // temporarily exceed quota before deleting the database.
   QM_TRY_INSPECT(const auto& dbFileUrl,
-                 GetDatabaseFileURL(aDatabaseFile, -1, maybeKey), QM_VOID);
+                 GetDatabaseFileURL(aDatabaseFile, -1, maybeKey), NS_OK);
 
   QM_TRY_UNWRAP(const NotNull<nsCOMPtr<mozIStorageConnection>> connection,
-                OpenDatabaseAndHandleBusy(*ss, *dbFileUrl), QM_VOID);
+                OpenDatabaseAndHandleBusy(*ss, *dbFileUrl), NS_OK);
 
-#ifdef DEBUG
-  {
-    QM_TRY_INSPECT(const auto& stmt,
-                   CreateAndExecuteSingleStepStatement<
-                       SingleStepResult::ReturnNullIfNoResult>(
-                       *connection, "SELECT name FROM database"_ns),
-                   QM_VOID);
-
-    QM_TRY(OkIf(stmt), QM_VOID);
-
-    nsString databaseName;
-    rv = stmt->GetString(0, databaseName);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    MOZ_ASSERT(mCommonParams.metadata().name() == databaseName);
-  }
-#endif
+  // Unreadable metadata must not prevent removal of a damaged database.
+  QM_TRY_INSPECT(const auto& nameStmt,
+                 CreateAndExecuteSingleStepStatement<
+                     SingleStepResult::ReturnNullIfNoResult>(
+                     *connection, "SELECT name FROM database"_ns),
+                 NS_OK);
+  QM_TRY(OkIf(nameStmt), NS_OK);
+  QM_TRY_INSPECT(
+      const auto& storedName,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsString, nameStmt, GetString, 0),
+      NS_OK);
+  QM_TRY(OkIf(databaseName == storedName), NS_ERROR_FILE_CORRUPTED);
 
   QM_TRY_INSPECT(const auto& stmt,
                  CreateAndExecuteSingleStepStatement<
                      SingleStepResult::ReturnNullIfNoResult>(
                      *connection, "SELECT version FROM database"_ns),
-                 QM_VOID);
+                 NS_OK);
 
-  QM_TRY(OkIf(stmt), QM_VOID);
+  QM_TRY(OkIf(stmt), NS_OK);
 
   int64_t version;
   rv = stmt->GetInt64(0, &version);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
+    return NS_OK;
   }
 
   mPreviousVersion = uint64_t(version);
+  return NS_OK;
 }
 
 nsresult DeleteDatabaseOp::DatabaseOpen() {
@@ -16829,7 +16869,7 @@ nsresult DeleteDatabaseOp::DoDatabaseWork() {
   if (exists) {
     // Parts of this function may fail but that shouldn't prevent us from
     // deleting the file eventually.
-    LoadPreviousVersion(*dbFile);
+    QM_TRY(MOZ_TO_RESULT(LoadPreviousVersion(*dbFile)));
 
     mState = State::BeginVersionChange;
   } else {

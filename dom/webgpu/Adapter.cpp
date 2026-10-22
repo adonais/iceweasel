@@ -601,6 +601,10 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     // > devices created from such adapters.
     features->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
 
+    // Only a fallback for `WebGPUChild::ClearActorState`, which has no
+    // response to read the created device's limits from. Otherwise
+    // `wgpu_child_resolve_request_device_promise` builds them from the
+    // response, since wgpu-core may adjust what we ask for here.
     RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
 
     ffi::WGPUFfiDeviceDescriptor ffiDesc = {};

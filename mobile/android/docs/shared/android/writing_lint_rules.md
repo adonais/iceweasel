@@ -45,7 +45,6 @@ Execution failed for task ':detekt'.
 
 detekt is lacking good documentation for writing custom rules: to understand how to write lint rules, look at our custom rules and the source of the rules built into detekt. You can also use `println` to output values inside `visit*` methods to understand what is available (ideally we can figure out how to launch a debugger to analyze it at runtime but we haven't yet).
 
-
 ## Android Lint
 
 Custom Android lint checks are a great way to prohibit or warn about usages of certain classes and resources in a codebase and can be customized to give alternative suggestions.

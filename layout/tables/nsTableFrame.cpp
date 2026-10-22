@@ -168,10 +168,12 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   // Let the base class do its processing
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  // see if border collapse is on, if so set it
-  const nsStyleTableBorder* tableStyle = StyleTableBorder();
-  bool borderCollapse =
-      (StyleBorderCollapse::Collapse == tableStyle->mBorderCollapse);
+  // Continuations share the first-in-flow's cell map and cell frame types.
+  // Keep their border model consistent even if their computed styles differ.
+  const bool borderCollapse =
+      aPrevInFlow ? static_cast<nsTableFrame*>(aPrevInFlow)->IsBorderCollapse()
+                  : StyleTableBorder()->mBorderCollapse ==
+                        StyleBorderCollapse::Collapse;
   SetBorderCollapse(borderCollapse);
   if (borderCollapse) {
     SetNeedToCalcHasBCBorders(true);
@@ -3796,10 +3798,10 @@ void BCMapCellInfo::SetInfo(nsTableRowFrame* aNewRow, int32_t aColIndex,
   if (1 == mRowSpan) {
     mEndRow = mStartRow;
   } else {
-    mEndRow = mStartRow->GetNextRow();
+    mEndRow = mStartRow->GetNextRowAcrossFragments();
     if (mEndRow) {
       for (int32_t span = 2; mEndRow && span < mRowSpan; span++) {
-        mEndRow = mEndRow->GetNextRow();
+        mEndRow = mEndRow->GetNextRowAcrossFragments();
       }
       NS_ASSERTION(mEndRow, "spanned row not found");
     } else {
@@ -4495,10 +4497,11 @@ void nsTableFrame::ExpandBCDamageArea(TableArea& aArea) const {
   int32_t numRows = GetRowCount();
   int32_t numCols = GetColCount();
 
-  int32_t firstColIdx = aArea.StartCol();
-  int32_t lastColIdx = aArea.EndCol() - 1;
-  int32_t startRowIdx = aArea.StartRow();
-  int32_t endRowIdx = aArea.EndRow() - 1;
+  // Clamp to the table, the damage area can be out of sync with the cell map.
+  int32_t firstColIdx = std::min(aArea.StartCol(), numCols - 1);
+  int32_t lastColIdx = std::min(aArea.EndCol(), numCols) - 1;
+  int32_t startRowIdx = std::min(aArea.StartRow(), numRows - 1);
+  int32_t endRowIdx = std::min(aArea.EndRow(), numRows) - 1;
 
   // expand the damage area in each direction
   if (firstColIdx > 0) {
@@ -4750,8 +4753,9 @@ void BCMapCellInfo::SetColumn(int32_t aColX) {
 }
 
 void BCMapCellInfo::IncrementRow(bool aResetToBStartRowOfCell) {
-  mCurrentRowFrame =
-      aResetToBStartRowOfCell ? mStartRow : mCurrentRowFrame->GetNextRow();
+  mCurrentRowFrame = aResetToBStartRowOfCell
+                         ? mStartRow
+                         : mCurrentRowFrame->GetNextRowAcrossFragments();
 }
 
 BCCellBorder BCMapCellInfo::GetBStartEdgeBorder() {
@@ -5764,17 +5768,6 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
   mNumTableCols = mTable->GetColCount();
 }
 
-// Returns the row after aRow within aRow's own row group, or null if aRow is
-// the last one. Unlike nsTableRowFrame::GetNextRow(), this never continues into
-// the row group's next-in-flow, whose rows belong to a different table
-// continuation (i.e. another page) and are laid out in its coordinate space.
-static nsTableRowFrame* GetNextRowInSameRowGroup(nsTableRowFrame* aRow) {
-  nsIFrame* sibling = aRow->GetNextSibling();
-  MOZ_ASSERT(!sibling || static_cast<nsTableRowFrame*>(do_QueryFrame(sibling)),
-             "How do we have a non-row sibling?");
-  return static_cast<nsTableRowFrame*>(sibling);
-}
-
 bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   nsSize containerSize = mTable->GetSize();
   LogicalRect dirtyRect(mTableWM, aDirtyRect, containerSize);
@@ -5786,7 +5779,7 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   for (uint32_t rgIdx = 0; rgIdx < mRowGroups.Length() && !done; rgIdx++) {
     nsTableRowGroupFrame* rgFrame = mRowGroups[rgIdx];
     for (nsTableRowFrame* rowFrame = rgFrame->GetFirstRow(); rowFrame;
-         rowFrame = GetNextRowInSameRowGroup(rowFrame)) {
+         rowFrame = rowFrame->GetNextRow()) {
       // get the row rect relative to the table rather than the row group
       nscoord rowBSize = rowFrame->BSize(mTableWM);
       const nscoord onePx = mTable->PresContext()->DevPixelsToAppUnits(1);

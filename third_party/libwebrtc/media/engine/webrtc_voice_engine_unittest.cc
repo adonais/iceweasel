@@ -42,10 +42,11 @@
 #include "api/rtc_error.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/bitrate_settings.h"
-#include "api/transport/rtp/rtp_source.h"
+#include "api/units/timestamp.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/audio_state.h"
@@ -293,7 +294,8 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
     send_channel_ = engine_->CreateSendChannel(env_, &call_, MediaConfig(),
                                                AudioOptions(), CryptoOptions());
     receive_channel_ = engine_->CreateReceiveChannel(
-        env_, &call_, MediaConfig(), AudioOptions(), CryptoOptions(), nullptr);
+        env_, &call_, MediaConfig(), AudioOptions(), CryptoOptions(), nullptr,
+        [](uint32_t, const RtpPacketInfos&, Timestamp) {});
     return true;
   }
 
@@ -3560,17 +3562,6 @@ TEST_P(WebRtcVoiceEngineTestFake, PreservePlayoutWhenRecreateRecvStream) {
   EXPECT_TRUE(GetRecvStream(kSsrcX).started());
 }
 
-// Tests when GetSources is called with non-existing ssrc, it will return an
-// empty list of RtpSource without crashing.
-TEST_P(WebRtcVoiceEngineTestFake, GetSourcesWithNonExistingSsrc) {
-  // Setup an recv stream with `kSsrcX`.
-  SetupRecvStream();
-  WebRtcVoiceReceiveChannel* media_channel = ReceiveImpl();
-  // Call GetSources with `kSsrcY` which doesn't exist.
-  std::vector<RtpSource> sources = media_channel->GetSources(kSsrcY);
-  EXPECT_EQ(0u, sources.size());
-}
-
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   test::RunLoop run_loop;
@@ -3593,8 +3584,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
                                  CryptoOptions());
     EXPECT_TRUE(send_channel);
     std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel =
-        engine.CreateReceiveChannel(env, call.get(), MediaConfig(),
-                                    AudioOptions(), CryptoOptions(), nullptr);
+        engine.CreateReceiveChannel(
+            env, call.get(), MediaConfig(), AudioOptions(), CryptoOptions(),
+            nullptr, [](uint32_t, const RtpPacketInfos&, Timestamp) {});
     EXPECT_TRUE(receive_channel);
   }
 }
@@ -3621,8 +3613,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
                                    AudioOptions(), CryptoOptions());
       EXPECT_TRUE(send_channel);
       std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel =
-          engine.CreateReceiveChannel(env, call.get(), MediaConfig(),
-                                      AudioOptions(), CryptoOptions(), nullptr);
+          engine.CreateReceiveChannel(
+              env, call.get(), MediaConfig(), AudioOptions(), CryptoOptions(),
+              nullptr, [](uint32_t, const RtpPacketInfos&, Timestamp) {});
       EXPECT_TRUE(receive_channel);
     }
     // The engine/channel should have dropped their references.
@@ -3729,9 +3722,9 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
     AutoInitTerminate init_term(engine);
     std::unique_ptr<Call> call =
         Call::Create(CallConfig::CreateSingleThreaded(env));
-    WebRtcVoiceReceiveChannel channel(env, &engine, MediaConfig(),
-                                      AudioOptions(), CryptoOptions(),
-                                      call.get(), nullptr);
+    WebRtcVoiceReceiveChannel channel(
+        env, &engine, MediaConfig(), AudioOptions(), CryptoOptions(),
+        call.get(), nullptr, [](uint32_t, const RtpPacketInfos&, Timestamp) {});
     AudioReceiverParameters parameters;
     parameters.codecs = ReceiveCodecsWithId(engine);
     EXPECT_TRUE(channel.SetReceiverParameters(parameters));

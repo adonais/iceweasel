@@ -140,11 +140,20 @@ add_task(async function test_text_input_spellcheckwrong() {
     ],
     {
       waitForSpellCheck: true,
+      keepMenuOpen: true,
       awaitOnMenuBuilt: {
         id: "context-ask-chat",
       },
     }
   );
+  is(
+    contextMenu.querySelector(".spell-suggestion").accessKey,
+    "p",
+    "A spelling suggestion takes its accesskey from its label"
+  );
+  let hidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
+  contextMenu.hidePopup();
+  await hidden;
 });
 
 const kCorrectItems = [
@@ -343,6 +352,14 @@ add_task(async function test_text_input_spellcheck_multilingual() {
     dictionaryMenu.children.length,
     4,
     "Should have 2 dictionaries, a separator and 'add more dictionaries' item in the menu."
+  );
+  Assert.deepEqual(
+    Array.from(
+      dictionaryMenu.querySelectorAll("[data-locale-code]"),
+      item => item.accessKey
+    ),
+    ["D", "E"],
+    "Each dictionary takes its accesskey from its name"
   );
 
   let dictionaryEventPromise = BrowserTestUtils.waitForEvent(

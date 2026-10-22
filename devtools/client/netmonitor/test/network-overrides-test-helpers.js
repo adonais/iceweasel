@@ -211,7 +211,7 @@ async function setNetworkOverride(
   const overridePath = prepareFilePicker(overrideFileName);
 
   info("Select the request to update");
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
 
   info("Use set override from the context menu");
   EventUtils.sendMouseEvent({ type: "contextmenu" }, request);
@@ -239,7 +239,7 @@ async function setNetworkOverride(
  */
 async function removeNetworkOverride(monitor, request) {
   info("Select the request to update");
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
 
   info("Use remove override from the context menu");
   EventUtils.sendMouseEvent({ type: "contextmenu" }, request);

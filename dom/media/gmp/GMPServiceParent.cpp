@@ -52,6 +52,12 @@
 #  include "mozilla/MFCDMParent.h"
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "media/NdkMediaCrypto.h"
+#  include "media/NdkMediaDrm.h"
+#  include "mozilla/gfx/gfxVars.h"
+#endif
+
 namespace mozilla::gmp {
 
 #ifdef __CLASS__
@@ -550,9 +556,27 @@ RefPtr<GenericPromise> GeckoMediaPluginServiceParent::LoadFromEnvironment() {
       MutexAutoLock lock(mMutex);
       mPlugins.AppendElement(std::move(clearkeyGmp));
     }
-
-    UpdateContentProcessGMPCapabilities();
   }
+
+  // Querying MediaDrm may need to start the DRM HAL services, which can take a
+  // long time, so we do it here rather than on the main thread.
+  static constexpr uint8_t kWidevineUuid[] = {
+      0xed, 0xef, 0x8b, 0xa9, 0x79, 0xd6, 0x4a, 0xce,
+      0xa3, 0xc8, 0x27, 0xdc, 0xd5, 0x1d, 0x21, 0xed};
+  bool widevineSupported =
+      AMediaDrm_isCryptoSchemeSupported(kWidevineUuid, nullptr) &&
+      AMediaCrypto_isCryptoSchemeSupported(kWidevineUuid);
+
+  mMainThread->Dispatch(NS_NewRunnableFunction(
+      "GeckoMediaPluginServiceParent::UpdateWidevineSupport",
+      [self = RefPtr{this}, widevineSupported] {
+        if (gfx::gfxVars::IsInitialized()) {
+          gfx::gfxVars::SetWidevineSupport(
+              widevineSupported ? media::DrmSchemeSupport::Supported
+                                : media::DrmSchemeSupport::Unsupported);
+        }
+        self->UpdateContentProcessGMPCapabilities();
+      }));
 #endif
 
   const char* env = PR_GetEnv("MOZ_GMP_PATH");
@@ -1277,17 +1301,18 @@ void GeckoMediaPluginServiceParent::ReAddOnGMPThread(
   AssertOnGMPThread();
   GMP_LOG_DEBUG("{}::{}: {}", __CLASS__, __FUNCTION__, fmt::ptr((void*)aOld));
 
-  RefPtr<GMPParent> gmp;
   if (!mShuttingDownOnGMPThread) {
     // We're not shutting down, so replace the old plugin in the list with a
     // clone which is in a pristine state. Note: We place the plugin in
     // the same slot in the array as a hack to ensure if we re-request with
-    // the same capabilities we get an instance of the same plugin.
-    gmp = ClonePlugin(aOld);
+    // the same capabilities we get an instance of the same plugin. The old
+    // plugin may already have been replaced or removed, e.g. if it crashed
+    // during the shutdown handshake after GMPParent::Shutdown re-added it.
+    RefPtr<GMPParent> gmp = ClonePlugin(aOld);
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mPlugins.Contains(aOld));
-    if (mPlugins.Contains(aOld)) {
-      mPlugins[mPlugins.IndexOf(aOld)] = gmp;
+    size_t index = mPlugins.IndexOf(aOld);
+    if (index != mPlugins.NoIndex) {
+      mPlugins[index] = std::move(gmp);
     }
   } else {
     // We're shutting down; don't re-add plugin, let the old plugin die.

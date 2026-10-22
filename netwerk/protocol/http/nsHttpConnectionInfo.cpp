@@ -688,7 +688,7 @@ void nsHttpConnectionInfo::SetTlsFlags(uint32_t aTlsFlags) {
                    nsPrintfCString("%08x", mTlsFlags));
 }
 
-bool nsHttpConnectionInfo::UsingProxy() {
+bool nsHttpConnectionInfo::UsingProxy() const {
   if (!mProxyInfo) return false;
   return !mProxyInfo->IsDirect();
 }

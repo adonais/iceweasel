@@ -22,6 +22,7 @@ customElements.define("custom-checkbox",
       this._internals = this.attachInternals();
       this._internals.role = "checkbox";
       this._internals.ariaChecked = "true";
+      this._internals.ariaInvalid = "true";
     }
     get internals() {
       return this._internals;

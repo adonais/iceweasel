@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/SRIMetadata.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
@@ -92,7 +93,8 @@ class ScriptLoadRequest : public nsISupports,
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
   ScriptLoadRequest(ScriptKind aKind, const SRIMetadata& aIntegrity,
-                    nsIURI* aReferrer, LoadContextBase* aContext);
+                    nsIURI* aReferrer, LoadContextBase* aContext,
+                    const mozilla::Encoding* aClassicScriptHintEncoding);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -103,6 +105,7 @@ class ScriptLoadRequest : public nsISupports,
   template <typename T, typename D = DeletePolicy<T>>
   using UniquePtr = mozilla::UniquePtr<T, D>;
 
+  bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
   bool IsSpeculationRulesRequest() const {
@@ -462,6 +465,15 @@ class ScriptLoadRequest : public nsISupports,
   // a default of value of 0 indicating that this request is not an early hints
   // preload.
   uint64_t mEarlyHintPreloaderId;
+
+  // The charset attribute of the script element or the link element.
+  // This can be nullptr if there's no charset attribute, or the charset
+  // attribute has no effect (modules etc).
+  //
+  // The actual encoding used for decoding the received script source can be
+  // different than this.
+  // See ScriptLoadHandler::TrySetDecoder for more details.
+  const mozilla::Encoding* mClassicScriptHintEncoding = nullptr;
 };
 
 }  // namespace JS::loader

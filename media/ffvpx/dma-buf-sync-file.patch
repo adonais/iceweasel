@@ -1,0 +1,39 @@
+diff --git a/media/ffvpx/libavutil/hwcontext_vulkan.c b/media/ffvpx/libavutil/hwcontext_vulkan.c
+--- a/media/ffvpx/libavutil/hwcontext_vulkan.c
++++ b/media/ffvpx/libavutil/hwcontext_vulkan.c
+@@ -65,6 +65,26 @@
+ #if HAVE_LINUX_DMA_BUF_H
+ #include <sys/ioctl.h>
+ #include <linux/dma-buf.h>
++#elif defined(__linux__)
++#include <stdint.h>
++#include <sys/ioctl.h>
++struct dma_buf_export_sync_file {
++    uint32_t flags;
++    int32_t fd;
++};
++
++struct dma_buf_import_sync_file {
++    uint32_t flags;
++    int32_t fd;
++};
++
++#define DMA_BUF_SYNC_READ  (1 << 0)
++#define DMA_BUF_SYNC_WRITE (2 << 0)
++#define DMA_BUF_BASE       'b'
++#define DMA_BUF_IOCTL_EXPORT_SYNC_FILE \
++    _IOWR(DMA_BUF_BASE, 2, struct dma_buf_export_sync_file)
++#define DMA_BUF_IOCTL_IMPORT_SYNC_FILE \
++    _IOW(DMA_BUF_BASE, 3, struct dma_buf_import_sync_file)
+ #endif
+ 
+ #if CONFIG_CUDA
+@@ -4536,7 +4556,7 @@ static int vulkan_map_to_drm(AVHWFramesContext *hwfc, AVFrame *dst,
+             goto end;
+         }
+ 
+-#if HAVE_LINUX_DMA_BUF_H && defined(DMA_BUF_IOCTL_IMPORT_SYNC_FILE)
++#ifdef DMA_BUF_IOCTL_IMPORT_SYNC_FILE
+         if (sync_fd >= 0) {
+             int dup_fd = dup(sync_fd);
+             if (dup_fd >= 0) {

@@ -115,7 +115,7 @@ add_task(async function test_basic_eviction() {
 // Verify that the given cookie names exist, and are ordered from least to most recently accessed
 function verifyCookies(names, uri) {
   Assert.equal(
-    Services.cookies.countCookiesFromHost(uri.host, {}),
+    Services.cookies.getCookiesFromHost(uri.host, {}).length,
     names.length
   );
   let actual_cookies = [];

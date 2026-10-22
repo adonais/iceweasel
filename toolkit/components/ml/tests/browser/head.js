@@ -1,6 +1,8 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
+/* global TextGenerator */
+
 /// <reference path="../../../../../toolkit/components/translations/tests/browser/shared-head.js" />
 
 // Load the shared-head file first.
@@ -82,6 +84,7 @@ async function setup({
       ["browser.ml.checkForMemory", false],
       ["browser.ml.queueWaitTimeout", 2],
       ["javascript.options.wasm_lazy_tiering", true],
+      ...hwInferencePrefs(),
       ...prefs,
     ],
   });
@@ -424,6 +427,7 @@ async function perfSetup({ disabled = false, prefs = [], backend } = {}) {
     ["browser.ml.modelCacheTimeout", 1000],
     ["browser.ml.checkForMemory", false],
     ["javascript.options.wasm_lazy_tiering", true],
+    ...hwInferencePrefs(),
     ...prefs,
   ];
 
@@ -520,11 +524,41 @@ async function perfSetup({ disabled = false, prefs = [], backend } = {}) {
   };
 }
 
+// The CI tasks in taskcluster/kinds/perftest/*.yml (e.g. linux.yml) set
+// MOZ_ML_LLAMA_HWINFERENCE=1 to run the llama.cpp tests in the HWInference
+// process; setup() maps it to the browser.ml.llama.hwInference pref.
+const LLAMA_HW_INFERENCE_ENV = "MOZ_ML_LLAMA_HWINFERENCE";
+const LLAMA_HW_INFERENCE_PREF = "browser.ml.llama.hwInference";
+
+function usesHWInferenceProcess() {
+  return (
+    Services.env.get(LLAMA_HW_INFERENCE_ENV) === "1" ||
+    Services.prefs.getBoolPref(LLAMA_HW_INFERENCE_PREF, false)
+  );
+}
+
+function hwInferencePrefs() {
+  return Services.env.get(LLAMA_HW_INFERENCE_ENV) === "1"
+    ? [[LLAMA_HW_INFERENCE_PREF, true]]
+    : [];
+}
+
+/**
+ * Perfherder name suffix for the HWInference process, kept short because
+ * perfherder caps subtest names at 80 characters. Empty in the inference
+ * content process so its existing series stay continuous.
+ */
+function hwInferenceSuffix() {
+  return usesHWInferenceProcess() ? "_hwinf" : "";
+}
+
 /**
  * Returns the current total physical memory usage in MiB for the inference process
  */
 async function getTotalMemoryUsage() {
-  const procInfo = await getInferenceProcessInfo();
+  const procInfo = await getInferenceProcessInfo(
+    usesHWInferenceProcess() ? "hwInference" : "inference"
+  );
   return Math.round(procInfo.memory / ONE_MIB);
 }
 
@@ -604,6 +638,15 @@ async function runInference({
     const res = await run();
     runEndTime = performance.now();
     const decodingTime = runEndTime - startTime;
+    if (!numGeneratedTokens && res.metrics?.outputTokens) {
+      numGeneratedTokens = res.metrics.outputTokens;
+    }
+    if (!numPromptTokens && res.metrics?.inputTokens) {
+      numPromptTokens = res.metrics.inputTokens;
+    }
+    if (!numPromptCharacters && res.metrics?.inputCharacters) {
+      numPromptCharacters = res.metrics.inputCharacters;
+    }
     metrics = fetchMetrics(res.metrics?.runTimestamps || [], isFirstRun);
     metrics[`${isFirstRun ? COLD_START_PREFIX : ""}${TOTAL_MEMORY_USAGE}`] =
       await getTotalMemoryUsage();
@@ -646,7 +689,9 @@ class PeakMemoryTracker {
   }
 
   async collectPeakMemory() {
-    const procInfo = await getInferenceProcessInfo();
+    const procInfo = await getInferenceProcessInfo(
+      usesHWInferenceProcess() ? "hwInference" : "inference"
+    );
     if (procInfo.memory && procInfo.memory > this._memory) {
       this._memory = procInfo.memory;
     }
@@ -1384,6 +1429,14 @@ function generateFloat16Numpy(vocabSize, dimensions) {
   return { numbers, encoding };
 }
 
+// Marks a utility process crash as expected for the debug leak checker,
+// which otherwise fails on the dead process's incomplete bloat log.
+function noteIntentionalUtilityCrash(pid) {
+  Cc["@mozilla.org/utility-process-test;1"]
+    .createInstance(Ci.nsIUtilityProcessTest)
+    .noteIntentionalCrash(pid);
+}
+
 /**
  * Checks that a process exists.
  *
@@ -1397,4 +1450,113 @@ async function checkForRemoteType(remoteType) {
     }
   }
   return false;
+}
+
+// Bound off the namespace rather than destructuring MLTestUtils, which some
+// tests in this directory declare themselves.
+const { runOnBothInferenceProcesses } = ChromeUtils.importESModule(
+  "resource://testing-common/MLTestUtils.sys.mjs"
+).MLTestUtils;
+
+// top-k only filters; the final dist sampler selects a token.
+const TINYSTORIES_GREEDY_SAMPLERS = [
+  { type: "top-k", topK: 1 },
+  { type: "dist" },
+];
+
+const TINYSTORIES_STORYTELLER_PROMPT = [
+  { role: "system", content: "You are a friendly storyteller." },
+  { role: "user", content: "Once upon a time there was a small mouse who" },
+];
+
+const TINYSTORIES_CONTEXT_SIZE = 512;
+// Chaos mode confines the utility process to CPU 0, where every ggml barrier
+// costs a scheduler slice: 74 ms per token with two threads, 2 s with the
+// default pool. One thread there, the default pool everywhere else.
+const TINYSTORIES_CHAOS_THREADS = parseInt(
+  Services.env.get("MOZ_CHAOSMODE"),
+  16
+)
+  ? { numThreads: 1 }
+  : {};
+const TINYSTORIES_ENGINE_OPTIONS = {
+  backend: "llama.cpp",
+  taskName: "text-generation",
+  modelId: "Mozilla/test-llama",
+  modelFile: "TinyStories-656K.Q8_0.gguf",
+  modelRevision: "main",
+  numContext: 256,
+  ...TINYSTORIES_CHAOS_THREADS,
+};
+
+async function createTinyStoriesGenerator(options = {}) {
+  const modelFile = await File.createFromFileName(
+    getTestFilePath("data/Mozilla/test-llama/main/TinyStories-656K.Q8_0.gguf")
+  );
+  return TextGenerator.create(modelFile, {
+    contextSize: TINYSTORIES_CONTEXT_SIZE,
+    ...TINYSTORIES_CHAOS_THREADS,
+    ...options,
+  });
+}
+
+async function collectGeneratedText(generator) {
+  let text = "";
+  for await (const chunk of generator) {
+    text += chunk.text;
+  }
+  return text;
+}
+
+function mockModelHubModel(
+  sandbox,
+  { id, model, filePath, headers = {}, error }
+) {
+  const { Progress } = ChromeUtils.importESModule(
+    "chrome://global/content/ml/Utils.sys.mjs"
+  );
+  return sandbox
+    .stub(ModelHub.prototype, "getModelDataAsFile")
+    .callsFake(async function ({ progressCallback }) {
+      const statusInfo = {
+        metadata: { model },
+        ok: true,
+        id,
+      };
+      progressCallback(
+        new Progress.ProgressAndStatusCallbackParams({
+          ...statusInfo,
+          type: Progress.ProgressType.DOWNLOAD,
+          statusText: Progress.ProgressStatusText.INITIATE,
+        })
+      );
+      progressCallback(
+        new Progress.ProgressAndStatusCallbackParams({
+          ...statusInfo,
+          type: Progress.ProgressType.DOWNLOAD,
+          statusText: Progress.ProgressStatusText.IN_PROGRESS,
+          progress: 25,
+          totalLoaded: 256,
+          currentLoaded: 256,
+          total: 1024,
+          units: "bytes",
+        })
+      );
+      progressCallback(
+        new Progress.ProgressAndStatusCallbackParams({
+          ...statusInfo,
+          type: Progress.ProgressType.DOWNLOAD,
+          statusText: Progress.ProgressStatusText.DONE,
+          progress: 100,
+          totalLoaded: 1024,
+          currentLoaded: 768,
+          total: 1024,
+          units: "bytes",
+        })
+      );
+      if (error) {
+        throw error;
+      }
+      return [filePath, headers];
+    });
 }

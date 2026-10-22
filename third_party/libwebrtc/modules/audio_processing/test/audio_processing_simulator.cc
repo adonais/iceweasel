@@ -312,7 +312,10 @@ void AudioProcessingSimulator::SetupBuffersConfigsOutputs(
                        reverse_input_num_channels);
 
   if (settings_.use_verbose_logging) {
-    LogMessage::LogToDebug(LS_VERBOSE);
+    LoggingConfig config;
+    config.set_min_severity(LS_VERBOSE);
+    config.set_debug_severity(LS_VERBOSE);
+    InitializeLogging(std::move(config));
 
     std::cout << "Sample rates:" << std::endl;
     std::cout << " Forward input: " << input_sample_rate_hz << std::endl;

@@ -14,6 +14,7 @@
 #include "mozilla/Printf.h"
 #include "mozilla/ResultExtensions.h"
 #include "nsASCIIMask.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsCharTraits.h"
 #include "nsISupports.h"
 #include "nsString.h"

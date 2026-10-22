@@ -10,6 +10,7 @@
 
 #include "nsHTMLContentSerializer.h"
 
+#include "mozilla/IntegerRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsAttrName.h"
@@ -45,21 +46,21 @@ nsHTMLContentSerializer::AppendDocumentStart(Document* aDocument) {
   return NS_OK;
 }
 
-bool nsHTMLContentSerializer::SerializeHTMLAttributes(
-    Element* aElement, Element* aOriginalElement, nsAString& aTagPrefix,
-    const nsAString& aTagNamespaceURI, nsAtom* aTagName, int32_t aNamespace,
-    nsAString& aStr) {
+bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
+                                                      nsAtom* aTagName,
+                                                      int32_t aNamespace,
+                                                      nsAString& aStr) {
   MaybeSerializeIsValue(aElement, aStr);
 
-  int32_t count = aElement->GetAttrCount();
-  if (!count) return true;
+  const uint32_t count = aElement->GetAttrCount();
+  if (!count) {
+    return true;
+  }
 
-  nsresult rv;
   nsAutoString valueStr;
 
-  for (int32_t index = 0; index < count; index++) {
+  for (const uint32_t index : mozilla::IntegerRange(count)) {
     const nsAttrName* name = aElement->GetAttrNameAt(index);
-    int32_t namespaceID = name->NamespaceID();
     nsAtom* attrName = name->LocalName();
 
     // Filter out any attribute starting with [-|_]moz
@@ -68,29 +69,31 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(
         StringBeginsWith(attrNameStr, u"-moz"_ns)) {
       continue;
     }
-    aElement->GetAttr(namespaceID, attrName, valueStr);
 
+    const int32_t attrNamespaceID = name->NamespaceID();
     if (mIsCopying && mIsFirstChildOfOL && aTagName == nsGkAtoms::li &&
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::value &&
-        namespaceID == kNameSpaceID_None) {
+        attrNamespaceID == kNameSpaceID_None) {
       // This is handled separately in SerializeLIValueAttribute()
       continue;
     }
-    bool isJS = IsJavaScript(aElement, attrName, namespaceID, valueStr);
 
-    if (((attrName == nsGkAtoms::href && (namespaceID == kNameSpaceID_None ||
-                                          namespaceID == kNameSpaceID_XLink)) ||
-         (attrName == nsGkAtoms::src && namespaceID == kNameSpaceID_None))) {
+    aElement->GetAttr(attrNamespaceID, attrName, valueStr);
+    bool isJS = IsJavaScript(aElement, attrName, attrNamespaceID, valueStr);
+
+    if (((attrName == nsGkAtoms::href &&
+          (attrNamespaceID == kNameSpaceID_None ||
+           attrNamespaceID == kNameSpaceID_XLink)) ||
+         (attrName == nsGkAtoms::src &&
+          attrNamespaceID == kNameSpaceID_None))) {
       // Make all links absolute when converting only the selection:
       if (mFlags & nsIDocumentEncoder::OutputAbsoluteLinks) {
         // Would be nice to handle OBJECT tags, but that gets more complicated
         // since we have to search the tag list for CODEBASE as well. For now,
         // just leave them relative.
-        nsIURI* uri = aElement->GetBaseURI();
-        if (uri) {
+        if (nsIURI* uri = aElement->GetBaseURI()) {
           nsAutoString absURI;
-          rv = NS_MakeAbsoluteURI(absURI, valueStr, uri);
-          if (NS_SUCCEEDED(rv)) {
+          if (NS_SUCCEEDED(NS_MakeAbsoluteURI(absURI, valueStr, uri))) {
             valueStr = std::move(absURI);
           }
         }
@@ -99,7 +102,7 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(
 
     if (mRewriteEncodingDeclaration && aTagName == nsGkAtoms::meta &&
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::content &&
-        namespaceID == kNameSpaceID_None) {
+        attrNamespaceID == kNameSpaceID_None) {
       // If we're serializing a <meta http-equiv="content-type">,
       // use the proper value, rather than what's in the document.
       nsAutoString header;
@@ -109,20 +112,20 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(
       }
     }
 
-    nsDependentAtomString nameStr(attrName);
     nsAutoString prefix;
-    if (namespaceID == kNameSpaceID_XML) {
+    if (attrNamespaceID == kNameSpaceID_XML) {
       prefix.AssignLiteral(u"xml");
-    } else if (namespaceID == kNameSpaceID_XLink) {
+    } else if (attrNamespaceID == kNameSpaceID_XLink) {
       prefix.AssignLiteral(u"xlink");
     }
 
     // Expand shorthand attribute.
-    if (aNamespace == kNameSpaceID_XHTML && namespaceID == kNameSpaceID_None &&
+    if (aNamespace == kNameSpaceID_XHTML &&
+        attrNamespaceID == kNameSpaceID_None &&
         IsShorthandAttr(attrName, aTagName) && valueStr.IsEmpty()) {
-      valueStr = nameStr;
+      valueStr = attrNameStr;
     }
-    NS_ENSURE_TRUE(SerializeAttr(prefix, nameStr, valueStr, aStr, !isJS),
+    NS_ENSURE_TRUE(SerializeAttr(prefix, attrNameStr, valueStr, aStr, !isJS),
                    false);
   }
 
@@ -224,11 +227,8 @@ nsHTMLContentSerializer::AppendElementStart(Element* aElement,
 
   // Even LI passed above have to go through this
   // for serializing attributes other than "value".
-  nsAutoString dummyPrefix;
-  NS_ENSURE_TRUE(
-      SerializeHTMLAttributes(aElement, aOriginalElement, dummyPrefix, u""_ns,
-                              name, ns, *mOutput),
-      NS_ERROR_OUT_OF_MEMORY);
+  NS_ENSURE_TRUE(SerializeHTMLAttributes(aElement, name, ns, *mOutput),
+                 NS_ERROR_OUT_OF_MEMORY);
 
   NS_ENSURE_TRUE(AppendToString(kGreaterThan, *mOutput),
                  NS_ERROR_OUT_OF_MEMORY);

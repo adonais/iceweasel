@@ -16,6 +16,9 @@ interface PowerManagerInfoProvider {
 
     /** Returns true if the user has disabled battery optimisations for the app. */
     fun isIgnoringBatteryOptimizations(): Boolean
+
+    /** Returns true if the device is in power save (battery saver) mode. */
+    fun isPowerSaveMode(): Boolean
 }
 
 /** @see PowerManagerInfoProvider */
@@ -27,4 +30,6 @@ class DefaultPowerManagerInfoProvider(private val context: Context) : PowerManag
 
     override fun isIgnoringBatteryOptimizations(): Boolean =
         powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+
+    override fun isPowerSaveMode(): Boolean = powerManager?.isPowerSaveMode ?: false
 }

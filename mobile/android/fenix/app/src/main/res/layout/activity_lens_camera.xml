@@ -20,4 +20,12 @@
         android:id="@+id/lens_fragment_container_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
+
+    <!-- Covers the camera while a photo picker image uploads. Gone, and its composition disposed,
+       - whenever no upload is on screen. -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/lens_upload_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
 </RelativeLayout>

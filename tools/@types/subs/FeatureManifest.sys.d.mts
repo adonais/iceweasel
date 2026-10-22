@@ -1737,10 +1737,6 @@ export const FeatureManifest: {
                 type: string;
                 description: string;
             };
-            sportsWidgetEnabled: {
-                type: string;
-                description: string;
-            };
             listsBadgeEnabled: {
                 type: string;
                 description: string;

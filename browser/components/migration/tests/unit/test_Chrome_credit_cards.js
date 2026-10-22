@@ -102,7 +102,7 @@ add_task(async function test_credit_cards() {
   };
   if (AppConstants.platform == "macosx") {
     let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
-      "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
+      "moz-src:///browser/components/migration/ChromeMacOSLoginCrypto.sys.mjs"
     );
     loginCrypto = new ChromeMacOSLoginCrypto(
       mockMacOSKeychain.serviceName,
@@ -119,7 +119,7 @@ add_task(async function test_credit_cards() {
     // We no longer support importing payment methods from Chrome on Windows,
     // but we can still do it for some other Chrome-based browsers like Canary.
     let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
-      "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
+      "moz-src:///browser/components/migration/ChromeWindowsLoginCrypto.sys.mjs"
     );
     loginCrypto = new ChromeWindowsLoginCrypto("Chrome Beta");
     profilePathSegments = ["Google", "Chrome Beta", "User Data", "Default"];

@@ -52,6 +52,7 @@
 #include "AccessCheck.h"
 #include "Crypto.h"
 #include "ExpandedPrincipal.h"
+#include "jsapi.h"
 #include "jsfriendapi.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
@@ -262,10 +263,8 @@ static bool SandboxImport(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
   }
-  JS_MarkCrossZoneIdValue(cx, StringValue(funname));
-
   RootedId id(cx);
-  if (!JS_StringToId(cx, funname, &id)) {
+  if (!JS_StringToId(cx, funname, &id) || !JS_WrapId(cx, &id)) {
     return false;
   }
 

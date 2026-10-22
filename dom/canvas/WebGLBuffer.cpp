@@ -194,10 +194,12 @@ void WebGLBuffer::BufferSubData(GLenum target, uint64_t rawDstByteOffset,
   const ScopedLazyBind lazyBind(gl, target, this);
 
   void* mapping = nullptr;
-  // Repeated calls to glMapBufferRange is slow on D3D ANGLE, so fall back to
-  // the glBufferSubData path. See bug 1827047.
+  // Repeated calls to glMapBufferRange are slow on D3D ANGLE (bug 1827047).
+  // Unsynchronized mapping causes rendering glitches with Metal ANGLE on Radeon
+  // GFX10 GPUs (bug 2074540), Fall back to glBufferSubData for both.
   if (unsynchronized && gl->IsSupported(gl::GLFeature::map_buffer_range) &&
-      !gl->IsD3DANGLE()) {
+      !gl->IsD3DANGLE() &&
+      !(gl->IsMetalANGLE() && gl->Renderer() == gl::GLRenderer::RadeonGFX10)) {
     GLbitfield access = LOCAL_GL_MAP_WRITE_BIT |
                         LOCAL_GL_MAP_UNSYNCHRONIZED_BIT |
                         LOCAL_GL_MAP_INVALIDATE_RANGE_BIT;

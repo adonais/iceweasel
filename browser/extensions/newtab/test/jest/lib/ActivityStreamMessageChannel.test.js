@@ -262,7 +262,7 @@ describe("ActivityStreamMessageChannel", () => {
       });
     });
     describe("#onNewTabUnload", () => {
-      it("should dispatch a NEW_TAB_UNLOAD action", () => {
+      it("should dispatch a NEW_TAB_UNLOAD action with the browser as _target", () => {
         let msg = getTabDetails("foo");
         mm.loadedTabs.set(msg.data.browser, msg.data);
         const onActionFromContent = jest
@@ -270,7 +270,13 @@ describe("ActivityStreamMessageChannel", () => {
           .mockImplementation(() => {});
         mm.onNewTabUnload({ target: msg.target }, msg.data);
         expect(onActionFromContent).toHaveBeenCalledWith(
-          { type: at.NEW_TAB_UNLOAD },
+          {
+            type: at.NEW_TAB_UNLOAD,
+            _target: {
+              browser: msg.data.browser,
+              window: msg.data.browser.documentGlobal,
+            },
+          },
           "foo"
         );
       });

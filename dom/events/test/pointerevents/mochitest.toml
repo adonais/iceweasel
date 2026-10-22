@@ -91,6 +91,13 @@ skip-if = [
   "xorigin", # Bug 1953695, Bug 1958029
 ]
 
+["test_getCoalescedEvents_retained_event_leak.html"]
+scheme = "https"
+skip-if = [
+  "xorigin", # Bug 1953695, Bug 1958029
+]
+support-files = ["file_getCoalescedEvents_retained_event_leak.html"]
+
 ["test_getCoalescedEvents_touch.html"]
 scheme = "https"
 skip-if = [
@@ -124,9 +131,6 @@ support-files = [
   "file_pointercapture_xorigin_iframe.html",
   "file_pointercapture_xorigin_iframe_pointerlock.html",
   "file_pointercapture_xorigin_iframe_touch.html",
-]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1856971
 ]
 
 ["test_pointerevent_altitude_azimuth_angle.html"]
@@ -259,7 +263,6 @@ skip-if = [
 ["test_wpt_touch_action.html"]
 skip-if = [
   "os == 'android'", # Bug 1312791
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && headless", # Bug 1722906
 ]
 support-files = [
   "../../../../gfx/layers/apz/test/mochitest/apz_test_utils.js",

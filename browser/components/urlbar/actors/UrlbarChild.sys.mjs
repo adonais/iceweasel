@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
@@ -199,6 +199,10 @@ export class UrlbarChild extends JSWindowActorChild {
       removePrefObserver: lazy.UrlbarPrefs.removeObserver.bind(
         lazy.UrlbarPrefs
       ),
+      toggleResultMenuKeyboardAccessible:
+        lazy.UrlbarPrefs.toggleResultMenuKeyboardAccessible.bind(
+          lazy.UrlbarPrefs
+        ),
     };
   }
 

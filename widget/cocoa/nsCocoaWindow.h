@@ -450,6 +450,8 @@ class nsCocoaWindow final : public nsIWidget {
   void PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
   nsresult ActivateNativeMenuItemAt(const nsAString& indexString) override;
   nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) override;
+  nsresult GetNativeMenuItemKeyEquivalent(const nsAString& aElementId,
+                                          nsAString& aResult) override;
   [[nodiscard]] nsresult GetSelectionAsPlaintext(nsAString& aResult) override;
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
   [[nodiscard]] nsresult AttachNativeKeyEvent(
@@ -504,6 +506,7 @@ class nsCocoaWindow final : public nsIWidget {
   void CocoaWindowWillEnterFullscreen(bool aFullscreen);
   void CocoaWindowDidEnterFullscreen(bool aFullscreen);
   void CocoaWindowDidResize();
+  void SaveRestoredBounds();
   void CocoaSendToplevelActivateEvents();
   void CocoaSendToplevelDeactivateEvents();
 

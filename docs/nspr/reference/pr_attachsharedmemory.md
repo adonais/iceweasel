@@ -1,6 +1,6 @@
 # PR_AttachSharedMemory
 
-Attaches a memory segment previously opened with {ref}`PR_OpenSharedMemory`
+Attaches a memory segment previously opened with {doc}`pr_opensharedmemory`
 and maps it into the process memory space.
 
 ## Syntax
@@ -26,7 +26,7 @@ The function has these parameters:
 
 shm
 
-: The handle returned from {ref}`PR_OpenSharedMemory`.
+: The handle returned from {doc}`pr_opensharedmemory`.
 
 flags
 
@@ -36,5 +36,5 @@ flags
 ### Returns
 
 Address where shared memory is mapped, or `NULL` if an error occurs.
-Retrieve the reason for the failure by calling {ref}`PR_GetError` and
-{ref}`PR_GetOSError`.
+Retrieve the reason for the failure by calling {doc}`pr_geterror` and
+{doc}`pr_getoserror`.

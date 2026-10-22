@@ -22,9 +22,11 @@
   },
   "text": {
     "color": {
-      "value": {
-        "nativeTheme": "FieldText",
-        "default": "{text.color.@base}"
+      "@base": {
+        "value": {
+          "nativeTheme": "FieldText",
+          "default": "{text.color.@base}"
+        }
       }
     }
   }

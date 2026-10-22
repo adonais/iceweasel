@@ -6,10 +6,10 @@ package org.mozilla.fenix.startupCrash
 
 import android.os.Bundle
 import android.os.Process
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import mozilla.components.lib.crash.CrashReporter
 import org.mozilla.fenix.R
@@ -23,7 +23,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 class StartupCrashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.activity_startup_crash)
 
         findViewById<ComposeView>(R.id.startupCrashActivity).setContent {

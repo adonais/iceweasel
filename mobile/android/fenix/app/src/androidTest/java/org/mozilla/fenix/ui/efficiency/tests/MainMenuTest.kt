@@ -9,15 +9,20 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.Constants.PackageName.PRINT_SPOOLER
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.selectors.AddToHomeScreenSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors.DELETE_BOOKMARK_BUTTON
@@ -36,12 +41,11 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.DESKTOP_SITE_
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.EDIT_BOOKMARK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.FORWARD_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAddonsManagerSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.SettingsHomepageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
-import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.TabHistorySelectors
-import org.mozilla.fenix.ui.efficiency.selectors.WebCompatReporterSelectors
 
 class MainMenuTest : BaseTest() {
 
@@ -440,22 +444,6 @@ class MainMenuTest : BaseTest() {
             .mozVerify(TabHistorySelectors.TAB_HISTORY_ITEM(firstWebPage.url.toString()))
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080112
-    // Converted from legacy MainMenuTest.verifyTheReportBrokenSiteSubMenuOptionTest
-    @SmokeTest
-    @Test
-    fun verifyTheReportBrokenSiteSubMenuOptionTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
-
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
-            .navigateToPage()
-            .mozVerify(WebCompatReporterSelectors.URL_LABEL)
-            .mozVerify(WebCompatReporterSelectors.REPORTED_SITE_URL(defaultWebPage.url.toString()))
-            .mozVerify(WebCompatReporterSelectors.WHATS_BROKEN_LABEL)
-            .mozVerify(WebCompatReporterSelectors.DESCRIPTION)
-    }
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080151
     // Converted from legacy MainMenuTest.verifyRecommendedExtensionsListWhileNoExtensionIsInstalledTest
     @SmokeTest
@@ -504,12 +492,12 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-        val addonTitle = on.mainMenu.installFirstRecommendedExtension()
+        val extension = on.mainMenu.installFirstRecommendedExtension()
 
         // Remove it through Manage extensions -> the add-ons manager.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
         on.mainMenu.navigateToPage()
-        on.settingsAddonsManager.navigateToPage().removeInstalledExtension(addonTitle)
+        on.settingsAddonsManager.navigateToPage().removeInstalledExtension(extension.name)
 
         // With no extensions installed, the "Try a recommended extension" entry point is shown again.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
@@ -528,7 +516,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-        val addonTitle = on.mainMenu.installFirstRecommendedExtension()
+        val extension = on.mainMenu.installFirstRecommendedExtension()
 
         // Manage extensions opens the add-ons manager, where the extension is listed under Enabled.
         // Parity: legacy verifyAddonIsInstalled asserted the addon's install (+) button was invisible;
@@ -539,7 +527,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(SettingsAddonsManagerSelectors.ADD_ONS_LIST)
             .mozVerify(SettingsAddonsManagerSelectors.ENABLED_SECTION_TITLE)
-            .mozVerify(SettingsAddonsManagerSelectors.INSTALLED_ADDON_ITEM(addonTitle))
+            .mozVerify(SettingsAddonsManagerSelectors.INSTALLED_ADDON_ITEM(extension.name))
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080156
@@ -554,7 +542,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-        val addonTitle = on.mainMenu.installFirstRecommendedExtension()
+        val extension = on.mainMenu.installFirstRecommendedExtension()
 
         // Re-open the Extensions submenu: the collapsed Extensions row now advertises the installed
         // extension, the extension is listed in the submenu, and "Discover more" has been replaced by
@@ -563,10 +551,10 @@ class MainMenuTest : BaseTest() {
         on.mainMenu
             .navigateToPage()
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-            .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonTitle))
+            .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(extension.menuLabel))
             .mozVerifyElementAbsent(MainMenuSelectors.DISCOVER_MORE_EXTENSIONS_BUTTON)
             .mozVerify(MainMenuSelectors.MANAGE_EXTENSIONS_BUTTON)
-            .mozVerify(MainMenuSelectors.INSTALLED_EXTENSION_ITEM(addonTitle))
+            .mozVerify(MainMenuSelectors.INSTALLED_EXTENSION_ITEM(extension.menuLabel))
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080162
@@ -581,12 +569,14 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-        val addonTitle = on.mainMenu.installFirstRecommendedExtension()
+        val extension = on.mainMenu.installFirstRecommendedExtension()
 
         // Open the installed extension's detail from Manage extensions and disable it.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
-        on.mainMenu.navigateToPage().mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonTitle))
-        on.settingsAddonsManager.navigateToPage().disableInstalledExtension(addonTitle)
+        on.mainMenu
+            .navigateToPage()
+            .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(extension.menuLabel))
+        on.settingsAddonsManager.navigateToPage().disableInstalledExtension(extension.name)
 
         // With the only extension disabled, the menu advertises the "no extensions enabled" entry point.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
@@ -608,90 +598,66 @@ class MainMenuTest : BaseTest() {
             .mozVerifyFileOpensInExternalApp(Constants.PackageName.YOUTUBE_APP)
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227146
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036009
     @SmokeTest
     @Test
-    fun verifyTheReportBrokenSiteURLIsSuccessfullyEditedTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
+    fun verifyTheMoreMainMenuSummarizePageButtonTest() {
+        composeRule.activityRule.applySettingsExceptions {
+            it.hasSeenShakeToSummarizeToolbarCfr = true
+        }
 
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
+        val articlePage = mockWebServer.articleSummaryAsset
+
+        on.browserPage.navigateToPage(articlePage.url.toString())
+        on.mainMenu
             .navigateToPage()
-            .mozClick(WebCompatReporterSelectors.REPORTED_SITE_URL(defaultWebPage.url.toString()))
-            .mozClear(WebCompatReporterSelectors.EDIT_SITE_URL_DIALOG_TEXT_FIELD)
-            .mozEnterText("https://www.example.com", WebCompatReporterSelectors.EDIT_SITE_URL_DIALOG_TEXT_FIELD)
-            .mozClick(WebCompatReporterSelectors.EDIT_SITE_URL_DIALOG_SAVE_BUTTON)
-            .mozVerify(WebCompatReporterSelectors.REPORTED_SITE_URL("https://www.example.com"))
+            .mozClick(MainMenuSelectors.MORE_BUTTON)
+            .mozVerify(MainMenuSelectors.SUMMARIZE_PAGE_BUTTON)
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227137
-    @SmokeTest
-    @Test
-    fun verifyTheReportBrokenSiteFormAfterSelectingReasonTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
-
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
-            .navigateToPage()
-            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
-            .mozVerify(WebCompatReporterSelectors.REPORTED_SITE_URL(defaultWebPage.url.toString()))
-            .mozVerify(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
-            .mozVerifyElementIsNotChecked(WebCompatReporterSelectors.ITEMS_BLOCKED_BY_TRACKING_PROTECTION_CHECKBOX)
-            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_FORM)
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227141
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4105720
     @Critical
     @Test
-    fun verifyThatTheBrokenSiteFormSubmissionCanBeCanceledTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
+    fun verifyTheCustomizeHomepageMenuItemTest() {
+        // The test harness forces the Bookmarks and Recently visited homepage sections on (LaunchConfig defaults),
+        // but bug 2066206 made both default off in the product. Override them here so this test asserts the real
+        // shipped default state.
+        composeRule.activityRule.applySettingsExceptions {
+            it.isBookmarksHomeFeatureEnabled = false
+            it.isRecentlyVisitedFeatureEnabled = false
+        }
 
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
-            .navigateToPage()
-            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
-            .mozClick(WebCompatReporterSelectors.CLOSE_REPORT_BUTTON)
-        on.browserPage.navigateToPage()
-        on.webCompatReporter
-            .navigateToPage()
-            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_VIEW_ITEMS)
-    }
+        // The privacy report row's label follows the longfox flag exactly as HomeSettingsFragment sets it, so derive
+        // the
+        // expected text from the same setting to keep this locator valid on every channel (developer/debug shows
+        // "Help catch trackers"; nightly/beta/release show "Privacy report").
+        val privacyReportLabel =
+            if (settings.longfoxEnabled) {
+                getStringResource(R.string.help_catch_trackers)
+            } else {
+                getStringResource(R.string.customize_toggle_privacy_report)
+            }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227139
-    @Critical
-    @Test
-    fun verifyTheSiteIsDeceptiveReasonTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
+        on.settingsHomepage
+            .navigateToPage(
+                navigationOptions =
+                    NavigationOptions(via = listOf("MainMenuPage"), excludedPages = setOf("SettingsPage"))
+            )
+            .mozVerify(SettingsHomepageSelectors.WALLPAPERS_BUTTON)
+            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.SHORTCUTS_SWITCH)
+            .mozVerifyOptionCheckBoxIsChecked(SettingsHomepageSelectors.SPONSORED_SHORTCUTS_CHECKBOX)
+            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.PRIVACY_REPORT_SWITCH(privacyReportLabel))
+            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.CONTINUE_SWITCH)
+            .mozVerifyOptionSwitchIsNotChecked(SettingsHomepageSelectors.BOOKMARKS_SWITCH)
+            .mozVerifyOptionSwitchIsNotChecked(SettingsHomepageSelectors.RECENTLY_VISITED_SWITCH)
+            .mozVerifyOptionSwitchIsChecked(SettingsHomepageSelectors.STORIES_SWITCH)
+            .mozVerifyOptionCheckBoxIsChecked(SettingsHomepageSelectors.SPONSORED_STORIES_CHECKBOX)
+            .mozVerify(SettingsHomepageSelectors.OPENING_SCREEN_OPTION("Homepage"))
+            .mozVerify(SettingsHomepageSelectors.OPENING_SCREEN_OPTION("Last tab"))
+            .mozVerifyElementIsChecked(
+                SettingsHomepageSelectors.OPENING_SCREEN_OPTION("Homepage after four hours of inactivity")
+            )
 
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
-            .navigateToPage()
-            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("This site is deceptive"))
-        on.browserPage.navigateToPage().verifyUrl("safebrowsing.google.com/safebrowsing/report_phish/")
-        on.tabDrawer.navigateToPage().mozClick(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(defaultWebPage.title))
-        on.browserPage.navigateToPage()
-        on.webCompatReporter
-            .navigateToPage()
-            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_VIEW_ITEMS)
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227138
-    @Critical
-    @Test
-    fun verifyTheSomethingElseReasonTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
-
-        on.browserPage.navigateToPage(defaultWebPage.url.toString())
-        on.webCompatReporter
-            .navigateToPage()
-            .mozClick(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Something else"))
-            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.SOMETHING_ELSE_REASON_FORM)
-            .mozVerify(WebCompatReporterSelectors.DESCRIBE_PROBLEM_ERROR_MESSAGE)
-            .mozVerifyElementIsNotEnabled(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
-            .mozClearAndEnterText("Prolonged page loading time", WebCompatReporterSelectors.DESCRIPTION_INPUT_BOX)
-            .mozVerifyElementIsEnabled(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
-            .mozVerifyElementAbsent(WebCompatReporterSelectors.DESCRIBE_PROBLEM_ERROR_MESSAGE)
-            .mozClick(WebCompatReporterSelectors.SEND_REPORT_BUTTON)
-            .mozVerify(WebCompatReporterSelectors.REPORT_SENT_SNACK_BAR_MESSAGE)
+        on.home.navigateToPage().mozVerify(HomeSelectors.HOMEPAGE_VIEW)
     }
 }

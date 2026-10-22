@@ -198,10 +198,23 @@ Pref Sanitization is used for two purposes:
     Spectre adversary.
  2. To reduce IPC use and thread wake-ups for commonly modified preferences.
 
-A pref is sanitized from entering the web content process if it matches a
+A pref is sanitized from entering content processes if it matches a
 denylist *or* it is a dynamically-named string preference (that is not
 exempted via an allowlist), See `ShouldSanitizePreference` in
 `Preferences.cpp`.
+
+Which content processes receive sanitized prefs depends on the remote type, and
+on whether the prefs are sent at startup or as a runtime update.
+`SerializeToSharedMemory` in `ProcessUtils_common.cpp` makes the startup
+decision. `Preferences::GetPreference` in `Preferences.cpp` makes the runtime
+decision.
+
+| Remote type | Startup | Runtime updates |
+| --- | --- | --- |
+| `WebContent`, `WebCoopCoep`, `WebServiceWorker`, `Prealloc` | Sanitized | Sanitized |
+| `PrivilegedMozilla` | Sanitized if taken from the preallocated pool | Sanitized |
+| `Inference` | Sanitized if taken from the preallocated pool | Unsanitized |
+| `PrivilegedAbout`, `File`, `Extension` | Unsanitized | Unsanitized |
 
 ### Loading and Saving
 

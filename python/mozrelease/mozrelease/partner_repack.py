@@ -726,7 +726,7 @@ if __name__ == "__main__":
         log.error("Invalid platform %s." % options.platform)
         error = True
 
-    upstream_tasks = options.upstream_tasks or os.getenv("UPSTREAM_TASKIDS")
+    upstream_tasks = options.upstream_tasks or os.getenv("UPSTREAM_TASKIDS", "").split()
     if not upstream_tasks:
         log.error(
             "upstream tasks should be defined using --taskid args or "

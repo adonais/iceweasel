@@ -699,6 +699,25 @@ async function getBrowsingContextsAndFrameIdsForSubFrames(
   return browsingContextsAndFrames;
 }
 
+// Remove, at the end of the test, the permissions left behind by granting device
+// access, so they don't affect the next tests: the persisted camera and
+// microphone "Always Ask" permissions, and the one-shot MediaManagerVideo
+// permission, which only opening a real camera would consume.
+let gPrincipalsRequestingDevices = new Map();
+function clearDevicePermissionsAtEnd(principal) {
+  if (!gPrincipalsRequestingDevices.size) {
+    registerCleanupFunction(() => {
+      for (let p of gPrincipalsRequestingDevices.values()) {
+        for (let type of ["camera", "microphone", "MediaManagerVideo"]) {
+          Services.perms.removeFromPrincipal(p, type);
+        }
+      }
+      gPrincipalsRequestingDevices.clear();
+    });
+  }
+  gPrincipalsRequestingDevices.set(principal.origin, principal);
+}
+
 /**
  * Test helper for getUserMedia calls.
  *
@@ -725,6 +744,11 @@ async function promiseRequestDevice(
   let bc =
     aBrowsingContext ??
     (await getBrowsingContextForFrame(gBrowser.selectedBrowser, aFrameId));
+  clearDevicePermissionsAtEnd(
+    BrowsingContext.isInstance(bc)
+      ? bc.top.currentWindowGlobal.documentPrincipal
+      : bc.contentPrincipal
+  );
 
   if (viaButtonClick) {
     return SpecialPowers.spawn(

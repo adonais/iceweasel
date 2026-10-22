@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
@@ -43,6 +44,26 @@ class NavigationToolbarTest : BaseTest() {
         on.browserPage.verifyUrl(firstWebPage.url.toString())
         on.browserPage.mozSwipeElement(ToolbarSelectors.TOOLBAR, SwipeDirection.LEFT, steps = 2)
         on.browserPage.verifyUrl(secondWebPage.url.toString())
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2728269
+    @Critical
+    @Test
+    fun verifyNavigationToOtherWebsitesWithinSameTabTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
+
+        on.browserPage.navigateToPage(firstWebPage.url.toString())
+        on.browserPage.verifyPageContent(firstWebPage.content)
+        on.browserPage.verifyUrl(firstWebPage.url.toString())
+        on.browserPage.verifyTabCounter("1")
+
+        // Entering a new URL in the same address bar navigates within the current tab; the tab
+        // counter must stay at 1, confirming no additional tab was opened.
+        on.browserPage.navigateToPage(secondWebPage.url.toString(), forceNavigation = true)
+        on.browserPage.verifyPageContent(secondWebPage.content)
+        on.browserPage.verifyUrl(secondWebPage.url.toString())
+        on.browserPage.verifyTabCounter("1")
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135067

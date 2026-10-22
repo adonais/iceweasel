@@ -17,11 +17,14 @@ import android.content.pm.PackageManager.PERMISSION_DENIED
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.pm.ResolveInfo
 import android.net.Uri
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.BrowserAction
@@ -37,6 +40,7 @@ import mozilla.components.feature.prompts.PromptContainer
 import mozilla.components.feature.prompts.file.FilePicker.Companion.FILE_PICKER_ACTIVITY_REQUEST_CODE
 import mozilla.components.feature.prompts.file.FilePicker.Companion.FOLDER_PICKER_ACTIVITY_REQUEST_CODE
 import mozilla.components.support.test.any
+import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
@@ -177,8 +181,8 @@ class FilePickerTest {
     }
 
     @Test
-    @Config(sdk = [28])
-    fun `handleFilePickerRequest with the required permission will call startActivityForResult on SDK 28`() {
+    @Config(sdk = [32])
+    fun `handleFilePickerRequest with the required permission will call startActivityForResult on SDK 32 and below`() {
         var onRequestPermissionWasCalled = false
 
         filePicker =
@@ -590,6 +594,35 @@ class FilePickerTest {
         val result = filePickerSpy.canUseAndroidPhotoPicker()
 
         assertFalse(result)
+    }
+
+    @Test
+    fun `onPermissionsDenied launches androidPhotoPicker with capabilities if available`() {
+        val capabilities = AndroidPhotoPicker.allHdrCapabilities()
+        val mockAndroidPhotoPicker = mock<AndroidPhotoPicker>()
+        val mockLauncher = mock<ActivityResultLauncher<PickVisualMediaRequest>>()
+        whenever(mockAndroidPhotoPicker.singleMediaPicker).thenReturn(mockLauncher)
+        whenever(mockAndroidPhotoPicker.mediaCapabilities).thenReturn(capabilities)
+        whenever(mockAndroidPhotoPicker.isPhotoPickerAvailable).thenReturn(true)
+
+        val imageRequest =
+            request.copy(
+                mimeTypes = arrayOf("image/*"),
+                isMultipleFilesSelection = false,
+            )
+
+        prepareSelectedSession(imageRequest)
+        stubContext()
+
+        filePicker.currentRequest = imageRequest
+        filePicker.androidPhotoPicker = mockAndroidPhotoPicker
+
+        filePicker.onPermissionsDenied()
+
+        val requestCaptor = argumentCaptor<PickVisualMediaRequest>()
+        verify(mockLauncher).launch(requestCaptor.capture())
+
+        assertEquals(capabilities, requestCaptor.value.mediaCapabilitiesForTranscoding)
     }
 
     @Test

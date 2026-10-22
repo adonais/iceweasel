@@ -476,7 +476,7 @@ def infallibleDecl(member):
     realtype = member.realtype.nativeType("in")
     tmpl = builtin_infallible_tmpl
 
-    if member.realtype.kind not in {"builtin", "cenum"}:
+    if member.realtype.kind not in {"builtin", "cenum", "typedef"}:
         assert realtype.endswith(" *"), "bad infallible type"
         tmpl = refcnt_infallible_tmpl
         realtype = realtype[:-2]  # strip trailing pointer

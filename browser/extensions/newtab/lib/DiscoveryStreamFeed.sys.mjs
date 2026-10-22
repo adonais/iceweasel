@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
@@ -151,6 +153,9 @@ ChromeUtils.defineLazyGetter(lazy, "userAgent", () => {
 });
 
 export class DiscoveryStreamFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     // Internal state for checking if we've intialized all our data
     this.loaded = false;
@@ -740,10 +745,11 @@ export class DiscoveryStreamFeed {
   /**
    * Returns true if data in the cache for a particular key has expired or is missing.
    *
-   * @param {object} cachedData data returned from cache.get()
-   * @param {string} key a cache key
-   * @param {string?} url for "feed" only, the URL of the feed.
-   * @param {boolean} is this check done at initial browser load
+   * @param {object} options
+   * @param {object} options.cachedData data returned from cache.get()
+   * @param {string} options.key a cache key
+   * @param {string?} options.url for "feed" only, the URL of the feed.
+   * @param {boolean} options.isStartup is this check done at initial browser load
    */
   isExpired({ cachedData, key, url, isStartup }) {
     const { spocs, feeds } = cachedData;
@@ -1124,9 +1130,6 @@ export class DiscoveryStreamFeed {
       return;
     }
 
-    // Reset the flag that indicates whether or not at least one API request
-    // was issued to fetch the component feed in `getComponentFeed()`.
-    this.componentFeedFetched = false;
     const { newFeedsPromises, newFeeds } = this.buildFeedPromises(
       DiscoveryStream.layout,
       isStartup,
@@ -2019,7 +2022,6 @@ export class DiscoveryStreamFeed {
 
         const { data: filteredResults } =
           await this.filterBlocked(rotatedItems);
-        this.componentFeedFetched = true;
         feed = {
           lastUpdated: Date.now(),
           personalized,

@@ -156,11 +156,7 @@ class BrowserIcons(
         }
 
     /** Asynchronously loads an [Icon] for the given [IconRequest]. */
-    fun loadIcon(request: IconRequest): Deferred<Icon> = scope.async {
-        loadIconInternalAsync(request).await().also { loadedIcon ->
-            logger.debug("Loaded icon (source = ${loadedIcon.source}): ${request.url}")
-        }
-    }
+    fun loadIcon(request: IconRequest): Deferred<Icon> = loadIconInternalAsync(request)
 
     /** Synchronously loads an [Icon] for the given [IconRequest] using an in-memory loader. */
     private fun loadIconMemoryOnly(initialRequest: IconRequest, desiredSize: DesiredSize): Icon? {
@@ -201,7 +197,11 @@ class BrowserIcons(
                 ?: (generator.generate(context, request) to null)
 
         // (4) Finally process the icon.
-        process(context, processors, request, resource, icon, desiredSize) ?: generator.generate(context, request)
+        val loadedIcon =
+            process(context, processors, request, resource, icon, desiredSize) ?: generator.generate(context, request)
+
+        logger.debug("Loaded icon (source = ${loadedIcon.source}): ${request.url}")
+        loadedIcon
     }
 
     /** Installs the "icons" extension in the engine in order to dynamically load icons for loaded websites. */

@@ -21,7 +21,6 @@
 #include "mozilla/dom/GamepadRemapping.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "nsComponentManagerUtils.h"
-#include "nsITimer.h"
 #include "nsThreadUtils.h"
 
 namespace {
@@ -75,9 +74,10 @@ const unsigned kConsumerPage = 0x0C;
 const unsigned kHomeUsage = 0x223;
 const unsigned kBackUsage = 0x224;
 
-// We poll it periodically,
-// 50ms is arbitrarily chosen.
-const uint32_t kDarwinGamepadPollInterval = 50;
+// Upper bound for one blocking pass of the monitor thread's run loop. IOKit
+// wakes the loop as soon as it posts an event, so this only bounds how long a
+// stop request that raced with entering the loop can be delayed.
+const CFTimeInterval kDarwinGamepadRunLoopTimeout = 1.0;
 
 struct GamepadInputReportContext {
   DarwinGamepadService* service;
@@ -204,7 +204,9 @@ class DarwinGamepadService {
 
   nsCOMPtr<nsIThread> mMonitorThread;
   nsCOMPtr<nsIThread> mBackgroundThread;
-  nsCOMPtr<nsITimer> mPollingTimer;
+  // Retained run loop of the monitor thread, so that Shutdown() can stop it
+  // from the background thread without racing its destruction.
+  CFRunLoopRef mRunLoop MOZ_GUARDED_BY(mGamepadsMutex);
   Atomic<bool> mIsRunning;
 
   static void DeviceAddedCallback(void* data, IOReturn result, void* sender,
@@ -213,7 +215,6 @@ class DarwinGamepadService {
                                     IOHIDDeviceRef device);
   static void InputValueChangedCallback(void* data, IOReturn result,
                                         void* sender, IOHIDValueRef newValue);
-  static void EventLoopOnceCallback(nsITimer* aTimer, void* aClosure);
 
   void DeviceAdded(IOHIDDeviceRef device);
   void DeviceRemoved(IOHIDDeviceRef device);
@@ -478,12 +479,6 @@ void DarwinGamepadService::InputValueChangedCallback(void* data,
   service->InputValueChanged(newValue);
 }
 
-void DarwinGamepadService::EventLoopOnceCallback(nsITimer* aTimer,
-                                                 void* aClosure) {
-  DarwinGamepadService* service = static_cast<DarwinGamepadService*>(aClosure);
-  service->RunEventLoopOnce();
-}
-
 static CFMutableDictionaryRef MatchingDictionary(UInt32 inUsagePage,
                                                  UInt32 inUsage) {
   CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
@@ -513,42 +508,53 @@ static CFMutableDictionaryRef MatchingDictionary(UInt32 inUsagePage,
 DarwinGamepadService::DarwinGamepadService()
     : mManager(nullptr),
       mGamepadsMutex("DarwinGamepadService::mGamepads"),
+      mRunLoop(nullptr),
       mIsRunning(false) {}
 
 DarwinGamepadService::~DarwinGamepadService() {
   if (mManager != nullptr) CFRelease(mManager);
   mMonitorThread = nullptr;
   mBackgroundThread = nullptr;
-  if (mPollingTimer) {
-    mPollingTimer->Cancel();
-    mPollingTimer = nullptr;
+  MutexAutoLock lock(mGamepadsMutex);
+  if (mRunLoop) {
+    CFRelease(mRunLoop);
+    mRunLoop = nullptr;
   }
 }
 
 void DarwinGamepadService::RunEventLoopOnce() {
   MOZ_ASSERT(NS_GetCurrentThread() == mMonitorThread);
-  CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, true);
-
-  // This timer must be created in monitor thread
-  if (!mPollingTimer) {
-    mPollingTimer = NS_NewTimer();
-  }
-  mPollingTimer->Cancel();
   if (mIsRunning) {
-    mPollingTimer->InitWithNamedFuncCallback(
-        EventLoopOnceCallback, this, kDarwinGamepadPollInterval,
-        nsITimer::TYPE_ONE_SHOT, "EventLoopOnceCallback"_ns);
-  } else {
-    // We schedule a task shutdown and cleaning up resources to Background
-    // thread here to make sure no runloop is running to prevent potential race
-    // condition.
-    RefPtr<Runnable> shutdownTask = new DarwinGamepadServiceShutdownRunnable();
-    mBackgroundThread->Dispatch(shutdownTask.forget(), NS_DISPATCH_NORMAL);
+    SInt32 result = CFRunLoopRunInMode(kCFRunLoopDefaultMode,
+                                       kDarwinGamepadRunLoopTimeout, false);
+    // An empty mode means the IOHIDManager source is gone and no input can
+    // arrive anymore. Not expected, but tear down rather than spin.
+    if (mIsRunning && result != kCFRunLoopRunFinished) {
+      NS_DispatchToCurrentThread(NewNonOwningRunnableMethod(
+          "DarwinGamepadService::RunEventLoopOnce", this,
+          &DarwinGamepadService::RunEventLoopOnce));
+      return;
+    }
+    mIsRunning = false;
   }
+
+  // We schedule a task shutdown and cleaning up resources to Background
+  // thread here to make sure no runloop is running to prevent potential race
+  // condition.
+  RefPtr<Runnable> shutdownTask = new DarwinGamepadServiceShutdownRunnable();
+  mBackgroundThread->Dispatch(shutdownTask.forget(), NS_DISPATCH_NORMAL);
 }
 
 void DarwinGamepadService::StartupInternal() {
   if (mManager != nullptr) return;
+
+  {
+    MutexAutoLock lock(mGamepadsMutex);
+    if (!mRunLoop) {
+      mRunLoop = CFRunLoopGetCurrent();
+      CFRetain(mRunLoop);
+    }
+  }
 
   IOHIDManagerRef manager =
       IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
@@ -610,8 +616,13 @@ void DarwinGamepadService::Startup() {
 void DarwinGamepadService::Shutdown() {
   // Flipping this flag will stop the eventloop in Monitor thread
   // and dispatch a task destroying and cleaning up resources in
-  // Background thread
+  // Background thread. Stopping the run loop wakes the Monitor thread
+  // early if it is blocked waiting for input.
   mIsRunning = false;
+  MutexAutoLock lock(mGamepadsMutex);
+  if (mRunLoop) {
+    CFRunLoopStop(mRunLoop);
+  }
 }
 
 void DarwinGamepadService::SetLightIndicatorColor(

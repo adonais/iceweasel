@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing the socket.
+: A pointer to a {doc}`prfiledesc` object representing the socket.
 
 `addr`
 
@@ -28,4 +28,4 @@ The function has the following parameters:
 
 - If successful, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. The reason for the failure can be
-  obtained by calling {ref}`PR_GetError`.
+  obtained by calling {doc}`pr_geterror`.

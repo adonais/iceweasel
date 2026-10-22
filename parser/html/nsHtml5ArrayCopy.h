@@ -23,6 +23,9 @@
 #ifndef nsHtml5ArrayCopy_h
 #define nsHtml5ArrayCopy_h
 
+#include <algorithm>
+#include <cstdint>
+
 class nsHtml5StackNode;
 
 // Unfortunately, these don't work as template functions because the arguments
@@ -32,29 +35,29 @@ class nsHtml5ArrayCopy {
   static inline void arraycopy(char16_t* source, int32_t sourceOffset,
                                char16_t* target, int32_t targetOffset,
                                int32_t length) {
-    memcpy(&(target[targetOffset]), &(source[sourceOffset]),
-           size_t(length) * sizeof(char16_t));
+    std::copy(source + sourceOffset, source + sourceOffset + length,
+              target + targetOffset);
   }
 
   static inline void arraycopy(char16_t* source, char16_t* target,
                                int32_t length) {
-    memcpy(target, source, size_t(length) * sizeof(char16_t));
+    std::copy(source, source + length, target);
   }
 
   static inline void arraycopy(int32_t* source, int32_t* target,
                                int32_t length) {
-    memcpy(target, source, size_t(length) * sizeof(int32_t));
+    std::copy(source, source + length, target);
   }
 
   static inline void arraycopy(nsHtml5StackNode** source,
                                nsHtml5StackNode** target, int32_t length) {
-    memcpy(target, source, size_t(length) * sizeof(nsHtml5StackNode*));
+    std::copy(source, source + length, target);
   }
 
   static inline void arraycopy(nsHtml5StackNode** arr, int32_t sourceOffset,
                                int32_t targetOffset, int32_t length) {
-    memmove(&(arr[targetOffset]), &(arr[sourceOffset]),
-            size_t(length) * sizeof(nsHtml5StackNode*));
+    std::copy(arr + sourceOffset, arr + sourceOffset + length,
+              arr + targetOffset);
   }
 };
 #endif  // nsHtml5ArrayCopy_h

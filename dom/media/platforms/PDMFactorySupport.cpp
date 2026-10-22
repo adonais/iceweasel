@@ -70,6 +70,7 @@ constexpr const char* kInvalidatingPrefs_Android[] = {
 constexpr const char* kInvalidatingPrefs_FFmpeg[] = {
     "media.ffmpeg.enabled",
     "media.rdd-ffmpeg.enabled",
+    "media.hardware-video-decoding-vulkan.prefer-system-ffmpeg",
     nullptr,
 };
 #endif

@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.195
- * pdfjsBuild = d54c193bd
+ * pdfjsVersion = 6.5.10
+ * pdfjsBuild = 17bb2442f
  */
 
 ;// ./src/scripting_api/constants.js
@@ -3135,7 +3135,7 @@ class Doc extends PDFObject {
     let mustCalculate = false;
     let fieldsToReset;
     if (aFields) {
-      fieldsToReset = [];
+      fieldsToReset = new Set();
       for (const fieldName of aFields) {
         if (!fieldName) {
           continue;
@@ -3148,11 +3148,22 @@ class Doc extends PDFObject {
         if (!field) {
           continue;
         }
-        fieldsToReset.push(field);
+        fieldsToReset.add(field);
         mustCalculate = true;
       }
     }
-    if (!fieldsToReset) {
+    if (fieldsToReset) {
+      for (const {
+        obj
+      } of fieldsToReset) {
+        for (const id of obj._kidIds || []) {
+          const kid = obj._appObjects[id];
+          if (kid) {
+            fieldsToReset.add(kid);
+          }
+        }
+      }
+    } else {
       fieldsToReset = this._fields.values();
       mustCalculate = this._fields.size !== 0;
     }
@@ -3376,7 +3387,7 @@ class Util extends PDFObject {
         }
       }
       let sign = "";
-      if (intPart < 0) {
+      if (intPart < 0 || cConvChar === "f" && arg < 0) {
         sign = "-";
         intPart = -intPart;
       } else if (cFlags & PLUS) {
@@ -3447,7 +3458,7 @@ class Util extends PDFObject {
       seconds: oDate.getSeconds()
     };
     const patterns = /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t|\\.)/g;
-    return cFormat.replaceAll(patterns, (_, pattern) => pattern in handlers ? handlers[pattern](data) : pattern.charCodeAt(1));
+    return cFormat.replaceAll(patterns, (_, pattern) => pattern in handlers ? handlers[pattern](data) : pattern.charAt(1));
   }
   printx(cFormat, cSource) {
     cSource = (cSource ?? "").toString();

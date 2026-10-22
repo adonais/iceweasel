@@ -8,81 +8,81 @@
 
 :host,
 :root {
-  --urlbarView-small-font-size: 0.85em;
+  --urlbarview-small-font-size: 0.85em;
 
   /* The purpose of the gutter is to create a visible gap between adjacent hovered
      and selected rows while keeping the view's entire hover area contiguous. It's
      row padding that `background-clip: content-box` keeps out of the background. */
-  --urlbarView-row-gutter: var(--space-xsmall);
+  --urlbarview-row-gutter: var(--space-xsmall);
   /* The view's own margin, which urlbar.css also derives the joint
      background's outsets from. Negative here so the selection rect is flush
      with the input container's border edge, compensating the row's gutter. */
-  --urlbarView-margin-block: calc(-1 * var(--urlbarView-row-gutter));
-  --urlbarView-margin-inline: calc(-1 * var(--urlbarView-row-gutter));
-  --urlbarView-row-border-radius: var(--urlbarview-border-radius);
+  --urlbarview-margin-block: calc(-1 * var(--urlbarview-row-gutter));
+  --urlbarview-margin-inline: calc(-1 * var(--urlbarview-row-gutter));
+  --urlbarview-row-border-radius: var(--urlbarview-border-radius);
 
-  --urlbarView-row-padding-inline: var(--urlbar-icon-padding);
-  --urlbarView-row-inner-min-height: calc(var(--urlbarview-row-min-height) - var(--urlbarview-row-padding-block) * 2);
+  --urlbarview-row-padding-inline: var(--urlbar-icon-padding);
+  --urlbarview-row-inner-min-height: calc(var(--urlbarview-row-min-height) - var(--urlbarview-row-padding-block) * 2);
 
-  --urlbarView-padding: calc(var(--space-large) - var(--urlbarView-row-gutter));
+  --urlbarview-padding: calc(var(--space-large) - var(--urlbarview-row-gutter));
 
   /* The two common row icon types are favicons and rich search suggestion icons,
      favicons being smaller. Depending on current product requirements, there
      may be other icon types of various sizes. All icons no larger than rich
      search suggestion icons should be center-aligned along one vertical axis.
      Larger icons should be left-aligned with rich search suggestion icons. */
-  --urlbarView-rich-search-suggestion-icon-size: 28px;
-  --urlbarView-rich-search-suggestion-icon-border-radius: var(--border-radius-small);
+  --urlbarview-rich-search-suggestion-icon-size: 28px;
+  --urlbarview-rich-search-suggestion-icon-border-radius: var(--border-radius-small);
 
-  /* Keep `--urlbarView-top-pick-icon-size` in sync with `UrlbarShared.TOP_PICK_ICON_SIZE` */
-  --urlbarView-top-pick-icon-size: 58px;
-  --urlbarView-top-pick-icon-border-radius: calc(
-    var(--urlbarView-row-border-radius) - min(var(--urlbarview-row-padding-block), var(--urlbarView-row-padding-inline))
+  /* Keep `--urlbarview-top-pick-icon-size` in sync with `UrlbarShared.TOP_PICK_ICON_SIZE` */
+  --urlbarview-top-pick-icon-size: 58px;
+  --urlbarview-top-pick-icon-border-radius: calc(
+    var(--urlbarview-row-border-radius) - min(var(--urlbarview-row-padding-block), var(--urlbarview-row-padding-inline))
   );
 
   /* Icon margin-end not taking into account the size of the icon */
-  --urlbarView-icon-margin-end-base: calc(var(--urlbar-icon-padding) + var(--identity-box-margin-inline));
+  --urlbarview-icon-margin-end-base: calc(var(--urlbar-icon-padding) + var(--identity-box-margin-inline));
 
-  --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarview-favicon-size)) / 2);
-  --urlbarView-favicon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-favicon-margin-start));
+  --urlbarview-favicon-margin-start: calc((var(--urlbarview-rich-search-suggestion-icon-size) - var(--urlbarview-favicon-size)) / 2);
+  --urlbarview-favicon-margin-end: calc(var(--urlbarview-icon-margin-end-base) + var(--urlbarview-favicon-margin-start));
 
-  --urlbarView-favicon-mask-size: 24px;
-  --urlbarView-favicon-mask-position: calc((var(--urlbarview-favicon-size) - var(--urlbarView-favicon-mask-size)) / 2);
+  --urlbarview-favicon-mask-size: 24px;
+  --urlbarview-favicon-mask-position: calc((var(--urlbarview-favicon-size) - var(--urlbarview-favicon-mask-size)) / 2);
 
   /* The flex-basis of the URL and no-wrap are set such that the title can take up
      most of the space but the URL will remain at least partially visible. */
-  --urlbarView-url-flex-basis: 30%;
+  --urlbarview-url-flex-basis: 30%;
 
-  --urlbarView-result-button-size: 24px;
-  --urlbarView-result-button-background-opacity: 60%;
-  --urlbarView-result-button-selected-color: var(--toolbar-field-text-color-focus);
-  --urlbarView-result-button-selected-background-color: color-mix(
+  --urlbarview-result-button-size: 24px;
+  --urlbarview-result-button-background-opacity: 60%;
+  --urlbarview-result-button-selected-color: var(--toolbar-field-text-color-focus);
+  --urlbarview-result-button-selected-background-color: color-mix(
     in srgb,
-    var(--toolbar-field-background-color-focus) var(--urlbarView-result-button-background-opacity),
+    var(--toolbar-field-background-color-focus) var(--urlbarview-result-button-background-opacity),
     transparent
   );
-  --urlbarView-result-button-hover-color: var(--toolbar-field-background-color-focus);
-  --urlbarView-result-button-hover-background-color: color-mix(
+  --urlbarview-result-button-hover-color: var(--toolbar-field-background-color-focus);
+  --urlbarview-result-button-hover-background-color: color-mix(
     in srgb,
-    var(--toolbar-field-text-color-focus) var(--urlbarView-result-button-background-opacity),
+    var(--toolbar-field-text-color-focus) var(--urlbarview-result-button-background-opacity),
     transparent
   );
 
-  --urlbarView-labeled-row-margin-top: calc(1.46em + 4px);
-  --urlbarView-labeled-row-label-top: calc(-1.27em - 2px);
-  --urlbarView-labeled-tip-margin-top-extra: 8px;
+  --urlbarview-labeled-row-margin-top: calc(1.46em + 4px);
+  --urlbarview-labeled-row-label-top: calc(-1.27em - 2px);
+  --urlbarview-labeled-tip-margin-top-extra: 8px;
 
-  --urlbarView-tail150-overlay-background: var(--color-violet-90);
-  --urlbarView-tail150-overlay-color: var(--color-gray-0);
-  --urlbarView-tail150-canvas-background: var(--color-violet-110);
+  --urlbarview-tail150-overlay-background: var(--color-violet-90);
+  --urlbarview-tail150-overlay-color: var(--color-gray-0);
+  --urlbarview-tail150-canvas-background: var(--color-violet-110);
 
-  --urlbarView-separator-char: "•" / "—";
-  --urlbarView-separator-char-hidden: "" / "—";
-  --urlbarView-separator-margin-inline: 0.6em;
+  --urlbarview-separator-char: "•" / "—";
+  --urlbarview-separator-char-hidden: "" / "—";
+  --urlbarview-separator-margin-inline: 0.6em;
 
-  --urlbarView-action-slide-in-distance: 200px;
+  --urlbarview-action-slide-in-distance: 200px;
   &:dir(rtl) {
-    --urlbarView-action-slide-in-distance: -200px;
+    --urlbarview-action-slide-in-distance: -200px;
   }
 
   &[lwtheme] {
@@ -92,18 +92,18 @@
   }
 
   @media (prefers-contrast) {
-    --urlbarView-result-button-background-opacity: 100%;
+    --urlbarview-result-button-background-opacity: 100%;
     --urlbarview-text-color-secondary: currentColor;
 
     /* Align the result buttons with the toolbar buttons by borrowing the
        generic ghost-button hover colors. */
-    --urlbarView-result-button-hover-color: var(--button-text-color-ghost-hover);
-    --urlbarView-result-button-hover-background-color: var(--button-background-color-ghost-hover);
+    --urlbarview-result-button-hover-color: var(--button-text-color-ghost-hover);
+    --urlbarview-result-button-hover-background-color: var(--button-background-color-ghost-hover);
   }
 }
 
 .urlbarView {
-  margin: var(--urlbarView-margin-block) var(--urlbarView-margin-inline);
+  margin: var(--urlbarview-margin-block) var(--urlbarview-margin-inline);
 
   /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
@@ -115,10 +115,10 @@
   /* The gap under the input sits outside the scrollport, so a row scrolling
      past it doesn't paint over the input's border edge. */
   :where(.urlbar:not([noresults])) > & {
-    padding-block-start: var(--urlbarView-padding);
+    padding-block-start: var(--urlbarview-padding);
 
     :where(:root[uidensity="compact"]) & {
-      padding: var(--urlbarView-padding);
+      padding: var(--urlbarview-padding);
     }
   }
 }
@@ -137,21 +137,21 @@
 /* Row structure */
 
 .urlbarView-row {
-  --urlbarView-icon-size: var(--urlbarview-favicon-size);
-  --urlbarView-icon-border-radius: 0;
-  --urlbarView-icon-margin-start: max(0px, (var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2);
-  --urlbarView-icon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-icon-margin-start));
+  --urlbarview-icon-size: var(--urlbarview-favicon-size);
+  --urlbarview-icon-border-radius: 0;
+  --urlbarview-icon-margin-start: max(0px, (var(--urlbarview-rich-search-suggestion-icon-size) - var(--urlbarview-icon-size)) / 2);
+  --urlbarview-icon-margin-end: calc(var(--urlbarview-icon-margin-end-base) + var(--urlbarview-icon-margin-start));
 
   /* Block padding that belongs inside the row's background. It goes on the row's
      children, since the row's own padding is the gutter, which is outside it. */
-  --urlbarView-row-extra-padding-block: 0px;
+  --urlbarview-row-extra-padding-block: 0px;
 
   display: flex;
   align-items: center;
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
-  padding: var(--urlbarView-row-gutter);
-  border-radius: var(--urlbarView-row-border-radius);
+  padding: var(--urlbarview-row-gutter);
+  border-radius: var(--urlbarview-row-border-radius);
   background-clip: content-box;
 
   /* The row is the containing block for everything positioned within it,
@@ -167,6 +167,7 @@
   &[menu-trigger],
   &[row-selectable]:not([selected]):hover {
     background-color: var(--urlbarview-background-color-hover);
+    color: var(--urlbarview-text-color-hover);
   }
 
   &[selected] {
@@ -176,22 +177,22 @@
 
   &:not([type="tip"], [type="dynamic"]) {
     :root:not([uidensity="compact"]) & {
-      min-height: calc(var(--urlbarview-row-min-height) + 2 * var(--urlbarView-row-extra-padding-block));
+      min-height: calc(var(--urlbarview-row-min-height) + 2 * var(--urlbarview-row-extra-padding-block));
     }
     :root[uidensity="touch"] & {
-      --urlbarView-row-extra-padding-block: 11px;
+      --urlbarview-row-extra-padding-block: 11px;
     }
   }
 
   &[type="rich-search"] {
-    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
-    --urlbarView-icon-border-radius: var(--urlbarView-rich-search-suggestion-icon-border-radius);
+    --urlbarview-icon-size: var(--urlbarview-rich-search-suggestion-icon-size);
+    --urlbarview-icon-border-radius: var(--urlbarview-rich-search-suggestion-icon-border-radius);
 
     :root:not([uidensity="compact"]) & {
-      min-height: calc(46px + 2 * var(--urlbarView-row-extra-padding-block));
+      min-height: calc(46px + 2 * var(--urlbarview-row-extra-padding-block));
     }
     :root[uidensity="touch"] & {
-      --urlbarView-row-extra-padding-block: 4px;
+      --urlbarview-row-extra-padding-block: 4px;
     }
   }
 }
@@ -203,11 +204,11 @@
 
   flex: auto;
   overflow: hidden;
-  padding-inline: var(--urlbarView-row-padding-inline);
-  padding-block: calc(var(--urlbarview-row-padding-block) + var(--urlbarView-row-extra-padding-block));
+  padding-inline: var(--urlbarview-row-padding-inline);
+  padding-block: calc(var(--urlbarview-row-padding-block) + var(--urlbarview-row-extra-padding-block));
 
   :root:not([uidensity="compact"]) & {
-    min-height: var(--urlbarView-row-inner-min-height);
+    min-height: var(--urlbarview-row-inner-min-height);
   }
 }
 
@@ -224,14 +225,14 @@
 .urlbarView-row-body-top-no-wrap {
   display: flex;
   align-items: baseline;
-  flex: 1 1 calc(100% - var(--urlbarView-url-flex-basis));
+  flex: 1 1 calc(100% - var(--urlbarview-url-flex-basis));
   min-width: 0;
   max-width: max-content;
 }
 
 .urlbarView-row-body-description,
 .urlbarView-row-body-bottom {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   white-space: normal;
 
   .urlbarView-row:not([selected]) > .urlbarView-row-inner > .urlbarView-row-body > & {
@@ -313,18 +314,18 @@
    image, depending on the row type. */
 
 .urlbarView-favicon {
-  width: var(--urlbarView-icon-size);
-  height: var(--urlbarView-icon-size);
-  flex: 0 0 var(--urlbarView-icon-size);
-  margin-inline-start: var(--urlbarView-icon-margin-start);
-  margin-inline-end: var(--urlbarView-icon-margin-end);
-  border-radius: var(--urlbarView-icon-border-radius);
+  width: var(--urlbarview-icon-size);
+  height: var(--urlbarview-icon-size);
+  flex: 0 0 var(--urlbarview-icon-size);
+  margin-inline-start: var(--urlbarview-icon-margin-start);
+  margin-inline-end: var(--urlbarview-icon-margin-end);
+  border-radius: var(--urlbarview-icon-border-radius);
   align-self: center;
   background-repeat: no-repeat;
   background-size: contain;
   object-fit: contain;
   mask-mode: luminance;
-  mask-position: var(--urlbarView-favicon-mask-position);
+  mask-position: var(--urlbarview-favicon-mask-position);
   -moz-context-properties: fill, fill-opacity;
 
   .urlbarView-row[tail-suggestion] > .urlbarView-row-inner > & {
@@ -344,10 +345,10 @@
 
 .urlbarView-type-icon {
   position: absolute;
-  width: var(--urlbarView-favicon-mask-size);
-  height: var(--urlbarView-favicon-mask-size);
+  width: var(--urlbarview-favicon-mask-size);
+  height: var(--urlbarview-favicon-mask-size);
   align-self: center;
-  margin-inline-start: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-favicon-mask-position));
+  margin-inline-start: calc(var(--urlbarview-icon-margin-start) + var(--urlbarview-favicon-mask-position));
   background-repeat: no-repeat;
   -moz-context-properties: fill, stroke;
 
@@ -447,13 +448,13 @@
   align-items: center;
   justify-content: end;
   flex-wrap: wrap;
-  padding-block: var(--urlbarView-row-extra-padding-block);
+  padding-block: var(--urlbarview-row-extra-padding-block);
 }
 
 .urlbarView-button {
   display: inline-block;
-  min-width: var(--urlbarView-result-button-size);
-  min-height: var(--urlbarView-result-button-size);
+  min-width: var(--urlbarview-result-button-size);
+  min-height: var(--urlbarview-result-button-size);
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -482,13 +483,13 @@
   }
 
   .urlbarView-row:is([row-selectable]:hover, [selected]) > &:not(:hover, [aria-expanded="true"]) {
-    color: var(--urlbarView-result-button-selected-color);
-    background-color: var(--urlbarView-result-button-selected-background-color);
+    color: var(--urlbarview-result-button-selected-color);
+    background-color: var(--urlbarview-result-button-selected-background-color);
   }
 
   &:is(:hover, [aria-expanded="true"]) {
-    color: var(--urlbarView-result-button-hover-color);
-    background-color: var(--urlbarView-result-button-hover-background-color);
+    color: var(--urlbarview-result-button-hover-color);
+    background-color: var(--urlbarview-result-button-hover-background-color);
   }
 
   & + & {
@@ -523,10 +524,10 @@
     .urlbarView-results:not([wrap]) > .urlbarView-row > .urlbarView-row-buttons > & {
       display: inline-flex;
       align-items: center;
-      border-radius: var(--urlbarView-result-button-size);
+      border-radius: var(--urlbarview-result-button-size);
       padding-inline: 8px 26px;
       background-position-x: right 4px;
-      font-size: var(--urlbarView-small-font-size);
+      font-size: var(--urlbarview-small-font-size);
 
       &:dir(rtl) {
         background-position-x: left 4px;
@@ -538,12 +539,6 @@
       font-size: 0;
     }
   }
-}
-
-/* This should be supported within panel-{item,list} rather than modifying it, to be fixed by
-   https://bugzilla.mozilla.org/show_bug.cgi?id=1826841 */
-.urlbarView-result-menuitem::part(button) {
-  padding-inline-start: 12px;
 }
 
 /* Button with label, e.g. tip button */
@@ -610,7 +605,7 @@
 .urlbarView-row[label] {
   /* `margin-block-start` controls how far the main part of the row is from the
      main part of the previous row. */
-  margin-block-start: var(--urlbarView-labeled-row-margin-top);
+  margin-block-start: var(--urlbarview-labeled-row-margin-top);
 
   &::before {
     content: attr(label);
@@ -620,8 +615,8 @@
     position: absolute;
     /* `top` controls how far the label is from the main part of the row. It is
        measured from the row's padding box, hence the gutter. */
-    top: calc(var(--urlbarView-row-gutter) + var(--urlbarView-labeled-row-label-top));
-    margin-inline-start: var(--urlbarView-row-padding-inline);
+    top: calc(var(--urlbarview-row-gutter) + var(--urlbarview-labeled-row-label-top));
+    margin-inline-start: var(--urlbarview-row-padding-inline);
     font-size: 0.8em;
     /* The color and opacity of labels is the same as the "This time, search with"
        text in the search shortcuts. See `.search-panel-header > label` in
@@ -632,13 +627,13 @@
   }
 
   /* For tips with row labels, the entire row is moved down by an additional
-     var(--urlbarView-labeled-tip-margin-top-extra) so there's more space
+     var(--urlbarview-labeled-tip-margin-top-extra) so there's more space
      between the tip's top border and the label; see the tip rules. Here we
      compensate so that the label remains the same distance from the previous
      row as it would have had we not moved the tip row down. +1px compensates
      for the tip's top 1px border. */
   &[type="tip"]::before {
-    top: calc(var(--urlbarView-labeled-row-label-top) - var(--urlbarView-labeled-tip-margin-top-extra) + 1px);
+    top: calc(var(--urlbarview-labeled-row-label-top) - var(--urlbarview-labeled-tip-margin-top-extra) + 1px);
   }
 
   :root[lwt-toolbar-field-focus="dark"] &::before {
@@ -658,9 +653,9 @@
     align-items: center;
     position: absolute;
     bottom: 0.72em;
-    font-size: var(--urlbarView-small-font-size);
-    margin-inline-start: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start));
-    padding-inline-start: calc(var(--urlbarview-favicon-size) + var(--urlbarView-favicon-margin-end));
+    font-size: var(--urlbarview-small-font-size);
+    margin-inline-start: calc(var(--urlbarview-row-padding-inline) + var(--urlbarview-favicon-margin-start));
+    padding-inline-start: calc(var(--urlbarview-favicon-size) + var(--urlbarview-favicon-margin-end));
     background-image: url("chrome://branding/content/icon32.png");
     background-repeat: no-repeat;
     background-position: 0 center;
@@ -703,8 +698,8 @@
 
 .urlbarView-title-separator {
   &::before {
-    content: var(--urlbarView-separator-char);
-    margin: 0 var(--urlbarView-separator-margin-inline);
+    content: var(--urlbarview-separator-char);
+    margin: 0 var(--urlbarview-separator-margin-inline);
     opacity: 0.6;
   }
 
@@ -715,7 +710,7 @@
   .urlbarView-row[type="clipboard"] &,
   .urlbarView-title:empty + .urlbarView-tags:empty + & {
     &::before {
-      content: var(--urlbarView-separator-char-hidden);
+      content: var(--urlbarview-separator-char-hidden);
       margin: 0;
     }
   }
@@ -726,7 +721,7 @@
 .urlbarView-action,
 .urlbarView-switchToTab-accessory {
   white-space: nowrap;
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
 
   /* Chiclet style */
   .urlbarView-row:is([type="switchtab"], [type="remotetab"], [type="clipboard"]) & {
@@ -811,7 +806,7 @@
 @keyframes urlbarView-action-slide-in {
   0%,
   28.6% {
-    translate: var(--urlbarView-action-slide-in-distance);
+    translate: var(--urlbarview-action-slide-in-distance);
     opacity: 0;
   }
   100% {
@@ -831,7 +826,7 @@
 
 .urlbarView-url,
 .urlbarView-explanation {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   /* Increase line-height to avoid cutting overhanging glyphs due to masking on
      the element */
   line-height: 1.4;
@@ -844,7 +839,7 @@
 .urlbarView-url {
   /* The large flex-grow ensures the URL grows more quickly than the explanation
      so that the explanation doesn't cause the URL to overflow unnecessarily. */
-  flex: 100 1 var(--urlbarView-url-flex-basis);
+  flex: 100 1 var(--urlbarview-url-flex-basis);
   min-width: 0;
   max-width: max-content;
 
@@ -860,7 +855,7 @@
 .urlbarView-explanation {
   display: flex;
   align-items: baseline;
-  margin-inline: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-icon-margin-start));
+  margin-inline: calc(var(--urlbarview-row-padding-inline) + var(--urlbarview-icon-margin-start));
   flex: 1 0;
   justify-content: end;
 
@@ -875,8 +870,8 @@
      whether that's a non-overflowed URL or action text. */
   > .urlbarView-explanation-bookmarked:not(:empty)::before,
   > .urlbarView-explanation-last-visited:not(:empty)::before {
-    content: var(--urlbarView-separator-char);
-    margin: 0 var(--urlbarView-separator-margin-inline);
+    content: var(--urlbarview-separator-char);
+    margin: 0 var(--urlbarview-separator-margin-inline);
     opacity: 0;
   }
   .urlbarView-url[overflow] ~ & > .urlbarView-explanation-bookmarked::before,
@@ -917,7 +912,7 @@
 
 .urlbarView-tags {
   display: flex;
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   /* Increase line-height to avoid cutting overhanging glyphs due to masking on
      the element */
   line-height: 1.4;
@@ -949,11 +944,11 @@
   }
 
   /* For tips with row labels, move the entire row down by an additional
-     var(--urlbarView-labeled-tip-margin-top-extra) so there's more space
+     var(--urlbarview-labeled-tip-margin-top-extra) so there's more space
      between the tip's top border and the label. They're too close otherwise.
      The row label must also be adjusted; see the row label rules. */
   &[label] {
-    margin-top: calc(var(--urlbarView-labeled-row-margin-top) + var(--urlbarView-labeled-tip-margin-top-extra));
+    margin-top: calc(var(--urlbarview-labeled-row-margin-top) + var(--urlbarview-labeled-tip-margin-top-extra));
   }
 
   > .urlbarView-row-inner {
@@ -1031,53 +1026,54 @@
       padding-block: 6px;
 
       &:last-child {
-        padding-block-end: max(0px, 6px - var(--urlbarView-padding));
+        padding-block-end: max(0px, 6px - var(--urlbarview-padding));
       }
     }
   }
 
   &[tip-type="dismissalAcknowledgment"] {
-    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
+    --urlbarview-icon-size: var(--urlbarview-rich-search-suggestion-icon-size);
   }
 }
 
 /* Firefox Suggest rows */
 
 .urlbarView-row[is-top-pick] {
-  --urlbarView-icon-size: var(--urlbarView-top-pick-icon-size);
-  --urlbarView-icon-border-radius: var(--urlbarView-top-pick-icon-border-radius);
+  --urlbarview-icon-size: var(--urlbarview-top-pick-icon-size);
+  --urlbarview-icon-border-radius: var(--urlbarview-top-pick-icon-border-radius);
 }
 
 @media not -moz-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize") {
   .urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
-    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
-    --urlbarView-icon-border-radius: var(--urlbarView-rich-search-suggestion-icon-border-radius);
+    --urlbarview-icon-size: var(--urlbarview-rich-search-suggestion-icon-size);
+    --urlbarview-icon-border-radius: var(--urlbarview-rich-search-suggestion-icon-border-radius);
   }
 }
 
 .urlbarView-row[type$="_amo"] {
   /* Draw the icon at 24px but give it a padding and background color to make it
      overall the size of top-pick icons. */
-  --urlbarView-icon-size: 24px;
-  --urlbarView-icon-border-radius: 0;
-  --urlbarView-icon-margin-start: 0;
-  --urlbarView-icon-margin-end: var(--urlbarView-icon-margin-end-base);
+  --urlbarview-icon-size: 24px;
+  --urlbarview-icon-border-radius: 0;
+  --urlbarview-icon-margin-start: 0;
+  --urlbarview-icon-margin-end: var(--urlbarview-icon-margin-end-base);
 
   > .urlbarView-row-inner > .urlbarView-favicon {
-    padding: calc((var(--urlbarView-top-pick-icon-size) - 24px) / 2);
+    padding: calc((var(--urlbarview-top-pick-icon-size) - 24px) / 2);
     background-color: var(--urlbar-box-background-color-focus);
-    border-radius: var(--urlbarView-top-pick-icon-border-radius);
+    color: var(--urlbar-box-text-color-focus);
+    border-radius: var(--urlbarview-top-pick-icon-border-radius);
   }
 
   &:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
-    background-color: var(--urlbarView-result-button-selected-background-color);
+    background-color: var(--urlbarview-result-button-selected-background-color);
   }
 }
 
 .urlbarView-row[type$="_important_dates"] {
   /* Important dates are top picks, but their icons are smaller. */
-  --urlbarView-icon-size: 24px;
-  --urlbarView-icon-border-radius: 0;
+  --urlbarview-icon-size: 24px;
+  --urlbarview-icon-border-radius: 0;
 }
 
 .urlbarView-row[dynamicType="weather"],
@@ -1191,7 +1187,7 @@
 
 .urlbarView-actions-container {
   margin-inline-start: calc(
-    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarview-favicon-size) + var(--urlbarView-icon-margin-end)
+    var(--urlbarview-row-padding-inline) + var(--urlbarview-favicon-margin-start) + var(--urlbarview-favicon-size) + var(--urlbarview-icon-margin-end)
   );
   margin-block-end: var(--urlbarview-row-padding-block);
 }
@@ -1323,10 +1319,10 @@
      selectable rather than the row. Space the items apart by twice the gutter so
      that the gap and the selection styling apply to them and not to the row. */
   > .urlbarView-realtime-root {
-    gap: calc(2 * var(--urlbarView-row-gutter));
+    gap: calc(2 * var(--urlbarview-row-gutter));
 
     > .urlbarView-realtime-item {
-      border-radius: var(--urlbarView-row-border-radius);
+      border-radius: var(--urlbarview-row-border-radius);
     }
   }
 }
@@ -1361,12 +1357,13 @@
        normal inner inline padding we removed above, in order to keep the first
        item's image aligned with the text and images in other rows. */
     :root:not([uidensity="compact"]) & {
-      padding: var(--urlbarView-row-padding-inline);
+      padding: var(--urlbarview-row-padding-inline);
     }
     padding-inline-end: var(--space-large);
 
     .urlbarView-realtime-root:not([selectable]) > &:not([selected]):hover {
       background-color: var(--urlbarview-background-color-hover);
+      color: var(--urlbarview-text-color-hover);
     }
 
     &[selected] {
@@ -1378,13 +1375,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--urlbarView-top-pick-icon-size);
-      height: var(--urlbarView-top-pick-icon-size);
+      width: var(--urlbarview-top-pick-icon-size);
+      height: var(--urlbarview-top-pick-icon-size);
       margin-inline-end: var(--space-medium);
       /* Row types that draw a border on the container give up this padding for
          it, so the padding takes the snapped width a 1px border resolves to. */
       padding: var(--urlbar-snapped-1px-border-width);
-      border-radius: var(--urlbarView-top-pick-icon-border-radius);
+      border-radius: var(--urlbarview-top-pick-icon-border-radius);
 
       fill: currentColor;
       fill-opacity: var(--urlbar-icon-fill-opacity);
@@ -1410,7 +1407,7 @@
       }
 
       > .urlbarView-realtime-description-bottom {
-        font-size: var(--urlbarView-small-font-size);
+        font-size: var(--urlbarview-small-font-size);
       }
 
       .urlbarView-row:not([selected]) > .urlbarView-realtime-root > .urlbarView-realtime-item:not([selected]) > & > .urlbarView-realtime-description-bottom {
@@ -1437,8 +1434,8 @@
       > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator-dot {
         /* stylelint-disable-next-line max-nesting-depth */
         &::before {
-          content: var(--urlbarView-separator-char);
-          margin-inline: var(--urlbarView-separator-margin-inline);
+          content: var(--urlbarview-separator-char);
+          margin-inline: var(--urlbarview-separator-margin-inline);
         }
       }
 
@@ -1532,10 +1529,10 @@
   --star-size: 12px;
 
   > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
-    width: var(--urlbarView-top-pick-icon-size);
-    height: var(--urlbarView-top-pick-icon-size);
-    flex-basis: var(--urlbarView-top-pick-icon-size);
-    border-radius: var(--urlbarView-top-pick-icon-border-radius);
+    width: var(--urlbarview-top-pick-icon-size);
+    height: var(--urlbarview-top-pick-icon-size);
+    flex-basis: var(--urlbarview-top-pick-icon-size);
+    border-radius: var(--urlbarview-top-pick-icon-border-radius);
   }
 
   > .urlbarView-realtime-description {
@@ -1589,6 +1586,7 @@
     padding: 0;
     border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
     background-color: var(--urlbar-box-background-color-focus);
+    color: var(--urlbar-box-text-color-focus);
 
     &[backgroundImageId] {
       background-position: center;
@@ -1819,7 +1817,7 @@
 #urlbar .search-panel-one-offs-header-label {
   white-space: nowrap;
   margin: 0;
-  padding-inline: var(--urlbarView-row-padding-inline) 18px;
+  padding-inline: var(--urlbarview-row-padding-inline) 18px;
 }
 
 #urlbar .searchbar-engine-one-off-item {
@@ -1891,8 +1889,8 @@
   }
 
   .urlbarView-subtitle-separator::before {
-    content: var(--urlbarView-separator-char);
-    margin: 0 var(--urlbarView-separator-margin-inline);
+    content: var(--urlbarview-separator-char);
+    margin: 0 var(--urlbarview-separator-margin-inline);
     color: var(--text-color-deemphasized);
   }
 
@@ -1908,8 +1906,8 @@
 
   .urlbarView-bottom-separator {
     &::before {
-      content: var(--urlbarView-separator-char);
-      margin: 0 var(--urlbarView-separator-margin-inline);
+      content: var(--urlbarview-separator-char);
+      margin: 0 var(--urlbarview-separator-margin-inline);
       color: var(--text-color-deemphasized);
     }
 
@@ -1973,25 +1971,29 @@
   color: var(--urlbarview-text-color-selected);
 }
 
-.urlbarView-tail150-overlay {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: 0;
-  background: var(--urlbarView-tail150-overlay-background);
-  color: var(--urlbarView-tail150-overlay-color);
-  z-index: 9999;
+.urlbarView-tail150-overlay:popover-open {
+  position-anchor: --urlbar-anchor;
+  inset-block: anchor(start) auto;
+  inset-inline: anchor(start) anchor(end);
+  width: auto;
+  margin: 0;
+  border: none;
+  overflow: visible;
+  background: var(--urlbarview-tail150-overlay-background);
+  color: var(--urlbarview-tail150-overlay-color);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-block: var(--urlbar-padding-block);
+  padding-inline: 0;
   border-radius: var(--toolbarbutton-border-radius);
 
   .close-button {
     position: absolute;
     inset-block-start: var(--urlbar-padding-block);
     inset-inline-end: var(--urlbar-padding-block);
-    width: var(--urlbarView-result-button-size);
-    height: var(--urlbarView-result-button-size);
+    width: var(--urlbarview-result-button-size);
+    height: var(--urlbarview-result-button-size);
     cursor: pointer;
     background: url(chrome://global/skin/icons/close.svg) no-repeat center;
     background-size: round(62.5%, 2px);
@@ -2011,8 +2013,8 @@
 .urlbarView-tail150-canvas {
   width: 400px;
   height: 400px;
-  border: 2px solid var(--urlbarView-tail150-overlay-color);
+  border: 2px solid var(--urlbarview-tail150-overlay-color);
   border-radius: var(--toolbarbutton-border-radius);
   margin-block-start: var(--urlbar-padding-block);
-  background: var(--urlbarView-tail150-canvas-background);
+  background: var(--urlbarview-tail150-canvas-background);
 }

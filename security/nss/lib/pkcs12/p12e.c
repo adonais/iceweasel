@@ -254,35 +254,6 @@ SEC_PKCS12AddPasswordIntegrity(SEC_PKCS12ExportContext *p12ctxt,
     return SECSuccess;
 }
 
-/* SEC_PKCS12AddPublicKeyIntegrity
- *      Add public key integrity to the exported data.  If an integrity method
- *      has already been set, then return an error.  The certificate must be
- *      allowed to be used as a signing cert.
- *
- *      p12ctxt - the export context
- *      cert - signer certificate
- *      certDb - the certificate database
- *      algorithm - signing algorithm
- *      keySize - size of the signing key (?)
- */
-SECStatus
-SEC_PKCS12AddPublicKeyIntegrity(SEC_PKCS12ExportContext *p12ctxt,
-                                CERTCertificate *cert, CERTCertDBHandle *certDb,
-                                SECOidTag algorithm, int keySize)
-{
-    if (!p12ctxt) {
-        return SECFailure;
-    }
-
-    p12ctxt->integrityInfo.pubkeyInfo.cert = cert;
-    p12ctxt->integrityInfo.pubkeyInfo.certDb = certDb;
-    p12ctxt->integrityInfo.pubkeyInfo.algorithm = algorithm;
-    p12ctxt->integrityInfo.pubkeyInfo.keySize = keySize;
-    p12ctxt->integrityEnabled = PR_TRUE;
-
-    return SECSuccess;
-}
-
 /*
  * Adding safes - encrypted (password/public key) or unencrypted
  *      Each of the safe creation routines return an opaque pointer which
@@ -527,84 +498,6 @@ loser:
     return NULL;
 }
 
-/* SEC_PKCS12CreatePubKeyEncryptedSafe
- *      Creates a safe which is protected by public key encryption.
- *
- *      p12ctxt - the export context
- *      certDb - the certificate database
- *      signer - the signer's certificate
- *      recipients - the list of recipient certificates.
- *      algorithm - the encryption algorithm to use
- *      keysize - the algorithms key size (?)
- */
-SEC_PKCS12SafeInfo *
-SEC_PKCS12CreatePubKeyEncryptedSafe(SEC_PKCS12ExportContext *p12ctxt,
-                                    CERTCertDBHandle *certDb,
-                                    CERTCertificate *signer,
-                                    CERTCertificate **recipients,
-                                    SECOidTag algorithm, int keysize)
-{
-    SEC_PKCS12SafeInfo *safeInfo = NULL;
-    void *mark = NULL;
-
-    if (!p12ctxt || !signer || !recipients || !(*recipients)) {
-        return NULL;
-    }
-
-    /* allocate the safeInfo */
-    mark = PORT_ArenaMark(p12ctxt->arena);
-    safeInfo = (SEC_PKCS12SafeInfo *)PORT_ArenaZAlloc(p12ctxt->arena,
-                                                      sizeof(SEC_PKCS12SafeInfo));
-    if (!safeInfo) {
-        PORT_ArenaRelease(p12ctxt->arena, mark);
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
-    }
-
-    safeInfo->itemCount = 0;
-    safeInfo->arena = p12ctxt->arena;
-
-    /* create the enveloped content info using certUsageEmailSigner currently.
-     * XXX We need to eventually use something other than certUsageEmailSigner
-     */
-    safeInfo->cinfo = SEC_PKCS7CreateEnvelopedData(signer, certUsageEmailSigner,
-                                                   certDb, algorithm, keysize,
-                                                   p12ctxt->pwfn, p12ctxt->pwfnarg);
-    if (!safeInfo->cinfo) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto loser;
-    }
-
-    /* add recipients */
-    if (recipients) {
-        unsigned int i = 0;
-        while (recipients[i] != NULL) {
-            SECStatus rv = SEC_PKCS7AddRecipient(safeInfo->cinfo, recipients[i],
-                                                 certUsageEmailRecipient, certDb);
-            if (rv != SECSuccess) {
-                goto loser;
-            }
-            i++;
-        }
-    }
-
-    if (sec_pkcs12_append_safe_info(p12ctxt, safeInfo) != SECSuccess) {
-        goto loser;
-    }
-
-    PORT_ArenaUnmark(p12ctxt->arena, mark);
-    return safeInfo;
-
-loser:
-    if (safeInfo->cinfo) {
-        SEC_PKCS7DestroyContentInfo(safeInfo->cinfo);
-        safeInfo->cinfo = NULL;
-    }
-
-    PORT_ArenaRelease(p12ctxt->arena, mark);
-    return NULL;
-}
-
 /*********************************
  * Routines to handle the exporting of the keys and certificates
  *********************************/
@@ -834,50 +727,6 @@ sec_PKCS12NewCertBag(PLArenaPool *arena, SECOidTag certType)
 
     PORT_ArenaUnmark(arena, mark);
     return certBag;
-
-loser:
-    PORT_ArenaRelease(arena, mark);
-    return NULL;
-}
-
-/* Creates a new CRL bag and returns a pointer to it.  If an error
- * occurs NULL is returned.
- */
-sec_PKCS12CRLBag *
-sec_PKCS12NewCRLBag(PLArenaPool *arena, SECOidTag crlType)
-{
-    sec_PKCS12CRLBag *crlBag = NULL;
-    SECOidData *bagType = NULL;
-    SECStatus rv;
-    void *mark = NULL;
-
-    if (!arena) {
-        return NULL;
-    }
-
-    mark = PORT_ArenaMark(arena);
-    crlBag = (sec_PKCS12CRLBag *)PORT_ArenaZAlloc(arena,
-                                                  sizeof(sec_PKCS12CRLBag));
-    if (!crlBag) {
-        PORT_ArenaRelease(arena, mark);
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
-    }
-
-    bagType = SECOID_FindOIDByTag(crlType);
-    if (!bagType) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto loser;
-    }
-
-    rv = SECITEM_CopyItem(arena, &crlBag->bagID, &bagType->oid);
-    if (rv != SECSuccess) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto loser;
-    }
-
-    PORT_ArenaUnmark(arena, mark);
-    return crlBag;
 
 loser:
     PORT_ArenaRelease(arena, mark);
@@ -1431,65 +1280,6 @@ SEC_PKCS12AddCertAndKey(SEC_PKCS12ExportContext *p12ctxt,
     return SEC_PKCS12AddCertOrChainAndKey(p12ctxt, certSafe, certNestedDest,
                                           cert, certDb, keySafe, keyNestedDest, shroudKey, pwItem,
                                           algorithm, PR_TRUE);
-}
-
-/* SEC_PKCS12CreateNestedSafeContents
- *      Allows nesting of safe contents to be implemented.  No limit imposed on
- *      depth.
- *
- *      p12ctxt - the export context
- *      baseSafe - the base safeInfo
- *      nestedDest - a parent safeContents (?)
- */
-void *
-SEC_PKCS12CreateNestedSafeContents(SEC_PKCS12ExportContext *p12ctxt,
-                                   void *baseSafe, void *nestedDest)
-{
-    sec_PKCS12SafeContents *newSafe;
-    sec_PKCS12SafeBag *safeContentsBag;
-    void *mark;
-    SECStatus rv;
-
-    if (!p12ctxt || !baseSafe) {
-        return NULL;
-    }
-
-    mark = PORT_ArenaMark(p12ctxt->arena);
-
-    newSafe = sec_PKCS12CreateSafeContents(p12ctxt->arena);
-    if (!newSafe) {
-        PORT_ArenaRelease(p12ctxt->arena, mark);
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
-    }
-
-    /* create the safeContents safeBag */
-    safeContentsBag = sec_PKCS12CreateSafeBag(p12ctxt,
-                                              SEC_OID_PKCS12_V1_SAFE_CONTENTS_BAG_ID,
-                                              newSafe);
-    if (!safeContentsBag) {
-        goto loser;
-    }
-
-    /* append the safeContents to the appropriate area */
-    if (nestedDest) {
-        rv = sec_pkcs12_append_bag_to_safe_contents(p12ctxt->arena,
-                                                    (sec_PKCS12SafeContents *)nestedDest,
-                                                    safeContentsBag);
-    } else {
-        rv = sec_pkcs12_append_bag(p12ctxt, (SEC_PKCS12SafeInfo *)baseSafe,
-                                   safeContentsBag);
-    }
-    if (rv != SECSuccess) {
-        goto loser;
-    }
-
-    PORT_ArenaUnmark(p12ctxt->arena, mark);
-    return newSafe;
-
-loser:
-    PORT_ArenaRelease(p12ctxt->arena, mark);
-    return NULL;
 }
 
 /*********************************

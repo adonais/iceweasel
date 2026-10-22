@@ -46,14 +46,12 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.MediaSessionAction
@@ -158,6 +156,7 @@ import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.setNavigationIcon
 import org.mozilla.fenix.extension.WebExtensionPromptFeature
 import org.mozilla.fenix.home.HomeFragment
+import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.TopSitesRefresher
 import org.mozilla.fenix.home.intent.AssistIntentProcessor
 import org.mozilla.fenix.home.intent.CrashReporterIntentProcessor
@@ -1337,7 +1336,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
             when (currentFragment) {
                 is HomeFragment -> {
-                    val action = NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Home)
+                    val action =
+                        when (getSettings().isMenuCustomizationEnabled) {
+                            true -> HomeFragmentDirections.actionHomeFragmentToMenuFragment(MenuAccessPoint.Home)
+                            else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Home)
+                        }
                     navHost.navController.navigate(action)
                     return true
                 }
@@ -1345,7 +1348,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 is BrowserFragment -> {
                     val action =
                         when (getSettings().isMenuCustomizationEnabled) {
-                            true -> BrowserFragmentDirections.actionBrowserFragmentToMenuFragment()
+                            true ->
+                                BrowserFragmentDirections.actionBrowserFragmentToMenuFragment(MenuAccessPoint.Browser)
                             else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Browser)
                         }
                     navHost.navController.navigate(action)
@@ -1723,11 +1727,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     private fun captureSnapshotTelemetryMetrics() {
         lifecycleScope.launch {
             val recentlyUsedPwaCount =
-                withContext(Dispatchers.IO) {
-                    components.core.webAppShortcutManager.recentlyUsedWebAppsCount(
-                        activeThresholdMs = PWA_RECENTLY_USED_THRESHOLD
-                    )
-                }
+                components.core.webAppShortcutManager.recentlyUsedWebAppsCount(
+                    activeThresholdMs = PWA_RECENTLY_USED_THRESHOLD
+                )
+
             if (recentlyUsedPwaCount == 0) {
                 Metrics.hasRecentPwas.set(false)
             } else {

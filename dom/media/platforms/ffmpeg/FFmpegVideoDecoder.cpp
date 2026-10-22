@@ -788,17 +788,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
 
   StaticMutexAutoLock mon(sMutex);
 
-  // mAcceleratedFormats is already configured so check supported
-  // formats before we do anything.
-  if (mAcceleratedFormats.Length()) {
-    if (!IsFormatAccelerated(mCodecID)) {
-      FFMPEG_LOG("  Format {} is not accelerated",
-                 mLib->avcodec_get_name(mCodecID));
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    FFMPEG_LOG("  Format {} is accelerated", mLib->avcodec_get_name(mCodecID));
-  }
-
   // Select the appropriate v4l2 codec
   AVCodec* codec = FindVideoHardwareAVCodec(mLib, mCodecID);
   if (!codec) {
@@ -837,15 +826,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
     FFMPEG_LOG("  Couldn't initialise V4L2 decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
-  }
-
-  // Set mAcceleratedFormats
-  if (mAcceleratedFormats.IsEmpty()) {
-    // FFmpeg does not correctly report that the V4L2 wrapper decoders are
-    // hardware accelerated, but we know they always are.  If we've gotten
-    // this far then we know this codec has a V4L2 wrapper decoder and so is
-    // accelerateed.
-    mAcceleratedFormats.AppendElement(mCodecID);
   }
 
   AdjustHWDecodeLogging();
@@ -1382,14 +1362,6 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
     return rv;
   }
 
-  CheckedInt32 dataSize = mLib->av_image_get_buffer_size(
-      aCodecContext->pix_fmt, aCodecContext->coded_width,
-      aCodecContext->coded_height, 32);
-  if (!dataSize.isValid()) {
-    FFMPEG_LOG("Data size overflow!");
-    return AVERROR(EINVAL);
-  }
-
   if (!mImageContainer) {
     FFMPEG_LOG("No Image container!");
     return AVERROR(EINVAL);
@@ -1448,12 +1420,25 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
   auto imageWrapper = MakeRefPtr<ImageBufferWrapper>(std::move(image));
 #  endif
 
+  // The buffer spans to the end of the last plane, not the packed image size.
+  auto planeEnd = [](const layers::MappedYCbCrChannelData& aPlane) {
+    return aPlane.data + aPlane.stride * aPlane.size.height;
+  };
+  const uint8_t* bufferEnd =
+      std::max({planeEnd(mapped.y), planeEnd(mapped.cb), planeEnd(mapped.cr)});
+  const ptrdiff_t bufferExtent = bufferEnd - aFrame->data[0];
+  const CheckedInt<int> bufferSize(bufferExtent);
+  if (!bufferSize.isValid() || bufferSize.value() <= 0) {
+    FFMPEG_LOG("Invalid mapped buffer extent");
+    return AVERROR(EINVAL);
+  }
+
   // This will hold a strong reference to imageWrapper, and the reference will
   // be dropped when ffmpeg tells us that the buffer is no longer needed. Since
   // the wrapper keeps image alive, it will prevent recycling until ffmpeg is
   // done with the buffer.
   aFrame->buf[0] =
-      mLib->av_buffer_create(aFrame->data[0], dataSize.value(),
+      mLib->av_buffer_create(aFrame->data[0], bufferSize.value(),
                              ReleaseVideoBufferWrapper, imageWrapper.get(), 0);
   if (!aFrame->buf[0]) {
     FFMPEG_LOG("Failed to allocate buffer");
@@ -1465,7 +1450,7 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
 
   FFMPEG_LOG("Created av buffer, buf={}, data={}, image={}, sz={}",
              fmt::ptr(aFrame->buf[0]), fmt::ptr(aFrame->data[0]),
-             fmt::ptr(imageWrapperPtr), dataSize.value());
+             fmt::ptr(imageWrapperPtr), bufferSize.value());
   mIsUsingShmemBufferForDecode = Some(true);
   return 0;
 }
@@ -1569,14 +1554,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
   }
 }
 #endif
-
-static int64_t GetFramePts(const AVFrame* aFrame) {
-#if LIBAVCODEC_VERSION_MAJOR > 57
-  return aFrame->pts;
-#else
-  return aFrame->pkt_pts;
-#endif
-}
 
 static bool IsKeyFrame(const AVFrame* aFrame) {
 #if LIBAVCODEC_VERSION_MAJOR > 61
@@ -1684,8 +1661,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
       FFMPEG_LOG("avcodec_send_packet error: {} (code={})", errStr, res);
       nsresult rv;
       if (res == int(AVERROR_EOF)) {
-        rv = MaybeQueueDrain(aResults) ? NS_ERROR_DOM_MEDIA_END_OF_STREAM
-                                       : NS_ERROR_NOT_AVAILABLE;
+        rv = MaybeQueueDrain(aResults) ? NS_ERROR_NOT_AVAILABLE
+                                       : NS_ERROR_DOM_MEDIA_END_OF_STREAM;
       } else {
         rv = NS_ERROR_DOM_MEDIA_DECODE_ERR;
       }
@@ -1734,6 +1711,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
       return NS_ERROR_DOM_MEDIA_END_OF_STREAM;
     }
     if (res == AVERROR(EAGAIN)) {
+      // MediaCodec produces no frame while it has no free output buffer. When
+      // draining, giving up here loses the frames it is still holding.
+      if (!aData && MaybeQueueDrain(aResults)) {
+        FFMPEG_LOG("  Output buffer shortage while draining.");
+        return NS_ERROR_NOT_AVAILABLE;
+      }
       return NS_OK;
     }
     if (res < 0) {
@@ -1919,15 +1902,8 @@ void FFmpegVideoDecoder<LIBAV_VER>::RecordFrame(const MediaRawData* aSample,
 #ifdef MOZ_WIDGET_ANDROID
 void FFmpegVideoDecoder<LIBAV_VER>::ResumeDrain() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
-
-  if (mDrainPromise.IsEmpty()) {
-    FFMPEG_LOGV("Resume drain but promise already fulfilled");
-    return;
-  }
-
-  FFMPEG_LOGV("Resume drain");
   mShouldResumeDrain = true;
-  ProcessDrain();
+  FFmpegDataDecoder::ResumeDrain();
 }
 
 void FFmpegVideoDecoder<LIBAV_VER>::QueueResumeDrain() {
@@ -1945,8 +1921,12 @@ void FFmpegVideoDecoder<LIBAV_VER>::QueueResumeDrain() {
 bool FFmpegVideoDecoder<LIBAV_VER>::MaybeQueueDrain(
     const MediaDataDecoder::DecodedData& aData) {
 #if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
-  if (aData.IsEmpty() && mMediaCodecDeviceContext &&
-      !mLib->moz_avcodec_mediacodec_is_eos(mCodecContext)) {
+  // MediaCodec may still hold frames even if we hold none, such as when it
+  // reports an output format change before the first frame, or when it is
+  // waiting for frames held by the compositor.
+  if (mMediaCodecDeviceContext &&
+      !mLib->moz_avcodec_mediacodec_is_eos(mCodecContext) &&
+      MaybeDeferDrain(aData)) {
     FFMPEG_LOGV("Schedule drain");
     return true;
   }
@@ -2093,6 +2073,20 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
   b.mPlanes[0].mHeight = mFrame->height;
   SetChromaPlaneGeometryFromAVFormat(b, static_cast<int>(mFrame->format),
                                      mFrame->width, mFrame->height);
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  if (!FramePlanesFitBackingBuffers(mFrame, b)) {
+    FFMPEG_LOG(
+        "Decoded frame plane layout does not match its buffers: format {} "
+        "{}x{}, Y {}x{} stride {}, CbCr {}x{} stride {}, buffer sizes {} {} {}",
+        mFrame->format, mFrame->width, mFrame->height, b.mPlanes[0].mWidth,
+        b.mPlanes[0].mHeight, b.mPlanes[0].mStride, b.mPlanes[1].mWidth,
+        b.mPlanes[1].mHeight, b.mPlanes[1].mStride, FrameBufferSize(mFrame, 0),
+        FrameBufferSize(mFrame, 1), FrameBufferSize(mFrame, 2));
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_DECODE_ERR,
+        RESULT_DETAIL("Decoded frame plane layout does not match its buffers"));
+  }
+#endif
   b.mYUVColorSpace = GetFrameColorSpace();
   b.mColorPrimaries = GetFrameColorPrimaries();
   b.mColorRange = GetFrameColorRange();

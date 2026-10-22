@@ -33,9 +33,7 @@ add_task(async function () {
 
   gBrowser.pinTab(gBrowser.tabs[0]);
 
-  await TestUtils.waitForCondition(() => {
-    return Array.from(gBrowser.tabs).every(tab => tab._fullyOpen);
-  });
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
 
   ok(arrowScrollbox.overflowing, "Tab strip should be overflowing");
 

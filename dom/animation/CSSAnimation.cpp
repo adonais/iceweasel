@@ -212,10 +212,6 @@ void CSSAnimation::QueueEvents(const StickyTimeDuration& aActiveTime) {
     }
   }
 
-  TimeStamp startTimeStamp = ElapsedTimeToTimeStamp(intervalStartTime);
-  TimeStamp endTimeStamp = ElapsedTimeToTimeStamp(intervalEndTime);
-  TimeStamp iterationTimeStamp = ElapsedTimeToTimeStamp(iterationStartTime);
-
   AutoTArray<AnimationEventInfo, 2> events;
 
   auto appendAnimationEvent = [&](EventMessage aMessage,
@@ -243,6 +239,11 @@ void CSSAnimation::QueueEvents(const StickyTimeDuration& aActiveTime) {
     appendAnimationEvent(eAnimationCancel, aActiveTime,
                          GetTimelineCurrentTimeAsTimeStamp());
   }
+
+  const TimeStamp startTimeStamp = ElapsedTimeToTimeStamp(intervalStartTime);
+  const TimeStamp endTimeStamp = ElapsedTimeToTimeStamp(intervalEndTime);
+  const TimeStamp iterationTimeStamp =
+      ElapsedTimeToTimeStamp(iterationStartTime);
 
   switch (mPreviousPhase) {
     case AnimationPhase::Idle:

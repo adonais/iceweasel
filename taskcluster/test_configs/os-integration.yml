@@ -46,9 +46,9 @@
 
 # android isolated-process
 - kind: test
-  test_platform: android-em.*/debug-isolated-process
+  test_platform: android-em.*/debug
   unittest_suite: xpcshell
-  unittest_variant: null
+  unittest_variant: geckoview-isolated-process
 
 # linux wayland
 - kind: *unittest-kinds

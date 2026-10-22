@@ -4,6 +4,7 @@
 
 with Files("**"):
     BUG_COMPONENT = ("GeckoView", "General")
+    SCHEDULES.exclusive = ["android"]
 
 SOURCES += [
     "nsAndroidSystemProxySettings.cpp",

@@ -40,7 +40,7 @@ DistributionCustomizer.prototype = {
         ? Services.dirsvc.get("ProfD", Ci.nsIFile)
         : Services.dirsvc.get("XREAppDist", Ci.nsIFile);
       if (loadFromProfile) {
-        iniFile.leafName = "distribution";
+        iniFile.append("distribution");
       }
       iniFile.append("distribution.ini");
     } catch (ex) {}

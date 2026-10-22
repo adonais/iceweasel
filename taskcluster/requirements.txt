@@ -1098,9 +1098,9 @@ taskcluster==110.0.0 \
     # via
     #   -c ../third_party/python/requirements.txt
     #   taskcluster-taskgraph
-taskcluster-taskgraph==24.2.3 \
-    --hash=sha256:80017dc5fcd98bdd0fa4357cd3fcabd6719447c029f3ee569e1c830a527bec56 \
-    --hash=sha256:e2af9e09395c34bba456cf26e3952822f359922bc75f696ba7948269b47e3289
+taskcluster-taskgraph==24.4.0 \
+    --hash=sha256:87a4aecc0820e9888f0795681babc53b55664f61b0e3dc00736dbf4d1d04eef2 \
+    --hash=sha256:fac741fe8103e70e9c5e9d6b5058eb5aac4c09cf0ae55577561c203900ba95df
     # via
     #   -r requirements.in
     #   mozilla-taskgraph

@@ -29,7 +29,7 @@ add_task(async function () {
   info("Clicking item and waiting for details panel to open");
   waitPromise = waitForDOM(document, ".network-details-bar");
   const xhrRequestItem = document.querySelectorAll(".request-list-item")[3];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequestItem);
+  clickOnRequestRow(xhrRequestItem);
   await waitPromise;
 
   info("Clicking stack tab and waiting for stack panel to open");

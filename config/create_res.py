@@ -70,7 +70,7 @@ def generate_res():
 
         command = [buildconfig.substs["RC"]]
         if is_windres:
-            command.extend(("-O", "coff"))
+            command.extend(("-O", "coff", "--use-temp-file"))
 
         # Even though llvm-rc doesn't preprocess, we still need to pass at least
         # the -I flags.

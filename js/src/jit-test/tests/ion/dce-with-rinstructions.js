@@ -168,6 +168,15 @@ function rursh_object(i) {
     return i;
 }
 
+var uceFault_rotate_number = eval(`(${uceFault})`.replace('uceFault', 'uceFault_rotate_number'));
+function rrotate_number(i) {
+    var x = i >>> 1 | i << 31;
+    if (uceFault_rotate_number(i) || uceFault_rotate_number(i))
+        assertEq(x, -2147483599);
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
 var uceFault_signextend8_1 = eval(`(${uceFault})`.replace('uceFault', 'uceFault_signextend8_1'));
 function rsignextend8_1(i) {
     var x = (i << 24) >> 24;
@@ -2147,6 +2156,7 @@ for (j = 100 - max; j < 100; j++) {
     rrsh_object(i);
     rursh_number(i);
     rursh_object(i);
+    rrotate_number(i);
     rsignextend8_1(i);
     rsignextend8_2(i);
     rsignextend16_1(i);

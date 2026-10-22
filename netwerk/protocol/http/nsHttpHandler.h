@@ -307,8 +307,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
       nsHttpConnectionInfo* ci, nsIInterfaceRequestor* callbacks, uint32_t caps,
       bool aFetchHTTPSRR) {
     TickleWifi(callbacks);
-    RefPtr<nsHttpConnectionInfo> clone = ci->Clone();
-    return mConnMgr->SpeculativeConnect(clone, callbacks, caps, nullptr,
+    return mConnMgr->SpeculativeConnect(ci, callbacks, caps, nullptr,
                                         aFetchHTTPSRR);
   }
 
@@ -791,7 +790,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
       nsIURI* aURI, nsIPrincipal* aPrincipal,
       Maybe<OriginAttributes>&& aOriginAttributes,
       nsIInterfaceRequestor* aCallbacks, bool anonymous);
-  void ExcludeHttp2OrHttp3Internal(const nsHttpConnectionInfo* ci);
+  void ExcludeHttp2OrHttp3Internal(nsHttpConnectionInfo* ci);
 
   // State for generating channelIds
   uint64_t mUniqueProcessId{0};
@@ -820,9 +819,9 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   void RemoveHttpChannel(uint64_t aId);
   nsWeakPtr GetWeakHttpChannel(uint64_t aId);
 
-  void ExcludeHttp2(const nsHttpConnectionInfo* ci);
+  void ExcludeHttp2(nsHttpConnectionInfo* ci);
   [[nodiscard]] bool IsHttp2Excluded(const nsHttpConnectionInfo* ci);
-  void ExcludeHttp3(const nsHttpConnectionInfo* ci);
+  void ExcludeHttp3(nsHttpConnectionInfo* ci);
   [[nodiscard]] bool IsHttp3Excluded(const nsACString& aRoutedHost);
   void Exclude0RttTcp(const nsHttpConnectionInfo* ci);
   [[nodiscard]] bool Is0RttTcpExcluded(const nsHttpConnectionInfo* ci);
@@ -854,7 +853,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   // This is parsed pref network.http.http3.alt-svc-mapping-for-testing.
   // The pref set artificial altSvc-s for origin for testing.
   // This maps an origin to an altSvc.
-  nsClassHashtable<nsCStringHashKey, nsCString> mAltSvcMappingTemptativeMap;
+  DataMutex<nsClassHashtable<nsCStringHashKey, nsCString>>
+      mAltSvcMappingTemptativeMap{"nsHttpHandler::AltSvcMappingTemptativeMap"};
 
   nsCOMPtr<nsIHttpActivityDistributor> mActivityDistributor;
 };

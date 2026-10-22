@@ -9,6 +9,28 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">ولدا کوشش کرو</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">محفوظ شدہ ورژن چیک کرو</string>
+  <!--
+    The text shown underneath the archive button, explaining what the button does. The %1$s will be replaced by
+    the app name and %2$s will be replaced by the name of the archive service as a link
+  -->
+  <string name="mozac_browser_errorpages_archive_description">%1$s انٹرنیٹ آرکائیو کنوں ایں صفحے دا پہلے آلا ورژن ڳول سڳدا اے%2$s۔</string>
+  <!--
+    The name of the Internet Archive service, shown as a link at the end of
+    mozac_browser_errorpages_archive_description.
+  -->
+  <string name="mozac_browser_errorpages_archive_wayback_machine">Wayback Machine</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">محفوظ شدہ ورژن چیک تھیندا پئے</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">کوئی محفوظ شدہ ورژن نئیں ملیا۔</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">ویب تے ڳولو۔</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">آرکائیو سروس تئیں رسائی نہ تھی سڳی۔</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">ولا کوشش کرو۔</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">ارداس پوری کائنی کر سڳدا</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -89,6 +111,12 @@
   <string name="mozac_browser_errorpages_unknown_host_title">پتہ کائنی لبھا</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>ݙتے ہوئے پتے کیتے براؤزر ہوسٹ سرور کائنی لبھ سڳا۔</p>\n<ul>\n<li>پتے وچ ایں طرحاں دیاں ٹائپنگ غلطیاں دی پڑتال کرو <strong>ww</strong>.example.com پر لکھݨا ہائی <strong>www</strong>.example.com.</li>\n<li>جے تساں کہیں وی ورقے کوں لوڈ نہوے کر سڳدے تاں ڈیوائس ڈیٹا یا وائی فائی کنکشن دی پڑتال کرو</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">لڳدا اے تہاݙے انٹرنیٹ کنکشن وچ کوئی مسئلہ اے۔</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">ٻئی ڈیوائس نال کنیکٹ کرݨ دی کوشش کرو۔ اپݨے موڈیم یا راؤٹر کوں چیک کرو۔ وائی فائی کنوں ڈسکنیکٹ کر کے ولا کنیکٹ کرو۔</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">خرابی کوڈ: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">ولدا لوڈ کرو</string>
   <!-- The document title and heading of an error page. -->
@@ -129,10 +157,16 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">فریبی سائٹ مسئلہ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s تے موجود ویب ورقے کوں فریبی سائٹ دے طور تے رپورٹ کیتا ڳئے تے تہاݙی سیکیورٹی ترجیحات دی بݨیاد تے بلاک کر ݙتا ڳئے۔</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">تہاݙی حفاظت واسطے سائٹ بلاک کیتی ڳئی اے۔</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s تے اے ویب صفحہ بلاک کیتا ڳیا اے کیوں جو تہاݙے ایڈ آنز وچوں ہک نے اینکوں کھولݨ دی کوشش کیتی اے۔ اے سائٹ تہاݙی معلومات جیویں پاس ورڈ یا کریڈٹ کارڈ نمبر چوری کرݨ واسطے ورتی ونڄ سڳدی اے۔</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">محفوظ سائٹ دستیاب کائنی</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[وادھوں حفاظت کیتے اساں ایچ ٹی ٹی پی ایس ــ صرف موڈ فعال کر ݙتے، تے <em>%1$s</em> دا ایچ ٹی ٹی پی ایس ورشن دستیاب کائنی۔]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">ایچ ٹی ٹی پی سائٹ تے جاری رکھو</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">واپس ونڄو (تجویز کردہ)</string>
 </resources>

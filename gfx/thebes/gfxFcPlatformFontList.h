@@ -68,7 +68,6 @@ struct default_delete<FcObjectSet> {
 
 class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   friend class gfxFcPlatformFontList;
-  using FTUserFontData = mozilla::gfx::FTUserFontData;
 
  public:
   // used for system fonts with explicit patterns
@@ -96,7 +95,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
 
   mozilla::gfx::SharedFTFace* GetFTFace();
-  FTUserFontData* GetUserFontData() override;
+  FontData* GetUserFontData() override;
 
   FT_MM_Var* GetMMVar() override;
 

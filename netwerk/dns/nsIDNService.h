@@ -40,6 +40,7 @@ class nsIDNService final : public nsIIDNService {
   void InitDigitConfusables();
   void InitCyrillicLatinConfusables();
   void InitThaiLatinConfusables();
+  void InitAllowedLimitedUseScripts();
 
  public:
   /**
@@ -89,6 +90,7 @@ class nsIDNService final : public nsIIDNService {
   bool isCJKIdeograph(char32_t aChar);
 
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
+  nsTArray<mozilla::intl::Script> mAllowedLimitedUseScripts;
 
   // Confusables that we would like to check for IDN spoofing detection.
   nsTHashSet<char32_t> mCJKSlashConfusables;

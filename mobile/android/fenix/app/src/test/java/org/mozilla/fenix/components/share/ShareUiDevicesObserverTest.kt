@@ -118,6 +118,24 @@ class ShareUiDevicesObserverTest {
         assertEquals(listOf(SyncShareOption.Offline), shareUiObserver.buildDeviceList())
     }
 
+    @Test
+    fun `WHEN refreshDevices is called THEN loading is shown and then the devices are updated`() = runTest {
+        val capabilities =
+            mockk<NetworkCapabilities> {
+                every { hasCapability(any()) } returns false
+            }
+        every { connectivityManager.getNetworkCapabilities(any()) } returns capabilities
+        store = ShareUiStore(initialState = ShareUiState(devices = listOf(SyncShareOption.Offline)))
+        val states = mutableListOf<ShareUiState>()
+        store.observeManually { states.add(it) }.resume()
+
+        createObserver().refreshDevices(null)
+        testScheduler.runCurrent()
+
+        assertEquals(listOf(false, true, false), states.map { it.isLoading })
+        assertEquals(listOf(SyncShareOption.Offline), store.state.devices)
+    }
+
     private fun TestScope.createObserver() =
         ShareUiDevicesObserver(
             store = store,

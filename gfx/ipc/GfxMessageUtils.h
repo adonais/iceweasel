@@ -10,6 +10,7 @@
 #include "DriverCrashGuard.h"
 #include "FilterSupport.h"
 #include "ImageTypes.h"
+#include "MediaCodecsSupport.h"
 #include "RegionBuilder.h"
 #include "SharedFontList.h"
 #include "chrome/common/ipc_message_utils.h"
@@ -126,6 +127,13 @@ struct ParamTraits<mozilla::gfx::BackendType>
                                       mozilla::gfx::BackendType::NONE,
                                       mozilla::gfx::BackendType::BACKEND_LAST> {
 };
+
+template <>
+struct ParamTraits<mozilla::media::DrmSchemeSupport>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::media::DrmSchemeSupport,
+          mozilla::media::DrmSchemeSupport::Unknown,
+          mozilla::media::DrmSchemeSupport::Supported> {};
 
 template <>
 struct ParamTraits<mozilla::gfx::Feature>

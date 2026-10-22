@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 /**
  * Picture of the Day widget - data flow overview
  *
@@ -80,6 +82,9 @@ const PREF_ENDPOINTS_ALLOWLIST = "discoverystream.endpoints";
  * source lacks them, so callers must treat them as optional.
  */
 export class PictureOfTheDayFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
     this.merino = null;
@@ -103,8 +108,7 @@ export class PictureOfTheDayFeed {
   }
 
   // Resolve the Merino endpoint, guarding it against the shared endpoint
-  // allowlist so a mis-set pref can't point the fetch at an arbitrary host
-  // (mirrors SportsFeed).
+  // allowlist so a mis-set pref can't point the fetch at an arbitrary host.
   getEndpoint() {
     const { values } = this.store.getState().Prefs;
     const endpoint = values[PREF_ENDPOINT];
@@ -306,12 +310,16 @@ export class PictureOfTheDayFeed {
       // the user's wallpaper display. The wallpaper feature pref
       // (newtabWallpapers.enabled) is deliberately left untouched: the "Set
       // wallpaper" CTA is only shown when it's already enabled, so we never
-      // force the feature on (product decision).
-      this.store.dispatch(ac.SetPref("newtabWallpapers.user.enabled", true));
-      this.store.dispatch(ac.SetPref("newtabWallpapers.wallpaper", "custom"));
-      this.store.dispatch(ac.SetPref("newtabWallpapers.initialWallpaper", ""));
+      // force the feature on (product decision). One transaction, because
+      // content re-renders on every pref broadcast: turning the display on
+      // before "custom" is selected paints whatever wallpaper was chosen last.
       this.store.dispatch(
-        ac.SetPref("widgets.pictureOfTheDay.wallpaperActive", publishedDate)
+        ac.SetMultiplePrefs({
+          "newtabWallpapers.wallpaper": "custom",
+          "newtabWallpapers.initialWallpaper": "",
+          "newtabWallpapers.user.enabled": true,
+          "widgets.pictureOfTheDay.wallpaperActive": publishedDate,
+        })
       );
     } catch (e) {
       console.error("PictureOfTheDayFeed: failed to set wallpaper", e);

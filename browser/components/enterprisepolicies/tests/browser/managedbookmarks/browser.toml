@@ -4,7 +4,6 @@ support-files = ["managedbookmarks.json"]
 
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Popup timeout issue - see Bug 1742167
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Popup timeout issue - see Bug 1742167
 ]
 
 ["browser_policy_managedbookmarks.js"]

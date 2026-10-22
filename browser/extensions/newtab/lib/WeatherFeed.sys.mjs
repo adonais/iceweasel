@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import { WEATHER_OPTIN_REGIONS } from "./ActivityStream.sys.mjs";
 
 const lazy = {};
@@ -36,6 +38,9 @@ const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
  * A feature that periodically fetches weather suggestions from Merino for HNT.
  */
 export class WeatherFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
     this.merino = null;

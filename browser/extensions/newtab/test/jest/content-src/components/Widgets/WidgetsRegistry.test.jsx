@@ -72,27 +72,6 @@ describe("isWidgetToggleVisible", () => {
   });
 });
 
-// Bug 2063657: the sports widget is retired; removed in bug 2063656.
-describe("retired sports widget", () => {
-  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
-  const everythingOn = {
-    "widgets.enabled": true,
-    "widgets.sportsWidget.enabled": true,
-    "widgets.system.sportsWidget.enabled": true,
-    widgetsConfig: { sportsWidgetEnabled: true },
-    trainhopConfig: {
-      widgets: { sportsWidgetEnabled: true },
-      widgetsSettings: { sportsWidgetVisible: true },
-    },
-  };
-
-  it("is never addable, visible or enabled, whatever the prefs say", () => {
-    expect(isWidgetAddable(sportsWidget, everythingOn)).toBe(false);
-    expect(isWidgetToggleVisible(sportsWidget, everythingOn)).toBe(false);
-    expect(isWidgetEnabled(sportsWidget, everythingOn, true)).toBe(false);
-  });
-});
-
 // Bug 2063207: the privacy widget's readout needs history, so it is hidden
 // outright on profiles that record none.
 describe("privacy widget on a profile with no history", () => {
@@ -217,14 +196,11 @@ describe("getWidgetOrder", () => {
 
   it("respects a fully-specified custom order", () => {
     expect(
-      getWidgetOrder(
-        "focusTimer,lists,weather,sportsWidget,clocks,privacy,crossword"
-      )
+      getWidgetOrder("focusTimer,lists,weather,clocks,privacy,crossword")
     ).toEqual([
       "focusTimer",
       "lists",
       "weather",
-      "sportsWidget",
       "clocks",
       "privacy",
       "crossword",
@@ -238,7 +214,6 @@ describe("getWidgetOrder", () => {
     expect(getWidgetOrder("weather")).toEqual([
       "weather",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "lists",
       "focusTimer",
@@ -254,7 +229,6 @@ describe("getWidgetOrder", () => {
       "lists",
       "weather",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "focusTimer",
       "privacy",
@@ -276,7 +250,6 @@ describe("getWidgetOrder", () => {
       "focusTimer",
       "lists",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "weather",
       "privacy",
@@ -303,7 +276,6 @@ describe("resolveWidgetOrder", () => {
       "lists",
       "focusTimer",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "privacy",
       "crossword",
@@ -323,7 +295,6 @@ describe("resolveWidgetOrder", () => {
       "weather",
       "lists",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "privacy",
       "crossword",
@@ -343,7 +314,6 @@ describe("resolveWidgetOrder", () => {
       "focusTimer",
       "weather",
       "pictureOfTheDay",
-      "sportsWidget",
       "clocks",
       "privacy",
       "crossword",
@@ -421,6 +391,24 @@ describe("isWidgetAddable", () => {
     ).toBe(true);
   });
 
+  it.each([
+    ["widgets", { privacyEnabled: true }],
+    ["widgetsSettings", { privacyVisible: true }],
+  ])(
+    "makes privacy addable via %s despite its preffed-off default",
+    (type, payload) => {
+      const privacy = WIDGET_REGISTRY.find(w => w.id === "privacy");
+      const prefs = { [privacy.systemEnabledPref]: false };
+      expect(isWidgetAddable(privacy, prefs)).toBe(false);
+      expect(
+        isWidgetAddable(privacy, {
+          ...prefs,
+          trainhopConfig: { [type]: payload },
+        })
+      ).toBe(true);
+    }
+  );
+
   it("is addable when revealed via the dedicated widgetPrivacy namespace", () => {
     const privacy = WIDGET_REGISTRY.find(w => w.id === "privacy");
     expect(
@@ -430,6 +418,48 @@ describe("isWidgetAddable", () => {
       })
     ).toBe(true);
   });
+
+  it.each([
+    ["widgets", { stocksEnabled: true }],
+    ["widgetsSettings", { stocksVisible: true }],
+  ])(
+    "makes stocks addable via %s despite its preffed-off default",
+    (type, payload) => {
+      const stocks = WIDGET_REGISTRY.find(w => w.id === "stocks");
+      const prefs = { [stocks.systemEnabledPref]: false };
+      expect(isWidgetAddable(stocks, prefs)).toBe(false);
+      expect(
+        isWidgetAddable(stocks, {
+          ...prefs,
+          trainhopConfig: { [type]: payload },
+        })
+      ).toBe(true);
+    }
+  );
+
+  it.each([
+    ["widgets", { recentSearchesEnabled: true }],
+    ["widgetsSettings", { recentSearchesVisible: true }],
+    ["widgetRecentSearches", { visible: true }],
+  ])(
+    "makes recent searches addable via %s despite its preffed-off default",
+    (type, payload) => {
+      const recentSearches = WIDGET_REGISTRY.find(
+        w => w.id === "recentSearches"
+      );
+      const prefs = {
+        [recentSearches.systemEnabledPref]: false,
+        supportsWidgetSearchSap: true,
+      };
+      expect(isWidgetAddable(recentSearches, prefs)).toBe(false);
+      expect(
+        isWidgetAddable(recentSearches, {
+          ...prefs,
+          trainhopConfig: { [type]: payload },
+        })
+      ).toBe(true);
+    }
+  );
 
   it("is addable when revealed via the dedicated widgetRecentSearches namespace", () => {
     const recentSearches = WIDGET_REGISTRY.find(w => w.id === "recentSearches");

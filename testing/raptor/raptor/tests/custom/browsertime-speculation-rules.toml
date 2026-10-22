@@ -40,3 +40,19 @@ browsertime_args = "--browsertime.source=list --browsertime.eagerness=moderate"
 
 ["prefetch-list-conservative"]
 browsertime_args = "--browsertime.source=list --browsertime.eagerness=conservative"
+
+# In-flight activation. The 200 ms moderate hover timer dispatches the prefetch
+# and dwell_ms is the hover-to-click delay. Timeline in ms from the hover
+# (~ = includes webdriver latency):
+#
+#   0      200          250    ~370                            ~700
+#   |-------|------------|------|--------------------------------|
+#   hover   prefetch     click  click lands                      prefetch
+#   starts  dispatched   issued (navigationStart)                response
+#                               |<---- navigation_duration ----->|
+#           |<-------------- 500 ms server stall --------------->|
+#
+# The click must land before the prefetch response arrives, so the navigation
+# has to wait for the ongoing prefetch instead of refetching the target.
+["prefetch-list-inflight"]
+browsertime_args = "--browsertime.source=list --browsertime.eagerness=moderate --browsertime.dwell_ms=250"

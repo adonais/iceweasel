@@ -91,10 +91,6 @@ export class _CollapsibleSection extends React.PureComponent {
     } else if (!isAnimating && collapsed) {
       bodyStyle = { display: "none" };
     }
-    let titleStyle;
-    if (this.props.hideTitle) {
-      titleStyle = { visibility: "hidden" };
-    }
     const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
     const hasBeenUpdatedPreviously =
       this.props.Prefs.values[
@@ -119,10 +115,7 @@ export class _CollapsibleSection extends React.PureComponent {
         {/* @nova-cleanup(remove-conditional): Remove !novaEnabled check, title moves to CardGrid */}
         {!sectionsEnabled && !novaEnabled && (
           <div className="section-top-bar">
-            <h2
-              className={`section-title-container ${hasSubtitleClassName}`}
-              style={titleStyle}
-            >
+            <h2 className={`section-title-container ${hasSubtitleClassName}`}>
               <span className="section-title">
                 <FluentOrText message={title} />
               </span>

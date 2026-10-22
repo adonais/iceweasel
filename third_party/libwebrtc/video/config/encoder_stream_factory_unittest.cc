@@ -43,6 +43,11 @@ using ::testing::SizeIs;
 using ::testing::TestWithParam;
 using ::testing::Values;
 
+MATCHER_P3(MatchesStream, active, width, height, "") {
+  return arg.active == active && arg.width == static_cast<size_t>(width) &&
+         arg.height == static_cast<size_t>(height);
+}
+
 struct CreateVideoStreamParams {
   int width = 0;
   int height = 0;
@@ -221,6 +226,115 @@ TEST(EncoderStreamFactory,
               ElementsAre(Resolution{.width = 640, .height = 360},
                           Resolution{.width = 640, .height = 360},
                           Resolution{.width = 320, .height = 180}));
+}
+
+TEST(EncoderStreamFactory,
+     SimulcastScaleResolutionDownToWithInactiveLowerLayersAnd360pRestriction) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  VideoSourceRestrictions restrictions(
+      /* max_pixels_per_frame= */ (640 * 360),
+      /* target_pixels_per_frame= */ std::nullopt,
+      /* max_frame_rate= */ std::nullopt);
+  VideoEncoderConfig encoder_config;
+  encoder_config.number_of_streams = 3;
+  encoder_config.simulcast_layers.resize(3);
+  encoder_config.simulcast_layers[0].active = false;
+  encoder_config.simulcast_layers[0].scale_resolution_down_to = {.width = 320,
+                                                                 .height = 180};
+  encoder_config.simulcast_layers[1].active = false;
+  encoder_config.simulcast_layers[1].scale_resolution_down_to = {.width = 640,
+                                                                 .height = 360};
+  encoder_config.simulcast_layers[2].active = true;
+  encoder_config.simulcast_layers[2].scale_resolution_down_to = {.width = 1280,
+                                                                 .height = 720};
+  auto streams =
+      CreateEncoderStreams(field_trials, {.width = 1280, .height = 720},
+                           encoder_config, restrictions);
+  // Highest layer is preserved and adapted down to 360p.
+  EXPECT_THAT(streams, ElementsAre(MatchesStream(/*active=*/false, 320, 180),
+                                   MatchesStream(/*active=*/false, 640, 360),
+                                   MatchesStream(/*active=*/true, 640, 360)));
+}
+
+TEST(EncoderStreamFactory,
+     SimulcastScaleResolutionDownToWithInactiveLowestLayerAnd180pRestriction) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  VideoSourceRestrictions restrictions(
+      /* max_pixels_per_frame= */ (320 * 180),
+      /* target_pixels_per_frame= */ std::nullopt,
+      /* max_frame_rate= */ std::nullopt);
+  VideoEncoderConfig encoder_config;
+  encoder_config.number_of_streams = 3;
+  encoder_config.simulcast_layers.resize(3);
+  encoder_config.simulcast_layers[0].active = false;
+  encoder_config.simulcast_layers[0].scale_resolution_down_to = {.width = 320,
+                                                                 .height = 180};
+  encoder_config.simulcast_layers[1].active = true;
+  encoder_config.simulcast_layers[1].scale_resolution_down_to = {.width = 640,
+                                                                 .height = 360};
+  encoder_config.simulcast_layers[2].active = true;
+  encoder_config.simulcast_layers[2].scale_resolution_down_to = {.width = 1280,
+                                                                 .height = 720};
+  auto streams =
+      CreateEncoderStreams(field_trials, {.width = 1280, .height = 720},
+                           encoder_config, restrictions);
+  // Middle layer is preserved and adapted down to 180p.
+  EXPECT_THAT(streams, ElementsAre(MatchesStream(/*active=*/false, 320, 180),
+                                   MatchesStream(/*active=*/true, 320, 180)));
+}
+
+TEST(EncoderStreamFactory,
+     SimulcastScaleResolutionDownToWithAllInactiveLayersAnd360pRestriction) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  VideoSourceRestrictions restrictions(
+      /* max_pixels_per_frame= */ (640 * 360),
+      /* target_pixels_per_frame= */ std::nullopt,
+      /* max_frame_rate= */ std::nullopt);
+  VideoEncoderConfig encoder_config;
+  encoder_config.number_of_streams = 3;
+  encoder_config.simulcast_layers.resize(3);
+  encoder_config.simulcast_layers[0].active = false;
+  encoder_config.simulcast_layers[0].scale_resolution_down_to = {.width = 320,
+                                                                 .height = 180};
+  encoder_config.simulcast_layers[1].active = false;
+  encoder_config.simulcast_layers[1].scale_resolution_down_to = {.width = 640,
+                                                                 .height = 360};
+  encoder_config.simulcast_layers[2].active = false;
+  encoder_config.simulcast_layers[2].scale_resolution_down_to = {.width = 1280,
+                                                                 .height = 720};
+  auto streams =
+      CreateEncoderStreams(field_trials, {.width = 1280, .height = 720},
+                           encoder_config, restrictions);
+  // Highest layer is dropped (min_num_layers is 0).
+  EXPECT_THAT(streams, ElementsAre(MatchesStream(/*active=*/false, 320, 180),
+                                   MatchesStream(/*active=*/false, 640, 360)));
+}
+
+TEST(EncoderStreamFactory,
+     SimulcastScaleResolutionDownToWithMiddleActiveLayerAnd180pRestriction) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  VideoSourceRestrictions restrictions(
+      /* max_pixels_per_frame= */ (320 * 180),
+      /* target_pixels_per_frame= */ std::nullopt,
+      /* max_frame_rate= */ std::nullopt);
+  VideoEncoderConfig encoder_config;
+  encoder_config.number_of_streams = 3;
+  encoder_config.simulcast_layers.resize(3);
+  encoder_config.simulcast_layers[0].active = false;
+  encoder_config.simulcast_layers[0].scale_resolution_down_to = {.width = 320,
+                                                                 .height = 180};
+  encoder_config.simulcast_layers[1].active = true;
+  encoder_config.simulcast_layers[1].scale_resolution_down_to = {.width = 640,
+                                                                 .height = 360};
+  encoder_config.simulcast_layers[2].active = false;
+  encoder_config.simulcast_layers[2].scale_resolution_down_to = {.width = 1280,
+                                                                 .height = 720};
+  auto streams =
+      CreateEncoderStreams(field_trials, {.width = 1280, .height = 720},
+                           encoder_config, restrictions);
+  // Middle layer is preserved and adapted down to 180p.
+  EXPECT_THAT(streams, ElementsAre(MatchesStream(/*active=*/false, 320, 180),
+                                   MatchesStream(/*active=*/true, 320, 180)));
 }
 
 TEST(EncoderStreamFactory,

@@ -829,6 +829,7 @@ test_only:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
+
   an_event:
     type: event
     description: |
@@ -845,6 +846,23 @@ test_only:
     expires: never
     send_in_pings:
       - test-ping
+
+  event_ping_event:
+    type: event
+    description: |
+      This is a test-only metric.
+      Just recording some events.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064404
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064404
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - glean-team@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
 
 
 test_only.ipc:

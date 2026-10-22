@@ -7,13 +7,13 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/TextRange.h"
+#include "mozilla/dom/AbstractRange.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 
 class nsCycleCollectionTraversalCallback;
 
 namespace mozilla::dom {
-class AbstractRange;
 
 struct StyledRange {
   explicit StyledRange(AbstractRange* aRange, TextRangeStyle aStyle = {});

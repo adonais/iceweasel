@@ -7,7 +7,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   MigrationWizardConstants:
     "chrome://browser/content/migration/migration-wizard-constants.mjs",
 });

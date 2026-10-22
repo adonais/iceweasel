@@ -42,8 +42,8 @@ add_task(async function offersTheOpenInCommands() {
   );
   Assert.deepEqual(
     items.slice(5),
-    ["dismiss", "help"],
-    "The menu keeps the row's own commands"
+    ["dismiss", "help", "hr", "toggle-keyboard-accessible"],
+    "The menu keeps the row's own commands, followed by the tab-skipping checkbox"
   );
 
   BrowserTestUtils.removeTab(tab);

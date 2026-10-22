@@ -7,7 +7,10 @@ pnpm-audit:
     payload: pnpm-audit:lint
     include:
         - third_party/node/pnpm-lock.yaml
-    exclude-error: []
+    exclude-error:
+        # braces 3.0.3 has no patched release and does not affect our build.
+        # Upgrading or removing sass would remove it, see bug 2078348.
+        - GHSA-vfj7-8cjw-p6xm
     extensions:
         - yaml
     support-files:

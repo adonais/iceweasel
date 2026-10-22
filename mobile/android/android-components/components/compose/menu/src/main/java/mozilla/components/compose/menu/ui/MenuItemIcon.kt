@@ -4,9 +4,13 @@
 
 package mozilla.components.compose.menu.ui
 
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
@@ -40,6 +44,17 @@ data class MenuItemIconDrawable(
     override val isHighlighted: Boolean = false,
 ) : MenuItemIcon(isHighlighted)
 
+/**
+ * Menu item icon in the form of a [Bitmap].
+ *
+ * @property icon Bitmap to show as icon.
+ * @property isHighlighted Whether the icon is highlighted (has a blue dot indicator).
+ */
+data class MenuItemIconBitmap(
+    val icon: Bitmap,
+    override val isHighlighted: Boolean = false,
+) : MenuItemIcon(isHighlighted)
+
 /** Get a [Painter] to draw the icon. */
 internal val MenuItemIcon.painter
     @Composable
@@ -47,4 +62,5 @@ internal val MenuItemIcon.painter
         when (this) {
             is MenuItemIconRes -> painterResource(iconRes)
             is MenuItemIconDrawable -> rememberDrawablePainter(icon)
+            is MenuItemIconBitmap -> remember(icon) { BitmapPainter(icon.asImageBitmap()) }
         }

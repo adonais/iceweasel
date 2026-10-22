@@ -514,9 +514,8 @@
   }
 }
 
-/* TODO: update this image to a more appropriate one further down the stack */
 #mini-window-button {
-  list-style-image: url("chrome://global/skin/icons/open-in-new.svg");
+  list-style-image: url("chrome://browser/content/miniwindow/assets/mini-window.svg");
 }
 
 #smartwindow-ask-button-inner {

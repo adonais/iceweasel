@@ -1807,8 +1807,12 @@ bool CacheIRCompiler::emitGuardIsNullOrUndefined(ValOperandId inputId) {
   }
 
   Label success;
-  masm.branchTestNull(Assembler::Equal, input, &success);
-  masm.branchTestUndefined(Assembler::NotEqual, input, failure->label());
+  {
+    ScratchTagScope tag(masm, input);
+    masm.splitTagForTest(input, tag);
+    masm.branchTestNull(Assembler::Equal, tag, &success);
+    masm.branchTestUndefined(Assembler::NotEqual, tag, failure->label());
+  }
 
   masm.bind(&success);
   return true;
@@ -3064,21 +3068,25 @@ bool CacheIRCompiler::emitDoubleParseIntResult(NumberOperandId numId) {
   return true;
 }
 
-bool CacheIRCompiler::emitStringToAtom(StringOperandId stringId) {
+bool CacheIRCompiler::emitStringToAtom(StringOperandId stringId,
+                                       StringOperandId resultId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Register str = allocator.useRegister(masm, stringId);
-  AutoScratchRegister scratch(allocator, masm);
+  Register output = allocator.defineRegister(masm, resultId);
 
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
     return false;
   }
 
-  Label done, vmCall;
-  masm.branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
-                    Imm32(StringFlags::ATOM_BIT), &done);
+  Label done, notAtom, vmCall;
+  masm.branchTest32(Assembler::Zero, Address(str, JSString::offsetOfFlags()),
+                    Imm32(StringFlags::ATOM_BIT), &notAtom);
+  masm.movePtr(str, output);
+  masm.jump(&done);
 
-  masm.tryFastAtomize(str, scratch, str, &vmCall);
+  masm.bind(&notAtom);
+  masm.tryFastAtomize(str, output, output, &vmCall);
   masm.jump(&done);
 
   masm.bind(&vmCall);
@@ -3086,19 +3094,18 @@ bool CacheIRCompiler::emitStringToAtom(StringOperandId stringId) {
   masm.PushRegsInMask(save);
 
   using Fn = JSAtom* (*)(JSContext * cx, JSString * str);
-  masm.setupUnalignedABICall(scratch);
-  masm.loadJSContext(scratch);
-  masm.passABIArg(scratch);
+  masm.setupUnalignedABICall(output);
+  masm.loadJSContext(output);
+  masm.passABIArg(output);
   masm.passABIArg(str);
   masm.callWithABI<Fn, jit::AtomizeStringNoGC>();
-  masm.storeCallPointerResult(scratch);
+  masm.storeCallPointerResult(output);
 
   LiveRegisterSet ignore;
-  ignore.add(scratch);
+  ignore.add(output);
   masm.PopRegsInMaskIgnore(save, ignore);
 
-  masm.branchPtr(Assembler::Equal, scratch, Imm32(0), failure->label());
-  masm.movePtr(scratch.get(), str);
+  masm.branchTestPtr(Assembler::Zero, output, output, failure->label());
 
   masm.bind(&done);
   return true;
@@ -9972,25 +9979,29 @@ bool CacheIRCompiler::emitGuardWasmArg(ValOperandId argId,
   // Check that the argument can be converted to the Wasm type in Warp code
   // without bailing out.
   Label done;
-  switch (kind) {
-    case wasm::ValType::I32:
-    case wasm::ValType::F32:
-    case wasm::ValType::F64: {
-      // Argument must be number, bool, or undefined.
-      masm.branchTestNumber(Assembler::Equal, arg, &done);
-      masm.branchTestBoolean(Assembler::Equal, arg, &done);
-      masm.branchTestUndefined(Assembler::NotEqual, arg, failure->label());
-      break;
+  {
+    ScratchTagScope tag(masm, arg);
+    masm.splitTagForTest(arg, tag);
+    switch (kind) {
+      case wasm::ValType::I32:
+      case wasm::ValType::F32:
+      case wasm::ValType::F64: {
+        // Argument must be number, bool, or undefined.
+        masm.branchTestNumber(Assembler::Equal, tag, &done);
+        masm.branchTestBoolean(Assembler::Equal, tag, &done);
+        masm.branchTestUndefined(Assembler::NotEqual, tag, failure->label());
+        break;
+      }
+      case wasm::ValType::I64: {
+        // Argument must be bigint, bool, or string.
+        masm.branchTestBigInt(Assembler::Equal, tag, &done);
+        masm.branchTestBoolean(Assembler::Equal, tag, &done);
+        masm.branchTestString(Assembler::NotEqual, tag, failure->label());
+        break;
+      }
+      default:
+        MOZ_CRASH("Unexpected kind");
     }
-    case wasm::ValType::I64: {
-      // Argument must be bigint, bool, or string.
-      masm.branchTestBigInt(Assembler::Equal, arg, &done);
-      masm.branchTestBoolean(Assembler::Equal, arg, &done);
-      masm.branchTestString(Assembler::NotEqual, arg, failure->label());
-      break;
-    }
-    default:
-      MOZ_CRASH("Unexpected kind");
   }
   masm.bind(&done);
 

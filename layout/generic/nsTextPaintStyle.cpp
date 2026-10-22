@@ -236,11 +236,11 @@ bool nsTextPaintStyle::GetTargetTextColor(nscolor* aForeColor) {
   NS_ASSERTION(aForeColor, "aForeColor is null");
   InitTargetTextPseudoStyle();
   if (mTargetTextPseudoStyle &&
-      (mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor() ||
-       mTargetTextPseudoStyle->HasAuthorSpecifiedBorderOrBackground())) {
+      (mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedTextColor() ||
+       mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedBorderOrBackground())) {
     *aForeColor = mTargetTextPseudoStyle->GetVisitedDependentColor(
         &nsStyleText::mWebkitTextFillColor);
-    return mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor();
+    return mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedTextColor();
   }
   *aForeColor = LookAndFeel::Color(
       LookAndFeel::ColorID::TargetTextForeground,
@@ -253,8 +253,8 @@ bool nsTextPaintStyle::GetTargetTextBackgroundColor(nscolor* aBackColor) {
   NS_ASSERTION(aBackColor, "aBackColor is null");
   InitTargetTextPseudoStyle();
   if (mTargetTextPseudoStyle &&
-      (mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor() ||
-       mTargetTextPseudoStyle->HasAuthorSpecifiedBorderOrBackground())) {
+      (mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedTextColor() ||
+       mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedBorderOrBackground())) {
     *aBackColor = mTargetTextPseudoStyle->GetVisitedDependentColor(
         &nsStyleBackground::mBackgroundColor);
     return NS_GET_A(*aBackColor) != 0;
@@ -270,7 +270,7 @@ mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetTargetTextShadow() {
   InitTargetTextPseudoStyle();
 
   if (mTargetTextPseudoStyle &&
-      mTargetTextPseudoStyle->HasAuthorSpecifiedTextShadow()) {
+      mTargetTextPseudoStyle->HasAuthorOrUserSpecifiedTextShadow()) {
     return mTargetTextPseudoStyle->StyleText()->mTextShadow.AsSpan();
   }
 
@@ -296,7 +296,7 @@ bool nsTextPaintStyle::GetCustomHighlightTextColor(nsAtom* aHighlightName,
 
   *aForeColor = highlightStyle->GetVisitedDependentColor(&nsStyleText::mColor);
 
-  return highlightStyle->HasAuthorSpecifiedTextColor();
+  return highlightStyle->HasAuthorOrUserSpecifiedTextColor();
 }
 
 bool nsTextPaintStyle::GetCustomHighlightBackgroundColor(nsAtom* aHighlightName,
@@ -327,7 +327,8 @@ nsTextPaintStyle::GetCustomHighlightTextShadow(nsAtom* aHighlightName) {
           aHighlightName, [this, &aHighlightName] {
             return mFrame->ComputeHighlightSelectionStyle(aHighlightName);
           });
-  if (!highlightStyle || !highlightStyle->HasAuthorSpecifiedTextShadow()) {
+  if (!highlightStyle ||
+      !highlightStyle->HasAuthorOrUserSpecifiedTextShadow()) {
     return {};
   }
 
@@ -459,8 +460,8 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
   if (RefPtr<ComputedStyle> style =
           mFrame->ComputeSelectionStyle(selectionStatus)) {
     mSelectionPseudoStyle = std::move(style);
-    if (mSelectionPseudoStyle->HasAuthorSpecifiedTextColor() ||
-        mSelectionPseudoStyle->HasAuthorSpecifiedBorderOrBackground()) {
+    if (mSelectionPseudoStyle->HasAuthorOrUserSpecifiedTextColor() ||
+        mSelectionPseudoStyle->HasAuthorOrUserSpecifiedBorderOrBackground()) {
       mSelectionBGColor = mSelectionPseudoStyle->GetVisitedDependentColor(
           &nsStyleBackground::mBackgroundColor);
       mSelectionTextColor =
@@ -638,7 +639,7 @@ mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetSelectionShadow() {
   }
 
   if (mSelectionPseudoStyle &&
-      mSelectionPseudoStyle->HasAuthorSpecifiedTextShadow()) {
+      mSelectionPseudoStyle->HasAuthorOrUserSpecifiedTextShadow()) {
     return mSelectionPseudoStyle->StyleText()->mTextShadow.AsSpan();
   }
 

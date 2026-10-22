@@ -9,6 +9,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
@@ -89,16 +91,16 @@ class ASWebAuthSession {
     this.finish();
   }
 
-  // Cancellation path: optionally notify the requesting app, then tear down.
-  cancel(notifyNative, options) {
+  // Cancellation path: tell the requesting app, then tear down. The reply has
+  // to go to the request object the native handler kept from the begin call,
+  // which is what nsIASWebAuthSessionRequest::cancel() uses.
+  cancel(options) {
     if (this.completed) {
       return;
     }
 
     this.completed = true;
-    if (notifyNative) {
-      this.request.cancel();
-    }
+    this.request.cancel();
     this.finish(options);
   }
 
@@ -155,13 +157,13 @@ class ASWebAuthSession {
       !this.completed &&
       (browser === this.browser || !this.hasOpenTrackedBrowser())
     ) {
-      this.cancel(true);
+      this.cancel();
     }
   }
 
   onWindowUnload() {
     if (this.service.activeSessions.get(this.uuid) === this) {
-      this.cancel(true, { closeWindow: false });
+      this.cancel({ closeWindow: false });
     }
   }
 
@@ -269,7 +271,7 @@ export const ASWebAuthSessionService = new (class ASWebAuthSessionService {
     lazy.EveryWindow.unregisterCallback("ASWebAuthSessionService");
 
     for (let session of Array.from(this.activeSessions.values())) {
-      session.cancel(true);
+      session.cancel();
     }
 
     // Cancel setups that are still opening their window so their native
@@ -587,6 +589,13 @@ export const ASWebAuthSessionService = new (class ASWebAuthSessionService {
     let userContextId = 0;
     let win = null;
     try {
+      // Wait for the startup windows, including restored ones, to open first so
+      // that the auth window opens after them and appears in front.
+      await lazy.SessionStore.promiseAllWindowsRestored;
+      if (pending.cancelled) {
+        return;
+      }
+
       if (ephemeral) {
         let container = await lazy.ContextualIdentityService.create(
           EPHEMERAL_CONTAINER_PREFIX + uuid,
@@ -631,13 +640,14 @@ export const ASWebAuthSessionService = new (class ASWebAuthSessionService {
   onCancel(uuid) {
     let session = this.activeSessions.get(uuid);
     if (session) {
-      session.cancel(false);
+      session.cancel();
       return;
     }
 
     let pending = this.pendingSetups.get(uuid);
-    if (pending) {
+    if (pending && !pending.cancelled) {
       pending.cancelled = true;
+      pending.request.cancel();
     }
   }
 })();

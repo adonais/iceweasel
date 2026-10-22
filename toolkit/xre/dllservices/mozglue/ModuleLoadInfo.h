@@ -25,7 +25,7 @@ struct ModuleLoadInfo final {
   // changes.  mMagic can never be mistaken for the QueryPerformanceCounter
   // value that earlier layouts started with.
   static constexpr uint64_t kMagic = 0xF14D6F644C6F6164ull;
-  static constexpr uint32_t kVersion = 1;
+  static constexpr uint32_t kVersion = 2;
 
   // Each of those binaries exports a function of this name that returns its
   // kVersion, so that a sender can check a receiver before handing one over.
@@ -201,6 +201,11 @@ struct ModuleLoadInfo final {
   nt::AllocatedUnicodeString mSectionName;
   // The base address of the module's mapped section
   const void* mBaseAddr;
+  // A duplicate of the handle the loader opened this module's file with, taken
+  // by the NtCreateSection hook.  It grants no access to the file's contents.
+  //
+  // Null for any load the NtCreateSection hook did not take a handle for.
+  nt::AutoHandle mFileHandle;
   // If the module was successfully loaded, stack trace of the DLL load request
   Vector<PVOID, 0, nt::RtlAllocPolicy> mBacktrace;
   // The status of DLL load

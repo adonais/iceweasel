@@ -92,11 +92,11 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
     let imageUri;
     let isImageAnArrow = false;
     if (item.image_url) {
-      imageUri = UrlbarUtils.getRemoteIconUrl(
-        item.image_url,
-        lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
-        controller
-      );
+      imageUri = UrlbarUtils.getRemoteImageUrl({
+        controller,
+        url: item.image_url,
+        size: lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+      });
     } else {
       isImageAnArrow = true;
       imageUri = arrowImageUri;

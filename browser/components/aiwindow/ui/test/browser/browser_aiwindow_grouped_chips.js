@@ -197,6 +197,188 @@ add_task(async function test_grouped_chips_three_chips_group() {
   }
 });
 
+/**
+ * Adds the given context mentions to the smartbar, submits, and lets the mock
+ * engine finish the turn.
+ *
+ * @param {MozBrowser} browser
+ * @param {MockEngineManager} mockEngineManager
+ * @param {object[]} mentions - Context mentions to add
+ */
+async function sendMessageWithMentions(browser, mockEngineManager, mentions) {
+  const smartbar = BrowserTestUtils.querySelectorDeep(
+    browser.contentDocument,
+    "#ai-window-smartbar"
+  );
+
+  for (const mention of mentions) {
+    smartbar.addContextMention(mention);
+  }
+
+  await typeInSmartbar(browser, "summarize these");
+  await submitSmartbar(browser);
+  await mockEngineManager.respondTo({
+    purpose: "chat",
+    response: "Hello from mock.",
+  });
+}
+
+const TRIP_PLANNING_GROUP = {
+  type: "tabGroup",
+  groupId: "group-1",
+  label: "Trip planning",
+  color: "blue",
+};
+
+add_task(async function test_tab_group_chip_renders_as_single_chip() {
+  const restoreSignIn = skipSignIn();
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  try {
+    await sendMessageWithMentions(browser, mockEngineManager, [
+      TRIP_PLANNING_GROUP,
+    ]);
+
+    const info = await getBubbleChipInfo(browser);
+    Assert.equal(
+      info.websiteChipCount,
+      1,
+      "A referenced tab group renders as a single chip in the submitted message"
+    );
+    Assert.ok(!info.hasGroupedChips, "A single group chip is not grouped");
+
+    const aiChatBrowser = await getAIChatBrowser(browser);
+    const groupChip = await spawnBounded(
+      aiChatBrowser,
+      [],
+      async () => {
+        const contentEl = content.document.querySelector("ai-chat-content");
+        const container = [
+          ...contentEl.shadowRoot.querySelectorAll(
+            ".chat-bubble-user website-chip-container"
+          ),
+        ].at(-1);
+        const chip = container.shadowRoot.querySelector("ai-website-chip");
+        await chip.updateComplete;
+        const node = chip.shadowRoot.querySelector("tab-group-icon");
+
+        const probe = content.document.createElement("div");
+        probe.style.backgroundColor = "var(--tab-group-blue)";
+        content.document.body.appendChild(probe);
+        const expectedColor = content.getComputedStyle(probe).backgroundColor;
+        probe.remove();
+
+        return {
+          initial: node?.shadowRoot.textContent.trim(),
+          color: node && content.getComputedStyle(node).backgroundColor,
+          expectedColor,
+          label: chip.shadowRoot
+            .querySelector(".chip-label")
+            ?.textContent.trim(),
+        };
+      },
+      "group chip icon"
+    );
+
+    Assert.equal(groupChip.label, "Trip planning", "The chip shows the label");
+    Assert.equal(groupChip.initial, "T", "With the group's initial");
+    Assert.equal(
+      groupChip.color,
+      groupChip.expectedColor,
+      "And the group's color, resolved rather than transparent"
+    );
+    Assert.notEqual(
+      groupChip.color,
+      "rgba(0, 0, 0, 0)",
+      "The group color resolves"
+    );
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    mockEngineManager.cleanupMocks();
+  }
+});
+
+add_task(async function test_tab_group_and_tab_chips_group_together() {
+  const restoreSignIn = skipSignIn();
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  try {
+    await sendMessageWithMentions(browser, mockEngineManager, [
+      TRIP_PLANNING_GROUP,
+      { type: "tab", url: CHIPS[0].url, label: CHIPS[0].label },
+      { type: "tab", url: CHIPS[1].url, label: CHIPS[1].label },
+    ]);
+
+    const info = await getBubbleChipInfo(browser);
+    Assert.ok(
+      info.hasGroupedChips,
+      "A tab group and tabs collapse into the grouped chip summary"
+    );
+
+    const aiChatBrowser = await getAIChatBrowser(browser);
+    const stack = await spawnBounded(
+      aiChatBrowser,
+      [],
+      async () => {
+        const contentEl = content.document.querySelector("ai-chat-content");
+        const container = [
+          ...contentEl.shadowRoot.querySelectorAll(
+            ".chat-bubble-user website-chip-container"
+          ),
+        ].at(-1);
+        const grouped = container.shadowRoot.querySelector(
+          "ai-grouped-chip-container"
+        );
+        await grouped.updateComplete;
+        const stackedIcon = grouped.shadowRoot.querySelector(
+          ".grouped-chips__stacked-icon"
+        );
+        const probe = content.document.createElement("div");
+        probe.style.backgroundColor = "var(--tab-group-blue)";
+        content.document.body.appendChild(probe);
+        const expectedColor = content.getComputedStyle(probe).backgroundColor;
+        probe.remove();
+
+        return {
+          stackedIcons: grouped.shadowRoot.querySelectorAll(
+            ".grouped-chips__stacked-icon"
+          ).length,
+          favicons: grouped.shadowRoot.querySelectorAll(
+            ".grouped-chips__favicon"
+          ).length,
+          stackedIconColor:
+            content.getComputedStyle(stackedIcon).backgroundColor,
+          expectedColor,
+        };
+      },
+      "grouped chip stack"
+    );
+
+    Assert.equal(
+      stack.stackedIcons,
+      1,
+      "The group contributes an icon to the stack"
+    );
+    Assert.equal(stack.favicons, 2, "And the two tabs contribute favicons");
+    Assert.equal(
+      stack.stackedIconColor,
+      stack.expectedColor,
+      "The stacked icon paints the group color"
+    );
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    mockEngineManager.cleanupMocks();
+  }
+});
+
 // The toggle is tested with a component page rather than the chat bubble
 // because ai-chat-content autoscrolls when messages render, and panel-list
 // dismisses on any scroll outside it, which would race our assertions.

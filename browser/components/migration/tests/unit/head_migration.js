@@ -1,7 +1,7 @@
 "use strict";
 
 var { MigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/MigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/MigrationUtils.sys.mjs"
 );
 var { LoginHelper } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginHelper.sys.mjs"
@@ -264,21 +264,9 @@ function createChromeBookmarkStructure(totalBookmarks = 100) {
   return bookmarksData;
 }
 
-// Setup that allows to use the profile service in xpcshell tests,
-// lifted from `toolkit/profile/xpcshell/head.js`.
-function setupProfileService() {
-  let gDataHome = gProfD.clone();
-  gDataHome.append("data");
-  gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-  let gDataHomeLocal = gProfD.clone();
-  gDataHomeLocal.append("local");
-  gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-  let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
-    Ci.nsIXREDirProvider
-  );
-  xreDirProvider.setUserDataDirectory(gDataHome, false);
-  xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+// Make sure the directory service provider is initialised.
+function initDirectoryService() {
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
 }
 
-add_setup(setupProfileService);
+add_setup(initDirectoryService);

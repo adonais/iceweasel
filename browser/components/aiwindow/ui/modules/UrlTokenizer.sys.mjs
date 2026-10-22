@@ -5,6 +5,14 @@
  */
 
 /**
+ * Matches a URL token in model text, e.g. "§url_token: GITHUB_COM_1§". The
+ * first capture group is the bare token.
+ */
+export const URL_TOKEN_REGEX = /§url_token:\s*([A-Z0-9_]+_\d+)§/g;
+
+const EXACT_URL_TOKEN_REGEX = new RegExp(`^${URL_TOKEN_REGEX.source}$`);
+
+/**
  * Tokenizes URLs to send to an LLM
  */
 export class UrlTokenizer {
@@ -129,6 +137,67 @@ export class UrlTokenizer {
 
     return tokenFinal;
   }
+
+  /**
+   * Encodes a URL and wraps it in the delimiters the model is prompted with.
+   *
+   * @param {string} url
+   * @returns {string} e.g. "§url_token: GITHUB_COM_1§"
+   */
+  formatToken(url) {
+    return `§url_token: ${this.encodeToken(url)}§`;
+  }
+
+  /**
+   * Replaces every http(s) URL in the text with a token from formatToken, in
+   * one pass. Any "http://" or "https://" that doesn't form a valid URL has its
+   * scheme removed, so the output never contains a raw URL.
+   *
+   * @param {string} text
+   * @returns {string}
+   */
+  tokenizeText(text) {
+    if (!text) {
+      return text;
+    }
+    // A match starts at any http:// or https:// and runs until whitespace or a
+    // delimiter. There is no \b, so "xhttps://..." is also caught. The
+    // lookahead ends the match just before the next scheme, so a bad URL
+    // can't swallow a valid one that follows it.
+    return text.replace(
+      /https?:\/\/(?:(?!https?:\/\/)[^\s<>"'`§])*/gi,
+      match => {
+        // Keep trailing sentence punctuation like "." or ")" outside the token,
+        // except a ")" that closes a "(" in the URL, as in "Function_(math)".
+        let url = match.replace(/[.,;:!?)\]}]+$/, "");
+        let unclosed = url.split("(").length - url.split(")").length;
+        while (unclosed-- > 0 && match[url.length] == ")") {
+          url += ")";
+        }
+        const trailing = match.slice(url.length);
+        // If it doesn't parse, drop the scheme and keep the rest as plain text.
+        return URL.parse(url)
+          ? this.formatToken(url) + trailing
+          : match.slice(match.indexOf("//") + 2);
+      }
+    );
+  }
+
+  /**
+   * Resolves a value that must consist of exactly one known URL token, such
+   * as a link target in structured model output. Anything else, including a
+   * raw URL written by the model or a hallucinated token, yields null.
+   *
+   * @param {string} value
+   * @returns {string|null}
+   */
+  resolveExactToken(value) {
+    if (typeof value != "string") {
+      return null;
+    }
+    const match = value.trim().match(EXACT_URL_TOKEN_REGEX);
+    return (match && this.tokenToUrl.get(match[1])) || null;
+  }
 }
 
 /**
@@ -140,7 +209,7 @@ export class UrlTokenizer {
  * @returns {string}
  */
 export function expandUrlTokens(text, tokenToUrl) {
-  return text.replace(/§url_token:\s*([A-Z0-9_]+_\d+)§/g, (match, token) => {
+  return text.replace(URL_TOKEN_REGEX, (match, token) => {
     return tokenToUrl.get(token) ?? match;
   });
 }
@@ -153,5 +222,5 @@ export function expandUrlTokens(text, tokenToUrl) {
  * @returns {string}
  */
 export function stripUnresolvedUrlTokens(text) {
-  return text.replace(/§url_token:\s*[A-Z0-9_]+_\d+§/g, "");
+  return text.replace(URL_TOKEN_REGEX, "");
 }

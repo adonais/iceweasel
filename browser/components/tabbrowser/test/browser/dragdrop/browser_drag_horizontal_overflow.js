@@ -8,10 +8,7 @@ add_setup(async () => {
     overflowAtStart: false,
     overflowTabFactor: 3,
   });
-  await TestUtils.waitForCondition(
-    () => Array.from(gBrowser.tabs).every(tab => tab._fullyOpen),
-    "Tabs are fully open"
-  );
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
 });
 
 registerCleanupFunction(() => {
@@ -37,8 +34,6 @@ add_task(async function test_dragstart_on_scroll_button_does_not_grab_tab() {
   const tabOrder = [...gBrowser.tabs];
 
   info("Attempt to hold, then drag, the enabled scroll button.");
-  // FIXME Bug 2044440 - synthesizePlainDragAndDrop() should supress a11y checks for expectCancelDragStart
-  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   await EventUtils.synthesizePlainDragAndDrop({
     srcElement: button,
     stepX: 9,
@@ -46,7 +41,6 @@ add_task(async function test_dragstart_on_scroll_button_does_not_grab_tab() {
     expectCancelDragStart: true,
   });
   arrowScrollbox._stopScroll();
-  AccessibilityUtils.resetEnv();
 
   Assert.deepEqual(
     gBrowser.tabs,

@@ -5,9 +5,13 @@
 package mozilla.components.feature.prompts.file
 
 import android.content.Context
+import android.net.Uri
+import android.os.Build
+import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import mozilla.components.feature.prompts.PromptFeature
 
@@ -17,11 +21,13 @@ import mozilla.components.feature.prompts.PromptFeature
  * @property context The application [Context].
  * @property singleMediaPicker An [ActivityResultLauncher] for picking a single photo.
  * @property multipleMediaPicker An [ActivityResultLauncher] for picking multiple photos.
+ * @property mediaCapabilities The media capabilities of the application.
  */
 class AndroidPhotoPicker(
     val context: Context,
     val singleMediaPicker: ActivityResultLauncher<PickVisualMediaRequest>,
     val multipleMediaPicker: ActivityResultLauncher<PickVisualMediaRequest>,
+    val mediaCapabilities: ActivityResultContracts.PickVisualMedia.MediaCapabilities? = null,
 ) {
     internal val isPhotoPickerAvailable = ActivityResultContracts.PickVisualMedia.isPhotoPickerAvailable(context)
 
@@ -39,9 +45,10 @@ class AndroidPhotoPicker(
             getFragment: () -> Fragment,
             getPromptsFeature: () -> PromptFeature?,
         ): ActivityResultLauncher<PickVisualMediaRequest> {
-            return getFragment.invoke().registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            val caller: ActivityResultCaller = getFragment()
+            return caller.registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
                 uri?.let {
-                    getPromptsFeature.invoke()?.onAndroidPhotoPickerResult(arrayOf(uri))
+                    getPromptsFeature()?.onAndroidPhotoPickerResult(arrayOf(it))
                 }
             }
         }
@@ -59,10 +66,24 @@ class AndroidPhotoPicker(
             getFragment: () -> Fragment,
             getPromptsFeature: () -> PromptFeature?,
         ): ActivityResultLauncher<PickVisualMediaRequest> {
-            return getFragment.invoke().registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
-                uriList ->
-                getPromptsFeature.invoke()?.onAndroidPhotoPickerResult(uriList.toTypedArray())
+            val caller: ActivityResultCaller = getFragment()
+            return caller.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
+                uriList: List<Uri> ->
+                getPromptsFeature()?.onAndroidPhotoPickerResult(uriList.toTypedArray())
             }
+        }
+
+        /**
+         * Returns a [ActivityResultContracts.PickVisualMedia.MediaCapabilities] with all common HDR types supported.
+         */
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        fun allHdrCapabilities(): ActivityResultContracts.PickVisualMedia.MediaCapabilities {
+            return ActivityResultContracts.PickVisualMedia.MediaCapabilities.Builder()
+                .addSupportedHdrType(ActivityResultContracts.PickVisualMedia.MediaCapabilities.TYPE_HLG10)
+                .addSupportedHdrType(ActivityResultContracts.PickVisualMedia.MediaCapabilities.TYPE_HDR10)
+                .addSupportedHdrType(ActivityResultContracts.PickVisualMedia.MediaCapabilities.TYPE_HDR10_PLUS)
+                .addSupportedHdrType(ActivityResultContracts.PickVisualMedia.MediaCapabilities.TYPE_DOLBY_VISION)
+                .build()
         }
     }
 }

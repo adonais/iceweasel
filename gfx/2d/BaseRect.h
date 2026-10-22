@@ -42,10 +42,10 @@ namespace mozilla::gfx {
  */
 template <class T, class Sub, class Point, class SizeT, class MarginT>
 struct BaseRect {
-  T x, y, width, height;
+  T x{0}, y{0}, width{0}, height{0};
 
   // Constructors
-  BaseRect() : x(0), y(0), width(0), height(0) {}
+  BaseRect() = default;
   BaseRect(const Point& aOrigin, const SizeT& aSize)
       : x(aOrigin.x), y(aOrigin.y), width(aSize.width), height(aSize.height) {}
   BaseRect(T aX, T aY, T aWidth, T aHeight)

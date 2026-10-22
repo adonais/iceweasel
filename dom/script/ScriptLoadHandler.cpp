@@ -12,6 +12,7 @@
 #include "ScriptLoader.h"
 #include "ScriptTrace.h"
 #include "js/Transcoding.h"
+#include "js/loader/LoadedScript.h"
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"
@@ -236,7 +237,8 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
       return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
     }
     if (sriLength) {
-      mRequest->SetSRILength(sriLength);
+      uint32_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(sriLength);
+      mRequest->SetAlignedSRILength(alignedSRILength);
     }
   }
 
@@ -251,10 +253,13 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   // JavaScript modules are always UTF-8.
   if (mRequest->IsModuleRequest()) {
+    MOZ_ASSERT(!mRequest->getLoadedScript()->ClassicScriptEncoding());
     mDecoder = MakeUnique<ScriptDecoder>(UTF_8_ENCODING,
                                          ScriptDecoder::BOMHandling::Remove);
     return true;
   }
+
+  MOZ_ASSERT(mRequest->IsClassicScript());
 
   // Determine if BOM check should be done.  This occurs either
   // if end-of-stream has been reached, or at least 3 bytes have
@@ -267,6 +272,7 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   const Encoding* encoding;
   std::tie(encoding, std::ignore) = Encoding::ForBOM(Span(aData, aDataLength));
   if (encoding) {
+    mRequest->getLoadedScript()->SetClassicScriptEncodingFromBOM(encoding);
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Remove);
     return true;
@@ -276,45 +282,17 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   nsAutoCString label;
   if (NS_SUCCEEDED(aChannel->GetContentCharset(label)) &&
       (encoding = Encoding::ForLabel(label))) {
+    mRequest->getLoadedScript()->SetClassicScriptEncodingFromCharsetParameter(
+        encoding);
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
     return true;
   }
 
-  // Check the hint charset from the script element or preload
-  // request.
-  nsAutoString hintCharset;
-  if (!mRequest->GetScriptLoadContext()->IsPreload()) {
-    mRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
-  } else {
-    nsTArray<ScriptLoader::PreloadInfo>::index_type i =
-        mScriptLoader->mPreloads.IndexOf(
-            mRequest, 0, ScriptLoader::PreloadRequestComparator());
-
-    NS_ASSERTION(i != mScriptLoader->mPreloads.NoIndex,
-                 "Incorrect preload bookkeeping");
-    hintCharset = mScriptLoader->mPreloads[i].mCharset;
-  }
-
-  if ((encoding = Encoding::ForLabel(hintCharset))) {
-    mDecoder =
-        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  // Get the charset from the charset of the document.
-  if (mScriptLoader->mDocument) {
-    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
-    mDecoder =
-        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  // Curiously, there are various callers that don't pass aDocument. The
-  // fallback in the old code was ISO-8859-1, which behaved like
-  // windows-1252.
-  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
-                                       ScriptDecoder::BOMHandling::Ignore);
+  encoding = mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+  mRequest->getLoadedScript()->SetClassicScriptEncodingFromFallback(encoding);
+  mDecoder =
+      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 
@@ -574,14 +552,33 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
         return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
 
-      mRequest->SetSRILength(sriLength);
+      uint32_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(sriLength);
+      mRequest->SetAlignedSRILength(alignedSRILength);
+
+      const JS::loader::LoadedScript::EncodingHeader* header =
+          reinterpret_cast<const JS::loader::LoadedScript::EncodingHeader*>(
+              buf.begin() + alignedSRILength);
+      if (!mRequest->getLoadedScript()->ReadFromEncodingHeader(header)) {
+        // Corrupted data.
+        return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
+      }
+
+      if (mRequest->IsClassicScript() &&
+          mRequest->getLoadedScript()->DependsOnClassicScriptHintEncoding()) {
+        const Encoding* fallbackEncoding =
+            mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+        if (mRequest->getLoadedScript()->ClassicScriptEncoding() !=
+            fallbackEncoding) {
+          return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
+        }
+      }
 
       Vector<uint8_t> compressed;
       // mRequest has the compressed data, but will be filled with the
       // uncompressed data
       compressed.swap(buf);
       if (!JS::loader::ScriptBytecodeDecompress(
-              compressed, mRequest->GetSRILength(), buf)) {
+              compressed, mRequest->GetSerializedStencilOffset(), buf)) {
         return NS_ERROR_UNEXPECTED;
       }
     }

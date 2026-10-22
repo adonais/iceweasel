@@ -341,61 +341,12 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("aec3_unittests") {
-    testonly = true
-    configs += [ "//third_party/tflite:tflite_config_no_undef" ]
-    deps = [
-      ":adaptive_fir_filter_erl_unittest",
-      ":adaptive_fir_filter_unittest",
-      ":aec3_fft_unittest",
-      ":aec_state_unittest",
-      ":alignment_mixer_unittest",
-      ":api_call_jitter_metrics_unittest",
-      ":block_delay_buffer_unittest",
-      ":block_framer_unittest",
-      ":block_processor_metrics_unittest",
-      ":block_processor_unittest",
-      ":clockdrift_detector_unittest",
-      ":coarse_filter_update_gain_unittest",
-      ":comfort_noise_generator_unittest",
-      ":config_selector_unittest",
-      ":decimator_unittest",
-      ":echo_canceller3_unittest",
-      ":echo_path_delay_estimator_unittest",
-      ":echo_path_variability_unittest",
-      ":echo_remover_metrics_unittest",
-      ":echo_remover_unittest",
-      ":erl_estimator_unittest",
-      ":erle_estimator_unittest",
-      ":fft_data_unittest",
-      ":filter_analyzer_unittest",
-      ":frame_blocker_unittest",
-      ":matched_filter_lag_aggregator_unittest",
-      ":matched_filter_unittest",
-      ":moving_average_spectrum_unittest",
-      ":multi_channel_content_detector_unittest",
-      ":refined_filter_update_gain_unittest",
-      ":render_buffer_unittest",
-      ":render_delay_buffer_unittest",
-      ":render_delay_controller_metrics_unittest",
-      ":render_delay_controller_unittest",
-      ":render_signal_analyzer_unittest",
-      ":residual_echo_estimator_unittest",
-      ":reverb_model_estimator_unittest",
-      ":signal_dependent_erle_estimator_unittest",
-      ":subtractor_unittest",
-      ":suppression_filter_unittest",
-      ":suppression_gain_unittest",
-      ":vector_math_unittest",
-    ]
-  }
-
-  rtc_library("adaptive_fir_filter_erl_unittest") {
-    testonly = true
+  rtc_cc_test("adaptive_fir_filter_erl_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "adaptive_fir_filter_erl_unittest.cc" ]
     deps = [
       ":adaptive_fir_filter_erl",
+      ":aec3",
       ":aec3_common",
       "../../../rtc_base:cpu_info",
       "../../../rtc_base/system:arch",
@@ -403,8 +354,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("adaptive_fir_filter_unittest") {
-    testonly = true
+  rtc_cc_test("adaptive_fir_filter_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "adaptive_fir_filter_unittest.cc" ]
     deps = [
@@ -430,11 +380,11 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("aec3_fft_unittest") {
-    testonly = true
+  rtc_cc_test("aec3_fft_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "aec3_fft_unittest.cc" ]
     deps = [
+      ":aec3",
       ":aec3_common",
       ":aec3_fft",
       ":fft_data",
@@ -443,8 +393,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("aec_state_unittest") {
-    testonly = true
+  rtc_cc_test("aec_state_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "aec_state_unittest.cc" ]
     deps = [
@@ -459,8 +408,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("alignment_mixer_unittest") {
-    testonly = true
+  rtc_cc_test("alignment_mixer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "alignment_mixer_unittest.cc" ]
     deps = [
@@ -473,8 +421,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("api_call_jitter_metrics_unittest") {
-    testonly = true
+  rtc_cc_test("api_call_jitter_metrics_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "api_call_jitter_metrics_unittest.cc" ]
     deps = [
@@ -484,8 +431,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("block_delay_buffer_unittest") {
-    testonly = true
+  rtc_cc_test("block_delay_buffer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "block_delay_buffer_unittest.cc" ]
     deps = [
@@ -497,8 +443,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("block_framer_unittest") {
-    testonly = true
+  rtc_cc_test("block_framer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "block_framer_unittest.cc" ]
     deps = [
@@ -511,8 +456,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("block_processor_metrics_unittest") {
-    testonly = true
+  rtc_cc_test("block_processor_metrics_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "block_processor_metrics_unittest.cc" ]
     deps = [
@@ -522,8 +466,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("block_processor_unittest") {
-    testonly = true
+  rtc_cc_test("block_processor_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "block_processor_unittest.cc" ]
     deps = [
@@ -545,8 +488,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("clockdrift_detector_unittest") {
-    testonly = true
+  rtc_cc_test("clockdrift_detector_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "clockdrift_detector_unittest.cc" ]
     deps = [
@@ -555,8 +497,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("coarse_filter_update_gain_unittest") {
-    testonly = true
+  rtc_cc_test("coarse_filter_update_gain_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "coarse_filter_update_gain_unittest.cc" ]
     deps = [
@@ -577,8 +518,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("comfort_noise_generator_unittest") {
-    testonly = true
+  rtc_cc_test("comfort_noise_generator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "comfort_noise_generator_unittest.cc" ]
     deps = [
@@ -591,8 +531,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("config_selector_unittest") {
-    testonly = true
+  rtc_cc_test("config_selector_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "config_selector_unittest.cc" ]
     deps = [
@@ -602,8 +541,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("decimator_unittest") {
-    testonly = true
+  rtc_cc_test("decimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "decimator_unittest.cc" ]
     deps = [
@@ -615,8 +553,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("echo_canceller3_unittest") {
-    testonly = true
+  rtc_cc_test("echo_canceller3_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "echo_canceller3_unittest.cc" ]
     deps = [
@@ -640,8 +577,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("echo_path_delay_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("echo_path_delay_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "echo_path_delay_estimator_unittest.cc" ]
     deps = [
@@ -658,8 +594,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("echo_path_variability_unittest") {
-    testonly = true
+  rtc_cc_test("echo_path_variability_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "echo_path_variability_unittest.cc" ]
     deps = [
@@ -668,8 +603,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("echo_remover_metrics_unittest") {
-    testonly = true
+  rtc_cc_test("echo_remover_metrics_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "echo_remover_metrics_unittest.cc" ]
     deps = [
@@ -684,8 +618,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("echo_remover_unittest") {
-    testonly = true
+  rtc_cc_test("echo_remover_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "echo_remover_unittest.cc" ]
     deps = [
@@ -703,8 +636,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("erl_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("erl_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "erl_estimator_unittest.cc" ]
     deps = [
@@ -715,8 +647,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("erle_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("erle_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "erle_estimator_unittest.cc" ]
     deps = [
@@ -731,8 +662,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("fft_data_unittest") {
-    testonly = true
+  rtc_cc_test("fft_data_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "fft_data_unittest.cc" ]
     deps = [
@@ -743,10 +673,12 @@ if (rtc_include_tests) {
       "../../../rtc_base/system:arch",
       "../../../test:test_support",
     ]
+    if (current_cpu == "x86" || current_cpu == "x64") {
+      deps += [ ":aec3_avx2" ]
+    }
   }
 
-  rtc_library("filter_analyzer_unittest") {
-    testonly = true
+  rtc_cc_test("filter_analyzer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "filter_analyzer_unittest.cc" ]
     deps = [
@@ -756,8 +688,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("frame_blocker_unittest") {
-    testonly = true
+  rtc_cc_test("frame_blocker_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "frame_blocker_unittest.cc" ]
     deps = [
@@ -770,8 +701,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("matched_filter_lag_aggregator_unittest") {
-    testonly = true
+  rtc_cc_test("matched_filter_lag_aggregator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "matched_filter_lag_aggregator_unittest.cc" ]
     deps = [
@@ -784,8 +714,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("matched_filter_unittest") {
-    testonly = true
+  rtc_cc_test("matched_filter_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "matched_filter_unittest.cc" ]
     deps = [
@@ -805,8 +734,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("moving_average_spectrum_unittest") {
-    testonly = true
+  rtc_cc_test("moving_average_spectrum_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "moving_average_spectrum_unittest.cc" ]
     deps = [
@@ -815,8 +743,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("multi_channel_content_detector_unittest") {
-    testonly = true
+  rtc_cc_test("multi_channel_content_detector_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "multi_channel_content_detector_unittest.cc" ]
     deps = [
@@ -826,8 +753,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("refined_filter_update_gain_unittest") {
-    testonly = true
+  rtc_cc_test("refined_filter_update_gain_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "refined_filter_update_gain_unittest.cc" ]
     deps = [
@@ -850,19 +776,18 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("render_buffer_unittest") {
-    testonly = true
+  rtc_cc_test("render_buffer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "render_buffer_unittest.cc" ]
     deps = [
+      ":aec3",
       ":render_buffer",
       "../../../rtc_base:checks",
       "../../../test:test_support",
     ]
   }
 
-  rtc_library("render_delay_buffer_unittest") {
-    testonly = true
+  rtc_cc_test("render_delay_buffer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "render_delay_buffer_unittest.cc" ]
     deps = [
@@ -876,8 +801,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("render_delay_controller_metrics_unittest") {
-    testonly = true
+  rtc_cc_test("render_delay_controller_metrics_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "render_delay_controller_metrics_unittest.cc" ]
     deps = [
@@ -888,8 +812,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("render_delay_controller_unittest") {
-    testonly = true
+  rtc_cc_test("render_delay_controller_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "render_delay_controller_unittest.cc" ]
     deps = [
@@ -905,8 +828,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("render_signal_analyzer_unittest") {
-    testonly = true
+  rtc_cc_test("render_signal_analyzer_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "render_signal_analyzer_unittest.cc" ]
     deps = [
@@ -923,8 +845,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("residual_echo_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("residual_echo_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "residual_echo_estimator_unittest.cc" ]
     deps = [
@@ -940,8 +861,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("reverb_model_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("reverb_model_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "reverb_model_estimator_unittest.cc" ]
     deps = [
@@ -955,8 +875,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("signal_dependent_erle_estimator_unittest") {
-    testonly = true
+  rtc_cc_test("signal_dependent_erle_estimator_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "signal_dependent_erle_estimator_unittest.cc" ]
     deps = [
@@ -970,8 +889,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("subtractor_unittest") {
-    testonly = true
+  rtc_cc_test("subtractor_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "subtractor_unittest.cc" ]
     deps = [
@@ -991,8 +909,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("suppression_filter_unittest") {
-    testonly = true
+  rtc_cc_test("suppression_filter_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "suppression_filter_unittest.cc" ]
     deps = [
@@ -1006,8 +923,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("suppression_gain_unittest") {
-    testonly = true
+  rtc_cc_test("suppression_gain_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "suppression_gain_unittest.cc" ]
     deps = [
@@ -1024,8 +940,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("vector_math_unittest") {
-    testonly = true
+  rtc_cc_test("vector_math_unittest") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "vector_math_unittest.cc" ]
     deps = [
@@ -1035,5 +950,8 @@ if (rtc_include_tests) {
       "../../../rtc_base/system:arch",
       "../../../test:test_support",
     ]
+    if (current_cpu == "x86" || current_cpu == "x64") {
+      deps += [ ":aec3_avx2" ]
+    }
   }
 }

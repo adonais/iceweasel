@@ -823,9 +823,6 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
   mCanvas->save();
   mCanvas->resetMatrix();
 
-  SkPaint paint;
-  paint.setBlendMode(GfxOpToSkiaOp(aOperator));
-
   // bug 1201272
   // We can't use the SkDropShadowImageFilter here because it applies the xfer
   // mode first to render the bitmap to a temporary layer, and then implicitly
@@ -834,27 +831,35 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
   // composite the resulting shadow, so we must instead use a SkBlurImageFilter
   // to blur the image ourselves.
 
-  SkPaint shadowPaint;
-  shadowPaint.setBlendMode(GfxOpToSkiaOp(aOperator));
-
-  auto shadowDest = IntPoint::Round(aDest + aShadow.mOffset);
-
-  sk_sp<SkImageFilter> blurFilter(
-      SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
-
-  shadowPaint.setImageFilter(blurFilter);
-  shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
-
   // Extract the alpha channel of the image into a bitmap. If the image is A8
   // format already, then we can directly reuse the bitmap rather than create a
   // new one as the surface only needs to be drawn from once.
   if (sk_sp<SkImage> alphaImage = ExtractAlphaImage(image, true)) {
-    mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
-                       SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+    SkPaint shadowPaint;
+    shadowPaint.setBlendMode(GfxOpToSkiaOp(aOperator));
+    shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
+    auto shadowDest = IntPoint::Round(aDest + aShadow.mOffset);
+    SkPoint offset = SkPoint::Make(0, 0);
+    sk_sp<SkImage> blurred(GaussianBlur::BlurAlphaMask(
+        alphaImage.get(), Point(aShadow.mSigma, aShadow.mSigma), offset));
+    if (blurred) {
+      mCanvas->drawImage(
+          blurred, shadowDest.x + offset.x(), shadowDest.y + offset.y(),
+          SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+    } else {
+      sk_sp<SkImageFilter> blurFilter(
+          SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
+      shadowPaint.setImageFilter(blurFilter);
+      mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
+                         SkSamplingOptions(SkFilterMode::kLinear),
+                         &shadowPaint);
+    }
   }
 
   if (aSurface->GetFormat() != SurfaceFormat::A8) {
     // Composite the original image after the shadow
+    SkPaint paint;
+    paint.setBlendMode(GfxOpToSkiaOp(aOperator));
     auto dest = IntPoint::Round(aDest);
     mCanvas->drawImage(image, dest.x, dest.y,
                        SkSamplingOptions(SkFilterMode::kLinear), &paint);
@@ -2146,11 +2151,18 @@ void DrawTargetSkia::PushClipRect(const Rect& aRect) {
 }
 
 void DrawTargetSkia::PopClip() {
+  if (!mPushedLayers.empty() &&
+      mCanvas->getSaveCount() <= mPushedLayers.back().mSaveCount) {
+    return;
+  }
   mCanvas->restore();
   SetTransform(GetTransform());
 }
 
 bool DrawTargetSkia::RemoveAllClips() {
+  if (!mPushedLayers.empty()) {
+    return false;
+  }
   mCanvas->restoreToCount(1);
   SetTransform(GetTransform());
   return true;
@@ -2267,6 +2279,7 @@ void DrawTargetSkia::PushLayerWithBlend(bool aOpaque, Float aOpacity,
           (aCopyBackground ? SkCanvas::kInitWithPrevious_SaveLayerFlag : 0));
 
   mCanvas->saveLayer(saveRec);
+  mPushedLayers.back().mSaveCount = mCanvas->getSaveCount();
 
   SetPermitSubpixelAA(aOpaque);
 
@@ -2302,6 +2315,10 @@ void DrawTargetSkia::PopLayer() {
     }
   }
 
+  // Remove any unbalanced saves before the layer restore.
+  if (mCanvas->getSaveCount() > layer.mSaveCount) {
+    mCanvas->restoreToCount(layer.mSaveCount);
+  }
   // Restore the layer itself, and the clip we pushed for the mask bounds.
   mCanvas->restore();
   if (layer.mMask) {
@@ -2343,6 +2360,13 @@ void DrawTargetSkia::DetachAllSnapshots() {
   if (mSnapshot) {
     if (mSnapshot->hasOneRef()) {
       // No owners outside of this DrawTarget's own reference. Just dump it.
+      // Raster snapshot images borrow our pixels, which we're about to change,
+      // so nothing may hold on to them past the lock GetSkImageForSurface
+      // hands out either.
+      SkPixmap pixmap;
+      MOZ_DIAGNOSTIC_ASSERT(!mSnapshot->mImage || mSnapshot->mImage->unique() ||
+                                !mSnapshot->mImage->peekPixels(&pixmap),
+                            "Snapshot image outlived its lock");
       mSnapshot = nullptr;
       return;
     }

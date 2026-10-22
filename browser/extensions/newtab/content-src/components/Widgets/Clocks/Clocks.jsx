@@ -22,6 +22,7 @@ import { AddClockForm } from "./AddClockForm";
 import { ClocksRow } from "./ClocksRow";
 import { EditClocksPanel } from "./EditClocksPanel";
 import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { useCuratedCityNames } from "./useCuratedCityNames";
 import {
@@ -389,13 +390,10 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             ref={addButtonRef}
           />
         )}
-        <moz-button
+        <WidgetMenuButton
           className="clocks-context-menu-button"
-          data-l10n-id="newtab-clock-widget-menu-button2"
-          iconSrc="chrome://global/skin/icons/more.svg"
           menuId="clocks-widget-context-menu"
-          type="icon ghost"
-          size="small"
+          l10nId="newtab-clock-widget-open-menu-button"
           ref={contextMenuButtonRef}
         />
         <panel-list

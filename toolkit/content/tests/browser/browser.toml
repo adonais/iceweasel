@@ -46,21 +46,11 @@ run-if = ["os == 'win'"]
 ["browser_autoscroll_disabled.js"]
 
 ["browser_autoscroll_disabled_on_editable_content.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be focusable
-]
 
 ["browser_autoscroll_disabled_on_links.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be focusable
-]
 
 ["browser_bug295977_autoscroll_overflow.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1710788 # Bug 1869961
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775543
   "os == 'win' && arch == 'x86'", # Bug 1775543
   "os == 'win' && arch == 'x86_64' && opt", # Bug 1775543
@@ -83,9 +73,6 @@ skip-if = [
 ["browser_bug1198465.js"]
 
 ["browser_bug1572798.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 tags = "audiochannel"
 support-files = ["file_document_open_audio.html"]
 
@@ -101,9 +88,6 @@ fail-if = [
 ["browser_charsetMenu_swapBrowsers.js"]
 
 ["browser_click_event_during_autoscrolling.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be accessible
-]
 
 ["browser_contentTitle.js"]
 
@@ -230,8 +214,6 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775552
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775552
-  "os == 'win' && os_version == '11.26100' && debug", # Bug 1775552
-  "os == 'win' && os_version == '11.26200' && debug", # Bug 1775552
 ]
 
 ["browser_richlistbox_keyboard.js"]

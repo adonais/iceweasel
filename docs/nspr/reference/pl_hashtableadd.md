@@ -43,6 +43,6 @@ can write your `freeEntry` function to free the value of the specified
 entry if the old value should be freed. The default `freeEntry`
 function does not free the value of the entry.
 
-{ref}`PL_HashTableAdd` returns `NULL` if there is not enough memory to
+{doc}`pl_hashtableadd` returns `NULL` if there is not enough memory to
 create a new entry. It doubles the number of buckets if the table is
 overloaded.

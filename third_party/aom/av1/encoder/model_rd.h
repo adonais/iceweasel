@@ -118,7 +118,7 @@ static inline int64_t compute_sse_plane(const AV1_COMP *cpi, MACROBLOCK *x,
   const int block_height = block_size_high[plane_bsize];
 
   get_visible_dimensions(x, plane, plane_bsize, 0, 0, block_width, block_height,
-                         &bw, &bh, true);
+                         /*clip_dims=*/true, &bw, &bh);
 
   int64_t sse = pixel_dist_visible_only(
       cpi, x, p->src.buf, p->src.stride, pd->dst.buf, pd->dst.stride,
@@ -280,7 +280,7 @@ static inline void model_rd_for_sb_with_curvfit(
     const int block_height = block_size_high[plane_bsize];
 
     get_visible_dimensions(x, plane, plane_bsize, 0, 0, block_width,
-                           block_height, &bw, &bh, true);
+                           block_height, /*clip_dims=*/true, &bw, &bh);
 
     sse = pixel_dist_visible_only(cpi, x, p->src.buf, p->src.stride,
                                   pd->dst.buf, pd->dst.stride, plane_bsize,

@@ -1,0 +1,35 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+include TextGenerationTypes;
+
+namespace mozilla {
+namespace hwinference {
+
+// One llama.cpp generator in an HWInference process. Toplevel like
+// PSpeechRecognition and bootstrapped by PHWInference::NewTextGeneration, so
+// the same protocol serves whichever process holds the parent side; that side
+// ends it with Close().
+[ChildProc=Utility]
+async protocol PTextGeneration
+{
+parent:
+  // Sent exactly once, when the construction-time model load finishes.
+  async Ready(LoadResult result);
+  // A batch of generated text, bufferLength tokens at a time; the
+  // Generate reply carries the whole text again.
+  async Delta(nsCString text);
+
+child:
+  // One in flight at a time; the reply follows the last Delta.
+  async Generate(GenerateRequest request) returns (GenerateResponse response);
+  // Empties the conversation history the next Generate builds on.
+  async Clear();
+  // Best-effort; the pending Generate still resolves, with reason cancelled.
+  async Cancel();
+};
+
+}  // namespace hwinference
+}  // namespace mozilla

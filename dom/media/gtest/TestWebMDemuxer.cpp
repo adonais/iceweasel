@@ -242,3 +242,212 @@ TEST(MatroskaDemuxer, AACFrameCountNotParsed)
   taskQueue->AwaitShutdownAndIdle();
   EXPECT_TRUE(ran);
 }
+// output_hevc.mkv is a 1s 30fps HEVC-in-Matroska file encoded with B-frames
+// (has_b_frames=2), so decode order differs from presentation order:
+//   ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libx265
+//     -pix_fmt yuv420p output_hevc.mkv
+// The file carries no BlockDuration, so samples must fall back to the
+// container default duration (33000 us). Peeking at decode-order packet
+// timestamps instead gives 0ms and 66-67ms outliers. A single GetSamples(3)
+// is enough to tell: the demuxed samples stray from the first frames
+// without the fix.
+TEST(MatroskaDemuxer, HEVCDurations)
+{
+  RefPtr<MockMediaResource> resource = new MockMediaResource("output_hevc.mkv");
+  ASSERT_EQ(NS_OK, resource->Open());
+
+  RefPtr<MatroskaDemuxer> demuxer = new MatroskaDemuxer(resource);
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), "TestMatroskaDemuxer");
+
+  bool ran = false;
+  InvokeAsync(taskQueue, __func__, [demuxer]() { return demuxer->Init(); })
+      ->Then(
+          taskQueue, __func__,
+          [demuxer, taskQueue, &ran]() {
+            EXPECT_EQ(demuxer->GetNumberTracks(TrackInfo::kVideoTrack), 1u);
+            RefPtr<MediaTrackDemuxer> videoTrack =
+                demuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+            // GetSamples(3) resolves once 3 samples are available. EXPECT
+            // (not ASSERT) throughout so a failure still reaches
+            // BeginShutdown below instead of hanging in
+            // AwaitShutdownAndIdle.
+            videoTrack->GetSamples(3)->Then(
+                taskQueue, __func__,
+                [taskQueue,
+                 &ran](RefPtr<MediaTrackDemuxer::SamplesHolder> aHolder) {
+                  EXPECT_EQ(aHolder->GetSamples().Length(), 3u);
+                  for (const auto& sample : aHolder->GetSamples()) {
+                    EXPECT_TRUE(sample->mDuration.IsValid());
+                    EXPECT_EQ(sample->mDuration,
+                              TimeUnit::FromMicroseconds(33000));
+                  }
+                  ran = true;
+                  taskQueue->BeginShutdown();
+                },
+                [taskQueue](const MediaResult&) {
+                  EXPECT_TRUE(false) << "GetSamples failed";
+                  taskQueue->BeginShutdown();
+                });
+          },
+          [taskQueue](const MediaResult&) {
+            EXPECT_TRUE(false) << "MatroskaDemuxer::Init() failed";
+            taskQueue->BeginShutdown();
+          });
+
+  taskQueue->AwaitShutdownAndIdle();
+  EXPECT_TRUE(ran);
+}
+
+// Bug 2071275: output_avc.mkv is a 1s 30fps AVC-in-Matroska file encoded
+// with B-frames (max_num_reorder_frames=2), so decode order differs from
+// presentation order. The file carries no BlockDuration, so samples must
+// fall back to the container default duration (33000 us). Peeking at
+// decode-order packet timestamps instead gives 160ms outliers and negative
+// durations. A single GetSamples(3) is enough to tell: the demuxed samples
+// stray from the first frames without the fix.
+TEST(MatroskaDemuxer, AVCDurations)
+{
+  RefPtr<MockMediaResource> resource = new MockMediaResource("output_avc.mkv");
+  ASSERT_EQ(NS_OK, resource->Open());
+
+  RefPtr<MatroskaDemuxer> demuxer = new MatroskaDemuxer(resource);
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), "TestMatroskaDemuxer");
+
+  bool ran = false;
+  InvokeAsync(taskQueue, __func__, [demuxer]() { return demuxer->Init(); })
+      ->Then(
+          taskQueue, __func__,
+          [demuxer, taskQueue, &ran]() {
+            EXPECT_EQ(demuxer->GetNumberTracks(TrackInfo::kVideoTrack), 1u);
+            RefPtr<MediaTrackDemuxer> videoTrack =
+                demuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+            // GetSamples(3) resolves once 3 samples are available. EXPECT
+            // (not ASSERT) throughout so a failure still reaches
+            // BeginShutdown below instead of hanging in
+            // AwaitShutdownAndIdle.
+            videoTrack->GetSamples(3)->Then(
+                taskQueue, __func__,
+                [taskQueue,
+                 &ran](RefPtr<MediaTrackDemuxer::SamplesHolder> aHolder) {
+                  EXPECT_EQ(aHolder->GetSamples().Length(), 3u);
+                  for (const auto& sample : aHolder->GetSamples()) {
+                    EXPECT_TRUE(sample->mDuration.IsValid());
+                    EXPECT_EQ(sample->mDuration,
+                              TimeUnit::FromMicroseconds(33000));
+                  }
+                  ran = true;
+                  taskQueue->BeginShutdown();
+                },
+                [taskQueue](const MediaResult&) {
+                  EXPECT_TRUE(false) << "GetSamples failed";
+                  taskQueue->BeginShutdown();
+                });
+          },
+          [taskQueue](const MediaResult&) {
+            EXPECT_TRUE(false) << "MatroskaDemuxer::Init() failed";
+            taskQueue->BeginShutdown();
+          });
+
+  taskQueue->AwaitShutdownAndIdle();
+  EXPECT_TRUE(ran);
+}
+
+// output_hevc_aac.mkv is a 1s file with a 30fps HEVC video track encoded
+// with B-frames (num_reorder_frames=2, no BlockDuration) and a 48kHz AAC
+// audio track:
+//   ffmpeg -f lavfi -i testsrc=size=320x240:rate=30:duration=1 -f lavfi
+//     -i sine=frequency=1000:duration=1 -c:v libx265 -pix_fmt yuv420p
+//     -x265-params keyint=30:min-keyint=30:open-gop=1:info=0 -c:a aac
+//     -ac 2 -ar 48000 output_hevc_aac.mkv
+// The video track reorders (decode order differs from presentation order)
+// while the audio track does not: demuxing both off the shared demuxer must
+// give the video the container default duration (33000 us) while the audio
+// samples stay contiguous, proving the reorder handling does not disturb the
+// in-order track.
+TEST(MatroskaDemuxer, AudioVideoDurations)
+{
+  RefPtr<MockMediaResource> resource =
+      new MockMediaResource("output_hevc_aac.mkv");
+  ASSERT_EQ(NS_OK, resource->Open());
+
+  RefPtr<MatroskaDemuxer> demuxer = new MatroskaDemuxer(resource);
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), "TestMatroskaDemuxer");
+
+  // Settled flags (set on success and failure alike): one track must never
+  // starve the shutdown if the other misbehaves. Declared here (not in the
+  // Then below) so the callbacks below cannot outlive them.
+  bool doneVideo = false;
+  bool doneAudio = false;
+  auto maybeShutdown = [&taskQueue, &doneVideo, &doneAudio]() {
+    if (doneVideo && doneAudio) {
+      taskQueue->BeginShutdown();
+    }
+  };
+  InvokeAsync(taskQueue, __func__, [demuxer]() { return demuxer->Init(); })
+      ->Then(
+          taskQueue, __func__,
+          [demuxer, taskQueue, &doneVideo, &doneAudio, &maybeShutdown]() {
+            EXPECT_EQ(demuxer->GetNumberTracks(TrackInfo::kVideoTrack), 1u);
+            EXPECT_EQ(demuxer->GetNumberTracks(TrackInfo::kAudioTrack), 1u);
+            RefPtr<MediaTrackDemuxer> videoTrack =
+                demuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+            RefPtr<MediaTrackDemuxer> audioTrack =
+                demuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
+            // The two tracks demux independently off the shared demuxer;
+            // either side settles on its own. EXPECT (not ASSERT) throughout
+            // so a failure still reaches the shutdown instead of hanging in
+            // AwaitShutdownAndIdle.
+            videoTrack->GetSamples(3)->Then(
+                taskQueue, __func__,
+                [taskQueue, &doneVideo, &maybeShutdown](
+                    RefPtr<MediaTrackDemuxer::SamplesHolder> aHolder) {
+                  EXPECT_EQ(aHolder->GetSamples().Length(), 3u);
+                  for (const auto& sample : aHolder->GetSamples()) {
+                    EXPECT_TRUE(sample->mDuration.IsValid());
+                    EXPECT_EQ(sample->mDuration,
+                              TimeUnit::FromMicroseconds(33000));
+                  }
+                  doneVideo = true;
+                  maybeShutdown();
+                },
+                [taskQueue, &doneVideo, &maybeShutdown](const MediaResult&) {
+                  EXPECT_TRUE(false) << "GetSamples failed (video)";
+                  doneVideo = true;
+                  maybeShutdown();
+                });
+            audioTrack->GetSamples(3)->Then(
+                taskQueue, __func__,
+                [taskQueue, &doneAudio, &maybeShutdown](
+                    RefPtr<MediaTrackDemuxer::SamplesHolder> aHolder) {
+                  const auto& samples = aHolder->GetSamples();
+                  EXPECT_EQ(samples.Length(), 3u);
+                  for (const auto& sample : samples) {
+                    EXPECT_TRUE(sample->mDuration.IsValid());
+                  }
+                  // Audio timestamps arrive in order, so each sample must
+                  // end exactly where the next one begins.
+                  for (size_t i = 0; i + 1 < samples.Length(); ++i) {
+                    EXPECT_EQ(samples[i]->mTime + samples[i]->mDuration,
+                              samples[i + 1]->mTime);
+                  }
+                  doneAudio = true;
+                  maybeShutdown();
+                },
+                [taskQueue, &doneAudio, &maybeShutdown](const MediaResult&) {
+                  EXPECT_TRUE(false) << "GetSamples failed (audio)";
+                  doneAudio = true;
+                  maybeShutdown();
+                });
+          },
+          [taskQueue](const MediaResult&) {
+            EXPECT_TRUE(false) << "MatroskaDemuxer::Init() failed";
+            taskQueue->BeginShutdown();
+          });
+
+  taskQueue->AwaitShutdownAndIdle();
+  EXPECT_TRUE(doneVideo);
+  EXPECT_TRUE(doneAudio);
+}

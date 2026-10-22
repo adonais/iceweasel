@@ -135,7 +135,6 @@ void TestPeer::Close() {
   remote_ice_candidates_.clear();
   video_sources_.clear();
   wrapper_ = nullptr;
-  worker_thread_ = nullptr;
 }
 
 TestPeer::TestPeer(scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
@@ -143,11 +142,9 @@ TestPeer::TestPeer(scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
                    std::unique_ptr<MockPeerConnectionObserver> observer,
                    Params params,
                    ConfigurableParams configurable_params,
-                   std::vector<PeerConfigurer::VideoSource> video_sources,
-                   std::unique_ptr<Thread> worker_thread)
+                   std::vector<PeerConfigurer::VideoSource> video_sources)
     : params_(std::move(params)),
       configurable_params_(std::move(configurable_params)),
-      worker_thread_(std::move(worker_thread)),
       wrapper_(std::make_unique<PeerConnectionWrapper>(std::move(pc_factory),
                                                        std::move(pc),
                                                        std::move(observer))),

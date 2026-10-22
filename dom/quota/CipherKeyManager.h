@@ -65,6 +65,14 @@ class CipherKeyManager {
     });
   }
 
+  void Remove(const nsACString& aKeyId) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    MOZ_ASSERT(!mInvalidated);
+
+    lockedCipherKeys->Remove(aKeyId);
+  }
+
   bool Invalidated() {
     auto lockedCipherKeys = mCipherKeys.Lock();
 

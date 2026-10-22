@@ -681,7 +681,8 @@ bool AudioSendStream::ReconfigureSendCodec(const Config& new_config) {
       new_config.send_codec_spec->payload_type !=
           old_config.send_codec_spec->payload_type ||
       new_config.send_codec_spec->red_payload_type !=
-          old_config.send_codec_spec->red_payload_type) {
+          old_config.send_codec_spec->red_payload_type ||
+      new_config.encoder_factory != old_config.encoder_factory) {
     return SetupSendCodec(new_config);
   }
 

@@ -5,7 +5,12 @@
         "distribution_id": "canonical-002"
     },
     "test_about_buildconfig": {
-        "source_repo": "https://hg.mozilla.org/",
+        "source_repo": [
+            "https://hg.mozilla.org/",
+            "https://github.com/mozilla-firefox/firefox",
+            "https://github.com/mozilla-releng/staging-firefox",
+            "https://github.com/mozilla/firefox-dev"
+        ],
         "official": "MOZILLA_OFFICIAL=1"
     },
     "test_youtube": {

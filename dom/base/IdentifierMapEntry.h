@@ -74,6 +74,9 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   IdentifierMapEntry(IdentifierMapEntry&& aOther);
   ~IdentifierMapEntry();
 
+  IdentifierMapEntry(const IdentifierMapEntry& aOther) = delete;
+  IdentifierMapEntry& operator=(const IdentifierMapEntry& aOther) = delete;
+
   nsDependentAtomString GetKeyAsString() const {
     return nsDependentAtomString(mKey);
   }
@@ -187,9 +190,6 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
  private:
-  IdentifierMapEntry(const IdentifierMapEntry& aOther) = delete;
-  IdentifierMapEntry& operator=(const IdentifierMapEntry& aOther) = delete;
-
   void FireChangeCallbacks(Element* aOldElement, Element* aNewElement,
                            bool aImageOnly = false);
 

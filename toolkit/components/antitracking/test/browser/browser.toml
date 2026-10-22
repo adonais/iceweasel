@@ -240,16 +240,10 @@ support-files = [
   "!/browser/components/originattributes/test/browser/file_thirdPartyChild.worker.xhr.html",
   "!/browser/components/originattributes/test/browser/file_thirdPartyChild.xhr.html",
 ]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1775745
-]
 
 ["browser_staticPartition_network.js"]
 
 ["browser_staticPartition_saveAs.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 support-files = [
   "file_saveAsImage.sjs",
   "file_saveAsVideo.sjs",

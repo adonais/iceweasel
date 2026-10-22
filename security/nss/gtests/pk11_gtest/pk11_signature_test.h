@@ -3,8 +3,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <memory>
+#include "prerror.h"
 #include "nss.h"
 #include "pk11pub.h"
+#include "pk11priv.h"
 #include "sechash.h"
 
 #include "nss_scoped_ptrs.h"
@@ -49,6 +51,7 @@ class Pk11SignatureTest : public ::testing::Test {
   }
 
   ScopedSECKEYPrivateKey ImportPrivateKey(const DataBuffer& pkcs8);
+  ScopedSECKEYPrivateKey ImportEncryptedPrivateKey(const DataBuffer& pkcs8);
   ScopedSECKEYPublicKey ImportPublicKey(const DataBuffer& spki);
 
   bool ComputeHash(const DataBuffer& data, DataBuffer* hash) {
@@ -107,6 +110,10 @@ class Pk11SignatureTest : public ::testing::Test {
     SignRaw(privKey, params.data_, &sig);
     EXPECT_EQ(sig, params.signature_);
     Verify(params, sig, true);
+    ScopedSECKEYPrivateKey privKey2(ImportEncryptedPrivateKey(params.pkcs8_));
+    SignRaw(privKey2, params.data_, &sig);
+    EXPECT_EQ(sig, params.signature_);
+    Verify(params, sig, true);
   }
 
   // Importing a private key in PKCS#8 format and reexporting it should
@@ -115,6 +122,21 @@ class Pk11SignatureTest : public ::testing::Test {
     DataBuffer exported;
     ScopedSECKEYPrivateKey key = ImportPrivateKey(k);
     ExportPrivateKey(&key, exported);
+
+    // we currently can't export v2 key format so,
+    // if the key came in as a v2 key skip
+    // the comparison. We can still export
+    // the key, but it will now be a v1 key
+    SECItem derpki = {siBuffer, (unsigned char*)k.data(),
+                      (unsigned int)k.len()};
+    ScopedSECKEYPrivateKeyInfo privKeyInfo(
+        _PK11_DERPrivateKeyToPrivateKeyInfo(&derpki));
+    EXPECT_NE(privKeyInfo, nullptr) << PORT_ErrorToName(PORT_GetError()) << ": "
+                                    << PORT_ErrorToString(PORT_GetError());
+    if (privKeyInfo && (privKeyInfo.get()->version.len == 1) &&
+        (privKeyInfo.get()->version.data[0] == 1)) {
+      return;
+    }
     EXPECT_EQ(k, exported);
   }
 

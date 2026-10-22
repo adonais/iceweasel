@@ -63,11 +63,7 @@ add_task(async function () {
   const horizontalScroll = 100;
   inspector.markup.doc.documentElement.scrollLeft = horizontalScroll;
 
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    inspector.markup.getSelectedContainer().elt,
-    inspector.markup.win
-  );
+  await clickContainer("div", inspector);
   await wait(100);
   is(
     inspector.markup.doc.documentElement.scrollLeft,

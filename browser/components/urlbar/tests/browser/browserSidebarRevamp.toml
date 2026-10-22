@@ -6,9 +6,6 @@ support-files = [
   "head.js",
   "head-common.js",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # long running manifest
-]
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
   "browser.urlbar.trending.featureGate=false",

@@ -1385,6 +1385,14 @@ if (aom_config("CONFIG_AV1_ENCODER") eq "yes") {
   add_proto qw/uint64_t/, "aom_mse_wxh_16bit", "uint8_t *dst, int dstride,uint16_t *src, int sstride, int w, int h";
   specialize qw/aom_mse_wxh_16bit  sse2 avx2 neon/;
 
+  add_proto qw/int64_t/, "aom_calc_variance_stat", "const uint8_t *src, int stride, int bw, int bh";
+  specialize qw/aom_calc_variance_stat avx2/;
+
+  if (aom_config("CONFIG_AV1_HIGHBITDEPTH") eq "yes") {
+    add_proto qw/int64_t/, "aom_highbd_calc_variance_stat", "const uint16_t *src, int stride, int bw, int bh";
+    specialize qw/aom_highbd_calc_variance_stat avx2/;
+  }
+
   add_proto qw/uint64_t/, "aom_mse_16xh_16bit", "uint8_t *dst, int dstride,uint16_t *src, int w, int h";
   specialize qw/aom_mse_16xh_16bit sse2 avx2 neon/;
 
@@ -1738,7 +1746,7 @@ if (aom_config("CONFIG_AV1_ENCODER") eq "yes") {
     add_proto qw/double aom_compute_correlation/, "const unsigned char *frame1, int stride1, int x1, int y1, double mean1, double one_over_stddev1, const unsigned char *frame2, int stride2, int x2, int y2, double mean2, double one_over_stddev2";
     specialize qw/aom_compute_correlation sse4_1 avx2/;
 
-    add_proto qw/void aom_compute_flow_at_point/, "const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v";
+    add_proto qw/void aom_compute_flow_at_point/, "const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v";
     specialize qw/aom_compute_flow_at_point sse4_1 avx2 neon sve/;
   }
 

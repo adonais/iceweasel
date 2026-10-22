@@ -10,8 +10,8 @@ origin:
 
   url: https://tukaani.org/xz/embedded.html
 
-  release: b'e75f4eb79165213a02d567940d344f5c2ff1be03' (b'2015-11-03 21:27:39 +0200').
-  revision: b'e75f4eb79165213a02d567940d344f5c2ff1be03'
+  release: e75f4eb79165213a02d567940d344f5c2ff1be03 (2015-11-03 21:27:39 +0200).
+  revision: e75f4eb79165213a02d567940d344f5c2ff1be03
 
   license: Public Domain
   license-file: COPYING

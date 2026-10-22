@@ -682,11 +682,6 @@ static bool fun_resolve(JSContext* cx, HandleObject obj, HandleId id,
 static bool fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  if (args.length() < 1) {
-    args.rval().setBoolean(false);
-    return true;
-  }
-
   /* Step 1. */
   HandleValue func = args.thisv();
 
@@ -701,7 +696,8 @@ static bool fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp) {
 
   /* Step 2. */
   bool result;
-  if (!OrdinaryHasInstance(cx, obj, args[0], &result)) {
+  HandleValue arg = args.length() > 0 ? args[0] : JS::UndefinedHandleValue;
+  if (!OrdinaryHasInstance(cx, obj, arg, &result)) {
     return false;
   }
 

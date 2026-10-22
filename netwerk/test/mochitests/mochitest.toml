@@ -119,7 +119,6 @@ run-if = [
 ]
 skip-if = [
   "asan",
-  "tsan", # TSan shadow memory causes OOMs.
 ]
 
 ["test_different_domain_in_hierarchy.html"]

@@ -12,7 +12,7 @@ PRStatus PR_JoinThread(PRThread *thread);
 
 ### Parameter
 
-{ref}`PR_JoinThread` has the following parameter:
+{doc}`pr_jointhread` has the following parameter:
 
 `thread`
 
@@ -29,15 +29,15 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_JoinThread` is used to synchronize the termination of a thread.
+{doc}`pr_jointhread` is used to synchronize the termination of a thread.
 The function is synchronous in that it blocks the calling thread until
-the target thread is in a joinable state. {ref}`PR_JoinThread` returns to
+the target thread is in a joinable state. {doc}`pr_jointhread` returns to
 the caller only after the target thread returns from its root function.
 
-{ref}`PR_JoinThread` must not be called until after {ref}`PR_CreateThread` has
-returned. If {ref}`PR_JoinThread` is not called on the same thread as
-{ref}`PR_CreateThread`, then it is the caller's responsibility to ensure
-that {ref}`PR_CreateThread` has completed.
+{doc}`pr_jointhread` must not be called until after {doc}`pr_createthread` has
+returned. If {doc}`pr_jointhread` is not called on the same thread as
+{doc}`pr_createthread`, then it is the caller's responsibility to ensure
+that {doc}`pr_createthread` has completed.
 
 Several threads cannot wait for the same thread to complete. One of the
 calling threads operates successfully, and the others terminate with the
@@ -46,4 +46,4 @@ error `PR_FAILURE`.
 The calling thread is not blocked if the target thread has already
 terminated.
 
-{ref}`PR_JoinThread` is interruptible.
+{doc}`pr_jointhread` is interruptible.

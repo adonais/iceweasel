@@ -58,7 +58,9 @@ function withStubs(prefs, task) {
 }
 
 add_setup(async function () {
+  // FOG needs a profile
   do_get_profile();
+  Services.fog.initializeFOG();
 });
 
 registerCleanupFunction(() => {
@@ -119,6 +121,67 @@ add_task(async function test_flipping_the_user_switch_off_stops() {
   withStubs({ available: true, enabled: true }, calls => {
     Services.prefs.setBoolPref(ENABLED_PREF, false);
     Assert.equal(calls.stop, 1, "flipping off stops without an update()");
+  });
+});
+
+function toggleCounts() {
+  const toggled = Glean.backgroundNotificationHelper.toggled;
+
+  return {
+    enabled: toggled.enabled.testGetValue() ?? 0,
+    disabled: toggled.disabled.testGetValue() ?? 0,
+  };
+}
+
+add_task(async function test_toggling_the_user_switch_is_recorded() {
+  withStubs({ available: true, enabled: false }, () => {
+    Services.fog.testResetFOG();
+
+    Services.prefs.setBoolPref(ENABLED_PREF, true);
+    Assert.deepEqual(
+      toggleCounts(),
+      { enabled: 1, disabled: 0 },
+      "turning the switch on is recorded"
+    );
+
+    Services.prefs.setBoolPref(ENABLED_PREF, false);
+    Assert.deepEqual(
+      toggleCounts(),
+      { enabled: 1, disabled: 1 },
+      "turning the switch off is recorded"
+    );
+  });
+});
+
+// The pref is written by more than one caller, and a write that lands on the
+// value the helper already sees is not the user having changed their mind.
+// libpref leaves its observers alone for such a write, which the metric relies
+// on rather than filtering for itself.
+add_task(async function test_rewriting_the_same_value_is_no_toggle() {
+  withStubs({ available: true, enabled: true }, () => {
+    Services.fog.testResetFOG();
+
+    Services.prefs.setBoolPref(ENABLED_PREF, true);
+    Assert.deepEqual(
+      toggleCounts(),
+      { enabled: 0, disabled: 0 },
+      "writing the value the helper already has is not a toggle"
+    );
+  });
+});
+
+// The gate is withdrawn by Nimbus rather than by the user, so a helper that
+// stops because the gate closed is not the user turning anything off.
+add_task(async function test_closing_the_gate_is_no_toggle() {
+  withStubs({ available: true, enabled: true }, () => {
+    Services.fog.testResetFOG();
+
+    Services.prefs.setBoolPref(AVAILABLE_PREF, false);
+    Assert.deepEqual(
+      toggleCounts(),
+      { enabled: 0, disabled: 0 },
+      "the Nimbus-owned gate closing is not a user toggle"
+    );
   });
 });
 

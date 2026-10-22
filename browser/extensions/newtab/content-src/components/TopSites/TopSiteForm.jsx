@@ -116,8 +116,8 @@ export class TopSiteForm extends React.PureComponent {
             source: TOP_SITES_SOURCE,
             event: "TOP_SITES_EDIT",
             action_position: index,
-            hasTitleChanged: this.state.hasTitleChanged,
-            hasURLChanged: this.state.hasURLChanged,
+            has_title_changed: this.state.hasTitleChanged,
+            has_url_changed: this.state.hasURLChanged,
           })
         );
       } else if (!isEdit) {

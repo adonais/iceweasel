@@ -47,7 +47,7 @@
 #include <unistd.h>
 
 gboolean save_to_stdout(const gchar* buf, gsize count, GError** error,
-                        gpointer data) {
+                        gpointer /*data*/) {
   size_t written = fwrite(buf, 1, count, stdout);
   if (written != count) {
     g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(errno),
@@ -108,9 +108,9 @@ int main(int argc, char** argv) {
               argv[0]);
       return 1;
     }
-  }
+  } else
 #endif
-  if (!screenshot) {
+  {
     GdkWindow* window = gdk_get_default_root_window();
     screenshot =
         gdk_pixbuf_get_from_window(window, 0, 0, gdk_window_get_width(window),

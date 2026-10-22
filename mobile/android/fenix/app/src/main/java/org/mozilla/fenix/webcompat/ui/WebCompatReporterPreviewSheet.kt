@@ -167,7 +167,15 @@ private fun PreviewReporterItemRow(
             ) {
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_20),
-                    contentDescription = null,
+                    contentDescription =
+                        "${previewReporterItem.title}, " +
+                            stringResource(
+                                if (isExpanded) {
+                                    R.string.a11y_action_label_collapse
+                                } else {
+                                    R.string.a11y_action_label_expand
+                                }
+                            ),
                     modifier = Modifier.rotate(rotation),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )

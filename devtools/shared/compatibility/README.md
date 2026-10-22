@@ -9,13 +9,10 @@ The subsets from the dataset required by the Compatibility panel are:
 - browsers: [https://github.com/mdn/browser-compat-data/tree/master/browsers](https://github.com/mdn/browser-compat-data/tree/master/browsers)
 - css.properties: [https://github.com/mdn/browser-compat-data/tree/master/css](https://github.com/mdn/browser-compat-data/tree/master/css).
 
-In order to download up-to-date data, you need to run the following commands:
-
-- `cd devtools/shared/compatibility`
-- `yarn install --no-lockfile` and select the latest package version for the `@mdn/browser-compat-data` package
-- `yarn update`
-
-This should save the `css-properties.json` JSON file directly in `devtools/shared/compatibility/dataset/`.
+To download up-to-date data, run `./mach devtools-update-compat-data`.
+It downloads the latest `@mdn/browser-compat-data` package in a temporary folder,
+then runs `bin/update.js` to save the `css-properties.json` JSON file directly in `devtools/shared/compatibility/dataset/`.
+Pass `--run-tests` to also run the tests listed below.
 
 Before submitting for review, run our internal tests:
 - `./mach xpcshell-test --tag devtools-compat-data`

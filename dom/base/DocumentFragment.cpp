@@ -17,6 +17,7 @@
 #include "nsDOMString.h"
 #include "nsError.h"
 #include "nsNodeInfoManager.h"
+#include "nsNodeSupportsWeakRefTearoff.h"
 #include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {

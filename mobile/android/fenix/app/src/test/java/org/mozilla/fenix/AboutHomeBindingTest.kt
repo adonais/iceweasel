@@ -55,6 +55,70 @@ class AboutHomeBindingTest {
     @Test
     fun `WHEN URL is updated to ABOUT_HOME_URL THEN navigate to the homepage`() =
         runTest(testDispatcher) {
+            val mockDestination: NavDestination = mockk()
+            every { mockDestination.id } returns R.id.browserFragment
+            every { navController.currentDestination } returns mockDestination
+
+            val binding =
+                AboutHomeBinding(
+                    browserStore = browserStore,
+                    navController = navController,
+                    mainDispatcher = testDispatcher,
+                )
+
+            binding.start()
+
+            browserStore.dispatch(
+                ContentAction.UpdateUrlAction(
+                    sessionId = tab.id,
+                    url = ABOUT_HOME_URL,
+                )
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(ABOUT_HOME_URL, tab.content.url)
+
+            verify { navController.navigate(NavGraphDirections.actionGlobalHome()) }
+        }
+
+    @Test
+    fun `GIVEN menu dialog is shown WHEN URL is updated to ABOUT_HOME_URL THEN navigate to the homepage`() =
+        runTest(testDispatcher) {
+            val mockDestination: NavDestination = mockk()
+            every { mockDestination.id } returns R.id.menuDialogFragment
+            every { navController.currentDestination } returns mockDestination
+
+            val binding =
+                AboutHomeBinding(
+                    browserStore = browserStore,
+                    navController = navController,
+                    mainDispatcher = testDispatcher,
+                )
+
+            binding.start()
+
+            browserStore.dispatch(
+                ContentAction.UpdateUrlAction(
+                    sessionId = tab.id,
+                    url = ABOUT_HOME_URL,
+                )
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(ABOUT_HOME_URL, tab.content.url)
+
+            verify { navController.navigate(NavGraphDirections.actionGlobalHome()) }
+        }
+
+    @Test
+    fun `GIVEN menu fragment is shown WHEN URL is updated to ABOUT_HOME_URL THEN navigate to the homepage`() =
+        runTest(testDispatcher) {
+            val mockDestination: NavDestination = mockk()
+            every { mockDestination.id } returns R.id.menuFragment
+            every { navController.currentDestination } returns mockDestination
+
             val binding =
                 AboutHomeBinding(
                     browserStore = browserStore,
@@ -174,6 +238,36 @@ class AboutHomeBindingTest {
         runTest(testDispatcher) {
             val mockDestination: NavDestination = mockk()
             every { mockDestination.id } returns R.id.unlockPrivateTabsFragment
+            every { navController.currentDestination } returns mockDestination
+
+            val binding =
+                AboutHomeBinding(
+                    browserStore = browserStore,
+                    navController = navController,
+                    mainDispatcher = testDispatcher,
+                )
+
+            binding.start()
+
+            browserStore.dispatch(
+                ContentAction.UpdateUrlAction(
+                    sessionId = tabId,
+                    url = ABOUT_HOME_URL,
+                )
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(ABOUT_HOME_URL, tab.content.url)
+
+            verify(exactly = 0) { navController.navigate(NavGraphDirections.actionGlobalHome()) }
+        }
+
+    @Test
+    fun `GIVEN the settings screen is currently shown WHEN URL is updated to ABOUT_HOME_URL THEN do not navigate to the homepage`() =
+        runTest(testDispatcher) {
+            val mockDestination: NavDestination = mockk()
+            every { mockDestination.id } returns R.id.settingsFragment
             every { navController.currentDestination } returns mockDestination
 
             val binding =

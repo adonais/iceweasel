@@ -46,7 +46,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * shortcuts out identically.
  *
  * On the homepage the grid cannot scroll itself: it sits inside the page's vertical scroll, where a scrollable child is
- * measured with an infinite height and fails. There it is given an exact height instead, with scrolling disabled. The
+ * measured with an infinite height and fails. There it is given a bounded height instead, with scrolling disabled. The
  * library, which is a screen of its own, scrolls normally.
  *
  * @param topSites List of [TopSite] to display.
@@ -119,10 +119,14 @@ internal fun Shortcuts(
 }
 
 /**
- * Sizes [grid] to exactly [rowCount] rows by measuring a shortcut's text, then hands it that height.
+ * Caps [grid] at the height [rowCount] rows take in the worst case, measured from a shortcut's text.
  *
- * The homepage grid sits inside the page's vertical scroll, so it must be given a height rather than measuring itself.
- * Estimating that height from the caption line height under-counts, because the text style preserves the padding around
+ * The homepage grid sits inside the page's vertical scroll, where it is measured with an infinite height and cannot
+ * measure itself, so it has to be given a bound. That bound is a maximum rather than an exact height: a row whose
+ * titles all fit on one line is shorter than the worst case, and pinning the grid to the worst case instead leaves the
+ * surplus as dead space between the last row and whatever follows the grid.
+ *
+ * Estimating the bound from the caption line height under-counts, because the text style preserves the padding around
  * each line, and the shortfall grows with the user's font scale until a `LazyVerticalGrid` clips the last row.
  * Measuring the real [TopSiteItemText] avoids the estimate entirely.
  *
@@ -131,7 +135,7 @@ internal fun Shortcuts(
  * @param layout The resolved row layout, providing the cell and favicon sizes.
  * @param topSiteColors The color set defined by [TopSiteColors] used to style a top site.
  * @param modifier The [Modifier] to be applied to the layout.
- * @param grid The grid to size.
+ * @param grid The grid to bound.
  */
 @Composable
 private fun SelfMeasuredGrid(
@@ -166,9 +170,7 @@ private fun SelfMeasuredGrid(
         val gridHeight = itemHeight * rowCount + rowSpacing.roundToPx() * (rowCount - 1).coerceAtLeast(0)
 
         val placeable =
-            subcompose(SlotId.Grid, grid)
-                .first()
-                .measure(constraints.copy(minHeight = gridHeight, maxHeight = gridHeight))
+            subcompose(SlotId.Grid, grid).first().measure(constraints.copy(minHeight = 0, maxHeight = gridHeight))
 
         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }

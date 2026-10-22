@@ -29,6 +29,8 @@ const int kTIleSizeInPixels = (kTileSize << 6);
 // Fake width and height so that they can be multiples of the tile size.
 const int kImgWidth = 704;
 const int kImgHeight = 576;
+const int kInvalidTileImgSize = 256;
+const int kOutOfRangeTileCol = 2;
 
 // This test tests large scale tile coding case. Non-large-scale tile coding
 // is tested by the tile_independence test.
@@ -78,7 +80,8 @@ class AV1ExtTileTest
                           ::libaom_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       // Encode setting
-      encoder->Control(AOME_SET_CPUUSED, set_cpu_used_);
+      encoder->Control(AOME_SET_CPUUSED,
+                       test_invalid_tile_ ? 8 : set_cpu_used_);
       encoder->Control(AOME_SET_ENABLEAUTOALTREF, 0);
       encoder->Control(AV1E_SET_FRAME_PARALLEL_DECODING, 1);
 
@@ -88,8 +91,8 @@ class AV1ExtTileTest
       encoder->Control(AV1E_SET_SUPERBLOCK_SIZE, AOM_SUPERBLOCK_SIZE_64X64);
       // Set tile_columns and tile_rows to MAX values, which guarantees the tile
       // size of 64 x 64 pixels(i.e. 1 SB) for <= 4k resolution.
-      encoder->Control(AV1E_SET_TILE_COLUMNS, 6);
-      encoder->Control(AV1E_SET_TILE_ROWS, 6);
+      encoder->Control(AV1E_SET_TILE_COLUMNS, test_invalid_tile_ ? 1 : 6);
+      encoder->Control(AV1E_SET_TILE_ROWS, test_invalid_tile_ ? 1 : 6);
     } else if (video->frame() == 1) {
       frame_flags_ =
           AOM_EFLAG_NO_UPD_LAST | AOM_EFLAG_NO_UPD_GF | AOM_EFLAG_NO_UPD_ARF;
@@ -109,6 +112,16 @@ class AV1ExtTileTest
   }
 
   void FramePktHook(const aom_codec_cx_pkt_t *pkt) override {
+    if (test_invalid_tile_) {
+      decoder_->Control(AV1_SET_DECODE_TILE_ROW, 0);
+      decoder_->Control(AV1_SET_DECODE_TILE_COL, kOutOfRangeTileCol);
+      EXPECT_EQ(AOM_CODEC_INVALID_PARAM,
+                decoder_->DecodeFrame(
+                    reinterpret_cast<uint8_t *>(pkt->data.frame.buf),
+                    pkt->data.frame.sz));
+      return;
+    }
+
     // Skip decoding 1 frame.
     if (pkt->data.frame.pts == (aom_codec_pts_t)kSkip) return;
 
@@ -186,12 +199,28 @@ class AV1ExtTileTest
     ASSERT_EQ(md5_, tile_md5_);
   }
 
+  void TestInvalidTile() {
+    ::libaom_test::I420VideoSource video("hantro_collage_w352h288.yuv",
+                                         kInvalidTileImgSize,
+                                         kInvalidTileImgSize, 30, 1, 0, 1);
+    cfg_.rc_target_bitrate = 500;
+    cfg_.g_error_resilient = AOM_ERROR_RESILIENT_DEFAULT;
+    cfg_.large_scale_tile = 1;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.g_threads = 1;
+    test_invalid_tile_ = true;
+
+    init_flags_ = AOM_CODEC_USE_PSNR;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
   ::libaom_test::TestMode encoding_mode_;
   int set_cpu_used_;
   ::libaom_test::Decoder *decoder_;
   aom_image_t tile_img_;
   std::vector<std::string> md5_;
   std::vector<std::string> tile_md5_;
+  bool test_invalid_tile_ = false;
 };
 
 TEST_P(AV1ExtTileTest, DecoderResultTest) { TestRoundTrip(); }
@@ -204,6 +233,8 @@ AV1_INSTANTIATE_TEST_SUITE(
 class AV1ExtTileTestLarge : public AV1ExtTileTest {};
 
 TEST_P(AV1ExtTileTestLarge, DecoderResultTest) { TestRoundTrip(); }
+
+TEST_P(AV1ExtTileTestLarge, RejectsInvalidDecodeTile) { TestInvalidTile(); }
 
 AV1_INSTANTIATE_TEST_SUITE(
     // Now only test 2-pass mode.

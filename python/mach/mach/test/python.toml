@@ -31,3 +31,5 @@ skip-if = ["automation == false"]
 ["test_site_compatibility.py"]
 
 ["test_telemetry_instrumentation.py"]
+
+["test_util.py"]

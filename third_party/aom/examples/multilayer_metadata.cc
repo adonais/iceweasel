@@ -225,38 +225,6 @@ bool parse_line(std::ifstream &file, int min_indent, bool is_list, int *indent,
 }
 
 template <typename T>
-bool parse_integer_list(std::ifstream &file, int min_indent, int *line_idx,
-                        std::vector<T> *result) {
-  bool has_list_prefix;
-  int indent = -1;
-  std::string field_name;
-  ParsedValue value;
-  bool syntax_error;
-  while (parse_line(file, min_indent, /*is_list=*/true, &indent,
-                    &has_list_prefix, line_idx, &field_name, &value,
-                    &syntax_error)) {
-    if (!field_name.empty()) {
-      fprintf(
-          stderr,
-          "Error: Unexpected field name '%s' at line %d, expected a number\n",
-          field_name.c_str(), *line_idx);
-      return false;
-    } else if (!has_list_prefix) {
-      fprintf(stderr, "Error: Missing list prefix '-' at line %d\n", *line_idx);
-      return false;
-    } else {
-      T v;
-      RETURN_IF_FALSE(value.IntegerValueInRange(
-          static_cast<int64_t>(std::numeric_limits<T>::min()),
-          static_cast<int64_t>(std::numeric_limits<T>::max()), *line_idx, &v));
-      result->push_back(v);
-    }
-  }
-  if (syntax_error) return false;
-  return true;
-}
-
-template <typename T>
 std::pair<T, bool> value_present(const T &v) {
   return std::make_pair(v, true);
 }

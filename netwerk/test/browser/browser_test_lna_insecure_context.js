@@ -22,7 +22,6 @@ async function restorePermissions() {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["permissions.manager.defaultsUrl", ""],
       ["network.lna.block_insecure_contexts", true],
       ["network.lna.blocking", true],
       ["network.http.rcwn.enabled", false],

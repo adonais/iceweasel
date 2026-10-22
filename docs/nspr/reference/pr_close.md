@@ -16,7 +16,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object.
+: A pointer to a {doc}`prfiledesc` object.
 
 ### Returns
 
@@ -28,5 +28,5 @@ One of the following values:
 ## Description
 
 The file descriptor may represent a normal file, a socket, or an end
-point of a pipe. On successful return, {ref}`PR_Close` frees the dynamic
+point of a pipe. On successful return, {doc}`pr_close` frees the dynamic
 memory and other resources identified by the `fd` parameter.

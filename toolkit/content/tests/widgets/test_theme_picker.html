@@ -130,6 +130,24 @@
           "A picker item is rendered for each theme."
         );
 
+        await waitForCondition(
+          () => picker.pickerEl.ariaLabel,
+          "The theme listbox has a localized accessible name."
+        );
+        await picker.pickerEl.updateComplete;
+        await picker.pickerEl.fieldset.updateComplete;
+        let themeListbox =
+          picker.pickerEl.fieldset.shadowRoot.querySelector("#inputs");
+        ok(
+          themeListbox.getAttribute("aria-label"),
+          "The theme listbox exposes its localized accessible name."
+        );
+        is(
+          picker.pickerEl.getAttribute("aria-label"),
+          null,
+          "The picker host drops aria-label in listbox mode."
+        );
+
         let segmentedControl = picker.shadowRoot.querySelector(
           "moz-segmented-control"
         );

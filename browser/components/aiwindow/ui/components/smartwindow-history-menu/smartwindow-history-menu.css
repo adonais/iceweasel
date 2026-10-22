@@ -50,10 +50,7 @@ panel-list.history-menu[valign="top"] {
 
 @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
   moz-button.fullpage-action-button {
-    /* Resting icon/label use the muted accent (#584a7d / #9687c0); on
-       hover/active/selected they brighten to button/text/color (#fcfbff in
-       dark). The icon tracks the label via currentColor. */
-    --button-text-color-ghost: var(--icon-color-accent-primary-desaturated);
+    --button-text-color-ghost: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-30));
     --button-text-color-ghost-hover: var(--button-text-color);
     --button-text-color-ghost-active: var(--button-text-color);
     --button-text-color-ghost-selected: var(--button-text-color);

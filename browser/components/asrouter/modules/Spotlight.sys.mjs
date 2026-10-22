@@ -7,6 +7,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeTelemetry:
     "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
+  ASRouterScreenUtils:
+    "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs",
   MessagingSystemAllowlists:
     "resource://messaging-system/lib/MessagingSystemAllowlists.sys.mjs",
 });
@@ -82,6 +84,14 @@ export const Spotlight = {
     // shrinks the window for a possible race condition.
     lazy.MessagingSystemAllowlists.ensureInit();
 
+    const renderedContent =
+      await lazy.ASRouterScreenUtils.prepareContentForFirstPaint(
+        message.content
+      );
+    if (!renderedContent || win.closed || !browser.isConnected) {
+      return false;
+    }
+
     if (message.trigger?.id === "lastWindowClose") {
       win.gDialogBox.replaceDialogIfOpen();
       // We do this for the selected browser, not the triggering browser, since
@@ -112,7 +122,7 @@ export const Spotlight = {
     win.addEventListener("unload", unloadHandler, { once: true });
 
     try {
-      if (message.content?.modal === "tab") {
+      if (renderedContent?.modal === "tab") {
         let { closedPromise, dialog } = win.gBrowser
           .getTabDialogBox(browser)
           .open(
@@ -121,13 +131,13 @@ export const Spotlight = {
               features: "resizable=no",
               allowDuplicateDialogs: false,
             },
-            message.content
+            renderedContent
           );
         this._dialog = dialog;
         this._dialogWindow = win;
         await closedPromise;
       } else {
-        let closedPromise = win.gDialogBox.open(spotlight_url, message.content);
+        let closedPromise = win.gDialogBox.open(spotlight_url, renderedContent);
         this._dialog = win.gDialogBox.dialog;
         this._dialogWindow = win;
         await closedPromise;

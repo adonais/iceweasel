@@ -477,7 +477,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   if (gHttpHandler->IsHttp2Excluded(mConnectionInfo)) {
     StoreAllowSpdy(0);
     mCaps |= NS_HTTP_DISALLOW_SPDY;
-    mConnectionInfo->SetNoSpdy(true);
+    mConnectionInfo = mConnectionInfo->Mutate().SetNoSpdy(true).Finalize();
   }
 
   auto canUseHappyEyeballs = [&]() {
@@ -494,7 +494,8 @@ nsresult TRRServiceChannel::BeginConnect() {
     LOG(("%p NS_HTTP_USE_HAPPY_EYEBALLS ", this));
     mCaps |= NS_HTTP_USE_HAPPY_EYEBALLS;
     mCaps &= ~NS_HTTP_FORCE_WAIT_HTTP_RR;
-    mConnectionInfo->SetHappyEyeballsEnabled(true);
+    mConnectionInfo =
+        mConnectionInfo->Mutate().SetHappyEyeballsEnabled(true).Finalize();
   }
 
   // if this somehow fails we can go on without it
@@ -541,16 +542,18 @@ nsresult TRRServiceChannel::ContinueOnBeforeConnect() {
   mCaps |= NS_HTTP_TRR_FLAGS_FROM_MODE(nsIRequest::GetTRRMode());
 
   // Finalize ConnectionInfo flags before SpeculativeConnect
-  mConnectionInfo->SetAnonymous((mLoadFlags & LOAD_ANONYMOUS) != 0);
-  mConnectionInfo->SetPrivate(mPrivateBrowsing);
-  mConnectionInfo->SetNoSpdy(mCaps & NS_HTTP_DISALLOW_SPDY);
-  mConnectionInfo->SetBeConservative((mCaps & NS_HTTP_BE_CONSERVATIVE) ||
-                                     LoadBeConservative());
-  mConnectionInfo->SetTlsFlags(mTlsFlags);
-  mConnectionInfo->SetIsTrrServiceChannel(LoadIsTRRServiceChannel());
-  mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
-  mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
-  mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
+  mConnectionInfo = mConnectionInfo->Mutate()
+                        .SetAnonymous((mLoadFlags & LOAD_ANONYMOUS) != 0)
+                        .SetPrivate(mPrivateBrowsing)
+                        .SetNoSpdy(mCaps & NS_HTTP_DISALLOW_SPDY)
+                        .SetBeConservative((mCaps & NS_HTTP_BE_CONSERVATIVE) ||
+                                           LoadBeConservative())
+                        .SetTlsFlags(mTlsFlags)
+                        .SetIsTrrServiceChannel(LoadIsTRRServiceChannel())
+                        .SetTRRMode(nsIRequest::GetTRRMode())
+                        .SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4)
+                        .SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6)
+                        .Finalize();
 
   if (mLoadFlags & LOAD_FRESH_CONNECTION) {
     glean::networking::trr_connection_cycle_count.Get(TRRService::ProviderKey())

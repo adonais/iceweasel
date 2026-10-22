@@ -1,96 +1,75 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import gzip
-import json
 import os
-import shutil
-import tempfile
 from pathlib import Path
-
-try:
-    import orjson
-except ImportError:
-    orjson = None
 
 from mozlog import get_proxy_logger
 
-from .symbolication import get_extracted_symbols, symbolicate_profile
+from .symbolication import get_extracted_symbols, symbolicate_profile_file
 
 LOG = get_proxy_logger("profiler")
 
 
-def save_gecko_profile(profile, filename, gzip_compress=False):
-    LOG.info(
-        f"Saving profile to {filename} {'with gzip compression' if gzip_compress else ''}"
-    )
-    if orjson is not None:
-        try:
-            data = orjson.dumps(profile)
-        except Exception:
-            data = json.dumps(profile).encode("utf-8")
-    else:
-        data = json.dumps(profile).encode("utf-8")
-
-    if gzip_compress:
-        with gzip.open(filename, "wb") as f:
-            f.write(data)
-    else:
-        with open(filename, "wb") as f:
-            f.write(data)
-
-
 def symbolicate_profile_json(profile_path, symbol_dir=None):
+    """Symbolicate a profile, replacing it with a gzipped symbolicated profile.
+
+    Symbolicated profiles are always gzipped, whatever the input's compression,
+    so the result is named ".json.gz". The profile therefore moves when it was
+    not already named that way, and callers should use the returned path.
+
+    Args:
+        profile_path (path): The profile to symbolicate.
+        symbol_dir (path): Directory of Breakpad symbols to use. When omitted,
+            it is looked up with get_extracted_symbols().
+
+    Returns:
+        Path: Where the symbolicated profile ended up, or profile_path
+            unchanged when symbolication failed.
     """
-    Symbolicate a single JSON profile.
-    """
+    profile_path = Path(profile_path)
+    stat = profile_path.stat()
 
-    stat = Path(profile_path).stat()
-    original_atime = stat.st_atime
-    original_mtime = stat.st_mtime
-
-    with tempfile.TemporaryDirectory() as work_dir:
-        if symbol_dir is None:
-            symbol_dir = get_extracted_symbols(work_dir)
-
-        LOG.info("Symbolicating the performance profile...")
-        try:
-            gzipped = False
-            with open(profile_path, "rb") as profile_file:
-                # Some profile.json files may be compressed with gzip
-                # (ex. Mochitest / XPCshell profiles)
-                data = profile_file.read()
-                LOG.info(f"Profile file size: {len(data)} bytes")
-                gzip_magic_number = b"\x1f\x8b"
-                if data[:2] == gzip_magic_number:
-                    gzipped = True
-                    data = gzip.decompress(data)
-                    LOG.info(f"Decompressed profile size: {len(data)} bytes")
-                else:
-                    LOG.debug("Profile was not gzipped, treating as regular JSON")
-
-                if orjson is not None:
-                    try:
-                        profile = orjson.loads(data)
-                    except Exception:
-                        profile = json.loads(data)
-                else:
-                    profile = json.loads(data)
-
-            symbolicate_profile(profile, symbol_dir)
-            save_gecko_profile(profile, profile_path, gzip_compress=gzipped)
-        except MemoryError:
-            LOG.error(
-                f"Ran out of memory while trying to symbolicate profile {profile_path}"
+    if profile_path.name.endswith(".gz"):
+        final_path = profile_path
+    else:
+        final_path = profile_path.with_name(profile_path.name + ".gz")
+        if final_path.exists():
+            # Renaming would destroy that profile. Keep our own name instead.
+            LOG.warning(
+                f"Not renaming {profile_path.name} to {final_path.name}: "
+                "a profile of that name already exists."
             )
-        except Exception as e:
-            LOG.error("Encountered an exception during profile symbolication")
-            LOG.error(e)
+            final_path = profile_path
+
+    # profiler-edit writes the symbolicated profile in its final form, next to
+    # the destination so that the swap below is a same-filesystem rename. The
+    # ".gz" is what makes it gzip, and the leading dot keeps a partial file
+    # from being picked up as an artifact or by the glob below.
+    out_path = final_path.with_name(f".{final_path.name}.sym.json.gz")
+
+    LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
+    try:
+        if not symbolicate_profile_file(profile_path, out_path, symbol_dir):
+            LOG.warning(f"Not replacing {profile_path.name}: symbolication failed.")
+            return profile_path
+
+        sym_size = out_path.stat().st_size
+        os.replace(out_path, final_path)
+        if final_path != profile_path:
+            profile_path.unlink()
+        LOG.info(
+            f"Successfully symbolicated {profile_path.name} -> {final_path.name}: "
+            f"{stat.st_size} bytes -> {sym_size} bytes"
+        )
+    finally:
+        out_path.unlink(missing_ok=True)
 
     # To ensure the artifact markers in resource usage profiles are accurate,
     # the symbolicated profile's mod and access time should reflect
     # when the artifact was created rather than when the profile was symbolicated
-    os.utime(profile_path, (original_atime, original_mtime))
+    os.utime(final_path, (stat.st_atime, stat.st_mtime))
+    return final_path
 
 
 def symbolicate_profiles(profile_dir=None, symbol_dir=None):
@@ -103,61 +82,34 @@ def symbolicate_profiles(profile_dir=None, symbol_dir=None):
         LOG.warning("No profile directory specified, skipping symbolication")
         return
 
+    # Profiles are gzipped or plain depending on how they were dumped, so we
+    # check both .json and .json.gz.
     profile_files = sorted(
         profile
-        for profile in profile_dir.glob("profile_*.json")
+        for pattern in ("profile_*.json", "profile_*.json.gz")
+        for profile in profile_dir.glob(pattern)
         if "resource-usage" not in profile.name
     )
+    if not profile_files:
+        return
 
-    with tempfile.TemporaryDirectory() as work_dir:
+    # symbol_dir may be a URL (e.g. mozharness' --symbols-path with on-demand
+    # symbols), in which case the local symbols are extracted instead.
+    if symbol_dir is not None and not Path(symbol_dir).is_dir():
+        symbol_dir = None
+
+    if symbol_dir is None:
+        symbol_dir = get_extracted_symbols()
         if symbol_dir is None:
-            symbol_dir = get_extracted_symbols(work_dir)
-            if symbol_dir is None:
-                LOG.warning(
-                    "Symbols not found. Attempting to symbolication with remote symbol server."
-                )
+            LOG.warning(
+                "Symbols not found. Attempting to symbolication with remote symbol server."
+            )
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for profile_file in profile_files:
-                stat = profile_file.stat()
-                unsym_size = stat.st_size
-                unsym_mod_time = stat.st_mtime
-                unsym_access_time = stat.st_atime
-                LOG.info(f"Symbolicating {profile_file.name} ({unsym_size} bytes)...")
-
-                try:
-                    temp_path = Path(temp_dir) / profile_file.name
-                    shutil.copy(profile_file, temp_path)
-
-                    symbolicate_profile_json(str(temp_path), symbol_dir)
-
-                    if temp_path.is_file():
-                        sym_size = temp_path.stat().st_size
-                        LOG.info(
-                            f"Successfully symbolicated {profile_file.name}: "
-                            f"{unsym_size} bytes -> {sym_size} bytes"
-                        )
-                        # Use shutil move if os.replace fails with
-                        # ([Errno 18] Invalid cross-device link in CI
-                        try:
-                            os.replace(str(temp_path), str(profile_file))
-                            LOG.info(
-                                f"Successfully moved {profile_file.name} using os.replace"
-                            )
-                        except Exception:
-                            shutil.move(str(temp_path), str(profile_file))
-                            LOG.info(
-                                f"Successfully moved {profile_file.name} using shutil.move"
-                            )
-
-                        # To ensure the artifact markers in resource usage profiles are accurate,
-                        # the symbolicate profile's mod and access time should reflect
-                        # when the artifact was created rather than when the profile
-                        # was symbolicated
-                        os.utime(profile_file, (unsym_access_time, unsym_mod_time))
-
-                except Exception as e:
-                    LOG.warning(
-                        f"Failed to symbolicate {profile_file.name}: {e}",
-                        exc_info=True,
-                    )
+    for profile_file in profile_files:
+        try:
+            symbolicate_profile_json(profile_file, symbol_dir)
+        except Exception as e:
+            LOG.warning(
+                f"Failed to symbolicate {profile_file.name}: {e}",
+                exc_info=True,
+            )

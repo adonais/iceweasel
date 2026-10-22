@@ -39,7 +39,7 @@ const DelegatedCertHost sDelegatedCertHosts[] = {
     {nullptr, nullptr, nullptr, false}};
 
 int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
-                          uint32_t aSrvNameArrSize, void* aArg) {
+                          uint32_t aSrvNameArrSize, void* /*aArg*/) {
   const DelegatedCertHost* host =
       GetHostForSNI(aSrvNameArr, aSrvNameArrSize, sDelegatedCertHosts);
   if (!host) {

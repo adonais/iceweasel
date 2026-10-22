@@ -8,6 +8,8 @@ TEST_DIRS += [
     "xpcshell",
 ]
 
+MARIONETTE_MANIFESTS += ["marionette/manifest.toml"]
+
 MOCHITEST_MANIFESTS += [
     "mochitest/mochitest-private.toml",
     "mochitest/mochitest.toml",

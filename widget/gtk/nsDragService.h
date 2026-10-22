@@ -158,6 +158,11 @@ class nsDragSession : public nsBaseDragSession {
   // If empty it's mType = eDragTaskNone.
   mozilla::UniquePtr<DragTask> mRecentTask;
 
+  // Whether the drag is currently over the window it was started from. Starts
+  // true because that is where a drag starts, so a compositor that reports no
+  // drag motion at all leaves it true.
+  bool mDragIsOverSourceWindow = true;
+
   gboolean Schedule(mozilla::UniquePtr<DragTask> aTask);
 
   void GetDragFlavors(nsTArray<nsCString>& aFlavors);

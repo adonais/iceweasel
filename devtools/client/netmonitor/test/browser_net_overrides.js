@@ -313,7 +313,7 @@ add_task(async function testStylesheetOverrideWithCache() {
 });
 
 async function assertOverriddenResponseTab(doc, request, overrideFileName) {
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
   await waitFor(
     () => doc.querySelector("#response-tab"),
     "Wait for the response tab to be displayed"

@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-box-link.tagmap.d.ts" />
+
 import { MozBoxBase } from "../lit-utils.mjs";
 import { html } from "../vendor/lit.all.mjs";
 
@@ -17,7 +19,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozBoxBase.ftl");
  * @property {string} href - The href of the link.
  * @property {string} supportPage - Whether or not the link is to a support page.
  */
-export default class MozBoxLink extends MozBoxBase {
+export class MozBoxLink extends MozBoxBase {
   static shadowRootOptions = {
     ...super.shadowRootOptions,
     delegatesFocus: true,

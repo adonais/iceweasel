@@ -616,6 +616,15 @@ void MediaSource::DurationChangeOnEndOfStream() {
   // SourceBuffer.buffered getter.  Do this before comparison because
   // mDecoder->GetDuration() may have been similarly truncated.
   media::TimeUnit newDuration = highestEndTime.ToBase(USECS_PER_S);
+  // highestEndTime may carry a near-INT64_MAX timestamp from a crafted
+  // segment; ToBase(USECS_PER_S) overflows in that case. Skip setting the
+  // duration rather than crashing — the clip is malformed anyway.
+  if (!newDuration.IsValid()) {
+    MSE_DEBUG(
+        "DurationChangeOnEndOfStream: duration overflow (highestEndTime=%s)",
+        highestEndTime.ToString().get());
+    return;
+  }
   MSE_DEBUG("DurationChangeOnEndOfStream(newDuration={})",
             newDuration.ToString().get());
   if (mDecoder->GetDuration() == newDuration.ToSeconds()) {

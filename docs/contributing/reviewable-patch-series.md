@@ -38,6 +38,7 @@ Another approach is to put all patches on the same bug first, and move them out 
 Some of the goals above pull in opposite directions. This section acknowledges that there are some judgment calls involved.
 
 For example, there are often multiple options when making a change to a widely-used API:
+
 - Option 1: In the same commit, change both the API as well as all consumers of that API across all directories. Good: atomic change, passes build, no messy intermediate state. Bad: large patch, large number of reviewers
 - Option 2: One commit for the API change, multiple commits (grouped by reviewer) for updating consumers. Good: Small patch, low number of reviewers per patch. Bad: Intermediate state fails to build
 - Option 3: One commit makes the API change but keeps a compatibility stub so that existing callers still work, and then multiple patches convert various directories, with a final patch removing the compat stub. Good: Small patch, low number of reviewers per patch, passes build. Bad: somewhat messy intermediate state with compat stub, risk that compat stub stays around indefinitely.

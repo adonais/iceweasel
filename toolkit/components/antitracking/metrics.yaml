@@ -105,7 +105,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847990
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 165
+    expires: 170
 
   canvas_fingerprinting_type_text_by_source_per_tab2:
     type: dual_labeled_counter
@@ -143,7 +143,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847990
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 165
+    expires: 170
 
   canvas_fingerprinting_type_alias_by_source_per_tab2:
     type: dual_labeled_counter
@@ -180,7 +180,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847990
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 165
+    expires: 170
 
   font_fingerprinting_per_tab:
     type: labeled_counter
@@ -199,7 +199,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1946406
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 160
+    expires: 170
 
   storage_access_granted_count:
     type: labeled_counter

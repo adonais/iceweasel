@@ -121,71 +121,99 @@ MOZ_NEVER_INLINE int32_t AccelerateRawtextLineCol(const char16_t* aPtr,
   return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, false);
 }
 
+/// The innerHTML / DOMParser case for the script data escaped state in the
+/// HTML parser. Shares the characters of interest with the comment state but
+/// does not accumulate into strBuf.
+MOZ_NEVER_INLINE int32_t
+AccelerateScriptDataEscapedFastest(const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR, true,
+                                    false);
+}
+
+/// View Source case for the script data escaped state in the HTML parser
+MOZ_NEVER_INLINE int32_t AccelerateScriptDataEscapedViewSource(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, true,
+                                    false);
+}
+
+/// Normal network case for the script data escaped state in the HTML parser
+MOZ_NEVER_INLINE int32_t
+AccelerateScriptDataEscapedLineCol(const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, false,
+                                    false);
+}
+
 /// The innerHTML / DOMParser case for the comment state in the HTML parser
 MOZ_NEVER_INLINE int32_t AccelerateCommentFastest(const char16_t* aPtr,
-                                                  const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR, true,
+                                                  const char16_t* aEnd,
+                                                  char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut, detail::ZERO_LT_CR, true,
                                     false);
 }
 
 /// View Source case for the comment state in the HTML parser
 MOZ_NEVER_INLINE int32_t AccelerateCommentViewSource(const char16_t* aPtr,
-                                                     const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, true,
-                                    false);
+                                                     const char16_t* aEnd,
+                                                     char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut, detail::ZERO_LT_CR_LF,
+                                    true, false);
 }
 
 /// Normal network case for the comment state in the HTML parser
 MOZ_NEVER_INLINE int32_t AccelerateCommentLineCol(const char16_t* aPtr,
-                                                  const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, false,
-                                    false);
+                                                  const char16_t* aEnd,
+                                                  char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut, detail::ZERO_LT_CR_LF,
+                                    false, false);
 }
 
 /// The innerHTML / DOMParser case for the attribute value single-quoted state
 /// in the HTML parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedFastest(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR, true);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut, detail::ZERO_APOS_AMP_CR,
+                                    true);
 }
 
 /// View Source case for the attribute value single-quoted state in the HTML
 /// parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedViewSource(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR_LF,
-                                    true);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut,
+                                    detail::ZERO_APOS_AMP_CR_LF, true);
 }
 
 /// Normal network case for the attribute value single-quoted state in the HTML
 /// parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedLineCol(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR_LF,
-                                    false);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut,
+                                    detail::ZERO_APOS_AMP_CR_LF, false);
 }
 
 /// The innerHTML / DOMParser case for the attribute value double-quoted state
 /// in the HTML parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedFastest(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR, true);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut, detail::ZERO_QUOT_AMP_CR,
+                                    true);
 }
 
 /// View Source case for the attribute value double-quoted state in the HTML
 /// parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedViewSource(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR_LF,
-                                    true);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut,
+                                    detail::ZERO_QUOT_AMP_CR_LF, true);
 }
 
 /// Normal network case for the attribute value double-quoted state in the HTML
 /// parser
 MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedLineCol(
-    const char16_t* aPtr, const char16_t* aEnd) {
-  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR_LF,
-                                    false);
+    const char16_t* aPtr, const char16_t* aEnd, char16_t* aOut) {
+  return detail::AccelerateTextNode(aPtr, aEnd, aOut,
+                                    detail::ZERO_QUOT_AMP_CR_LF, false);
 }
 
 /// The innerHTML / DOMParser case for the CDATA section state in the HTML

@@ -4,6 +4,9 @@
 
 /* global gBrowser, isBlankPageURL, MozXULElement, XPCOMUtils */
 
+const { Tabbrowser } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs"
+);
 const { DeferredTask } = ChromeUtils.importESModule(
   "resource://gre/modules/DeferredTask.sys.mjs"
 );
@@ -69,7 +72,9 @@ export class MozTabSplitViewWrapper extends MozXULElement {
    * @returns {MozTabbrowserTabGroup}
    */
   get group() {
-    return gBrowser.isTabGroup(this.parentElement) ? this.parentElement : null;
+    return Tabbrowser.isTabGroup(this.parentElement)
+      ? this.parentElement
+      : null;
   }
 
   /**
@@ -486,10 +491,8 @@ export class MozTabSplitViewWrapper extends MozXULElement {
       this.#activate();
       // This check ensures we don't call suspend for every tab selection
       // or for a selected tab in a splitview that is being dragged to another window,
-      // as this event fires as part of updateCurrentBrowser; we
-      // utilize this temporary property - removedByAdoption -
-      // that is added in adoptSplitView.
-    } else if (wasActive && !event.detail.previousTab?.removedByAdoption) {
+      // as this event fires as part of updateCurrentBrowser.
+    } else if (wasActive && !event.detail.previousTabInAdoptedSplitView) {
       this.#suspend();
     }
   }

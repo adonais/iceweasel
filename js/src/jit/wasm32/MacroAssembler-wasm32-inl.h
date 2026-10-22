@@ -1277,6 +1277,29 @@ void MacroAssembler::rotateRight64(Register count, Register64 input,
   MOZ_CRASH();
 }
 
+// ===============================================================
+// Shift or rotate, then combine with another register
+
+void MacroAssembler::lshift32ThenAdd(Imm32 shift, Register rhs,
+                                     Register srcDest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::lshift32ThenOr(Imm32 shift, Register rhs,
+                                    Register srcDest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::rshiftPtrThenXor(Imm32 shift, Register rhs,
+                                      Register srcDest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::rotateLeft64ThenXor(Imm32 count, Register64 rhs,
+                                         Register64 srcDest) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::flexibleLshift32(Register shift, Register srcDest) {
   MOZ_CRASH();
 }

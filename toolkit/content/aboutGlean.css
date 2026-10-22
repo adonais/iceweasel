@@ -16,6 +16,11 @@ body {
   height: 100%;
 }
 
+moz-toggle {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .category .category-name {
   pointer-events: none;
 }

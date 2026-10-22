@@ -1,5 +1,3 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta")
-//
 // JS::SafeResolve: promise-like and non-native-promise resolution values must
 // be handled via a deferred microtask, so that Get(resolution, "then") never
 // runs on the caller's stack.

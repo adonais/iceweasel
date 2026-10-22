@@ -837,7 +837,9 @@ const TEST_DATA = [
             rotate(-270deg);
         }
       }
-    );`,
+    );
+    --bar: [a b];
+    color: blue;`,
     expected: [
       {
         name: "--foo",
@@ -856,6 +858,41 @@ const TEST_DATA = [
         priority: "",
         offsets: [0, 1036],
         isCustomProperty: true,
+      },
+      {
+        name: "--bar",
+        value: "[a b]",
+        priority: "",
+        offsets: [1041, 1054],
+        isCustomProperty: true,
+      },
+      {
+        name: "color",
+        value: "blue",
+        priority: "",
+        offsets: [1059, 1071],
+      },
+    ],
+  },
+
+  // Regression test for bug 2077906 (which is a variant of the previous test case) - take
+  // CSS blocks into consideration before handling ; and : (i.e. don't advance to the
+  // property name or value automatically).
+  {
+    input: `--foo: { a: b; c: d }; color: red;`,
+    expected: [
+      {
+        name: "--foo",
+        value: "{ a: b; c: d }",
+        priority: "",
+        offsets: [0, 22],
+        isCustomProperty: true,
+      },
+      {
+        name: "color",
+        value: "red",
+        priority: "",
+        offsets: [23, 34],
       },
     ],
   },
@@ -1661,6 +1698,10 @@ function assertDeclarations(input, actualDeclarations, expectedDeclarations) {
           "}"
       );
     }
-    Assert.equal(actualDeclarations.length, expectedDeclarations.length);
+    Assert.equal(
+      actualDeclarations.length,
+      expectedDeclarations.length,
+      `Got expected number of declarations when parsing "${input}"`
+    );
   }
 }

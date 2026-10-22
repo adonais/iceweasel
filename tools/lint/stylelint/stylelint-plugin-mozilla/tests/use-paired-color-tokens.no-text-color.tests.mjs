@@ -62,7 +62,28 @@ testRule({
     },
     {
       code: ".a { &:hover { background-color: var(--button-background-color-hover); } }",
-      description: "A nested state variant is one as well.",
+      description:
+        "A nested state variant whose enclosing rules set no text color is one as well.",
+    },
+    {
+      code: ".a { color: var(--button-text-color-hover); &:hover { background-color: var(--button-background-color-hover); } }",
+      description:
+        "A nested state variant inheriting the counterpart from the rule it nests in is satisfied.",
+    },
+    {
+      code: ".a { color: inherit; &:hover { background-color: var(--button-background-color-hover); } }",
+      description:
+        "An inherited text color that claims no pairing satisfies it, as a declared one would.",
+    },
+    {
+      code: ".a { color: var(--text-color); &:hover { background-color: var(--button-background-color-hover); } }",
+      description:
+        "An inherited text token without a counterpart claims no pairing either.",
+    },
+    {
+      code: ".a { color: var(--button-text-color); &:hover { color: var(--button-text-color-hover); @media (prefers-contrast) { background-color: var(--button-background-color-hover); } } }",
+      description:
+        "An at-rule inside a state variant takes the state variant's own text color first.",
     },
     {
       code: ".a:hover { .b { background-color: var(--button-background-color-hover); } }",
@@ -207,6 +228,54 @@ testRule({
       line: 1,
       column: 18,
     },
+    {
+      code: ".a { color: var(--button-text-color); &:hover { background-color: var(--button-background-color-hover); } }",
+      message: messages.inheritedTextColor(
+        "--button-background-color-hover",
+        "--button-text-color",
+        "--button-text-color-hover"
+      ),
+      description:
+        "A nested state variant inheriting the base variant's text color is held to the pairing.",
+      line: 1,
+      column: 49,
+    },
+    {
+      code: ".a { color: var(--panel-text-color); &[open] { background-color: var(--button-background-color); } }",
+      message: messages.inheritedTextColor(
+        "--button-background-color",
+        "--panel-text-color",
+        "--button-text-color"
+      ),
+      description:
+        "An inherited text color paired with another component's background is reported too.",
+      line: 1,
+      column: 48,
+    },
+    {
+      code: ".a { color: var(--button-text-color); &:hover { .b { background-color: var(--button-background-color-hover); } } }",
+      message: messages.inheritedTextColor(
+        "--button-background-color-hover",
+        "--button-text-color",
+        "--button-text-color-hover"
+      ),
+      description:
+        "A block nested inside a state variant inherits through it from the rule above.",
+      line: 1,
+      column: 54,
+    },
+    {
+      code: ".a { color: var(--button-text-color); &:hover { @media (prefers-contrast) { background-color: var(--button-background-color-hover); } } }",
+      message: messages.inheritedTextColor(
+        "--button-background-color-hover",
+        "--button-text-color",
+        "--button-text-color-hover"
+      ),
+      description:
+        "An at-rule inside a state variant inherits the color the state variant does.",
+      line: 1,
+      column: 77,
+    },
   ],
 });
 
@@ -223,6 +292,11 @@ testRule({
     {
       code: ".a:hover { background-color: var(--button-background-color-hover); }",
       description: "A state variant is left alone as well.",
+    },
+    {
+      code: ".a { color: var(--button-text-color-hover); &:hover { background-color: var(--button-background-color-hover); } }",
+      description:
+        "A nested state variant inheriting the counterpart is left alone.",
     },
     {
       code: "/* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */\n.a { background-color: var(--sidebar-background-color); }",
@@ -259,6 +333,41 @@ testRule({
         "--button-text-color-hover"
       ),
       description: "A token nested in light-dark() gets its counterpart too.",
+    },
+    {
+      code: ".a {\n  color: var(--button-text-color);\n\n  &:hover {\n    background-color: var(--button-background-color-hover);\n  }\n}",
+      fixed:
+        ".a {\n  color: var(--button-text-color);\n\n  &:hover {\n    background-color: var(--button-background-color-hover);\n    color: var(--button-text-color-hover);\n  }\n}",
+      message: messages.inheritedTextColor(
+        "--button-background-color-hover",
+        "--button-text-color",
+        "--button-text-color-hover"
+      ),
+      description:
+        "A nested state variant inheriting the wrong variant gets its own counterpart.",
+    },
+    {
+      code: ".a {\n  color: var(--button-text-color);\n\n  &:hover {\n    background-color: var(--button-background-color-hover);\n\n    &:active {\n      background-color: var(--button-background-color-active);\n    }\n  }\n}",
+      fixed:
+        ".a {\n  color: var(--button-text-color);\n\n  &:hover {\n    background-color: var(--button-background-color-hover);\n    color: var(--button-text-color-hover);\n\n    &:active {\n      background-color: var(--button-background-color-active);\n      color: var(--button-text-color-active);\n    }\n  }\n}",
+      warnings: [
+        {
+          message: messages.inheritedTextColor(
+            "--button-background-color-hover",
+            "--button-text-color",
+            "--button-text-color-hover"
+          ),
+        },
+        {
+          message: messages.inheritedTextColor(
+            "--button-background-color-active",
+            "--button-text-color",
+            "--button-text-color-active"
+          ),
+        },
+      ],
+      description:
+        "A state nested in a state gets its own counterpart once the outer one has its own.",
     },
     {
       code: ".a {\n  background-color: var(--sidebar-background-color);\n  border: 1px solid;\n}",

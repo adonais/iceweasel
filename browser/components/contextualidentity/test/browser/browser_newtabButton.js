@@ -81,8 +81,10 @@ add_task(async function test_containers_with_left_click() {
 
   let popupShownPromise = BrowserTestUtils.waitForEvent(popup, "popupshown");
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  // The menu opens on press, so release the button only once it is shown.
   EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mousedown" });
   await popupShownPromise;
+  EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mouseup" });
   let contextIdItems = popup.querySelectorAll("menuitem");
   // 4 + default + add container + manage containers
   is(contextIdItems.length, 7, "Has 7 menu items");
@@ -94,6 +96,7 @@ add_task(async function test_containers_with_left_click() {
     EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mousedown" });
 
     await popupShownPromise;
+    EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mouseup" });
     let contextIdItem = popup.querySelector(
       `menuitem[data-usercontextid="${i}"]`
     );
@@ -303,6 +306,7 @@ add_task(async function test_vertical_tabs_right_click_other_new_tab_button() {
   info("Windows and tabs opened, waiting for readyWindowsPromise");
   await NonPrivateTabs.readyWindowsPromise;
   info("readyWindowsPromise resolved");
+  await SidebarController.waitUntilStable();
   const newTabButton = sidebar.querySelector("#vertical-tabs-newtab-button");
 
   let popup = findPopup();

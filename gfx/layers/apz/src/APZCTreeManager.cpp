@@ -1561,7 +1561,7 @@ static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
   }
 
   WidgetWheelEvent wheelEvent = aPanInput.ToWidgetEvent(nullptr);
-  return APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome();
+  return APZBridge::ActionForWheelEvent(&wheelEvent).isSome();
 }
 
 /*static*/
@@ -1810,7 +1810,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(
 
       // If/when we enable support for pan inputs off-main-thread, we'll need
       // to duplicate this EventStateManager code or something. See the call to
-      // GetUserPrefsForWheelEvent in APZInputBridge.cpp for why these fields
+      // GetUserPrefsForWheelEvent in APZBridge.cpp for why these fields
       // are stored separately.
       MOZ_ASSERT(NS_IsMainThread());
       WidgetWheelEvent wheelEvent = panInput.ToWidgetEvent(nullptr);
@@ -4006,12 +4006,11 @@ void APZCTreeManager::SetFixedLayerMarginsOnRootContentApzcs(
 ScreenPoint APZCTreeManager::ComputeFixedMarginsOffset(
     const MutexAutoLock& aProofOfMapLock, SideBits aFixedSides,
     const ScreenMargin& aGeckoFixedLayerMargins) const {
-  // If the software keyboard is visible and the interactive-widget is not
-  // resizes-content, we don't need to move the position:fixed or sticky
-  // elements at all.
-  if (IsSoftwareKeyboardVisible(aProofOfMapLock) &&
-      InteractiveWidgetMode(aProofOfMapLock) !=
-          dom::InteractiveWidget::ResizesContent) {
+  // In `overlays-content` mode with the software keyboard visible, the main
+  // thread ignores dynamic toolbar movement (see
+  // nsPresContext::UpdateDynamicToolbarOffset) so the compositor needs to
+  // ignore it too.
+  if (IsKeyboardVisibleOnOverlaysContent(aProofOfMapLock)) {
     return ScreenPoint(0, 0);
   }
 

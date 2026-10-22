@@ -5,12 +5,12 @@
 #input {
   width: 100%;
   max-width: var(--input-text-max-width, none);
-  min-height: var(--input-text-min-height);
+  min-height: var(--input-min-height);
   padding-inline: var(--space-medium);
-  border: var(--input-text-border);
-  border-radius: var(--input-text-border-radius);
+  border: var(--input-border);
+  border-radius: var(--input-border-radius);
   box-sizing: border-box;
-  background-color: var(--input-text-background-color);
+  background-color: var(--input-background-color);
   color: var(--input-text-color);
 
   @media (-moz-platform: macos) {
@@ -26,10 +26,10 @@
   }
 
   &:disabled {
-    border-color: var(--input-text-border-color-disabled);
-    background-color: var(--input-text-background-color-disabled);
+    border-color: var(--input-border-color-disabled);
+    background-color: var(--input-background-color-disabled);
     color: var(--input-text-color-disabled);
-    opacity: var(--input-text-opacity-disabled);
+    opacity: var(--input-opacity-disabled);
   }
 
   &:focus-visible {
@@ -37,9 +37,9 @@
   }
 
   &.with-icon {
-    padding-inline-start: calc(2 * var(--space-medium) + var(--input-text-icon-size));
+    padding-inline-start: calc(2 * var(--space-medium) + var(--input-icon-size));
     background-repeat: no-repeat;
-    background-size: var(--input-text-icon-size);
+    background-size: var(--input-icon-size);
     background-position: var(--space-medium) center;
     background-image: var(--input-background-icon);
     -moz-context-properties: fill;
@@ -47,21 +47,6 @@
 
     &:dir(rtl) {
       background-position: center right var(--space-medium);
-    }
-  }
-
-  &[type="search"] {
-    --input-background-icon: url(chrome://global/skin/icons/search-textbox.svg);
-    border-radius: var(--input-search-border-radius);
-    padding-inline-end: var(--space-xxsmall);
-
-    &.with-icon {
-      background-size: var(--input-search-icon-size);
-      padding-inline-start: calc(2 * var(--space-medium) + var(--input-search-icon-size));
-    }
-
-    &::-moz-search-clear-button {
-      border-radius: var(--input-search-border-radius);
     }
   }
 

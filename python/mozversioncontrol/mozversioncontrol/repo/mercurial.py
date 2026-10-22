@@ -363,14 +363,14 @@ class HgRepository(Repository):
     ) -> list[str]:
         """Return a list of commit SHAs for nodes on the current branch."""
         if not base_ref:
-            base_ref = self.base_ref
+            base_ref = "last(ancestors(.) and public())"
 
-        head_ref = head or self.head_ref
+        head_ref = head or self.branch or "."
 
         cmd = [
             "log",
             "-r",
-            f"{base_ref}::{head_ref} and not {base_ref}",
+            f"({base_ref})::({head_ref}) and not ({base_ref})",
             "-T",
             "{node}\n",
         ]

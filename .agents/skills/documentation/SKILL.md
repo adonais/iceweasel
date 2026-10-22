@@ -164,17 +164,28 @@ Link to the **source file**, not to the generated URL:
 -   Bad: a full `https://firefox-source-docs.mozilla.org/...` URL for in-tree
     documentation -- it bypasses link validation and breaks when pages move.
 
-The path is rooted at the documentation tree (leading `/`), and the extension
-must match the actual source file (always `.md`). To link to a section, append
-the anchor: `/mots/index.md#desktop-theme`.
+The path is rooted at the documentation tree (leading `/`), which is the built
+tree, not the source checkout: `browser/components/urlbar/docs/index.md` is
+`/browser/urlbar/index.md`. The extension must match the actual source file
+(always `.md`). To link to a section, append the anchor:
+`/mots/index.md#desktop-theme`.
 
 A `{doc}` role with no link text renders the target page's *title*, so a noun
 after it reads twice: ``in the {doc}`api` reference`` comes out as "in the
 SessionStore API reference reference". Give the role its own text where the
 sentence already names the thing.
 
-A `{doc}` or `{ref}` target is a doc path *without* the extension -- the
-opposite of the markdown form -- and a directory needs its `/index` spelled out.
+A `{doc}` target is the same path *without* the extension -- the opposite of
+the markdown form -- and a directory needs its `/index` spelled out.
+
+A `{ref}` target is an explicit label, never a page title: page titles are not
+labels, so `{ref}`Address Bar`` fails with `undefined label`. Link a page with
+`{doc}` or the markdown form.
+
+Explicit labels share one namespace across the whole tree, so a short one claims
+its name for every page: a `(telemetry)=` in one guide takes `{ref}`telemetry``
+away from the Telemetry docs, with no warning. Prefix a label with its page's
+subject, and use `{doc}` when the link means the whole page.
 
 ### Anchors
 

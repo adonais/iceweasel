@@ -8,7 +8,7 @@ DIRS += [
     "nsis",
 ]
 
-if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
+if CONFIG["MAKENSISU"]:
     FINAL_TARGET = "dist/bin"
 
     nsis_config_dir = f"{OBJDIR}/instgen"
@@ -52,10 +52,7 @@ if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
         extra_deps=nsis_srcdir_files
         + nsis_topsrcdir_files
         + nsis_locale_files
-        + [
-            nsis_preprocess_locale,
-            "!/buildid.h",
-        ],
+        + [nsis_preprocess_locale],
         flags=[
             f"--config-dir={nsis_config_dir}",
             f"--spec-out={OBJDIR}/nsis-stage.json",
@@ -108,12 +105,13 @@ if CONFIG["MAKENSISU"] and not CONFIG["MOZ_USE_MAKEFILE_INSTALLER_BUILD"]:
         )
         FINAL_TARGET_FILES += ["!maintenanceservice_installer.exe"]
 
-    if CONFIG["ENABLE_TESTS"]:
+    if CONFIG["ENABLE_TESTS"] and CONFIG["MOZ_STUB_INSTALLER"]:
         GeneratedFile(
             "test_stub_installer.exe",
             script="/python/mozbuild/mozbuild/action/nsis_build.py",
             entry_point="generate",
-            extra_deps=["!nsis-stage.stamp"],
-            flags=nsis_build_flags + ["--nsi=test_stub.nsi"],
+            extra_deps=["!nsis-stage.stamp", "!/buildid.h"],
+            flags=nsis_build_flags
+            + ["--nsi=test_stub.nsi", f"--buildid-header={TOPOBJDIR}/buildid.h"],
         )
         FINAL_TARGET_FILES += ["!test_stub_installer.exe"]

@@ -147,7 +147,6 @@ static const uint32_t kDefaultGlyphCacheSize = -1;
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/SourceSurfaceCairo.h"
 #include "nsIGfxInfo.h"
 #include "nsIXULRuntime.h"
 #include "nscore.h"  // for NS_FREE_PERMANENT_DATA
@@ -695,6 +694,14 @@ static void FinishAsyncMemoryReport() {
   helper.Report(aReport.interning.data_stores.id, \
                 "interning/" #id "/data-stores");
 
+// Follower stores for types interned by the content display list builder
+// rather than by a scene builder interner. See
+// gfx/wr/webrender/doc/dl-builder-interning.md.
+#define REPORT_DL_STORE(id)                                      \
+  helper.Report(aReport.interning.dl_stores.id, "interning/" #id \
+                                                "/dl-"           \
+                                                "stores");
+
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
 
 NS_IMETHODIMP
@@ -731,6 +738,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
         WEBRENDER_FOR_EACH_INTERNER(REPORT_INTERNER, );
         WEBRENDER_FOR_EACH_INTERNER(REPORT_DATA_STORE, );
+        WEBRENDER_FOR_EACH_INTERNER(REPORT_DL_STORE, );
 
         // GPU Memory.
         helper.ReportTexture(aReport.vertex_data_textures, "vertex-data");
@@ -759,6 +767,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
 #undef REPORT_INTERNER
 #undef REPORT_DATA_STORE
+#undef REPORT_DL_STORE
 
 std::atomic<int8_t> gfxPlatform::sHasVariationFontSupport = -1;
 
@@ -1455,184 +1464,6 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(
     return nullptr;
   }
   return drawTarget.forget();
-}
-
-cairo_user_data_key_t kSourceSurface;
-
-/**
- * Record the backend that was used to construct the SourceSurface.
- * When getting the cached SourceSurface for a gfxASurface/DrawTarget pair,
- * we check to make sure the DrawTarget's backend matches the backend
- * for the cached SourceSurface, and only use it if they match. This
- * can avoid expensive and unnecessary readbacks.
- */
-struct SourceSurfaceUserData {
-  RefPtr<SourceSurface> mSrcSurface;
-  BackendType mBackendType;
-};
-
-static void SourceBufferDestroy(void* srcSurfUD) {
-  delete static_cast<SourceSurfaceUserData*>(srcSurfUD);
-}
-
-UserDataKey kThebesSurface;
-
-struct DependentSourceSurfaceUserData {
-  RefPtr<gfxASurface> mSurface;
-};
-
-static void SourceSurfaceDestroyed(void* aData) {
-  delete static_cast<DependentSourceSurfaceUserData*>(aData);
-}
-
-void gfxPlatform::ClearSourceSurfaceForSurface(gfxASurface* aSurface) {
-  aSurface->SetData(&kSourceSurface, nullptr, nullptr);
-}
-
-/* static */
-already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
-    RefPtr<DrawTarget> aTarget, gfxASurface* aSurface, bool aIsPlugin) {
-  if (!aSurface->CairoSurface() || aSurface->CairoStatus()) {
-    return nullptr;
-  }
-
-  if (!aTarget) {
-    aTarget = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  }
-
-  void* userData = aSurface->GetData(&kSourceSurface);
-
-  if (userData) {
-    SourceSurfaceUserData* surf = static_cast<SourceSurfaceUserData*>(userData);
-
-    if (surf->mSrcSurface->IsValid() &&
-        surf->mBackendType == aTarget->GetBackendType()) {
-      RefPtr<SourceSurface> srcSurface(surf->mSrcSurface);
-      return srcSurface.forget();
-    }
-    // We can just continue here as when setting new user data the destroy
-    // function will be called for the old user data.
-  }
-
-  SurfaceFormat format = aSurface->GetSurfaceFormat();
-
-  if (aTarget->GetBackendType() == BackendType::CAIRO) {
-    // If we're going to be used with a CAIRO DrawTarget, then just create a
-    // SourceSurfaceCairo since we don't know the underlying type of the CAIRO
-    // DrawTarget and can't pick a better surface type. Doing this also avoids
-    // readback of aSurface's surface into memory if, for example, aSurface
-    // wraps an xlib cairo surface (which can be important to avoid a major
-    // slowdown).
-    //
-    // We return here regardless of whether CreateSourceSurfaceFromNativeSurface
-    // succeeds or not since we don't expect to be able to do any better below
-    // if it fails.
-    //
-    // Note that the returned SourceSurfaceCairo holds a strong reference to
-    // the cairo_surface_t* that it wraps, which essencially means it holds a
-    // strong reference to aSurface since aSurface shares its
-    // cairo_surface_t*'s reference count variable. As a result we can't cache
-    // srcBuffer on aSurface (see below) since aSurface would then hold a
-    // strong reference back to srcBuffer, creating a reference loop and a
-    // memory leak. Not caching is fine since wrapping is cheap enough (no
-    // copying) so we can just wrap again next time we're called.
-    return Factory::CreateSourceSurfaceForCairoSurface(
-        aSurface->CairoSurface(), aSurface->GetSize(), format);
-  }
-
-  RefPtr<SourceSurface> srcBuffer;
-
-  // Currently no other DrawTarget types implement
-  // CreateSourceSurfaceFromNativeSurface
-
-  if (!srcBuffer) {
-    // If aSurface wraps data, we can create a SourceSurfaceRawData that wraps
-    // the same data, then optimize it for aTarget:
-    RefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
-    if (surf) {
-      srcBuffer = aIsPlugin
-                      ? aTarget->OptimizeSourceSurfaceForUnknownAlpha(surf)
-                      : aTarget->OptimizeSourceSurface(surf);
-
-      if (srcBuffer == surf) {
-        // GetWrappedDataSourceSurface returns a SourceSurface that holds a
-        // strong reference to aSurface since it wraps aSurface's data and
-        // needs it to stay alive. As a result we can't cache srcBuffer on
-        // aSurface (below) since aSurface would then hold a strong reference
-        // back to srcBuffer, creating a reference loop and a memory leak. Not
-        // caching is fine since wrapping is cheap enough (no copying) so we
-        // can just wrap again next time we're called.
-        //
-        // Note that the check below doesn't catch this since srcBuffer will be
-        // a SourceSurfaceRawData object (even if aSurface is not a
-        // gfxImageSurface object), which is why we need this separate check.
-        return srcBuffer.forget();
-      }
-    }
-  }
-
-  if (!srcBuffer) {
-    MOZ_ASSERT(aTarget->GetBackendType() != BackendType::CAIRO,
-               "We already tried CreateSourceSurfaceFromNativeSurface with a "
-               "DrawTargetCairo above");
-    // We've run out of performant options. We now try creating a SourceSurface
-    // using a temporary DrawTargetCairo and then optimizing it to aTarget's
-    // actual type. The CreateSourceSurfaceFromNativeSurface() call will
-    // likely create a DataSourceSurface (possibly involving copying and/or
-    // readback), and the OptimizeSourceSurface may well copy again and upload
-    // to the GPU. So, while this code path is rarely hit, hitting it may be
-    // very slow.
-    srcBuffer = Factory::CreateSourceSurfaceForCairoSurface(
-        aSurface->CairoSurface(), aSurface->GetSize(), format);
-    if (srcBuffer) {
-      srcBuffer = aTarget->OptimizeSourceSurface(srcBuffer);
-    }
-  }
-
-  if (!srcBuffer) {
-    return nullptr;
-  }
-
-  if ((srcBuffer->GetType() == SurfaceType::CAIRO &&
-       static_cast<SourceSurfaceCairo*>(srcBuffer.get())->GetSurface() ==
-           aSurface->CairoSurface()) ||
-      (srcBuffer->GetType() == SurfaceType::CAIRO_IMAGE &&
-       static_cast<DataSourceSurfaceCairo*>(srcBuffer.get())->GetSurface() ==
-           aSurface->CairoSurface())) {
-    // See the "Note that the returned SourceSurfaceCairo..." comment above.
-    return srcBuffer.forget();
-  }
-
-  // Add user data to aSurface so we can cache lookups in the future.
-  auto* srcSurfUD = new SourceSurfaceUserData;
-  srcSurfUD->mBackendType = aTarget->GetBackendType();
-  srcSurfUD->mSrcSurface = srcBuffer;
-  aSurface->SetData(&kSourceSurface, srcSurfUD, SourceBufferDestroy);
-
-  return srcBuffer.forget();
-}
-
-already_AddRefed<DataSourceSurface> gfxPlatform::GetWrappedDataSourceSurface(
-    gfxASurface* aSurface) {
-  RefPtr<gfxImageSurface> image = aSurface->GetAsImageSurface();
-  if (!image) {
-    return nullptr;
-  }
-  RefPtr<DataSourceSurface> result = Factory::CreateWrappingDataSourceSurface(
-      image->Data(), image->Stride(), image->GetSize(),
-      ImageFormatToSurfaceFormat(image->Format()));
-
-  if (!result) {
-    return nullptr;
-  }
-
-  // If we wrapped the underlying data of aSurface, then we need to add user
-  // data to make sure aSurface stays alive until we are done with the data.
-  auto* srcSurfUD = new DependentSourceSurfaceUserData;
-  srcSurfUD->mSurface = aSurface;
-  result->AddUserData(&kThebesSurface, srcSurfUD, SourceSurfaceDestroyed);
-
-  return result.forget();
 }
 
 void gfxPlatform::PopulateScreenInfo() {

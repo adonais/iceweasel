@@ -15,7 +15,6 @@ prefs = [
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
-  "browser.newtabpage.activity-stream.telemetry.structuredIngestion=false",
   "browser.newtabpage.activity-stream.discoverystream.endpoints=https://example.com",
   "browser.newtabpage.activity-stream.discoverystream.sections.region-content-config=",
   "dom.ipc.processPrelaunch.delayMs=0",
@@ -37,9 +36,6 @@ prefs = [
 ["browser_locale_change.js"]
 
 ["browser_no_cache.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1952938
-]
 
 ["browser_no_cache_on_SessionStartup_restore.js"]
 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width; initial-scale=1.0">
+  <title>Test that a zero-delta pan gesture does not stall the input queue when there is a wheel listener</title>
+  <script src="apz_test_utils.js"></script>
+  <script src="apz_test_native_event_utils.js"></script>
+  <script src="/tests/SimpleTest/paint_listener.js"></script>
+  <style>
+    #spacer {
+      height: 500vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="spacer"></div>
+</body>
+<script>
+async function test() {
+  // An active wheel listener which does not call preventDefault(), so APZ
+  // waits for a content response for each input block, but events with
+  // nonzero deltas do cause scrolling.
+  window.addEventListener("wheel", () => { }, { passive: false });
+
+  // Start in the middle of the page so the test does not depend on the
+  // scroll direction of the synthesized pan (which is reversed on Linux,
+  // see bug 1889039).
+  window.scrollTo(0, window.innerHeight * 2);
+  await promiseApzFlushedRepaints();
+  const startY = window.scrollY;
+  ok(startY > 0, "Should start scrolled down");
+
+  // A pan gesture consisting entirely of zero-delta events. These do not
+  // result in DOM wheel events, but they still need to reach content so
+  // that APZ gets a content response for the gesture's input block.
+  // Without the fix for bug 2072785, they were dropped before reaching
+  // content, and the block would stall the input queue until the
+  // apz.content_response_timeout is reached.
+  await NativePanHandler.promiseNativePanEvent(
+    window, 100, 100, 0, 0, NativePanHandler.beginPhase);
+  await NativePanHandler.promiseNativePanEvent(
+    window, 100, 100, 0, 0, NativePanHandler.endPhase);
+
+  // A second pan gesture which scrolls. Its events reach content even if
+  // the input queue is stalled, and they reach it after the events of the
+  // first gesture, so once content has seen the DOM wheel event, it has
+  // also sent the content response for the first gesture (if the events
+  // of the first gesture reached it).
+  const wheelPromise = promiseOneEvent(window, "wheel");
+  await NativePanHandler.promiseNativePanEvent(
+    window, 100, 100, 0, NativePanHandler.delta, NativePanHandler.beginPhase);
+  await wheelPromise;
+
+  // The content response for the second gesture is sent after the DOM wheel
+  // event has been dispatched, so wait for that to happen.
+  await promiseFrame();
+
+  // The repaint flush request is sent to APZ after the content responses,
+  // so once it completes, APZ will have processed the second gesture
+  // unless the input queue is stalled.
+  await promiseApzFlushedRepaints();
+  isnot(window.scrollY, startY,
+        "Should have scrolled without waiting for the content response timeout");
+
+  await NativePanHandler.promiseNativePanEvent(
+    window, 100, 100, 0, 0, NativePanHandler.endPhase);
+}
+
+waitUntilApzStable()
+.then(test)
+.then(subtestDone, subtestFailed);
+</script>
+</html>

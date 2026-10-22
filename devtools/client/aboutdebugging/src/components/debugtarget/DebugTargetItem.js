@@ -5,6 +5,7 @@
 "use strict";
 
 const {
+  createElement,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
@@ -77,14 +78,23 @@ class DebugTargetItem extends PureComponent {
   render() {
     return dom.li(
       {
-        className: "card debug-target-item qa-debug-target-item",
-        "data-qa-target-type": this.props.target.type,
+        className: "debug-target-item__list-item",
       },
-      this.renderIcon(),
-      this.renderName(),
-      this.renderAction(),
-      this.renderDetail(),
-      this.renderAdditionalActions()
+      createElement(
+        "moz-card",
+        {},
+        dom.div(
+          {
+            className: "debug-target-item qa-debug-target-item",
+            "data-qa-target-type": this.props.target.type,
+          },
+          this.renderIcon(),
+          this.renderName(),
+          this.renderAction(),
+          this.renderDetail(),
+          this.renderAdditionalActions()
+        )
+      )
     );
   }
 }

@@ -830,6 +830,20 @@ abstract class EngineSession(private val delegate: Observable<Observer> = Observ
     abstract fun requestPdfToDownload()
 
     /**
+     * When the current tab is a PDF, this will return the [Response] of the currently displayed PDF.
+     *
+     * When the current tab is a regular page, this will generate a PDF of the page and that will be the [Response].
+     *
+     * @param onResult Callback invoked with a [Response] carrying the PDF bytes.
+     * @param onException Callback invoked when the engine cannot supply the bytes, so that the caller can fall back to
+     *   downloading them from the URL.
+     */
+    open fun requestPdfToShare(
+        onResult: (Response) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) = onException(UnsupportedOperationException("Sharing PDF bytes is not supported by this engine"))
+
+    /**
      * Requests the [EngineSession] to print the current session's contents.
      *
      * This will open the Android Print Spooler.

@@ -1,7 +1,7 @@
 # PRThreadScope
 
 The scope of an NSPR thread, specified as a parameter to
-{ref}`PR_CreateThread` or returned by {ref}`PR_GetThreadScope`.
+{doc}`pr_createthread` or returned by {doc}`pr_getthreadscope`.
 
 ## Syntax
 
@@ -31,7 +31,7 @@ typedef enum PRThreadScope {
 
 ## Description
 
-An enumerator of type {ref}`PRThreadScope` specifies how a thread is
+An enumerator of type {doc}`prthreadscope` specifies how a thread is
 scheduled: either locally by NSPR within the process (a local thread) or
 globally by the host (a global thread).
 
@@ -51,4 +51,4 @@ global thread early is probably warranted.
 
 On systems that don't make a distinction between local and global
 threads, NSPR silently ignores the scheduling request. To find the scope
-of the thread, call {ref}`PR_GetThreadScope`.
+of the thread, call {doc}`pr_getthreadscope`.

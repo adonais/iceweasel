@@ -5,6 +5,7 @@ const AC_L10N = new Localization(
   ["toolkit/main-window/autocomplete.ftl"],
   true
 );
+const DELETE_TOOLTIP = AC_L10N.formatValueSync("autocomplete-delete-address");
 
 add_setup(async function setup_storage() {
   await setStorage(TEST_ADDRESS_1);
@@ -34,7 +35,7 @@ add_task(async function test_no_secondary_action_when_pref_disabled() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_flyout_when_pref_enabled() {
+add_task(async function test_trash_button_when_pref_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: FORM_URL },
@@ -45,20 +46,27 @@ add_task(async function test_flyout_when_pref_enabled() {
       const rowItem = items[0].querySelector("autocomplete-row-item");
       is(
         rowItem.actions.secondary.type,
-        "menupopup",
-        "Address rows show a flyout secondary action when the pref is on"
+        "delete",
+        "Address rows show a delete secondary action when the pref is on"
       );
-      is(
-        rowItem.actions.secondary.actions.length,
-        2,
-        "The flyout has an edit and a delete item"
+      ok(
+        !rowItem.actions.secondary.actions,
+        "The trash is a single action, not a flyout"
       );
+
+      const { label, tooltip } = rowItem.actions.secondary;
+      is(tooltip, DELETE_TOOLTIP, "The tooltip stays short and omits the row");
+      ok(
+        label.includes(TEST_ADDRESS_1.organization),
+        `The accessible name names the row it belongs to, got "${label}"`
+      );
+
       const button = rowItem.shadowRoot.querySelector(
         "moz-button.secondary-action"
       );
       ok(
-        button.iconSrc.endsWith("more.svg"),
-        "The secondary action shows the more icon"
+        button.iconSrc.endsWith("delete.svg"),
+        "The secondary action shows the trash icon"
       );
 
       // The "Manage addresses" footer row must not get a secondary action.
@@ -83,28 +91,20 @@ async function selectFirstRow(browser, item) {
   );
 }
 
-async function openFlyout(rowItem, label) {
+// The Lit render lags the row's selected attribute, so the button can still be
+// hidden when the row is already active. Wait it out before clicking, or the
+// click falls through to the row and fills the form instead.
+async function clickTrashButton(rowItem) {
   const button = rowItem.shadowRoot.querySelector(
     "moz-button.secondary-action"
   );
+
+  await EventUtils.promiseElementReadyForUserInput(button, window, info);
   await TestUtils.waitForCondition(
     () => button.checkVisibility({ checkVisibilityCSS: true }),
-    "Wait for the secondary action button to be visible"
+    "Wait for the trash button to be visible"
   );
-  EventUtils.synthesizeMouseAtCenter(button, {});
-  const menupopup = await TestUtils.waitForCondition(
-    () =>
-      [...document.querySelectorAll("menupopup")].find(m =>
-        [...m.querySelectorAll("menuitem")].some(
-          mi => mi.getAttribute("label") === label
-        )
-      ),
-    "Wait for the flyout menu to open"
-  );
-  if (menupopup.state != "open") {
-    await BrowserTestUtils.waitForEvent(menupopup, "popupshown");
-  }
-  return menupopup;
+  EventUtils.synthesizeMouseAtCenter(button, {}, window);
 }
 
 add_task(async function test_delete_confirms_without_device_sign_in() {
@@ -127,12 +127,6 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
       const item = getDisplayedPopupItems(browser)[0];
       const rowItem = item.querySelector("autocomplete-row-item");
       await selectFirstRow(browser, item);
-
-      const deleteLabel = rowItem.actions.secondary.actions[1].label;
-      const menupopup = await openFlyout(rowItem, deleteLabel);
-      const menuitem = [...menupopup.querySelectorAll("menuitem")].find(
-        mi => mi.getAttribute("label") === deleteLabel
-      );
 
       const dialogClosed = BrowserTestUtils.promiseAlertDialog(
         null,
@@ -159,12 +153,8 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
         }
       );
 
-      menupopup.activateItem(menuitem);
+      await clickTrashButton(rowItem);
       await dialogClosed;
-      await TestUtils.waitForCondition(
-        () => !menupopup.isConnected,
-        "Wait for the flyout to be torn down"
-      );
       await TestUtils.waitForCondition(
         () => browser.autoCompletePopup.popupOpen,
         "Wait for the dropdown to come back after the confirmation"
@@ -188,5 +178,116 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
     }
   );
   FormAutofillUtils.verifyUserOSAuth = originalVerify;
+  await SpecialPowers.popPrefEnv();
+});
+
+async function activateDelete(browser) {
+  const item = getDisplayedPopupItems(browser)[0];
+  const rowItem = item.querySelector("autocomplete-row-item");
+  await selectFirstRow(browser, item);
+
+  const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
+  await clickTrashButton(rowItem);
+  await dialogClosed;
+}
+
+add_task(async function test_delete_removes_the_address() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_ADDRESS_1, TEST_ADDRESS_4);
+  const before = await getAddresses();
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: FORM_URL },
+    async browser => {
+      await openPopupOn(browser, "#organization");
+      const rowCount = getDisplayedPopupItems(browser).length;
+
+      await withStorageChange("remove", () => activateDelete(browser));
+
+      const remaining = await getAddresses();
+      is(remaining.length, 1, "Confirming the removal deleted one address");
+      ok(
+        before.some(
+          address => !remaining.some(kept => kept.guid == address.guid)
+        ),
+        "Exactly one of the stored addresses is gone"
+      );
+
+      await TestUtils.waitForCondition(
+        () => browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to come back after the removal"
+      );
+      await TestUtils.waitForCondition(
+        () => getDisplayedPopupItems(browser).length == rowCount - 1,
+        "Wait for the restored dropdown to drop the removed row"
+      );
+
+      await closePopup(browser);
+    }
+  );
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_deleting_the_last_address_closes_the_dropdown() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_ADDRESS_1);
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: FORM_URL },
+    async browser => {
+      await openPopupOn(browser, "#organization");
+
+      await withStorageChange("remove", () => activateDelete(browser));
+
+      is(
+        (await getAddresses()).length,
+        0,
+        "The last address was removed from storage"
+      );
+      await TestUtils.waitForCondition(
+        () => !browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to be torn down"
+      );
+    }
+  );
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_delete_refuses_an_unknown_guid() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_ADDRESS_1);
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: FORM_URL },
+    async browser => {
+      await openPopupOn(browser, "#organization");
+
+      const actor =
+        browser.browsingContext.currentWindowGlobal.getActor("FormAutofill");
+      const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
+      await actor.onAutoCompleteEntrySelected("FormAutofill:DeleteAddress", {
+        guid: "no-such-guid",
+      });
+      await dialogClosed;
+
+      is(
+        (await getAddresses()).length,
+        1,
+        "A guid that names no stored address removes nothing"
+      );
+
+      await TestUtils.waitForCondition(
+        () => browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to come back after the refused removal"
+      );
+      await closePopup(browser);
+    }
+  );
+  await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });

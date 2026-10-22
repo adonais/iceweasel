@@ -24,6 +24,8 @@ function makeImpression(overrides = {}) {
     shopping_tab_displayed: "false",
     is_signed_in: "false",
     has_ai_summary: "false",
+    prescan: "none_found",
+    scan: "complete",
     ...overrides,
   };
 }
@@ -448,10 +450,15 @@ add_task(async function test_parsing_search_urls() {
       browser,
       Services.io.newURI(test.trackingUrl)
     );
+    SearchSERPTelemetry.reportPageWithAds(
+      { url: test.trackingUrl, hasAds: false },
+      browser
+    );
     SearchSERPTelemetry.reportPageImpression(
       {
         url: test.trackingUrl,
         shoppingTabDisplayed: false,
+        scan: "complete",
       },
       browser
     );

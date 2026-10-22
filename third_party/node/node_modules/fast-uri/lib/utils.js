@@ -7,6 +7,9 @@ const isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\d
 const isIPv4 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u)
 
 /** @type {(value: string) => boolean} */
+const isPort = RegExp.prototype.test.bind(/^\d*$/u)
+
+/** @type {(value: string) => boolean} */
 const isHexPair = RegExp.prototype.test.bind(/^[\da-f]{2}$/iu)
 
 /** @type {(value: string) => boolean} */
@@ -713,8 +716,12 @@ function recomposeAuthority (component) {
   }
 
   if (typeof component.port === 'number' || typeof component.port === 'string') {
+    const port = String(component.port)
+    if (!isPort(port)) {
+      throw new TypeError('URI port is malformed.')
+    }
     uriTokens.push(':')
-    uriTokens.push(String(component.port))
+    uriTokens.push(port)
   }
 
   return uriTokens.length ? uriTokens.join('') : undefined

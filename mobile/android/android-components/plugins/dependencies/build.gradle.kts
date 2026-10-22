@@ -23,7 +23,6 @@ gradlePlugin {
 dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito)
     testRuntimeOnly(libs.junit.platform.launcher)
 
     lintChecks(libs.androidx.lint)

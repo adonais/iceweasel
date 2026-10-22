@@ -126,6 +126,7 @@ add_task(async function test_default_telemetry() {
     Assert.equal(extra.engine_id, "default-engine");
     Assert.equal(extra.model_id, "Mozilla/test");
     Assert.equal(extra.backend, "test-backend");
+    Assert.equal(extra.host_process, "inference");
   }
 
   Assert.equal(res.output.dtype, "q8", "The config was enriched by RS");

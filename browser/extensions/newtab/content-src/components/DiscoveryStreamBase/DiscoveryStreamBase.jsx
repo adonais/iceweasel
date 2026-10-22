@@ -23,6 +23,7 @@ import { Widgets } from "content-src/components/Widgets/Widgets";
 import { Spaces } from "content-src/components/Spaces/Spaces";
 import {
   isSpacesActive,
+  isSpacesArrowsAssigned,
   resolvePopulatedSpaces,
   resolveThematicSpaces,
   SPACE_IDS,
@@ -392,7 +393,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       const populated =
         thematicSpaces?.order ??
         resolvePopulatedSpaces(this.props.Prefs.values);
-      defaultSpaceId = thematicSpaces?.defaultId;
+      // V1 opens on stories wherever pageLayouts.spacesOrder puts it.
+      defaultSpaceId = thematicSpaces?.defaultId ?? SPACE_IDS.STORIES;
       // A thematic space is its own slice of the feed plus the widgets column,
       // which is the side-by-side pair rather than one of the three boxes. A
       // space whose widgets are all off gets no column and keeps the feed width.
@@ -489,6 +491,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           <Spaces
             spaces={spaceEntries}
             defaultId={defaultSpaceId}
+            arrows={isSpacesArrowsAssigned(this.props.Prefs.values)}
             dispatch={this.props.dispatch}
           />
         ) : (

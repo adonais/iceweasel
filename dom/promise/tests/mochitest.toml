@@ -52,6 +52,9 @@ skip-if = [
 
 ["test_resolver_return_value.html"]
 
+["test_safe_resolve_warning.html"]
+skip-if = ["!nightly_build"]
+
 ["test_species_getter.html"]
 
 ["test_thenable_vs_promise_ordering.html"]

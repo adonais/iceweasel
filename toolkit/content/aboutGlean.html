@@ -10,6 +10,9 @@
     <meta charset="utf-8">
     <meta name="color-scheme" content="light dark">
     <title data-l10n-id="about-glean-page-title2"></title>
+
+    <script type="module" src="chrome://global/content/elements/moz-toggle.mjs"></script>
+
     <link rel="stylesheet" href="chrome://global/content/aboutGlean.css"/>
 
     <script src="chrome://global/content/aboutGlean.js"></script>
@@ -133,8 +136,17 @@
       </div>
       <div id="metrics-table" class="tab" hidden="true">
         <div id="metrics-table-header">
-          <h2 data-l10n-id="about-glean-metrics-table-header"></h2>
-          <button name="metrics-table-settings-button" id="metrics-table-settings-button" data-l10n-id="about-glean-metrics-table-settings-button"></button>
+          <div>
+            <h2 data-l10n-id="about-glean-metrics-table-header"></h2>
+          </div>
+          <div>
+            <label for="submitted-pings-select" data-l10n-id="about-glean-store-submitted-pings-select-label"></label>
+            <select name="submitted-pings" id="submitted-pings-select">
+              <option value="">---</option>
+            </select>
+
+            <button name="metrics-table-settings-button" id="metrics-table-settings-button" data-l10n-id="about-glean-metrics-table-settings-button"></button>
+          </div>
         </div>
         <div id="metrics-table-settings" hidden="true">
           <h2 data-l10n-id="about-glean-metrics-table-settings-title"></h2>
@@ -143,6 +155,9 @@
               <h3 data-l10n-id="about-glean-metrics-table-settings-category-general"></h3>
               <input type="checkbox" name="settings-hide-empty-value-rows" id="settings-hide-empty-value-rows" data-form-control="hideEmptyValueRows"/>
               <label for="settings-hide-empty-value-rows" data-l10n-id="about-glean-metrics-table-settings-hide-empty-value-rows"></label>
+
+              <moz-toggle
+                data-l10n-id="about-glean-store-submitted-pings" data-form-control="storeSubmittedPings" data-l10n-attrs="label, description"></moz-toggle>
             </div>
             <div>
               <h3 data-l10n-id="about-glean-metrics-table-settings-category-visualizations"></h3>

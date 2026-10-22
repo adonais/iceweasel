@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
 
 #include <cstdint>
+#include <tuple>
 
 #include "rtc_base/buffer.h"
 #include "test/gmock.h"
@@ -22,7 +23,6 @@ namespace {
 
 using rtcp::App;
 using ::testing::ElementsAreArray;
-using ::testing::make_tuple;
 
 constexpr uint32_t kName = ((uint32_t)'n' << 24) | ((uint32_t)'a' << 16) |
                            ((uint32_t)'m' << 8) | (uint32_t)'e';
@@ -62,7 +62,7 @@ TEST(RtcpPacketAppTest, CreateWithoutData) {
 
   Buffer raw = app.Build();
 
-  EXPECT_THAT(make_tuple(raw.data(), raw.size()),
+  EXPECT_THAT(std::make_tuple(raw.data(), raw.size()),
               ElementsAreArray(kPacketWithoutData));
 }
 
@@ -85,7 +85,7 @@ TEST(RtcpPacketAppTest, CreateWithData) {
 
   Buffer raw = app.Build();
 
-  EXPECT_THAT(make_tuple(raw.data(), raw.size()),
+  EXPECT_THAT(std::make_tuple(raw.data(), raw.size()),
               ElementsAreArray(kPacketWithData));
 }
 
@@ -96,7 +96,7 @@ TEST(RtcpPacketAppTest, ParseWithData) {
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kSubtype, parsed.sub_type());
   EXPECT_EQ(kName, parsed.name());
-  EXPECT_THAT(make_tuple(parsed.data(), parsed.data_size()),
+  EXPECT_THAT(std::make_tuple(parsed.data(), parsed.data_size()),
               ElementsAreArray(kData));
 }
 

@@ -543,6 +543,56 @@ TEST_F(DatagramConnectionTest, SingleBytePacketsAreSent) {
   EXPECT_TRUE(callback_called);
 }
 
+TEST_F(DatagramConnectionTest, DtlsWithFeedbackPacketsAreReceived) {
+  CreateConnections(WireProtocol::kDtlsWithFeedback);
+  Connect();
+
+  ASSERT_TRUE(
+      WaitUntil([&]() { return conn1_->Writable() && conn2_->Writable(); }));
+
+  std::vector<uint8_t> data = {1, 2, 3, 4, 5};
+  struct Callbacks {
+    bool packet_received = false;
+    bool send_outcome = false;
+  } callbacks;
+
+  auto check_done = [&] {
+    if (callbacks.packet_received && callbacks.send_outcome)
+      loop_.Quit();
+  };
+
+  // The app payload must be delivered intact, i.e. with the transport header
+  // stripped off by the DtlsPacketProcessor.
+  EXPECT_CALL(*observer2_ptr_, OnPacketReceived(_, _))
+      .WillOnce(
+          [&](std::span<const uint8_t> received_data,
+              const DatagramConnection::Observer::PacketMetadata& metadata) {
+            ASSERT_EQ(received_data.size(), data.size());
+            EXPECT_EQ(memcmp(received_data.data(), data.data(), data.size()),
+                      0);
+            callbacks.packet_received = true;
+            check_done();
+          });
+
+  EXPECT_CALL(*observer1_ptr_, OnSendOutcome(_))
+      .WillOnce([&](const SendOutcome& outcome) {
+        EXPECT_EQ(outcome.id, 1u);
+        EXPECT_EQ(outcome.status, SendOutcome::Status::kSuccess);
+        callbacks.send_outcome = true;
+        check_done();
+      });
+
+  std::vector<PacketSendParameters> packets = {
+      PacketSendParameters{.id = 1, .payload = data}};
+  conn1_->SendPackets(packets);
+  // The framed packet carries a transport header, so more than the payload is
+  // put on the wire (plus DTLS overhead).
+  EXPECT_GT(ice1_->last_sent_packet().size(), data.size());
+  loop_.Run();
+  EXPECT_TRUE(callbacks.packet_received);
+  EXPECT_TRUE(callbacks.send_outcome);
+}
+
 TEST_F(DatagramConnectionTest, InternalSentPacketsAreIgnored) {
   CreateConnections();
   EXPECT_CALL(*observer1_ptr_, OnSendOutcome(_)).Times(0);

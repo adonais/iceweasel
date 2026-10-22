@@ -1,0 +1,16 @@
+gczeal(0);
+let W = newGlobal({newCompartment: true});
+W.eval(`var h2 = {s: Symbol('s')};`);
+addMarkObservers([W.h2.s]);
+W.eval(`grayRoot().push(h2); h2 = null;`);
+gc();
+gc();
+printErr("GC1 (full): symbol=" + getMarks()[0]);
+schedulezone(W);
+startgc(1);
+while (gcstate() != "Mark" && gcstate() != "NotActive") gcslice(1);
+printErr("GC2 (incremental, zone W only, atoms not collected): state=" + gcstate());
+W.eval(`var h = grayRoot()[0]; var keep = {}; keep.s = h.s; h.s = 1;`);
+while (gcstate() != "NotActive") gcslice(1000);
+printErr("GC2 done: symbol=" + getMarks()[0] + " (referenced from black object W.keep)");
+W.eval(`String(keep.s);`);

@@ -7,6 +7,9 @@ excluded_tests = [
   # fiddly text-format rules we don't care about
   "^annotations.wast",
   "^id.wast",
+  "^name/name_annot.wast",
+  # branch hinting custom section
+  "^metadata.code.branch_hint/",
 ]
 
 [[repos]]
@@ -242,6 +245,29 @@ excluded_tests = [
   "^loop.wast.js",
 ]
 directive = "; skip-if: !wasmStackSwitchingEnabled(); test-also=--wasm-compiler=ion -P wasm_stack_switching;"
+
+[[repos]]
+name = "extended-name-section"
+url = "https://github.com/WebAssembly/extended-name-section"
+branch = "main"
+parent = "spec"
+excluded_tests = [
+  # A test was recently added where a struct type has multiple parent types.
+  # This doesn't even parse on any version of wasm-tools currently released,
+  # although someday it will be, so by the next time you read this you should
+  # probably delete this exclusion. The fix for wasm-tools is this PR:
+  # https://github.com/bytecodealliance/wasm-tools/pull/2652
+  "^gc/type-subtyping.wast",
+
+  # Irrelevant tests (we really only care about names)
+  "^array",
+  "^data",
+  "^elem",
+  "^memory",
+  "^return",
+  "^simd",
+  "^table",
+]
 
 # Example proposal config:
 #

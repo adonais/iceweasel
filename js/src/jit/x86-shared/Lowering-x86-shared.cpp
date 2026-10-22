@@ -1033,6 +1033,8 @@ bool MWasmBinarySimd128::canPmaddubsw() {
   MOZ_ASSERT(Assembler::HasSSE3());
   return true;
 }
+
+bool MWasmBinarySimd128::canTestBits() { return false; }
 #endif
 
 bool MWasmBinarySimd128::specializeForConstantRhs() {

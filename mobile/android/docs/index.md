@@ -17,7 +17,7 @@ To contribute to any of the three, you will need to get set up as a contributor 
 
 To set up Mozilla Central, you can follow the general instructions provided in the Mozilla Source Docs:
 
-- {ref}`Getting Set Up To Work On The Firefox Codebase <Getting Set Up To Work On The Firefox Codebase>`
+- {doc}`Getting Set Up To Work On The Firefox Codebase </setup/index>`
 
 Additionally, for writing, submitting and updating a patch with git, you can refer to the following guide:
 
@@ -256,9 +256,9 @@ MOZCONFIG=debug.mozconfig ./mach build
 
 Now that you're prepared and set up, you can access specific project instructions below:
 
-- GeckoView: {ref}`Contributing to GeckoView <Contributing to GeckoView>`
+- GeckoView: {doc}`Contributing to GeckoView <geckoview/contributor/index>`
 - Android Components: [Mozilla Android Components](https://mozac.org/)
-- Frontend: {ref}`Building Firefox for Android <Building Firefox for Android>`
+- Frontend: {doc}`Building Firefox for Android <fenix>`
 
 ## Android Request For Comment (RFC) Process
 

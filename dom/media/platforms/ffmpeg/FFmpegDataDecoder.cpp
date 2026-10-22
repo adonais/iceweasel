@@ -28,6 +28,11 @@ namespace mozilla {
 
 StaticMutex FFmpegDataDecoder<LIBAV_VER>::sMutex;
 
+#ifdef MOZ_WIDGET_ANDROID
+static constexpr uint32_t kDrainIntervalMs = 20;
+static constexpr uint32_t kMaxDrainAttempts = 25;
+#endif
+
 FFmpegDataDecoder<LIBAV_VER>::FFmpegDataDecoder(const FFmpegLibWrapper* aLib,
                                                 AVCodecID aCodecID,
                                                 PRemoteCDMActor* aCDM)
@@ -110,6 +115,14 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
 MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
     AVDictionary** aOptions) {
   FFMPEG_LOG("Initialising FFmpeg decoder");
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  if (mCDM) {
+    FFMPEG_LOG("  cannot use software decoder with CDM");
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("CDM requires HW decoder"));
+  }
+#endif
 
   AVCodec* codec = FindSoftwareAVCodec(mLib, mCodecID);
   if (!codec) {
@@ -397,18 +410,91 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessDrain() {
         }
         break;
       }
+#ifdef MOZ_WIDGET_ANDROID
+      CancelDrainTimer();
+#endif
       mDrainPromise.Reject(r, __func__);
       return p;
     }
   } while (gotFrame);
+#ifdef MOZ_WIDGET_ANDROID
+  CancelDrainTimer();
+#endif
   mDrainPromise.Resolve(std::move(results), __func__);
   return p;
 }
+
+#ifdef MOZ_WIDGET_ANDROID
+bool FFmpegDataDecoder<LIBAV_VER>::MaybeDeferDrain(
+    const DecodedData& aResults) {
+  MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+
+  if (!aResults.IsEmpty() || mDrainTimedOut) {
+    return false;
+  }
+
+  if (!mDrainTimer) {
+    nsresult rv = NS_NewTimerWithCallback(
+        getter_AddRefs(mDrainTimer),
+        [self = RefPtr{this}](nsITimer*) { self->OnDrainTimer(); },
+        kDrainIntervalMs, nsITimer::TYPE_ONE_SHOT,
+        "FFmpegDataDecoder::OnDrainTimer"_ns, mTaskQueue);
+    if (NS_FAILED(rv)) {
+      mDrainTimer = nullptr;
+      return false;
+    }
+    FFMPEG_LOGV("Polling drain in {} ms, attempt {} of {}", kDrainIntervalMs,
+                mDrainAttempts + 1, kMaxDrainAttempts);
+  }
+  return true;
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::ResumeDrain() {
+  MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+
+  if (mDrainPromise.IsEmpty()) {
+    FFMPEG_LOGV("Resume drain but promise already fulfilled");
+    return;
+  }
+
+  FFMPEG_LOGV("Resume drain");
+  ProcessDrain();
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::OnDrainTimer() {
+  MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+
+  mDrainTimer = nullptr;
+  if (++mDrainAttempts >= kMaxDrainAttempts) {
+    FFMPEG_LOG("Drain expired after {} attempts, completing with what we have",
+               mDrainAttempts);
+    mDrainTimedOut = true;
+  }
+
+  ResumeDrain();
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::CancelDrainTimer() {
+  MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+
+  mDrainAttempts = 0;
+  mDrainTimedOut = false;
+
+  if (mDrainTimer) {
+    mDrainTimer->Cancel();
+    mDrainTimer = nullptr;
+  }
+}
+#endif
 
 RefPtr<MediaDataDecoder::FlushPromise>
 FFmpegDataDecoder<LIBAV_VER>::ProcessFlush() {
   AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessFlush", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+  mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+#ifdef MOZ_WIDGET_ANDROID
+  CancelDrainTimer();
+#endif
   if (mCodecContext) {
     FFMPEG_LOG("FFmpegDataDecoder: flushing buffers");
     ReleaseFrame();
@@ -425,6 +511,10 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessFlush() {
 void FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown() {
   AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessShutdown", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+  mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+#ifdef MOZ_WIDGET_ANDROID
+  CancelDrainTimer();
+#endif
   StaticMutexAutoLock mon(sMutex);
 
   if (mCodecContext) {

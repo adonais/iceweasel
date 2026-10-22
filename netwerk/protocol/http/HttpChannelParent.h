@@ -145,18 +145,17 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   [[nodiscard]] bool DoAsyncOpen(
       nsIURI* uri, nsIURI* originalUri, nsIURI* docUri,
-      nsIReferrerInfo* aReferrerInfo, nsIURI* aAPIRedirectToURI,
-      nsIURI* topWindowUri, const uint32_t& loadFlags,
-      const RequestHeaderTuples& requestHeaders, const nsCString& requestMethod,
-      const Maybe<IPCStream>& uploadStream, const bool& uploadStreamIsStreaming,
-      const int16_t& priority, const ClassOfService& classOfService,
-      const uint8_t& redirectionLimit, const uint32_t& thirdPartyFlags,
-      const bool& doResumeAt, const uint64_t& startPos,
-      const nsCString& entityID, const bool& allowSpdy, const bool& allowHttp3,
-      const bool& allowAltSvc, const bool& beConservative,
-      const bool& bypassProxy, const uint32_t& tlsFlags,
-      const LoadInfoArgs& aLoadInfoArgs, const uint32_t& aCacheKey,
-      const uint64_t& aRequestContextID,
+      nsIReferrerInfo* aReferrerInfo, nsIURI* topWindowUri,
+      const uint32_t& loadFlags, const RequestHeaderTuples& requestHeaders,
+      const nsCString& requestMethod, const Maybe<IPCStream>& uploadStream,
+      const bool& uploadStreamIsStreaming, const int16_t& priority,
+      const ClassOfService& classOfService, const uint8_t& redirectionLimit,
+      const uint32_t& thirdPartyFlags, const bool& doResumeAt,
+      const uint64_t& startPos, const nsCString& entityID,
+      const bool& allowSpdy, const bool& allowHttp3, const bool& allowAltSvc,
+      const bool& beConservative, const bool& bypassProxy,
+      const uint32_t& tlsFlags, const LoadInfoArgs& aLoadInfoArgs,
+      const uint32_t& aCacheKey, const uint64_t& aRequestContextID,
       const Maybe<CorsPreflightArgs>& aCorsPreflightArgs,
       const uint32_t& aInitialRwin, const bool& aBlockAuthPrompt,
       const bool& aAllowStaleCacheContent,
@@ -193,7 +192,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
       const uint32_t& aSourceRequestBlockingReason,
       const Maybe<ChildLoadInfoForwarderArgs>& aTargetLoadInfoForwarder,
       const uint32_t& loadFlags, nsIReferrerInfo* aReferrerInfo,
-      nsIURI* apiRedirectUri,
       const Maybe<CorsPreflightArgs>& aCorsPreflightArgs) override;
   virtual mozilla::ipc::IPCResult RecvDocumentChannelCleanup(
       const bool& clearCacheEntry) override;
@@ -258,6 +256,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
 
+  // Sets mAltDataBindingOrigin from aChannel's principal, or clears it if the
+  // principal is not one the content process could have loaded.
+  void UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel);
+
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;
@@ -266,6 +268,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   RefPtr<HttpBaseChannel> mChannel;
   nsCOMPtr<nsICacheEntry> mCacheEntry;
+  // Origin of the load's principal, captured while the channel is still alive
+  // (mChannel is cleared on document channel cleanup, before alt-data is
+  // written). Used to bind child-written alt-data to the producing principal.
+  nsCString mAltDataBindingOrigin;
 
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;

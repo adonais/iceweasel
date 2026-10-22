@@ -12,7 +12,7 @@ PRCondVar* PR_NewCondVar(PRLock *lock);
 
 ### Parameter
 
-{ref}`PR_NewCondVar` has one parameter:
+{doc}`pr_newcondvar` has one parameter:
 
 `lock`
 

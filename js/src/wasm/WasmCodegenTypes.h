@@ -898,6 +898,11 @@ struct TrapData {
   // validly constructed, but has no debug frame yet.
   bool failedUnwindSignatureMismatch;
 
+  // Indicates whether wasm::StartUnwinding() actually unwound the frame within
+  // which the trap occurred. This is used to unwind the corresponding shadow
+  // stack entry in wasm::HandleExceptionWasm.
+  bool unwoundFrame;
+
   struct FaultInfo {
     uint32_t memoryIndex;
     uint64_t byteOffset;

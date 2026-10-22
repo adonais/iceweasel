@@ -93,6 +93,13 @@ class AudioEncoder {
     bool send_even_if_empty = false;
     bool speech = true;
     CodecType encoder_type = CodecType::kOther;
+
+    // Used by EncodedAudioFrameInjector to set metadata that override
+    // values used in the default case. Internal encoders do not set these
+    // values.
+    std::optional<uint8_t> audio_level_dbov_override;
+    std::optional<int64_t> absolute_capture_timestamp_ms_override;
+    std::optional<std::vector<uint32_t>> csrcs_override;
   };
 
   // This is the main struct for auxiliary encoding information. Each encoded

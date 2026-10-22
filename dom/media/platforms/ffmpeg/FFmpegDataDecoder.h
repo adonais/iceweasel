@@ -8,6 +8,9 @@
 #include "FFmpegLibWrapper.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/StaticMutex.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "nsITimer.h"
+#endif
 
 // This must be the last header included
 #include "FFmpegLibs.h"
@@ -98,7 +101,25 @@ class FFmpegDataDecoder<LIBAV_VER>
   RefPtr<DecodePromise> ProcessDrain();
   MozPromiseHolder<DecodePromise> mDrainPromise;
 
+#ifdef MOZ_WIDGET_ANDROID
+  // MediaCodec may be slow to produce frames, if there is resource pressure on
+  // the output buffers. We arm a timer up to a fixed number of attempts until
+  // we either produce new frames, resetting the attempt counter, or we get the
+  // end of stream indicator, ending the drain immediately.
+  bool MaybeDeferDrain(const DecodedData& aResults);
+  virtual void ResumeDrain();
+#endif
+
  private:
+#ifdef MOZ_WIDGET_ANDROID
+  void OnDrainTimer();
+  void CancelDrainTimer();
+
+  nsCOMPtr<nsITimer> mDrainTimer;
+  uint32_t mDrainAttempts = 0;
+  bool mDrainTimedOut = false;
+#endif
+
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
   virtual MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                                bool* aGotFrame,

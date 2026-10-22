@@ -4,7 +4,7 @@
 "use strict";
 
 const { ChromeMigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeMigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
 );
 
 const SOURCE_PROFILE_DIR = "Library/Application Support/Google/Chrome/Default/";

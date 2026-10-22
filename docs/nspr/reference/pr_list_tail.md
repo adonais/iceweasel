@@ -22,4 +22,4 @@ A pointer to a list element.
 
 ## Description
 
-{ref}`PR_LIST_TAIL` returns the tail of the specified circular list.
+{doc}`pr_list_tail` returns the tail of the specified circular list.

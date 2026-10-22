@@ -299,6 +299,13 @@ class TextSelectionTest {
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
         searchScreen(retryableComposeTestRule.current) {
+            // open floating toolbar
+            longClickToolbar()
+            // long click selects only the touched word, which is wherever the centre of the
+            // rendered URL falls. "Select all" widens it to the whole URL
+            clickContextMenuItem("Select all")
+            // select all also dismisses the floating toolbar, so long click again
+            // to bring the toolbar back with the selection intact.
             longClickToolbar()
             clickContextMenuItem("Copy")
             clickClearButton()
@@ -316,6 +323,9 @@ class TextSelectionTest {
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
         searchScreen(retryableComposeTestRule.current) {
+            longClickToolbar()
+            // See verifyCopyUrlBarTextSelectionOptionTest for why the selection is widened and the toolbar reopened.
+            clickContextMenuItem("Select all")
             longClickToolbar()
             clickContextMenuItem("Cut")
             verifySearchBarPlaceholder("Search or enter address")

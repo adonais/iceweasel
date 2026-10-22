@@ -30,10 +30,7 @@ add_task(async function () {
   );
 
   await waitForRequest;
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
 
   const waitForPanel = waitForDOM(document, "#request-panel .cm-content");
   clickOnSidebarTab(document, "request");

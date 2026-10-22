@@ -23,7 +23,7 @@ The function has the following parameter:
 
 The function returns one of the following values:
 
-- If successful, the {ref}`PRDescIdentity` for the layer associated with
+- If successful, the {doc}`prdescidentity` for the layer associated with
   the string specified in the layer named `layer_name`.
 - If the function cannot allocate enough dynamic memory, it fails and
   returns the value `PR_INVALID_IO_LAYER` with the error code
@@ -32,10 +32,10 @@ The function returns one of the following values:
 ## Description
 
 A string may be associated with a layer when the layer is created.
-{ref}`PR_GetUniqueIdentity` allocates a unique layer identity and
+{doc}`pr_getuniqueidentity` allocates a unique layer identity and
 associates it with the string. The string can be subsequently passed to
-{ref}`PR_CreateIOLayerStub` to create a new file descriptor of that layer.
+{doc}`pr_createiolayerstub` to create a new file descriptor of that layer.
 
-Call {ref}`PR_GetUniqueIdentity` only once for any particular layer name.
+Call {doc}`pr_getuniqueidentity` only once for any particular layer name.
 If you're creating a custom I/O layer, cache the result, and then use
-that cached result every time you call {ref}`PR_CreateIOLayerStub`.
+that cached result every time you call {doc}`pr_createiolayerstub`.

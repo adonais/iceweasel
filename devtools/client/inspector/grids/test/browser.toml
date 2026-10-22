@@ -35,8 +35,6 @@ support-files = [
 ["browser_grids_grid-list-on-mutation-element-added.js"]
 skip-if = [
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1557326
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1557326
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1557326
 ]
 
 ["browser_grids_grid-list-on-mutation-element-removed.js"]

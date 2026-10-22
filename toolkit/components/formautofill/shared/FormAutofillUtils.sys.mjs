@@ -190,6 +190,51 @@ FormAutofillUtils = {
     return this._unsupportedFieldNameInfo.includes(fieldName);
   },
 
+  /**
+   * Determine whether the element carries an autocomplete attribute that the
+   * parser could not resolve to a known field name, which we treat as a signal
+   * that the site does not want browser autofill on this field (Bug 1999789).
+   *
+   * getAutocompleteInfo() returns an empty fieldName for both "no attribute" and
+   * "attribute present but unparseable", so the presence of the attribute is
+   * what separates the two.
+   *
+   * Called at field detection time (FormAutofillHeuristics.inferFieldInfo),
+   * which leaves such a field unclassified so that it takes no part in
+   * autofill at all.
+   *
+   * @param {HTMLElement} element
+   * @param {?AutocompleteInfo} autocompleteInfo
+   *        The result of element.getAutocompleteInfo(), which is null when
+   *        autocomplete does not apply to this element type.
+   * @returns {boolean}
+   */
+  hasUnrecognizedAutocomplete(element, autocompleteInfo) {
+    if (autocompleteInfo?.fieldName) {
+      return false;
+    }
+
+    const tokens =
+      element
+        .getAttribute("autocomplete")
+        ?.trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean) ?? [];
+
+    // An absent, empty or whitespace-only attribute expresses no intent, so it
+    // is treated the same as having no attribute at all.
+    if (!tokens.length) {
+      return false;
+    }
+
+    // "off" and "on" parse as valid field names on their own and never reach
+    // here. In a malformed multi-token value they do, and honouring those as a
+    // suppression signal would read as respecting autocomplete=off through a
+    // side door (Bug 1754879).
+    return !tokens.includes("off") && !tokens.includes("on");
+  },
+
   isCCNumber(ccNumber) {
     return ccNumber && lazy.CreditCard.isValidNumber(ccNumber);
   },

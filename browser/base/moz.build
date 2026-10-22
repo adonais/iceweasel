@@ -10,6 +10,9 @@ SPHINX_TREES["sslerrorreport"] = "content/docs/sslerrorreport"
 with Files("content/docs/sslerrorreport/**"):
     SCHEDULES.exclusive = ["docs"]
 
+with Files("content/test/browser-safebrowsing/**"):
+    BUG_COMPONENT = ("Toolkit", "Safe Browsing")
+
 MOCHITEST_CHROME_MANIFESTS += [
     "content/test/chrome/chrome.toml",
 ]
@@ -34,6 +37,7 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/browser-keyboard/browser.toml",
     "content/test/browser-keyboard/browserSidebarRevamp.toml",
     "content/test/browser-linkHandling/browser.toml",
+    "content/test/browser-mathml/browser.toml",
     "content/test/browser-maximized/browser.toml",
     "content/test/browser-maximized/browserNova.toml",
     "content/test/browser-menubar/browser.toml",
@@ -50,6 +54,7 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/browser-popups/browser.toml",
     "content/test/browser-protectionsUI/browser.toml",
     "content/test/browser-referrer/browser.toml",
+    "content/test/browser-safebrowsing/browser.toml",
     "content/test/browser-sanitize/browser.toml",
     "content/test/browser-scroll-to-text-fragment/browser.toml",
     "content/test/browser-siteIdentity/browser.toml",

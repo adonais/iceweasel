@@ -9,7 +9,7 @@ use std::fmt;
 
 use euclid::{Transform3D, Box2D, Point2D, Vector2D};
 
-use api::units::{DevicePoint, DeviceRect};
+use api::units::{DevicePoint, DeviceRect, LayoutSideOffsets};
 use crate::spatial_tree::{CoordinateSystemId, SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::surface::SurfaceInfo;
 use crate::util::project_rect;
@@ -417,15 +417,39 @@ impl SpaceSnapper {
     /// each mode is for.
     pub fn snap_rect_rounded<F>(&self, rect: &Box2D<f32, F>, rounding: SnapRounding) -> Box2D<f32, F> where F: fmt::Debug {
         debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
+        // Short-circuit rather than round-tripping through the snap transform,
+        // which wouldn't be bit-exact.
+        if rounding == SnapRounding::Exact {
+            return *rect;
+        }
         match self.snapping_transform {
             Some(SnapTransform { ref scale_offset, swap_xy }) => {
                 let rect = if swap_xy { swap_box_xy(rect) } else { *rect };
                 let device_rect: DeviceRect = scale_offset.map_rect(&rect);
                 let snapped: DeviceRect = match rounding {
+                    SnapRounding::Exact => unreachable!("returned above"),
                     SnapRounding::Nearest => device_rect.snap(),
                     SnapRounding::RoundOut => device_rect.round_out(),
                     SnapRounding::Line { horizontal } =>
                         snap_line_device_rect(&device_rect, horizontal ^ swap_xy),
+                    SnapRounding::BorderInner { .. } if swap_xy => device_rect.snap(),
+                    SnapRounding::BorderInner { ref widths } => {
+                        // Map the inner rect from layout space the way content
+                        // meeting it maps its own rect, so both round a tie the
+                        // same way.
+                        let inner: Box2D<f32, F> = Box2D::new(
+                            Point2D::new(rect.min.x + widths.left, rect.min.y + widths.top),
+                            Point2D::new(rect.max.x - widths.right, rect.max.y - widths.bottom),
+                        );
+                        let inner_device: DeviceRect = scale_offset.map_rect(&inner);
+                        snap_border_device_rect(
+                            &device_rect,
+                            &inner_device,
+                            widths,
+                            scale_offset.scale.x,
+                            scale_offset.scale.y,
+                        )
+                    }
                 };
                 let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped);
                 if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
@@ -438,6 +462,10 @@ impl SpaceSnapper {
 /// How a rect is rounded to the device pixel grid by `snap_rect_rounded`.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SnapRounding {
+    /// Don't round: leave the rect at its exact sub-pixel position. For a prim
+    /// that resolves its own edges in the shader (anti-aliasing), where moving an
+    /// edge to the grid is what the anti-aliasing is there to avoid.
+    Exact,
     /// Round each edge to the nearest device pixel. Crisp fills / borders that
     /// tile seamlessly with neighbours (`round(max_of_A) == round(min_of_B)`).
     Nearest,
@@ -457,6 +485,64 @@ pub enum SnapRounding {
     /// phase dependence. `horizontal` is the line orientation in the target's
     /// own space (a horizontal line is thin in Y).
     Line { horizontal: bool },
+    /// Round a border's edges to the nearest pixel, then pull an outer edge in
+    /// where the whole-pixel width measured from it (each side's width rounded
+    /// as `NormalBorderData` rounds it) would stop short of the inner edge's
+    /// own nearest pixel. Content that meets the border in layout snaps to that
+    /// pixel, so the shortfall shows as a gap between them (bug 2074176). The
+    /// border never grows past its `Nearest` rect. Falls back to `Nearest` when
+    /// a width is not snapped to whole pixels, or across a 90-degree rotation.
+    BorderInner { widths: LayoutSideOffsets },
+}
+
+/// Snap a device-space border rect so its inner edges never fall short of
+/// the content they meet. See `SnapRounding::BorderInner`.
+fn snap_border_device_rect(
+    r: &DeviceRect,
+    inner: &DeviceRect,
+    widths: &LayoutSideOffsets,
+    scale_x: f32,
+    scale_y: f32,
+) -> DeviceRect {
+    // Mirrors the width snapping in `NormalBorderData::update`: widths of at
+    // least one layout pixel round to whole device pixels, zero stays zero.
+    let snapped_width = |w: f32, s: f32| {
+        if w == 0.0 {
+            Some(0.0)
+        } else if w >= 1.0 && s > 0.0 {
+            Some((w * s).round().max(1.0))
+        } else {
+            None
+        }
+    };
+    let (Some(left), Some(top), Some(right), Some(bottom)) = (
+        snapped_width(widths.left, scale_x),
+        snapped_width(widths.top, scale_y),
+        snapped_width(widths.right, scale_x),
+        snapped_width(widths.bottom, scale_y),
+    ) else {
+        return r.snap();
+    };
+
+    if inner.is_empty() {
+        return r.snap();
+    }
+    let outer = r.snap();
+    let inner = inner.snap();
+
+    // Content meeting the inner edge snaps it to `inner`. Where the whole-pixel
+    // width measured from the snapped outer edge stops short of that, the gap
+    // would show, so pull the outer edge in to close it. Where it reaches past
+    // `inner` instead, the outer edge stays put, so the border never grows past
+    // its own snapped rect.
+    let snapped = DeviceRect::new(
+        DevicePoint::new(outer.min.x.max(inner.min.x - left), outer.min.y.max(inner.min.y - top)),
+        DevicePoint::new(outer.max.x.min(inner.max.x + right), outer.max.y.min(inner.max.y + bottom)),
+    );
+    if snapped.width() < left + right || snapped.height() < top + bottom {
+        return outer;
+    }
+    snapped
 }
 
 /// Snap a device-space decoration-line rect: round both edges of the long axis

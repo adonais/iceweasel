@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-box-item.tagmap.d.ts" />
+
 import { html, classMap } from "../vendor/lit.all.mjs";
 import { MozBoxBase } from "../lit-utils.mjs";
 import { GROUP_TYPES } from "chrome://global/content/elements/moz-box-group.mjs";
@@ -45,7 +47,7 @@ const NAVIGATION_VALUE = {
  * @slot actions - Slot for the actions positioned at the end of the component container.
  * @slot actions-start - Slot for the actions positioned at the start of the component container.
  */
-export default class MozBoxItem extends MozBoxBase {
+export class MozBoxItem extends MozBoxBase {
   #actionEls = [];
 
   static properties = {
@@ -153,13 +155,6 @@ export default class MozBoxItem extends MozBoxBase {
     return NAVIGATION_DIRECTIONS.LTR;
   }
 
-  get isDocumentRTL() {
-    if (typeof Services !== "undefined") {
-      return Services.locale.isAppLocaleRTL;
-    }
-    return document.dir === "rtl";
-  }
-
   get isDraggable() {
     const reorderableParent = this.closest("moz-box-group");
     return (
@@ -181,30 +176,41 @@ export default class MozBoxItem extends MozBoxBase {
   }
 
   /**
-   * Focuses the item, or delegates to an action element when the item
-   * isn't directly focusable.
+   * Focuses the item, or its first action when the item isn't directly
+   * focusable.
    *
-   * @param {KeyboardEvent} [event]
+   * @param {FocusOptions} [options]
    */
-  focus(event) {
+  focus(options) {
     if (this.isFocusable) {
-      super.focus();
+      super.focus(options);
       return;
     }
 
-    if (event?.key == "Up" || event?.key == "ArrowUp") {
-      let actionEls = this.actionsSlotEl.assignedElements();
-      let lastActions = actionEls.length
-        ? actionEls
-        : this.actionsStartSlotEl?.assignedElements();
-      let lastAction = lastActions?.[lastActions.length - 1];
-      lastAction?.focus();
-    } else {
-      let firstAction =
-        this.actionsStartSlotEl?.assignedElements()?.[0] ??
-        this.actionsSlotEl.assignedElements()?.[0];
-      firstAction?.focus();
+    let firstAction =
+      this.actionsStartSlotEl?.assignedElements()?.[0] ??
+      this.actionsSlotEl.assignedElements()?.[0];
+    firstAction?.focus(options);
+  }
+
+  /**
+   * Focuses the item in response to arrow key navigation. Moving up into an
+   * item that isn't directly focusable lands on its last action.
+   *
+   * @param {KeyboardEvent} event
+   */
+  focusFromEvent(event) {
+    if (this.isFocusable || (event.key != "Up" && event.key != "ArrowUp")) {
+      this.focus();
+      return;
     }
+
+    let actionEls = this.actionsSlotEl.assignedElements();
+    let lastActions = actionEls.length
+      ? actionEls
+      : this.actionsStartSlotEl?.assignedElements();
+    let lastAction = lastActions?.[lastActions.length - 1];
+    lastAction?.focus();
   }
 
   getActionEls() {

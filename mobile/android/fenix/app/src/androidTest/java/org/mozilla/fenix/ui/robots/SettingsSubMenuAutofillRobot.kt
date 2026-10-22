@@ -419,6 +419,8 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Email\" to $emailAddress")
         composeTestRule.onAddressFormNode(EditAddressTestTag.EMAIL_FIELD) { performTextInput(emailAddress) }
         Log.i(TAG, "fillAndSaveAddress: \"Email\" was set to $emailAddress")
+        waitForKeyboardDismiss()
+        composeTestRule.waitForIdle()
         Log.i(TAG, "fillAndSaveAddress: Trying to click the \"Save\" button")
         composeTestRule.onAddressFormNode(EditAddressTestTag.SAVE_BUTTON) { performClick() }
         Log.i(TAG, "fillAndSaveAddress: Clicked the \"Save\" button")

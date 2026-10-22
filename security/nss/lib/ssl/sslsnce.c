@@ -344,14 +344,14 @@ UnlockSet(cacheDesc *cache, PRUint32 set)
 /* Put a certificate in the cache.  Update the cert index in the sce.
  */
 static PRUint32
-CacheCert(cacheDesc *cache, CERTCertificate *cert, sidCacheEntry *sce)
+CacheCert(cacheDesc *cache, const SECItem *derCert, sidCacheEntry *sce)
 {
     PRUint32 now;
     certCacheEntry cce;
 
-    if ((cert->derCert.len > SSL_MAX_CACHED_CERT_LEN) ||
-        (cert->derCert.len <= 0) ||
-        (cert->derCert.data == NULL)) {
+    if ((derCert->len > SSL_MAX_CACHED_CERT_LEN) ||
+        (derCert->len <= 0) ||
+        (derCert->data == NULL)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return 0;
     }
@@ -359,8 +359,8 @@ CacheCert(cacheDesc *cache, CERTCertificate *cert, sidCacheEntry *sce)
     cce.sessionIDLength = sce->sessionIDLength;
     PORT_Memcpy(cce.sessionID, sce->sessionID, cce.sessionIDLength);
 
-    cce.certLength = cert->derCert.len;
-    PORT_Memcpy(cce.cert, cert->derCert.data, cce.certLength);
+    cce.certLength = derCert->len;
+    PORT_Memcpy(cce.cert, derCert->data, cce.certLength);
 
     /* get lock on cert cache */
     now = LockSidCacheLock(cache->certCacheLock, 0);
@@ -488,8 +488,7 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
 static sslSessionID *
 ConvertToSID(sidCacheEntry *from,
              certCacheEntry *pcce,
-             srvNameCacheEntry *psnce,
-             CERTCertDBHandle *dbHandle)
+             srvNameCacheEntry *psnce)
 {
     sslSessionID *to;
 
@@ -532,12 +531,11 @@ ConvertToSID(sidCacheEntry *from,
     if (from->u.ssl3.certIndex != -1 && pcce) {
         SECItem derCert;
 
+        derCert.type = siBuffer;
         derCert.len = pcce->certLength;
         derCert.data = pcce->cert;
 
-        to->peerCert = CERT_NewTempCertificate(dbHandle, &derCert, NULL,
-                                               PR_FALSE, PR_TRUE);
-        if (to->peerCert == NULL)
+        if (SECITEM_CopyItem(NULL, &to->peerCertDER, &derCert) != SECSuccess)
             goto loser;
     }
     if (from->authType == ssl_auth_ecdsa ||
@@ -745,7 +743,7 @@ ServerSessionIDLookup(PRTime sslNow, const PRIPv6Addr *addr,
         /* sce conains a copy of the cache entry.
         ** Convert shared memory format to local format
         */
-        sid = ConvertToSID(&sce, pcce ? &cce : 0, psnce ? &snce : 0, dbHandle);
+        sid = ConvertToSID(&sce, pcce ? &cce : 0, psnce ? &snce : 0);
     }
     return sid;
 }
@@ -794,8 +792,8 @@ ssl_ServerCacheSessionID(sslSessionID *sid, PRTime creationTime)
         if (name->len && name->data) {
             now = CacheSrvName(cache, name, &sce);
         }
-        if (sid->peerCert != NULL) {
-            now = CacheCert(cache, sid->peerCert, &sce);
+        if (sid->peerCertDER.data != NULL) {
+            now = CacheCert(cache, &sid->peerCertDER, &sce);
         }
 
         set = SIDindex(cache, &sce.addr, sce.sessionID, sce.sessionIDLength);

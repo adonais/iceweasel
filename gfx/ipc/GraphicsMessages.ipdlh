@@ -12,6 +12,8 @@ using mozilla::gfx::IntSize from "mozilla/gfx/Point.h";
 using gfxImageFormat from "mozilla/gfx/Types.h";
 using mozilla::gfx::D3D11Checks::VideoFormatOption from "mozilla/gfx/D3D11Checks.h";
 using mozilla::gfx::D3D11Checks::VideoFormatOptionSet from "mozilla/gfx/D3D11Checks.h";
+using mozilla::media::MediaCodecsSupported from "MediaCodecsSupport.h";
+using mozilla::media::DrmSchemeSupport from "MediaCodecsSupport.h";
 
 namespace mozilla {
 namespace gfx {
@@ -70,6 +72,8 @@ union GfxVarValue
   uint64_t;
   float;
   uint64_t[];
+  MediaCodecsSupported;
+  DrmSchemeSupport;
 };
 
 struct GfxVarUpdate

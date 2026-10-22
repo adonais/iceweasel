@@ -7,6 +7,7 @@
 
 #include "FFmpegDataDecoder.h"
 #include "FFmpegLibWrapper.h"
+#include "SimpleMap.h"
 
 namespace mozilla {
 
@@ -46,12 +47,26 @@ class FFmpegAudioDecoder<LIBAV_VER>
   MediaResult DecodeUsingFFmpeg(AVPacket* aPacket, bool& aDecoded,
                                 MediaRawData* aSample, DecodedData& aResults,
                                 bool* aGotFrame);
+  media::TimeUnit ExtractFramePts(MediaRawData* aSample,
+                                  const media::NullableTimeUnit& aPreviousEnd);
+  // aPreviousEnd is the end time of the frame this packet last produced, if
+  // any, and is updated with that of the frame emitted here.
   MediaResult PostProcessOutput(bool aDecoded, MediaRawData* aSample,
                                 DecodedData& aResults, bool* aGotFrame,
-                                int32_t aSubmitted);
+                                int32_t aSubmitted,
+                                media::NullableTimeUnit& aPreviousEnd);
+  RefPtr<FlushPromise> ProcessFlush() override;
+
+  // Mapping of sample time in microseconds to full precision.
+  SimpleMap<int64_t, media::TimeUnit> mInputTimes;
+
   const AudioInfo mAudioInfo;
   // True if the audio will be downmixed and rendered in mono.
   bool mDefaultPlaybackDeviceMono = false;
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  bool mIsMediaCodec = false;
+  bool mHasSentDrainPacket = false;
+#endif
 };
 
 }  // namespace mozilla

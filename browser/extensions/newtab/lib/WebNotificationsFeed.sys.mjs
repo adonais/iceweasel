@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 /**
  * NormalizedNotification
  * ---
@@ -158,6 +160,9 @@ function normalizeDiskEntry(entry, origin) {
  * reports notifications either way, but to no one.
  */
 export class WebNotificationsFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     /** @type {{[id: string]: NormalizedNotification}} */
     this._notifications = Object.create(null);

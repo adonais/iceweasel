@@ -159,18 +159,17 @@ bool HttpChannelParent::Init(const HttpChannelCreationArgs& aArgs) {
     case HttpChannelCreationArgs::THttpChannelOpenArgs: {
       const HttpChannelOpenArgs& a = aArgs.get_HttpChannelOpenArgs();
       return DoAsyncOpen(
-          a.uri(), a.original(), a.doc(), a.referrerInfo(), a.apiRedirectTo(),
-          a.topWindowURI(), a.loadFlags(), a.requestHeaders(),
-          a.requestMethod(), a.uploadStream(), a.uploadStreamIsStreaming(),
-          a.priority(), a.classOfService(), a.redirectionLimit(),
-          a.thirdPartyFlags(), a.resumeAt(), a.startPos(), a.entityID(),
-          a.allowSpdy(), a.allowHttp3(), a.allowAltSvc(), a.beConservative(),
-          a.bypassProxy(), a.tlsFlags(), a.loadInfo(), a.cacheKey(),
-          a.requestContextID(), a.preflightArgs(), a.initialRwin(),
-          a.blockAuthPrompt(), a.allowStaleCacheContent(),
-          a.preferCacheLoadOverBypass(), a.contentTypeHint(), a.requestMode(),
-          a.redirectMode(), a.channelId(), a.contentWindowId(),
-          a.preferredAlternativeTypes(), a.browserId(),
+          a.uri(), a.original(), a.doc(), a.referrerInfo(), a.topWindowURI(),
+          a.loadFlags(), a.requestHeaders(), a.requestMethod(),
+          a.uploadStream(), a.uploadStreamIsStreaming(), a.priority(),
+          a.classOfService(), a.redirectionLimit(), a.thirdPartyFlags(),
+          a.resumeAt(), a.startPos(), a.entityID(), a.allowSpdy(),
+          a.allowHttp3(), a.allowAltSvc(), a.beConservative(), a.bypassProxy(),
+          a.tlsFlags(), a.loadInfo(), a.cacheKey(), a.requestContextID(),
+          a.preflightArgs(), a.initialRwin(), a.blockAuthPrompt(),
+          a.allowStaleCacheContent(), a.preferCacheLoadOverBypass(),
+          a.contentTypeHint(), a.requestMode(), a.redirectMode(), a.channelId(),
+          a.contentWindowId(), a.preferredAlternativeTypes(), a.browserId(),
           a.launchServiceWorkerStart(), a.launchServiceWorkerEnd(),
           a.dispatchFetchEventStart(), a.dispatchFetchEventEnd(),
           a.handleFetchEventStart(), a.handleFetchEventEnd(),
@@ -421,17 +420,17 @@ void HttpChannelParent::InvokeEarlyHintPreloader(
 
 bool HttpChannelParent::DoAsyncOpen(
     nsIURI* aURI, nsIURI* aOriginalURI, nsIURI* aDocURI,
-    nsIReferrerInfo* aReferrerInfo, nsIURI* aAPIRedirectToURI,
-    nsIURI* aTopWindowURI, const uint32_t& aLoadFlags,
-    const RequestHeaderTuples& requestHeaders, const nsCString& requestMethod,
-    const Maybe<IPCStream>& uploadStream, const bool& uploadStreamIsStreaming,
-    const int16_t& priority, const ClassOfService& classOfService,
-    const uint8_t& redirectionLimit, const uint32_t& thirdPartyFlags,
-    const bool& doResumeAt, const uint64_t& startPos, const nsCString& entityID,
-    const bool& allowSpdy, const bool& allowHttp3, const bool& allowAltSvc,
-    const bool& beConservative, const bool& bypassProxy,
-    const uint32_t& tlsFlags, const LoadInfoArgs& aLoadInfoArgs,
-    const uint32_t& aCacheKey, const uint64_t& aRequestContextID,
+    nsIReferrerInfo* aReferrerInfo, nsIURI* aTopWindowURI,
+    const uint32_t& aLoadFlags, const RequestHeaderTuples& requestHeaders,
+    const nsCString& requestMethod, const Maybe<IPCStream>& uploadStream,
+    const bool& uploadStreamIsStreaming, const int16_t& priority,
+    const ClassOfService& classOfService, const uint8_t& redirectionLimit,
+    const uint32_t& thirdPartyFlags, const bool& doResumeAt,
+    const uint64_t& startPos, const nsCString& entityID, const bool& allowSpdy,
+    const bool& allowHttp3, const bool& allowAltSvc, const bool& beConservative,
+    const bool& bypassProxy, const uint32_t& tlsFlags,
+    const LoadInfoArgs& aLoadInfoArgs, const uint32_t& aCacheKey,
+    const uint64_t& aRequestContextID,
     const Maybe<CorsPreflightArgs>& aCorsPreflightArgs,
     const uint32_t& aInitialRwin, const bool& aBlockAuthPrompt,
     const bool& aAllowStaleCacheContent, const bool& aPreferCacheLoadOverBypass,
@@ -552,10 +551,6 @@ bool HttpChannelParent::DoAsyncOpen(
 
   httpChannel->SetClassicScriptHintCharset(aClassicScriptHintCharset);
   httpChannel->SetDocumentCharacterSet(aDocumentCharacterSet);
-
-  if (aAPIRedirectToURI) {
-    httpChannel->RedirectTo(aAPIRedirectToURI);
-  }
 
   if (aTopWindowURI) {
     httpChannel->SetTopWindowURI(aTopWindowURI);
@@ -856,7 +851,6 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
     const uint32_t& aSourceRequestBlockingReason,
     const Maybe<ChildLoadInfoForwarderArgs>& aTargetLoadInfoForwarder,
     const uint32_t& loadFlags, nsIReferrerInfo* aReferrerInfo,
-    nsIURI* aAPIRedirectURI,
     const Maybe<CorsPreflightArgs>& aCorsPreflightArgs) {
   LOG(("HttpChannelParent::RecvRedirect2Verify [this=%p result=%" PRIx32 "]\n",
        this, static_cast<uint32_t>(aResult)));
@@ -873,11 +867,6 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
         do_QueryInterface(mRedirectChannel);
 
     if (newHttpChannel) {
-      if (aAPIRedirectURI) {
-        rv = newHttpChannel->RedirectTo(aAPIRedirectURI);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
-      }
-
       for (uint32_t i = 0; i < changedHeaders.Length(); i++) {
         if (changedHeaders[i].mEmpty) {
           rv = newHttpChannel->SetEmptyRequestHeader(changedHeaders[i].mHeader);
@@ -1274,6 +1263,11 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     httpChannelImpl->GetCacheToken(getter_AddRefs(cacheEntry));
     mCacheEntry = do_QueryInterface(cacheEntry);
     args.cacheEntryAvailable() = static_cast<bool>(mCacheEntry);
+
+    // Capture the load's principal origin now, while the channel is alive, to
+    // bind any alt-data written later (after the channel may have been
+    // cleared).
+    UpdateAltDataBindingOrigin(chan);
 
     httpChannelImpl->GetCacheKey(&args.cacheKey());
     httpChannelImpl->GetAlternativeDataType(args.altDataType());
@@ -2012,9 +2006,53 @@ NS_INTERFACE_MAP_BEGIN(CacheEntryWriteHandleParent)
   NS_INTERFACE_MAP_ENTRY(nsICacheEntryWriteHandle)
 NS_INTERFACE_MAP_END
 
+void HttpChannelParent::UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel) {
+  mAltDataBindingOrigin.Truncate();
+
+  nsIPrincipal* principal = aChannel->GetAltDataBindingPrincipal();
+  if (!principal) {
+    return;
+  }
+
+  if (StaticPrefs::network_cache_alt_data_validate_binding_principal()) {
+    ContentParent* cp = nullptr;
+    if (Manager() && Manager()->Manager()) {
+      cp = static_cast<ContentParent*>(Manager()->Manager());
+    }
+    if (!cp ||
+        !cp->ValidatePrincipal(
+            principal, {ValidatePrincipalOptions::AllowSystemIfLoaded})) {
+      LOG(
+          ("HttpChannelParent::UpdateAltDataBindingOrigin [this=%p] principal "
+           "not valid for the content process",
+           this));
+      return;
+    }
+  }
+
+  principal->GetOrigin(mAltDataBindingOrigin);
+}
+
+// Records, atomically with the alt-data write, the origin of the principal
+// that produced the alt-data.
+static void RecordAltDataPrincipal(nsICacheEntry* aCacheEntry,
+                                   const nsACString& aOrigin) {
+  if (!aCacheEntry) {
+    return;
+  }
+  if (aOrigin.IsEmpty()) {
+    // Fail closed: without a known principal, clear any binding so that reads
+    // reject this alt-data.
+    aCacheEntry->SetMetaDataElement("alt-data-principal", nullptr);
+  } else {
+    aCacheEntry->SetMetaDataElement("alt-data-principal",
+                                    PromiseFlatCString(aOrigin).get());
+  }
+}
+
 CacheEntryWriteHandleParent::CacheEntryWriteHandleParent(
-    nsICacheEntry* aCacheEntry)
-    : mCacheEntry(aCacheEntry) {}
+    nsICacheEntry* aCacheEntry, const nsACString& aBindingOrigin)
+    : mCacheEntry(aCacheEntry), mBindingOrigin(aBindingOrigin) {}
 
 NS_IMETHODIMP
 CacheEntryWriteHandleParent::OpenAlternativeOutputStream(
@@ -2028,12 +2066,13 @@ CacheEntryWriteHandleParent::OpenAlternativeOutputStream(
       mCacheEntry->OpenAlternativeOutputStream(type, predictedSize, _retval);
   if (NS_SUCCEEDED(rv)) {
     mCacheEntry->SetMetaDataElement("alt-data-from-child", "1");
+    RecordAltDataPrincipal(mCacheEntry, mBindingOrigin);
   }
   return rv;
 }
 
 CacheEntryWriteHandleParent* HttpChannelParent::AllocCacheEntryWriteHandle() {
-  return new CacheEntryWriteHandleParent(mCacheEntry);
+  return new CacheEntryWriteHandleParent(mCacheEntry, mAltDataBindingOrigin);
 }
 
 nsresult HttpChannelParent::OpenAlternativeOutputStream(
@@ -2048,6 +2087,7 @@ nsresult HttpChannelParent::OpenAlternativeOutputStream(
       mCacheEntry->OpenAlternativeOutputStream(type, predictedSize, _retval);
   if (NS_SUCCEEDED(rv)) {
     mCacheEntry->SetMetaDataElement("alt-data-from-child", "1");
+    RecordAltDataPrincipal(mCacheEntry, mAltDataBindingOrigin);
   }
   return rv;
 }

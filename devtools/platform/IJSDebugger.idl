@@ -7,7 +7,7 @@
 /**
  * Do not use this interface. Instead, write:
  *     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
- *       "resource://gre/modules/jsdebugger.sys.mjs"
+ *       "moz-src:///devtools/platform/jsdebugger.sys.mjs"
  *     );
  *     addDebuggerToGlobal(global);
  */

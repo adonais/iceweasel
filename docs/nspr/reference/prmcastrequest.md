@@ -31,6 +31,6 @@ The structure has the following fields:
 
 ## Description
 
-The `mcaddr` and `ifaddr` fields are of the type {ref}`PRNetAddr`, but
+The `mcaddr` and `ifaddr` fields are of the type {doc}`prnetaddr`, but
 their `port` fields are ignored. Only the IP address (`inet.ip`)
 fields are used.

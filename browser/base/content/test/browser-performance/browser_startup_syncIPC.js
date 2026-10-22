@@ -122,7 +122,7 @@ const startupPhases = {
       maxCount: 2,
     },
     {
-      name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
+      name: "PAPZBridge::Msg_ProcessUnhandledEvent",
       condition: WIN,
       ignoreIfUnused: true, // Only on Win10 64
       maxCount: 2,
@@ -202,13 +202,13 @@ const startupPhases = {
       maxCount: 1,
     },
     {
-      name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
+      name: "PAPZBridge::Msg_ProcessUnhandledEvent",
       condition: WIN,
       ignoreIfUnused: true, // intermittently occurs in "before becoming idle"
       maxCount: 1,
     },
     {
-      name: "PAPZInputBridge::Msg_ReceiveMouseInputEvent",
+      name: "PAPZBridge::Msg_ReceiveMouseInputEvent",
       condition: WIN,
       ignoreIfUnused: true, // intermittently occurs in "before becoming idle"
       maxCount: 1,
@@ -253,13 +253,13 @@ const startupPhases = {
       maxCount: 1,
     },
     {
-      name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
+      name: "PAPZBridge::Msg_ProcessUnhandledEvent",
       condition: WIN,
       ignoreIfUnused: true, // Only on Win10 64
       maxCount: 1,
     },
     {
-      name: "PAPZInputBridge::Msg_ReceiveMouseInputEvent",
+      name: "PAPZBridge::Msg_ReceiveMouseInputEvent",
       condition: WIN,
       ignoreIfUnused: true, // Only on Win10 64
       maxCount: 1,

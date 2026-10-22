@@ -10,6 +10,7 @@ import glob
 import multiprocessing
 import os
 import pathlib
+import plistlib
 import re
 import subprocess
 import sys
@@ -916,18 +917,57 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         self.device.install_app(str(cstm_car_m_apk))
         self.info("Custom Chromium-as-Release for Android successfully installed")
 
-    def install_safari_technology_preview(self):
-        """Ensure latest version of Safari TP binary is running in CI"""
-
-        if self.app != "safari-tp" or self.run_local:
+    def _log_safari_version(self):
+        app_name = {
+            "safari": "Safari",
+            "safari-tp": "Safari Technology Preview",
+        }[self.app]
+        plist_path = pathlib.Path(
+            "/Applications", app_name + ".app", "Contents", "version.plist"
+        )
+        try:
+            with plist_path.open("rb") as plist_file:
+                plist = plistlib.load(plist_file)
+            short_version = plist.get("CFBundleShortVersionString")
+            bundle_version = plist.get("CFBundleVersion")
+        except Exception as exc:
+            self.warning(f"Unable to read {app_name} version from {plist_path}: {exc}")
             return
 
-        import mozprocess
+        missing_keys = [
+            key
+            for key, value in (
+                ("CFBundleShortVersionString", short_version),
+                ("CFBundleVersion", bundle_version),
+            )
+            if not value
+        ]
+        if missing_keys:
+            self.warning(
+                f"Unable to read {app_name} version: missing {', '.join(missing_keys)}"
+            )
+            return
 
-        self.info("Checking for Safari Technology Preview updates...")
-        install_script = "/usr/local/bin/install_safari_softwareupdate_updates.py"
-        cmd = [sys.executable, install_script]
-        mozprocess.run_and_wait(cmd)
+        self.info(
+            f"{app_name} version: {short_version} (CFBundleShortVersionString), "
+            f"{bundle_version} (CFBundleVersion)"
+        )
+
+    def install_safari_technology_preview(self):
+        """Update Safari TP in CI, then log the Safari or Safari TP version"""
+
+        if self.app not in ("safari", "safari-tp") or self.run_local:
+            return
+
+        if self.app == "safari-tp":
+            import mozprocess
+
+            self.info("Checking for Safari Technology Preview updates...")
+            install_script = "/usr/local/bin/install_safari_softwareupdate_updates.py"
+            cmd = [sys.executable, install_script]
+            mozprocess.run_and_wait(cmd)
+
+        self._log_safari_version()
 
     def install_chromium_distribution(self):
         """Install Google Chromium distribution in production"""

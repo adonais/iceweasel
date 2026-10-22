@@ -329,10 +329,11 @@ bool DataChannelController::HandleOpenMessage_n(
   if (channel_or_error.ok()) {
     signaling_thread()->PostTask(
         SafeTask(signaling_safety_.flag(),
-                 [this, channel = channel_or_error.MoveValue(),
+                 [this, channel = channel_or_error.MoveValue(), channel_id,
                   ready_to_send = data_channel_transport_->IsReadyToSend()] {
                    RTC_DCHECK_RUN_ON(signaling_thread());
-                   OnDataChannelOpenMessage(std::move(channel), ready_to_send);
+                   OnDataChannelOpenMessage(std::move(channel), ready_to_send,
+                                            channel_id);
                  }));
   } else {
     RTC_LOG(LS_ERROR) << "Failed to create DataChannel from the OPEN message. "
@@ -343,12 +344,13 @@ bool DataChannelController::HandleOpenMessage_n(
 
 void DataChannelController::OnDataChannelOpenMessage(
     scoped_refptr<SctpDataChannel> channel,
-    bool ready_to_send) {
+    bool ready_to_send,
+    int id) {
   channel_usage_ = DataChannelUsage::kInUse;
   auto proxy = SctpDataChannel::CreateProxy(channel);
 
   if (auto* tracer = pc_->tracer()) {
-    tracer->OnDataChannel(*proxy);
+    tracer->OnDataChannel(*proxy, id);
   }
   pc_->RunWithObserver([&](auto observer) { observer->OnDataChannel(proxy); });
   pc_->NoteDataAddedEvent();

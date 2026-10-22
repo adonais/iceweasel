@@ -1,0 +1,552 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css"
+                 type="text/css"?>
+<window title="Testing nsITextInputProcessor behavior"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  onunload="onunload();">
+<script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+<body  xmlns="http://www.w3.org/1999/xhtml">
+<textarea></textarea>
+<div id="content" style="display: none">
+</div>
+<pre id="test">
+</pre>
+<script class="testbody" type="application/javascript">
+<![CDATA[
+
+const SimpleTest = window.arguments[0].SimpleTest;
+const ok = SimpleTest.ok;
+const is = SimpleTest.is;
+const isnot = SimpleTest.isnot;
+const todo_is = SimpleTest.todo_is;
+const info = SimpleTest.info;
+const textarea = document.querySelector("textarea");
+
+function createTIP() {
+  return Cc["@mozilla.org/text-input-processor;1"].
+           createInstance(Ci.nsITextInputProcessor);
+}
+
+function onunload() {
+  SimpleTest.finish();
+}
+
+SimpleTest.waitForFocus(async () => {
+  textarea.focus();
+
+  const TIP = createTIP();
+  ok(
+    TIP.beginInputTransactionForTests(window),
+    "TextInputProcessor should start an input transaction for tests"
+  );
+
+  let events = [];
+  function onEvent(aEvent) {
+    events.push(aEvent);
+  }
+  for (const type of ["keydown", "keypress", "keyup",
+                      "compositionstart", "compositionupdate", "compositionend"]) {
+    textarea.addEventListener(type, onEvent);
+  }
+
+  function stringifyEvents(aEvents) {
+    if (!aEvents.length) {
+      return "[]";
+    }
+    function stringifyEvent(aEvent) {
+      switch (aEvent.type) {
+        case "compositionstart":
+          return `{ type:"compositionstart" }`;
+        case "compositionupdate":
+        case "compositionend":
+          return `{ type:"${aEvent.type}", data:"${aEvent.data}" }`;
+        case "keydown":
+        case "keypress":
+        case "keyup":
+          return `{ type:"${aEvent.type}", key:"${aEvent.key}" }`;
+        default:
+          return `{ type:"${aEvent.type}" }`;
+      }
+    }
+    let result = "[\n";
+    for (const e of aEvents) {
+      if (result.length != 2) {
+        result += ",";
+      }
+      result += "\n  " + stringifyEvent(e);
+    }
+    return result += "\n]";
+  }
+
+  // Basic tests.
+  try {
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.setPendingCompositionString("a");
+    TIP.appendClauseToPendingComposition("a".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "a" }));
+    is(
+      stringifyEvents(events),
+      stringifyEvents([]),
+      "compositionstart nor compositionupdate shouldn't be dispatched during a batch"
+    );
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionstart" },
+      { type: "compositionupdate", data: "a" },
+    ]),
+    "compositionstart and compositionupdate should be fired at end of the batch"
+  );
+  TIP.keyup(new KeyboardEvent("keyup", { key: "a" }), TIP.KEY_MARK_KEYUP_AS_PROCESSED);
+
+  try {
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.setPendingCompositionString("ab");
+    TIP.appendClauseToPendingComposition("ab".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "b" }));
+    is(
+      stringifyEvents(events),
+      stringifyEvents([]),
+      "compositionupdate shouldn't be dispatched during a batch"
+    );
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionupdate", data: "ab" },
+    ]),
+    "compositionupdate should be dispatched at end of the batch"
+  );
+  TIP.keyup(new KeyboardEvent("keyup", { key: "b" }), TIP.KEY_MARK_KEYUP_AS_PROCESSED);
+
+  try {
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.commitComposition(new KeyboardEvent("keydown", { key: "Enter" }));
+    is(
+      stringifyEvents(events),
+      stringifyEvents([]),
+      "compositionend shouldn't be dispatched during a batch"
+    );
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionend", data: "ab" },
+    ]),
+    "compositionend should be dispatched at end of the batch"
+  );
+  TIP.keyup(new KeyboardEvent("keyup", { key: "Enter" }));
+
+  // Linux dead key with compose key cancels the dead key composition and
+  // sending commit event without composing state. The latter commit should
+  // be treated as the preceding composition.
+  for (const useCompositionEventsForInsertText of [false, true]) {
+    // Only when "intl.ime.use_composition_events_for_insert_text" is false,
+    // TextEventDispatcher treats a insertText content command as commit
+    // composition without composing state.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["intl.ime.use_composition_events_for_insert_text", useCompositionEventsForInsertText],
+      ],
+    });
+    textarea.value = "";
+    TIP.setPendingCompositionString("\u00B4");
+    TIP.appendClauseToPendingComposition("\u00B4".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "Dead" }));
+    try {
+      events = [];
+      TIP.beginTextEventDispatcherBatchForTests();
+      TIP.cancelComposition(new KeyboardEvent("keydown", { key: "a" }));
+      windowUtils.sendContentCommandEvent("insertText", null, "\u00E1");
+      is(
+        stringifyEvents(events),
+        stringifyEvents([]),
+        `compositionupdate, etc, shouldn't be dispatched during a batch (intl.ime.use_composition_events_for_insert_text=${
+          useCompositionEventsForInsertText
+        })`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    if (useCompositionEventsForInsertText) {
+      is(
+        stringifyEvents(events),
+        stringifyEvents([
+          { type: "keydown", key: "Process" },
+          { type: "compositionupdate", data: "" },
+          { type: "compositionend", data: "" },
+        ]),
+        `the insertText command should not be treated as the result of the preceding composition (intl.ime.use_composition_events_for_insert_text=true)`
+      );
+      is(textarea.value, "\u00E1", "the insertText command should've been handled by the editor");
+    } else {
+      is(
+        stringifyEvents(events),
+        stringifyEvents([
+          { type: "keydown", key: "Process" },
+          { type: "compositionupdate", data: "\u00E1" },
+          { type: "compositionend", data: "\u00E1" },
+        ]),
+        `the insertText command should be treated as the result of the preceding composition (intl.ime.use_composition_events_for_insert_text=false)`
+      );
+    }
+    TIP.keyup(new KeyboardEvent("keyup", { key: "a" }));
+  }
+
+  for (const useCompositionEventsForInsertText of [false, true]) {
+    for (const method of ["commitComposition", "commitCompositionWith"]) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["intl.ime.use_composition_events_for_insert_text", useCompositionEventsForInsertText],
+        ],
+      });
+      TIP.setPendingCompositionString("\u00B4");
+      TIP.appendClauseToPendingComposition("\u00B4".length, TIP.ATTR_RAW_CLAUSE);
+      TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "Dead" }));
+      try {
+        events = [];
+        TIP.beginTextEventDispatcherBatchForTests();
+        TIP.cancelComposition(new KeyboardEvent("keydown", { key: "a" }));
+        TIP.setPendingCompositionString("\u00E1");
+        TIP.appendClauseToPendingComposition("\u00E1".length, TIP.ATTR_RAW_CLAUSE);
+        TIP.flushPendingComposition();
+        if (method == "commitComposition") {
+          TIP.commitComposition();
+        } else {
+          TIP.commitCompositionWith("\u00E1");
+        }
+        is(
+          stringifyEvents(events),
+          stringifyEvents([]),
+          `compositionupdate, etc, shouldn't be dispatched during a batch (intl.ime.use_composition_events_for_insert_text=${
+            useCompositionEventsForInsertText
+          }, commit by nsITextInputProcessor.${method}())`
+        );
+      } finally {
+        TIP.endTextEventDispatcherBatchForTests();
+      }
+      is(
+        stringifyEvents(events),
+        stringifyEvents([
+          { type: "keydown", key: "Process" },
+          { type: "compositionupdate", data: "\u00E1" },
+          { type: "compositionend", data: "\u00E1" },
+        ]),
+        `compositionupdate and compositionend should be dispatched as end of the preceding composition at end of the batch (intl.ime.use_composition_events_for_insert_text=${
+          useCompositionEventsForInsertText
+        }, commit by nsITextInputProcessor.${method}())`
+      );
+      TIP.keyup(new KeyboardEvent("keyup", { key: "a" }));
+    }
+  }
+
+  // Omit multiple composition changes in a batch.
+  try {
+    textarea.value = "";
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.setPendingCompositionString("a");
+    TIP.appendClauseToPendingComposition("a".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "a" }));
+    TIP.setPendingCompositionString("ab");
+    TIP.appendClauseToPendingComposition("ab".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition();
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionstart" },
+      { type: "compositionupdate", data: "ab" },
+    ]),
+    "Consecutive composition change events should be merged"
+  );
+  TIP.cancelComposition();
+
+  // Don't omit composition if another keyboard event happens.
+  try {
+    textarea.value = "";
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.setPendingCompositionString("a");
+    TIP.appendClauseToPendingComposition("a".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "a" }));
+    TIP.setPendingCompositionString("ab");
+    TIP.appendClauseToPendingComposition("ab".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "b" }));
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionstart" },
+      { type: "compositionupdate", data: "a" },
+      { type: "keydown", key: "Process" },
+      { type: "compositionupdate", data: "ab" },
+    ]),
+    "Consecutive composition change events should not be merged if another key event happens"
+  );
+  TIP.cancelComposition();
+
+  // Don't use the commit composition after canceling composition as the
+  // preceding composition if selection is changed.
+  textarea.value = "XYZ";
+  textarea.selectionStart = textarea.selectionEnd = 1;
+  TIP.setPendingCompositionString("a");
+  TIP.appendClauseToPendingComposition("a".length, TIP.ATTR_RAW_CLAUSE);
+  TIP.flushPendingComposition(new KeyboardEvent("keydown", { key: "a" }));
+  try {
+    events = [];
+    TIP.beginTextEventDispatcherBatchForTests();
+    TIP.cancelComposition(new KeyboardEvent("keydown", { key: "End" }));
+    windowUtils.sendSelectionSetEvent(2, 0);
+    TIP.setPendingCompositionString("b");
+    TIP.appendClauseToPendingComposition("b".length, TIP.ATTR_RAW_CLAUSE);
+    TIP.flushPendingComposition();
+    TIP.commitComposition();
+  } finally {
+    TIP.endTextEventDispatcherBatchForTests();
+  }
+  is(
+    stringifyEvents(events),
+    stringifyEvents([
+      { type: "keydown", key: "Process" },
+      { type: "compositionupdate", data: "" },
+      { type: "compositionend", data: "" },
+      { type: "compositionstart" },
+      { type: "compositionupdate", data: "b" },
+      { type: "compositionend", data: "b" },
+    ]),
+    "Consecutive compositions shouldn't be merged if set selection happens"
+  );
+  is(
+    textarea.value,
+    "XYbZ",
+    "The canceled composition \"a\" shouldn't be inserted and the other composition \"b\" should be inserted to the new selection"
+  );
+
+  // When WidgetContentCommandEvent is enqueued, only the enabled state should
+  // be checked.
+  for (const enabled of [true, false]) {
+    textarea.disabled = !enabled;
+
+    textarea.value = "";
+    try {
+      TIP.beginTextEventDispatcherBatchForTests();
+      const commandEnabled = windowUtils.sendContentCommandEvent("insertText", null, "abc");
+      is(
+        textarea.value,
+        "",
+        `insertText command should not cause inserting text during a batch (enabled=${enabled})`
+      );
+      is(
+        commandEnabled,
+        enabled,
+        `insertText command should be enabled only when the editor is enabled (enabled=${enabled})`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    if (enabled) {
+      is(
+        textarea.value,
+        "abc",
+        `The pending insertText command should be handled at end of the batch (enabled=true)`
+      );
+    } else {
+      is(
+        textarea.value,
+        "",
+        `The pending insertText command should not be handled at end of the batch (enabled=false)`
+      );
+    }
+
+    textarea.value = "abc";
+    // select "b"
+    textarea.selectionStart = 1;
+    textarea.selectionEnd = 2;
+    try {
+      TIP.beginTextEventDispatcherBatchForTests();
+      const commandEnabled = windowUtils.sendContentCommandEvent("replaceText", null, "B", 1, "b");
+      is(
+        textarea.value,
+        "abc",
+        `replaceText command should not cause replacing text during a batch (enabled=${enabled})`
+      );
+      is(
+        commandEnabled,
+        enabled,
+        `replaceText command should be enabled only when the editor is enabled (enabled=${enabled})`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    if (enabled) {
+      is(
+        textarea.value,
+        "aBc",
+        `The pending replaceText command should be handled at end of the batch (enabled=true)`
+      );
+    } else {
+      is(
+        textarea.value,
+        "abc",
+        `The pending replaceText command should not be handled at end of the batch (enabled=false)`
+      );
+    }
+
+    textarea.value = "abc";
+    // select "b"
+    textarea.selectionStart = 1;
+    textarea.selectionEnd = 2;
+    try {
+      TIP.beginTextEventDispatcherBatchForTests();
+      const commandEnabled = windowUtils.sendContentCommandEvent("replaceText", null, "B", 1, "X");
+      is(
+        commandEnabled,
+        false,
+        `replaceText command should be disable because the source is unexpected (enabled=${enabled})`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    is(
+      textarea.value,
+      "abc",
+      `The pending replaceText command should not be handled at end of the batch because the source is unexpected (enabled=${
+        enabled
+      })`
+    );
+
+    for (const command of ["cut", "delete"]) {
+      textarea.value = "abc";
+      textarea.selectionStart = 1;
+      textarea.selectionEnd = 2;
+      try {
+        TIP.beginTextEventDispatcherBatchForTests();
+        const commandEnabled = windowUtils.sendContentCommandEvent(command);
+        is(
+          textarea.value,
+          "abc",
+          `${command} command should not be handled during a batch (enabled=${enabled})`
+        );
+        is(
+          commandEnabled,
+          enabled,
+          `${command} command should be enabled only when it's editable (enabled=${enabled})`
+        );
+      } finally {
+        TIP.endTextEventDispatcherBatchForTests();
+      }
+      if (enabled) {
+        is(
+          textarea.value,
+          "ac",
+          `${command} command should be handled at end of a batch (enabled=true)`
+        );
+      } else {
+        is(
+          textarea.value,
+          "abc",
+          `${command} command should not be handled at end of a batch (enabled=false)`
+        );
+      }
+    }
+
+    textarea.value = "ac";
+    textarea.selectionStart = textarea.selectionEnd = 1;
+    textarea.disabled = false;
+    document.execCommand("insertText", false, "b");
+    textarea.disabled = !enabled;
+    try {
+      TIP.beginTextEventDispatcherBatchForTests();
+      const commandEnabled = windowUtils.sendContentCommandEvent("undo");
+      is(
+        textarea.value,
+        "abc",
+        `undo command should not be handled during a batch (enabled=${enabled})`
+      );
+      is(
+        commandEnabled,
+        enabled,
+        `undo command should be enabled only when it's editable (enabled=${enabled})`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    if (enabled) {
+      is(
+        textarea.value,
+        "ac",
+        `undo should be handled at end of a batch (enabled=true)`
+      );
+    } else {
+      is(
+        textarea.value,
+        "abc",
+        `undo should not be handled at end of a batch (enabled=false)`
+      );
+    }
+
+    textarea.value = "ac";
+    textarea.selectionStart = textarea.selectionEnd = 1;
+    textarea.disabled = false;
+    document.execCommand("insertText", false, "b");
+    document.execCommand("undo");
+    textarea.disabled = !enabled;
+    try {
+      TIP.beginTextEventDispatcherBatchForTests();
+      const commandEnabled = windowUtils.sendContentCommandEvent("redo");
+      is(
+        textarea.value,
+        "ac",
+        `redo command should not be handled during a batch (enabled=${enabled})`
+      );
+      is(
+        commandEnabled,
+        enabled,
+        `redo command should be enabled only when it's editable (enabled=${enabled})`
+      );
+    } finally {
+      TIP.endTextEventDispatcherBatchForTests();
+    }
+    if (enabled) {
+      is(
+        textarea.value,
+        "abc",
+        `redo should be handled at end of a batch (enabled=true)`
+      );
+    } else {
+      is(
+        textarea.value,
+        "ac",
+        `redo should not be handled at end of a batch (enabled=false)`
+      );
+    }
+  }
+
+  window.close();
+}, window);
+]]>
+</script>
+</body>
+</window>

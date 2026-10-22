@@ -36,9 +36,9 @@ enum PairedBracketType {
 };
 
 /* This values must match the values by UIdentifierStatus by ICU */
-enum IdentifierType {
-  IDTYPE_RESTRICTED = 0,
-  IDTYPE_ALLOWED = 1,
+enum IdentifierStatus {
+  IDSTATUS_RESTRICTED = 0,
+  IDSTATUS_ALLOWED = 1,
 };
 
 enum EmojiPresentation { TextOnly = 0, TextDefault = 1, EmojiDefault = 2 };
@@ -185,8 +185,8 @@ inline VerticalOrientation GetVerticalOrientation(uint32_t aCh) {
       aCh, intl::UnicodeProperties::IntProperty::VerticalOrientation));
 }
 
-inline IdentifierType GetIdentifierType(uint32_t aCh) {
-  return IdentifierType(intl::UnicodeProperties::GetIntPropertyValue(
+inline IdentifierStatus GetIdentifierStatus(uint32_t aCh) {
+  return IdentifierStatus(intl::UnicodeProperties::GetIntPropertyValue(
       aCh, intl::UnicodeProperties::IntProperty::IdentifierStatus));
 }
 

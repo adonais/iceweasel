@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <tuple>
 
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
@@ -23,7 +24,6 @@ namespace webrtc {
 
 using rtcp::LossNotification;
 using ::testing::ElementsAreArray;
-using ::testing::make_tuple;
 
 TEST(RtcpPacketLossNotificationTest, SetWithIllegalValuesFails) {
   constexpr uint16_t kLastDecoded = 0x3c7b;
@@ -65,7 +65,7 @@ TEST(RtcpPacketLossNotificationTest, CreateProducesExpectedWireFormat) {
 
   Buffer packet = loss_notification.Build();
 
-  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
+  EXPECT_THAT(std::make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 

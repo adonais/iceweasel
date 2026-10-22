@@ -33,6 +33,7 @@ gcloud:
     - notPackage org.mozilla.fenix.experimentintegration
     - notPackage org.mozilla.fenix.ui.efficiency.devtools
     - package org.mozilla.fenix.ui.efficiency.tests
+    - package org.mozilla.fenix.ui.efficiency.core
 
   device:
     - model: MediumPhone.arm

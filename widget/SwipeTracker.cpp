@@ -137,7 +137,9 @@ nsEventStatus SwipeTracker::ProcessEvent(
   const bool computedSwipeSuccess = ComputeSwipeSuccess();
   if (computedSwipeSuccess != mLastComputedSwipeSuccess) {
     mLastComputedSwipeSuccess = computedSwipeSuccess;
-    widget->PerformHapticFeedback(HapticFeedbackType::ThresholdCrossing);
+    if (StaticPrefs::widget_swipe_haptic_feedback_enabled()) {
+      widget->PerformHapticFeedback(HapticFeedbackType::ThresholdCrossing);
+    }
   }
   double eventAmount = mGestureAmount;
   // If ComputeSwipeSuccess returned false because the users fingers were

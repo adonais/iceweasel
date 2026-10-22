@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { Rect, Point } from "resource://gre/modules/Geometry.sys.mjs";
+
 export const MIN_WIDTH = 200;
 export const MIN_HEIGHT = 150;
 
@@ -21,6 +23,120 @@ export class MiniWindowUtils {
       width: FULL_TAB_DEFAULT_WIDTH,
       height: FULL_TAB_DEFAULT_HEIGHT,
     };
+  }
+
+  /**
+   * A window's outer rect in desktop px.
+   *
+   * @param {Window} win
+   * @returns {{left: number, top: number, width: number, height: number}}
+   */
+  static windowRectDesktopPx(win) {
+    let scale = win.devicePixelRatio / win.desktopToDeviceScale;
+    return {
+      left: win.screenX * scale,
+      top: win.screenY * scale,
+      width: win.outerWidth * scale,
+      height: win.outerHeight * scale,
+    };
+  }
+
+  /**
+   * Move `rect` off anything in `obstacles` it would cover. Every rect is in
+   * desktop px.
+   *
+   * First tries the screen's own four corners, preferring the one nearest to
+   * where the window wanted to sit. If they're all taken, falls back to
+   * sitting flush against an obstacle's edge:
+   *
+   *      +---+
+   *      | 2 |          1  left:   flush to the obstacle's left
+   *   +---+---+---+     2  top:    flush above it
+   *   | 1 | X | 3 |     3  right:  flush to its right
+   *   +---+---+---+     4  bottom: flush below it
+   *      | 4 |          X  the obstacle
+   *      +---+
+   *
+   * Candidates off `screenRect` or onto another obstacle are dropped.
+   *
+   * @param {object} rect - {left, top, width, height} the window wants.
+   * @param {object[]} obstacles - rects to avoid, same shape as `rect`.
+   * @param {object} screenRect - candidates have to fit inside this.
+   * @returns {{left: number, top: number}} where to put it.
+   */
+  static resolveOverlapConflicts(rect, obstacles, screenRect) {
+    let original = { left: rect.left, top: rect.top };
+    let taken = obstacles.map(o => new Rect(o.left, o.top, o.width, o.height));
+    let wanted = new Rect(rect.left, rect.top, rect.width, rect.height);
+
+    let conflict = taken.find(r => r.intersects(wanted));
+    if (!conflict) {
+      return original;
+    }
+
+    let screen = new Rect(
+      screenRect.left,
+      screenRect.top,
+      screenRect.width,
+      screenRect.height
+    );
+
+    let fits = corner => {
+      let candidate = new Rect(corner.x, corner.y, rect.width, rect.height);
+      return (
+        screen.contains(candidate) && !taken.some(o => o.intersects(candidate))
+      );
+    };
+    let distanceFromOriginal = corner =>
+      Math.abs(corner.x - original.left) + Math.abs(corner.y - original.top);
+
+    // Prefer parking in a screen corner, nearest to where it wanted to be.
+    let screenCorners = [
+      new Point(screen.left, screen.top),
+      new Point(screen.right - rect.width, screen.top),
+      new Point(screen.left, screen.bottom - rect.height),
+      new Point(screen.right - rect.width, screen.bottom - rect.height),
+    ];
+    let bestCorner = null;
+    for (let corner of screenCorners) {
+      if (!fits(corner)) {
+        continue;
+      }
+      let distance = distanceFromOriginal(corner);
+      if (!bestCorner || distance < bestCorner.distance) {
+        bestCorner = { distance, left: corner.x, top: corner.y };
+      }
+    }
+    if (bestCorner) {
+      return { left: bestCorner.left, top: bestCorner.top };
+    }
+
+    // Corners are taken; sit flush against an obstacle's edge instead, nearest
+    // to the conflict.
+    let conflictCenter = conflict.center();
+    let best = null;
+    for (let r of taken) {
+      for (let corner of [
+        new Point(r.left - rect.width, r.top),
+        new Point(r.left, r.top - rect.height),
+        new Point(r.right, r.top),
+        new Point(r.left, r.bottom),
+      ]) {
+        if (!fits(corner)) {
+          continue;
+        }
+        let candidate = new Rect(corner.x, corner.y, rect.width, rect.height);
+        let center = candidate.center();
+        let distance =
+          Math.abs(conflictCenter.x - center.x) +
+          Math.abs(conflictCenter.y - center.y);
+        if (!best || distance < best.distance) {
+          best = { distance, left: corner.x, top: corner.y };
+        }
+      }
+    }
+
+    return best ? { left: best.left, top: best.top } : original;
   }
 
   /**
@@ -61,6 +177,49 @@ export class MiniWindowUtils {
       originCssToDesktopScale,
       isRTL: Services.locale.isAppLocaleRTL,
     });
+  }
+
+  /**
+   * Where to move an already-open mini window so it clears `avoidWins`.
+   *
+   * @param {Window} win - the mini window to place, already open.
+   * @param {Window[]} avoidWins - windows it should not cover (excluding `win`).
+   * @returns {{left: number, top: number}|null} the new top-left in `win`'s CSS
+   *   px for moveTo, or null if it already clears everything.
+   */
+  static repositionToAvoid(win, avoidWins) {
+    if (!avoidWins.length) {
+      return null;
+    }
+    let sm = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
+      Ci.nsIScreenManager
+    );
+    let cssToDesktopScale = win.devicePixelRatio / win.desktopToDeviceScale;
+    let winRect = MiniWindowUtils.windowRectDesktopPx(win);
+    let screen = sm.screenForRect(
+      winRect.left,
+      winRect.top,
+      winRect.width,
+      winRect.height
+    );
+    let l = {},
+      t = {},
+      w = {},
+      h = {};
+    screen.GetAvailRectDisplayPix(l, t, w, h);
+
+    let { left, top } = MiniWindowUtils.resolveOverlapConflicts(
+      winRect,
+      avoidWins.map(other => MiniWindowUtils.windowRectDesktopPx(other)),
+      { left: l.value, top: t.value, width: w.value, height: h.value }
+    );
+    if (left === winRect.left && top === winRect.top) {
+      return null;
+    }
+    return {
+      left: Math.round(left / cssToDesktopScale),
+      top: Math.round(top / cssToDesktopScale),
+    };
   }
 
   /**

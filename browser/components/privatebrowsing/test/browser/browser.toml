@@ -111,6 +111,8 @@ skip-if = [
 
 ["browser_privatebrowsing_protocolhandler.js"]
 
+["browser_privatebrowsing_redesign_telemetry.js"]
+
 ["browser_privatebrowsing_rememberprompt.js"]
 tags = "geolocation xr"
 

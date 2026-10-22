@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test invalid Content-Range responses are rejected</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<script>
+"use strict";
+
+add_task(async () => {
+  const audio = new Audio(
+    "contentType.sjs?type=audio/ogg&body=O&status=206" +
+    "&accept_ranges=bytes" +
+    "&content_range=bytes%2070368744177663-70368744177663/*"
+  );
+  audio.preload = "metadata";
+
+  await new Promise(r => audio.onerror = r);
+  is(audio.readyState, HTMLMediaElement.HAVE_NOTHING, "readyState");
+  is(audio.error.code, MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED, "error.code");
+  ok(!!audio.error.message.length, "error.message");
+});
+</script>
+</html>

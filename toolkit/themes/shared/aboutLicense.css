@@ -5,17 +5,88 @@
 /* License Illustration */
 
 .license-header {
-  background-image: url("chrome://global/skin/illustrations/about-license.svg");
-  background-repeat: no-repeat;
-  background-position: right center;
-  min-height: 300px;
   display: flex;
   align-items: center;
-  padding-inline-end: 320px;
+
+  @media (width > 45em) {
+    background-image: url("chrome://global/skin/illustrations/about-license.svg");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 180px;
+    min-height: 180px;
+    padding-inline-end: 220px;
+  }
 }
 
-td:nth-child(1),
-td:nth-child(2) {
-  text-align: left;
-  vertical-align: top;
+.license-index {
+  columns: 14em;
+  column-gap: var(--space-xxlarge);
+
+  > li {
+    break-inside: avoid;
+    margin-bottom: var(--space-xsmall);
+  }
+}
+
+.licenses {
+  --licenses-header-height: 2.5em;
+  table-layout: fixed;
+  /* The sticky cells below need the page, not the table, as their scroller. */
+  overflow: clip;
+
+  th {
+    position: sticky;
+    top: 0;
+    height: var(--licenses-header-height);
+
+    &:nth-child(1) {
+      width: 18%;
+    }
+
+    &:nth-child(2) {
+      width: 24%;
+    }
+  }
+
+  td {
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+
+    > h2 {
+      position: sticky;
+      top: var(--licenses-header-height);
+      font-size: var(--font-size-large);
+    }
+
+    .license-meta {
+      position: sticky;
+      top: var(--licenses-header-height);
+      max-height: calc(100vh - var(--licenses-header-height));
+      overflow-y: auto;
+    }
+
+    .license-paths {
+      margin-inline-start: var(--space-large);
+
+      > li {
+        margin-bottom: 0;
+      }
+    }
+
+    &.license-text {
+      h3,
+      h4 {
+        font-size: var(--font-size-large);
+      }
+
+      pre {
+        white-space: pre-wrap;
+      }
+
+      > pre {
+        font-size: var(--font-size-small);
+      }
+    }
+  }
 }

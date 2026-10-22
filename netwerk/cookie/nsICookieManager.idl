@@ -23,7 +23,10 @@ interface nsICookieValidation;
 
 /**
  * An optional interface for accessing or removing the cookies
- * that are in the cookie list
+ * that are in the cookie list.
+ *
+ * Expired cookies are never exposed by the getters of this interface, even if
+ * they have not been purged yet.
  */
 
 [scriptable, builtinclass, uuid(AAAB6710-0F2C-11d5-A53B-0010A401EB10)]
@@ -218,39 +221,9 @@ interface nsICookieManager : nsISupports
                            out nsICookie aCookie);
 
   /**
-   * Count how many cookies exist within the base domain of 'aHost'.
-   * Thus, for a host "weather.yahoo.com", the base domain would be "yahoo.com",
-   * and any host or domain cookies for "yahoo.com" and its subdomains would be
-   * counted.
-   *
-   * Expired cookies that have not been purged yet are included in the count.
-   * Callers asking "does this site have any cookies?" across several
-   * OriginAttributes buckets at once should use hasCookiesForSite instead.
-   *
-   * @param aHost
-   *        the host string to search for, e.g. "google.com". this should consist
-   *        of only the host portion of a URI. see @add for a description of
-   *        acceptable host strings.
-   * @param aOriginAttributes
-   *        the originAttributes of the cookies to be counted. Cookies stored in
-   *        a different jar (e.g. another userContextId or partitionKey) are not
-   *        counted.
-   *
-   * @return the number of cookies found.
-   */
-  [implicit_jscontext]
-  unsigned long countCookiesFromHost(in AUTF8String aHost,
-                                     in jsval aOriginAttributes);
-
-  [notxpcom]
-  nsresult countCookiesFromHostNative(in AUTF8String aHost,
-                                      in OriginAttributesPtr aOriginAttributes,
-                                      out unsigned long aCount);
-
-  /**
    * Greedily check whether any cookie exists for the site (base domain of
    * 'aHost') whose OriginAttributes match aPattern. Returns as soon as a
-   * matching cookie is found. Unlike countCookiesFromHost, this iterates
+   * matching cookie is found. Unlike getCookiesFromHost, this iterates
    * across all OriginAttributes buckets within the base domain, so it can
    * see cookies stored in containers (userContextId), under a partitionKey,
    * etc.
@@ -283,8 +256,6 @@ interface nsICookieManager : nsISupports
    *                time and path length as described in RFC 6265
    *
    * @return an array of nsICookie objects.
-   *
-   * @see countCookiesFromHost
    */
   [implicit_jscontext]
   Array<nsICookie> getCookiesFromHost(in AUTF8String aHost,

@@ -106,13 +106,13 @@ inside an open Firefox browser window.
 
 If tests require access to core Gecko APIs or need to interact with Firefox’s UI
 elements that live outside of the browser tabs, you must explicitly enable
-**system access** by starting Firefox with the `--remote-allow-system-access`
-argument.
+**system access** by starting Firefox with the `MOZ_REMOTE_ALLOW_SYSTEM_ACCESS`
+environment variable set to `1`.
 
-Note: Enabling this flag grants unrestricted access to all available Gecko APIs
+Note: Enabling this grants unrestricted access to all available Gecko APIs
 for both the Marionette and WebDriver BiDi protocols, allowing tests to interact
 directly with the host system or the device running the test.
-**Use this flag only when absolutely necessary.**
+**Use it only when absolutely necessary.**
 
 ## Security reviews
 

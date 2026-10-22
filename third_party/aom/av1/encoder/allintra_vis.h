@@ -20,6 +20,10 @@
 #include "av1/encoder/block.h"
 #include "av1/encoder/encoder.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MB_WIENER_MT_UNIT_SIZE BLOCK_64X64
 
 void av1_init_mb_wiener_var_buffer(AV1_COMP *cpi);
@@ -46,6 +50,10 @@ int av1_get_sbq_user_rating_based(const AV1_COMP *const cpi, int mi_row,
 
 #if !CONFIG_REALTIME_ONLY
 int av1_get_sbq_variance_boost(const AV1_COMP *const cpi, const MACROBLOCK *x);
+#endif
+
+#ifdef __cplusplus
+}  // extern "C"
 #endif
 
 #endif  // AOM_AV1_ENCODER_ALLINTRA_VIS_H_

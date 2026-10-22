@@ -273,17 +273,6 @@ static void convolve_2d_sr_avx2(const uint8_t *src, int src_stride,
     filt[2] = _mm256_load_si256((__m256i const *)filt3_global_avx2);
     filt[3] = _mm256_load_si256((__m256i const *)filt4_global_avx2);
 
-    if (subpel_x_qn == 0 && subpel_y_qn == 0) {
-      for (i = 0; i < h; ++i) {
-        for (int j = 0; j < w; j += 8) {
-          _mm_storel_epi64(
-              (__m128i *)&dst[i * dst_stride + j],
-              _mm_loadl_epi64((const __m128i *)&src[i * src_stride + j]));
-        }
-      }
-      return;
-    }
-
     for (i = 0; i < (im_h - 1); i += 2) {
       const uint8_t *src_row0 = &src_ptr[i * src_stride];
       const uint8_t *src_row1 = &src_ptr[(i + 1) * src_stride];

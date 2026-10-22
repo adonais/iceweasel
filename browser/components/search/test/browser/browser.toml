@@ -21,12 +21,6 @@ prefs = ["browser.search.widget.new=false"]
 
 ["browser_426329.js"]
 support-files = ["test.html", "discovery.html", "426329.xml"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1920926 and being removed in bug 2012951
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1920926 and being removed in bug 2012951
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1920926 and being removed in bug 2012951
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1920926 and being removed in bug 2012951
-]
 
 ["browser_addSearchEngineFromForm.js"]
 support-files = ["test.html", "test_windows1252.html"]
@@ -56,10 +50,6 @@ support-files = [
 ["browser_contextSearchTabPosition.js"]
 
 ["browser_contextmenu.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1937944
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1937944
-]
 
 ["browser_contextmenu_privateWindow.js"]
 
@@ -111,8 +101,6 @@ tags = "urlbar"
 ["browser_searchbar_keyboard_navigation.js"]
 skip-if = [
   "debug", # Bug 1792718
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1792718
-  "tsan", # Bug 1792718
 ]
 
 ["browser_searchbar_openpopup.js"]

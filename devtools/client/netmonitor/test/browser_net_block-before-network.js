@@ -68,7 +68,7 @@ add_task(async function () {
 
   info("Unblock requests matching the pattern 'count'");
   const requestItems = document.querySelectorAll(".request-list-item");
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requestItems[1]);
+  clickOnRequestRow(requestItems[1]);
   await toggleBlockedUrl(requestItems[1], monitor, store, "unblock");
 
   info("Send a last request to /count, non-blocked");

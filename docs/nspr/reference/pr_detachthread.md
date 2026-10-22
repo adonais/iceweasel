@@ -34,16 +34,16 @@ destroyed. The exit process is invoked. The call returns after the NSPR
 thread object is destroyed.
 
 This call is needed only if you attached the thread using
-{ref}`PR_AttachThread`.
+{doc}`pr_attachthread`.
 
 :::{note}
-As of NSPR release v3.0, {ref}`PR_AttachThread` and
-{ref}`PR_DetachThread` are obsolete. A native thread not created by NSPR
+As of NSPR release v3.0, {doc}`pr_attachthread` and
+{doc}`pr_detachthread` are obsolete. A native thread not created by NSPR
 is automatically attached the first time it calls an NSPR function,
 and automatically detached when it exits.
 :::
 
 In NSPR release 19980529B and earlier, it is necessary for a native
-thread not created by NSPR to call {ref}`PR_AttachThread` before it calls
-any NSPR functions, and call {ref}`PR_DetachThread` when it is done calling
+thread not created by NSPR to call {doc}`pr_attachthread` before it calls
+any NSPR functions, and call {doc}`pr_detachthread` when it is done calling
 NSPR functions.

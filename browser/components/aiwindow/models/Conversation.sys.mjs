@@ -426,11 +426,18 @@ export class Conversation {
   /**
    * Execute one LLM call against this conversation's messages + parameters.
    *
+   * This and `runWithGenerator()` are the only ways a turn reaches the engine,
+   * so they are where staged security flags are committed. Committing here
+   * rather than at each call site covers turns driven from anywhere, including
+   * a tool that re-enters the chat loop, and keeps flags staged for the whole
+   * of a tool-call batch, which runs no LLM call of its own.
+   *
    * @param {object} opts - { fxAccountToken, signal?, ... }
    * @param {InferenceParams} [opts.inferenceParams]
    * @returns {Promise<object>}
    */
   async run(opts = {}) {
+    this.securityProperties.commit();
     return this.engine.run({
       args: this.getMessagesInChatCompletionsFormat(),
       ...opts,
@@ -439,13 +446,15 @@ export class Conversation {
   }
 
   /**
-   * Streaming variant — returns an AsyncGenerator.
+   * Streaming variant — returns an AsyncGenerator. Commits security flags for
+   * the same reason `run()` does, eagerly, before the generator is returned.
    *
    * @param {object} opts - { fxAccountToken, signal?, chatId?, tools?, tool_choice?, streamOptions?, args? }
    * @param {InferenceParams} [opts.inferenceParams]
    * @returns {AsyncGenerator}
    */
   runWithGenerator(opts = {}) {
+    this.securityProperties.commit();
     return this.engine.runWithGenerator({
       ...opts,
       // Lazy so the projection is skipped when the caller supplies its own
@@ -490,6 +499,8 @@ export class Conversation {
   /**
    * Gets any URL mentioned in the conversation. These URLs have heightened security
    * permissions as they have been explicitly added to the conversation by the user.
+   * Tabs mentioned as part of a tab group were not picked individually, so they
+   * are left out.
    *
    * @returns {Set<string>}
    */
@@ -499,8 +510,10 @@ export class Conversation {
     for (const message of this.messages) {
       const { contextMentions } = message.content;
       if (contextMentions) {
-        for (const { url } of contextMentions) {
-          mentionUrls.add(url);
+        for (const { url, groupId } of contextMentions) {
+          if (url && !groupId) {
+            mentionUrls.add(url);
+          }
         }
       }
     }

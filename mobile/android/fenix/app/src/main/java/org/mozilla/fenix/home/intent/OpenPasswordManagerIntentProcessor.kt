@@ -18,8 +18,12 @@ class OpenPasswordManagerIntentProcessor : HomeIntentProcessor {
         return if (intent.extras?.getBoolean(HomeActivity.OPEN_PASSWORD_MANAGER) == true) {
             out.removeExtra(HomeActivity.OPEN_PASSWORD_MANAGER)
 
-            val directions = NavGraphDirections.actionLoginsListFragment()
-            navController.nav(null, directions)
+            // The shortcut is declared statically in the manifest and cannot be removed at runtime, so devices without
+            // password management support are simply left on the homepage.
+            if (settings.isAutofillSupported) {
+                val directions = NavGraphDirections.actionLoginsListFragment()
+                navController.nav(null, directions)
+            }
             true
         } else {
             false

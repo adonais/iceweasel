@@ -10,14 +10,9 @@
 #include <type_traits>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefCountType.h"
-
-#ifdef __wasi__
-#  include "mozilla/WasiAtomic.h"
-#else
-#  include <atomic>
-#endif  // __wasi__
 
 #if defined(MOZ_SUPPORT_LEAKCHECKING) && defined(NS_BUILD_REFCNT_LOGGING)
 #  define MOZ_REFCOUNTED_LEAK_CHECKING
@@ -178,28 +173,7 @@ class RC<T, AtomicRefCount> {
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
-  T operator--() {
-    // Since this may be the last release on this thread, we need
-    // release semantics so that prior writes on this thread are visible
-    // to the thread that destroys the object when it reads mValue with
-    // acquire semantics.
-    T result = mValue.fetch_sub(1, std::memory_order_release) - 1;
-    if (result == 0) {
-      // We're going to destroy the object on this thread, so we need
-      // acquire semantics to synchronize with the memory released by
-      // the last release on other threads, that is, to ensure that
-      // writes prior to that release are now visible on this thread.
-#if defined(MOZ_TSAN) || defined(__wasi__)
-      // TSan doesn't understand std::atomic_thread_fence, so in order
-      // to avoid a false positive for every time a refcounted object
-      // is deleted, we replace the fence with an atomic operation.
-      (void)mValue.load(std::memory_order_acquire);
-#else
-      std::atomic_thread_fence(std::memory_order_acquire);
-#endif
-    }
-    return result;
-  }
+  T operator--() { return AtomicRefCountDecrement(mValue); }
 
 #ifdef DEBUG
   // This method is only called in debug builds, so we're not too concerned
@@ -315,7 +289,7 @@ template <typename T>
 class RefCounted : public detail::RefCounted<T, detail::NonAtomicRefCount> {
  public:
   ~RefCounted() {
-    static_assert(std::is_base_of<RefCounted, T>::value,
+    static_assert(std::is_base_of_v<RefCounted, T>,
                   "T must derive from RefCounted<T>");
   }
 };
@@ -334,7 +308,7 @@ class AtomicRefCounted
     : public mozilla::detail::RefCounted<T, mozilla::detail::AtomicRefCount> {
  public:
   ~AtomicRefCounted() {
-    static_assert(std::is_base_of<AtomicRefCounted, T>::value,
+    static_assert(std::is_base_of_v<AtomicRefCounted, T>,
                   "T must derive from AtomicRefCounted<T>");
   }
 };

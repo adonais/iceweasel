@@ -32,7 +32,7 @@ page whenever it executes a JavaScript `debugger;` statement.
     // This simply defines 'Debugger' in this Scratchpad;
     // it doesn't actually start debugging anything.
     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-      "resource://gre/modules/jsdebugger.sys.mjs"
+      "moz-src:///devtools/platform/jsdebugger.sys.mjs"
     );
     addDebuggerToGlobal(window);
 

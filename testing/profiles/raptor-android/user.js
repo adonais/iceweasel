@@ -19,6 +19,8 @@ user_pref("toolkit.telemetry.server", "");
 user_pref("telemetry.fog.test.localhost_port", -1);
 user_pref("telemetry.fog.test.activity_limit", -1);
 user_pref("telemetry.fog.test.inactivity_limit", -1);
+// Slow down early "events" pings to make testing easier.
+user_pref("telemetry.fog.test.decelerate_early_events", true);
 
 // Turn off update
 user_pref("app.update.disabledForTesting", true);

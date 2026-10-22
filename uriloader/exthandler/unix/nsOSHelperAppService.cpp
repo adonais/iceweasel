@@ -66,8 +66,8 @@ nsOSHelperAppService::~nsOSHelperAppService() = default;
  */
 // static
 nsresult nsOSHelperAppService::UnescapeCommand(const nsAString& aEscapedCommand,
-                                               const nsAString& aMajorType,
-                                               const nsAString& aMinorType,
+                                               const nsAString& /*aMajorType*/,
+                                               const nsAString& /*aMinorType*/,
                                                nsACString& aUnEscapedCommand) {
   LOG("-- UnescapeCommand");
   LOG("Command to escape: '%s'\n",

@@ -20,15 +20,17 @@ extensions_button:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_sensitivity:
       - technical
     notification_emails:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
-    expires: 160
+    expires: 180
 
   toggle_visibility:
     type: event
@@ -38,15 +40,17 @@ extensions_button:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_sensitivity:
       - interaction
     notification_emails:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
-    expires: 160
+    expires: 180
     extra_keys:
       is_customizing:
         description: Whether the change was made in Customize Mode.
@@ -83,15 +87,17 @@ extensions_button:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_sensitivity:
       - interaction
     notification_emails:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
-    expires: 160
+    expires: 180
     extra_keys:
       is_extensions_panel_empty:
         description: |
@@ -162,15 +168,17 @@ extensions_button:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966935
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010477
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072843
     data_sensitivity:
       - interaction
     notification_emails:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
-    expires: 160
+    expires: 180
     labels:
       - customize
       - addon_install_doorhanger

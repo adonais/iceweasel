@@ -1200,6 +1200,25 @@ class BuildReader:
         hook = config.substs.get("MOZ_BUILD_HOOK")
         if hook:
             sandbox.exec_file(hook, becomes_current_path=False)
+
+        # Add all EXPORTS to SOURCE_HEADERS
+        if exports := context.get("EXPORTS"):
+            exported_headers = {
+                hdr
+                for _, v in exports.walk()
+                for hdr in v
+                if hdr.endswith((".h", ".hpp"))
+            }
+            for source_header in sandbox["SOURCE_HEADERS"]:
+                if source_header in exported_headers:
+                    raise SandboxValidationError(
+                        f"SOURCE_HEADERS lists {source_header} which is already listed in EXPORTS",
+                        context,
+                    )
+
+            exported_headers = sorted(exported_headers, key=str.lower)
+            sandbox["SOURCE_HEADERS"] += exported_headers
+
         self._execution_time += time.monotonic() - time_start
         self._file_count += len(context.all_paths)
 

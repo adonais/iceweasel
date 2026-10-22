@@ -31,6 +31,7 @@
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
@@ -40,6 +41,7 @@
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/timestamp.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
@@ -426,6 +428,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
   const std::vector<StreamParams>& channel_local_streams() const;
   const std::vector<StreamParams>& channel_remote_streams() const;
   absl::string_view channel_transport_name() const;
+  // Returns the MID that the channel was created for, or an empty string if
+  // there is no channel. The channel stays bound to the transport of this MID
+  // for its lifetime. Must be called on the network thread.
+  absl::string_view channel_mid() const;
 
   // Accessors for media channels. These return null if there is no channel.
   MediaSendChannelInterface* media_send_channel();
@@ -438,6 +444,13 @@ class RtpTransceiver : public RtpTransceiverInterface {
   VoiceMediaReceiveChannelInterface* voice_media_receive_channel();
 
  private:
+  void OnFrameDeliveredOnSignalingThread(uint32_t ssrc,
+                                         const RtpPacketInfos& infos,
+                                         Timestamp timestamp);
+  absl::AnyInvocable<void(uint32_t ssrc, const RtpPacketInfos&, Timestamp)
+                         const>
+  GetOnFrameDeliveredCallback();
+
   VoiceChannelFactoryInterface* voice_channel_factory() const {
     return context_->voice_channel_factory();
   }

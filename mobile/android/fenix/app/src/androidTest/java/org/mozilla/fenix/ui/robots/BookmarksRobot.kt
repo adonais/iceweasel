@@ -61,10 +61,10 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyBookmarkedURL(url: String) {
         Log.i(TAG, "verifyBookmarkedURL: Waiting for $waitingTime ms for bookmarked url: $url to exist")
-        composeTestRule.waitUntilAtLeastOneExists(hasText(url), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasText(url, substring = true), waitingTime)
         Log.i(TAG, "verifyBookmarkedURL: Waited for $waitingTime ms for bookmarked url: $url to exist")
         Log.i(TAG, "verifyBookmarkedURL: Trying to verify bookmarks url: $url is displayed")
-        composeTestRule.onNodeWithText(url).assertIsDisplayed()
+        composeTestRule.onNodeWithText(url, substring = true).assertIsDisplayed()
         Log.i(TAG, "verifyBookmarkedURL: Verified bookmarks url: $url is displayed")
     }
 

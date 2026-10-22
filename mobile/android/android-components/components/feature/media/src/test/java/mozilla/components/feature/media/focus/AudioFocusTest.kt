@@ -336,12 +336,14 @@ class AudioFocusTest {
         )
     }
 
+    // Ambient audio (navigator.audioSession.type = "ambient") mixes with other audio, so no focus
+    // is taken for it. The request still reports success so callers go on to play it.
     @Test
-    fun `WHEN requesting focus for ambient THEN no audio focus is requested`() {
+    fun `WHEN requesting focus for ambient THEN no audio focus is requested and the request reports success`() {
         val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
         val audioFocus = AudioFocus(audioManager, store)
 
-        audioFocus.request("tab", MediaSession.AudioSessionType.AMBIENT)
+        assertTrue(audioFocus.request("tab", MediaSession.AudioSessionType.AMBIENT))
 
         verify(audioManager, never()).requestAudioFocus(any())
     }
@@ -396,5 +398,19 @@ class AudioFocusTest {
 
         audioFocus.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
         verify(controller).onSystemAudioFocusChanged(MediaSession.SystemAudioFocusChange.PERMANENT_LOSS)
+    }
+
+    @Test
+    fun `WHEN requesting audio focus THEN the result reports whether focus was granted`() {
+        val store = BrowserStore()
+        mapOf(
+                AudioManager.AUDIOFOCUS_REQUEST_GRANTED to true,
+                AudioManager.AUDIOFOCUS_REQUEST_DELAYED to false,
+                AudioManager.AUDIOFOCUS_REQUEST_FAILED to false,
+            )
+            .forEach { (result, expected) ->
+                doReturn(result).`when`(audioManager).requestAudioFocus(any())
+                assertEquals("result $result", expected, AudioFocus(audioManager, store).request("tab"))
+            }
     }
 }

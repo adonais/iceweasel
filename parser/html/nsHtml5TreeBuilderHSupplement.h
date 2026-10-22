@@ -219,40 +219,55 @@ void SetSanitizer(mozilla::dom::Sanitizer* aSanitizer, bool aSafe);
 /**
  * Whether the sanitizer replaced an adoption agency algorithm clone with its
  * children, in which case the clone is not in the tree and the algorithm
- * leaves lastNode where it is. Redirects the clone's content to where the
- * content of aCommonAncestor goes: the algorithm never inserts the clone, so
- * this is the only point at which that location is known.
+ * leaves lastNode where it is. sanitizerRedirectPending() then decides where
+ * the clone's content goes.
  */
-bool sanitizerRedirectsClone(nsIContentHandle* aClone,
-                             nsIContentHandle* aCommonAncestor) {
+bool sanitizerRedirectsClone(nsIContentHandle* aClone) {
   return MOZ_UNLIKELY(mSanitizerState) &&
-         SanitizerRedirectsCloneImpl(static_cast<nsIContent*>(aClone),
-                                     static_cast<nsIContent*>(aCommonAncestor));
+         SanitizerRedirectsCloneImpl(static_cast<nsIContent*>(aClone));
 }
 
 /**
- * Re-points the content of a furthest block that the sanitizer replaced with
- * its children at aParent, where the adoption agency algorithm moves the
- * content the block already has. The two overloads take the two shapes of
- * insertion target the algorithm has at that point: a plain parent, and a
- * foster parenting location.
+ * Queues a furthest block that the sanitizer replaced with its children for
+ * sanitizerRedirectPending(), which re-points its content at wherever the
+ * adoption agency algorithm moves the content the block already has.
  */
-void sanitizerRedirectFurthestBlock(nsIContentHandle* aFurthestBlock,
-                                    nsIContentHandle* aParent) {
+void sanitizerDeferRedirect(nsIContentHandle* aFurthestBlock) {
   if (MOZ_UNLIKELY(mSanitizerState)) {
-    SanitizerRedirectFurthestBlockImpl(static_cast<nsIContent*>(aFurthestBlock),
-                                       static_cast<nsIContent*>(aParent));
+    SanitizerDeferRedirectImpl(static_cast<nsIContent*>(aFurthestBlock));
   }
 }
 
-void sanitizerRedirectFurthestBlockToFosterParent(
-    nsIContentHandle* aFurthestBlock, nsIContentHandle* aTable,
-    nsIContentHandle* aStackParent) {
+/**
+ * Re-points the content of every queued element at aParent, where the
+ * adoption agency algorithm inserts lastNode. The two overloads take the two
+ * shapes of insertion target the algorithm has at that point: a plain parent,
+ * and a foster parenting location.
+ */
+void sanitizerRedirectPending(nsIContentHandle* aParent) {
   if (MOZ_UNLIKELY(mSanitizerState)) {
-    SanitizerRedirectFurthestBlockToFosterParentImpl(
-        static_cast<nsIContent*>(aFurthestBlock),
+    SanitizerRedirectPendingImpl(static_cast<nsIContent*>(aParent));
+  }
+}
+
+void sanitizerRedirectPendingToFosterParent(nsIContentHandle* aTable,
+                                            nsIContentHandle* aStackParent) {
+  if (MOZ_UNLIKELY(mSanitizerState)) {
+    SanitizerRedirectPendingToFosterParentImpl(
         static_cast<nsIContent*>(aTable),
         static_cast<nsIContent*>(aStackParent));
+  }
+}
+
+/**
+ * Re-points the content of the run of elements the sanitizer replaced with
+ * their children immediately below the adoption agency algorithm's new
+ * formatting clone, at stack position aClonePos, into the clone. The clone
+ * now sits between them and the furthest block whose content they followed.
+ */
+void sanitizerRedirectBelowFormattingClone(int32_t aClonePos) {
+  if (MOZ_UNLIKELY(mSanitizerState)) {
+    SanitizerRedirectBelowFormattingCloneImpl(aClonePos);
   }
 }
 
@@ -271,12 +286,13 @@ bool sanitizerDropsTemplateToken(nsHtml5HtmlAttributes* aAttributes) {
 // The sanitizing-while-parsing side of the insertion hooks. Kept out of line
 // so that a parse without a sanitizer pays only the mSanitizerState null
 // check, which is what the hooks above and below guard these with.
-MOZ_NEVER_INLINE bool SanitizerRedirectsCloneImpl(nsIContent* aClone,
-                                                  nsIContent* aCommonAncestor);
-MOZ_NEVER_INLINE void SanitizerRedirectFurthestBlockImpl(
-    nsIContent* aFurthestBlock, nsIContent* aParent);
-MOZ_NEVER_INLINE void SanitizerRedirectFurthestBlockToFosterParentImpl(
-    nsIContent* aFurthestBlock, nsIContent* aTable, nsIContent* aStackParent);
+MOZ_NEVER_INLINE bool SanitizerRedirectsCloneImpl(nsIContent* aClone);
+MOZ_NEVER_INLINE void SanitizerDeferRedirectImpl(nsIContent* aFurthestBlock);
+MOZ_NEVER_INLINE void SanitizerRedirectPendingImpl(nsIContent* aParent);
+MOZ_NEVER_INLINE void SanitizerRedirectPendingToFosterParentImpl(
+    nsIContent* aTable, nsIContent* aStackParent);
+MOZ_NEVER_INLINE void SanitizerRedirectBelowFormattingCloneImpl(
+    int32_t aClonePos);
 MOZ_NEVER_INLINE bool SanitizerDropsTemplateTokenImpl(
     nsHtml5HtmlAttributes* aAttributes);
 MOZ_NEVER_INLINE void SanitizedAppendElement(nsIContent* aChild,

@@ -5,7 +5,10 @@
 #ifndef mozilla_CycleCollectedUniquePtr_h_
 #define mozilla_CycleCollectedUniquePtr_h_
 
+#include <memory>
+
 #include "nsCycleCollectionContainerParticipant.h"
+#include "nsCycleCollectionTraversalCallback.h"
 
 namespace mozilla {
 
@@ -15,6 +18,7 @@ template <typename T>
 inline void ImplCycleCollectionUnlink(std::unique_ptr<T>& aField) {
   aField.reset();
 }
+
 template <typename T>
 inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCallback,

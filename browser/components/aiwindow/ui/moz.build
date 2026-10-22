@@ -7,6 +7,7 @@ with Files("**"):
 
 BROWSER_CHROME_MANIFESTS += [
     "test/browser/browser.toml",
+    "test/browser/browser_smartwindow.toml",
     "test/browser_perf/perftest.toml",
 ]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
@@ -25,6 +26,8 @@ MOZ_SRC_FILES += [
     "actors/SmartFormFillReviewParent.sys.mjs",
     "actors/SmartWindowTasksChild.sys.mjs",
     "actors/SmartWindowTasksParent.sys.mjs",
+    "modules/A2UI.mjs",
+    "modules/AgentPageDetector.sys.mjs",
     "modules/AgentUI.sys.mjs",
     "modules/AITabConstants.sys.mjs",
     "modules/AITabMigrations.sys.mjs",
@@ -53,7 +56,7 @@ MOZ_SRC_FILES += [
     "modules/MonitorAttention.sys.mjs",
     "modules/MonitorPanel.sys.mjs",
     "modules/MonitorUIUtils.sys.mjs",
-    "modules/ResumeActivityDismissals.sys.mjs",
+    "modules/ResumeActivity.sys.mjs",
     "modules/SmartFormFillAutocomplete.sys.mjs",
     "modules/SmartFormFillController.sys.mjs",
     "modules/SmartFormFillDocument.sys.mjs",

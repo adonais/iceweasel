@@ -32,7 +32,11 @@ export var SessionWindowUI = {
             const sourceWindow = lazy.SessionStore.getWindowForTabClosedId(
               lastActionTaken.closedId
             );
-            this.undoCloseTab(window, undefined, sourceWindow?.__SSi);
+            this.undoCloseTab(
+              window,
+              undefined,
+              sourceWindow && lazy.SessionStore.getWindowId(sourceWindow)
+            );
           }
           break;
         case lazy.SessionStore.LAST_ACTION_CLOSED_WINDOW: {

@@ -9,6 +9,28 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">Dîsa biceribîne</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">Versiyona Arşîvkirî Kontrol Bike</string>
+  <!--
+    The text shown underneath the archive button, explaining what the button does. The %1$s will be replaced by
+    the app name and %2$s will be replaced by the name of the archive service as a link
+  -->
+  <string name="mozac_browser_errorpages_archive_description">%1$s dikare li %2$s ya Arşîva Înternetê li versiyoneke kevintir a vê rûpelê bigere.</string>
+  <!--
+    The name of the Internet Archive service, shown as a link at the end of
+    mozac_browser_errorpages_archive_description.
+  -->
+  <string name="mozac_browser_errorpages_archive_wayback_machine">Makîneya Wayback</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">Arşîv tê kontrolkirin</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">Versiyoneke arşîvkirî nehat dîtin.</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">Di webê de bigere.</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">Nekarî xwe bigihîne xizmeta arşîvê.</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">Dîsa biceribîne.</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Daxwaz nehate temamkirin</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -145,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Te ji bo zêdetirina ewlekariyê HTTPS-Tenê vekiriye lê versiyoneke ewle ya HTTPSê ya malpera <em>%1$s</em>ê ne berdest e.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Ji malpera HTTP dewam bike</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Vegere (tê pêşniyarkirin)</string>
 </resources>

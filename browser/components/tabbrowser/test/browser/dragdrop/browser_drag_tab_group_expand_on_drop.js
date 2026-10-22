@@ -26,10 +26,7 @@ async function addTabsTo(win, count) {
       })
     );
   }
-  await TestUtils.waitForCondition(
-    () => tabs.every(tab => tab._fullyOpen),
-    "Tabs are fully open"
-  );
+  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
   return tabs;
 }
 

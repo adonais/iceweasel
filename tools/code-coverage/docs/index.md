@@ -108,7 +108,7 @@ browser/config/mozconfigs/linux64/code-coverage,
 browser/config/mozconfigs/win64/code-coverage,
 browser/config/mozconfigs/macosx64/code-coverage.
 
-Make sure you are not running with {ref}`artifact build <Understanding Artifact Builds>`
+Make sure you are not running with {doc}`artifact build </contributing/build/artifact_builds>`
 enabled, as it can prevent coverage artifacts from being created.
 
 You can then create your build as usual. Once the build is complete, you

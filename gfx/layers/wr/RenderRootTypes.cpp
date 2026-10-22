@@ -18,6 +18,7 @@ void ParamTraits<DisplayListData>::Write(IPC::MessageWriter* aWriter,
   WriteParam(aWriter, aParam.mCommands);
   WriteParam(aWriter, std::move(aParam.mDLItems));
   WriteParam(aWriter, std::move(aParam.mDLSpatialTree));
+  WriteParam(aWriter, std::move(aParam.mDLInternerDelta));
   WriteParam(aWriter, aParam.mDLDesc);
   WriteParam(aWriter, aParam.mResourceUpdates);
   WriteParam(aWriter, aParam.mSmallShmems);
@@ -32,6 +33,7 @@ bool ParamTraits<DisplayListData>::Read(IPC::MessageReader* aReader,
          ReadParam(aReader, &aResult->mCommands) &&
          ReadParam(aReader, &aResult->mDLItems) &&
          ReadParam(aReader, &aResult->mDLSpatialTree) &&
+         ReadParam(aReader, &aResult->mDLInternerDelta) &&
          ReadParam(aReader, &aResult->mDLDesc) &&
          ReadParam(aReader, &aResult->mResourceUpdates) &&
          ReadParam(aReader, &aResult->mSmallShmems) &&

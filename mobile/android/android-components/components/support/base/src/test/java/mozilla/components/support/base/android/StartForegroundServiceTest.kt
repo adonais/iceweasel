@@ -93,7 +93,12 @@ class StartForegroundServiceTest {
         override fun sdkInt(): Int = sdkInt
     }
 
-    class FakePowerManagerInfoProvider(private val isIgnoringBatteryOptimizations: Boolean) : PowerManagerInfoProvider {
+    class FakePowerManagerInfoProvider(
+        private val isIgnoringBatteryOptimizations: Boolean,
+        private val isPowerSaveMode: Boolean = false,
+    ) : PowerManagerInfoProvider {
         override fun isIgnoringBatteryOptimizations(): Boolean = isIgnoringBatteryOptimizations
+
+        override fun isPowerSaveMode(): Boolean = isPowerSaveMode
     }
 }

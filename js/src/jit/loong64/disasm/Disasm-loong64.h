@@ -30,6 +30,7 @@ class NameConverter {
   virtual const char* nameOfCPURegister(uint32_t reg) const;
   virtual const char* nameOfFPURegister(uint32_t reg) const;
   virtual const char* nameOfAddress(const uint8_t* address) const;
+  virtual const char* nameOfVectorRegister(uint32_t reg) const;
 
  private:
   mutable char addressBuffer_[32];

@@ -15,6 +15,7 @@
 #include "NumericTools.h"
 #include "Point.h"
 #include "Tools.h"
+#include "fmt/ostream.h"
 #include "mozilla/Maybe.h"
 
 namespace mozilla {
@@ -29,7 +30,7 @@ struct RectTyped;
 
 template <class Units>
 struct MOZ_EMPTY_BASES IntMarginTyped
-    : public BaseMargin<int32_t, IntMarginTyped<Units>, IntCoordTyped<Units> >,
+    : public BaseMargin<int32_t, IntMarginTyped<Units>, IntCoordTyped<Units>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
@@ -37,10 +38,8 @@ struct MOZ_EMPTY_BASES IntMarginTyped
   typedef IntCoordTyped<Units> Coord;
   typedef BaseMargin<int32_t, IntMarginTyped<Units>, Coord> Super;
 
-  IntMarginTyped() : Super() {
-    static_assert(sizeof(IntMarginTyped) == sizeof(int32_t) * 4,
-                  "Would be unfortunate otherwise!");
-  }
+  IntMarginTyped() = default;
+
   constexpr IntMarginTyped(Coord aTop, Coord aRight, Coord aBottom, Coord aLeft)
       : Super(aTop, aRight, aBottom, aLeft) {}
 
@@ -59,10 +58,12 @@ struct MOZ_EMPTY_BASES IntMarginTyped
   }
 };
 typedef IntMarginTyped<UnknownUnits> IntMargin;
+static_assert(sizeof(IntMargin) == sizeof(int32_t) * 4,
+              "Would be unfortunate otherwise!");
 
 template <class Units, class F = Float>
 struct MOZ_EMPTY_BASES MarginTyped
-    : public BaseMargin<F, MarginTyped<Units, F>, CoordTyped<Units, F> >,
+    : public BaseMargin<F, MarginTyped<Units, F>, CoordTyped<Units, F>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
@@ -70,7 +71,7 @@ struct MOZ_EMPTY_BASES MarginTyped
   typedef CoordTyped<Units, F> Coord;
   typedef BaseMargin<F, MarginTyped<Units, F>, Coord> Super;
 
-  MarginTyped() : Super() {}
+  MarginTyped() = default;
   MarginTyped(Coord aTop, Coord aRight, Coord aBottom, Coord aLeft)
       : Super(aTop, aRight, aBottom, aLeft) {}
   explicit MarginTyped(const IntMarginTyped<Units>& aMargin)
@@ -107,21 +108,19 @@ IntMarginTyped<Units> RoundedToInt(const MarginTyped<Units>& aMargin) {
 template <class Units>
 struct MOZ_EMPTY_BASES IntRectTyped
     : public BaseRect<int32_t, IntRectTyped<Units>, IntPointTyped<Units>,
-                      IntSizeTyped<Units>, IntMarginTyped<Units> >,
+                      IntSizeTyped<Units>, IntMarginTyped<Units>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
   typedef BaseRect<int32_t, IntRectTyped<Units>, IntPointTyped<Units>,
-                   IntSizeTyped<Units>, IntMarginTyped<Units> >
+                   IntSizeTyped<Units>, IntMarginTyped<Units>>
       Super;
   typedef IntRectTyped<Units> Self;
   typedef IntParam<int32_t> ToInt;
 
-  IntRectTyped() : Super() {
-    static_assert(sizeof(IntRectTyped) == sizeof(int32_t) * 4,
-                  "Would be unfortunate otherwise!");
-  }
+  IntRectTyped() = default;
+
   IntRectTyped(const IntPointTyped<Units>& aPos,
                const IntSizeTyped<Units>& aSize)
       : Super(aPos, aSize) {}
@@ -261,23 +260,23 @@ struct MOZ_EMPTY_BASES IntRectTyped
   }
 };
 typedef IntRectTyped<UnknownUnits> IntRect;
+static_assert(sizeof(IntRect) == sizeof(int32_t) * 4,
+              "Would be unfortunate otherwise!");
 
 template <class Units, class F = Float>
 struct MOZ_EMPTY_BASES RectTyped
     : public BaseRect<F, RectTyped<Units, F>, PointTyped<Units, F>,
-                      SizeTyped<Units, F>, MarginTyped<Units, F> >,
+                      SizeTyped<Units, F>, MarginTyped<Units, F>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
   typedef BaseRect<F, RectTyped<Units, F>, PointTyped<Units, F>,
-                   SizeTyped<Units, F>, MarginTyped<Units, F> >
+                   SizeTyped<Units, F>, MarginTyped<Units, F>>
       Super;
 
-  RectTyped() : Super() {
-    static_assert(sizeof(RectTyped) == sizeof(F) * 4,
-                  "Would be unfortunate otherwise!");
-  }
+  RectTyped() = default;
+
   RectTyped(const PointTyped<Units, F>& aPos, const SizeTyped<Units, F>& aSize)
       : Super(aPos, aSize) {}
   RectTyped(F _x, F _y, F _width, F _height) : Super(_x, _y, _width, _height) {}
@@ -327,6 +326,10 @@ struct MOZ_EMPTY_BASES RectTyped
 };
 typedef RectTyped<UnknownUnits> Rect;
 typedef RectTyped<UnknownUnits, double> RectDouble;
+static_assert(sizeof(Rect) == sizeof(float) * 4,
+              "Would be unfortunate otherwise!");
+static_assert(sizeof(RectDouble) == sizeof(double) * 4,
+              "Would be unfortunate otherwise!");
 
 template <class Units, class D>
 RectTyped<Units> NarrowToFloat(const RectTyped<Units, D>& aRect) {
@@ -584,5 +587,18 @@ struct RoundedRect {
 
 }  // namespace gfx
 }  // namespace mozilla
+
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntMarginTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::MarginTyped<Units, F>>
+    : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntRectTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::RectTyped<Units, F>>
+    : fmt::ostream_formatter {};
 
 #endif /* MOZILLA_GFX_RECT_H_ */

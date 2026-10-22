@@ -15,6 +15,11 @@ class SocketProcessBackgroundParent;
 
 namespace psm {
 
+void SignDataGivenCertificate(const nsTArray<uint8_t>& certificate,
+                              const nsTArray<uint8_t>& data,
+                              const nsTArray<uint8_t>& params,
+                              nsTArray<uint8_t>& signature, void* ctx);
+
 class IPCClientCertsParent final : public PIPCClientCertsParent {
   friend class mozilla::net::SocketProcessBackgroundParent;
 

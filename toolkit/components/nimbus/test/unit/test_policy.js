@@ -44,6 +44,7 @@ async function doTest({
   existingEnrollments = [],
   expectedEnrollments,
   expectedOptIns,
+  readyBeforeInit = false,
 }) {
   info("Enabling policy");
   await EnterprisePolicyTesting.setupPolicyEngineWithJson({ policies });
@@ -71,6 +72,16 @@ async function doTest({
 
   sinon.spy(loader, "updateRecipes");
   sinon.spy(loader, "setTimer");
+
+  if (readyBeforeInit) {
+    await ExperimentAPI.ready();
+
+    Assert.equal(
+      ExperimentAPI.enabled,
+      false,
+      "ready() computes Nimbus as disabled before init()"
+    );
+  }
 
   await ExperimentAPI.init();
 
@@ -186,5 +197,21 @@ add_task(async function testDisableRolloutPolicyCausesUnenrollments() {
     expectedEnrollments: ["experiment"],
     existingEnrollments: ["rollout"],
     expectedOptIns: ["optin"],
+  });
+});
+
+add_task(async function testNimbusDisabled() {
+  await doTest({
+    policies: {
+      DisableRemoteImprovements: true,
+      DisableFirefoxStudies: true,
+      UserMessaging: { FirefoxLabs: false },
+    },
+    labsEnabled: false,
+    rolloutsEnabled: false,
+    studiesEnabled: false,
+    expectedEnrollments: [],
+    expectedOptIns: [],
+    readyBeforeInit: true,
   });
 });

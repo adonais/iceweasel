@@ -207,7 +207,6 @@ skip-if = [
 
 ["test_event_listener_leaks.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1930730
 ]
 
@@ -418,10 +417,8 @@ skip-if = [
 ["test_upgrade_add_index.html"]
 scheme = "https"
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1930730 (secondary)
-  "os == 'win'", # Bug 1637715
 ]
 
 ["test_view_put_get_values.html"]

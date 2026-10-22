@@ -6,6 +6,7 @@ Transform the checksums task into an actual task description.
 """
 
 import logging
+from shlex import quote as shell_quote
 
 from mozilla_taskgraph.worker_types import get_release_config
 from taskgraph.transforms.base import TransformSequence
@@ -16,15 +17,26 @@ transforms = TransformSequence()
 
 
 @transforms.add
-def interpolate(config, jobs):
+def add_command(config, jobs):
     release_config = get_release_config(config)
     for job in jobs:
-        mh_options = list(job["run"]["options"])
-        job["run"]["options"] = [
-            option.format(
-                version=release_config["version"],
-                build_number=release_config["build_number"],
-            )
-            for option in mh_options
+        run = job["run"]
+        command = [
+            "python",
+            "python/mozrelease/mozrelease/generate_checksums.py",
+            "--stage-product",
+            run.pop("stage-product"),
+            "--bucket-name",
+            run.pop("bucket-name"),
+            "--version",
+            release_config["version"],
+            "--build-number",
+            str(release_config["build_number"]),
+            "--output-dir",
+            run.pop("output-dir"),
         ]
+        run.update({
+            "using": "mach",
+            "mach": " ".join(map(shell_quote, command)),
+        })
         yield job

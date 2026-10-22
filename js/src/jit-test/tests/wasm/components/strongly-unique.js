@@ -1,67 +1,67 @@
 // |jit-test| skip-if: !wasmComponentsEnabled()
 
-// We use imported functions as our oracle for strongly-uniqueness, as only
-// functions allow the full range of plain names.
-function assertAllStronglyUnique(names) {
-  wasmValidateText(`(component
-    ${names.map(n => `(import "${n}" (func))`).join("\n")}
-  )`);
-}
-function assertNotStronglyUnique(okNames, badName) {
-  assertAllStronglyUnique(okNames);
+const specOkImports = `
+  (import "foo" (type $foo (sub resource)))
+  (import "foo-bar" (func))
+  (import "[constructor]foo" (func (result (own $foo))))
+  (import "[method]foo.bar" (func (param "self" (borrow $foo))))
+  (import "[static]foo.baz" (func))
+  (import "[get]prop" (func (result u32)))
+  (import "[set]prop" (func (param "v" u32)))
+  (import "[method][get]foo.prop" (func (param "self" (borrow $foo)) (result u32)))
+  (import "[method][set]foo.prop" (func (param "self" (borrow $foo)) (param "v" u32)))
+  (import "[static][get]foo.prop-2" (func (result u32)))
+  (import "[static][set]foo.prop-2" (func (param "v" u32)))
+  ;; For now this is allowed. In the future these are expected to conflict with
+  ;; [method][get]foo.prop and [method][set]foo.prop.
+  (import "[method]foo.get-prop" (func (param "self" (borrow $foo))))
+  (import "[method]foo.set-prop" (func (param "self" (borrow $foo))))
+`;
+wasmValidateText(`(component
+  ${specOkImports}
+)`);
+
+function assertNotStronglyUnique(badName) {
   wasmFailValidateText(`(component
-    ${okNames.map(n => `(import "${n}" (func))`).join("\n")}
+    ${specOkImports}
     (import "${badName}" (func))
   )`, /not strongly-unique/);
 }
 
-const specOkExamples = [
-  "foo", "foo-bar",
-  "[constructor]foo",
-  "[method]foo.bar", "[static]foo.baz",
-  "[get]prop", "[set]prop",
-  "[method][get]foo.prop", "[method][set]foo.prop",
-  "[static][get]foo.prop-2", "[static][set]foo.prop-2",
-  // For now this is allowed. In the future these are expected to conflict with
-  // [method][get]foo.prop and [method][set]foo.prop.
-  "[method]foo.get-prop", "[method]foo.set-prop",
-];
-assertAllStronglyUnique(specOkExamples);
-
 // Conflicts with "foo"
-assertNotStronglyUnique(specOkExamples, "foo");
-assertNotStronglyUnique(specOkExamples, "FOO");
-assertNotStronglyUnique(specOkExamples, "[method]foo.foo");
-assertNotStronglyUnique(specOkExamples, "[get]foo");
-assertNotStronglyUnique(specOkExamples, "[method][get]foo.foo");
-assertNotStronglyUnique(specOkExamples, "[static][set]foo.FOO");
+assertNotStronglyUnique("foo");
+assertNotStronglyUnique("FOO");
+assertNotStronglyUnique("[method]foo.foo");
+assertNotStronglyUnique("[get]foo");
+assertNotStronglyUnique("[method][get]foo.foo");
+assertNotStronglyUnique("[static][set]foo.FOO");
 
 // Conflicts with "foo-bar"
-assertNotStronglyUnique(specOkExamples, "foo-BAR");
-assertNotStronglyUnique(specOkExamples, "[static]foo-BAR.FOO-bar");
+assertNotStronglyUnique("foo-BAR");
+assertNotStronglyUnique("[static]foo-BAR.FOO-bar");
 
 // Conflicts with "[constructor]foo"
-assertNotStronglyUnique(specOkExamples, "[constructor]FOO");
+assertNotStronglyUnique("[constructor]FOO");
 
 // Conflicts with "[method]foo.bar"
-assertNotStronglyUnique(specOkExamples, "[method]foo.BAR");
-assertNotStronglyUnique(specOkExamples, "[static]foo.bar");
+assertNotStronglyUnique("[method]foo.BAR");
+assertNotStronglyUnique("[static]foo.bar");
 
 // Conflicts with "[static]foo.baz"
-assertNotStronglyUnique(specOkExamples, "[method]foo.baz");
+assertNotStronglyUnique("[method]foo.baz");
 
 // Conflicts with "[get]prop"
-assertNotStronglyUnique(specOkExamples, "prop");
+assertNotStronglyUnique("prop");
 
 // Conflicts with "[set]prop"
-assertNotStronglyUnique(specOkExamples, "[set]PROP");
+assertNotStronglyUnique("[set]PROP");
 
 // Conflicts with "[method][get]foo.prop"
-assertNotStronglyUnique(specOkExamples, "[method]foo.prop");
-assertNotStronglyUnique(specOkExamples, "[static]foo.PROP");
-assertNotStronglyUnique(specOkExamples, "[method][get]foo.PROP");
-assertNotStronglyUnique(specOkExamples, "[static][get]foo.prop");
+assertNotStronglyUnique("[method]foo.prop");
+assertNotStronglyUnique("[static]foo.PROP");
+assertNotStronglyUnique("[method][get]foo.PROP");
+assertNotStronglyUnique("[static][get]foo.prop");
 
 // Conflicts with "[method][set]foo.prop"
-assertNotStronglyUnique(specOkExamples, "[method][set]foo.PROP");
-assertNotStronglyUnique(specOkExamples, "[static][set]foo.prop");
+assertNotStronglyUnique("[method][set]foo.PROP");
+assertNotStronglyUnique("[static][set]foo.prop");

@@ -8,69 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <charconv>
 #include <cstdio>
-#include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
-#include <vector>
 
-#include "absl/strings/string_view.h"
 #include "api/video/resolution.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/string_encode.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_reader.h"
+#include "test/testsupport/y4m_header_parser.h"
 
 namespace webrtc {
 namespace test {
 namespace {
 constexpr int kFrameHeaderSize = 6;  // "FRAME\n"
 }  // namespace
-
-void ParseY4mHeader(std::string filepath,
-                    Resolution* resolution,
-                    int* header_size) {
-  FILE* file = fopen(filepath.c_str(), "r");
-  RTC_CHECK(file != nullptr) << "Cannot open " << filepath;
-
-  // Length of Y4M header is technically unlimited due to the comment tag 'X'.
-  char h[1024];
-  RTC_CHECK(fgets(h, sizeof(h), file) != nullptr)
-      << "File " << filepath << " is too small";
-  fclose(file);
-
-  std::vector<absl::string_view> header = split(h, ' ');
-  RTC_CHECK(!header.empty() && header[0] == "YUV4MPEG2")
-      << filepath << " is not a valid Y4M file";
-
-  for (size_t i = 1; i < header.size(); ++i) {
-    RTC_CHECK(!header[i].empty());
-    switch (header[i][0]) {
-      case 'W': {
-        auto n = header[i].substr(1);
-        std::from_chars(n.data(), n.data() + n.size(), resolution->width);
-        continue;
-      }
-      case 'H': {
-        auto n = header[i].substr(1);
-        std::from_chars(n.data(), n.data() + n.size(), resolution->height);
-        continue;
-      }
-      default: {
-        continue;
-      }
-    }
-  }
-
-  RTC_CHECK_GT(resolution->width, 0) << "Width must be positive";
-  RTC_CHECK_GT(resolution->height, 0) << "Height must be positive";
-
-  *header_size = strcspn(h, "\n") + 1;
-  RTC_CHECK(static_cast<unsigned>(*header_size) < sizeof(h))
-      << filepath << " has unexpectedly large header";
-}
 
 Y4mFrameReaderImpl::Y4mFrameReaderImpl(std::string filepath,
                                        RepeatMode repeat_mode)
@@ -80,7 +34,11 @@ void Y4mFrameReaderImpl::Init() {
   file_ = fopen(filepath_.c_str(), "rb");
   RTC_CHECK(file_ != nullptr) << "Cannot open " << filepath_;
 
-  ParseY4mHeader(filepath_, &resolution_, &header_size_bytes_);
+  std::optional<Y4mHeader> header = ParseY4mHeaderFromFile(filepath_);
+  RTC_CHECK(header.has_value()) << "Cannot parse Y4M header in " << filepath_;
+  resolution_ = header->resolution;
+  header_size_bytes_ = static_cast<int>(header->header_size.bytes());
+
   frame_size_bytes_ =
       CalcBufferSize(VideoType::kI420, resolution_.width, resolution_.height);
   frame_size_bytes_ += kFrameHeaderSize;

@@ -26,6 +26,13 @@ export class SafeAnchor extends React.PureComponent {
             // Use the anchor's url, which could have been cleaned up
             url: event.currentTarget.href,
             is_sponsored: this.props.isSponsored,
+            // Opts this link into newtab.opened_page_dwell_time, and names the
+            // label the sample accrues to. Spread rather than set to undefined,
+            // so the action shape is unchanged for the anchors that did not opt
+            // in.
+            ...(this.props.dwellLabel
+              ? { dwell_label: this.props.dwellLabel }
+              : {}),
           },
         })
       );

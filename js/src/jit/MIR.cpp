@@ -2813,6 +2813,52 @@ MDefinition* MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
+MDefinition* MBitOr::foldsTo(TempAllocator& alloc) {
+  MDefinition* folded = MBinaryBitwiseInstruction::foldsTo(alloc);
+  if (folded != this || type() != MIRType::Int32) {
+    return folded;
+  }
+
+  MDefinition* lhs = getOperand(0);
+  MDefinition* rhs = getOperand(1);
+
+  // Convert the pattern (x >>> C) | (x << (32 - D)) into an MRotate,
+  // where D = 32-C.
+  auto isRotateRight = [&](MDefinition* ursh,
+                           MDefinition* lsh) -> MDefinition* {
+    if (!ursh->isUrsh() || !lsh->isLsh()) {
+      return nullptr;
+    }
+    MDefinition* x = ursh->getOperand(0);
+    if (x != lsh->getOperand(0) || x->type() != MIRType::Int32) {
+      return nullptr;
+    }
+    MDefinition* urshConst = ursh->getOperand(1);
+    MDefinition* lshConst = lsh->getOperand(1);
+    if (!urshConst->isConstant() || urshConst->type() != MIRType::Int32 ||
+        !lshConst->isConstant() || lshConst->type() != MIRType::Int32) {
+      return nullptr;
+    }
+    int32_t c = urshConst->toConstant()->toInt32();
+    int32_t d = 32 - c;
+    if (c < 1 || c > 31 || !lshConst->toConstant()->isInt32(d)) {
+      return nullptr;
+    }
+    return urshConst;
+  };
+  if (rhs->type() == MIRType::Int32 && lhs->type() == MIRType::Int32) {
+    if (MDefinition* count = isRotateRight(lhs, rhs)) {
+      return MRotate::New(alloc, lhs->getOperand(0), count, MIRType::Int32,
+                          /* left = */ false);
+    }
+    if (MDefinition* count = isRotateRight(rhs, lhs)) {
+      return MRotate::New(alloc, rhs->getOperand(0), count, MIRType::Int32,
+                          /* left = */ false);
+    }
+  }
+  return this;
+}
+
 MDefinition* MBinaryBitwiseInstruction::foldUnnecessaryBitop() {
   // It's probably OK to perform this optimization only for int32, as JS
   // bytecode does not see int64 values.
@@ -6387,6 +6433,35 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
     MDefinition* opop = op->getOperand(0);
     if (opop->isNot()) {
       return opop;
+    }
+  }
+
+  // Fold a Not of a single-use integer comparison into the negated comparison,
+  // and Not(Not(int32)) into a comparison against zero, so that the result is
+  // materialized once instead of being computed and then flipped.
+  if (type() == MIRType::Boolean && op->type() == MIRType::Boolean &&
+      op->hasOneUse()) {
+    if (op->isCompare()) {
+      MCompare* cmp = op->toCompare();
+      switch (cmp->compareType()) {
+        case MCompare::Compare_Int32:
+        case MCompare::Compare_UInt32:
+        case MCompare::Compare_Int64:
+        case MCompare::Compare_UInt64:
+        case MCompare::Compare_IntPtr:
+        case MCompare::Compare_UIntPtr:
+          return MCompare::New(alloc, cmp->lhs(), cmp->rhs(),
+                               NegateCompareOp(cmp->jsop()),
+                               cmp->compareType());
+        default:
+          break;
+      }
+    }
+    if (op->isNot() && op->getOperand(0)->type() == MIRType::Int32) {
+      MConstant* zero = MConstant::NewInt32(alloc, 0);
+      block()->insertBefore(this, zero);
+      return MCompare::New(alloc, op->getOperand(0), zero, JSOp::Ne,
+                           MCompare::Compare_Int32);
     }
   }
 

@@ -136,55 +136,68 @@ bool OverscrollHandoffChain::HasAutoscrollApzc() const {
   return AnyApzc(&AsyncPanZoomController::IsAutoscroll);
 }
 
-RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
+bool OverscrollHandoffChain::HasAnimatingApzc() const {
+  return AnyApzc(&AsyncPanZoomController::IsAnimationRunning);
+}
+
+RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindScrollTarget(
     const InputData& aInput, ScrollDirections* aOutAllowedScrollDirections,
     IncludeOverscroll aIncludeOverscroll) const {
-  // Start by allowing scrolling in both directions. As we do handoff
-  // overscroll-behavior may restrict one or both of the directions.
-  *aOutAllowedScrollDirections += ScrollDirection::eVertical;
-  *aOutAllowedScrollDirections += ScrollDirection::eHorizontal;
+  // |aOutAllowedScrollDirections| carries the overscroll-behavior handoff
+  // restrictions of the APZCs that precede the returned one in the chain. The
+  // caller rebuilds the handoff chain from the returned APZC, so those APZCs
+  // drop out of it and no longer get to enforce their own restrictions when the
+  // scroll is dispatched. That's why this info is necessary.
+  *aOutAllowedScrollDirections = EitherScrollDirection;
 
+  // The directions handoff still allows on entry to each APZC the scroll pass
+  // reaches.
+  AutoTArray<ScrollDirections, 8> allowedDirectionsOnEntry;
+  ScrollDirections allowed = EitherScrollDirection;
   for (size_t i = 0; i < Length(); i++) {
     if (mChain[i]->CanScroll(aInput)) {
+      *aOutAllowedScrollDirections = allowed;
+      MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
       return mChain[i];
     }
-
-    // If there is any directions we allow overscroll effects on the root
-    // content APZC (i.e. the overscroll-behavior of the root one is not
-    // `none`), we consider the APZC can be scrollable in terms of pan gestures
-    // because it causes overscrolling even if it's not able to scroll to the
-    // direction.
-    if (StaticPrefs::apz_overscroll_enabled() && bool(aIncludeOverscroll) &&
-        // FIXME: Bug 1707491: Drop this pan gesture input check.
-        aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
-      // Check whether the root content APZC is also overscrollable governed by
-      // overscroll-behavior in the same directions where we allow scrolling
-      // handoff and where we are going to scroll, if it matches we do handoff
-      // to the root content APZC.
-      // In other words, if the root content is not scrollable, we don't
-      // handoff.
-      ScrollDirections allowedOverscrollDirections =
-          mChain[i]->GetOverscrollableDirections();
-      ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
-      if (mChain[i]->IsZero(delta.x)) {
-        allowedOverscrollDirections -= ScrollDirection::eHorizontal;
-      }
-      if (mChain[i]->IsZero(delta.y)) {
-        allowedOverscrollDirections -= ScrollDirection::eVertical;
-      }
-
-      allowedOverscrollDirections &= *aOutAllowedScrollDirections;
-      if (!allowedOverscrollDirections.isEmpty()) {
-        *aOutAllowedScrollDirections = allowedOverscrollDirections;
-        return mChain[i];
-      }
-    }
-
-    *aOutAllowedScrollDirections &= mChain[i]->GetAllowedHandoffDirections();
-    if (aOutAllowedScrollDirections->isEmpty()) {
-      return nullptr;
+    allowedDirectionsOnEntry.AppendElement(allowed);
+    allowed &= mChain[i]->GetAllowedHandoffDirections();
+    if (allowed.isEmpty()) {
+      break;
     }
   }
+
+  if (!StaticPrefs::apz_overscroll_enabled() || !bool(aIncludeOverscroll) ||
+      // FIXME: Bug 1707491: Drop this pan gesture input check.
+      aInput.mInputType != PANGESTURE_INPUT) {
+    MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
+    return nullptr;
+  }
+
+  // Check overscroll possibility. Note that the check starts from an outer
+  // frame.
+  for (size_t i = allowedDirectionsOnEntry.Length(); i-- > 0;) {
+    // |overscrollable| describes what this frame itself can do, so
+    // they only decide whether it gets picked. They deliberately do not narrow
+    // |aOutAllowedScrollDirections|, which reports what the earlier frames
+    // forbid, so |reachable[i]| is what gets written out.
+    ScrollDirections overscrollable = mChain[i]->GetOverscrollableDirections();
+    ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
+    if (mChain[i]->IsZero(delta.x)) {
+      overscrollable -= ScrollDirection::eHorizontal;
+    }
+    if (mChain[i]->IsZero(delta.y)) {
+      overscrollable -= ScrollDirection::eVertical;
+    }
+    if (!(overscrollable & allowedDirectionsOnEntry[i]).isEmpty()) {
+      // Don't intersect it with overscrollable here. See the above comment.
+      *aOutAllowedScrollDirections = allowedDirectionsOnEntry[i];
+      MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
+      return mChain[i];
+    }
+  }
+
+  MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
   return nullptr;
 }
 

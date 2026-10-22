@@ -138,6 +138,7 @@
 
       &:active {
         background-color: var(--button-background-color-ghost-active);
+        color: var(--button-text-color-ghost-active);
         border-color: var(--button-border-color-ghost-active);
       }
     }

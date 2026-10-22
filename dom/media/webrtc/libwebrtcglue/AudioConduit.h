@@ -6,6 +6,7 @@
 #define AUDIO_SESSION_H_
 
 #include "MediaConduitInterface.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -225,6 +226,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   // Written only on the Call thread. Guarded by mLock, except for reads on the
   // Call thread.
   webrtc::AudioReceiveStreamInterface* mRecvStream;
+
+  // Fed by mRecvStreamConfig.on_frame_delivered_callback. Call thread only,
+  // since webrtc::SourceTracker itself is not thread-safe.
+  webrtc::SourceTracker mSourceTracker;
 
   // Accessed only on the Call thread.
   webrtc::AudioSendStream::Config mSendStreamConfig;

@@ -364,39 +364,15 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
 
 template <typename SizeOrMaxSize>
 nscoord SizeComputationInput::ComputeISizeValue(
-    const LogicalSize& aContainingBlockSize, StyleBoxSizing aBoxSizing,
-    const SizeOrMaxSize& aSize) const {
+    const LogicalSize& aContainingBlockSize, const SizeOrMaxSize& aSize) const {
   WritingMode wm = GetWritingMode();
-  const auto borderPadding = ComputedLogicalBorderPadding(wm);
-  const auto margin = ComputedLogicalMargin(wm);
-  const LogicalSize contentEdgeToBoxSizing =
-      aBoxSizing == StyleBoxSizing::BorderBox ? borderPadding.Size(wm)
-                                              : LogicalSize(wm);
-  const nscoord boxSizingToMarginEdgeISize = borderPadding.IStartEnd(wm) +
-                                             margin.IStartEnd(wm) -
-                                             contentEdgeToBoxSizing.ISize(wm);
-
-  // Get the bSize with anchor functions resolved, and manually resolve
-  // 'stretch'-like sizes as well (we should do this a bit cleaner,
-  // see bug 2000035):
-  auto bSize = mFrame->StylePosition()->BSize(
+  const auto bSize = mFrame->StylePosition()->BSize(
       wm, AnchorPosResolutionParams::From(mFrame, mAnchorPosResolutionCache));
-  if (bSize->BehavesLikeStretchOnBlockAxis()) {
-    if (NS_UNCONSTRAINEDSIZE == aContainingBlockSize.BSize(wm)) {
-      bSize = AnchorResolvedSizeHelper::Auto();
-    } else {
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
-          aContainingBlockSize.BSize(wm), margin.BStartEnd(wm),
-          borderPadding.BStartEnd(wm), aBoxSizing);
-      bSize = AnchorResolvedSizeHelper::LengthPercentage(
-          StyleLengthPercentage::FromAppUnits(stretchBSize));
-    }
-  }
-
   return mFrame
       ->ComputeISizeValue(mRenderingContext, wm, aContainingBlockSize,
-                          contentEdgeToBoxSizing, boxSizingToMarginEdgeISize,
-                          aSize, *bSize, mFrame->GetAspectRatio())
+                          ComputedLogicalMargin(wm).Size(wm),
+                          ComputedLogicalBorderPadding(wm).Size(wm), aSize,
+                          *bSize, mFrame->GetAspectRatio())
       .mISize;
 }
 
@@ -1255,14 +1231,8 @@ struct nsHypotheticalPosition {
   WritingMode mWritingMode;
 };
 
-/**
- * aInsideBoxSizing returns the part of the padding, border, and margin
- * in the aAxis dimension that goes inside the edge given by box-sizing;
- * aOutsideBoxSizing returns the rest.
- */
-void ReflowInput::CalculateBorderPaddingMargin(
-    LogicalAxis aAxis, nscoord aContainingBlockSize, nscoord* aInsideBoxSizing,
-    nscoord* aOutsideBoxSizing) const {
+ReflowInput::BorderPaddingMargin ReflowInput::CalculateBorderPaddingMargin(
+    LogicalAxis aAxis, nscoord aContainingBlockSize) const {
   WritingMode wm = GetWritingMode();
   Side startSide = wm.PhysicalSide(MakeLogicalSide(aAxis, LogicalEdge::Start));
   Side endSide = wm.PhysicalSide(MakeLogicalSide(aAxis, LogicalEdge::End));
@@ -1303,14 +1273,7 @@ void ReflowInput::CalculateBorderPaddingMargin(
     marginStartEnd = start + end;
   }
 
-  nscoord outside = paddingStartEnd + borderStartEnd + marginStartEnd;
-  nscoord inside = 0;
-  if (mStylePosition->mBoxSizing == StyleBoxSizing::BorderBox) {
-    inside = borderStartEnd + paddingStartEnd;
-  }
-  outside -= inside;
-  *aInsideBoxSizing = inside;
-  *aOutsideBoxSizing = outside;
+  return {paddingStartEnd + borderStartEnd, marginStartEnd};
 }
 
 /**
@@ -1386,18 +1349,17 @@ void ReflowInput::CalculateHypotheticalPosition(
     // border/padding/margin that the element would have had if it had
     // been in the flow. Note that we ignore any 'auto' and 'inherit'
     // values
-    nscoord contentEdgeToBoxSizingISize, boxSizingToMarginEdgeISize;
-    CalculateBorderPaddingMargin(
-        LogicalAxis::Inline, blockContainerContentBoxSize.ISize(wm),
-        &contentEdgeToBoxSizingISize, &boxSizingToMarginEdgeISize);
+    const auto inlineBPM = CalculateBorderPaddingMargin(
+        LogicalAxis::Inline, blockContainerContentBoxSize.ISize(wm));
+    const nscoord iSizeOutsideContentBox =
+        inlineBPM.mBorderPadding + inlineBPM.mMargin;
 
     if (mFlags.mIsReplaced && isAutoISize) {
       // It's a replaced element with an 'auto' inline size so the box inline
       // size is its intrinsic size plus any border/padding/margin
       if (intrinsicSize) {
         boxISize.emplace(LogicalSize(wm, *intrinsicSize).ISize(wm) +
-                         contentEdgeToBoxSizingISize +
-                         boxSizingToMarginEdgeISize);
+                         iSizeOutsideContentBox);
       }
     } else if (isAutoISize) {
       // The box inline size is the block container's inline size
@@ -1406,23 +1368,20 @@ void ReflowInput::CalculateHypotheticalPosition(
       // We need to compute it. It's important we do this, because if it's
       // percentage based this computed value may be different from the computed
       // value calculated using the absolute containing block width
-      nscoord contentEdgeToBoxSizingBSize, dummy;
-      CalculateBorderPaddingMargin(LogicalAxis::Block,
-                                   blockContainerContentBoxSize.ISize(wm),
-                                   &contentEdgeToBoxSizingBSize, &dummy);
-
+      const auto blockBPM = CalculateBorderPaddingMargin(
+          LogicalAxis::Block, blockContainerContentBoxSize.ISize(wm));
       const auto contentISize =
           mFrame
               ->ComputeISizeValue(
                   mRenderingContext, wm, blockContainerContentBoxSize,
-                  LogicalSize(wm, contentEdgeToBoxSizingISize,
-                              contentEdgeToBoxSizingBSize),
-                  boxSizingToMarginEdgeISize, *styleISize,
+                  LogicalSize(wm, inlineBPM.mMargin, blockBPM.mMargin),
+                  LogicalSize(wm, inlineBPM.mBorderPadding,
+                              blockBPM.mBorderPadding),
+                  *styleISize,
                   *mStylePosition->BSize(wm, anchorResolutionParams),
                   mFrame->GetAspectRatio())
               .mISize;
-      boxISize.emplace(contentISize + contentEdgeToBoxSizingISize +
-                       boxSizingToMarginEdgeISize);
+      boxISize.emplace(contentISize + iSizeOutsideContentBox);
     }
   }
 
@@ -1615,10 +1574,10 @@ void ReflowInput::CalculateHypotheticalPosition(
     // border/padding/margin that the element would have had if it had
     // been in the flow. Note that we ignore any 'auto' and 'inherit'
     // values.
-    nscoord insideBoxSizing, outsideBoxSizing;
-    CalculateBorderPaddingMargin(LogicalAxis::Block,
-                                 blockContainerContentBoxSize.BSize(wm),
-                                 &insideBoxSizing, &outsideBoxSizing);
+    const auto blockBPM = CalculateBorderPaddingMargin(
+        LogicalAxis::Block, blockContainerContentBoxSize.BSize(wm));
+    const nscoord bSizeOutsideContentBox =
+        blockBPM.mBorderPadding + blockBPM.mMargin;
 
     nscoord boxBSize;
     const auto styleBSize = mStylePosition->BSize(wm, anchorResolutionParams);
@@ -1628,33 +1587,27 @@ void ReflowInput::CalculateHypotheticalPosition(
       if (mFlags.mIsReplaced && intrinsicSize) {
         // It's a replaced element with an 'auto' block size so the box
         // block size is its intrinsic size plus any border/padding/margin
-        boxBSize = LogicalSize(wm, *intrinsicSize).BSize(wm) +
-                   outsideBoxSizing + insideBoxSizing;
+        boxBSize =
+            LogicalSize(wm, *intrinsicSize).BSize(wm) + bSizeOutsideContentBox;
       } else {
         // XXX Bug 1191801
         // Figure out how to get the correct boxBSize here (need to reflow the
         // positioned frame?)
         boxBSize = 0;
       }
-    } else if (styleBSize->BehavesLikeStretchOnBlockAxis()) {
-      MOZ_ASSERT(blockContainerContentBoxSize.BSize(wm) != NS_UNCONSTRAINEDSIZE,
-                 "If we're 'stretch' with unconstrained size, isAutoBSize "
-                 "should be true which should make us skip this code");
-      // TODO(dholbert) The 'insideBoxSizing' and 'outsideBoxSizing' usages
-      // here aren't quite right, because we're supposed to be passing margin
-      // and borderPadding specifically.  The arithmetic seems to work out in
-      // testcases though.
-      boxBSize = nsLayoutUtils::ComputeStretchContentBoxBSize(
-          blockContainerContentBoxSize.BSize(wm), outsideBoxSizing,
-          insideBoxSizing);
     } else {
       // We need to compute it. It's important we do this, because if it's
       // percentage-based this computed value may be different from the
       // computed value calculated using the absolute containing block height.
-      boxBSize = nsLayoutUtils::ComputeBSizeValue(
-                     blockContainerContentBoxSize.BSize(wm), insideBoxSizing,
-                     styleBSize->AsLengthPercentage()) +
-                 insideBoxSizing + outsideBoxSizing;
+      const nscoord contentEdgeToBoxSizing =
+          mStylePosition->mBoxSizing == StyleBoxSizing::BorderBox
+              ? blockBPM.mBorderPadding
+              : 0;
+      boxBSize =
+          nsLayoutUtils::ComputeBSizeValueHandlingStretch(
+              blockContainerContentBoxSize.BSize(wm), blockBPM.mMargin,
+              blockBPM.mBorderPadding, contentEdgeToBoxSizing, *styleBSize) +
+          bSizeOutsideContentBox;
     }
 
     LogicalSize boxSize(wm, boxISize.valueOr(0), boxBSize);
@@ -2139,64 +2092,20 @@ void ReflowInput::InitConstraints(
                 mComputeSizeFlags, aBorder, aPadding, mStyleDisplay);
 
     // For calculating the size of this box, we use its own writing mode
-    auto blockSize =
+    const auto blockSize =
         mStylePosition->BSize(wm, AnchorPosResolutionParams::From(this));
-    if (blockSize->BehavesLikeStretchOnBlockAxis()) {
-      // Resolve 'stretch' to either 'auto' or the stretched bsize, depending
-      // on whether our containing block has a definite bsize.
-      // TODO(dholbert): remove this in bug 2000035.
-      if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-        blockSize = AnchorResolvedSizeHelper::Auto();
-      } else {
-        nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
-            cbSize.BSize(wm), ComputedLogicalMargin(wm).BStartEnd(wm),
-            ComputedLogicalBorderPadding(wm).BStartEnd(wm),
-            mStylePosition->mBoxSizing);
-        blockSize = AnchorResolvedSizeHelper::LengthPercentage(
-            StyleLengthPercentage::FromAppUnits(stretchBSize));
-      }
-    }
-    bool isAutoBSize = blockSize->BehavesLikeInitialValueOnBlockAxis();
 
-    // Check for a percentage based block size and a containing block
-    // block size that depends on the content block size
-    if (blockSize->HasPercent()) {
-      if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-        // this if clause enables %-blockSize on replaced inline frames,
-        // such as images.  See bug 54119.  The else clause "blockSizeUnit =
-        // eStyleUnit_Auto;" used to be called exclusively.
-        if (mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle()) {
-          // Get the containing block's reflow input
-          NS_ASSERTION(cbri, "no containing block");
-          // in quirks mode, get the cb height using the special quirk method
-          if (!wm.IsVertical() &&
-              eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
-            if (!cbri->mFrame->IsTableCellFrame() &&
-                !cbri->mFrame->IsFlexOrGridItem()) {
-              cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
-              if (cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
-                isAutoBSize = true;
-              }
-            } else {
-              isAutoBSize = true;
-            }
-          }
-          // in standard mode, use the cb block size.  if it's "auto",
-          // as will be the case by default in BODY, use auto block size
-          // as per CSS2 spec.
-          else {
-            nscoord computedBSize = cbri->ComputedSize(wm).BSize(wm);
-            if (NS_UNCONSTRAINEDSIZE != computedBSize) {
-              cbSize.BSize(wm) = computedBSize;
-            } else {
-              isAutoBSize = true;
-            }
-          }
-        } else {
-          // default to interpreting the blockSize like 'auto'
-          isAutoBSize = true;
-        }
-      }
+    // In quirks mode, get the containing block height using the special quirk
+    // method for replaced inline frames, such as images.
+    //
+    // Bug 2075032: Merge the quirks mode logic below into
+    // ComputeContainingBlockRectangle().
+    if (aPresContext->CompatibilityMode() == eCompatibility_NavQuirks &&
+        blockSize->HasPercent() && cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE &&
+        mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle() &&
+        !wm.IsVertical() && !cbri->mFrame->IsTableCellFrame() &&
+        !cbri->mFrame->IsFlexOrGridItem()) {
+      cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
     }
 
     // Compute our offsets if the element is relatively positioned.  We
@@ -2251,25 +2160,25 @@ void ReflowInput::InitConstraints(
         NS_ASSERTION(ComputedISize() >= 0, "Bogus computed isize");
 
       } else {
-        SetComputedISize(
-            ComputeISizeValue(cbSize, mStylePosition->mBoxSizing, *inlineSize),
-            ResetResizeFlags::No);
+        SetComputedISize(ComputeISizeValue(cbSize, *inlineSize),
+                         ResetResizeFlags::No);
       }
 
       // Calculate the computed block size
-      if (StyleDisplay::TableColumn == mStyleDisplay->mDisplay ||
-          StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay) {
-        // 'blockSize' property doesn't apply to table columns and column groups
-        isAutoBSize = true;
-      }
+      // 'blockSize' property doesn't apply to table columns and column groups
+      const bool isAutoBSize =
+          StyleDisplay::TableColumn == mStyleDisplay->mDisplay ||
+          StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay ||
+          nsLayoutUtils::IsAutoBSize(*blockSize, cbSize.BSize(wm));
+
       // calc() with both percentages and lengths acts like 'auto' on internal
       // table elements
       if (isAutoBSize || blockSize->HasLengthAndPercentage()) {
         SetComputedBSize(NS_UNCONSTRAINEDSIZE, ResetResizeFlags::No);
       } else {
         SetComputedBSize(
-            ComputeBSizeValue(cbSize.BSize(wm), mStylePosition->mBoxSizing,
-                              blockSize->AsLengthPercentage()),
+            ComputeBSizeValueHandlingStretch(
+                cbSize.BSize(wm), mStylePosition->mBoxSizing, *blockSize),
             ResetResizeFlags::No);
       }
 
@@ -2954,8 +2863,7 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
   if (minISize->IsAuto()) {
     SetComputedMinISize(0);
   } else {
-    SetComputedMinISize(
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, *minISize));
+    SetComputedMinISize(ComputeISizeValue(aCBSize, *minISize));
   }
 
   if (mIsThemed) {
@@ -2966,8 +2874,7 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
     // Specified value of 'none'
     SetComputedMaxISize(NS_UNCONSTRAINEDSIZE);
   } else {
-    SetComputedMaxISize(
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, *maxISize));
+    SetComputedMaxISize(ComputeISizeValue(aCBSize, *maxISize));
   }
 
   // If the computed value of 'min-width' is greater than the value of

@@ -167,6 +167,22 @@ Maybe<double> WebGLContext::GetParameter(const GLenum pname) {
     }
   }
 
+  if (IsExtensionEnabled(WebGLExtensionID::EXT_clip_control)) {
+    if (pname == LOCAL_GL_CLIP_ORIGIN || pname == LOCAL_GL_CLIP_DEPTH_MODE) {
+      GLint value = 0;
+      gl->fGetIntegerv(pname, &value);
+      return Some(value);
+    }
+  }
+
+  if (IsExtensionEnabled(WebGLExtensionID::EXT_polygon_offset_clamp)) {
+    if (pname == LOCAL_GL_POLYGON_OFFSET_CLAMP_EXT) {
+      GLfloat f = 0.f;
+      gl->fGetFloatv(pname, &f);
+      return Some(f);
+    }
+  }
+
   if (IsExtensionEnabled(WebGLExtensionID::EXT_texture_filter_anisotropic)) {
     if (pname == LOCAL_GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT) {
       GLfloat f = 0.f;
@@ -400,15 +416,6 @@ Maybe<double> WebGLContext::GetParameter(const GLenum pname) {
     case LOCAL_GL_POLYGON_OFFSET_FACTOR:
     case LOCAL_GL_POLYGON_OFFSET_UNITS:
     case LOCAL_GL_SAMPLE_COVERAGE_VALUE: {
-      GLfloat f = 0.f;
-      gl->fGetFloatv(pname, &f);
-      return Some(f);
-    }
-
-    case LOCAL_GL_POLYGON_OFFSET_CLAMP_EXT: {
-      if (!IsExtensionEnabled(WebGLExtensionID::EXT_polygon_offset_clamp)) {
-        break;
-      }
       GLfloat f = 0.f;
       gl->fGetFloatv(pname, &f);
       return Some(f);

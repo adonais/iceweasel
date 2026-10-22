@@ -64,9 +64,6 @@ skip-if = [
 
 ["browser_bookmark_add_tags.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775656
-]
 
 ["browser_bookmark_backup_export_import.js"]
 
@@ -92,9 +89,6 @@ tags = "os_integration"
 ["browser_bookmark_popup.js"]
 
 ["browser_bookmark_private_window.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1937891
-]
 
 ["browser_bookmark_remove_tags.js"]
 
@@ -247,9 +241,6 @@ https_first_disabled = true
 ["browser_remove_bookmarks.js"]
 
 ["browser_sidebar_bookmarks_glean.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2036783
-]
 
 ["browser_sidebar_bookmarks_telemetry.js"]
 

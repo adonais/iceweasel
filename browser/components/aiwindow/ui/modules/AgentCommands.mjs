@@ -13,6 +13,8 @@
  */
 export const AGENT_COMMANDS = Object.freeze({
   WATCH: "watch",
+  RESEARCH: "research", //not in use
+  SCHEDULE: "schedule", //not in use
 });
 
 /**

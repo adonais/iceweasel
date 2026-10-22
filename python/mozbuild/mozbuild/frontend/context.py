@@ -1226,6 +1226,7 @@ LicensesList = StrictOrderingOnAppendListWithFlagsFactory({
     "url": str,
     "paths": list,
     "subcomponent": bool,
+    "acknowledgement": str,
 })
 
 LicensedUnderList = StrictOrderingOnAppendListWithFlagsFactory({"paths": list})
@@ -1579,6 +1580,17 @@ VARIABLES = {
         that can be concatenated all together and built as a single source
         file. This can help make the build faster and reduce the debug info
         size.
+        """,
+    ),
+    "SOURCE_HEADERS": (
+        ContextDerivedTypedList(Path, StrictOrderingOnAppendList),
+        list,
+        """Header files.
+
+        This variable contains a list of header files that can be used by
+        various steps of the build, including for static analysis.
+
+        Any header added to EXPORTS is also added to SOURCE_HEADERS implicitly.
         """,
     ),
     "GENERATED_FILES": (
@@ -2018,6 +2030,12 @@ VARIABLES = {
 
         ``url``
            Optional canonical URL for the license.
+
+        ``acknowledgement``
+           Optional one-line credit, as HTML, listed under "Acknowledgements"
+           in ``about:license``. Some licenses ask for such a sentence in the
+           product's documentation, such as the FreeType License, and some
+           authors merely request one.
 
         ``paths``
            Optional extra paths this notice covers, listed under its heading in

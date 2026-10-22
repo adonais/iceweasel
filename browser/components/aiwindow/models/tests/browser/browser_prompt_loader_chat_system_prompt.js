@@ -7,7 +7,12 @@ const { buildChatSystemPrompt, loadPrompt } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs"
 );
 
-const { getRemoteClient, MODEL_FEATURES } = ChromeUtils.importESModule(
+const {
+  checkMajorVersion,
+  FEATURE_MAJOR_VERSIONS,
+  getRemoteClient,
+  MODEL_FEATURES,
+} = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
@@ -30,7 +35,11 @@ add_setup(async function read_real_chat_records() {
     record =>
       record.kind === "params" &&
       record.feature === MODEL_FEATURES.CHAT &&
-      record.model === CHAT_MODEL
+      record.model === CHAT_MODEL &&
+      checkMajorVersion(
+        record.version,
+        FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]
+      )
   );
   gChatModuleRecords = records.filter(
     record => record.kind === "module" && record.feature === MODEL_FEATURES.CHAT
@@ -119,3 +128,62 @@ add_task(
     }
   }
 );
+
+/**
+ * Test the gated pages module when AITab is on. The mistral release pref is a
+ * legacy flag that will be removed soon (Bug 2053495).
+ */
+add_task(async function test_buildChatSystemPrompt_skips_gated_module() {
+  const AITAB_PREF = "browser.smartwindow.aitab.enabled";
+  const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [MISTRAL_RELEASE_PREF, true],
+      [AITAB_PREF, false],
+    ],
+  });
+  const records = await getRemoteClient().get();
+  const params = records.find(
+    record =>
+      record.kind === "params" &&
+      record.feature === MODEL_FEATURES.CHAT &&
+      record.model === CHAT_MODEL &&
+      checkMajorVersion(
+        record.version,
+        FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]
+      )
+  );
+  const entry = params?.modules.find(module => module.name === "pages");
+  Assert.ok(entry, "Chat manifest names the gated pages module");
+  const pagesRecord = records.find(
+    record =>
+      record.kind === "module" &&
+      record.feature === MODEL_FEATURES.CHAT &&
+      record.module === "pages" &&
+      record.model === CHAT_MODEL &&
+      checkMajorVersion(record.version, parseInt(entry.version, 10))
+  );
+  Assert.ok(pagesRecord, "Remote Settings provides the pages module");
+  const marker = pagesRecord.prompts.trim().split("\n")[0];
+
+  let { prompt } = await buildChatSystemPrompt(CHAT_MODEL);
+  Assert.ok(
+    !prompt.includes(marker),
+    "pages module is left out while the aitab pref is off"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [MISTRAL_RELEASE_PREF, true],
+      [AITAB_PREF, true],
+    ],
+  });
+  ({ prompt } = await buildChatSystemPrompt(CHAT_MODEL));
+  Assert.ok(
+    prompt.includes(marker),
+    "pages module is assembled while the aitab pref is on"
+  );
+  await SpecialPowers.popPrefEnv();
+});

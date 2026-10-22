@@ -341,3 +341,28 @@ add_task(async function keyupEnterWhilePressingMeta() {
   // Cleanup.
   BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function closeTabRightAfterEnter() {
+  info("Closing the tab right after Enter doesn't load in another tab");
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    START_VALUE
+  );
+  const sandbox = sinon.createSandbox();
+  const loadURLSpy = sandbox.spy(gURLBar.parentController, "loadURL");
+
+  gURLBar.focus();
+  gURLBar.value = "https://example.com/some/url";
+  EventUtils.synthesizeKey("KEY_Enter");
+  Assert.ok(loadURLSpy.calledOnce, "Enter started the load");
+
+  BrowserTestUtils.removeTab(tab);
+  await loadURLSpy.firstCall.returnValue;
+  Assert.equal(
+    gBrowser.selectedBrowser.userTypedValue,
+    null,
+    "The load didn't go to the newly selected tab"
+  );
+
+  sandbox.restore();
+});

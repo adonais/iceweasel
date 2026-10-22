@@ -57,6 +57,24 @@ const CONTAINER_STYLES = [
   "gap",
 ];
 
+/**
+ * @param {object|object[]} tiles - The tiles of the screen being shown.
+ * @returns {object} Impression context, if any.
+ */
+export function getTileImpressionContext(tiles) {
+  const pinnableSites = (Array.isArray(tiles) ? tiles : [tiles]).find(
+    tile => tile?.type === "pinnable_sites" && Array.isArray(tile.data)
+  );
+  if (!pinnableSites) {
+    return {};
+  }
+  return {
+    total_sites: pinnableSites.data.length,
+    personalized_sites: pinnableSites.data.filter(item => item?.personalized)
+      .length,
+  };
+}
+
 export const ContentTiles = props => {
   const { content } = props;
   const [expandedTileIndex, setExpandedTileIndex] = useState(null);

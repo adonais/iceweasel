@@ -1779,7 +1779,7 @@ class NetEqImplTest120ms : public NetEqImplTest {
         [sampling_freq, speech_type]() {
           std::unique_ptr<AudioDecoder> decoder =
               std::make_unique<Decoder120ms>(sampling_freq, speech_type);
-          RTC_CHECK_EQ(2, decoder->Channels());
+          RTC_CHECK_EQ(decoder->Channels(), 2);
           return decoder;
         });
   }

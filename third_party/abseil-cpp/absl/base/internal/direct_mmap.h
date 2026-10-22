@@ -54,7 +54,6 @@
 
 // SYS_mmap and SYS_munmap are not defined in Android.
 #ifdef __BIONIC__
-// mozilla - externally provided; must not inherit -fvisibility=hidden.
 #pragma GCC visibility push(default)
 extern "C" void* __mmap2(void*, size_t, int, int, int, size_t);
 #pragma GCC visibility pop

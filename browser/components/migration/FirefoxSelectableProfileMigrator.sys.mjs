@@ -9,9 +9,9 @@
  * from the source profile.
  */
 
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
-import { FirefoxProfileMigrator } from "resource:///modules/FirefoxProfileMigrator.sys.mjs";
+import { FirefoxProfileMigrator } from "moz-src:///browser/components/migration/FirefoxProfileMigrator.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 /**

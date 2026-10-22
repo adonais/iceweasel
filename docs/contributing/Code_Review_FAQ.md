@@ -52,7 +52,7 @@ Reviewers will probably look at the following areas of the code:
 - Maintainability review. Code which is unreadable is impossible to
   maintain. If the reviewer has to ask questions about the purpose of a
   piece of code, then it is probably not documented well enough. Does
-  the code follow the {ref}`Coding style` ? Be careful when
+  the code follow the {doc}`/code-quality/coding-style/index` ? Be careful when
   reviewing code using modern C++ features like auto.
 - Security review. Does the design use security concepts such as input
   sanitizers, wrappers, and other techniques? Does this code need

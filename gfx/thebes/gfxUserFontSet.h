@@ -264,6 +264,7 @@ struct gfxUserFontAttributes {
 class gfxUserFontSet {
   friend class gfxUserFontEntry;
   friend class gfxOTSMessageContext;
+  friend class gfxPlatformFontList;
 
  public:
   using FontWidth = mozilla::FontWidth;
@@ -561,6 +562,11 @@ class gfxUserFontSet {
 
   // true when rules using local names need to be redone
   bool mRebuildLocalRules;
+
+  // Set when this font-set is being destroyed, to prevent re-adding it to the
+  // gfxPlatformFontList's list of active font sets.
+  // Guarded by the platform font-list lock.
+  bool mDestroying = false;
 
   // performance stats
   uint32_t mDownloadCount;

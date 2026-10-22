@@ -1,7 +1,7 @@
 # PR_FreeAddrInfo
 
 Destroys the `PRAddrInfo` structure returned by
-{ref}`PR_GetAddrInfoByName`.
+{doc}`pr_getaddrinfobyname`.
 
 ## Syntax
 
@@ -18,7 +18,7 @@ The function has the following parameters:
 `addrInfo`
 
 : A pointer to a `PRAddrInfo` structure returned by a successful call
-  to {ref}`PR_GetAddrInfoByName`.
+  to {doc}`pr_getaddrinfobyname`.
 
 ### Returns
 

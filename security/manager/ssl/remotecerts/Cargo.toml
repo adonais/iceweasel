@@ -1,0 +1,12 @@
+[package]
+name = "remotecerts"
+version = "0.1.0"
+edition = "2024"
+rust-version.workspace = true
+
+[dependencies]
+env_logger = {version = "0.10", default-features = false } # disable `regex` to reduce code size
+log = "0.4"
+pkcs11-bindings = "0.1"
+rsclientcerts = { path = "../rsclientcerts" }
+rsclientcerts-util = { path = "../rsclientcerts-util" }

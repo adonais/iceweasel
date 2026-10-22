@@ -24,7 +24,7 @@
         "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
-      "description": "Allow WebExtensions to configure policy.",
+      "description": "Provide configuration to WebExtensions, which they can read through the `storage.managed` API.",
       "examples": [
         {
           "Extensions": {
@@ -4095,7 +4095,7 @@
       "x-compatibility": {
         "firefox": { "version_added": "138" },
         "firefox_esr": { "version_added": "140" },
-        "firefox_enterprise": { "version_added": false }
+        "firefox_enterprise": { "version_added": "149" }
       },
       "x-restart-required": true,
       "description": "Configure display settings for the Firefox Terms of Use and Privacy Notice on startup.",

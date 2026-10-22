@@ -50,3 +50,18 @@ when = { all = [
 load = [
   { type = "file", path = ".claude/skills/gecko-web-standard-implementation/SKILL.md" },
 ]
+
+# JavaScript Engine: Triggered when doing work in the JavaScript Engine.
+[[rules]]
+name = "JavaScript Engine"
+description = "Guidance for reviewing JavaScript engine code"
+when = { any_file = { include = [
+  "js/**",
+], ext = [
+  ".js",
+  ".cpp",
+  ".h",
+] } }
+load = [
+  { type = "file", path = ".claude/skills/js-review/SKILL.md" },
+]

@@ -93,7 +93,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
     onCreated({ fire }) {
       let onCreate = event => {
-        if (event.detail.isAdoptingGroup) {
+        if (event.detail.adopting) {
           // Tab group moved from a different window.
           return;
         }
@@ -124,7 +124,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
         fire.async(this.convert(event.originalTarget));
       };
       let onCreate = event => {
-        if (!event.detail.isAdoptingGroup) {
+        if (!event.detail.adopting) {
           // We are only interested in tab groups moved from a different window.
           return;
         }
@@ -149,7 +149,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onRemoved({ fire }) {
       let onRemove = event => {
-        if (event.originalTarget.removedByAdoption) {
+        if (event.detail.adopting) {
           // Tab group moved to a different window.
           return;
         }

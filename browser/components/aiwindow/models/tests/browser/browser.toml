@@ -1,6 +1,7 @@
 [DEFAULT]
 support-files = [
-  "aitab_viewer_stub.html",
+  "aitab_attacker_page.html",
+  "aitab_source_page.html",
   "head.js",
 ]
 prefs = [
@@ -9,6 +10,7 @@ prefs = [
 
 ["browser_MemoriesManager.js"]
 ["browser_MemoriesSchedulers.js"]
+["browser_aitab.js"]
 ["browser_aitab_catalog.js"]
 ["browser_aitab_generation.js"]
 ["browser_aitab_schema_override.js"]

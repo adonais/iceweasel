@@ -10,6 +10,8 @@ from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_u
 from taskgraph.util import path
 from taskgraph.util.schema import Schema, taskref_or_string_msgspec
 
+BUILD_METRICS_DIR = "/builds/worker/build-metrics"
+
 
 class SecretSchema(Schema, kw_only=True):
     name: str
@@ -114,6 +116,12 @@ def configure_gradlew(config, job, taskdesc):
         "GET_SECRETS": _convert_commands_to_string(dummy_secrets + secrets),
         "GRADLEW_ARGS": " ".join(run.pop("gradlew")),
         "POST_GRADLEW": _convert_commands_to_string(run.pop("post-gradlew", [])),
+        "BUILD_METRICS_DIR": BUILD_METRICS_DIR,
+    })
+    worker.setdefault("artifacts", []).append({
+        "type": "directory",
+        "name": "public/build/build-metrics",
+        "path": BUILD_METRICS_DIR,
     })
     run["command"] = (
         "/builds/worker/checkouts/gecko/taskcluster/scripts/builder/build-android.sh"

@@ -7,6 +7,10 @@ package org.mozilla.fenix.ui.efficiency.core
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject
+import androidx.test.uiautomator.UiSelector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -50,6 +54,48 @@ class VerbContractTest {
 
         assertFalse(present)
         assertEquals(2, host.locateCalls)
+    }
+
+    @Test
+    fun anEmptyAbsenceGroupCannotSucceedVacuously() {
+        val logger = RecordingStepLogger()
+        val host = FakeVerbHost(TimedReporter(logger))
+
+        val absent = host.groupAbsent(verb = "verify_group_absent", label = "Page_GROUP", selectors = emptyList())
+
+        assertFalse(absent)
+        assertEquals(0, host.locateCalls)
+        assertEquals(Failure.EMPTY_SELECTOR_GROUP, logger.completed.single().args["failure"])
+    }
+
+    @Test
+    fun absenceGroupSucceedsWhenEverySelectorIsAbsent() {
+        val logger = RecordingStepLogger()
+        val host = FakeVerbHost(TimedReporter(logger), ElementResolution.Absent)
+        val second = selector.copy(value = "second", description = "second")
+
+        val absent =
+            host.groupAbsent(verb = "verify_group_absent", label = "Page_GROUP", selectors = listOf(selector, second))
+
+        assertTrue(absent)
+        assertEquals(2, host.locateCalls)
+    }
+
+    @Test
+    fun absenceGroupFailsWhenASelectorIsPresent() {
+        val logger = RecordingStepLogger()
+        // groupAbsent probes DISPLAYED on the resolved element, and Espresso's isDisplayed() needs a
+        // running activity this unit test never launches. A UiObject reports DISPLAYED via exists(),
+        // so a stub that exists is a present element without a UI in the loop.
+        // Constructing one needs the UiDevice singleton, which nothing else in this test touches.
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val present = UiObjectUiElement(AlwaysPresentUiObject())
+        val host = FakeVerbHost(TimedReporter(logger), ElementResolution.Found(present))
+
+        val absent = host.groupAbsent(verb = "verify_group_absent", label = "Page_GROUP", selectors = listOf(selector))
+
+        assertFalse(absent)
+        assertEquals(Failure.STILL_PRESENT, logger.completed.last().args["failure"])
     }
 
     @Test
@@ -239,6 +285,11 @@ class VerbContractTest {
         override fun dumpFailure(label: String) = Unit
 
         override fun stepId(prefix: String, description: String) = "$prefix-$description"
+    }
+
+    @Suppress("DEPRECATION")
+    private class AlwaysPresentUiObject : UiObject(UiSelector()) {
+        override fun exists() = true
     }
 
     private class RecordingStepLogger : StepLogger {

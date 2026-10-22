@@ -19,8 +19,6 @@
 
 /* Fullpage: browser collapsed (0 height) until chat starts, showing prompts and smartbar */
 :host([mode="fullpage"]) {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
-  box-shadow: inset 0 80px 80px -80px color-mix(in srgb, light-dark(var(--color-violet-70), var(--color-violet-50)) 60%, transparent);
   grid-template-areas:
     "browser"
     "."
@@ -32,9 +30,11 @@
     "resume-section"
     "."
     "footer";
-  /* Preserve space above the heading as the resume section grows. */
-  grid-template-rows: 0 minmax(var(--space-xlarge), 1fr) auto auto auto auto auto auto 1fr auto;
+  /* Preserve space above the heading as the resume section grows, and a
+   * minimum gap above the footer so it doesn't crowd short content. */
+  grid-template-rows: 0 minmax(var(--space-xlarge), 1fr) auto auto auto auto auto auto minmax(var(--size-item-xlarge), 1fr) auto;
   align-content: stretch;
+  box-shadow: var(--smartwindow-main-box-shadow);
 }
 
 :host([mode="sidebar"]) {

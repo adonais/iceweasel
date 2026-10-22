@@ -7,12 +7,12 @@ package org.mozilla.fenix.ipprotection
 import org.mozilla.fenix.ipprotection.store.IPProtectionPromptRepository
 
 class FakeIPProtectionPromptRepository(
-    private val canShowIPProtectionPrompt: Boolean = true,
+    var canShowIPProtectionPrompt: Boolean = true,
     override var hasShownPrompt: Boolean = false,
     override val hasAlreadyUsedIPProtection: Boolean = false,
     override val showOnboardingBottomSheet: Boolean = true,
 ) : IPProtectionPromptRepository {
     override var isShowingPrompt = false
 
-    override fun canShowIPProtectionPrompt(currentTimeMillis: Long) = canShowIPProtectionPrompt
+    override fun canShowIPProtectionPrompt() = canShowIPProtectionPrompt
 }

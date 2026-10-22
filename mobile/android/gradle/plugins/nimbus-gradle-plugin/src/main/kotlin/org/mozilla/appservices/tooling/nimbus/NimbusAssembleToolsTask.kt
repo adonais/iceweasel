@@ -8,6 +8,7 @@ import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileVisitDetails
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
@@ -56,6 +57,23 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
     @get:Nested
     abstract val unzipSpec: UnzipSpec
 
+    /**
+     * The directory holding one cache subdirectory per application-services
+     * version.
+     *
+     * Subdirectories other than [versionCacheDir] are deleted once this task has
+     * cached a new archive.
+     */
+    @get:Internal
+    abstract val cacheRootDir: DirectoryProperty
+
+    /**
+     * The subdirectory of [cacheRootDir] holding the archive for the
+     * application-services version this task fetches.
+     */
+    @get:Internal
+    abstract val versionCacheDir: DirectoryProperty
+
     /** The location of the fetched ZIP archive. */
     @get:Internal
     abstract val archiveFile: RegularFileProperty
@@ -87,6 +105,8 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
         platform.convention(detectPlatform(providers))
         connectTimeout.convention(30000)
         readTimeout.convention(60000)
+        archiveFile.convention(versionCacheDir.file("nimbus-fml.zip"))
+        hashFile.convention(versionCacheDir.file("nimbus-fml.sha256"))
     }
 
     /**
@@ -113,6 +133,25 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
         val archiveFileObj = archiveFile.get().asFile
         val hashFileObj = hashFile.get().asFile
 
+        // `hashFile` is only written once an archive's checksum has been verified,
+        // and its directory is keyed by the application-services version, so a
+        // non-empty hash file is proof that the sibling archive was verified. We
+        // can reuse it without any network access.
+        val cachedHash = if (hashFileObj.exists()) hashFileObj.readText().trim() else ""
+        if (cachedHash.isNotEmpty()) {
+            if (binaryFile.exists()) {
+                logger.info("nimbus-fml binary is up-to-date")
+                return
+            }
+            if (archiveFileObj.exists() &&
+                computeSha256(archiveFileObj).equals(cachedHash, ignoreCase = true)
+            ) {
+                logger.info("Extracting nimbus-fml binary from cached archive")
+                extractBinary(archiveFileObj)
+                return
+            }
+        }
+
         val sources = (listOf(fetchSpec) + fetchSpec.fallbackSources.get()).map {
             Source(
                 URI(it.archive.get()),
@@ -122,41 +161,14 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
             )
         }
 
-        // Check if we have valid cached files by verifying against source hashes
-        val cachedHash = if (hashFileObj.exists()) hashFileObj.readText().trim() else null
-        if (cachedHash != null) {
-            for (source in sources) {
-                try {
-                    val sourceHash = source.fetchHashString()
-                    if (cachedHash.equals(sourceHash, ignoreCase = true)) {
-                        // Hash matches. Use cached binary if it exists, otherwise extract from archive
-                        if (binaryFile.exists()) {
-                            logger.info("nimbus-fml binary is up-to-date")
-                            return
-                        }
-                        if (archiveFileObj.exists()) {
-                            logger.info("Extracting nimbus-fml binary from cached archive")
-                            extractBinary(archiveFileObj)
-                            return
-                        }
-                        // We have a hash file, but neither binary nor archive, so we need to fetch the archive
-                        break
-                    }
-                } catch (ignored: IOException) {
-                    // Try next source
-                }
-            }
-        }
-
         logger.info("Fetching nimbus-fml for platform: {}", platform.get())
 
         // Clear the version-specific cache directory before downloading a new archive
-        archiveFileObj.parentFile?.let { versionCacheDir ->
-            if (versionCacheDir.exists()) {
-                logger.info("Clearing stale cache at {}", versionCacheDir)
-                versionCacheDir.deleteRecursively()
-                versionCacheDir.mkdirs()
-            }
+        val versionCacheDirObj = versionCacheDir.get().asFile
+        if (versionCacheDirObj.exists()) {
+            logger.info("Clearing stale cache at {}", versionCacheDirObj)
+            versionCacheDirObj.deleteRecursively()
+            versionCacheDirObj.mkdirs()
         }
 
         // Download the archive and verify with hash from the same source
@@ -191,6 +203,34 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
         hashFileObj.writeText(verifiedHash)
 
         extractBinary(archiveFileObj)
+
+        pruneOtherVersionCaches(versionCacheDirObj)
+    }
+
+    /**
+     * Deletes every subdirectory of [cacheRootDir] except [keep].
+     *
+     * Each archive holds the binaries for all platforms, so a cache left behind
+     * by an application-services version bump costs tens of megabytes and nothing
+     * else ever collects it. Failures are logged and ignored, so that losing a
+     * race with a concurrent build can't fail this task.
+     */
+    private fun pruneOtherVersionCaches(keep: File) {
+        val cacheRoot = cacheRootDir.orNull?.asFile ?: return
+        if (keep.parentFile != cacheRoot) {
+            logger.warn("Not pruning nimbus-fml caches: {} is not directly inside {}", keep, cacheRoot)
+            return
+        }
+        val siblings = cacheRoot.listFiles() ?: return
+        for (sibling in siblings) {
+            if (!sibling.isDirectory || sibling == keep) {
+                continue
+            }
+            logger.info("Removing stale nimbus-fml cache at {}", sibling)
+            if (!sibling.deleteRecursively()) {
+                logger.warn("Could not fully remove stale nimbus-fml cache at {}", sibling)
+            }
+        }
     }
 
     protected fun extractBinary(archiveFileObj: File) {

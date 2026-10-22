@@ -360,16 +360,6 @@ void IpcResourceUpdateQueue::PushExternalImageForTexture(
       aExtId, aKey, WrapNotNull(aTexture->GetIPDLActor()), aIsUpdate));
 }
 
-bool IpcResourceUpdateQueue::UpdateImageBuffer(
-    ImageKey aKey, const ImageDescriptor& aDescriptor, Range<uint8_t> aBytes) {
-  auto bytes = mWriter.Write(aBytes);
-  if (!bytes.length()) {
-    return false;
-  }
-  mUpdates.AppendElement(layers::OpUpdateImage(aDescriptor, bytes, aKey));
-  return true;
-}
-
 bool IpcResourceUpdateQueue::UpdateBlobImage(BlobImageKey aKey,
                                              const ImageDescriptor& aDescriptor,
                                              Range<uint8_t> aBytes,

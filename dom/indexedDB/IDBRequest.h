@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_idbrequest_h_
 #define mozilla_dom_idbrequest_h_
 
+#include "IDBTransaction.h"
 #include "ReportInternalError.h"
 #include "SafeRefPtr.h"
 #include "js/RootingAPI.h"

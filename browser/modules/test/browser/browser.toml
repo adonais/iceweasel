@@ -58,9 +58,6 @@ support-files = [
   "../../../components/tabbrowser/test/browser/tabs/file_mediaPlayback.html",
   "../../../base/content/test/browser-general/audio.ogg",
 ]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1781868
-]
 
 ["browser_Telemetry_numberOfSiteOrigins.js"]
 support-files = ["contain_iframe.html"]
@@ -107,7 +104,7 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_aswebauth_session.js"]
-run-if = ["os == 'mac' && nightly_build"]
+run-if = ["os == 'mac'"]
 support-files = ["browser_aswebauth_form.sjs"]
 
 ["browser_preloading_tab_moving.js"]
@@ -119,6 +116,5 @@ run-if = [
 
 ["browser_urlBar_zoom.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1775794
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775794
 ]

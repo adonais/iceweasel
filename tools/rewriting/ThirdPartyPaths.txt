@@ -145,6 +145,7 @@ modules/zlib/
 mozglue/baseprofiler/core/vtune/
 mozglue/misc/decimal/
 mozglue/static/lz4/
+mozglue/static/xxhash/
 mozglue/tests/glibc_printf_tests/
 mozpkix/
 netwerk/sctp/src/

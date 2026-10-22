@@ -51,9 +51,10 @@ if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
 //
 // The preferences in `RecommendedPreferences.sys.mjs` are applied after
 // the application has started, which means that the application must apply this
-// change dynamically and behave correctly. Note that you can also define
-// protocol specific preferences (WebDriver, ...) which are merged with the
-// COMMON_PREFERENCES from `RecommendedPreferences.sys.mjs`.
+// change dynamically and behave correctly. They are set on the default branch
+// and are therefore never written to the profile's `prefs.js`. Note that you
+// can also define protocol specific preferences (WebDriver, ...) which are
+// merged with the COMMON_PREFERENCES from `RecommendedPreferences.sys.mjs`.
 //
 // Additionally, users relying on the Marionette Python client (ie. using
 // geckoinstance.py) set `remote.prefs.recommended = false`. This means that
@@ -149,6 +150,9 @@ const COMMON_PREFERENCES = new Map([
 
   // Make sure Topsites doesn't hit the network to retrieve sponsored tiles.
   ["browser.newtabpage.activity-stream.showSponsoredTopSites", false],
+
+  // Do not render or load any New Tab widget
+  ["browser.newtabpage.activity-stream.widgets.enabled", false],
 
   // Background thumbnails in particular cause grief, and disabling
   // thumbnails in general cannot hurt
@@ -442,15 +446,79 @@ const COMMON_PREFERENCES = new Map([
   ["widget.windows.window_occlusion_tracking.enabled", false],
 ]);
 
+/**
+ * Read the value a preference has on the default branch.
+ *
+ * @param {nsIPrefBranch} defaultBranch
+ *     The default preference branch.
+ * @param {string} name
+ *     Name of the preference.
+ *
+ * @returns {boolean|number|string|undefined}
+ *     The default value, or `undefined` if the preference has none.
+ */
+function getDefaultValue(defaultBranch, name) {
+  try {
+    switch (defaultBranch.getPrefType(name)) {
+      case Ci.nsIPrefBranch.PREF_BOOL:
+        return defaultBranch.getBoolPref(name);
+      case Ci.nsIPrefBranch.PREF_INT:
+        return defaultBranch.getIntPref(name);
+      case Ci.nsIPrefBranch.PREF_STRING:
+        return defaultBranch.getStringPref(name);
+    }
+  } catch (e) {
+    // The preference exists but only carries a user value.
+  }
+
+  return undefined;
+}
+
+/**
+ * Set the value of a preference on the default branch.
+ *
+ * @param {nsIPrefBranch} defaultBranch
+ *     The default preference branch.
+ * @param {string} name
+ *     Name of the preference.
+ * @param {boolean|number|string} value
+ *     Value of the preference.
+ */
+function setDefaultValue(defaultBranch, name, value) {
+  switch (typeof value) {
+    case "boolean":
+      defaultBranch.setBoolPref(name, value);
+      break;
+    case "number":
+      defaultBranch.setIntPref(name, value);
+      break;
+    case "string":
+      defaultBranch.setStringPref(name, value);
+      break;
+    default:
+      throw new TypeError(`Invalid preference type: ${typeof value}`);
+  }
+}
+
 export const RecommendedPreferences = {
-  alteredPrefs: new Set(),
+  // Map of altered preference name to the value it had on the default branch
+  // before, which is `undefined` for a preference that had no default value.
+  alteredPrefs: new Map(),
 
   isInitialized: false,
 
   /**
    * Apply the provided map of preferences.
    *
-   * Note, that they will be automatically reset on application shutdown.
+   * The preferences are set on the default branch, which means that they are
+   * never written to the profile's `prefs.js`, and that they stay effective
+   * until the application has fully shut down.
+   *
+   * The recommended value is always set, including for a preference that
+   * already has a custom value on the user branch, eg. as set by a client via
+   * `moz:firefoxOptions` or a `user.js` file. Such a user value shadows the
+   * recommended value for as long as it is set, and clearing it lets the
+   * recommended value take effect.
    *
    * @param {Map<string, object>=} preferences
    *     Map of preference name to preference value.
@@ -469,63 +537,79 @@ export const RecommendedPreferences = {
       // single map. Hereby the extra preferences have higher priority.
       preferences = new Map([...COMMON_PREFERENCES, ...preferences]);
 
-      Services.obs.addObserver(this, "profile-before-change");
       this.isInitialized = true;
     }
 
-    for (const [k, v] of preferences) {
-      if (!Services.prefs.prefHasUserValue(k)) {
-        lazy.logger.debug(`Setting recommended pref ${k} to ${v}`);
+    const defaultBranch = Services.prefs.getDefaultBranch("");
 
-        switch (typeof v) {
-          case "string":
-            Services.prefs.setStringPref(k, v);
-            break;
-          case "boolean":
-            Services.prefs.setBoolPref(k, v);
-            break;
-          case "number":
-            Services.prefs.setIntPref(k, v);
-            break;
-          default:
-            throw new TypeError(`Invalid preference type: ${typeof v}`);
+    for (const [k, v] of preferences) {
+      if (this.alteredPrefs.has(k)) {
+        continue;
+      }
+
+      const masked = Services.prefs.prefHasUserValue(k)
+        ? " (masked by a user value)"
+        : "";
+      lazy.logger.debug(`Setting recommended pref ${k} to ${v}${masked}`);
+
+      // Keep track of all the altered preferences, and of the default value
+      // they had before, to be able to restore them later on.
+      const defaultValue = getDefaultValue(defaultBranch, k);
+
+      try {
+        setDefaultValue(defaultBranch, k, v);
+      } catch (e) {
+        if (e instanceof TypeError) {
+          throw e;
         }
 
-        // Keep track all the altered preferences to restore them on
-        // profile-before-change.
-        this.alteredPrefs.add(k);
+        // Setting a default value of a different type than the one the
+        // preference already has fails with NS_ERROR_UNEXPECTED.
+        lazy.logger.warn(`Failed to set recommended pref ${k}: ${e.message}`);
+        continue;
       }
-    }
-  },
 
-  observe(subject, topic) {
-    if (topic === "profile-before-change") {
-      this.restoreAllPreferences();
+      this.alteredPrefs.set(k, defaultValue);
     }
   },
 
   /**
-   * Restore all the altered preferences.
-   */
-  restoreAllPreferences() {
-    this.restorePreferences(this.alteredPrefs);
-    if (this.isInitialized) {
-      Services.obs.removeObserver(this, "profile-before-change");
-    }
-    this.isInitialized = false;
-  },
-
-  /**
-   * Restore provided preferences.
+   * Restore the default value of all altered preferences, and reset the module
+   * so that a subsequent `applyPreferences` call applies the common
+   * preferences again.
    *
-   * @param {Map} preferences
-   *     Map of preferences that should be restored.
+   * Recommended preferences are set on the default branch and are never
+   * persisted in the profile, which means that the application does not have
+   * to restore them when shutting down. This method exists so that tests can
+   * reset the state in between test cases.
    */
-  restorePreferences(preferences) {
-    for (const k of preferences.keys()) {
+  resetForTesting() {
+    const defaultBranch = Services.prefs.getDefaultBranch("");
+
+    for (const [k, defaultValue] of this.alteredPrefs) {
       lazy.logger.debug(`Resetting recommended pref ${k}`);
-      Services.prefs.clearUserPref(k);
-      this.alteredPrefs.delete(k);
+
+      if (defaultValue !== undefined) {
+        setDefaultValue(defaultBranch, k, defaultValue);
+        continue;
+      }
+
+      // A default value can only be removed by deleting the whole preference.
+      // Skip that when it would discard more than what has been set here, ie.
+      // a user value set by the client, or child preferences that
+      // `deleteBranch` would remove as well. Leaving the default value behind
+      // is harmless because it is never persisted.
+      if (
+        Services.prefs.prefHasUserValue(k) ||
+        Services.prefs.getChildList(`${k}.`).length
+      ) {
+        continue;
+      }
+
+      Services.prefs.deleteBranch(k);
     }
+
+    this.alteredPrefs.clear();
+    this.isInitialized = false;
   },
 };

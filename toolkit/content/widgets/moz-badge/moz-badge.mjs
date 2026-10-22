@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-badge.tagmap.d.ts" />
+
 import { html, ifDefined } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
@@ -19,7 +21,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozBadge.ftl");
  * @property {string} title - The title of the badge, appears as a tooltip on hover
  * @property {MozBadgeType} type - The type of badge (e.g., "new")
  */
-export default class MozBadge extends MozLitElement {
+export class MozBadge extends MozLitElement {
   static properties = {
     label: { type: String, fluent: true },
     iconSrc: { type: String },

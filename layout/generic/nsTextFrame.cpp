@@ -357,8 +357,11 @@ struct nsTextFrame::PaintTextSelectionParams : nsTextFrame::PaintTextParams {
 };
 
 struct nsTextFrame::DrawTextRunParams {
+  DrawTextRunParams(gfxContext* aContext,
+                    gfx::FontPaletteValueSet* aPaletteValueSet)
+      : context(aContext), paletteValueSet(aPaletteValueSet) {}
+
   gfxContext* context;
-  mozilla::gfx::PaletteCache& paletteCache;
   PropertyProvider* provider = nullptr;
   gfxFloat* advanceWidth = nullptr;
   mozilla::SVGContextPaint* contextPaint = nullptr;
@@ -366,13 +369,11 @@ struct nsTextFrame::DrawTextRunParams {
   nscolor textColor = NS_RGBA(0, 0, 0, 0);
   nscolor textStrokeColor = NS_RGBA(0, 0, 0, 0);
   nsAtom* fontPalette = nullptr;
+  gfx::FontPaletteValueSet* paletteValueSet = nullptr;
   float textStrokeWidth = 0.0f;
   bool drawSoftHyphen = false;
   bool hasTextShadow = false;
   bool paintingShadows = false;
-  DrawTextRunParams(gfxContext* aContext,
-                    mozilla::gfx::PaletteCache& aPaletteCache)
-      : context(aContext), paletteCache(aPaletteCache) {}
 };
 
 struct nsTextFrame::ClipEdges {
@@ -403,15 +404,16 @@ struct nsTextFrame::ClipEdges {
 };
 
 struct nsTextFrame::DrawTextParams : nsTextFrame::DrawTextRunParams {
+  DrawTextParams(gfxContext* aContext,
+                 gfx::FontPaletteValueSet* aPaletteValueSet)
+      : DrawTextRunParams(aContext, aPaletteValueSet) {}
+
   Point framePt;
   LayoutDeviceRect dirtyRect;
   const nsTextPaintStyle* textStyle = nullptr;
   const ClipEdges* clipEdges = nullptr;
   const nscolor* decorationOverrideColor = nullptr;
   Range glyphRange;
-  DrawTextParams(gfxContext* aContext,
-                 mozilla::gfx::PaletteCache& aPaletteCache)
-      : DrawTextRunParams(aContext, aPaletteCache) {}
 };
 
 struct nsTextFrame::PaintShadowParams {
@@ -1467,8 +1469,16 @@ BuildTextRunsScanner::FindBoundaryResult BuildTextRunsScanner::FindBoundaries(
     }
     const CharacterDataBuffer& characterDataBuffer =
         textFrame->CharacterDataBuffer();
-    uint32_t start = textFrame->GetContentOffset();
-    uint32_t length = textFrame->GetContentLength();
+    const int32_t start = textFrame->GetContentOffset();
+    const int32_t end = textFrame->GetContentEnd();
+    const int32_t bufferLength = characterDataBuffer.GetLength();
+
+    if (MOZ_UNLIKELY(start < 0 || end < start || end > bufferLength)) {
+      MOZ_ASSERT_UNREACHABLE("Invalid text-frame content range");
+      return FB_CONTINUE;
+    }
+
+    int32_t length = end - start;
     const void* text;
     const nsAtom* language = textFrame->StyleFont()->GetLangAtom();
     if (characterDataBuffer.Is2b()) {
@@ -6918,7 +6928,7 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
   // need to translate any coordinates to fit on the surface.
   gfxFloat advanceWidth;
   nsTextPaintStyle textPaintStyle(this);
-  DrawTextParams params(shadowContext, PresContext()->FontPaletteCache());
+  DrawTextParams params(shadowContext, PresContext()->GetFontPaletteValueSet());
   params.paintingShadows = true;
   params.advanceWidth = &advanceWidth;
   params.dirtyRect = aParams.dirtyRect;
@@ -7224,7 +7234,8 @@ bool nsTextFrame::PaintTextWithSelectionColors(
   }
 
   gfxFloat advance;
-  DrawTextParams params(aParams.context, PresContext()->FontPaletteCache());
+  DrawTextParams params(aParams.context,
+                        PresContext()->GetFontPaletteValueSet());
   params.dirtyRect = aParams.dirtyRect;
   params.framePt = aParams.framePt;
   params.provider = aParams.provider;
@@ -7289,7 +7300,8 @@ bool nsTextFrame::PaintTextWithSelectionColors(
       RefPtr<ComputedStyle> selectionStyle =
           aParams.textPaintStyle->GetComputedStyleForSelectionPseudo(
               selectionTypes[index], highlightName);
-      if (selectionStyle && selectionStyle->HasAuthorSpecifiedTextShadow()) {
+      if (selectionStyle &&
+          selectionStyle->HasAuthorOrUserSpecifiedTextShadow()) {
         // text-shadow was explicitly specified (including "none")
         hasSelectionShadow = true;
         Span<const StyleSimpleShadow> shadowSpan =
@@ -7510,13 +7522,14 @@ void nsTextFrame::DrawEmphasisMarks(gfxContext* aContext, WritingMode aWM,
       pt.x += info->baselineOffset;
     }
   }
+  auto* paletteValueSet = PresContext()->GetFontPaletteValueSet();
   if (!isTextCombined) {
     mTextRun->DrawEmphasisMarks(aContext, info->textRun.get(), info->advance,
-                                pt, aRange, aProvider,
-                                PresContext()->FontPaletteCache(), aImgParams);
+                                pt, aRange, aProvider, paletteValueSet,
+                                aImgParams);
   } else {
     pt.y += (GetSize().height - info->advance) / 2;
-    gfxTextRun::DrawParams params(aContext, PresContext()->FontPaletteCache());
+    gfxTextRun::DrawParams params(aContext, paletteValueSet);
     info->textRun->Draw(Range(info->textRun.get()), pt, params, aImgParams);
   }
 }
@@ -7864,7 +7877,8 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
   }
 
   gfxFloat advanceWidth;
-  DrawTextParams params(aParams.context, PresContext()->FontPaletteCache());
+  DrawTextParams params(aParams.context,
+                        PresContext()->GetFontPaletteValueSet());
   params.dirtyRect = aParams.dirtyRect;
   params.framePt = aParams.framePt;
   params.provider = &provider;
@@ -7890,7 +7904,7 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
                         const nsTextFrame::DrawTextRunParams& aParams,
                         mozilla::image::imgDrawingParams& aImgParams,
                         nsTextFrame* aFrame) {
-  gfxTextRun::DrawParams params(aParams.context, aParams.paletteCache);
+  gfxTextRun::DrawParams params(aParams.context, aParams.paletteValueSet);
   params.provider = aParams.provider;
   params.advanceWidth = aParams.advanceWidth;
   params.contextPaint = aParams.contextPaint;
@@ -10755,7 +10769,7 @@ void nsTextFrame::SetFirstLetterLength(int32_t aLength) {
     next = letterFrame->CreateContinuationForFramesAfter(this);
   }
 
-  next->mContentOffset = GetContentOffset() + aLength;
+  SetLength(aLength, nullptr, 0);
 
   ClearTextRuns();
 }

@@ -125,7 +125,6 @@ suites:
             linkedin: ""
             microsoft: ""
             netflix: ""
-            nytimes: ""
             office: ""
             openai: ""
             outlook: ""
@@ -135,7 +134,6 @@ suites:
             samsung: ""
             tiktok: ""
             tumblr: ""
-            twitch: ""
             twitter: ""
             weather: ""
             wikia: ""
@@ -159,8 +157,6 @@ suites:
             ebay-kleinanzeigen: ""
             ebay-kleinanzeigen-search: ""
             espn: ""
-            facebook: ""
-            facebook-cristiano: ""
             google: ""
             google-maps: ""
             google-search-restaurants: ""
@@ -169,7 +165,6 @@ suites:
             microsoft-support: ""
             reddit: ""
             stackoverflow: ""
-            sina: ""
             bild-de: ""
             wikipedia: ""
             youtube-watch: ""
@@ -309,6 +304,7 @@ suites:
             prefetch-list-eager: "Speculation Rules prefetch test using a list-source rule (eager eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered on the slightest hover (list-rule eagerness is browser-defined), then the link is clicked to serve the navigation from the prefetch cache."
             prefetch-list-moderate: "Speculation Rules prefetch test using a list-source rule (moderate eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered after ~200 ms of sustained hover (list-rule eagerness is browser-defined), then the link is clicked to serve the navigation from the prefetch cache."
             prefetch-list-conservative: "Speculation Rules prefetch test using a list-source rule (conservative eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered on pointerdown, which is held so the prefetch can complete before release navigates (list-rule eagerness is browser-defined)."
+            prefetch-list-inflight: "Speculation Rules prefetch test using a list-source rule (moderate eagerness, in-flight activation): the inline speculationrules script lists the target URLs explicitly; ~200 ms of sustained hover triggers the prefetch and the link is clicked partway through the target's server stall, so the navigation starts while the prefetch is still in flight and must wait for it to complete rather than refetching the page."
             tp6-bench: >
                 A pageload benchmark test that quickly runs through a selection of the
                 pages available to produce a single overall metric for fcp, lcp, and
@@ -349,7 +345,6 @@ suites:
         description: "Browsertime tests that interact with the webpage. Includes responsiveness tests as they make use of this support for navigation. This type of test allows the specification of browsertime commands through the test manifest."
         tests:
             cnn-nav: "Navigates to cnn main page, then to the world sub-page."
-            facebook-nav: "Navigates to facebook, then the sub-pages friends, marketplace, groups."
             reddit-billgates-ama: "Navigates from the Bill Gates AMA to the Reddit members section."
             reddit-billgates-post-1: "Navigates the `thisisbillgates` user starting at the main user page, then to the posts, comments, hot, and top sections."
             reddit-billgates-post-2: "Navigates the `thisisbillgates` user starting at the main user page, then to the posts, comments, hot, and top sections."

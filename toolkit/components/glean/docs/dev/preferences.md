@@ -42,6 +42,15 @@ Their values are integer seconds.
 The value `-1` is treated as no limit (never trigger (in)activity).
 Defaults to 120 (activity), 1200 (inactivity).
 
+`telemetry.fog.test.decelerate_early_events`
+
+When set to `true`, removes early "events" ping acceleration.
+Defaults to `false` except in tests where we set it to `true`.
+
+FOG accelerates the first few "events" pings each session.
+This makes it tricky to write instrumentation tests of flows of `event`
+metrics longer than just a few records.
+
 ## Internal Preferences
 
 `telemetry.fog.artifact_build`

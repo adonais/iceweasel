@@ -1652,8 +1652,9 @@ newtab:
       space:
         description: >
           The space navigated to. One of stories, widgets or activity in the
-          spaces-buttons-top and spaces-buttons-bottom variants, or a thematic
-          space id configured via Nimbus in spaces-thematic-v1.
+          spaces-buttons-top, spaces-buttons-bottom and spaces-floating-arrows
+          variants, or a thematic space id configured via Nimbus in
+          spaces-thematic-v1.
         type: string
       previous_space:
         description: >
@@ -1662,8 +1663,9 @@ newtab:
       method:
         description: >
           Which control was used: tab (the segmented control), keyboard (arrow
-          keys on the segmented control) or swipe (horizontal wheel, shift plus
-          wheel, or a touch drag).
+          keys on the segmented control), swipe (horizontal wheel, shift plus
+          wheel, or a touch drag) or arrow (the edge arrows in
+          spaces-floating-arrows).
         type: string
     send_in_pings:
       - newtab
@@ -1803,6 +1805,39 @@ newtab:
     send_in_pings:
       - newtab
 
+  opened_page_dwell_time:
+    lifetime: ping
+    type: labeled_timing_distribution
+    time_unit: millisecond
+    description: >
+      Active time the user spent on a page opened from the newtab, in
+      milliseconds, labelled by what was clicked to open it. Measures how long
+      the user was interacting with the browser, anywhere in the window, while
+      that page was the selected tab of the focused window, not how long the
+      tab was open.
+
+      One sample per opened page. Samples accumulate per client and are
+      submitted with the metrics ping. The distribution in one ping covers
+      every page opened from a newtab since the previous metrics ping, and
+      belongs to no single newtab visit.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062393
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062393
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sdowne@mozilla.com
+      - jbrown@mozilla.com
+    expires: never
+    labels:
+      - topsite_organic
+      - topsite_sponsored
+      - story_organic
+      - story_sponsored
+    send_in_pings:
+      - metrics
+
 newtab.search:
   enabled:
     lifetime: application
@@ -1914,10 +1949,6 @@ topsites:
         description: >
           The name of the advertiser of the tile
         type: string
-      tile_id: &tile_id
-        description: >
-          The tile id of the advertiser provided by Contile. Like `74357`.
-        type: quantity
       newtab_visit_id: *newtab_visit_id
       is_sponsored: &is_sponsored
         description: Whether the topsite tile was sponsored.
@@ -1978,7 +2009,6 @@ topsites:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
       is_sponsored: *is_sponsored
       position: *topsite_position
@@ -2095,7 +2125,6 @@ topsites:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
       position: *topsite_position
     send_in_pings:
@@ -2125,7 +2154,6 @@ topsites:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
       is_sponsored: *is_sponsored
       position: *topsite_position
@@ -2390,27 +2418,19 @@ pocket:
       position: &pocket_position
         description: The position (0-index) of the pocket tile.
         type: quantity
-      tile_id: &pocket_tile_id
-        description: >
-          A content identifier.
-          For organic Pocket recommendations it is an opaque id produced by
-          Pocket's recommendation systems.
-          For sponsored Pocket content it is Kevel's "ad ID".
-        type: quantity
       scheduled_corpus_item_id: &scheduled_corpus_item_id
         description: >
           A content identifier.
           For organic Newtab recommendations it is an opaque id produced by
           Newtab's recommendation systems that corresponds uniquely to
           a piece of content scheduled for a specific day on a specific surface.
-          This is the replacement for tile_id.
         type: string
       corpus_item_id: &corpus_item_id
         description: >
           A content identifier.
           For organic Newtab recommendations it is an opaque id produced by
           Newtab's recommendation systems that corresponds uniquely to the URL.
-          This is the replacement for tile_id and scheduled_corpus_item_id.
+          This is the replacement for scheduled_corpus_item_id.
         type: string
       received_rank: &received_rank
         description: The rank or order of the recommendation at the time it was sent to the client.
@@ -2478,7 +2498,6 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -2523,7 +2542,6 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -2572,7 +2590,6 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -2867,7 +2884,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -2882,6 +2898,10 @@ newtab_content:
       section:
         description: >
           If click belongs in a section, the name of the section
+        type: string
+      section_position:
+        description: >
+          If click belongs in a section, the numeric position of the section
         type: string
       is_section_followed:
         description: >
@@ -2920,7 +2940,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -2940,6 +2959,10 @@ newtab_content:
       section:
         description: >
           If click belongs in a section, the name of the section
+        type: string
+      section_position:
+        description: >
+          If click belongs in a section, the numeric position of the section
         type: string
       is_section_followed:
         description: >
@@ -2970,7 +2993,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
@@ -3211,7 +3233,6 @@ newtab_content:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       is_sponsored: *is_sponsored
       position: *topsite_position
       visible_topsites: *visible_topsites
@@ -3242,7 +3263,6 @@ newtab_content:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       is_sponsored: *is_sponsored
       position: *topsite_position
       visible_topsites: *visible_topsites
@@ -3268,7 +3288,6 @@ newtab_content:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       is_sponsored: *is_sponsored
       position: *topsite_position
     send_in_pings:
@@ -3291,7 +3310,6 @@ newtab_content:
     expires: never
     extra_keys:
       advertiser_name: *advertiser_name
-      tile_id: *tile_id
       position: *topsite_position
     send_in_pings:
       - newtab-content

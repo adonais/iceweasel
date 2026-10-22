@@ -1,0 +1,128 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests which scroll container takes the overscroll effect when three nested
+  scroll containers have the (root, middle, innermost) overscroll-behavior
+  given by the `root`, `middle` and `innermost` query parameters
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  html {
+    overscroll-behavior: auto;
+  }
+  #middle {
+    width: 400px;
+    height: 80vh;
+    overflow-y: scroll;
+  }
+  #innermost {
+    width: 300px;
+    height: 60vh;
+    overflow-y: scroll;
+  }
+  #innermost-content {
+    height: 400vh;
+    width: 100%;
+  }
+  #middle-spacer {
+    height: 200vh;
+  }
+  #root-spacer {
+    height: 200vh;
+  }
+</style>
+<div id="middle">
+  <div id="innermost">
+    <div id="innermost-content"></div>
+  </div>
+  <div id="middle-spacer"></div>
+</div>
+<div id="root-spacer"></div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const rootOverscrollBehavior = params.get("root");
+  const middleOverscrollBehavior = params.get("middle");
+  const innermostOverscrollBehavior = params.get("innermost");
+  const combination = `(${rootOverscrollBehavior}, ${middleOverscrollBehavior}, ${innermostOverscrollBehavior})`;
+
+  const middleScroller = document.getElementById("middle");
+  const innerScroller = document.getElementById("innermost");
+
+  document.documentElement.style.overscrollBehavior = rootOverscrollBehavior;
+  middleScroller.style.overscrollBehavior = middleOverscrollBehavior;
+  innerScroller.style.overscrollBehavior = innermostOverscrollBehavior;
+
+  async function test() {
+    const rootScrollId =
+      SpecialPowers.DOMWindowUtils.getViewId(document.scrollingElement);
+    const middleScrollId =
+      SpecialPowers.DOMWindowUtils.getViewId(middleScroller);
+    const innerScrollId = SpecialPowers.DOMWindowUtils.getViewId(innerScroller);
+
+    is(innerScroller.scrollTop, 0,
+       "The innermost scroll container starts at the top");
+    is(middleScroller.scrollTop, 0,
+       "The middle scroll container starts at the top");
+    is(document.scrollingElement.scrollTop, 0,
+       "The root scroll container starts at the top");
+
+    // Pan upward over the innermost scroll container. None of the three has
+    // room to scroll that way, so an overscroll effect is the only thing that
+    // can happen.
+    await NativePanHandler.promiseNativePanEvent(
+      innerScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await NativePanHandler.promiseNativePanEvent(
+      innerScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.updatePhase);
+
+    await promiseApzFlushedRepaints();
+
+    const overscrolled = collectOverscrolledIds();
+    const innerOverscrolled = isOverscrolled(overscrolled, innerScrollId);
+    const middleOverscrolled = isOverscrolled(overscrolled, middleScrollId);
+    const rootOverscrolled = isOverscrolled(overscrolled, rootScrollId);
+    if (rootOverscrollBehavior == "auto" && middleOverscrollBehavior == "auto" && innermostOverscrollBehavior == "auto") {
+      ok(!innerOverscrolled,
+         `The innermost scroll container should not be overscrolled ${combination}`);
+      ok(!middleOverscrolled,
+         `The middle scroll container should not be overscrolled ${combination}`);
+      ok(rootOverscrolled,
+         `The root scroll container should be overscrolled ${combination}`);
+    } else if (rootOverscrollBehavior == "none" && middleOverscrollBehavior == "auto" && innermostOverscrollBehavior == "auto") {
+      ok(!innerOverscrolled,
+         `The innermost scroll container should not be overscrolled ${combination}`);
+      ok(middleOverscrolled,
+           `The middle scroll container should be overscrolled ${combination}`);
+      ok(!rootOverscrolled,
+         `The root scroll container should not be overscrolled ${combination}`);
+    } else if (rootOverscrollBehavior == "none" && middleOverscrollBehavior == "none" && innermostOverscrollBehavior == "auto") {
+      ok(innerOverscrolled,
+           `The innermost scroll container should be overscrolled ${combination}`);
+      ok(!middleOverscrolled,
+         `The middle scroll container should not be overscrolled ${combination}`);
+      ok(!rootOverscrolled,
+         `The root scroll container should not be overscrolled ${combination}`);
+    } else if (rootOverscrollBehavior == "none" && middleOverscrollBehavior == "auto" && innermostOverscrollBehavior == "none") {
+      ok(!innerOverscrolled,
+         `The innermost scroll container should not be overscrolled ${combination}`);
+      ok(!middleOverscrolled,
+         `The middle scroll container should not be overscrolled ${combination}`);
+      ok(!rootOverscrolled,
+         `The root scroll container should not be overscrolled ${combination}`);
+    } else {
+      // Test aborts.
+      ok(false, `There is no expectation for ${combination}`);
+    }
+
+    await NativePanHandler.promiseNativePanEvent(
+      innerScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+  }
+
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+</script>

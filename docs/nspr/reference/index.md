@@ -118,9 +118,9 @@
 
 ## Atomic Operations
 
-- {ref}`PR_AtomicIncrement`
-- {ref}`PR_AtomicDecrement`
-- {ref}`PR_AtomicSet`
+- {doc}`pr_atomicincrement`
+- {doc}`pr_atomicdecrement`
+- {doc}`pr_atomicset`
 
 ## Interval Timing
 
@@ -131,7 +131,7 @@
 
 - {ref}`types-and-constants`
 - {ref}`time-parameter-callback-functions`
-- {ref}`Functions`
+- [Functions](date_and_time.md#functions)
 
 ## Memory_Management Operations
 
@@ -140,53 +140,53 @@
 
 ## String Operations
 
-- {ref}`PL_strlen`
-- {ref}`PL_strcpy`
-- {ref}`PL_strdup`
-- {ref}`PL_strfree`
+- {doc}`pl_strlen`
+- {doc}`pl_strcpy`
+- {doc}`pl_strdup`
+- {doc}`pl_strfree`
 
 ## Floating Point Number to String Conversion
 
-- {ref}`PR_strtod`
-- {ref}`PR_dtoa`
-- {ref}`PR_cnvtf`
+- {doc}`pr_strtod`
+- {doc}`pr_dtoa`
+- {doc}`pr_cnvtf`
 
 ## Linked Lists
 
 - {ref}`linked-list-types`
 
-  - {ref}`PRCList`
+  - {doc}`prclist`
 
 - {ref}`linked-list-macros`
 
-  - {ref}`PR_INIT_CLIST`
-  - {ref}`PR_INIT_STATIC_CLIST`
-  - {ref}`PR_APPEND_LINK`
-  - {ref}`PR_INSERT_LINK`
-  - {ref}`PR_NEXT_LINK`
-  - {ref}`PR_PREV_LINK`
-  - {ref}`PR_REMOVE_LINK`
-  - {ref}`PR_REMOVE_AND_INIT_LINK`
-  - {ref}`PR_INSERT_BEFORE`
-  - {ref}`PR_INSERT_AFTER`
+  - {doc}`pr_init_clist`
+  - {doc}`pr_init_static_clist`
+  - {doc}`pr_append_link`
+  - {doc}`pr_insert_link`
+  - {doc}`pr_next_link`
+  - {doc}`pr_prev_link`
+  - {doc}`pr_remove_link`
+  - {doc}`pr_remove_and_init_link`
+  - {doc}`pr_insert_before`
+  - {doc}`pr_insert_after`
 
 ## Dynamic Library Linking
 
 - {ref}`library-linking-types`
 
-  - {ref}`PRLibrary`
-  - {ref}`PRStaticLinkTable`
+  - {doc}`prlibrary`
+  - {doc}`prstaticlinktable`
 
 - {ref}`library-linking-functions`
 
-  - {ref}`PR_SetLibraryPath`
-  - {ref}`PR_GetLibraryPath`
-  - {ref}`PR_GetLibraryName`
-  - {ref}`PR_FreeLibraryName`
-  - {ref}`PR_LoadLibrary`
-  - {ref}`PR_UnloadLibrary`
-  - {ref}`PR_FindSymbol`
-  - {ref}`PR_FindSymbolAndLibrary`
+  - {doc}`pr_setlibrarypath`
+  - {doc}`pr_getlibrarypath`
+  - {doc}`pr_getlibraryname`
+  - {doc}`pr_freelibraryname`
+  - {doc}`pr_loadlibrary`
+  - {doc}`pr_unloadlibrary`
+  - {doc}`pr_findsymbol`
+  - {doc}`pr_findsymbolandlibrary`
   - {ref}`finding-symbols-defined-in-the-main-executable-program`
 
 - {ref}`platform-notes`
@@ -198,8 +198,8 @@
 
 - {ref}`process-management-types-and-constants`
 
-  - {ref}`PRProcess`
-  - {ref}`PRProcessAttr`
+  - {doc}`prprocess`
+  - {doc}`prprocessattr`
 
 - {ref}`process-management-functions`
 
@@ -213,21 +213,20 @@
 - {ref}`log-types-and-variables`
 
   - `PRLogModuleInfo`
-  - {ref}`PRLogModuleLevel`
-  - {ref}`NSPR_LOG_MODULES`
-  - {ref}`NSPR_LOG_FILE`
+  - {doc}`prlogmodulelevel`
+  - {doc}`nspr_log_modules`
+  - {doc}`nspr_log_file`
 
 - {ref}`logging-functions-and-macros`
 
-  - {ref}`PR_NewLogModule`
+  - {doc}`prlogmoduleinfo`
   - `PR_SetLogFile`
   - `PR_SetLogBuffering`
   - `PR_LogPrint`
   - `PR_LogFlush`
   - `PR_LOG_TEST`
   - `PR_LOG`
-  - {ref}`PR_Assert`
-  - {ref}`PR_ASSERT`
+  - {doc}`pr_assert`
   - `PR_NOT_REACHED`
 
 - {ref}`use-example`

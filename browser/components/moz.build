@@ -17,9 +17,6 @@ with Files("tests/browser/browser_contentpermissionprompt.js"):
 with Files("tests/unit/test_distribution.js"):
     BUG_COMPONENT = ("Firefox", "Distributions")
 
-with Files("safebrowsing/**"):
-    BUG_COMPONENT = ("Toolkit", "Safe Browsing")
-
 with Files("controlcenter/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
@@ -115,7 +112,7 @@ EXTRA_PP_COMPONENTS += [
     "BrowserComponents.manifest",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "AccountsGlue.sys.mjs",
     "BrowserContentHandler.sys.mjs",
     "BrowserGlue.sys.mjs",
@@ -131,12 +128,11 @@ MOZ_SRC_FILES += [
 ]
 
 if CONFIG["MOZ_DEBUG"] or CONFIG["MOZ_DEV_EDITION"] or CONFIG["NIGHTLY_BUILD"]:
-    EXTRA_JS_MODULES += [
+    MOZ_SRC_FILES += [
         "StartupRecorder.sys.mjs",
     ]
 
 BROWSER_CHROME_MANIFESTS += [
-    "safebrowsing/content/test/browser.toml",
     "tests/browser/browser.toml",
     "tests/browser/eval/browser.toml",
 ]

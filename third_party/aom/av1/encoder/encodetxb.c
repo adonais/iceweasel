@@ -21,6 +21,7 @@
 #include "av1/encoder/bitstream.h"
 #include "av1/encoder/cost.h"
 #include "av1/encoder/encodeframe.h"
+#include "av1/encoder/encoder_utils.h"
 #include "av1/encoder/hash.h"
 #include "av1/encoder/rdopt.h"
 #include "av1/encoder/tokenize.h"
@@ -28,10 +29,18 @@
 void av1_alloc_txb_buf(AV1_COMP *cpi) {
   AV1_COMMON *cm = &cpi->common;
   CoeffBufferPool *coeff_buf_pool = &cpi->coeff_buffer_pool;
+  int mi_rows = cm->mi_params.mi_rows;
+  int mi_cols = cm->mi_params.mi_cols;
+  if (cpi->oxcf.frm_dim_cfg.forced_max_frame_width) {
+    mi_cols = size_in_mi(cpi->oxcf.frm_dim_cfg.forced_max_frame_width);
+  }
+  if (cpi->oxcf.frm_dim_cfg.forced_max_frame_height) {
+    mi_rows = size_in_mi(cpi->oxcf.frm_dim_cfg.forced_max_frame_height);
+  }
   const int num_sb_rows =
-      CEIL_POWER_OF_TWO(cm->mi_params.mi_rows, cm->seq_params->mib_size_log2);
+      CEIL_POWER_OF_TWO(mi_rows, cm->seq_params->mib_size_log2);
   const int num_sb_cols =
-      CEIL_POWER_OF_TWO(cm->mi_params.mi_cols, cm->seq_params->mib_size_log2);
+      CEIL_POWER_OF_TWO(mi_cols, cm->seq_params->mib_size_log2);
   const int size = num_sb_rows * num_sb_cols;
   const int num_planes = av1_num_planes(cm);
   const int subsampling_x = cm->seq_params->subsampling_x;
@@ -899,8 +908,11 @@ CB_COEFF_BUFFER *av1_get_cb_coeff_buffer(const struct AV1_COMP *cpi, int mi_row,
                                          int mi_col) {
   const AV1_COMMON *const cm = &cpi->common;
   const int mib_size_log2 = cm->seq_params->mib_size_log2;
-  const int stride =
-      CEIL_POWER_OF_TWO(cm->mi_params.mi_cols, cm->seq_params->mib_size_log2);
+  int mi_cols = cm->mi_params.mi_cols;
+  if (cpi->oxcf.frm_dim_cfg.forced_max_frame_width) {
+    mi_cols = size_in_mi(cpi->oxcf.frm_dim_cfg.forced_max_frame_width);
+  }
+  const int stride = CEIL_POWER_OF_TWO(mi_cols, cm->seq_params->mib_size_log2);
   const int offset =
       (mi_row >> mib_size_log2) * stride + (mi_col >> mib_size_log2);
   return cpi->coeff_buffer_base + offset;

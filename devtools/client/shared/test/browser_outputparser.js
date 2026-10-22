@@ -8,9 +8,9 @@ add_task(async function () {
     set: [
       ["dom.security.html_serialization_escape_lt_gt", true],
       ["layout.css.alpha-color-function.enabled", true],
-      ["layout.css.attr.enabled", true],
       ["layout.css.backdrop-filter.enabled", true],
       ["layout.css.color-mix-multi-color.enabled", true],
+      ["layout.css.random.enabled", true],
       ["security.allow_unsafe_parent_loads", true],
     ],
   });
@@ -42,7 +42,7 @@ async function performTest() {
   testParseFontFamily(doc, parser);
   testParseLightDark(doc, parser);
   testParseAttr(doc, parser);
-  testParseFunctionsForCssExplainers(doc, parser);
+  testParseForCssExplainers(doc, parser);
 
   host.destroy();
 }
@@ -3182,6 +3182,35 @@ function testParseAttr(doc, parser) {
         `<span class="inspector-attr-fallback unmatched-class">match-parent</span>` +
         `)`,
     },
+    {
+      message: "Modern attr() with known attribute using random() and type()",
+      propertyName: "rotate",
+      propertyValue: "attr(data-x type(<angle>))",
+      attributes: { "data-x": "random(90deg, 0.75turn)" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;random(90deg, 0.75turn)&quot;">data-x</span>` +
+          ` type(&lt;angle&gt;)` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with known attribute using random() not matching specified type()",
+      propertyName: "rotate",
+      propertyValue: "attr(data-x type(<angle>))",
+      attributes: { "data-x": "random(10px, 20px)" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;random(10px, 20px)&quot;) does not match expected &quot;&lt;angle&gt;&quot; syntax">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` type(&lt;angle&gt;)` +
+        `</span>` +
+        `)`,
+    },
   ];
 
   for (const test of TESTS) {
@@ -3205,7 +3234,7 @@ function testParseAttr(doc, parser) {
   }
 }
 
-function testParseFunctionsForCssExplainers(doc, parser) {
+function testParseForCssExplainers(doc, parser) {
   const TESTS = [
     {
       message:
@@ -3232,7 +3261,7 @@ function testParseFunctionsForCssExplainers(doc, parser) {
       expected:
         `<span data-function-expression="calc(10px + 1em)">` +
           `<span class="css-explainers-function-name">calc</span>` +
-          `(10px + 1em)` +
+          `(10px + <span data-length-expression="1em">1em</span>)` +
         `</span>`,
     },
     {
@@ -3326,7 +3355,7 @@ function testParseFunctionsForCssExplainers(doc, parser) {
               `)` +
             `</span>` +
           `</span>` +
-          ` - 0.8rem` +
+          ` - <span data-length-expression="0.8rem">0.8rem</span>` +
           `)` +
           `)` +
         `</span>`,
@@ -3346,10 +3375,24 @@ function testParseFunctionsForCssExplainers(doc, parser) {
             `--my-anchor width, ` +
             `<span data-function-expression="calc(50% + 10vw)">` +
               `<span class="css-explainers-function-name">calc</span>` +
-              `(50% + 10vw)` +
+              `(<span data-length-expression="50%">50%</span> + <span data-length-expression="10vw">10vw</span>)` +
             `</span>` +
           `)` +
         `)`,
+    },
+    {
+      message:
+        "data-length-expression attribute for non-px length and percentage",
+      propertyName: "margin",
+      propertyValue: "10% 20px 30em 40lh",
+      cssExplainersEnabled: true,
+      // prettier-ignore
+      expected:
+        `<span data-length-expression="10%">10%</span> ` +
+        // no attribute for px
+        `20px ` +
+        `<span data-length-expression="30em">30em</span> ` +
+        `<span data-length-expression="40lh">40lh</span>`,
     },
   ];
 

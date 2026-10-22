@@ -30,10 +30,12 @@ ChromeUtils.defineLazyGetter(lazy, "PasswordRulesManager", () => {
 ChromeUtils.defineESModuleGetters(lazy, {
   AutocompleteRemoveRecord:
     "resource://gre/modules/AutocompleteRemoveRecord.sys.mjs",
-  ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.sys.mjs",
+  ChromeMigrationUtils:
+    "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   WebAuthnFeature: "resource://gre/modules/WebAuthnFeature.sys.mjs",
   PasswordGenerator: "resource://gre/modules/shared/PasswordGenerator.sys.mjs",

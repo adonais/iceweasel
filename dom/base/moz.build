@@ -435,6 +435,7 @@ UNIFIED_SOURCES += [
     "nsFrameLoaderOwner.cpp",
     "nsGlobalWindowCommands.cpp",
     "nsHistory.cpp",
+    "nsIContent.cpp",
     "nsIGlobalObject.cpp",
     "nsINode.cpp",
     "nsJSEnvironment.cpp",
@@ -444,6 +445,7 @@ UNIFIED_SOURCES += [
     "nsNameSpaceManager.cpp",
     "nsNoDataProtocolContentPolicy.cpp",
     "nsNodeInfoManager.cpp",
+    "nsNodeSupportsWeakRefTearoff.cpp",
     "nsOpenURIInFrameParams.cpp",
     "nsPropertyTable.cpp",
     "nsQueryContentEventResult.cpp",
@@ -566,7 +568,13 @@ if CONFIG["TARGET_CPU"].startswith("ppc"):
     SOURCES += ["CharacterDataBufferVMX.cpp"]
     SOURCES["CharacterDataBufferVMX.cpp"].flags += CONFIG["PPC_VMX_FLAGS"]
 
-EXTRA_JS_MODULES += [
+# Are we targeting LoongArch64? If so, we can enable a SIMD version for
+# CharacterDataBuffer.cpp as well.
+if CONFIG["TARGET_CPU"] == "loongarch64":
+    SOURCES += ["CharacterDataBufferLSX.cpp"]
+    SOURCES["CharacterDataBufferLSX.cpp"].flags += CONFIG["LSX_FLAGS"]
+
+MOZ_SRC_FILES += [
     "ContentAreaDropListener.sys.mjs",
     "IndexedDBHelper.sys.mjs",
     "LocationHelper.sys.mjs",

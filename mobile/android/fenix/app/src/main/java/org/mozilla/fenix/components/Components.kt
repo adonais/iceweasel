@@ -362,9 +362,8 @@ class Components(
                         SetupChecklistTelemetryMiddleware(),
                         ReviewPromptMiddleware(
                                 continuousOnboardingInProgress = {
-                                    val continuousOnboardingCompleted =
-                                        settings.seventhDayOnboardingCompletedTimestamp != -1L
-                                    settings.continuousOnboardingFeatureEnabled && !continuousOnboardingCompleted
+                                    settings.continuousOnboardingFeatureEnabled &&
+                                        !settings.continuousOnboardingCompleted
                                 },
                                 shouldShowCustomPrompt = {
                                     settings.customReviewPromptUiEnabled && settings.isTelemetryEnabled
@@ -385,16 +384,18 @@ class Components(
             }
     }
 
+    val lensImageUploader by lazyMonitored {
+        LensImageUploader(
+            context = context,
+            client = core.client,
+            userAgent = core.engine.settings.userAgentString ?: "",
+        )
+    }
+
     val lensImageSearch by lazyMonitored {
         LensImageSearch(
             appStore = appStore,
-            uploader = {
-                LensImageUploader(
-                    context = context,
-                    client = core.client,
-                    userAgent = core.engine.settings.userAgentString ?: "",
-                )
-            },
+            uploader = { lensImageUploader },
             browserUseCases = { useCases.fenixBrowserUseCases },
         )
     }
@@ -445,9 +446,21 @@ class Components(
     val settingsIndexer by lazyMonitored {
         DefaultFenixSettingsIndexer(
             context = context,
+            preferenceFileInformationList =
+                DefaultFenixSettingsIndexer.defaultPreferenceFileInformationList(
+                    includeAutofillPreferences = settings.isAutofillSupported
+                ),
             additionalProviders =
                 settingsSearchProviders(summarizationFeatureConfiguration = core.summarizeFeatureSettings),
+            excludedPreferenceKeys = ::createSettingsIndexerExclusions,
         )
+    }
+
+    private fun createSettingsIndexerExclusions(): Set<String> = buildSet {
+        if (!settings.isAutofillSupported) {
+            add(context.getString(R.string.pref_key_passwords))
+            add(context.getString(R.string.pref_key_credit_cards))
+        }
     }
 
     val ipProtectionPromptRepository by lazyMonitored {

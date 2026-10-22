@@ -19,8 +19,6 @@
 
 #define NSSTRUSTDOMAIN_DEFAULT_CACHE_SIZE 32
 
-extern const NSSError NSS_ERROR_NOT_FOUND;
-
 typedef PRUint32 nssUpdateLevel;
 
 NSS_IMPLEMENT NSSTrustDomain *
@@ -159,87 +157,6 @@ nssTrustDomain_GetSessionForToken(
     return nssToken_GetDefaultSession(token);
 }
 
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_SetDefaultCallback(
-    NSSTrustDomain *td,
-    NSSCallback *newCallback,
-    NSSCallback **oldCallbackOpt)
-{
-    if (oldCallbackOpt) {
-        *oldCallbackOpt = td->defaultCallback;
-    }
-    td->defaultCallback = newCallback;
-    return PR_SUCCESS;
-}
-
-NSS_IMPLEMENT NSSCallback *
-nssTrustDomain_GetDefaultCallback(
-    NSSTrustDomain *td,
-    PRStatus *statusOpt)
-{
-    if (statusOpt) {
-        *statusOpt = PR_SUCCESS;
-    }
-    return td->defaultCallback;
-}
-
-NSS_IMPLEMENT NSSCallback *
-NSSTrustDomain_GetDefaultCallback(
-    NSSTrustDomain *td,
-    PRStatus *statusOpt)
-{
-    return nssTrustDomain_GetDefaultCallback(td, statusOpt);
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_LoadModule(
-    NSSTrustDomain *td,
-    NSSUTF8 *moduleOpt,
-    NSSUTF8 *uriOpt,
-    NSSUTF8 *opaqueOpt,
-    void *reserved)
-{
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_DisableToken(
-    NSSTrustDomain *td,
-    NSSToken *token,
-    NSSError why)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_EnableToken(
-    NSSTrustDomain *td,
-    NSSToken *token)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_IsTokenEnabled(
-    NSSTrustDomain *td,
-    NSSToken *token,
-    NSSError *whyOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSSlot *
-NSSTrustDomain_FindSlotByName(
-    NSSTrustDomain *td,
-    NSSUTF8 *slotName)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 NSS_IMPLEMENT NSSToken **
 NSSTrustDomain_FindTokensByURI(
     NSSTrustDomain *td,
@@ -297,91 +214,6 @@ NSSTrustDomain_FindTokenByName(
     return tok;
 }
 
-NSS_IMPLEMENT NSSToken *
-NSSTrustDomain_FindTokenBySlotName(
-    NSSTrustDomain *td,
-    NSSUTF8 *slotName)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSToken *
-NSSTrustDomain_FindTokenForAlgorithm(
-    NSSTrustDomain *td,
-    NSSOID *algorithm)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSToken *
-NSSTrustDomain_FindBestTokenForAlgorithms(
-    NSSTrustDomain *td,
-    NSSOID *algorithms[],   /* may be null-terminated */
-    PRUint32 nAlgorithmsOpt /* limits the array if nonzero */
-)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_Login(
-    NSSTrustDomain *td,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_Logout(NSSTrustDomain *td)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_ImportCertificate(
-    NSSTrustDomain *td,
-    NSSCertificate *c)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_ImportPKIXCertificate(
-    NSSTrustDomain *td,
-    /* declared as a struct until these "data types" are defined */
-    struct NSSPKIXCertificateStr *pc)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_ImportEncodedCertificate(
-    NSSTrustDomain *td,
-    NSSBER *ber)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_ImportEncodedCertificateChain(
-    NSSTrustDomain *td,
-    NSSBER *ber,
-    NSSCertificate *rvOpt[],
-    PRUint32 maximumOpt, /* 0 for no max */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 static NSSCertificate **
 get_certs_from_list(nssList *list)
 {
@@ -394,160 +226,6 @@ get_certs_from_list(nssList *list)
         }
     }
     return certs;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-nssTrustDomain_FindCertificatesByNickname(
-    NSSTrustDomain *td,
-    const NSSUTF8 *name,
-    NSSCertificate *rvOpt[],
-    PRUint32 maximumOpt, /* 0 for no max */
-    NSSArena *arenaOpt)
-{
-    NSSToken *token = NULL;
-    NSSSlot **slots = NULL;
-    NSSSlot **slotp;
-    NSSCertificate **rvCerts = NULL;
-    nssPKIObjectCollection *collection = NULL;
-    nssUpdateLevel updateLevel;
-    nssList *nameList;
-    PRUint32 numRemaining = maximumOpt;
-    PRUint32 collectionCount = 0;
-    PRUint32 errors = 0;
-
-    /* First, grab from the cache */
-    nameList = nssList_Create(NULL, PR_FALSE);
-    if (!nameList) {
-        return NULL;
-    }
-    (void)nssTrustDomain_GetCertsForNicknameFromCache(td, name, nameList);
-    rvCerts = get_certs_from_list(nameList);
-    /* initialize the collection of token certificates with the set of
-     * cached certs (if any).
-     */
-    collection = nssCertificateCollection_Create(td, rvCerts);
-    nssCertificateArray_Destroy(rvCerts);
-    nssList_Destroy(nameList);
-    if (!collection) {
-        return (NSSCertificate **)NULL;
-    }
-    /* obtain the current set of active slots in the trust domain */
-    slots = nssTrustDomain_GetActiveSlots(td, &updateLevel);
-    if (!slots) {
-        goto loser;
-    }
-    /* iterate over the slots */
-    for (slotp = slots; *slotp; slotp++) {
-        token = nssSlot_GetToken(*slotp);
-        if (token) {
-            nssSession *session;
-            nssCryptokiObject **instances = NULL;
-            nssTokenSearchType tokenOnly = nssTokenSearchType_TokenOnly;
-            PRStatus status = PR_FAILURE;
-
-            session = nssTrustDomain_GetSessionForToken(td, token);
-            if (session) {
-                instances = nssToken_FindCertificatesByNickname(token,
-                                                                session,
-                                                                name,
-                                                                tokenOnly,
-                                                                numRemaining,
-                                                                &status);
-            }
-            (void)nssToken_Destroy(token);
-            if (status != PR_SUCCESS) {
-                errors++;
-                continue;
-            }
-            if (instances) {
-                status = nssPKIObjectCollection_AddInstances(collection,
-                                                             instances, 0);
-                nss_ZFreeIf(instances);
-                if (status != PR_SUCCESS) {
-                    errors++;
-                    continue;
-                }
-                collectionCount = nssPKIObjectCollection_Count(collection);
-                if (maximumOpt > 0) {
-                    if (collectionCount >= maximumOpt)
-                        break;
-                    numRemaining = maximumOpt - collectionCount;
-                }
-            }
-        }
-    }
-    if (!collectionCount && errors)
-        goto loser;
-    /* Grab the certs collected in the search. */
-    rvCerts = nssPKIObjectCollection_GetCertificates(collection,
-                                                     rvOpt, maximumOpt,
-                                                     arenaOpt);
-    /* clean up */
-    nssPKIObjectCollection_Destroy(collection);
-    nssSlotArray_Destroy(slots);
-    return rvCerts;
-loser:
-    if (slots) {
-        nssSlotArray_Destroy(slots);
-    }
-    if (collection) {
-        nssPKIObjectCollection_Destroy(collection);
-    }
-    return (NSSCertificate **)NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindCertificatesByNickname(
-    NSSTrustDomain *td,
-    NSSUTF8 *name,
-    NSSCertificate *rvOpt[],
-    PRUint32 maximumOpt, /* 0 for no max */
-    NSSArena *arenaOpt)
-{
-    return nssTrustDomain_FindCertificatesByNickname(td,
-                                                     name,
-                                                     rvOpt,
-                                                     maximumOpt,
-                                                     arenaOpt);
-}
-
-NSS_IMPLEMENT NSSCertificate *
-nssTrustDomain_FindBestCertificateByNickname(
-    NSSTrustDomain *td,
-    const NSSUTF8 *name,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt)
-{
-    NSSCertificate **nicknameCerts;
-    NSSCertificate *rvCert = NULL;
-    nicknameCerts = nssTrustDomain_FindCertificatesByNickname(td, name,
-                                                              NULL,
-                                                              0,
-                                                              NULL);
-    if (nicknameCerts) {
-        rvCert = nssCertificateArray_FindBestCertificate(nicknameCerts,
-                                                         timeOpt,
-                                                         usage,
-                                                         policiesOpt);
-        nssCertificateArray_Destroy(nicknameCerts);
-    }
-    return rvCert;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestCertificateByNickname(
-    NSSTrustDomain *td,
-    const NSSUTF8 *name,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt)
-{
-    return nssTrustDomain_FindBestCertificateByNickname(td,
-                                                        name,
-                                                        timeOpt,
-                                                        usage,
-                                                        policiesOpt);
 }
 
 NSS_IMPLEMENT NSSCertificate **
@@ -697,30 +375,6 @@ NSSTrustDomain_FindBestCertificateBySubject(
                                                        policiesOpt);
 }
 
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestCertificateByNameComponents(
-    NSSTrustDomain *td,
-    NSSUTF8 *nameComponents,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindCertificatesByNameComponents(
-    NSSTrustDomain *td,
-    NSSUTF8 *nameComponents,
-    NSSCertificate *rvOpt[],
-    PRUint32 maximumOpt, /* 0 for no max */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 /* This returns at most a single certificate, so it can stop the loop
  * when one is found.
  */
@@ -837,121 +491,6 @@ NSSTrustDomain_FindCertificateByEncodedCertificate(
     return nssTrustDomain_FindCertificateByEncodedCertificate(td, ber);
 }
 
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestCertificateByEmail(
-    NSSTrustDomain *td,
-    NSSASCII7 *email,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt)
-{
-    return 0;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindCertificatesByEmail(
-    NSSTrustDomain *td,
-    NSSASCII7 *email,
-    NSSCertificate *rvOpt[],
-    PRUint32 maximumOpt, /* 0 for no max */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindCertificateByOCSPHash(
-    NSSTrustDomain *td,
-    NSSItem *hash)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestUserCertificate(
-    NSSTrustDomain *td,
-    NSSTime *timeOpt,
-    NSSUsage *usage,
-    NSSPolicies *policiesOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindUserCertificates(
-    NSSTrustDomain *td,
-    NSSTime *timeOpt,
-    NSSUsage *usageOpt,
-    NSSPolicies *policiesOpt,
-    NSSCertificate **rvOpt,
-    PRUint32 rvLimit, /* zero for no limit */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestUserCertificateForSSLClientAuth(
-    NSSTrustDomain *td,
-    NSSUTF8 *sslHostOpt,
-    NSSDER *rootCAsOpt[],   /* null pointer for none */
-    PRUint32 rootCAsMaxOpt, /* zero means list is null-terminated */
-    NSSAlgorithmAndParameters *apOpt,
-    NSSPolicies *policiesOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindUserCertificatesForSSLClientAuth(
-    NSSTrustDomain *td,
-    NSSUTF8 *sslHostOpt,
-    NSSDER *rootCAsOpt[],   /* null pointer for none */
-    PRUint32 rootCAsMaxOpt, /* zero means list is null-terminated */
-    NSSAlgorithmAndParameters *apOpt,
-    NSSPolicies *policiesOpt,
-    NSSCertificate **rvOpt,
-    PRUint32 rvLimit, /* zero for no limit */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate *
-NSSTrustDomain_FindBestUserCertificateForEmailSigning(
-    NSSTrustDomain *td,
-    NSSASCII7 *signerOpt,
-    NSSASCII7 *recipientOpt,
-    /* anything more here? */
-    NSSAlgorithmAndParameters *apOpt,
-    NSSPolicies *policiesOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCertificate **
-NSSTrustDomain_FindUserCertificatesForEmailSigning(
-    NSSTrustDomain *td,
-    NSSASCII7 *signerOpt,
-    NSSASCII7 *recipientOpt,
-    /* anything more here? */
-    NSSAlgorithmAndParameters *apOpt,
-    NSSPolicies *policiesOpt,
-    NSSCertificate **rvOpt,
-    PRUint32 rvLimit, /* zero for no limit */
-    NSSArena *arenaOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 static PRStatus
 collector(nssCryptokiObject *instance, void *arg)
 {
@@ -1028,7 +567,9 @@ loser:
 NSS_IMPLEMENT NSSTrust *
 nssTrustDomain_FindTrustForCertificate(
     NSSTrustDomain *td,
-    NSSCertificate *c)
+    NSSDER *encoding,
+    NSSDER *issuer,
+    NSSDER *serial)
 {
     NSSSlot **slots;
     NSSSlot **slotp;
@@ -1045,9 +586,9 @@ nssTrustDomain_FindTrustForCertificate(
 
         if (token) {
             to = nssToken_FindTrustForCertificate(token, NULL,
-                                                  &c->encoding,
-                                                  &c->issuer,
-                                                  &c->serial,
+                                                  encoding,
+                                                  issuer,
+                                                  serial,
                                                   nssTokenSearchType_TokenOnly);
             if (to) {
                 PRStatus status;
@@ -1065,7 +606,7 @@ nssTrustDomain_FindTrustForCertificate(
         }
     }
     if (pkio) {
-        rvt = nssTrust_Create(pkio, &c->encoding);
+        rvt = nssTrust_Create(pkio, encoding);
         if (rvt) {
             pkio = NULL; /* rvt object now owns the pkio reference */
         }
@@ -1141,22 +682,4 @@ NSSTrustDomain_CreateCryptoContext(
     NSSCallback *uhhOpt)
 {
     return nssTrustDomain_CreateCryptoContext(td, uhhOpt);
-}
-
-NSS_IMPLEMENT NSSCryptoContext *
-NSSTrustDomain_CreateCryptoContextForAlgorithm(
-    NSSTrustDomain *td,
-    NSSOID *algorithm)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSCryptoContext *
-NSSTrustDomain_CreateCryptoContextForAlgorithmAndParameters(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
 }

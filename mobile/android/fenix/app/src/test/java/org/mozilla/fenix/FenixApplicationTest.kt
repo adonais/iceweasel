@@ -25,6 +25,7 @@ import mozilla.components.concept.engine.webextension.DisabledFlags
 import mozilla.components.concept.engine.webextension.Metadata
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
+import mozilla.components.support.base.android.PowerManagerInfoProvider
 import mozilla.components.support.test.robolectric.DefaultBrowserUtils
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.BrowsersCache
@@ -38,6 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.GleanMetrics.Metrics
+import org.mozilla.fenix.GleanMetrics.PowerSavingMode
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
 import org.mozilla.fenix.GleanMetrics.TabStrip
@@ -139,6 +141,7 @@ class FenixApplicationTest {
         val expectedAppInstallSource = "org.mozilla.install.source"
         val settings = spyk(Settings(testContext))
         val dohSettingsProvider = mockk<DohSettingsProvider>()
+        val powerManagerInfoProvider = mockk<PowerManagerInfoProvider>()
         val application = spyk(application)
         val packageManager: PackageManager = mockk()
 
@@ -200,6 +203,7 @@ class FenixApplicationTest {
         every { settings.isIsolatedProcessEnabled } returns true
         every { settings.isAppZygoteEnabled } returns true
         every { application.isDeviceRamAboveThreshold } returns true
+        every { powerManagerInfoProvider.isPowerSaveMode() } returns true
         every { dohSettingsProvider.getSelectedProtectionLevel() } returns ProtectionLevel.Max
         every { settings.getHttpsOnlyMode() } returns HttpsOnlyMode.ENABLED_PRIVATE_ONLY
         every { settings.shouldEnableGlobalPrivacyControl } returns true
@@ -214,6 +218,8 @@ class FenixApplicationTest {
             settings = settings,
             dohSettingsProvider,
             mozillaProductDetector = mozillaProductDetector,
+            powerManagerInfoProvider = powerManagerInfoProvider,
+            isAutomotiveDevice = true,
         )
 
         // Verify that browser defaults metrics are set.
@@ -259,7 +265,9 @@ class FenixApplicationTest {
         assertEquals(true, Preferences.appZygoteIsolatedContentProcessesEnabled.testGetValue())
         assertEquals(true, Metrics.defaultWallpaper.testGetValue())
         assertEquals(true, Metrics.ramMoreThanThreshold.testGetValue())
+        assertEquals(true, PowerSavingMode.activeAtStartup.testGetValue())
         assertEquals(7L, Metrics.deviceTotalRam.testGetValue())
+        assertEquals(true, Metrics.isAndroidAutomotive.testGetValue())
         assertEquals("Max", Preferences.dohProtectionLevel.testGetValue())
         assertEquals("ENABLED_PRIVATE_ONLY", Preferences.httpsOnlyMode.testGetValue())
         assertEquals(true, Preferences.globalPrivacyControlEnabled.testGetValue())

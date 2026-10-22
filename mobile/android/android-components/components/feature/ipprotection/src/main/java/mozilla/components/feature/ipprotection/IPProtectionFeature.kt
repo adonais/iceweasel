@@ -114,7 +114,7 @@ class IPProtectionFeature(
                         }
 
                         EligibilityStatus.Unknown -> {
-                            // no-op, initializing
+                            // no-op, initializing or no region set.
                         }
                     }
                 }

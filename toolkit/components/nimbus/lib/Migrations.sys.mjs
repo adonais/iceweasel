@@ -121,6 +121,38 @@ function migrateNoop() {
   // new clients.
 }
 
+/**
+ * Delete the databases, files and preferences left behind by AddonStudies,
+ * AddonRollouts, PreferenceExperiments, PreferenceRollouts and Storage which
+ * were removed in bug 2059778.
+ */
+async function migrateRemoveNormandyDatabases() {
+  function deleteDatabase(name) {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = () => resolve();
+      request.onblocked = () => reject(new Error(`Cannot delete DB ${name}`));
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  function deleteProfileFile(name) {
+    return IOUtils.remove(PathUtils.join(PathUtils.profileDir, name));
+  }
+
+  await Promise.allSettled([
+    ...["shield", "normandy-addon-rollout", "normandy-preference-rollout"].map(
+      deleteDatabase
+    ),
+    ...["shield-preference-experiments.json", "shield-recipe-client.json"].map(
+      deleteProfileFile
+    ),
+  ]);
+
+  Services.prefs.deleteBranch("app.normandy.startupExperimentPrefs.");
+  Services.prefs.deleteBranch("app.normandy.startupRolloutPrefs.");
+}
+
 async function migrateEnrollmentsToSql() {
   if (!lazy.NimbusEnrollments.databaseEnabled) {
     // We are in an xpcshell test that has not initialized the
@@ -615,6 +647,7 @@ export const NimbusMigrations = {
     [Phase.INIT_STARTED]: [
       migration("multi-phase-migrations", migrateMultiphase),
       migration("separate-rollout-opt-out", migrateSeparateRolloutOptOut),
+      migration("remove-normandy-databases", migrateRemoveNormandyDatabases),
     ],
 
     [Phase.AFTER_STORE_INITIALIZED]: [

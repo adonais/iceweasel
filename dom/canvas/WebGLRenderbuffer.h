@@ -50,6 +50,8 @@ class WebGLRenderbuffer final : public WebGLContextBoundObject,
   GLenum DoRenderbufferStorage(uint32_t samples,
                                const webgl::FormatUsageInfo* format,
                                uint32_t width, uint32_t height);
+
+  void Truncate();
 };
 
 }  // namespace mozilla

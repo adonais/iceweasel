@@ -515,7 +515,7 @@ add_task(async function test_context_menu_dismissed_before_logins_arrive() {
         const shown = BrowserTestUtils.waitForEvent(CONTEXT_MENU, "popupshown");
         await BrowserTestUtils.synthesizeMouseAtCenter(
           input,
-          { type: "mousedown", button: 2 },
+          { button: 2 },
           browser.browsingContext
         );
         await BrowserTestUtils.synthesizeMouseAtCenter(

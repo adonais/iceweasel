@@ -194,16 +194,107 @@ function test_datetimeformat() {
 }
 
 function test_getLanguageDirection() {
-  equal(Services.intl.getScriptDirection("ar"), "rtl");
-  equal(Services.intl.getScriptDirection("ar-EG"), "rtl");
-  equal(Services.intl.getScriptDirection("ckb"), "rtl");
-  equal(Services.intl.getScriptDirection("fa"), "rtl");
-  equal(Services.intl.getScriptDirection("he"), "rtl");
-  equal(Services.intl.getScriptDirection("ur"), "rtl");
+  // Expected directions follow CLDR: each locale's likely script from
+  // https://github.com/unicode-org/cldr/blob/release-48/common/supplemental/likelySubtags.xml
+  // and that script's RTL field from
+  // https://github.com/unicode-org/cldr/blob/release-48/common/properties/scriptMetadata.txt
+  const rtlLocales = [
+    "ar",
+    "ar-EG",
+    "ar-u-nu-latn",
+    "arc",
+    "az-Arab",
+    "az-IR",
+    "azb",
+    "bal",
+    "ckb",
+    "ckb-IR",
+    "dv",
+    "fa",
+    "fa-AF",
+    "ff-Adlm",
+    "ha-Arab",
+    "he",
+    "iw",
+    "ks",
+    "ku-Arab",
+    "ku-IQ",
+    "lrc",
+    "ms-Arab",
+    "mzn",
+    "nqo",
+    "pa-Arab",
+    "pa-PK",
+    "ps",
+    "rhg",
+    "sd",
+    "sdh",
+    "syr",
+    "ug",
+    "und-Arab",
+    "und-Hebr",
+    "ur",
+    "uz-AF",
+    "uz-Arab",
+    "yi",
+  ];
 
-  equal(Services.intl.getScriptDirection("en"), "ltr");
-  equal(Services.intl.getScriptDirection("en-US"), "ltr");
-  equal(Services.intl.getScriptDirection("fr"), "ltr");
+  const ltrLocales = [
+    "am",
+    "ar-Latn",
+    "az",
+    "bn",
+    "de",
+    "el",
+    "en",
+    "en-US",
+    "ff",
+    "fr",
+    "he-Latn",
+    "hi",
+    "hy",
+    "ja",
+    "ka",
+    "ko",
+    "ks-Deva",
+    "ku",
+    "mn",
+    "pa",
+    "ru",
+    "sd-Deva",
+    "sr",
+    "sr-Latn",
+    "ta",
+    "th",
+    "tr",
+    "ug-Cyrl",
+    "und",
+    "uz",
+    "zh",
+    "zh-Hant",
+  ];
+
+  for (const locale of rtlLocales) {
+    equal(
+      Services.intl.getScriptDirection(locale),
+      "rtl",
+      `${locale} is right-to-left`
+    );
+  }
+
+  for (const locale of ltrLocales) {
+    equal(
+      Services.intl.getScriptDirection(locale),
+      "ltr",
+      `${locale} is left-to-right`
+    );
+  }
+
+  equal(
+    Services.intl.getScriptDirection("zzz"),
+    "ltr",
+    "A locale with an unknown direction falls back to left-to-right"
+  );
 }
 
 function test_stringHasRTLChars() {

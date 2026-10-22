@@ -1,3 +1,224 @@
+diff --git a/js/src/jit-test/tests/wasm/spec/extended-name-section/name.wast.js b/js/src/jit-test/tests/wasm/spec/extended-name-section/name.wast.js
+--- a/js/src/jit-test/tests/wasm/spec/extended-name-section/name.wast.js
++++ b/js/src/jit-test/tests/wasm/spec/extended-name-section/name.wast.js
+@@ -284,17 +284,6 @@ let _anon_325 = module(`(module
+   (@custom "name" (after data) "\\0b\\04\\01\\01\\01t")   ;; tag 1 = "t"
+ )`);
+
+-// ./test/custom/name/name.wast:333
+-assert_invalid_custom(
+-  () => module(`(module
+-    (type \$t (func))
+-    (import "m" "e" (tag (type \$t)))
+-    (tag (type \$t))
+-    (@custom "name" (after data) "\\0b\\04\\01\\02\\01?")
+-  )`),
+-  `custom @name: invalid tag index 2`,
+-);
+-
+ // ./test/custom/name/name.wast:344
+ let _anon_343 = module(`(module
+   (type \$t (func (param i32)))
+@@ -305,195 +294,7 @@ let _anon_343 = module(`(module
+   )
+ )`);
+
+-// ./test/custom/name/name.wast:356
+-assert_invalid_custom(
+-  () => module(`(module (func) (@custom "name" (after data) "\\01\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid function index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:360
+-assert_invalid_custom(
+-  () => module(`(module
+-    (import "m" "f" (func))
+-    (func)
+-    (@custom "name" (after data) "\\01\\04\\01\\02\\01?")
+-  )`),
+-  `custom @name: invalid function index 2`,
+-);
+-
+-// ./test/custom/name/name.wast:369
+-assert_invalid_custom(
+-  () => module(`(module (func (local i32)) (@custom "name" (after data) "\\02\\06\\01\\01\\01\\00\\01?"))`),
+-  `custom @name: invalid function index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:373
+-assert_invalid_custom(
+-  () => module(`(module
+-    (import "m" "f" (func (param i32)))
+-    (func (local i32))
+-    (@custom "name" (after data) "\\02\\06\\01\\02\\01\\00\\01?")
+-  )`),
+-  `custom @name: invalid function index 2`,
+-);
+-
+-// ./test/custom/name/name.wast:381
+-assert_invalid_custom(
+-  () => module(`(module (func (param i32) (local i64))
+-    (@custom "name" (after data) "\\02\\06\\01\\00\\01\\02\\01?"))`),
+-  `custom @name: invalid local index 2 for function 0`,
+-);
+-
+-// ./test/custom/name/name.wast:387
+-assert_invalid_custom(
+-  () => module(`(module (func block end) (@custom "name" (after data) "\\03\\06\\01\\01\\01\\00\\01?"))`),
+-  `custom @name: invalid function index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:391
+-assert_invalid_custom(
+-  () => module(`(module (func block end) (@custom "name" (after data) "\\03\\06\\01\\00\\01\\01\\01?"))`),
+-  `custom @name: invalid label index 1 for function 0`,
+-);
+-
+-// ./test/custom/name/name.wast:395
+-assert_invalid_custom(
+-  () => module(`(module (import "m" "f" (func)) (@custom "name" (after data) "\\03\\06\\01\\00\\01\\00\\01?"))`),
+-  `custom @name: invalid label index 0 for function 0`,
+-);
+-
+-// ./test/custom/name/name.wast:400
+-assert_invalid_custom(
+-  () => module(`(module (type (func)) (@custom "name" (after data) "\\04\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid type index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:405
+-assert_invalid_custom(
+-  () => module(`(module (table 1 funcref) (@custom "name" (after data) "\\05\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid table index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:409
+-assert_invalid_custom(
+-  () => module(`(module
+-    (import "m" "t" (table 1 funcref))
+-    (table 1 funcref)
+-    (@custom "name" (after data) "\\05\\04\\01\\02\\01?")
+-  )`),
+-  `custom @name: invalid table index 2`,
+-);
+-
+-// ./test/custom/name/name.wast:418
+-assert_invalid_custom(
+-  () => module(`(module (memory 1) (@custom "name" (after data) "\\06\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid memory index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:422
+-assert_invalid_custom(
+-  () => module(`(module
+-    (import "m" "m" (memory 1))
+-    (memory 1)
+-    (@custom "name" (after data) "\\06\\04\\01\\02\\01?")
+-  )`),
+-  `custom @name: invalid memory index 2`,
+-);
+-
+-// ./test/custom/name/name.wast:431
+-assert_invalid_custom(
+-  () => module(`(module (global i32 (i32.const 0))
+-    (@custom "name" (after data) "\\07\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid global index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:436
+-assert_invalid_custom(
+-  () => module(`(module
+-    (import "m" "g" (global i32))
+-    (global i32 (i32.const 0))
+-    (@custom "name" (after data) "\\07\\04\\01\\02\\01?")
+-  )`),
+-  `custom @name: invalid global index 2`,
+-);
+-
+-// ./test/custom/name/name.wast:445
+-assert_invalid_custom(
+-  () => module(`(module
+-    (func \$f)
+-    (elem func \$f)
+-    (@custom "name" (after data) "\\08\\04\\01\\01\\01?")
+-  )`),
+-  `custom @name: invalid elem index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:454
+-assert_invalid_custom(
+-  () => module(`(module
+-    (data "x")
+-    (@custom "name" (after data) "\\09\\04\\01\\01\\01?")
+-  )`),
+-  `custom @name: invalid data index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:462
+-assert_invalid_custom(
+-  () => module(`(module (type (struct (field i32)))
+-    (@custom "name" (after data) "\\0a\\06\\01\\01\\01\\00\\01?"))`),
+-  `custom @name: invalid type index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:468
+-assert_invalid_custom(
+-  () => module(`(module (type (struct (field i32)))
+-    (@custom "name" (after data) "\\0a\\06\\01\\00\\01\\01\\01?"))`),
+-  `custom @name: invalid field index 1 for type 0`,
+-);
+-
+-// ./test/custom/name/name.wast:474
+-assert_invalid_custom(
+-  () => module(`(module (type \$t (func)) (tag (type \$t))
+-    (@custom "name" (after data) "\\0b\\04\\01\\01\\01?"))`),
+-  `custom @name: invalid tag index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:480
+-assert_invalid_custom(
+-  () => module(`(module (type (func (param i32)))
+-    (@custom "name" (after data) "\\0c\\06\\01\\01\\01\\00\\01?"))`),
+-  `custom @name: invalid type index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:485
+-assert_invalid_custom(
+-  () => module(`(module (type (func (param i32)))
+-    (@custom "name" (after data) "\\0c\\06\\01\\00\\01\\01\\01?"))`),
+-  `custom @name: invalid param index 1 for type 0`,
+-);
+-
+-// ./test/custom/name/name.wast:491
+-assert_invalid_custom(
+-  () => module(`(module (type \$t (func (param i32))) (tag (type \$t))
+-    (@custom "name" (after data) "\\0d\\06\\01\\01\\01\\00\\01?"))`),
+-  `custom @name: invalid tag index 1`,
+-);
+-
+-// ./test/custom/name/name.wast:496
+-assert_invalid_custom(
+-  () => module(`(module (type \$t (func (param i32))) (tag (type \$t))
+-    (@custom "name" (after data) "\\0d\\06\\01\\00\\01\\01\\01?"))`),
+-  `custom @name: invalid param index 1 for tag 0`,
+-);
+-
+-// ./test/custom/name/name.wast:506
+-assert_invalid_custom(
+-  () => module(`(module (type (func)) (@custom "name" (after data) "\\0a\\06\\01\\00\\01\\00\\01?"))`),
+-  `custom @name: non-struct type 0`,
+-);
+-
+-// ./test/custom/name/name.wast:512
+-assert_invalid_custom(
+-  () => module(`(module (type (struct (field i32)))
+-    (@custom "name" (after data) "\\0c\\06\\01\\00\\01\\00\\01?"))`),
+-  `custom @name: non-function type 0`,
+-);
++// Several spec tests have been omitted because we don't actually care if the
++// provided indices refer to valid items. In many cases this is all but
++// impossible for us to know at the time we parse the name section, e.g. the
++// number of locals or labels in a function body. See spec-tests.patch.
 diff --git a/js/src/jit-test/tests/wasm/spec/spec/align.wast.js b/js/src/jit-test/tests/wasm/spec/spec/align.wast.js
 --- a/js/src/jit-test/tests/wasm/spec/spec/align.wast.js
 +++ b/js/src/jit-test/tests/wasm/spec/spec/align.wast.js

@@ -2207,7 +2207,9 @@ bool DebuggerObject::getOwnPropertyNames(JSContext* cx,
   }
 
   for (size_t i = 0; i < result.length(); i++) {
-    cx->recordRefToId(result[i]);
+    if (!cx->wrapOrRecordRefToId(result[i])) {
+      return false;
+    }
   }
 
   return true;
@@ -2269,7 +2271,9 @@ bool DebuggerObject::getOwnPropertySymbols(JSContext* cx,
   }
 
   for (size_t i = 0; i < result.length(); i++) {
-    cx->recordRef(result[i].toSymbol());
+    if (!cx->wrapOrRecordRefToId(result[i])) {
+      return false;
+    }
   }
 
   return true;
@@ -2303,7 +2307,9 @@ bool DebuggerObject::getOwnPrivateProperties(JSContext* cx,
   });
 
   for (size_t i = 0; i < result.length(); i++) {
-    cx->recordRef(result[i].toSymbol());
+    if (!cx->wrapOrRecordRefToId(result[i])) {
+      return false;
+    }
   }
 
   return true;
@@ -2311,7 +2317,7 @@ bool DebuggerObject::getOwnPrivateProperties(JSContext* cx,
 
 /* static */
 bool DebuggerObject::getOwnPropertyDescriptor(
-    JSContext* cx, Handle<DebuggerObject*> object, HandleId id,
+    JSContext* cx, Handle<DebuggerObject*> object, HandleId id_,
     MutableHandle<Maybe<PropertyDescriptor>> desc_) {
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
@@ -2321,7 +2327,10 @@ bool DebuggerObject::getOwnPropertyDescriptor(
     Maybe<AutoRealm> ar;
     EnterDebuggeeObjectRealm(cx, ar, referent);
 
-    cx->recordRefToId(id);
+    RootedId id(cx, id_);
+    if (!cx->wrapOrRecordRefToId(&id)) {
+      return false;
+    }
 
     ErrorCopier ec(ar);
     if (!GetOwnPropertyDescriptor(cx, referent, id, desc_)) {
@@ -2395,7 +2404,8 @@ bool DebuggerObject::freeze(JSContext* cx, Handle<DebuggerObject*> object) {
 
 /* static */
 bool DebuggerObject::defineProperty(JSContext* cx,
-                                    Handle<DebuggerObject*> object, HandleId id,
+                                    Handle<DebuggerObject*> object,
+                                    HandleId id_,
                                     Handle<PropertyDescriptor> desc_) {
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
@@ -2409,10 +2419,10 @@ bool DebuggerObject::defineProperty(JSContext* cx,
   Maybe<AutoRealm> ar;
   EnterDebuggeeObjectRealm(cx, ar, referent);
 
-  if (!cx->compartment()->wrap(cx, &desc)) {
+  RootedId id(cx, id_);
+  if (!cx->compartment()->wrap(cx, &desc) || !cx->wrapOrRecordRefToId(&id)) {
     return false;
   }
-  cx->recordRefToId(id);
 
   ErrorCopier ec(ar);
   return DefineProperty(cx, referent, id, desc);
@@ -2421,8 +2431,10 @@ bool DebuggerObject::defineProperty(JSContext* cx,
 /* static */
 bool DebuggerObject::defineProperties(JSContext* cx,
                                       Handle<DebuggerObject*> object,
-                                      Handle<IdVector> ids,
+                                      Handle<IdVector> ids_,
                                       Handle<PropertyDescriptorVector> descs_) {
+  MOZ_ASSERT(ids_.length() == descs_.length());
+
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
 
@@ -2437,14 +2449,19 @@ bool DebuggerObject::defineProperties(JSContext* cx,
     JS_TRY_OR_RETURN_FALSE(cx, CheckPropertyDescriptorAccessors(cx, descs[i]));
   }
 
+  Rooted<IdVector> ids(cx, IdVector(cx));
+  if (!ids.append(ids_.begin(), ids_.end())) {
+    return false;
+  }
+
   Maybe<AutoRealm> ar;
   EnterDebuggeeObjectRealm(cx, ar, referent);
 
   for (size_t i = 0; i < descs.length(); i++) {
-    if (!cx->compartment()->wrap(cx, descs[i])) {
+    if (!cx->compartment()->wrap(cx, descs[i]) ||
+        !cx->wrapOrRecordRefToId(ids[i])) {
       return false;
     }
-    cx->recordRefToId(ids[i]);
   }
 
   ErrorCopier ec(ar);
@@ -2459,14 +2476,17 @@ bool DebuggerObject::defineProperties(JSContext* cx,
 
 /* static */
 bool DebuggerObject::deleteProperty(JSContext* cx,
-                                    Handle<DebuggerObject*> object, HandleId id,
-                                    ObjectOpResult& result) {
+                                    Handle<DebuggerObject*> object,
+                                    HandleId id_, ObjectOpResult& result) {
   RootedObject referent(cx, object->referent());
 
   Maybe<AutoRealm> ar;
   EnterDebuggeeObjectRealm(cx, ar, referent);
 
-  cx->recordRefToId(id);
+  RootedId id(cx, id_);
+  if (!cx->wrapOrRecordRefToId(&id)) {
+    return false;
+  }
 
   ErrorCopier ec(ar);
   return DeleteProperty(cx, referent, id, result);
@@ -2475,7 +2495,7 @@ bool DebuggerObject::deleteProperty(JSContext* cx,
 /* static */
 Result<Completion> DebuggerObject::getProperty(JSContext* cx,
                                                Handle<DebuggerObject*> object,
-                                               HandleId id,
+                                               HandleId id_,
                                                HandleValue receiver_) {
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
@@ -2487,16 +2507,18 @@ Result<Completion> DebuggerObject::getProperty(JSContext* cx,
     return cx->alreadyReportedError();
   }
 
+  RootedId id(cx, id_);
+
   // Enter the debuggee compartment and rewrap all input value for that
   // compartment. (Rewrapping always takes place in the destination
   // compartment.)
   Maybe<AutoRealm> ar;
   EnterDebuggeeObjectRealm(cx, ar, referent);
   if (!cx->compartment()->wrap(cx, &referent) ||
-      !cx->compartment()->wrap(cx, &receiver)) {
+      !cx->compartment()->wrap(cx, &receiver) ||
+      !cx->wrapOrRecordRefToId(&id)) {
     return cx->alreadyReportedError();
   }
-  cx->recordRefToId(id);
 
   LeaveDebuggeeNoExecute nnx(cx);
 
@@ -2508,10 +2530,12 @@ Result<Completion> DebuggerObject::getProperty(JSContext* cx,
 /* static */
 Result<Completion> DebuggerObject::setProperty(JSContext* cx,
                                                Handle<DebuggerObject*> object,
-                                               HandleId id, HandleValue value_,
+                                               HandleId id_, HandleValue value_,
                                                HandleValue receiver_) {
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
+
+  RootedId id(cx, id_);
 
   // Unwrap Debugger.Objects. This happens in the debugger's compartment since
   // that is where any exceptions must be reported.
@@ -2529,10 +2553,10 @@ Result<Completion> DebuggerObject::setProperty(JSContext* cx,
   EnterDebuggeeObjectRealm(cx, ar, referent);
   if (!cx->compartment()->wrap(cx, &referent) ||
       !cx->compartment()->wrap(cx, &value) ||
-      !cx->compartment()->wrap(cx, &receiver)) {
+      !cx->compartment()->wrap(cx, &receiver) ||
+      !cx->wrapOrRecordRefToId(&id)) {
     return cx->alreadyReportedError();
   }
-  cx->recordRefToId(id);
 
   LeaveDebuggeeNoExecute nnx(cx);
 

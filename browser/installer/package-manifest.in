@@ -432,6 +432,12 @@ bin/libfreebl_64int_3.so
 @BINPATH@/@DLL_PREFIX@notificationserver@DLL_SUFFIX@
 #endif
 
+; [ MSIX Background Task COM Server ]
+;
+#if defined(XP_WIN) && defined(MOZ_BACKGROUNDTASKS)
+@BINPATH@/@DLL_PREFIX@msixcomserver@DLL_SUFFIX@
+#endif
+
 ; [ Push Notification Helper ]
 ;
 #if defined(MOZ_PUSH_NOTIFICATION_HELPER)

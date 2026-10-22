@@ -469,11 +469,45 @@ static CurveNameTagPair nameTagPair[] = {
     { "curve25519", SEC_OID_CURVE25519 },
 };
 
+static CurveNameTagPair edNameTagPair[] = {
+    { "ed25519", SEC_OID_ED25519 },
+    /* with one entry, we could just hand check the
+     * curve name, but by using a table, we can
+     * add 448 support by just adding it to the table */
+};
+
 static SECKEYECParams *
-getECParams(const char *curve)
+buildECEDParams(const char *curve, SECOidTag curveOidTag)
 {
     SECKEYECParams *ecparams;
     SECOidData *oidData = NULL;
+
+    /* Return NULL if curve name is not recognized */
+    if ((curveOidTag == SEC_OID_UNKNOWN) ||
+        (oidData = SECOID_FindOIDByTag(curveOidTag)) == NULL) {
+        fprintf(stderr, "Unrecognized elliptic curve %s\n", curve);
+        return NULL;
+    }
+
+    ecparams = SECITEM_AllocItem(NULL, NULL, (2 + oidData->oid.len));
+    if (ecparams == NULL) {
+        return NULL;
+    }
+    /*
+     * ecparams->data needs to contain the ASN encoding of an object ID (OID)
+     * representing the named curve. The actual OID is in
+     * oidData->oid.data so we simply prepend 0x06 and OID length
+     */
+    ecparams->data[0] = SEC_ASN1_OBJECT_ID;
+    ecparams->data[1] = oidData->oid.len;
+    memcpy(ecparams->data + 2, oidData->oid.data, oidData->oid.len);
+
+    return ecparams;
+}
+
+static SECKEYECParams *
+getECParams(const char *curve)
+{
     SECOidTag curveOidTag = SEC_OID_UNKNOWN; /* default */
     int i, numCurves;
 
@@ -485,26 +519,24 @@ getECParams(const char *curve)
                 curveOidTag = nameTagPair[i].curveOidTag;
         }
     }
+    return buildECEDParams(curve, curveOidTag);
+}
 
-    /* Return NULL if curve name is not recognized */
-    if ((curveOidTag == SEC_OID_UNKNOWN) ||
-        (oidData = SECOID_FindOIDByTag(curveOidTag)) == NULL) {
-        fprintf(stderr, "Unrecognized elliptic curve %s\n", curve);
-        return NULL;
+static SECKEYECParams *
+getEDParams(const char *curve)
+{
+    SECOidTag curveOidTag = SEC_OID_UNKNOWN; /* default */
+    int i, numCurves;
+
+    if (curve != NULL) {
+        numCurves = sizeof(edNameTagPair) / sizeof(CurveNameTagPair);
+        for (i = 0; ((i < numCurves) && (curveOidTag == SEC_OID_UNKNOWN));
+             i++) {
+            if (PL_strcmp(curve, edNameTagPair[i].curveName) == 0)
+                curveOidTag = edNameTagPair[i].curveOidTag;
+        }
     }
-
-    ecparams = SECITEM_AllocItem(NULL, NULL, (2 + oidData->oid.len));
-
-    /*
-     * ecparams->data needs to contain the ASN encoding of an object ID (OID)
-     * representing the named curve. The actual OID is in
-     * oidData->oid.data so we simply prepend 0x06 and OID length
-     */
-    ecparams->data[0] = SEC_ASN1_OBJECT_ID;
-    ecparams->data[1] = oidData->oid.len;
-    memcpy(ecparams->data + 2, oidData->oid.data, oidData->oid.len);
-
-    return ecparams;
+    return buildECEDParams(curve, curveOidTag);
 }
 
 SECKEYPrivateKey *
@@ -570,6 +602,19 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
             if ((params = (void *)getECParams(pqgFile)) == NULL)
                 return NULL;
             break;
+        case edKey:
+            mechanism = CKM_EC_EDWARDS_KEY_PAIR_GEN;
+            if (pqgFile) {
+                /* For ED keys, PQGFile determines ED parameters */
+                if ((params = (void *)getEDParams(pqgFile)) == NULL) {
+                    return NULL;
+                }
+            } else {
+                if ((params = (void *)buildECEDParams("ed25519", SEC_OID_ED25519)) == NULL) {
+                    return NULL;
+                }
+            }
+            break;
         case mldsaKey:
             mechanism = CKM_ML_DSA_KEY_PAIR_GEN;
             /* set paramset */
@@ -631,6 +676,7 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
                 CERTUTIL_DestroyParamsPQG(dsaparams);
             break;
         case ecKey:
+        case edKey:
             SECITEM_FreeItem((SECItem *)params, PR_TRUE);
             break;
         default: /* nothing to free */

@@ -126,6 +126,7 @@ class SharedScreenCastStreamPrivate {
     shared_memory_factory_ = std::move(shared_memory_factory);
   }
   void StopScreenCastStream();
+  void ClearRenegotiateEventForTest();
   std::unique_ptr<SharedDesktopFrame> CaptureFrame();
   std::unique_ptr<MouseCursor> CaptureCursor();
   DesktopVector CaptureCursorPosition();
@@ -207,6 +208,11 @@ class SharedScreenCastStreamPrivate {
 
     ~PipeWireThreadLoop() {
       pw_thread_loop_stop(main_loop);
+
+      if (renegotiate) {
+        pw_loop_destroy_source(pw_thread_loop_get_loop(main_loop), renegotiate);
+        renegotiate = nullptr;
+      }
 
       if (stream) {
         pw_stream_disconnect(stream);
@@ -616,6 +622,9 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
     // Add an event that can be later invoked by pw_loop_signal_event()
     pw_->renegotiate = pw_loop_add_event(
         pw_thread_loop_get_loop(pw_->main_loop), OnRenegotiateFormat, this);
+    if (!pw_->renegotiate) {
+      RTC_LOG(LS_ERROR) << "Failed to add renegotiate event source";
+    }
 
     server_version_sync_ =
         pw_core_sync(pw_->core, PW_ID_CORE, server_version_sync_);
@@ -721,6 +730,18 @@ void SharedScreenCastStreamPrivate::UpdateScreenCastStreamFrameRate(
 
 void SharedScreenCastStreamPrivate::StopScreenCastStream() {
   StopAndCleanupStream();
+}
+
+void SharedScreenCastStreamPrivate::ClearRenegotiateEventForTest() {
+  if (!pw_) {
+    return;
+  }
+  PipeWireThreadLoopLock thread_loop_lock(pw_->main_loop);
+  if (pw_->renegotiate) {
+    pw_loop_destroy_source(pw_thread_loop_get_loop(pw_->main_loop),
+                           pw_->renegotiate);
+    pw_->renegotiate = nullptr;
+  }
 }
 
 void SharedScreenCastStreamPrivate::StopAndCleanupStream() {
@@ -1177,6 +1198,18 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
                                         DRM_FORMAT_MOD_INVALID);
     }
 
+    if (!pw_) {
+      RTC_LOG(LS_WARNING)
+          << "No main pipewire loop, ignoring modifier renegotiation";
+      return false;
+    }
+    if (!pw_->renegotiate) {
+      RTC_LOG(LS_WARNING)
+          << "Can not renegotiate stream params, ignoring modifier "
+             "renegotiation";
+      return false;
+    }
+
     pw_loop_signal_event(pw_thread_loop_get_loop(pw_->main_loop),
                          pw_->renegotiate);
     return false;
@@ -1259,6 +1292,10 @@ void SharedScreenCastStream::SetSharedMemoryFactory(
 
 void SharedScreenCastStream::StopScreenCastStream() {
   private_->StopScreenCastStream();
+}
+
+void SharedScreenCastStream::ClearRenegotiateEventForTest() {
+  private_->ClearRenegotiateEventForTest();
 }
 
 std::unique_ptr<SharedDesktopFrame> SharedScreenCastStream::CaptureFrame() {

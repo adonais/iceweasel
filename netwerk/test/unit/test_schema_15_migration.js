@@ -31,7 +31,7 @@ add_task(async function test_schema_15_migration() {
     "Some data",
     "foo.com",
     "/",
-    now,
+    now + 3600,
     now,
     now,
     false,
@@ -51,7 +51,7 @@ add_task(async function test_schema_15_migration() {
       "Some data",
       "foo.com",
       "/",
-      now,
+      now + 3600,
       now,
       now,
       false,
@@ -70,7 +70,7 @@ add_task(async function test_schema_15_migration() {
       "Some data",
       "foo.com",
       "/",
-      now,
+      now + 3600,
       now,
       now,
       false,
@@ -89,7 +89,7 @@ add_task(async function test_schema_15_migration() {
       "Some data",
       "foo.com",
       "/",
-      now,
+      now + 3600,
       now,
       now,
       false,
@@ -108,7 +108,7 @@ add_task(async function test_schema_15_migration() {
       "Some data",
       "foo.com",
       "/",
-      now,
+      now + 3600,
       now,
       now,
       false,
@@ -127,7 +127,7 @@ add_task(async function test_schema_15_migration() {
     "Some data",
     "foo.com",
     "/",
-    now,
+    now + 3600,
     now,
     now,
     false,
@@ -175,7 +175,7 @@ add_task(async function test_schema_15_migration() {
   await promise_load_profile();
 
   // Assert inserted cookies are in the db and correctly handled by services.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 6);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 6);
 
   // Check if the time was reset
   {

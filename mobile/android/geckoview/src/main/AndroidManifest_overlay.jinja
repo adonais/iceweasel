@@ -7,6 +7,10 @@
    Android from loading the app image. #}
 {% set tag = "_disable_art_image_" %}
 
+{# Some HyperOS memory cleaner paths exclude processes named :sandboxed_*.
+   See bug 2079728. #}
+{% set sandbox_tag = "sandboxed_" %}
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
           package="org.mozilla.geckoview">
     <application
@@ -75,7 +79,7 @@
                 android:enabled="true"
                 android:exported="false"
                 android:isolatedProcess="false"
-                android:process=":tab{{ tag }}{{ id }}">
+                android:process=":{{ sandbox_tag }}tab{{ tag }}{{ id }}">
         </service>
         <service
                 android:name="org.mozilla.gecko.process.GeckoChildProcessServices$isolatedTab{{ id }}"

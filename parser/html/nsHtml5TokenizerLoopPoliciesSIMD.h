@@ -13,7 +13,8 @@
  * This policy does not report tokenizer transitions anywhere and does not
  * track line and column numbers. To be used for innerHTML.
  *
- * This the SIMD version for aarch64 and SSSE3-enabled x86/x86_64.
+ * This the SIMD version for aarch64, SSSE3-enabled x86/x86_64, and LSX-enabled
+ * loongarch64.
  */
 struct nsHtml5FastestPolicySIMD {
   static const bool reportErrors = false;
@@ -68,10 +69,8 @@ struct nsHtml5FastestPolicySIMD {
   accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
                                          char16_t* buf, int32_t pos,
                                          int32_t endPos) {
-    // This state shares the SIMD part with the comment state, but this
-    // wrapper needs to differ!
-    return mozilla::htmlaccel::AccelerateCommentFastest(buf + pos,
-                                                        buf + endPos);
+    return mozilla::htmlaccel::AccelerateScriptDataEscapedFastest(buf + pos,
+                                                                  buf + endPos);
   }
 
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
@@ -84,11 +83,7 @@ struct nsHtml5FastestPolicySIMD {
       len = strBufAvailable;
     }
     int32_t advance = mozilla::htmlaccel::AccelerateCommentFastest(
-        buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+        buf + pos, buf + pos + len, aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -105,11 +100,8 @@ struct nsHtml5FastestPolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedFastest(
-            buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -126,11 +118,8 @@ struct nsHtml5FastestPolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedFastest(
-            buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -260,10 +249,8 @@ struct nsHtml5LineColPolicySIMD {
   accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
                                          char16_t* buf, int32_t pos,
                                          int32_t endPos) {
-    // This state shares the SIMD part with the comment state, but this
-    // wrapper needs to differ!
-    int32_t advance =
-        mozilla::htmlaccel::AccelerateCommentLineCol(buf + pos, buf + endPos);
+    int32_t advance = mozilla::htmlaccel::AccelerateScriptDataEscapedLineCol(
+        buf + pos, buf + endPos);
     if (!advance) {
       // When the SIMD advance is zero, don't touch the line and col tracking.
       return 0;
@@ -292,7 +279,7 @@ struct nsHtml5LineColPolicySIMD {
       len = strBufAvailable;
     }
     int32_t advance = mozilla::htmlaccel::AccelerateCommentLineCol(
-        buf + pos, buf + pos + len);
+        buf + pos, buf + pos + len, aTokenizer->strBuf + aTokenizer->strBufLen);
     if (!advance) {
       // When the SIMD advance is zero, don't touch the line and col tracking.
       return 0;
@@ -308,10 +295,6 @@ struct nsHtml5LineColPolicySIMD {
     } else {
       aTokenizer->col += advance;
     }
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -328,7 +311,8 @@ struct nsHtml5LineColPolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedLineCol(
-            buf + pos, buf + pos + len);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     if (!advance) {
       // When the SIMD advance is zero, don't touch the line and col tracking.
       return 0;
@@ -344,10 +328,6 @@ struct nsHtml5LineColPolicySIMD {
     } else {
       aTokenizer->col += advance;
     }
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -364,7 +344,8 @@ struct nsHtml5LineColPolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedLineCol(
-            buf + pos, buf + pos + len);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     if (!advance) {
       // When the SIMD advance is zero, don't touch the line and col tracking.
       return 0;
@@ -380,10 +361,6 @@ struct nsHtml5LineColPolicySIMD {
     } else {
       aTokenizer->col += advance;
     }
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -548,10 +525,8 @@ struct nsHtml5ViewSourcePolicySIMD {
   accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
                                          char16_t* buf, int32_t pos,
                                          int32_t endPos) {
-    // This state shares the SIMD part with the comment state, but this
-    // wrapper needs to differ!
-    return mozilla::htmlaccel::AccelerateCommentViewSource(buf + pos,
-                                                           buf + endPos);
+    return mozilla::htmlaccel::AccelerateScriptDataEscapedViewSource(
+        buf + pos, buf + endPos);
   }
 
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
@@ -564,11 +539,7 @@ struct nsHtml5ViewSourcePolicySIMD {
       len = strBufAvailable;
     }
     int32_t advance = mozilla::htmlaccel::AccelerateCommentViewSource(
-        buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+        buf + pos, buf + pos + len, aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -585,11 +556,8 @@ struct nsHtml5ViewSourcePolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedViewSource(
-            buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }
@@ -606,11 +574,8 @@ struct nsHtml5ViewSourcePolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedViewSource(
-            buf + pos, buf + pos + len);
-    // States that on the non-SIMD path copy characters to strBuf also
-    // need to do that in the SIMD case.
-    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
-                                aTokenizer->strBufLen, advance);
+            buf + pos, buf + pos + len,
+            aTokenizer->strBuf + aTokenizer->strBufLen);
     aTokenizer->strBufLen += advance;
     return advance;
   }

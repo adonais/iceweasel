@@ -79,7 +79,11 @@ add_task(async function testToggleSwitch() {
   await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
   await popuphiddenPromise;
 
-  checkClickTelemetry("etp_toggle_off");
+  is(
+    Glean.securityUiProtectionspopup.clickEtpToggleOff.testGetValue().length,
+    1,
+    "recorded etp_toggle_off telemetry event"
+  );
 
   // We need to wait toast's popup shown and popup hidden events. It won't fire
   // the popup shown event if we open the protections panel while the toast is
@@ -118,7 +122,11 @@ add_task(async function testToggleSwitch() {
   // Wait until the ETP state confirmation toast is shown and hides itself.
   await toastShown;
 
-  checkClickTelemetry("etp_toggle_on");
+  is(
+    Glean.securityUiProtectionspopup.clickEtpToggleOn.testGetValue().length,
+    1,
+    "recorded etp_toggle_on telemetry event"
+  );
 
   ContentBlockingAllowList.remove(tab.linkedBrowser);
   BrowserTestUtils.removeTab(tab);
@@ -151,7 +159,11 @@ add_task(async function testSettingsButton() {
   let newTab = await newTabPromise;
 
   ok(true, "about:preferences has been opened successfully");
-  checkClickTelemetry("settings");
+  is(
+    Glean.securityUiProtectionspopup.clickSettings.testGetValue().length,
+    1,
+    "recorded settings telemetry event"
+  );
 
   BrowserTestUtils.removeTab(newTab);
   BrowserTestUtils.removeTab(tab);
@@ -232,7 +244,11 @@ add_task(async function testShowFullReportButton() {
 
   ok(true, "about:protections has been opened successfully");
 
-  checkClickTelemetry("full_report");
+  is(
+    Glean.securityUiProtectionspopup.clickFullReport.testGetValue().length,
+    1,
+    "recorded full_report telemetry event"
+  );
 
   BrowserTestUtils.removeTab(newTab);
   BrowserTestUtils.removeTab(tab);
@@ -581,16 +597,39 @@ add_task(async function testNumberOfBlockedTrackers() {
 
 add_task(async function testSubViewTelemetry() {
   let items = [
-    ["protections-popup-category-trackers", "trackers"],
-    ["protections-popup-category-socialblock", "social"],
-    ["protections-popup-category-cookies", "cookies"],
-    ["protections-popup-category-cryptominers", "cryptominers"],
-    ["protections-popup-category-fingerprinters", "fingerprinters"],
-  ].map(item => [document.getElementById(item[0]), item[1]]);
+    [
+      "protections-popup-category-trackers",
+      Glean.securityUiProtectionspopup.clickTrackers,
+      "trackers",
+    ],
+    [
+      "protections-popup-category-socialblock",
+      Glean.securityUiProtectionspopup.clickSocial,
+      "social",
+    ],
+    [
+      "protections-popup-category-cookies",
+      Glean.securityUiProtectionspopup.clickCookies,
+      "cookies",
+    ],
+    [
+      "protections-popup-category-cryptominers",
+      Glean.securityUiProtectionspopup.clickCryptominers,
+      "cryptominers",
+    ],
+    [
+      "protections-popup-category-fingerprinters",
+      Glean.securityUiProtectionspopup.clickFingerprinters,
+      "fingerprinters",
+    ],
+  ].map(item => [document.getElementById(item[0]), item[1], item[2]]);
 
-  for (let [item, telemetryId] of items) {
+  for (let [item, telemetryMetric, telemetryValue] of items) {
     // eslint-disable-next-line sdl/no-insecure-url
     await BrowserTestUtils.withNewTab("http://www.example.com", async () => {
+      await Services.fog.testFlushAllChildren();
+      Services.fog.testResetFOG();
+
       await openProtectionsPanel();
 
       item.classList.remove("notFound"); // Force visible for test
@@ -603,7 +642,11 @@ add_task(async function testSubViewTelemetry() {
       );
       item.click();
       let panelView = (await viewShownEvent).originalTarget;
-      checkClickTelemetry(telemetryId);
+      is(
+        telemetryMetric.testGetValue().length,
+        1,
+        `recorded ${item.id} telemetry event`
+      );
       let prefsTabPromise = BrowserTestUtils.waitForNewTab(
         gBrowser,
         "about:preferences#privacy"
@@ -611,7 +654,14 @@ add_task(async function testSubViewTelemetry() {
       panelView.querySelector(".panel-subview-footer-button").click();
       let prefsTab = await prefsTabPromise;
       BrowserTestUtils.removeTab(prefsTab);
-      checkClickTelemetry("subview_settings", telemetryId);
+      let subviewEvents =
+        Glean.securityUiProtectionspopup.clickSubviewSettings.testGetValue();
+      is(subviewEvents.length, 1, "recorded subview_settings telemetry event");
+      is(
+        subviewEvents[0].extra.value,
+        telemetryValue,
+        "subview_settings event has the expected value"
+      );
     });
   }
 });

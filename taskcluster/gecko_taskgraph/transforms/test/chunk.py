@@ -238,7 +238,7 @@ def resolve_dynamic_chunks(config, tasks):
         all_runtimes = get_runtimes(task["test-platform"], suite_name)
 
         runtimes = resolve_manifest_runtimes(
-            all_runtimes, task["test-manifests"]["active"]
+            task["test-platform"], suite_name, task["test-manifests"]["active"]
         )
 
         # A manifest at 0 means the runtime data doesn't cover this

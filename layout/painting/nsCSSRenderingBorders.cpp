@@ -3571,8 +3571,8 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
       Maybe<ImageIntRegion> region;
       gfx::IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              img, aForFrame, imageRect, imageRect, aSc, flags, svgContext,
-              region);
+              img, aForFrame, imageRect, imageRect, aBuilder, aSc, flags,
+              svgContext, region);
 
       RefPtr<WebRenderImageProvider> provider;
       drawResult = img->GetImageProvider(aManager->LayerManager(), decodeSize,

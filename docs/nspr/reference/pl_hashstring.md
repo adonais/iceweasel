@@ -24,5 +24,5 @@ The hash number for the specified key.
 
 ## Description
 
-{ref}`PL_HashString` can be used as the key hash function for a hash table
+{doc}`pl_hashstring` can be used as the key hash function for a hash table
 if the key is a character string.

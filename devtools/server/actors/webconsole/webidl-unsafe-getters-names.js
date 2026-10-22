@@ -10,7 +10,6 @@ module.exports = [
   "InstallTrigger",
   "containerName",
   "containerQuery",
-  "fullScreen",
   "mozInputSource",
   "mozOrientation",
   "mozPressure",

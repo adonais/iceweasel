@@ -108,8 +108,7 @@ bool InterceptionAgent::OnDllLoad(const UNICODE_STRING* full_path,
   if (dlls_[i])
     return true;
 
-  size_t buffer_bytes = offsetof(DllInterceptionData, thunks) +
-                        dll_info->num_functions * sizeof(ThunkData);
+  size_t buffer_bytes = GetDllInterceptionDataSize(dll_info->num_functions);
   dlls_[i] = reinterpret_cast<DllInterceptionData*>(
       new (NT_PAGE, base_address) char[buffer_bytes]);
 

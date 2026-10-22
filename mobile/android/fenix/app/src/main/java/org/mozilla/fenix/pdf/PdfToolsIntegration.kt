@@ -33,7 +33,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.PdfViewer
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.share.createPdfShareAction
+import org.mozilla.fenix.components.share.tryDispatchPdfShareAction
 import org.mozilla.fenix.pdf.ui.PdfTools
 import org.mozilla.fenix.pdf.ui.PdfToolsContent
 import org.mozilla.fenix.pdf.ui.SignatureDialogContent
@@ -260,9 +260,7 @@ class PdfToolsIntegration(
     internal fun handleShareClick() {
         PdfViewer.shareTapped.record(NoExtras())
         val tab = browserStore.state.selectedTab ?: return
-        browserStore.createPdfShareAction(tabId = tab.id, url = tab.content.url)?.let {
-            browserStore.dispatch(it)
-        }
+        browserStore.tryDispatchPdfShareAction(tabId = tab.id, url = tab.content.url)
     }
 }
 

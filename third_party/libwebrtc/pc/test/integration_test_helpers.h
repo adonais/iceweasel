@@ -74,7 +74,6 @@
 #include "rtc_base/fake_mdns_responder.h"
 #include "rtc_base/fake_network.h"
 #include "rtc_base/firewall_socket_server.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_server.h"
@@ -195,17 +194,28 @@ class MockRtpReceiverObserver : public RtpReceiverObserverInterface {
     ASSERT_EQ(expected_media_type_, media_type);
     first_packet_received_after_receptive_change_ = true;
   }
+  void OnSourceChanged(bool ssrc_changed, bool csrc_changed) override {
+    source_changed_ = true;
+    last_ssrc_changed_ = ssrc_changed;
+    last_csrc_changed_ = csrc_changed;
+  }
 
   bool first_packet_received() const { return first_packet_received_; }
   bool first_packet_received_after_receptive_change() const {
     return first_packet_received_after_receptive_change_;
   }
+  bool source_changed() const { return source_changed_; }
+  bool last_ssrc_changed() const { return last_ssrc_changed_; }
+  bool last_csrc_changed() const { return last_csrc_changed_; }
 
   ~MockRtpReceiverObserver() override {}
 
  private:
   bool first_packet_received_ = false;
   bool first_packet_received_after_receptive_change_ = false;
+  bool source_changed_ = false;
+  bool last_ssrc_changed_ = false;
+  bool last_csrc_changed_ = false;
   webrtc::MediaType expected_media_type_;
 };
 
@@ -537,7 +547,6 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
             PeerConnectionDependencies dependencies,
             SocketServer* socket_server,
             Thread* network_thread,
-            Thread* worker_thread,
             std::unique_ptr<FakeRtcEventLogFactory> event_log_factory,
             bool reset_encoder_factory,
             bool reset_decoder_factory,
@@ -708,8 +717,13 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
   // Variables for tracking delay stats on an audio track
   int audio_packets_stat_ = 0;
   double audio_delay_stat_ = 0.0;
+  // Trailing counters from the most recent renegotiation step.
   uint64_t audio_samples_stat_ = 0;
   uint64_t audio_concealed_stat_ = 0;
+  // Baseline counters captured at the start of watching delay stats, used to
+  // compute cumulative sample metrics across all renegotiation steps.
+  uint64_t initial_audio_samples_stat_ = 0;
+  uint64_t initial_audio_concealed_stat_ = 0;
   std::string rtp_stats_id_;
   bool audio_delay_stats_percentage_checked_ = false;
 
@@ -1039,8 +1053,6 @@ class PeerConnectionIntegrationTestBase : public ::testing::Test {
                                          int expected_cipher_suite);
 
  protected:
-  void OverrideLoggingLevelForTest(LoggingSeverity new_severity);
-
   SdpSemantics sdp_semantics_;
   const Environment env_;
 
@@ -1048,21 +1060,13 @@ class PeerConnectionIntegrationTestBase : public ::testing::Test {
                            absl::AnyInvocable<void()> task) = 0;
 
  private:
-  // Support for optionally changing the default logging level for the duration
-  // of the test. Scoped wider than other member variables to also affect
-  // logging that's done in destructors.
-  class ScopedSetLoggingLevel;
-  std::unique_ptr<ScopedSetLoggingLevel> overridden_logging_level_;
-
   // `ss_` is used by `network_thread_` so it must be destroyed later.
   std::unique_ptr<VirtualSocketServer> ss_;
   std::unique_ptr<FirewallSocketServer> fss_;
 
-  // `network_thread_` and `worker_thread_` are used by both
-  // `caller_` and `callee_` so they must be destroyed
-  // later.
+  // `network_thread_` is used by both `caller_` and `callee_` so it must be
+  // destroyed later.
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   // The turn servers and turn customizers should be accessed & deleted on the
   // network thread to avoid a race with the socket read/write that occurs
   // on the network thread.

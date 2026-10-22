@@ -4,7 +4,7 @@ The full installer is actually responsible for installing the browser; it's what
 
 The full installer's main script is {searchfox}`installer.nsi <browser/installer/windows/nsis/installer.nsi>`, but most of the heavy lifting is done by the shared functions in {searchfox}`common.nsh <toolkit/mozapps/installer/windows/nsis/common.nsh>`.
 
-If it was not launched by the {doc}`StubInstaller`, an {ref}`Install Ping` is sent when the installer exits.
+If it was not launched by the {doc}`StubInstaller`, an {doc}`/toolkit/components/telemetry/data/install-ping` is sent when the installer exits.
 
 The installer writes `installation_telemetry.json` to the install location, this is read by Firefox in order to send a telemetry event, see the `installation.first_seen_full` metric definition in {searchfox}`metrics.yaml <browser/modules/metrics.yaml>` for a description of the properties. There is also an `install_timestamp` property, which is saved in the profile to determine whether there has been a new installation; this is not sent as part of the ping.
 

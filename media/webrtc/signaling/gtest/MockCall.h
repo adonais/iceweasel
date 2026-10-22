@@ -80,10 +80,6 @@ class MockAudioReceiveStream : public webrtc::AudioReceiveStreamInterface {
 
   void SetJitterBufferFastAccelerate(bool fast_accelerate) override {}
 
-  std::vector<webrtc::RtpSource> GetSources() const override {
-    return mRtpSources;
-  }
-
   webrtc::AudioMixer::Source* source() override { return nullptr; }
 
   void SetRtcpMode(webrtc::RtcpMode mode) override {}
@@ -113,7 +109,6 @@ class MockAudioReceiveStream : public webrtc::AudioReceiveStreamInterface {
 
   const RefPtr<MockCallWrapper> mCallWrapper;
   webrtc::AudioReceiveStreamInterface::Stats mStats;
-  std::vector<webrtc::RtpSource> mRtpSources;
 };
 
 class MockVideoSendStream : public webrtc::VideoSendStream {
@@ -165,10 +160,6 @@ class MockVideoReceiveStream : public webrtc::VideoReceiveStreamInterface {
   void Stop() override {}
 
   Stats GetStats() const override { return mStats; }
-
-  std::vector<webrtc::RtpSource> GetSources() const override {
-    return std::vector<webrtc::RtpSource>();
-  }
 
   bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override { return false; }
 

@@ -11,7 +11,7 @@ const { ASRouterScreenUtils } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs"
 );
 const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/InternalTestingProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/InternalTestingProfileMigrator.sys.mjs"
 );
 const {
   EASY_SETUP_TARGETING,

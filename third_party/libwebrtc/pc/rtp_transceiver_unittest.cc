@@ -192,13 +192,10 @@ class RtpTransceiverDoubleThreadTest : public testing::Test {
   RtpTransceiverDoubleThreadTest()
       : env_(CreateTestEnvironment()),
         network_thread_(Thread::Create()),
-        worker_thread_(Thread::Create()),
-        dependencies_(
-            MakeDependencies(network_thread_.get(), worker_thread_.get())),
+        dependencies_(MakeDependencies(network_thread_.get())),
         context_(ConnectionContext::Create(env_, &dependencies_)),
         codec_lookup_helper_(context_.get(), env_.field_trials()) {
     network_thread_->Start();
-    worker_thread_->Start();
     context_->worker_thread()->BlockingCall([&]() {
       media_engine_ref_ =
           std::make_unique<ConnectionContext::MediaEngineReference>(context_);
@@ -220,11 +217,9 @@ class RtpTransceiverDoubleThreadTest : public testing::Test {
 
  private:
   static PeerConnectionFactoryDependencies MakeDependencies(
-      Thread* network_thread,
-      Thread* worker_thread) {
+      Thread* network_thread) {
     PeerConnectionFactoryDependencies d;
     d.network_thread = network_thread;
-    d.worker_thread = worker_thread;
     d.signaling_thread = Thread::Current();
     RTC_LOG(LS_INFO) << "MakeDependencies signaling_thread="
                      << d.signaling_thread;
@@ -235,7 +230,6 @@ class RtpTransceiverDoubleThreadTest : public testing::Test {
   test::RunLoop main_thread_;
   Environment env_;
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   PeerConnectionFactoryDependencies dependencies_;
   scoped_refptr<ConnectionContext> context_;
   std::unique_ptr<ConnectionContext::MediaEngineReference> media_engine_ref_;

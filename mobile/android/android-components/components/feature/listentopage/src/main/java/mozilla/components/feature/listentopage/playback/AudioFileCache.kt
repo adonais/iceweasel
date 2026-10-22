@@ -15,6 +15,9 @@ interface AudioFileCache {
     /** Returns an empty file for [key], creating the directory if needed. */
     suspend fun create(key: String): File
 
+    /** Whether [file] is still on disk with audio in it. */
+    suspend fun exists(file: File): Boolean
+
     /** Deletes [file] if it is still there. */
     suspend fun delete(file: File)
 
@@ -46,6 +49,11 @@ internal constructor(
         withContext(ioDispatcher) {
             directory.mkdirs()
             File(directory, "$key.wav")
+        }
+
+    override suspend fun exists(file: File): Boolean =
+        withContext(ioDispatcher) {
+            file.isFile && file.length() > 0
         }
 
     override suspend fun delete(file: File) {

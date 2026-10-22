@@ -57,6 +57,12 @@ add_setup(async function () {
       "privacy.purge_trackers.date_in_cookie_database"
     );
     Services.prefs.clearUserPref("privacy.purge_trackers.last_purge");
+    // Pushing network.cookie.cookieBehavior below makes ContentBlockingPrefs
+    // rewrite browser.contentblocking.category, which in turn makes
+    // UrlClassifierExceptionListService set this one, also as a user pref.
+    Services.prefs.clearUserPref(
+      "privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings"
+    );
     // The service is a singleton shared with the rest of the run, so the state
     // this file leaves on it has to go back too.
     resetPurgeTrackerServiceState();

@@ -17,10 +17,6 @@ https_first_disabled = true
 support-files = ["open-self-from-frame.html"]
 
 ["browser_check_identity_state.js"]
-skip-if = [
-  "os == 'win' && opt && msix", # Bug 1895285
-  "os == 'win' && debug", # Bug 1895285
-]
 https_first_disabled = true
 
 ["browser_check_identity_state_pdf.js"]
@@ -45,6 +41,8 @@ support-files = [
 https_first_disabled = true
 support-files = ["dummy_iframe_page.html"]
 
+["browser_identityBlock_drag.js"]
+
 ["browser_identityBlock_flicker.js"]
 
 ["browser_identityBlock_focus.js"]
@@ -62,7 +60,6 @@ support-files = [
 ["browser_identityPopup_clearSiteData.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1577395
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1577395
 ]
 
 ["browser_identityPopup_clearSiteData_extensions.js"]
@@ -74,9 +71,6 @@ skip-if = [
 https_first_disabled = true
 
 ["browser_identityPopup_focus.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1723899
-]
 
 ["browser_identityPopup_qwacs.js"]
 
@@ -104,9 +98,6 @@ support-files = [
   "test_mcb_double_redirect_image.html",
   "test_mcb_redirect.js",
   "test_mcb_redirect.sjs",
-]
-skip-if = [
-  "a11y_checks", # Bugs 1858041 and 1824058 for causing intermittent crashes
 ]
 
 ["browser_mixedContentFramesOnHttp.js"]

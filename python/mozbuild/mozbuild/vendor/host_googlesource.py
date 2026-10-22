@@ -4,8 +4,6 @@
 
 import base64
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -17,7 +15,7 @@ class GoogleSourceHost(BaseHost):
             "+",
             revision + "?format=JSON",
         ])
-        req = requests.get(url)
+        req = self.session.get(url)
         req.raise_for_status()
         try:
             info = req.json()

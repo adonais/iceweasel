@@ -335,6 +335,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
                                   bool& aAllRecordsHaveEchConfig);
   // This function setups a new connection info for restarting this transaction.
   void PrepareConnInfoForRetry(nsresult aReason);
+  // Switches to a direct-route connection info with HTTP/3 disabled, so the
+  // transaction is restarted over HTTP/2 or HTTP/1.1.
+  void DisableHttp3ForRestart();
   // This function is used to select the next non http3 record and is only
   // executed when the fast fallback timer is triggered.
   already_AddRefed<nsHttpConnectionInfo> PrepareFastFallbackConnInfo(
@@ -435,7 +438,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // mixed-access patterns (e.g. mConnection is checked without the lock on the
   // socket thread but modified with it; mChunkedDecoder is accessed without the
   // lock except during trailer extraction).
-  Mutex mLock{"transaction lock"};
+  mutable Mutex mLock{"transaction lock"};
 
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsITransportEventSink> mTransportSink;
@@ -645,6 +648,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   }
   // Called when this transaction is inserted in the pending queue.
   void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
+  // Starts the timer that opens a TCP backup connection if this HTTP/3
+  // transaction is not connected in time. Only the first call has an effect.
+  void MaybeStartHttp3BackupTimer();
 
  private:
   TransactionObserverFunc mTransactionObserver;
@@ -694,7 +700,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<nsITimer> mHttp3BackupTimer;
   nsCOMPtr<nsITimer> mHttp3TunnelFallbackTimer;
   RefPtr<nsHttpConnectionInfo> mBackupConnInfo;
-  // A clone of mConnInfo taken when this transaction is activated.
+  // The value of mConnInfo when this transaction was activated.
   // Describes the server that the associated connection is connected to.
   RefPtr<nsHttpConnectionInfo> mFinalizedConnInfo MOZ_GUARDED_BY(mLock);
   RefPtr<HTTPSRecordResolver> mResolver;

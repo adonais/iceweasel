@@ -108,6 +108,39 @@ bool wasm::CanonicalizeName(mozilla::Span<const char> name,
   return true;
 }
 
+bool ComponentName::getterForSetter(CacheableName* out) const {
+  MOZ_RELEASE_ASSERT(attributes.contains(ComponentNameAttribute::Set));
+
+  UTF8Bytes b;
+
+  // Append other attributes
+  if (attributes.contains(ComponentNameAttribute::Constructor) &&
+      !b.append("[constructor]", strlen("[constructor]"))) {
+    return false;
+  }
+  if (attributes.contains(ComponentNameAttribute::Method) &&
+      !b.append("[method]", strlen("[method]"))) {
+    return false;
+  }
+  if (attributes.contains(ComponentNameAttribute::Static) &&
+      !b.append("[static]", strlen("[static]"))) {
+    return false;
+  }
+
+  // Append [get] instead of [set]
+  if (!b.append("[get]", strlen("[get]"))) {
+    return false;
+  }
+
+  // Append the rest of the name
+  if (!b.append(name.utf8Bytes().data() + attributesLength,
+                name.utf8Bytes().size() - attributesLength)) {
+    return false;
+  }
+
+  return CacheableName::fromUTF8Bytes(b, out);
+}
+
 bool StronglyUniqueNameSet::add(mozilla::Span<const char> name,
                                 bool* duplicate) {
   *duplicate = false;
@@ -1130,6 +1163,18 @@ JSObject* Component::createObject(JSContext* cx) const {
   return WasmComponentObject::create(cx, *this, proto);
 }
 
+bool Component::hasImportWithName(mozilla::Span<const char> name) const {
+  auto p = importsByName_.lookup(name);
+  return p.found();
+}
+
+const ComponentImport& Component::getImportByName(
+    mozilla::Span<const char> name) const {
+  auto p = importsByName_.lookup(name);
+  MOZ_RELEASE_ASSERT(p.found());
+  return imports_[p->value()];
+}
+
 bool Component::addImport(ComponentImport&& import) {
   ComponentSort sort = import.externDesc().sort();
   MOZ_ASSERT(ComponentSortValidForExternDesc(sort));
@@ -1137,6 +1182,15 @@ bool Component::addImport(ComponentImport&& import) {
   // Add import to imports vector
   uint32_t importIndex = imports_.length();
   if (!imports_.append(std::move(import))) {
+    return false;
+  }
+
+  // Add import to hash map
+  mozilla::Span<const char> savedImportName =
+      imports_[importIndex].name().name.utf8Bytes();
+  auto p = importsByName_.lookupForAdd(savedImportName);
+  MOZ_RELEASE_ASSERT(!p.found());
+  if (!importsByName_.add(p, savedImportName, importIndex)) {
     return false;
   }
 
@@ -1175,6 +1229,18 @@ bool Component::addImport(ComponentImport&& import) {
   return true;
 }
 
+bool Component::hasExportWithName(mozilla::Span<const char> name) const {
+  auto p = exportsByName_.lookup(name);
+  return p.found();
+}
+
+const ComponentExport& Component::getExportByName(
+    mozilla::Span<const char> name) const {
+  auto p = exportsByName_.lookup(name);
+  MOZ_RELEASE_ASSERT(p.found());
+  return exports_[p->value()];
+}
+
 bool Component::addExport(ComponentExport&& exp) {
   ComponentSort sort = exp.externDesc().sort();
   MOZ_ASSERT(ComponentSortValidForExternDesc(sort));
@@ -1182,6 +1248,15 @@ bool Component::addExport(ComponentExport&& exp) {
   // Add export to exports vector
   uint32_t exportIndex = exports_.length();
   if (!exports_.append(std::move(exp))) {
+    return false;
+  }
+
+  // Add export to hash map
+  mozilla::Span<const char> savedExportName =
+      exports_[exportIndex].name().name.utf8Bytes();
+  auto p = exportsByName_.lookupForAdd(savedExportName);
+  MOZ_RELEASE_ASSERT(!p.found());
+  if (!exportsByName_.add(p, savedExportName, exportIndex)) {
     return false;
   }
 

@@ -2343,6 +2343,107 @@ onboarding:
     send_in_pings:
       - onboarding
       - events
+  completion_state_migration_started:
+    type: event
+    description: |
+      Recorded only when an existing user's stored onboarding state needs a one-time migration.
+      The event fires before any changes are made, so its extras capture the original state.
+
+      Continuous onboarding introduced follow-up prompts on days 2, 3, 5 and 7 in
+      Firefox 155 (2026-09-01). Earlier users may have incomplete stored state, causing prompts to
+      appear long after installation. The migration marks initial onboarding and all follow-up
+      stages complete.
+
+      This event does not confirm that the migration finished or persisted to disk. Compare its
+      count with completion_state_migration_completed to see how often the migration is interrupted
+      before it completes. Multiple started events from the same client indicate that an earlier
+      migration did not persist.
+
+      The event is sent only in the events ping, not the onboarding ping, because it is not a user
+      interaction with onboarding.
+
+      How this data relates to the cohorts in the linked document:
+      - Cohorts 1.a and 1.b (no initial completion date): migration_reason is unset_timestamp
+        and progress_predates_cutoff is false.
+      - Cohort 2 (onboarded with the feature off): migration_reason is predates_rollout and
+        progress_predates_cutoff is false.
+      - Users who had the feature early (Nightly, Beta, or the Release experiment) with prompts
+        still remaining: migration_reason is predates_rollout and progress_predates_cutoff is true.
+      - Cohort 3 (onboarded with the feature on, from version 155) records no event.
+
+      Details: https://searchfox.org/firefox-main/source/mobile/android/fenix/app/src/main/java/org/mozilla/fenix/onboarding/Onboarding-state-migration-and-reconciliation.md
+    extra_keys:
+      migration_reason:
+        type: string
+        description: |
+          unset_timestamp: No record of when the user finished initial onboarding, either because
+          they completed onboarding before version 150 (2026-04-21) or bypassed onboarding
+          completely. The two states cannot be distinguished.
+
+          predates_rollout: The user finished initial onboarding before version 155 shipped
+          (2026-09-01) and has not completed the day 7 prompt. This covers users who onboarded
+          with the feature off, and users who had it on early (Nightly from version 151, Beta from
+          version 155, or the Release experiment) with prompts still remaining. Use
+          progress_predates_cutoff to tell them apart.
+
+          Users who onboarded on or after version 155, or who have already completed the day 7
+          prompt, are not migrated and do not record this event.
+      last_completed_stage:
+        type: quantity
+        description: |
+          The last of the day 2, 3, 5 and 7 prompts the user had already completed, as 2, 3, 5 or
+          7. Prompts complete in strict day order, so this also implies every earlier prompt was
+          completed. Omitted when no prompt had been completed.
+      progress_predates_cutoff:
+        type: boolean
+        description: |
+          Whether the user completed any of the day 2 to day 7 prompts before version 155 shipped
+          (2026-09-01). Prompts are only shown while the feature is on, so this is only possible
+          for users who had it early: Nightly from version 151, Beta from version 155, or the
+          Release experiment. False for users who onboarded with the feature off, since any prompts
+          they completed came after updating to 155. Always false when last_completed_stage is
+          omitted.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072667
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D328105
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: 170
+    metadata:
+      tags:
+        - Onboarding
+    send_in_pings:
+      - events
+  completion_state_migration_completed:
+    type: event
+    description: |
+      Recorded immediately after the migration described by completion_state_migration_started
+      has backfilled the onboarding state.
+
+      Comparing the number of clients recording this event with the number recording
+      completion_state_migration_started shows how often the migration is interrupted between
+      capturing the state and completing. This event does not confirm that the writes persisted to
+      disk.
+
+      The event is sent only in the events ping, not the onboarding ping, because it is not a user
+      interaction with onboarding.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072667
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D328105
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: 170
+    metadata:
+      tags:
+        - Onboarding
+    send_in_pings:
+      - events
 
 terms_of_use:
   impression:
@@ -3967,6 +4068,25 @@ metrics:
     metadata:
       tags:
         - Experiments
+  is_android_automotive:
+    type: boolean
+    lifetime: application
+    description: |
+      True if the device reports the `android.hardware.type.automotive`
+      system feature, i.e. the app is running on Android Automotive OS
+      (a car's built-in infotainment system). This is not set for
+      Android Auto, where a phone projects apps onto the car's display.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2076859
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D330041
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   tab_group_creation_mode:
     type: labeled_counter
     description: |
@@ -8526,6 +8646,170 @@ tracking_protection:
       - https://phabricator.services.mozilla.com/D304862
     data_sensitivity:
       - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_sent:
+    type: event
+    description: |
+      The weekly privacy report notification was sent to the user. Only recorded when the user
+      allows app notifications.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323756
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
+      - privacy-report-notification
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_dismissed:
+    type: event
+    description: |
+      A user dismissed the weekly privacy report notification without tapping
+      it.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323756
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
+      - privacy-report-notification
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_not_sent:
+    type: event
+    description: |
+      The weekly privacy report notification worker ran but did not result in a notification.
+      The `reason` extra records the reason it was not sent.
+    extra_keys:
+      reason:
+        description: |
+          The reason for why the notification was prevented from being sent. Possible values are:
+          `tracking_protection_disabled`, `app_notifications_disabled`, `channel_disabled` and
+          `channel_missing` which indicates an unexpected state caused by a programmer error.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323764
+      - https://phabricator.services.mozilla.com/D323768
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
+      - privacy-report-notification
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_availability:
+    type: string
+    lifetime: application
+    description: |
+      Whether the weekly privacy report notification can currently be sent
+      and if not, which notification setting stops it. Possible values
+      are: `available`, `app_notifications_disabled`, `channel_disabled`,
+      and `channel_missing`. `channel_missing` indicates an unexpected state
+      caused by a programmer error.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323764
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_worker_ran:
+    type: event
+    description: |
+      The background worker for the weekly privacy report notification ran.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323768
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
+      - privacy-report-notification
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_worker_scheduled:
+    type: boolean
+    lifetime: user
+    description: |
+      Whether the worker for the weekly privacy report notification is currently scheduled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323768
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_worker_run_count:
+    type: counter
+    lifetime: user
+    description: |
+      How many times the worker for the weekly privacy report notification has run
+      since it was first scheduled, including the runs that did not end in a notification.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323768
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - privacy-report-notification
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_notification_scheduled_at:
+    type: datetime
+    lifetime: user
+    time_unit: day
+    description: |
+      The most recent day on which the app confirmed that the worker for the weekly privacy
+      report notification is scheduled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323768
+    data_sensitivity:
+      - technical
     notification_emails:
       - android-probes@mozilla.com
     expires: never
@@ -17481,3 +17765,67 @@ tab_reload_cover:
     metadata:
       tags:
         - Tabs
+
+power_saving_mode:
+  active_at_startup:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether the device had the OS power saving (battery saver) mode active
+      when Firefox started. Read once during startup, so it is sent in every
+      metrics ping for that run.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068693
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323021
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Battery
+  changed:
+    type: event
+    description: |
+      The OS power saving (battery saver) mode was turned on or off while
+      Firefox was running. Also recorded when Firefox returns to the foreground
+      and finds the mode differs from the last observed value.
+    extra_keys:
+      enabled:
+        type: boolean
+        description: Whether power saving mode is now enabled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068693
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D323021
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Battery
+  reader_view_forced:
+    type: event
+    description: |
+      Power Saving Mode was active and the page loaded in the selected tab
+      could be displayed in reader view, so reader view was turned on for it
+      with a dark color scheme. Not recorded when the user turns reader view on
+      themselves.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069110
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325964
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Battery

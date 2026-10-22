@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
@@ -96,6 +98,9 @@ const ENABLEMENT_PREFS = new Set([
  * TrackingDBService so the whole feature stays trainhoppable (Bug 2050954).
  */
 export class PrivacyFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     // Cached once per session (holds the in-flight/resolved promise, so a
     // failed lookup resolves to null and is NOT retried on every new tab).

@@ -1,0 +1,8 @@
+{
+  "description": "Pinned Claude Code CLI for the updatebot docker image",
+  "license": "MPL-2.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.267"
+  }
+}

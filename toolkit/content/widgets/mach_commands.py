@@ -15,6 +15,8 @@ LICENSE_HEADER = """/* This Source Code Form is subject to the terms of the Mozi
 """
 
 JS_HEADER = """{license}
+/// <reference path="./{element_name}.tagmap.d.ts" />
+
 import {{ html }} from "../vendor/lit.all.mjs";
 import {{ MozLitElement }} from "../lit-utils.mjs";
 
@@ -24,7 +26,7 @@ import {{ MozLitElement }} from "../lit-utils.mjs";
  * @tagname {element_name}
  * @property {{string}} variant - Property description goes here
  */
-export default class {class_name} extends MozLitElement {{
+export class {class_name} extends MozLitElement {{
   static properties = {{
     variant: {{ type: String }},
   }};
@@ -42,6 +44,16 @@ export default class {class_name} extends MozLitElement {{
   }}
 }}
 customElements.define("{element_name}", {class_name});
+"""
+
+TAGMAP_HEADER = """{license}
+import type {{ {class_name} }} from "./{element_name}.mjs";
+
+declare global {{
+  interface HTMLElementTagNameMap {{
+    "{element_name}": {class_name};
+  }}
+}}
 """
 
 STORY_HEADER = """{license}
@@ -160,6 +172,15 @@ def addwidget(command_context, names):
             class_name = "".join(p.capitalize() for p in name.split("-"))
             f.write(
                 JS_HEADER.format(
+                    license=LICENSE_HEADER,
+                    element_name=name,
+                    class_name=class_name,
+                )
+            )
+
+        with open(f"{component_dir}/{name}.tagmap.d.ts", "w", newline="\n") as f:
+            f.write(
+                TAGMAP_HEADER.format(
                     license=LICENSE_HEADER,
                     element_name=name,
                     class_name=class_name,

@@ -5,7 +5,7 @@
 
 // Test for attr() in rule view.
 
-const TEST_URI = `data:text/html,<meta charset=utf8>
+const TEST_URI = `data:text/html,${encodeURIComponent(`<meta charset=utf8>
   <style>
     main {
       --before: attr(data-before);
@@ -33,6 +33,10 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
       color: attr(data-color type(<color>));
       outline-color: attr(data-outline type(<color>));
     }
+    #random {
+      rotate: attr(data-angle type(<angle>), 1turn);
+      width: attr(data-angle type(<length>), 80vw);
+    }
   </style>
   <main data-before="before-on-main">
     <div id=with-attr data-before="→" data-after="←" data-marker="❥"></div>
@@ -45,11 +49,11 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
     data-outline="attr(data-color type(<color>)"
   >
     fries
-  </aside>`;
+  </aside>
+  <h2 id=random data-angle="random(10deg, 90deg)">random()</h2>`)}`;
 
 add_task(async function () {
-  await pushPref("layout.css.attr.enabled", true);
-
+  await pushPref("layout.css.random.enabled", true);
   await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
 
@@ -353,6 +357,37 @@ add_task(async function () {
       attributeUnmatched: false,
       tooltipText: `"gold"`,
       fallback: "tomato",
+    },
+  });
+
+  info("Check attr() with attribute value using random()");
+  await selectNode("#random", inspector);
+  await assertAttr({
+    view,
+    description: `with attribute value using random() and matching syntax`,
+    propertyName: "rotate",
+    selector: "#random",
+    attrIndex: 0,
+    expected: {
+      text: `attr(data-angle type(<angle>), 1turn)`,
+      attributeName: "data-angle",
+      attributeUnmatched: false,
+      tooltipText: `"random(10deg, 90deg)"`,
+      fallback: `1turn`,
+    },
+  });
+  await assertAttr({
+    view,
+    description: `with attribute value using random() and not matching syntax`,
+    propertyName: "width",
+    selector: "#random",
+    attrIndex: 0,
+    expected: {
+      text: `attr(data-angle type(<length>), 80vw)`,
+      attributeName: "data-angle",
+      attributeUnmatched: true,
+      tooltipText: `Attribute value ("random(10deg, 90deg)") does not match expected "<length>" syntax`,
+      fallback: `80vw`,
     },
   });
 });

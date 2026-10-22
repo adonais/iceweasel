@@ -1746,6 +1746,21 @@ already_AddRefed<DataTransfer> EditorBase::CreateDataTransferForPaste(
   return dataTransfer.forget();
 }
 
+already_AddRefed<DataTransfer> EditorBase::CreateDataTransferForPaste(
+    EventMessage aEventMessage, nsITransferable* aTransferable) const {
+  MOZ_ASSERT(aTransferable);
+  nsIGlobalObject* scopeObject = nullptr;
+  if (PresShell* presShell = GetPresShell()) {
+    if (Document* doc = presShell->GetDocument()) {
+      scopeObject = doc->GetScopeObject();
+    }
+  }
+
+  auto dataTransfer =
+      MakeRefPtr<DataTransfer>(scopeObject, aEventMessage, aTransferable);
+  return dataTransfer.forget();
+}
+
 Result<EditorBase::ClipboardEventResult, nsresult>
 EditorBase::DispatchClipboardEventAndUpdateClipboard(
     EventMessage aEventMessage,
@@ -2327,7 +2342,8 @@ nsresult EditorBase::PasteAsQuotationAsAction(
 
 nsresult EditorBase::PasteTransferableAsAction(
     nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
-    nsIPrincipal* aPrincipal /* = nullptr */) {
+    nsIPrincipal* aPrincipal /* = nullptr */,
+    DataTransfer* aDataTransfer /* = nullptr */) {
   // FIXME: This may be called as a call of nsIEditor::PasteTransferable.
   // In this case, we should keep handling the paste even in the readonly mode.
   if (IsHTMLEditor() && IsReadonly()) {
@@ -2340,6 +2356,16 @@ nsresult EditorBase::PasteTransferableAsAction(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  // The data to paste comes from aTransferable rather than from a clipboard,
+  // so expose that through the paste event and use a nothing value for the
+  // clipboard type. Creating the DataTransfer consumes the input streams in
+  // aTransferable, so it must be created at most once and shared with
+  // HandlePasteTransferable().
+  RefPtr<DataTransfer> dataTransfer = aDataTransfer;
+  if (!dataTransfer && aTransferable) {
+    dataTransfer = CreateDataTransferForPaste(ePaste, aTransferable);
+  }
+
   if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
     RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
     if (NS_WARN_IF(!focusManager)) {
@@ -2347,13 +2373,9 @@ nsresult EditorBase::PasteTransferableAsAction(
     }
     const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
 
-    // Use a nothing value for the clipboard type as data comes from
-    // aTransferable and we don't currently implement a way to put that in the
-    // data transfer in TextEditor yet.
     Result<ClipboardEventResult, nsresult> ret =
-        DispatchClipboardEventAndUpdateClipboard(
-            ePaste,
-            IsTextEditor() ? Nothing() : Some(nsIClipboard::kGlobalClipboard));
+        DispatchClipboardEventAndUpdateClipboard(ePaste, Nothing(),
+                                                 dataTransfer);
     if (MOZ_UNLIKELY(ret.isErr())) {
       NS_WARNING(
           "EditorBase::DispatchClipboardEventAndUpdateClipboard(ePaste) "
@@ -2387,7 +2409,7 @@ nsresult EditorBase::PasteTransferableAsAction(
       }
       if (editorBase != this) {
         nsresult rv = editorBase->PasteTransferableAsAction(
-            aTransferable, DispatchPasteEvent::No, aPrincipal);
+            aTransferable, DispatchPasteEvent::No, aPrincipal, dataTransfer);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "EditorBase::PasteTransferableAsAction("
                              "DispatchPasteEvent::No) failed");
@@ -2403,7 +2425,8 @@ nsresult EditorBase::PasteTransferableAsAction(
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsresult rv = HandlePasteTransferable(editActionData, *aTransferable);
+  nsresult rv =
+      HandlePasteTransferable(editActionData, *aTransferable, dataTransfer);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::HandlePasteTransferable() failed");
   return EditorBase::ToGenericNSResult(rv);

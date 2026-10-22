@@ -2,4 +2,4 @@
 
 ## See also
 
-{ref}`Debugging On macOS`
+{doc}`debugging_on_macos`

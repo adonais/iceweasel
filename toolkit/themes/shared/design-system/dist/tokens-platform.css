@@ -13,8 +13,6 @@
     /** background-color **/
     --background-color-box-info: color-mix(in srgb, currentColor 6%, transparent);
     --background-color-canvas: Canvas;
-    --background-color-dimmed: color-mix(in srgb, currentColor 17%, transparent);
-    --background-color-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
     --background-color-list-item-hover: color-mix(in srgb, currentColor 20%, transparent);
 
     /** border **/
@@ -44,7 +42,7 @@
     --font-size-small: 1rem;
 
     /** input **/
-    --input-text-background-color: Field;
+    --input-background-color: Field;
     --input-text-color: FieldText;
 
     /** link **/
@@ -55,6 +53,7 @@
     /** panel **/
     --panel-background-color: Field;
     --panel-border-color: var(--border-color-deemphasized);
+    --panel-footer-background-color: color-mix(in srgb, currentColor 17%, transparent);
     --panel-text-color: FieldText;
 
     /** popup **/
@@ -119,7 +118,7 @@
       --info-bar-border-color: var(--border-color-deemphasized);
 
       /** input **/
-      --input-text-background-color: Field;
+      --input-background-color: Field;
 
       /** panel **/
       --panel-background-color: Field;
@@ -165,10 +164,6 @@
 :host(.anonymous-content-host) {
   @layer tokens-browser-theme {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      /** background-color **/
-      --background-color-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
-      --background-color-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
-
       /** button **/
       /* TODO Bug 1821203 - Gray use needs to be consolidated */
       --button-background-color: light-dark(rgba(207, 207, 216, 0.33), rgba(0, 0, 0, 0.33));
@@ -187,7 +182,7 @@
       --color-accent-primary-selected: light-dark(var(--color-blue-60), var(--color-cyan-30));
 
       /** input **/
-      --input-text-background-color: light-dark(var(--color-white), #42414d);
+      --input-background-color: light-dark(var(--color-white), #42414d);
       --input-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
 
       /** link **/
@@ -198,6 +193,7 @@
       /** panel **/
       --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
       --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
+      --panel-footer-background-color: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
       --panel-text-color: light-dark(var(--color-black), rgb(251, 251, 254));
 
       /** popup **/
@@ -261,7 +257,7 @@
         --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
 
         /** input **/
-        --input-text-background-color: var(--background-color-box);
+        --input-background-color: var(--background-color-box);
 
         /** panel **/
         --panel-background-color: var(--popup-background-color);

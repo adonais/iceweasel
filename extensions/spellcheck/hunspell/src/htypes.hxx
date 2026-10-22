@@ -62,11 +62,11 @@
 #  define HUNSPELL_THREAD_LOCAL static
 #endif
 
-// Field order chosen to minimize padding on 32-bit and 64-bit ABIs:
-// pointers first, then 2-byte fields, then 1-byte fields. On wasm32 this
-// packs to 20 bytes vs 24 with the upstream order; on 64-bit native, from
-// 40 to 32 bytes. Both savings are meaningful for large dictionaries
-// (e.g. Bulgarian has ~700K entries).
+// Field order chosen to minimize internal padding: pointer-sized fields
+// first, then 2-byte fields, then 1-byte fields. This packs sizeof(hentry)
+// to 20 bytes on 32-bit platforms (vs 24 with mixed ordering) and 32 bytes
+// on 64-bit (vs 40), which adds up to several MB on large dictionaries
+// (e.g. Bulgarian, ~700K entries).
 struct hentry {
   unsigned short* astr;         // affix flag vector
   struct hentry* next;          // next word with same hash code

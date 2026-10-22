@@ -7,8 +7,14 @@ package org.mozilla.fenix.ipprotection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.semantics.Role.Companion.Switch
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.spyk
+import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -30,13 +36,27 @@ import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
+import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.ui.icons.R as iconsR
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
+@RunWith(AndroidJUnit4::class)
 class VpnMenuItemProviderTest {
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
+
+    private val menu = FakeMenuHost()
+
     @Test
     fun `GIVEN the user is not eligible WHEN building the menu item THEN don't show it`() = runTest {
         val provider = provider(IPProtectionStore(IPProtectionState()))
@@ -123,6 +143,61 @@ class VpnMenuItemProviderTest {
 
         assertNull(provider.itemFlow.value)
     }
+
+    @Test
+    fun `GIVEN IP protection is off WHEN toggling it THEN turn it on and keep the menu open`() = runTest {
+        val store = spyk(eligibleStore(Authorized.Idle))
+
+        provider(store).onEvent(MenuAction.IPProtectionToggle, menu)
+
+        verify { store.dispatch(IPProtectionAction.Toggle) }
+        assertFalse(menu.isUsed)
+        assertNotNull(Vpn.menuTurnedOn.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN IP protection is on WHEN toggling it THEN turn it off and keep the menu open`() = runTest {
+        val store = spyk(eligibleStore(Authorized.Active))
+
+        provider(store).onEvent(MenuAction.IPProtectionToggle, menu)
+
+        verify { store.dispatch(IPProtectionAction.Toggle) }
+        assertFalse(menu.isUsed)
+        assertNotNull(Vpn.menuTurnedOff.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN signing in is needed WHEN toggling IP protection THEN show its settings instead`() = runTest {
+        val store = IPProtectionStore(IPProtectionState(serviceStatus = ServiceState.Unauthenticated))
+
+        provider(store).onEvent(MenuAction.IPProtectionToggle, menu)
+
+        assertEquals(settingsDirections, menu.directions)
+        assertNotNull(Vpn.menuTryItTapped.testGetValue())
+    }
+
+    @Test
+    fun `WHEN asking for the IP protection settings THEN show them in place of the menu`() = runTest {
+        provider(eligibleStore(Authorized.Idle)).onEvent(MenuAction.Navigate.IPProtectionSettings, menu)
+
+        assertEquals(settingsDirections, menu.directions)
+        assertEquals("Menu", Vpn.settingsPageTapped.testGetValue()?.last()?.extra?.get("entrypoint"))
+    }
+
+    @Test
+    fun `WHEN IP protection is on or off THEN handle all events the item can dispatch and no others`() = runTest {
+        listOf(Authorized.Idle, Authorized.Active).forEach { status ->
+            val provider = provider(eligibleStore(status))
+
+            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+
+            assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+            assertFalse(provider.handles(MenuAction.Navigate.Settings))
+        }
+    }
+
+    private val settingsDirections =
+        NavGraphDirections.actionGlobalIpProtectionFragment(entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu)
 
     // The item is kept up to date on a scope that runTest cancels at the end of each test.
     private fun TestScope.provider(ipProtectionStore: IPProtectionStore) =

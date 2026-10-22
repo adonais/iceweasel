@@ -202,6 +202,8 @@ add_task(async function nonPrivateWindow() {
         source: "contextmenu_visual",
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -287,6 +289,8 @@ async function doPrivateWindowTest(shouldRecordCounts) {
           is_private: "true",
           has_ai_summary: "unknown",
           shopping_tab_displayed: "unknown",
+          prescan: "not_run",
+          scan: "not_run",
         },
         abandonment: {
           reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,

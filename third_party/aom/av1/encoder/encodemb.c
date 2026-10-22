@@ -38,44 +38,40 @@
 // Compute the average value of the wxh block.
 static inline int16_t avg_wxh_block_c(int16_t *diff, ptrdiff_t diff_stride,
                                       int w, int h) {
+  assert(w > 0 && h > 0);
   int32_t sum = 0;
   for (int row = 0; row < h; ++row) {
     for (int col = 0; col < w; ++col) {
-      sum += *(diff + row * diff_stride + col);
+      sum += diff[row * diff_stride + col];
     }
   }
-  return (w * h > 0) ? (int16_t)(DIVIDE_AND_ROUND_SIGNED(sum, w * h)) : 0;
+  return (int16_t)DIVIDE_AND_ROUND_SIGNED(sum, w * h);
 }
 
 // Compute the row average value of the wxh block.
 static inline void avg_wxh_block_horiz_c(int16_t *diff, ptrdiff_t diff_stride,
                                          int w, int h, int16_t *out) {
+  assert(w > 0 && h > 0);
   for (int row = 0; row < h; ++row) {
     int32_t sum = 0;
     for (int col = 0; col < w; ++col) {
-      sum += *(diff + row * diff_stride + col);
+      sum += diff[row * diff_stride + col];
     }
-    out[row] = (w > 0) ? (int16_t)DIVIDE_AND_ROUND_SIGNED(sum, w) : 0;
+    out[row] = (int16_t)DIVIDE_AND_ROUND_SIGNED(sum, w);
   }
 }
 
 // Compute the column average value of the wxh block.
 static inline void avg_wxh_block_vert_c(int16_t *diff, ptrdiff_t diff_stride,
                                         int w, int h, int16_t *out) {
+  assert(w > 0 && h > 0);
   for (int col = 0; col < w; ++col) {
     int32_t sum = 0;
     for (int row = 0; row < h; ++row) {
-      sum += *(diff + row * diff_stride + col);
+      sum += diff[row * diff_stride + col];
     }
-    out[col] = (h > 0) ? (int16_t)DIVIDE_AND_ROUND_SIGNED(sum, h) : 0;
+    out[col] = (int16_t)DIVIDE_AND_ROUND_SIGNED(sum, h);
   }
-}
-
-static inline void *aom_memset_int16(void *dest, int16_t val, size_t length) {
-  size_t i;
-  int16_t *dest16 = (int16_t *)dest;
-  for (i = 0; i < length; i++) *dest16++ = val;
-  return dest;
 }
 
 // Fill the outside-frame part's residues with values derived from the in-frame
@@ -95,12 +91,11 @@ static inline void fill_residue_outside_frame(
     // Fill the remaining parts of the block with the average value
     const int right_pixels = tx_cols - visible_tx_cols;
     for (int i = 0; i < tx_rows; ++i) {
-      aom_memset_int16(diff + i * diff_stride + visible_tx_cols, avg,
-                       right_pixels);
+      aom_memset16(diff + i * diff_stride + visible_tx_cols, avg, right_pixels);
     }
 
     for (int i = visible_tx_rows; i < tx_rows; ++i) {
-      aom_memset_int16(diff + i * diff_stride, avg, visible_tx_cols);
+      aom_memset16(diff + i * diff_stride, avg, visible_tx_cols);
     }
   } else if (htx_tab[tx_type] == IDTX_1D) {
     if (visible_tx_rows < tx_rows) {
@@ -134,8 +129,8 @@ static inline void fill_residue_outside_frame(
                               visible_tx_rows, out);
 
       for (int i = 0; i < visible_tx_rows; ++i) {
-        aom_memset_int16(diff + i * diff_stride + visible_tx_cols, out[i],
-                         right_pixels);
+        aom_memset16(diff + i * diff_stride + visible_tx_cols, out[i],
+                     right_pixels);
       }
     }
 
@@ -170,9 +165,9 @@ void av1_subtract_block(const MACROBLOCK *x, int rows, int cols, int16_t *diff,
   if (!do_border_pad) return;
 
   int visible_cols, visible_rows;
-  const int is_border_block =
-      get_visible_dimensions(x, plane, plane_bsize, blk_col, blk_row, cols,
-                             rows, &visible_cols, &visible_rows, true);
+  const int is_border_block = get_visible_dimensions(
+      x, plane, plane_bsize, blk_col, blk_row, cols, rows,
+      /*clip_dims=*/true, &visible_cols, &visible_rows);
   if (is_border_block)
     fill_residue_outside_frame(diff, diff_stride, cols, rows, visible_cols,
                                visible_rows, tx_type);

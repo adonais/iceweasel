@@ -16,6 +16,7 @@ webIdlBindings/index
 ioutils_migration
 fedcm
 streams
+promise/safe-promise-resolve
 use-counters
 loggingKeyboardIME
 ```

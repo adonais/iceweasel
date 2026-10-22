@@ -4,6 +4,7 @@
 
 import {
   isSpaceOverridden,
+  selectFirstSlotWidget,
   selectWidgetsRowAd,
   SPACE_IDS,
 } from "resource://newtab/common/PageLayoutVariants.mjs";
@@ -304,7 +305,18 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       ...(sectionsEnabled
         ? {
             sections: handleSections(data.sections, data.recommendations).map(
-              section => {
+              (section, sectionIndex) => {
+                // @experiment(remove) { bug 2078816 }
+                // Before the ads, so their indexes count the widget and they
+                // still land on their tiles.
+                const firstSlotWidget =
+                  sectionIndex === 0 && selectFirstSlotWidget(prefs);
+                const sectionData = firstSlotWidget
+                  ? [
+                      { type: "widget", widgetId: firstSlotWidget },
+                      ...section.data,
+                    ]
+                  : section.data;
                 const sectionsSpocsPositions = [];
                 const smallestBreakpointLayout =
                   section.layout.responsiveLayouts
@@ -336,7 +348,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
                 return {
                   ...section,
                   data: handleSpocs(
-                    section.data,
+                    sectionData,
                     sectionsSpocsPositions,
                     spocsPlacement
                   ),

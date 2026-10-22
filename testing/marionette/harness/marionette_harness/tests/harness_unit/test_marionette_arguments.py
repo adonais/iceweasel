@@ -76,5 +76,21 @@ def test_parse_opt_args_emulator(
     assert built_kwargs[arg_dest] == expected_value
 
 
+@pytest.mark.parametrize(
+    "argv, expected_value",
+    [
+        ([], None),
+        (["--tag=tag"], ["tag"]),
+        (["--tag", "tag"], ["tag"]),
+        (["--tag", "tag", "--tag=tag2"], ["tag", "tag2"]),
+    ],
+)
+def test_parse_arg_tag(argv, expected_value):
+    parser = MarionetteArguments()
+    args = parser.parse_args(args=argv)
+
+    assert args.test_tags == expected_value
+
+
 if __name__ == "__main__":
     mozunit.main("-p", "no:terminalreporter", "--log-tbpl=-", "--capture", "no")

@@ -25,6 +25,12 @@ add_setup(async function () {
   // To help diagnose an intermittent later.
   SimpleTest.requestCompleteLog();
 
+  // Right-clicking text selects the word under the cursor on macOS, which adds
+  // a selection to the context menu this test checks.
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+
   // Setup the test tab now, rather than for each test
   someOtherTab = gBrowser.selectedTab;
   testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE);

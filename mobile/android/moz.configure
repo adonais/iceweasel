@@ -56,24 +56,6 @@ set_define(
 )
 
 option(
-    "--enable-isolated-process",
-    env="MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
-    help="Enable generating content process services with isolatedProcess=true",
-)
-
-isIsolatedProcessEnabled = depends_if("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS")(
-    lambda _: True
-)
-set_config(
-    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
-    isIsolatedProcessEnabled,
-)
-set_define(
-    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
-    isIsolatedProcessEnabled,
-)
-
-option(
     "--enable-geckoview-lite",
     help="Build GeckoView in Lite mode. Lite mode removes all unnecessary dependencies like Glean",
 )

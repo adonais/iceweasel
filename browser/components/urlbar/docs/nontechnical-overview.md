@@ -1,6 +1,6 @@
 (urlbar-nontechnical-overview)=
 
-# Address Bar Nontechnical Overview
+# Nontechnical Overview
 
 This document provides a high level, nontechnical overview of Firefox's address
 bar, with a focus on the different types of results it shows and how it chooses

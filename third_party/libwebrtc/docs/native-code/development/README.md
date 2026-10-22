@@ -1,16 +1,13 @@
 # WebRTC development
 
-The currently supported platforms are Windows, Mac OS X, Linux, Android and
-iOS. See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development]
-pages for build instructions and example applications specific to these mobile platforms.
-
+The currently supported platforms are Windows, Mac OS X, Linux, Android and iOS.
+See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development]
+pages for build instructions and example applications specific to these mobile
+platforms.
 
 ## Before You Start
 
 First, be sure to install the [prerequisite software][webrtc-prerequisite-sw].
-
-[webrtc-prerequisite-sw]: https://webrtc.googlesource.com/src/+/main/docs/native-code/development/prerequisite-sw/
-
 
 ## Getting the Code
 
@@ -25,13 +22,28 @@ $ fetch --nohooks webrtc
 $ gclient sync
 ```
 
-NOTICE: During your first sync, you'll have to accept the license agreement of the Google Play Services SDK.
+NOTICE: During your first sync, you'll have to accept the license agreement of
+the Google Play Services SDK.
 
-The checkout size is large due the use of the Chromium build toolchain and many dependencies. Estimated size:
+The checkout size is large due the use of the Chromium build toolchain and many
+dependencies. Estimated size:
 
-* Linux: 6.4 GB.
-* Linux (with Android): 16 GB (of which ~8 GB is Android SDK+NDK images).
-* Mac (with iOS support): 5.6GB
+- Linux: 6.4 GB.
+- Linux (with Android): 16 GB (of which ~8 GB is Android SDK+NDK images).
+- Mac (with iOS support): 5.6GB
+
+If you don't need the git history (e.g. for bots, CI or building a release),
+pass `--no-history` to `fetch` to do shallow clones of `src` and all its
+dependencies. This reduces both the checkout size and the time it takes
+significantly:
+
+```
+$ fetch --nohooks --no-history webrtc
+$ gclient sync --no-history
+```
+
+Note that `git log`, `git blame` and moving to older revisions won't work as
+expected in a shallow checkout.
 
 2. Optionally you can specify how new branches should be tracked:
 
@@ -48,7 +60,8 @@ $ git checkout main
 $ git new-branch your-branch-name
 ```
 
-See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development] pages for separate instructions.
+See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development]
+pages for separate instructions.
 
 **NOTICE:** if you get `Remote: Daily bandwidth rate limit exceeded for <ip>`,
 make sure you're logged in. The quota is much larger for logged in users.
@@ -67,19 +80,19 @@ $ git merge main
 
 ## Building
 
-[Ninja][ninja] is the default build system for all platforms.
+[Ninja] is the default build system for all platforms.
 
-See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development] pages for build
-instructions specific to those platforms.
+See the [Android][webrtc-android-development] and [iOS][webrtc-ios-development]
+pages for build instructions specific to those platforms.
 
 ## Generating Ninja project files
 
-[Ninja][ninja] project files are generated using [GN][gn]. They're put in a
-directory of your choice, like `out/Debug` or `out/Release`, but you can
-use any directory for keeping multiple configurations handy.
+[Ninja] project files are generated using [GN]. They're put in a directory of
+your choice, like `out/Debug` or `out/Release`, but you can use any directory
+for keeping multiple configurations handy.
 
-To generate project files using the defaults (Debug build), run (standing in
-the src/ directory of your checkout):
+To generate project files using the defaults (Debug build), run (standing in the
+src/ directory of your checkout):
 
 ```
 $ gn gen out/Default
@@ -98,10 +111,11 @@ configuration untouched (stored in the args.gn file), do:
 $ gn clean out/Default
 ```
 
-To build the fuzzers residing in the [test/fuzzers][fuzzers-dir] directory, read the instructions at the [fuzzers][fuzzers] page.
+To build the fuzzers residing in the [test/fuzzers][fuzzers-dir] directory, read
+the instructions at the [fuzzers] page.
 
-See the [GN][gn-doc] documentation for all available options. There are also more
-platform specific tips on the [Android][webrtc-android-development] and
+See the [GN][gn-doc] documentation for all available options. There are also
+more platform specific tips on the [Android][webrtc-android-development] and
 [iOS][webrtc-ios-development] instructions.
 
 ## Compiling
@@ -109,7 +123,7 @@ platform specific tips on the [Android][webrtc-android-development] and
 When you have Ninja project files generated (see previous section), compile
 (standing in `src/`) using:
 
-For [Ninja][ninja] project files generated in `out/Default`:
+For [Ninja] project files generated in `out/Default`:
 
 ```
 $ autoninja -C out/Default
@@ -121,11 +135,14 @@ To build everything in the generated folder (`out/Default`):
 $ autoninja all -C out/Default
 ```
 
-`autoninja` is a wrapper that automatically provides optimal values for the arguments passed to `ninja`.
+`autoninja` is a wrapper that automatically provides optimal values for the
+arguments passed to `ninja`.
 
-See [Ninja build rules][ninja-build-rules] to read more about difference between `ninja` and `ninja all`.
+See [Ninja build rules][ninja-build-rules] to read more about difference between
+`ninja` and `ninja all`.
 
-To build a particular target (like a fuzzer which is not included in the main target) use
+To build a particular target (like a fuzzer which is not included in the main
+target) use
 
 ```
 autoninja -C out/Default h264_depacketizer_fuzzer
@@ -133,14 +150,12 @@ autoninja -C out/Default h264_depacketizer_fuzzer
 
 ## Using Another Build System
 
-Other build systems are **not supported** (and may fail), such as Visual
-Studio on Windows or Xcode on OSX. GN supports a hybrid approach of using
-[Ninja][ninja] for building, but Visual Studio/Xcode for editing and driving
-compilation.
+Other build systems are **not supported** (and may fail), such as Visual Studio
+on Windows or Xcode on OSX. GN supports a hybrid approach of using [Ninja] for
+building, but Visual Studio/Xcode for editing and driving compilation.
 
-To generate IDE project files, pass the `--ide` flag to the [GN][gn] command.
-See the [GN reference][gn-doc] for more details on the supported IDEs.
-
+To generate IDE project files, pass the `--ide` flag to the [GN] command. See
+the [GN reference][gn-doc] for more details on the supported IDEs.
 
 ## Working with Release Branches
 
@@ -150,17 +165,17 @@ To see available release branches, run:
 $ git branch -r
 ```
 
-To create a local branch tracking a remote release branch (in this example,
-the branch corresponding to Chrome M80):
+To create a local branch tracking a remote release branch (in this example, the
+branch corresponding to Chrome M80):
 
 ```
 $ git checkout -b my_branch refs/remotes/branch-heads/3987
 $ gclient sync
 ```
 
-**NOTICE**: depot_tools are not tracked with your checkout, so it's possible gclient
-sync will break on sufficiently old branches. In that case, you can try using
-an older depot_tools:
+**NOTICE**: depot_tools are not tracked with your checkout, so it's possible
+gclient sync will break on sufficiently old branches. In that case, you can try
+using an older depot_tools:
 
 ```
 which gclient
@@ -176,31 +191,29 @@ $ # verify the current branch becomes REMOTE:origin/main
 
 The above is untested and unsupported, but it might help.
 
-Commit log for the branch: [https://webrtc.googlesource.com/src/+log/branch-heads/3987][m80-log]
-To browse it: [https://webrtc.googlesource.com/src/+/branch-heads/3987][m80]
+Commit log for the branch:
+[https://webrtc.googlesource.com/src/+log/branch-heads/3987][m80-log] To browse
+it: [https://webrtc.googlesource.com/src/+/branch-heads/3987][m80]
 
-For more details, read Chromium's [Working with Branches][chromium-work-branches] and
-[Working with Release Branches][chromium-work-release-branches] pages.
-To find the branch corresponding to a Chrome release check the
+For more details, read Chromium's
+[Working with Branches][chromium-work-branches] and
+[Working with Release Branches][chromium-work-release-branches] pages. To find
+the branch corresponding to a Chrome release check the
 [Chromium Dashboard][chromium-dashboard].
-
 
 ## Contributing Patches
 
 Please see [Contributing Fixes][contributing] for information on how to run
-`git cl upload`, getting your patch reviewed, and getting it submitted. You can also
-find info on how to run trybots and applying for try rights.
-
-[contributing]: https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/development/contributing.md
-
+`git cl upload`, getting your patch reviewed, and getting it submitted. You can
+also find info on how to run trybots and applying for try rights.
 
 ## Chromium Committers
 
 Many WebRTC committers are also Chromium committers. To make sure to use the
 right account for pushing commits to WebRTC, use the `user.email` Git config
-setting. The recommended way is to have the chromium committer account set globally
-as described at the [depot tools setup page][depot-tools] and then set `user.email`
-locally for the WebRTC repos using:
+setting. The recommended way is to have the chromium committer account set
+globally as described at the [depot tools setup page][depot-tools] and then set
+`user.email` locally for the WebRTC repos using:
 
 ```
 $ cd /path/to/webrtc/src
@@ -212,18 +225,17 @@ $ git config user.email <YOUR_WEBRTC_COMMITTER_EMAIL>
 WebRTC contains several example applications, which can be found under
 `src/webrtc/examples`. Higher level applications are listed first.
 
-
 ### Peerconnection
 
 Peerconnection consist of two applications using the WebRTC Native APIs:
 
-* A server application, with target name `peerconnection_server`
-* A client application, with target name `peerconnection_client` (not currently supported on Mac/Android)
+- A server application, with target name `peerconnection_server`
+- A client application, with target name `peerconnection_client` (not currently
+  supported on Mac/Android)
 
 The client application has simple voice and video capabilities. The server
 enables client applications to initiate a call between clients by managing
 signaling messages generated by the clients.
-
 
 #### Setting up P2P calls between peerconnection_clients
 
@@ -234,15 +246,15 @@ that it is running:
 Server listening on port 8888
 ```
 
-Start any number of `peerconnection_clients` and connect them to the server.
-The client UI consists of a few parts:
+Start any number of `peerconnection_clients` and connect them to the server. The
+client UI consists of a few parts:
 
 **Connecting to a server:** When the application is started you must specify
-which machine (by IP address) the server application is running on. Once that
-is done you can press **Connect** or the return button.
+which machine (by IP address) the server application is running on. Once that is
+done you can press **Connect** or the return button.
 
-**Select a peer:** Once successfully connected to a server, you can connect to
-a peer by double-clicking or select+press return on a peer's name.
+**Select a peer:** Once successfully connected to a server, you can connect to a
+peer by double-clicking or select+press return on a peer's name.
 
 **Video chat:** When a peer has been successfully connected to, a video chat
 will be displayed in full window.
@@ -252,7 +264,6 @@ peer.
 
 **Ending connection:** Press **Esc** and you will now be able to select which
 server to connect to.
-
 
 #### Testing peerconnection_server
 
@@ -269,25 +280,24 @@ peers.
 Target name `stunserver`. Implements the STUN protocol for Session Traversal
 Utilities for NAT as documented in [RFC 5389][rfc-5389].
 
-
 ### TURN Server
 
 Target name `turnserver`. Used for unit tests.
 
-
-[ninja]: https://ninja-build.org/
-[ninja-build-rules]: https://gn.googlesource.com/gn/+/main/docs/reference.md#the-all-and-default-rules
-[gn]: https://gn.googlesource.com/gn/+/main/README.md
-[gn-doc]: https://gn.googlesource.com/gn/+/main/docs/reference.md#IDE-options
-[webrtc-android-development]: https://webrtc.googlesource.com/src/+/main/docs/native-code/android/
-[webrtc-ios-development]: https://webrtc.googlesource.com/src/+/main/docs/native-code/ios/
 [chromium-dashboard]: https://chromiumdash.appspot.com/branches
 [chromium-work-branches]: https://www.chromium.org/developers/how-tos/get-the-code/working-with-branches
 [chromium-work-release-branches]: https://www.chromium.org/developers/how-tos/get-the-code/working-with-release-branches
+[contributing]: https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/development/contributing.md
 [depot-tools]: http://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up
-[rfc-5389]: https://tools.ietf.org/html/rfc5389
-[rfc-5766]: https://tools.ietf.org/html/rfc5766
-[m80-log]: https://webrtc.googlesource.com/src/+log/branch-heads/3987
-[m80]: https://webrtc.googlesource.com/src/+/branch-heads/3987
-[fuzzers-dir]: https://webrtc.googlesource.com/src/+/main/test/fuzzers/
 [fuzzers]: https://webrtc.googlesource.com/src/+/main/docs/native-code/development/fuzzers/
+[fuzzers-dir]: https://webrtc.googlesource.com/src/+/main/test/fuzzers/
+[gn]: https://gn.googlesource.com/gn/+/main/README.md
+[gn-doc]: https://gn.googlesource.com/gn/+/main/docs/reference.md#IDE-options
+[m80]: https://webrtc.googlesource.com/src/+/branch-heads/3987
+[m80-log]: https://webrtc.googlesource.com/src/+log/branch-heads/3987
+[ninja]: https://ninja-build.org/
+[ninja-build-rules]: https://gn.googlesource.com/gn/+/main/docs/reference.md#the-all-and-default-rules
+[rfc-5389]: https://tools.ietf.org/html/rfc5389
+[webrtc-android-development]: https://webrtc.googlesource.com/src/+/main/docs/native-code/android/
+[webrtc-ios-development]: https://webrtc.googlesource.com/src/+/main/docs/native-code/ios/
+[webrtc-prerequisite-sw]: https://webrtc.googlesource.com/src/+/main/docs/native-code/development/prerequisite-sw/

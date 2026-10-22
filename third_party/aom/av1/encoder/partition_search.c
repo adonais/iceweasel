@@ -637,8 +637,7 @@ static void setup_block_rdmult(const AV1_COMP *const cpi, MACROBLOCK *const x,
   }
 #endif
 #if CONFIG_TUNE_VMAF
-  else if (cpi->oxcf.tune_cfg.tuning == AOM_TUNE_VMAF_WITHOUT_PREPROCESSING ||
-           cpi->oxcf.tune_cfg.tuning == AOM_TUNE_VMAF_MAX_GAIN ||
+  else if (cpi->oxcf.tune_cfg.tuning == AOM_TUNE_VMAF_MAX_GAIN ||
            cpi->oxcf.tune_cfg.tuning == AOM_TUNE_VMAF_NEG_MAX_GAIN) {
     av1_set_vmaf_rdmult(cpi, x, bsize, mi_row, mi_col, &x->rdmult);
   }
@@ -5691,7 +5690,7 @@ bool av1_rd_pick_partition(AV1_COMP *const cpi, ThreadData *td,
 
   // Override skipping rectangular partition operations for edge blocks.
   if (none_rd) *none_rd = 0;
-  (void)*tp_orig;
+  (void)tp_orig;
 
 #if CONFIG_COLLECT_PARTITION_STATS
   // Stats at the current quad tree
@@ -6310,7 +6309,7 @@ void av1_nonrd_pick_partition(AV1_COMP *cpi, ThreadData *td,
   MACROBLOCK *const x = &td->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   const int hbs = mi_size_wide[bsize] >> 1;
-  TokenExtra *tp_orig = *tp;
+  const TokenExtra *const tp_orig = *tp;
   const ModeCosts *mode_costs = &x->mode_costs;
   RD_STATS this_rdc, best_rdc;
   RD_SEARCH_MACROBLOCK_CONTEXT x_ctx;
@@ -6324,7 +6323,7 @@ void av1_nonrd_pick_partition(AV1_COMP *cpi, ThreadData *td,
   assert(mi_size_wide[bsize] == mi_size_high[bsize]);  // Square partition only
   assert(cm->seq_params->sb_size == BLOCK_64X64);      // Small SB so far
 
-  (void)*tp_orig;
+  (void)tp_orig;
 
   av1_invalid_rd_stats(&best_rdc);
   best_rdc.rdcost = best_rd;

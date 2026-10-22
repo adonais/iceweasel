@@ -4,6 +4,7 @@
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Networking: HTTP")
+    SCHEDULES.exclusive = ["windows"]
 
 TEST_DIRS += ["tests/gtest"]
 

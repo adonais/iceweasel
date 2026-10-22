@@ -18,9 +18,7 @@ EXPORTS += [
     "COLRFonts.h",
     "DrawMode.h",
     "gfx2DGlue.h",
-    "gfxAlphaRecovery.h",
     "gfxASurface.h",
-    "gfxBaseSharedMemorySurface.h",
     "gfxBlur.h",
     "gfxColor.h",
     "gfxContext.h",
@@ -52,7 +50,6 @@ EXPORTS += [
     "gfxQuaternion.h",
     "gfxRect.h",
     "gfxScriptItemizer.h",
-    "gfxSharedImageSurface.h",
     "gfxSkipChars.h",
     "gfxSparseBitSet.h",
     "gfxSVGGlyphs.h",
@@ -154,7 +151,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXPORTS += [
         "gfxDWriteCommon.h",
         "gfxDWriteFonts.h",
-        "gfxWindowsNativeDrawing.h",
         "gfxWindowsPlatform.h",
         "gfxWindowsSurface.h",
     ]
@@ -168,7 +164,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "DisplayConfigWindows.cpp",
         "gfxDWriteCommon.cpp",
         "gfxDWriteFonts.cpp",
-        "gfxWindowsNativeDrawing.cpp",
         "gfxWindowsPlatform.cpp",
         "gfxWindowsSurface.cpp",
         "PrintTargetPDF.cpp",
@@ -177,13 +172,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     UNIFIED_SOURCES += [
         "gfxDWriteFontList.cpp",
     ]
-
-# Are we targeting x86 or x64?  If so, build gfxAlphaRecoverySSE2.cpp.
-if CONFIG["INTEL_ARCHITECTURE"]:
-    SOURCES += ["gfxAlphaRecoverySSE2.cpp"]
-    # The file uses SSE2 intrinsics, so it needs special compile flags on some
-    # compilers.
-    SOURCES["gfxAlphaRecoverySSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
 
 SOURCES += [
     # Includes mac system header conflicting with point/size,
@@ -204,8 +192,6 @@ UNIFIED_SOURCES += [
     "CJKCompatSVS.cpp",
     "COLRFonts.cpp",
     "FontPaletteCache.cpp",
-    "gfxAlphaRecovery.cpp",
-    "gfxBaseSharedMemorySurface.cpp",
     "gfxBlur.cpp",
     "gfxContext.cpp",
     "gfxFont.cpp",
@@ -267,7 +253,6 @@ LOCAL_INCLUDES += [
     "/dom/xml",
     "/gfx/cairo/cairo/src",
     "/image/encoders/jpeg",
-    "/third_party/xsimd/include",
     "/widget/gtk",
 ]
 

@@ -11,6 +11,7 @@
 #include "FileSystemFileManager.h"
 #include "FileSystemHashSource.h"
 #include "FileSystemParentTypes.h"
+#include "FileSystemQuotaClient.h"
 #include "NotifyUtils.h"
 #include "ResultStatement.h"
 #include "SchemaVersion001.h"
@@ -116,12 +117,14 @@ void RemoveFileSystemDataManager(const Origin& aOrigin) {
 
 Result<ResultConnection, QMResult> GetStorageConnection(
     const quota::OriginMetadata& aOriginMetadata,
-    const int64_t aDirectoryLockId) {
+    const int64_t aDirectoryLockId,
+    const Maybe<FileSystemCipherKey>& aMaybeCipherKey) {
   MOZ_ASSERT(aDirectoryLockId >= -1);
 
   // Ensure that storage is initialized and file system folder exists!
-  QM_TRY_INSPECT(const auto& dbFileUrl,
-                 GetDatabaseFileURL(aOriginMetadata, aDirectoryLockId));
+  QM_TRY_INSPECT(
+      const auto& dbFileUrl,
+      GetDatabaseFileURL(aOriginMetadata, aDirectoryLockId, aMaybeCipherKey));
 
   QM_TRY_INSPECT(
       const auto& storageService,
@@ -136,6 +139,15 @@ Result<ResultConnection, QMResult> GetStorageConnection(
                     mozIStorageService::CONNECTION_DEFAULT)));
 
   ResultConnection result(connection);
+
+  if (aMaybeCipherKey) {
+    // With a cipher key, mozilla::storage::obfsvfs is used (see
+    // GetDatabaseFileURL()). When using that, the database page size must be
+    // exactly 8192 bytes (see ObfuscatingVFS.cpp). IDB does the same thing in
+    // its CreateStorageConnection().
+    QM_TRY(
+        QM_TO_RESULT(result->ExecuteSimpleSQL("PRAGMA page_size = 8192;"_ns)));
+  }
 
   return result;
 }
@@ -658,6 +670,11 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                 MOZ_TO_RESULT(EnsureFileSystemDirectory(self->mOriginMetadata)),
                 CreateAndRejectBoolPromise);
 
+            auto* const quotaClient = static_cast<FileSystemQuotaClient*>(
+                self->mQuotaManager->GetClient(quota::Client::FILESYSTEM));
+            self->mCipherKeyManager =
+                quotaClient->GetOrCreateCipherKeyManager(self->mOriginMetadata);
+
             quota::SleepIfEnabled(
                 StaticPrefs::dom_fs_databaseInitialization_pauseOnIOThreadMs());
 
@@ -672,10 +689,17 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                                                   __func__);
             }
 
-            QM_TRY_UNWRAP(auto connection,
-                          GetStorageConnection(self->mOriginMetadata,
-                                               self->mDirectoryLockId),
-                          CreateAndRejectBoolPromiseFromQMResult);
+            Maybe<FileSystemCipherKey> maybeCipherKey;
+            if (self->mCipherKeyManager) {
+              maybeCipherKey =
+                  Some(self->mCipherKeyManager->Ensure(kDatabaseCipherKeyId));
+            }
+
+            QM_TRY_UNWRAP(
+                auto connection,
+                GetStorageConnection(self->mOriginMetadata,
+                                     self->mDirectoryLockId, maybeCipherKey),
+                CreateAndRejectBoolPromiseFromQMResult);
 
             QM_TRY_UNWRAP(UniquePtr<FileSystemFileManager> fmPtr,
                           FileSystemFileManager::CreateFileSystemFileManager(

@@ -268,7 +268,7 @@ body {
       transition: opacity 80ms var(--mini-window-ease-standard);
     }
 
-    &:is(.mini-window-revealed, :hover, :focus-within) {
+    &:is(.mini-window-revealed, :hover, :focus-within:not(:-moz-window-inactive)) {
       transform: translateY(0);
       opacity: 1;
     }
@@ -284,7 +284,7 @@ body {
  * keeps the window's full height throughout, so while the bar is up its last
  * few rows sit below the bottom of the window. */
 :root[mini-window] {
-  #navigator-toolbox:is(.mini-window-revealed, :hover, :focus-within) ~ #browser {
+  #navigator-toolbox:is(.mini-window-revealed, :hover, :focus-within:not(:-moz-window-inactive)) ~ #browser {
     /* 0 until the bar has been measured, which happens before it is first revealed. */
     transform: translateY(var(--mini-window-toolbar-height, 0));
   }
@@ -636,11 +636,6 @@ body {
   :root[taskbartab] & {
     display: none;
   }
-}
-
-/* Share Button */
-.share-more-button {
-  --menuitem-icon: url("chrome://global/skin/icons/more.svg");
 }
 
 /* Bookmarks toolbar */

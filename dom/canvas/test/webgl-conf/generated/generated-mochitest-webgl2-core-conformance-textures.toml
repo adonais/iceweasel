@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -84,8 +86,6 @@ skip-if = [
 
 ["test_2_conformance__textures__misc__tex-video-using-tex-unit-non-zero.html"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
 ]
 
@@ -119,22 +119,10 @@ skip-if = [
 ["test_2_conformance__textures__misc__texture-mips.html"]
 
 ["test_2_conformance__textures__misc__texture-size-cube-maps.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance__textures__misc__texture-size-limit.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
-]
 
 ["test_2_conformance__textures__misc__texture-size.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance__textures__misc__texture-srgb-upload.html"]
 skip-if = [

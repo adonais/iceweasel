@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `stack`
 
-: A pointer to a {ref}`PRFileDesc` object representing the stack from
+: A pointer to a {doc}`prfiledesc` object representing the stack from
   which the specified layer is to be removed.
 
 `id`
@@ -37,8 +37,8 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_PopIOLayer` pops the specified layer from the stack. If the object
-to be removed is found, {ref}`PR_PopIOLayer` returns a pointer to the
+{doc}`pr_popiolayer` pops the specified layer from the stack. If the object
+to be removed is found, {doc}`pr_popiolayer` returns a pointer to the
 removed object The object then becomes the responsibility of the caller.
 
 Even if the identity indicates the top layer of the stack, the reference

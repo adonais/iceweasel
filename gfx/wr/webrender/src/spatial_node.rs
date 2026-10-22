@@ -73,18 +73,6 @@ pub struct SceneSpatialNode {
     pub is_root_coord_system: bool,
 }
 
-/// Grid that reference-frame origins are quantized to (see
-/// `SceneSpatialNode::new_reference_frame`). The display-list builder
-/// reconstitutes an origin as a scrolled-space value plus a re-added (fractional)
-/// external scroll offset; at large scroll magnitudes that f32 round-trip can
-/// leave the origin slightly off its intended sub-pixel position (a few of the
-/// smallest representable float increments, e.g. 201.49994 vs 201.5). That tiny
-/// error sits on the device-pixel snap tie and flips snapped content +/-1px
-/// frame-to-frame while scrolling. 1/128 px is far above that float noise yet far
-/// below a device pixel (about half Gecko's app-unit granularity), so quantizing
-/// removes the noise without disturbing genuine sub-pixel placement.
-const REFERENCE_FRAME_ORIGIN_QUANTUM: f32 = 1.0 / 128.0;
-
 impl SceneSpatialNode {
     pub fn new_reference_frame(
         parent_index: Option<SpatialNodeIndex>,
@@ -96,17 +84,6 @@ impl SceneSpatialNode {
         is_root_coord_system: bool,
         is_pipeline_root: bool,
     ) -> Self {
-        // Quantize the reference-frame origin to REFERENCE_FRAME_ORIGIN_QUANTUM to
-        // strip the tiny float noise the builder's scrolled-space ESO round-trip
-        // can introduce (e.g. 201.49994 vs 201.5), which otherwise straddles the
-        // device-pixel snap tie and jitters snapped content +/-1px while scrolling.
-        let origin_in_parent_reference_frame = {
-            let q = REFERENCE_FRAME_ORIGIN_QUANTUM;
-            LayoutVector2D::new(
-                (origin_in_parent_reference_frame.x / q).round() * q,
-                (origin_in_parent_reference_frame.y / q).round() * q,
-            )
-        };
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
@@ -238,6 +215,37 @@ pub struct SpatialNode {
     /// the tree's existing policy of not snapping animated transforms (bug
     /// 637852), which the device text-snap path (bug 2044211) otherwise misses.
     pub is_ancestor_or_self_animating: bool,
+
+    /// True if this node is the spatial node of a picture cache slice.
+    pub is_slice_root: bool,
+
+    /// Adjustment that places a slice root scroll or sticky frame on the device
+    /// pixel grid. Applied to this node's transforms and to the coordinate system
+    /// offset handed to its descendants.
+    pub slice_root_snap_offset: WorldVector2D,
+}
+
+/// Grid that a device-space offset is quantized to just before it is rounded
+/// to a device pixel (`snap_offset`, and the `should_snap` round in
+/// `update_transform`). The display-list builder reconstitutes a
+/// reference-frame origin as a scrolled-space value plus a re-added (fractional)
+/// external scroll offset; at large scroll magnitudes that f32 round-trip can
+/// leave the origin slightly off its intended sub-pixel position (a few of the
+/// smallest representable float increments, e.g. 201.49994 vs 201.5). That tiny
+/// error sits on the device-pixel snap tie and flips snapped content +/-1px
+/// frame-to-frame while scrolling. 1/128 px is far above that float noise yet far
+/// below a device pixel (about half Gecko's app-unit granularity), so quantizing
+/// removes the noise without disturbing genuine sub-pixel placement.
+///
+/// This is only ever applied to device-space values that are about to be
+/// rounded. A reference frame's local origin is left exact: under a scaled
+/// ancestor (an SVG viewBox, say) 1/128 of a local unit is a sizeable fraction
+/// of a device pixel, and unsnapped (anti-aliased) content below the frame
+/// would visibly shift by it.
+const DEVICE_OFFSET_QUANTUM: f32 = 1.0 / 128.0;
+
+fn quantize_device_offset(value: f32) -> f32 {
+    (value / DEVICE_OFFSET_QUANTUM).round() * DEVICE_OFFSET_QUANTUM
 }
 
 /// Snap an offset to be incorporated into a transform, where the local space
@@ -256,8 +264,8 @@ fn snap_offset<OffsetUnits, ScaleUnits>(
     // composite offset; that offset must still be snapped here so the slice
     // composites on an integer boundary. Scroll slices already land integer
     // (their sampled offset is pre-snapped); sticky slices rely on this.
-    let snapped_x = (offset.x * scale.x).round();
-    let snapped_y = (offset.y * scale.y).round();
+    let snapped_x = quantize_device_offset(offset.x * scale.x).round();
+    let snapped_y = quantize_device_offset(offset.y * scale.y).round();
     Vector2D::new(
         if scale.x != 0.0 { snapped_x / scale.x } else { offset.x },
         if scale.y != 0.0 { snapped_y / scale.y } else { offset.y },
@@ -496,7 +504,10 @@ impl SpatialNode {
                             // viewport offset when scrolling.
                             cs_scale_offset = scale_offset.then(&state.coordinate_system_relative_scale_offset);
                             if let ReferenceFrameKind::Transform { should_snap: true, .. } = info.kind {
-                                cs_scale_offset.offset = cs_scale_offset.offset.round();
+                                cs_scale_offset.offset = Vector2D::new(
+                                    quantize_device_offset(cs_scale_offset.offset.x).round(),
+                                    quantize_device_offset(cs_scale_offset.offset.y).round(),
+                                );
                             }
                         }
                         None => reset_cs_id = true,
@@ -591,6 +602,28 @@ impl SpatialNode {
                     .pre_offset(snap_offset(added_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
 
                 self.coordinate_system_id = state.current_coordinate_system_id;
+            }
+        }
+
+        // A slice is rasterized relative to its spatial node and composited at a
+        // whole device pixel offset. If an unsnapped reference frame leaves the
+        // node at a fractional offset, surfaces drawn into the slice that rasterize
+        // relative to root end up off its pixel grid and get resampled when
+        // composited (bug 2077649). Snap the node so the spatial tree agrees with
+        // where the slice is composited. Slice content doesn't move, since it is
+        // already composited at the rounded offset.
+        self.slice_root_snap_offset = WorldVector2D::zero();
+        if self.is_slice_root {
+            if let SpatialNodeType::ScrollFrame(..) | SpatialNodeType::StickyFrame(..) = self.node_type {
+                debug_assert_eq!(self.coordinate_system_id, CoordinateSystemId::root());
+                let offset = self.content_transform.offset;
+                let snapped = Vector2D::new(
+                    quantize_device_offset(offset.x).round(),
+                    quantize_device_offset(offset.y).round(),
+                );
+                self.slice_root_snap_offset = WorldVector2D::from_untyped(snapped - offset);
+                self.content_transform.offset = snapped;
+                self.viewport_transform.offset += self.slice_root_snap_offset.to_untyped();
             }
         }
 
@@ -691,6 +724,7 @@ impl SpatialNode {
         // reference frame and the offset is the accumulated offset of all the nodes
         // between us and the parent reference frame. If we are a reference frame,
         // we need to reset both these values.
+        state.coordinate_system_relative_scale_offset.offset += self.slice_root_snap_offset.to_untyped();
         match self.node_type {
             SpatialNodeType::StickyFrame(ref info) => {
                 // We don't translate the combined rect by the sticky offset, because sticky

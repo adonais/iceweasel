@@ -1,19 +1,20 @@
-// Test basics of atom marking and check the isAtomMarked function works.
+// Test basics of atom reference tracking and check the isAtomMarked function
+// works.
 
 gczeal(0);
 let global = newGlobal({newCompartment: true});
 global.eval('var x = {}');
 gc();
 
-// Make an anonymous symbol and mark it in the global.
+// Unique symbols are not marked using the atom reference bitmap.
 let atom = Symbol();
-assertEq(isAtomMarked(this, atom), true);
+assertEq(isAtomMarked(this, atom), false);
 assertEq(isAtomMarked(global, atom), false);
 global.x[atom] = 0;
-assertEq(isAtomMarked(global, atom), true);
+assertEq(isAtomMarked(global, atom), false);
 
-// Make a named symbol (plus an atom for the description) and mark it.
-let sym = Symbol("baz");
+// Symbols created with Symbol.for do use the atom reference bitmap.
+let sym = Symbol.for("baz");
 assertEq(isAtomMarked(this, sym), true);
 assertEq(isAtomMarked(global, sym), false);
 global.x[sym] = 0;

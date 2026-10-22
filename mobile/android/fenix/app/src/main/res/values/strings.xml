@@ -280,8 +280,6 @@
     <string name="browser_menu_default_banner_title">Make %1$s your default</string>
     <!-- Label text within the set as default banner  -->
     <string name="browser_menu_default_banner_subtitle_2">Fast, private, and made for you.</string>
-    <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
-    <string name="browser_menu_default_banner_dismiss_promotion">Dismiss promotion</string>
     <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
     <string name="browser_menu_recommended_extensions_content_description">More info</string>
 
@@ -779,6 +777,8 @@
     <string name="preferences_override_sync_tokenserver">Custom Sync server</string>
     <!-- Preference category for account information -->
     <string name="preferences_category_account">Account</string>
+    <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+    <string name="preferences_category_sync_controls">Sync</string>
     <!-- Preference for changing where the AddressBar is positioned -->
     <string name="preferences_toolbar_2">Address bar location</string>
     <!-- Preference for changing toolbar layout -->
@@ -835,6 +835,8 @@
     <string name="preferences_search_synced_tabs">Search synced tabs</string>
     <!-- Preference for account settings -->
     <string name="preferences_account_settings">Account settings</string>
+    <!-- Preference for account and sync settings -->
+    <string name="preferences_account_and_sync_settings">Account and sync</string>
     <!-- Preference for enabling url autocomplete-->
     <string name="preferences_enable_autocomplete_urls">Autocomplete URLs</string>
     <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1093,6 +1095,12 @@
     <string name="preferences_sync_now">Sync now</string>
     <!-- Preference category for sync -->
     <string name="preferences_sync_category">Choose what to sync</string>
+    <!-- Preference category for sync controls -->
+    <string name="preferences_category_sync">Synced data</string>
+    <!-- Summary for the sync preference category. -->
+    <string name="preferences_sync_category_summary">Manage what syncs on all your connected devices</string>
+    <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+    <string name="preferences_sync_category_no_engine_selected_summary">You aren’t syncing anything. Choose what to keep synced across your devices.</string>
     <!-- Preference for syncing history -->
     <string name="preferences_sync_history">History</string>
     <!-- Preference for syncing bookmarks -->
@@ -1105,6 +1113,10 @@
     <string name="preferences_sign_out">Sign out</string>
     <!-- Preference displays and allows changing current FxA device name -->
     <string name="preferences_sync_device_name">Device name</string>
+    <!-- Preference category for Device name -->
+    <string name="preferences_device_name_category">Device name</string>
+    <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+    <string name="preferences_sync_change_device_name">Change device name</string>
     <!-- Text shown when user enters empty device name -->
     <string name="empty_device_name_error">Device name cannot be empty.</string>
     <!-- Label indicating that sync is in progress -->
@@ -2245,10 +2257,14 @@
     <string name="sync_send_tab_empty_state_title">No devices connected</string>
     <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
     <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">To send a tab, sign in to Firefox on at least one other device.</string>
+    <!-- Send tab to synced devices: Empty state link - Displayed when the user has no synced devices -->
+    <string name="sync_send_tab_empty_state_link">Learn how to connect a device</string>
     <!-- Send tab to synced devices: Connectivity Error title -->
     <string name="sync_send_tab_error_connection_title">Check your internet connection</string>
     <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
     <string name="sync_send_tab_error_connection_text">Then try resending your tab.</string>
+    <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+    <string name="sync_send_tab_error_connection_button">Retry</string>
 
     <!-- Notifications -->
     <!-- Text shown in the notification that pops up to remind the user that a private browsing session is active. -->
@@ -2415,6 +2431,12 @@
     <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[No account? <u>Create one</u> to sync Firefox between devices.]]></string>
     <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
     <string name="sign_out_confirmation_message_2">%s will stop syncing with your account, but won’t delete any of your browsing data on this device.</string>
+    <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_title">Sign out of your account?</string>
+    <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_message">Synced data stays saved in your account.</string>
+    <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+    <string name="sign_out_dialog_confirm_button">Sign out</string>
     <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
     <string name="sign_out_disconnect">Disconnect</string>
     <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -4132,6 +4154,16 @@
     <string name="lens_camera_mode_qr">QR scanner</string>
     <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
     <string name="lens_camera_qr_no_code_found">No QR code found in image</string>
+    <!-- Status shown under an image picked from the gallery while it is being sent to Google Lens for a visual search -->
+    <string name="lens_camera_loading_status">Looking this up</string>
+    <!-- Button shown under an image picked from the gallery while it is being sent to Google Lens. Tapping it stops the search and returns to the camera. -->
+    <string name="lens_camera_loading_cancel_button">Cancel</string>
+    <!-- Snackbar message shown when an image picked from the gallery could not be opened or read, so it was never sent to Google Lens. Shown after returning to the camera. -->
+    <string name="lens_camera_image_load_failed">Couldn’t load this image. Try a different one.</string>
+    <!-- Snackbar message shown when an image picked from the gallery could not be searched because of a network problem or an error from Google Lens. Shown after returning to the camera, next to the lens_camera_upload_failed_retry_button action. -->
+    <string name="lens_camera_upload_failed">Couldn’t get results from Google Lens</string>
+    <!-- Action in the snackbar shown when an image picked from the gallery could not be searched with Google Lens. Tapping it searches the same image again. -->
+    <string name="lens_camera_upload_failed_retry_button">Try again</string>
     <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
     <string name="lens_opt_out_title">Find it with Google Lens</string>
     <!-- Description of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
@@ -4210,4 +4242,6 @@
     <string name="reader_mode_panel_content_description">Reader Mode Options</string>
     <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
     <string name="reader_mode_panel_listen_content_description">Read Aloud</string>
+    <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+    <string name="reader_mode_panel_media_player_content_description">Media Player</string>
 </resources>

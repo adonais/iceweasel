@@ -151,6 +151,12 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& info,
 
 bool IsDefaultPlaybackDeviceMono();
 
+// Record on an Opus config how many channels the audio will be rendered as.
+void SetOpusOutputChannels(AudioInfo& aInfo);
+
+// The number of channels the audio will be rendered as.
+uint32_t AudioPlaybackChannels(const AudioInfo& aInfo);
+
 bool IsVideoContentType(const nsCString& aContentType);
 
 // Returns true if it's safe to use aPicture as the picture to be

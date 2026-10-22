@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/containers/flat_map.h"
@@ -37,16 +38,24 @@ class RtpDemuxerCriteria {
 
   static RtpDemuxerCriteria MatchAny() { return RtpDemuxerCriteria(true); }
 
-  bool operator==(const RtpDemuxerCriteria& other) const;
-  bool operator!=(const RtpDemuxerCriteria& other) const;
+  friend bool operator==(const RtpDemuxerCriteria&,
+                         const RtpDemuxerCriteria&) = default;
 
   bool match_any() const { return match_any_; }
 
   // If not the empty string, will match packets with this MID.
   const std::string& mid() const { return mid_; }
 
+  // Returns if demux criteria can be used for demuxing.
+  bool IsValid() const;
+
   // Return string representation of demux criteria to facilitate logging
   std::string ToString() const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const RtpDemuxerCriteria& self) {
+    sink.Append(self.ToString());
+  }
 
   // If not the empty string, will match packets with this as their RTP stream
   // ID or repaired RTP stream ID.
@@ -134,7 +143,7 @@ class RtpDemuxer {
   ~RtpDemuxer();
 
   RtpDemuxer(const RtpDemuxer&) = delete;
-  void operator=(const RtpDemuxer&) = delete;
+  RtpDemuxer& operator=(const RtpDemuxer&) = delete;
 
   void set_use_payload_type_demuxing(bool enable) {
     use_payload_type_demuxing_ = enable;
@@ -146,6 +155,7 @@ class RtpDemuxer {
   // criteria according to the algorithm described in the class description.
   // Returns true if the sink was successfully added.
   // Returns false in the following situations:
+  // - `criteria` is not valid.
   // - Only MID is specified and the MID is already registered.
   // - Only RSID is specified and the RSID is already registered.
   // - Both MID and RSID is specified and the (MID, RSID) pair is already
@@ -153,34 +163,37 @@ class RtpDemuxer {
   // - Any of the criteria SSRCs are already registered.
   // If false is returned, no changes are made to the demuxer state.
   bool AddSink(const RtpDemuxerCriteria& criteria,
-               RtpPacketSinkInterface* sink);
+               RtpPacketSinkInterface* absl_nonnull sink);
 
   // Registers a sink. Multiple SSRCs may be mapped to the same sink, but
   // each SSRC may only be mapped to one sink. The return value reports
   // whether the association has been recorded or rejected. Rejection may occur
   // if the SSRC has already been associated with a sink. The previously added
   // sink is *not* forgotten.
-  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
+  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* absl_nonnull sink);
 
   // Registers a sink's association to an RSID. Only one sink may be associated
   // with a given RSID. Null pointer is not allowed.
-  void AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink);
+  void AddSink(absl::string_view rsid,
+               RtpPacketSinkInterface* absl_nonnull sink);
 
   // Removes all sinks from the demuxer.
   void RemoveAllSinks();
 
   // Removes a sink. Return value reports if anything was actually removed.
   // Null pointer is not allowed.
-  bool RemoveSink(const RtpPacketSinkInterface* sink);
+  bool RemoveSink(const RtpPacketSinkInterface* absl_nonnull sink);
 
   // Returns the set of SSRCs associated with a sink.
-  flat_set<uint32_t> GetSsrcsForSink(const RtpPacketSinkInterface* sink) const;
+  flat_set<uint32_t> GetSsrcsForSink(
+      const RtpPacketSinkInterface* absl_nonnull sink) const;
 
   // Runs the demux algorithm on the given packet and returns the sink that
   // should receive the packet.
   // Will record any SSRC<->ID associations along the way.
   // If the packet should be dropped, this method returns null.
-  RtpPacketSinkInterface* ResolveSink(const RtpPacketReceived& packet);
+  RtpPacketSinkInterface* absl_nullable ResolveSink(
+      const RtpPacketReceived& packet);
 
   // Demuxes the given packet and forwards it to the chosen sink. Returns true
   // if the packet was forwarded and false if the packet was dropped.
@@ -192,22 +205,25 @@ class RtpDemuxer {
   bool CriteriaWouldConflict(const RtpDemuxerCriteria& criteria) const;
 
   // Used by the ResolveSink algorithm.
-  RtpPacketSinkInterface* ResolveSinkByMid(absl::string_view mid,
-                                           uint32_t ssrc);
-  RtpPacketSinkInterface* ResolveSinkByMidRsid(absl::string_view mid,
-                                               absl::string_view rsid,
-                                               uint32_t ssrc);
-  RtpPacketSinkInterface* ResolveSinkByRsid(absl::string_view rsid,
-                                            uint32_t ssrc);
-  RtpPacketSinkInterface* ResolveSinkByPayloadType(uint8_t payload_type,
-                                                   uint32_t ssrc);
+  RtpPacketSinkInterface* absl_nullable ResolveSinkByMid(absl::string_view mid,
+                                                         uint32_t ssrc);
+  RtpPacketSinkInterface* absl_nullable ResolveSinkByMidRsid(
+      absl::string_view mid,
+      absl::string_view rsid,
+      uint32_t ssrc);
+  RtpPacketSinkInterface* absl_nullable ResolveSinkByRsid(
+      absl::string_view rsid,
+      uint32_t ssrc);
+  RtpPacketSinkInterface* absl_nullable ResolveSinkByPayloadType(
+      uint8_t payload_type,
+      uint32_t ssrc);
 
   // Regenerate the known_mids_ set from information in the sink_by_mid_ and
   // sink_by_mid_and_rsid_ maps.
   void RefreshKnownMids();
 
   // Sink which matches all received packets.
-  RtpPacketSinkInterface* match_any_sink_ = nullptr;
+  RtpPacketSinkInterface* absl_nullable match_any_sink_ = nullptr;
 
   // Map each sink by its component attributes to facilitate quick lookups.
   // Payload Type mapping is a multimap because if two sinks register for the
@@ -216,12 +232,13 @@ class RtpDemuxer {
   // Note: Mappings are only modified by AddSink/RemoveSink (except for
   // SSRC mapping which receives all MID, payload type, or RSID to SSRC bindings
   // discovered when demuxing packets).
-  flat_map<std::string, RtpPacketSinkInterface*> sink_by_mid_;
-  flat_map<uint32_t, RtpPacketSinkInterface*> sink_by_ssrc_;
-  std::multimap<uint8_t, RtpPacketSinkInterface*> sinks_by_pt_;
-  flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+  flat_map<std::string, RtpPacketSinkInterface* absl_nonnull> sink_by_mid_;
+  flat_map<uint32_t, RtpPacketSinkInterface* absl_nonnull> sink_by_ssrc_;
+  std::multimap<uint8_t, RtpPacketSinkInterface* absl_nonnull> sinks_by_pt_;
+  flat_map<std::pair<std::string, std::string>,
+           RtpPacketSinkInterface* absl_nonnull>
       sink_by_mid_and_rsid_;
-  flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
+  flat_map<std::string, RtpPacketSinkInterface* absl_nonnull> sink_by_rsid_;
   flat_set<uint32_t> signaled_ssrcs_;
 
   // Tracks all the MIDs that have been identified in added criteria. Used to
@@ -237,7 +254,8 @@ class RtpDemuxer {
   flat_map<uint32_t, std::string> rsid_by_ssrc_;
 
   // Adds a binding from the SSRC to the given sink.
-  void AddSsrcSinkBinding(uint32_t ssrc, RtpPacketSinkInterface* sink);
+  void AddSsrcSinkBinding(uint32_t ssrc,
+                          RtpPacketSinkInterface* absl_nonnull sink);
 
   const bool use_mid_;
   bool use_payload_type_demuxing_ = true;

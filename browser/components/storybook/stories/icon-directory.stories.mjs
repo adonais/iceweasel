@@ -11,8 +11,8 @@ import {
 import chromeMap from "../.storybook/chrome-map.js";
 
 /**
- * @import MozMessageBar from "chrome://global/content/elements/moz-message-bar.mjs"
- * @import MozToggle from "chrome://global/content/elements/moz-toggle.mjs"
+ * @import { MozMessageBar } from "chrome://global/content/elements/moz-message-bar.mjs"
+ * @import { MozToggle } from "chrome://global/content/elements/moz-toggle.mjs"
  *
  * @typedef {string} FolderPath An in-tree folder path that has relevant files.
  * @typedef {string} FilePath An in-tree path to a file.

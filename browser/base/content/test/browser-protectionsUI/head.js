@@ -128,20 +128,6 @@ async function closeProtectionsPanel(win = window) {
   await popuphiddenPromise;
 }
 
-function checkClickTelemetry(objectName, value, source = "protectionspopup") {
-  let events = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS
-  ).parent;
-  let buttonEvents = events.filter(
-    e =>
-      e[1] == `security.ui.${source}` &&
-      e[2] == "click" &&
-      e[3] == objectName &&
-      e[4] === value
-  );
-  is(buttonEvents.length, 1, `recorded ${objectName} telemetry event`);
-}
-
 async function addTrackerDataIntoDB(count) {
   const insertSQL =
     "INSERT INTO events (type, count, timestamp)" +

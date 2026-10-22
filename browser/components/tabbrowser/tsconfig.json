@@ -1,7 +1,11 @@
 {
-  "include": ["*.sys.mjs", "types/*.ts"],
+  "include": ["*.sys.mjs", "content/*.mjs", "types/*.ts"],
   "exclude": [
-    "GroupsList.sys.mjs",
+    "content/tab-hover-preview.mjs",
+    "content/tab.mjs",
+    "content/tabgroup.mjs",
+    "content/tabs.mjs",
+    "content/tabsplitview.mjs",
     "SmartTabGrouping.sys.mjs",
     "TabsList.sys.mjs"
   ],

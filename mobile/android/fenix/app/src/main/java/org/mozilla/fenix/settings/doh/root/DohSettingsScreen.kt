@@ -349,6 +349,7 @@ private fun ProviderSummary(
 }
 
 @Composable
+@Suppress("Deprecation")
 private fun ProviderDropdown(
     selectedProviderOption: Provider,
     onProviderSelected: (Provider) -> Unit = {},

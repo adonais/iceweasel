@@ -27,4 +27,4 @@ mozbuild = "0.1"
 # Leave data collection enabled, but disable upload.
 disable_upload = []
 # Letting us know we're compiling with Gecko symbols.
-with_gecko = ["firefox-on-glean/with_gecko"]
+with_gecko = ["firefox-on-glean/with_gecko", "glean/gecko"]

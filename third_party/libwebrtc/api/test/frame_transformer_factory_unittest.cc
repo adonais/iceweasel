@@ -102,7 +102,9 @@ TEST(FrameTransformerFactory, CreateOutgoingVideoFrame) {
       /*rtp_timestamp_without_offset=*/222, data,
       /*absolute_capture_timestamp_ms=*/333, csrcs,
       VideoCodecType::kVideoCodecVP8,
-      /*presentation_timestamp=*/Timestamp::Micros(444));
+      /*presentation_timestamp=*/Timestamp::Micros(444),
+      /*width=*/640,
+      /*height=*/480);
 
   ASSERT_TRUE(frame);
   EXPECT_TRUE(frame->IsKeyFrame());
@@ -110,6 +112,8 @@ TEST(FrameTransformerFactory, CreateOutgoingVideoFrame) {
   EXPECT_THAT(frame->GetData(), ElementsAreArray(data));
   EXPECT_EQ(frame->GetSsrc(), 0u);
   EXPECT_STRCASEEQ("video/VP8", frame->GetMimeType().c_str());
+  EXPECT_EQ(frame->Metadata().GetWidth(), 640);
+  EXPECT_EQ(frame->Metadata().GetHeight(), 480);
   auto rtp_timestamp_info = frame->GetRtpTimestampInfo();
   ASSERT_TRUE(
       std::holds_alternative<RtpTimestampWithoutOffset>(rtp_timestamp_info));

@@ -750,8 +750,9 @@ static int enc_row_mt_worker_hook(void *arg1, void *unused) {
   return 1;
 }
 
-static int enc_worker_hook(void *arg1, void *unused) {
+static int enc_worker_hook(void *arg1, void *arg2) {
   EncWorkerData *const thread_data = (EncWorkerData *)arg1;
+  const int num_workers = (int)(intptr_t)arg2;
   AV1_COMP *const cpi = thread_data->cpi;
   MACROBLOCKD *const xd = &thread_data->td->mb.e_mbd;
   struct aom_internal_error_info *const error_info = &thread_data->error_info;
@@ -759,8 +760,6 @@ static int enc_worker_hook(void *arg1, void *unused) {
   const int tile_cols = cm->tiles.cols;
   const int tile_rows = cm->tiles.rows;
   int t;
-
-  (void)unused;
 
   xd->error_info = error_info;
 
@@ -784,8 +783,7 @@ static int enc_worker_hook(void *arg1, void *unused) {
     thread_data->td->pc_root = NULL;
   }
 
-  for (t = thread_data->start; t < tile_rows * tile_cols;
-       t += cpi->mt_info.num_workers) {
+  for (t = thread_data->start; t < tile_rows * tile_cols; t += num_workers) {
     int tile_row = t / tile_cols;
     int tile_col = t % tile_cols;
 
@@ -914,7 +912,7 @@ void av1_init_mt_sync(AV1_COMP *cpi, int is_first_pass) {
     }
 
 #if !CONFIG_REALTIME_ONLY
-    if (is_restoration_used(cm)) {
+    if (cm->seq_params->enable_restoration) {
       // Initialize loop restoration MT object.
       AV1LrSync *lr_sync = &mt_info->lr_row_sync;
       int rst_unit_size = cpi->sf.lpf_sf.min_lr_unit_size;
@@ -996,7 +994,7 @@ void av1_init_tile_thread_data(AV1_PRIMARY *ppi, int is_first_pass) {
 
       AOM_CHECK_MEM_ERROR(
           &ppi->error, td->upsample_pred,
-          aom_memalign(16, (1 + is_highbitdepth) * ((MAX_SB_SIZE + 16) + 16) *
+          aom_memalign(16, (1 + is_highbitdepth) * (MAX_SB_SIZE + SUBPEL_TAPS) *
                                MAX_SB_SIZE * sizeof(*td->upsample_pred)));
 
       if (!is_first_pass && i < num_enc_workers) {
@@ -1039,12 +1037,10 @@ void av1_init_tile_thread_data(AV1_PRIMARY *ppi, int is_first_pass) {
           }
         }
 
-        if (is_gradient_caching_for_hog_enabled(ppi->cpi)) {
-          const int plane_types = PLANE_TYPES >> ppi->seq_params.monochrome;
-          AOM_CHECK_MEM_ERROR(&ppi->error, td->pixel_gradient_info,
-                              aom_malloc(sizeof(*td->pixel_gradient_info) *
-                                         plane_types * MAX_SB_SQUARE));
-        }
+        const int plane_types = PLANE_TYPES >> ppi->seq_params.monochrome;
+        AOM_CHECK_MEM_ERROR(&ppi->error, td->pixel_gradient_info,
+                            aom_malloc(sizeof(*td->pixel_gradient_info) *
+                                       plane_types * MAX_SB_SQUARE));
 
         if (is_src_var_for_4x4_sub_blocks_caching_enabled(ppi->cpi)) {
           const BLOCK_SIZE sb_size = ppi->cpi->common.seq_params->sb_size;
@@ -1337,7 +1333,7 @@ static inline void prepare_fpmt_workers(AV1_PRIMARY *ppi,
             mt_info->cdef_worker->colbuf[plane];
     }
 #if !CONFIG_REALTIME_ONLY
-    if (is_restoration_used(cm)) {
+    if (cm->seq_params->enable_restoration) {
       // Back up the original LR buffers before update.
       int idx = i + mt_info->num_workers - 1;
       assert(idx < mt_info->lr_row_sync.num_workers);
@@ -1411,7 +1407,7 @@ static inline void restore_workers_after_fpmt(AV1_PRIMARY *ppi,
             mt_info->restore_state_buf.cdef_colbuf[plane];
     }
 #if !CONFIG_REALTIME_ONLY
-    if (is_restoration_used(cm)) {
+    if (cm->seq_params->enable_restoration) {
       // Restore the original LR buffers.
       int idx = i + mt_info->num_workers - 1;
       assert(idx < mt_info->lr_row_sync.num_workers);
@@ -1588,7 +1584,7 @@ static inline void prepare_enc_workers(AV1_COMP *cpi, AVxWorkerHook hook,
 
     worker->hook = hook;
     worker->data1 = thread_data;
-    worker->data2 = NULL;
+    worker->data2 = (void *)(intptr_t)num_workers;
 
     thread_data->thread_id = i;
     // Set the starting tile for each thread.

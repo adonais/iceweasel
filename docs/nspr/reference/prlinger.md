@@ -1,7 +1,7 @@
 # PRLinger
 
 Structure used with the `PR_SockOpt_Linger` socket option to specify
-the time interval (in {ref}`PRIntervalTime` units) to linger on closing a
+the time interval (in {doc}`printervaltime` units) to linger on closing a
 socket if any data remain in the socket send buffer.
 
 ## Syntax
@@ -24,22 +24,22 @@ The structure has the following fields:
 : Polarity of the option's setting: `PR_FALSE` means the option is
   off, in which case the value of `linger` is ignored. `PR_TRUE`
   means the option is on, and the value of `linger` will be used to
-  determine how long {ref}`PR_Close` waits before returning.
+  determine how long {doc}`pr_close` waits before returning.
 
 `linger`
 
-: Time (in {ref}`PRIntervalTime` units) to linger before closing if any
+: Time (in {doc}`printervaltime` units) to linger before closing if any
   data remain in the socket send buffer.
 
 ## Description
 
-By default, {ref}`PR_Close` returns immediately, but if there are any data
+By default, {doc}`pr_close` returns immediately, but if there are any data
 remaining in the socket send buffer, the system attempts to deliver the
 data to the peer. The `PR_SockOpt_Linger` socket option, with a value
-represented by a structure of type {ref}`PRLinger`, makes it possible to
+represented by a structure of type {doc}`prlinger`, makes it possible to
 change this default as follows:
 
-- If `polarity` is set to `PR_FALSE`, {ref}`PR_Close` returns
+- If `polarity` is set to `PR_FALSE`, {doc}`pr_close` returns
   immediately, but if there are any data remaining in the socket send
   buffer, the runtime attempts to deliver the data to the peer.
 - If `polarity` is set to `PR_TRUE` and `linger` is set to 0
@@ -47,6 +47,6 @@ change this default as follows:
   is closed and discards any data remaining in the socket send buffer.
 - If `polarity` is set to `PR_TRUE` and `linger` is nonzero, the
   runtime *lingers* when the socket is closed. That is, if any data
-  remains in the socket send buffer, {ref}`PR_Close` blocks until either
+  remains in the socket send buffer, {doc}`pr_close` blocks until either
   all the data is sent and acknowledged by the peer or the interval
   specified by `linger` expires.

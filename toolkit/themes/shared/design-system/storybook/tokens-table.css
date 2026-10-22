@@ -77,7 +77,7 @@ fieldset,
 .search-wrapper {
   border: var(--table-border-inner);
   border-radius: var(--border-radius-small);
-  height: var(--input-text-min-height);
+  height: var(--input-min-height);
   display: inline-flex;
   align-items: center;
 }

@@ -68,6 +68,7 @@ using ::testing::Ge;
 using ::testing::Gt;
 using ::testing::IsTrue;
 using ::testing::Ne;
+using ::testing::NotNull;
 using ::testing::SizeIs;
 using ::testing::StrictMock;
 using ::testing::Values;
@@ -83,14 +84,12 @@ class PeerConnectionEndToEndBaseTest : public ::testing::Test {
 
   explicit PeerConnectionEndToEndBaseTest(SdpSemantics sdp_semantics)
       : env_(CreateTestEnvironment()),
-        network_thread_(std::make_unique<Thread>(&pss_)),
-        worker_thread_(Thread::Create()) {
+        network_thread_(std::make_unique<Thread>(&pss_)) {
     RTC_CHECK(network_thread_->Start());
-    RTC_CHECK(worker_thread_->Start());
     caller_ = make_ref_counted<PeerConnectionTestWrapper>(
-        "caller", env_, &pss_, network_thread_.get(), worker_thread_.get());
+        "caller", env_, &pss_, network_thread_.get());
     callee_ = make_ref_counted<PeerConnectionTestWrapper>(
-        "callee", env_, &pss_, network_thread_.get(), worker_thread_.get());
+        "callee", env_, &pss_, network_thread_.get());
     PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
     caller_config_.servers.push_back(ice_server);
@@ -251,7 +250,6 @@ class PeerConnectionEndToEndBaseTest : public ::testing::Test {
   PhysicalSocketServer pss_;
   Environment env_;
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   scoped_refptr<PeerConnectionTestWrapper> caller_;
   scoped_refptr<PeerConnectionTestWrapper> callee_;
   DataChannelList caller_signaled_data_channels_;
@@ -706,14 +704,20 @@ TEST_P(PeerConnectionEndToEndTest, TooManyDataChannelsOpenedBeforeConnecting) {
       caller_->pc()->GetSctpTransport();
   scoped_refptr<SctpTransportInterface> callee_transport =
       callee_->pc()->GetSctpTransport();
-  std::optional<int> caller_channels =
-      caller_transport->Information().MaxChannels();
-  std::optional<int> callee_channels =
-      callee_transport->Information().MaxChannels();
-  ASSERT_TRUE(caller_channels.has_value());
-  ASSERT_TRUE(callee_channels.has_value());
-  EXPECT_THAT(caller_channels.value(), Eq(kReducedMaxSctpStreams));
-  EXPECT_THAT(callee_channels.value(), Eq(kReducedMaxSctpStreams));
+  ASSERT_THAT(caller_transport, NotNull());
+  ASSERT_THAT(callee_transport, NotNull());
+  // SCTP handshake completes asynchronously after ICE connection; wait for
+  // MaxChannels to be negotiated.
+  EXPECT_THAT(
+      WaitUntil([&] { return caller_transport->Information().MaxChannels(); },
+                Eq(kReducedMaxSctpStreams),
+                {.timeout = TimeDelta::Millis(kMaxWait)}),
+      IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return callee_transport->Information().MaxChannels(); },
+                Eq(kReducedMaxSctpStreams),
+                {.timeout = TimeDelta::Millis(kMaxWait)}),
+      IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return callee_signaled_data_channels_; },
                         SizeIs(Ge(kReducedMaxSctpStreams / 2)),
                         {.timeout = TimeDelta::Millis(kMaxWait)}),

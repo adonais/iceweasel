@@ -1221,7 +1221,8 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
           CacheDomain::Relations |          // relations info, DOMName attribute
           CacheDomain::Value |              // Value
           CacheDomain::DOMNodeIDAndClass |  // DOMNodeID
-          CacheDomain::GroupInfo            // GetOrCreateGroupInfo
+          CacheDomain::GroupInfo |          // GetOrCreateGroupInfo
+          CacheDomain::State                // ERRORMSG relation
           )) {
     return Relation();
   }
@@ -1368,6 +1369,13 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
   Relation rel;
   if (!mCachedFields) {
     return rel;
+  }
+
+  if (aType == RelationType::ERRORMSG) {
+    if (auto rawState = mCachedFields->GetAttribute<uint64_t>(CacheKey::State);
+        !rawState || !(*rawState & states::INVALID)) {
+      return rel;
+    }
   }
 
   auto GetDirectRelationFromCache =

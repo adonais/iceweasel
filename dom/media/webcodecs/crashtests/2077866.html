@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head><meta charset="utf-8"></head>
+<body>
+<script>
+// Frame dimensions that are not a multiple of 8 leave 4x4 transform blocks
+// entirely outside the visible frame in libaom's 8-aligned mode info grid.
+const SIZES = [[100, 100], [68, 36], [36, 68]];
+
+function noisyFrame(width, height, timestamp) {
+  const cw = (width + 1) >> 1, ch = (height + 1) >> 1;
+  const data = new Uint8Array(width * height + 2 * cw * ch);
+  let seed = timestamp + 1;
+  for (let i = 0; i < data.length; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    data[i] = seed >> 23;
+  }
+  return new VideoFrame(data, {
+    format: "I420",
+    codedWidth: width,
+    codedHeight: height,
+    timestamp,
+  });
+}
+
+async function encode(width, height) {
+  const config = { codec: "av01.0.04M.08", width, height, bitrate: 1000000 };
+  const { supported } = await VideoEncoder.isConfigSupported(config);
+  if (!supported) {
+    return;
+  }
+  const encoder = new VideoEncoder({ output: () => {}, error: () => {} });
+  encoder.configure(config);
+  for (let i = 0; i < 4; i++) {
+    const frame = noisyFrame(width, height, i * 33333);
+    encoder.encode(frame, { keyFrame: i == 0 });
+    frame.close();
+  }
+  await encoder.flush();
+  encoder.close();
+}
+
+async function run() {
+  for (const [w, h] of SIZES) {
+    try {
+      await encode(w, h);
+    } catch (e) {}
+  }
+}
+
+run().finally(() => { document.documentElement.className = ""; });
+</script>
+</body>
+</html>

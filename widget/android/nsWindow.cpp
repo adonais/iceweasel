@@ -77,8 +77,8 @@
 #include "mozilla/java/SessionAccessibilityWrappers.h"
 #include "mozilla/java/SurfaceControlManagerWrappers.h"
 #include "mozilla/jni/NativesInlines.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/APZEventState.h"
-#include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/AndroidHardwareBuffer.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -374,7 +374,7 @@ class NPZCSupport final
     }
 
     if (controller) {
-      controller->InputBridge()->SetLongTapEnabled(aIsLongpressEnabled);
+      controller->Bridge()->SetLongTapEnabled(aIsLongpressEnabled);
     }
   }
 
@@ -413,7 +413,7 @@ class NPZCSupport final
         // to do?
         WheelDeltaAdjustmentStrategy::eNone);
 
-    APZEventResult result = controller->InputBridge()->ReceiveInputEvent(input);
+    APZEventResult result = controller->Bridge()->ReceiveInputEvent(input);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return INPUT_RESULT_IGNORED;
     }
@@ -626,7 +626,7 @@ class NPZCSupport final
         ConvertButtons(buttons), origin, nsWindow::GetEventTimeStamp(aTime),
         nsWindow::GetModifiers(aMetaState));
 
-    APZEventResult result = controller->InputBridge()->ReceiveInputEvent(input);
+    APZEventResult result = controller->Bridge()->ReceiveInputEvent(input);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return INPUT_RESULT_IGNORED;
     }
@@ -942,7 +942,7 @@ class NPZCSupport final
         mouseType, MouseInput::NONE, MouseEvent_Binding::MOZ_SOURCE_MOUSE, 0,
         origin, nsWindow::GetEventTimeStamp(aTime), nsWindow::GetModifiers(0));
 
-    APZEventResult result = controller->InputBridge()->ReceiveInputEvent(input);
+    APZEventResult result = controller->Bridge()->ReceiveInputEvent(input);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return;
     }
@@ -996,7 +996,7 @@ class NPZCSupport final
       return;
     }
 
-    APZInputBridge::InputBlockCallback callback;
+    APZBridge::InputBlockCallback callback;
     if (aReturnResult) {
       callback = [aReturnResult = java::GeckoResult::GlobalRef(aReturnResult)](
                      uint64_t aInputBlockId,
@@ -1004,8 +1004,8 @@ class NPZCSupport final
         aReturnResult->Complete(ConvertAPZHandledResult(aHandledResult));
       };
     }
-    APZEventResult result = controller->InputBridge()->ReceiveInputEvent(
-        aInput, std::move(callback));
+    APZEventResult result =
+        controller->Bridge()->ReceiveInputEvent(aInput, std::move(callback));
 
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       if (aReturnResult) {

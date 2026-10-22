@@ -31,7 +31,7 @@ assertWarning(() => {
     // before the name section is finished decoding.
     customSection("extra"),
   ])).exports.test;
-}, /in the 'name' custom section: 1 bytes consumed past the end/);
+}, /bad name subsection payload length/);
 
 try {
   test();

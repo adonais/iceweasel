@@ -804,11 +804,12 @@ class PromisingFunctionModuleFactory {
   // Builds function that is called by event loop when promise resolves.
   //
   // (func $promising.reaction
-  //   (param $cont (ref $cont))
+  //   (param $cont externref)
   //   (param $promisingPromise externref)
   //
   //   block $suspend (result externref (ref $cont))
   //     local.get $cont
+  //     extern.to_cont $cont
   //     resume (on $on-suspend $suspend)
   //     return
   //   end
@@ -834,8 +835,12 @@ class PromisingFunctionModuleFactory {
       return false;
     }
 
-    // local.get $cont
+    // local.get $cont ; extern.to_cont $cont
     if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(contIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(MozOp::ExternToCont) ||
+        !encoder.writeVarU32(baseTypeIndex_ + ContTypeIndex)) {
       return false;
     }
 
@@ -1041,8 +1046,7 @@ class PromisingFunctionModuleFactory {
     // Func 3: $promising.reaction
     // addDefinedFunc creates Type baseTypeIndex_ + 8: reaction func type
     ValTypeVector reactionParams, reactionResults;
-    if (!reactionParams.emplaceBack(RefType::fromTypeDef(
-            &codeMeta->types->type(baseTypeIndex_ + ContTypeIndex), true)) ||
+    if (!reactionParams.emplaceBack(RefType::extern_()) ||
         !reactionParams.emplaceBack(RefType::extern_())) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -1255,6 +1259,7 @@ static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
                .as<PromiseObject>());
   JS::RootedValueArray<2> argv(cx);
   JS::Rooted<JS::Value> rval(cx);
+  MOZ_ASSERT(callee->getExtendedSlot(CONT_SLOT).toObject().is<ContObject>());
   argv[0].set(callee->getExtendedSlot(CONT_SLOT));
   argv[1].setObject(*promisingPromiseObject);
 

@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Service worker upload backpressure</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/service-workers/service-worker/resources/test-helpers.sub.js"></script>
+<script>
+async function setupWorker(t) {
+  const controlled = new Promise(resolve => {
+    navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+  });
+  const registration = await service_worker_unregister_and_register(
+    t, "request-stream-service-worker.js", location.pathname);
+  t.add_cleanup(() => registration.unregister());
+  await wait_for_state(t, registration.installing, "activated");
+  await controlled;
+
+  const channel = new MessageChannel();
+  t.add_cleanup(() => channel.port1.close());
+  const connected = new Promise(resolve => channel.port1.onmessage = resolve);
+  registration.active.postMessage(null, [channel.port2]);
+  await connected;
+  return channel.port1;
+}
+
+// The worker holds the intercepted upload without reading it, so the page's
+// producer must stall on the transfer's capacity rather than be drained.
+promise_test(async t => {
+  const port = await setupWorker(t);
+  const ready = new Promise(resolve => port.onmessage = resolve);
+  const abort = new AbortController();
+  t.add_cleanup(() => abort.abort());
+  let cancel;
+  const cancelled = new Promise(resolve => cancel = resolve);
+  let pulls = 0;
+  const response = fetch("sw-upload-backpressure", {
+    method: "POST",
+    duplex: "half",
+    signal: abort.signal,
+    body: new ReadableStream({
+      pull(controller) {
+        controller.enqueue(new Uint8Array(65536));
+        if (++pulls === 256) {
+          controller.close();
+        }
+      },
+      cancel,
+    }, { highWaterMark: 0 }),
+  });
+  await ready;
+  // A body buffered for replay would have taken all 16MB by now.
+  await new Promise(resolve => t.step_timeout(resolve, 100));
+  assert_less_than(pulls, 256, "An unread SW upload must not drain the producer");
+  port.postMessage("cancel");
+  assert_equals(await (await response).text(), "cancelled");
+  await cancelled;
+}, "An unread service-worker upload preserves backpressure and propagates cancellation");
+
+// An unhandled fetch event returns the worker's unread body to the channel, so
+// the server still sees it and the worker's own body ends closed and disturbed.
+promise_test(async t => {
+  const port = await setupWorker(t);
+  const observed = new Promise(resolve => port.onmessage = event => resolve(event.data));
+  const response = await fetch("/fetch/api/resources/echo-content.h2.py?sw-upload-fallback", {
+    method: "POST",
+    duplex: "half",
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("fallback body"));
+        controller.close();
+      },
+    }),
+  });
+  assert_equals(await response.text(), "fallback body");
+  const state = await observed;
+  assert_true(state.bodyUsed);
+  assert_false(state.locked);
+  assert_true(state.done);
+}, "Network fallback closes and disturbs the worker body without locking it");
+
+function streamingUpload(url, init = {}) {
+  return fetch(url, {
+    method: "POST",
+    duplex: "half",
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("redirected body"));
+        controller.close();
+      },
+    }),
+    ...init,
+  });
+}
+
+// The upload was handed to the worker, so it has no source left to resend.
+promise_test(async t => {
+  await setupWorker(t);
+  await promise_rejects_js(t, TypeError, streamingUpload("sw-upload-redirect-307"));
+}, "A method-preserving redirect from the worker fails a streaming upload");
+
+promise_test(async t => {
+  await setupWorker(t);
+  const response = await streamingUpload("sw-upload-redirect-303");
+  assert_true(response.redirected);
+  assert_equals(await response.text(), "GET true");
+}, "A 303 redirect from the worker turns a streaming upload into a bodiless GET");
+
+promise_test(async t => {
+  await setupWorker(t);
+  const response = await streamingUpload("sw-upload-redirect-307", { redirect: "manual" });
+  assert_equals(response.type, "opaqueredirect");
+}, "A manual 307 redirect from the worker is handed back to the page");
+</script>

@@ -311,7 +311,7 @@ export class TopSiteLink extends React.PureComponent {
               id: link.id,
               pos: link.pos,
               shim: link.shim && link.shim.impression,
-              advertiser: title.toLocaleLowerCase(),
+              advertiser_name: title.toLocaleLowerCase(),
             },
           ]}
           dispatch={this.props.dispatch}
@@ -327,7 +327,7 @@ export class TopSiteLink extends React.PureComponent {
             position: this.props.index,
             tile_id: link.sponsored_tile_id || -1,
             reporting_url: link.sponsored_impression_url,
-            advertiser: title.toLocaleLowerCase(),
+            advertiser_name: title.toLocaleLowerCase(),
             source: NEWTAB_SOURCE,
             visible_topsites: visibleTopSites,
             frecency_boosted: link.type === "frecency-boost",
@@ -351,8 +351,8 @@ export class TopSiteLink extends React.PureComponent {
             isPinned: this.props.link.isPinned,
             guid: this.props.link.guid,
             visible_topsites: visibleTopSites,
-            smartScores: this.props.link.scores,
-            smartWeights: this.props.link.weights,
+            smart_scores: this.props.link.scores,
+            smart_weights: this.props.link.weights,
             is_ad_eligible_position: this.props.link.is_ad_eligible_position,
           }}
           // For testing.
@@ -603,6 +603,9 @@ export class TopSite extends React.PureComponent {
           data: Object.assign(this.props.link, {
             event: { altKey, button, ctrlKey, metaKey, shiftKey },
             is_sponsored: !!this.props.link.sponsored_tile_id,
+            dwell_label: isSponsored(this.props.link)
+              ? "topsite_sponsored"
+              : "topsite_organic",
           }),
         })
       );
@@ -649,7 +652,7 @@ export class TopSite extends React.PureComponent {
               type: "click",
               position: this.props.link.pos,
               tile_id: this.props.link.id,
-              advertiser: title.toLocaleLowerCase(),
+              advertiser_name: title.toLocaleLowerCase(),
               source: NEWTAB_SOURCE,
               attribution: this.props.link.attribution,
             },
@@ -666,7 +669,7 @@ export class TopSite extends React.PureComponent {
               position: this.props.index,
               tile_id: this.props.link.sponsored_tile_id || -1,
               reporting_url: this.props.link.sponsored_click_url,
-              advertiser: title.toLocaleLowerCase(),
+              advertiser_name: title.toLocaleLowerCase(),
               source: NEWTAB_SOURCE,
               visible_topsites: this.props.visibleTopSites,
               frecency_boosted: this.props.link.type === "frecency-boost",
@@ -686,8 +689,8 @@ export class TopSite extends React.PureComponent {
               isPinned: this.props.link.isPinned,
               guid: this.props.link.guid,
               visible_topsites: this.props.visibleTopSites,
-              smartScores: this.props.link.scores,
-              smartWeights: this.props.link.weights,
+              smart_scores: this.props.link.scores,
+              smart_weights: this.props.link.weights,
             },
           })
         );

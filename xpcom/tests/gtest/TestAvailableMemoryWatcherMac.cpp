@@ -9,6 +9,7 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsITimer.h"

@@ -711,6 +711,7 @@ rtc_library("sctp_utils") {
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
+
 rtc_library("srtp_session") {
   visibility = [ ":*" ]
   sources = [
@@ -743,6 +744,7 @@ rtc_library("srtp_session") {
     deps += [ "//third_party/libsrtp" ]
   }
 }
+
 rtc_library("srtp_transport") {
   visibility = [ ":*" ]
   sources = [
@@ -932,13 +934,14 @@ rtc_library("connection_context") {
     "../media:rtc_data_sctp_transport_factory",
     "../p2p:basic_packet_socket_factory",
     "../rtc_base:checks",
+    "../rtc_base:logging",
     "../rtc_base:macromagic",
     "../rtc_base:network",
     "../rtc_base:socket_factory",
     "../rtc_base:socket_server",
     "../rtc_base:threading",
     "../rtc_base:unique_id_generator",
-    "../rtc_base/memory:always_valid_pointer",
+    "//third_party/abseil-cpp/absl/base:nullability",
   ]
 }
 
@@ -1143,6 +1146,7 @@ rtc_library("sdp_munging_detector") {
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
+
 rtc_library("sdp_offer_answer") {
   visibility = [ ":*" ]
   sources = [
@@ -1277,9 +1281,11 @@ rtc_library("sdp_payload_type_suggester") {
 rtc_source_set("jsep_ice_candidate") {
   visibility = [ ":*" ]
 }
+
 rtc_source_set("jsep_session_description") {
   visibility = [ ":*" ]
 }
+
 rtc_library("local_audio_source") {
   visibility = [ ":*" ]
   sources = [
@@ -1293,6 +1299,7 @@ rtc_library("local_audio_source") {
     "../api:scoped_refptr",
   ]
 }
+
 rtc_library("peer_connection") {
   visibility = [ ":*" ]
   sources = [
@@ -1439,6 +1446,7 @@ rtc_library("simulcast_sdp_serializer") {
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
+
 rtc_library("sdp_utils") {
   sources = [
     "sdp_utils.cc",
@@ -1453,6 +1461,7 @@ rtc_library("sdp_utils") {
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
+
 rtc_library("legacy_stats_collector") {
   visibility = [ ":*" ]
   sources = [
@@ -1510,6 +1519,7 @@ rtc_library("legacy_stats_collector") {
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
+
 rtc_source_set("stream_collection") {
   visibility = [ ":*" ]
   sources = [ "stream_collection.h" ]
@@ -1520,6 +1530,7 @@ rtc_source_set("stream_collection") {
     "../api:scoped_refptr",
   ]
 }
+
 rtc_library("track_media_info_map") {
   visibility = [ ":*" ]
   sources = [
@@ -1612,6 +1623,7 @@ rtc_library("media_stream_observer") {
     "//third_party/abseil-cpp/absl/algorithm:container",
   ]
 }
+
 rtc_library("peer_connection_factory") {
   # TODO(bugs.webrtc.org/13661): Reduce visibility if possible
   visibility = [ "*" ]  # Known to be used externally
@@ -1743,6 +1755,7 @@ rtc_library("rtp_transceiver") {
     "../api:make_ref_counted",
     "../api:media_stream_interface",
     "../api:rtc_error",
+    "../api:rtp_packet_info",
     "../api:rtp_parameters",
     "../api:rtp_receiver_interface",
     "../api:rtp_sender_interface",
@@ -1754,6 +1767,7 @@ rtc_library("rtp_transceiver") {
     "../api/environment",
     "../api/task_queue",
     "../api/task_queue:pending_task_safety_flag",
+    "../api/units:timestamp",
     "../api/video:video_bitrate_allocator_factory",
     "../api/video_codecs:scalability_mode",
     "../call:call_interfaces",
@@ -1864,17 +1878,23 @@ rtc_library("rtp_receiver") {
     "../api:frame_transformer_interface",
     "../api:media_stream_interface",
     "../api:rtc_error",
+    "../api:rtp_packet_info",
     "../api:rtp_receiver_interface",
     "../api:scoped_refptr",
     "../api:sequence_checker",
     "../api:sframe_decryptor_interface",
     "../api:sframe_types",
     "../api/crypto:frame_decryptor_interface",
+    "../api/task_queue:pending_task_safety_flag",
+    "../api/transport/rtp:rtp_source",
+    "../api/units:timestamp",
     "../media:media_channel",
+    "../modules/rtp_rtcp",
     "../rtc_base:logging",
     "../rtc_base:macromagic",
     "../rtc_base:threading",
     "../rtc_base/system:no_unique_address",
+    "../system_wrappers",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
   ]
 }
@@ -1907,6 +1927,7 @@ rtc_library("audio_rtp_receiver") {
     "../rtc_base:checks",
     "../rtc_base:macromagic",
     "../rtc_base:threading",
+    "../system_wrappers",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -1942,6 +1963,7 @@ rtc_library("video_rtp_receiver") {
     "../rtc_base:logging",
     "../rtc_base:macromagic",
     "../rtc_base:threading",
+    "../system_wrappers",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -2038,6 +2060,7 @@ rtc_library("remote_audio_source") {
   deps = [
     "../api:call_api",
     "../api:media_stream_interface",
+    "../api:rtp_packet_info",
     "../api:scoped_refptr",
     "../api:sequence_checker",
     "../api/task_queue",
@@ -2054,6 +2077,10 @@ rtc_library("remote_audio_source") {
 rtc_library("rtp_sender") {
   visibility = [ ":*" ]
   sources = [
+    "encoded_audio_frame_injector.cc",
+    "encoded_audio_frame_injector.h",
+    "encoded_video_frame_injector.cc",
+    "encoded_video_frame_injector.h",
     "rtp_sender.cc",
     "rtp_sender.h",
   ]
@@ -2063,6 +2090,7 @@ rtc_library("rtp_sender") {
     ":scoped_operations_batcher",
     ":simulcast_description",
     "../api:audio_options_api",
+    "../api:bitrate_allocation",
     "../api:dtls_transport_interface",
     "../api:dtmf_sender_interface",
     "../api:frame_transformer_interface",
@@ -2075,25 +2103,39 @@ rtc_library("rtp_sender") {
     "../api:scoped_refptr",
     "../api:sequence_checker",
     "../api:sframe_encryptor_interface",
+    "../api/audio_codecs:audio_codecs_api",
     "../api/crypto:frame_encryptor_interface",
     "../api/environment",
     "../api/task_queue",
     "../api/task_queue:pending_task_safety_flag",
+    "../api/units:time_delta",
+    "../api/units:timestamp",
+    "../api/video:encoded_image",
+    "../api/video:video_frame",
+    "../api/video:video_frame_type",
+    "../api/video:video_rtp_headers",
     "../api/video_codecs:video_codecs_api",
     "../media:audio_source",
     "../media:codec",
     "../media:media_channel",
     "../media:media_engine",
+    "../modules/video_coding:video_codec_interface",
+    "../rtc_base:buffer",
     "../rtc_base:checks",
     "../rtc_base:crypto_random",
     "../rtc_base:event_tracer",
     "../rtc_base:logging",
     "../rtc_base:macromagic",
+    "../rtc_base:refcount",
     "../rtc_base:rtc_event",
     "../rtc_base:threading",
+    "../rtc_base:timeutils",
     "../rtc_base/synchronization:mutex",
+    "../rtc_base/system:no_unique_address",
     "../rtc_base/system:plan_b_only",
+    "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -2181,6 +2223,9 @@ rtc_library("datagram_connection_internal") {
   sources = [
     "datagram_connection_internal.cc",
     "datagram_connection_internal.h",
+    "dtls_packet_processor.cc",
+    "dtls_packet_processor.h",
+    "packet_processor.h",
   ]
   deps = [
     ":dtls_srtp_transport",
@@ -2232,8 +2277,10 @@ if (rtc_include_tests && !build_with_chromium) {
     deps = [
       ":codec_vendor",
       ":connection_context",
+      "../api:field_trials_view",
       "../call:payload_type",
       "../rtc_base:checks",
+      "//third_party/abseil-cpp/absl/base:nullability",
     ]
   }
 
@@ -2246,6 +2293,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "codec_vendor_redesign_unittest.cc",
       "codec_vendor_unittest.cc",
       "datagram_connection_unittest.cc",
+      "dtls_packet_processor_unittest.cc",
       "dtls_srtp_transport_integrationtest.cc",
       "dtls_srtp_transport_unittest.cc",
       "dtls_transport_unittest.cc",
@@ -2297,6 +2345,7 @@ if (rtc_include_tests && !build_with_chromium) {
       ":typed_codec_vendor",
       ":video_rtp_receiver",
       "../api:audio_options_api",
+      "../api:call_api",
       "../api:candidate",
       "../api:datagram_connection",
       "../api:dtls_transport_interface",
@@ -2315,7 +2364,9 @@ if (rtc_include_tests && !build_with_chromium) {
       "../api:rtc_error_matchers",
       "../api:rtp_header_extension_id",
       "../api:rtp_headers",
+      "../api:rtp_packet_info",
       "../api:rtp_parameters",
+      "../api:rtp_receiver_interface",
       "../api:rtp_transceiver_direction",
       "../api:rtp_transport_factory",
       "../api:scoped_refptr",
@@ -2537,6 +2588,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
+
   rtc_cc_test("dtmf_sender_unittest") {
     sources = [ "dtmf_sender_unittest.cc" ]
     deps = [
@@ -2808,8 +2860,12 @@ if (rtc_include_tests && !build_with_chromium) {
       "../api:data_channel_interface",
       "../api:jsep",
       "../api:make_ref_counted",
+      "../api:media_stream_interface",
       "../api:peer_connection_interface",
       "../api:rtc_error",
+      "../api:rtp_parameters",
+      "../api:rtp_transceiver_direction",
+      "../api:rtp_transceiver_interface",
       "../api:scoped_refptr",
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:threading",
@@ -3224,7 +3280,6 @@ if (rtc_include_tests && !build_with_chromium) {
       "../rtc_base:checks",
       "../rtc_base:refcount",
       "../rtc_base:rtc_base_tests_utils",
-      "../rtc_base:stringutils",
       "../rtc_base:threading",
       "../test:create_test_environment",
       "../test:run_loop",
@@ -3459,6 +3514,7 @@ if (rtc_include_tests && !build_with_chromium) {
   }
 
   rtc_stats_traversal_unittest = [ "rtc_stats_traversal_unittest.cc" ]
+
   rtc_cc_test("rtc_stats_traversal_unittest") {
     sources = rtc_stats_traversal_unittest
     deps = [
@@ -3507,26 +3563,39 @@ if (rtc_include_tests && !build_with_chromium) {
       ":video_rtp_receiver",
       ":video_track",
       "../api:audio_options_api",
+      "../api:bitrate_allocation",
       "../api:dtmf_sender_interface",
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
+      "../api:frame_transformer_interface",
       "../api:make_ref_counted",
       "../api:media_stream_interface",
+      "../api:mock_transformable_video_frame",
+      "../api:mock_video_codec_factory",
       "../api:rtc_error",
       "../api:rtc_error_matchers",
+      "../api:rtp_packet_info",
       "../api:rtp_parameters",
       "../api:rtp_receiver_interface",
+      "../api:rtp_sender_interface",
       "../api:scoped_refptr",
       "../api:sframe_encryptor_interface",
       "../api:sframe_types",
+      "../api/audio_codecs:audio_codecs_api",
       "../api/crypto:frame_decryptor_interface",
       "../api/crypto:frame_encryptor_interface",
       "../api/crypto:options",
       "../api/environment",
       "../api/task_queue",
+      "../api/units:data_rate",
+      "../api/units:timestamp",
       "../api/video:builtin_video_bitrate_allocator_factory",
+      "../api/video:encoded_image",
       "../api/video:video_bitrate_allocator_factory",
       "../api/video:video_codec_constants",
+      "../api/video:video_frame",
+      "../api/video:video_frame_metadata",
+      "../api/video_codecs:video_codecs_api",
       "../media:codec",
       "../media:media_channel",
       "../media:media_engine",
@@ -3720,6 +3789,7 @@ if (rtc_include_tests && !build_with_chromium) {
       ":pc_test_utils",
       ":peerconnection_wrapper",
       ":rtp_transceiver",
+      ":sdp_utils",
       ":session_description",
       "../api:create_peerconnection_factory",
       "../api:jsep",
@@ -3746,6 +3816,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "../media:codec",
       "../media:media_constants",
       "../media:stream_params",
+      "../p2p:p2p_constants",
       "../rtc_base:threading",
       "../system_wrappers:metrics",
       "../test:create_test_field_trials",
@@ -4473,6 +4544,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "../api:rtc_error_matchers",
       "../api:rtc_stats_api",
       "../api:rtp_headers",
+      "../api:rtp_packet_info",
       "../api:rtp_parameters",
       "../api:rtp_receiver_interface",
       "../api:rtp_sender_interface",

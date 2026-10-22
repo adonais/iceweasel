@@ -8,7 +8,7 @@ browsers, its use is discouraged since it could be removed at any
 time. Try to avoid using it.
 :::
 
-Associates a {ref}`PRThread` object with an existing native thread.
+Associates a {doc}`prthread` object with an existing native thread.
 
 ## Syntax
 
@@ -23,7 +23,7 @@ PRThread* PR_AttachThread(
 
 ### Parameters
 
-{ref}`PR_AttachThread` has the following parameters:
+{doc}`pr_attachthread` has the following parameters:
 
 `type`
 
@@ -42,32 +42,32 @@ PRThread* PR_AttachThread(
 
 The function returns one of these values:
 
-- If successful, a pointer to a {ref}`PRThread` object.
+- If successful, a pointer to a {doc}`prthread` object.
 - If unsuccessful, for example if system resources are not available,
   `NULL`.
 
 ## Description
 
-You use {ref}`PR_AttachThread` when you want to use NSS functions on the
-native thread that was not created with NSPR. {ref}`PR_AttachThread`
-informs NSPR about the new thread by associating a {ref}`PRThread` object
+You use {doc}`pr_attachthread` when you want to use NSS functions on the
+native thread that was not created with NSPR. {doc}`pr_attachthread`
+informs NSPR about the new thread by associating a {doc}`prthread` object
 with the native thread.
 
 The thread object is automatically destroyed when it is no longer
 needed.
 
-You don't need to call {ref}`PR_AttachThread` unless you create your own
-native thread. {ref}`PR_Init` calls {ref}`PR_AttachThread` automatically for
+You don't need to call {doc}`pr_attachthread` unless you create your own
+native thread. {doc}`pr_init` calls {doc}`pr_attachthread` automatically for
 the primordial thread.
 
 :::{note}
-As of NSPR release v3.0, {ref}`PR_AttachThread` and
-{ref}`PR_DetachThread` are obsolete. A native thread not created by NSPR
+As of NSPR release v3.0, {doc}`pr_attachthread` and
+{doc}`pr_detachthread` are obsolete. A native thread not created by NSPR
 is automatically attached the first time it calls an NSPR function,
 and automatically detached when it exits.
 :::
 
 In NSPR release 19980529B and earlier, it is necessary for a native
-thread not created by NSPR to call {ref}`PR_AttachThread` before it calls
-any NSPR functions, and call {ref}`PR_DetachThread` when it is done calling
+thread not created by NSPR to call {doc}`pr_attachthread` before it calls
+any NSPR functions, and call {doc}`pr_detachthread` when it is done calling
 NSPR functions.

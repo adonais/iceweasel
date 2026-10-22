@@ -79,16 +79,9 @@ export class NetworkResponse {
     this.#cachedResponseBody = "";
 
     if (memoryCacheKey && hasResponseCollector) {
-      let charset = "";
-      const httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
-      if (httpChannel) {
-        charset = httpChannel.classicScriptHintCharset || "";
-      }
-
       const text = ChromeUtils.getCachedJavaScriptSource(
         memoryCacheKey,
-        channel.URI.spec,
-        charset
+        channel.URI.spec
       );
       if (text !== undefined) {
         this.#cachedResponseBody = text;

@@ -92,7 +92,7 @@ bool nsDragSession::CreateDragImage(nsINode* aDOMNode,
   }
 
   RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
-      BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride,
+      BackendType::SKIA, map.mData, dataSurface->GetSize(), map.mStride,
       dataSurface->GetFormat());
   if (!dt) {
     dataSurface->Unmap();

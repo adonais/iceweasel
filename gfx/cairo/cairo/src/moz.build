@@ -279,3 +279,7 @@ if CONFIG['MOZ_X11']:
 if CONFIG['MOZ_ENABLE_CAIRO_FT']:
     CFLAGS += CONFIG['CAIRO_FT_CFLAGS']
     CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
+
+# A lot of security-sensitive invariants are checked using debug
+# assertions.
+CFLAGS += ['-UNDEBUG']

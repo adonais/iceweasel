@@ -113,6 +113,12 @@ prefs = ["security.storage.encryption.sqlite.enabled=false"]
 # Bug 1996558: migrates a plaintext profile fixture that obfsvfs cannot read; runs with SQLite encryption off.
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 
+["test_obsoleteDatabaseRemovalFailure.js"]
+prefs = [
+  "dom.quotaManager.loadQuotaFromCache=false",
+  "dom.quotaManager.loadQuotaFromSecondaryCache=false",
+]
+
 ["test_obsoleteOriginAttributesUpgrade.js"]
 # Bug 1996558: migrates a plaintext profile fixture that obfsvfs cannot read; runs with SQLite encryption off.
 prefs = ["security.storage.encryption.sqlite.enabled=false"]

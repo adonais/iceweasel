@@ -24,8 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
@@ -144,7 +142,7 @@ private fun ShortcutsScreenContent(
         Shortcuts(
             topSites = state.topSites,
             topSiteColors = TopSiteColors.colors(),
-            showAddShortcut = state.showAddShortcut,
+            showAddShortcut = true,
             scrollable = true,
             menuItems = { topSite ->
                 getMenuItems(
@@ -200,26 +198,12 @@ private fun ShortcutsDialog(
 
 @Composable
 @FlexibleWindowLightDarkPreview
-private fun ShortcutsScreenPreviews(@PreviewParameter(ShortcutsScreenParameterProvider::class) state: ShortcutsState) {
+private fun ShortcutsScreenPreview() {
     FirefoxTheme {
         ShortcutsScreen(
-            store = ShortcutsStore(initialState = state),
+            store = ShortcutsStore(initialState = ShortcutsState(topSites = FakeHomepagePreview.topSites())),
             interactor = FakeHomepagePreview.topSitesInteractor,
             onNavigationIconClick = {},
         )
     }
-}
-
-private class ShortcutsScreenParameterProvider : PreviewParameterProvider<ShortcutsState> {
-    override val values: Sequence<ShortcutsState> =
-        sequenceOf(
-            ShortcutsState(
-                topSites = FakeHomepagePreview.topSites(),
-                showAddShortcut = false,
-            ),
-            ShortcutsState(
-                topSites = FakeHomepagePreview.topSites(),
-                showAddShortcut = true,
-            ),
-        )
 }

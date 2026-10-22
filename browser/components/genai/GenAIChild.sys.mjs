@@ -17,10 +17,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   200
 );
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
-});
-
 // Events to register after shortcuts are shown
 const HIDE_EVENTS = ["pagehide", "resize", "scroll"];
 
@@ -194,8 +190,6 @@ export class GenAIChild extends JSWindowActorChild {
    */
   async receiveMessage({ name, data }) {
     switch (name) {
-      case "GetReadableText":
-        return this.getContentText();
       case "AutoSubmit":
         return await this.autoSubmitClick(data);
       default:
@@ -300,24 +294,6 @@ export class GenAIChild extends JSWindowActorChild {
       // Disconnect once things stabilize
       win.setTimeout(() => observer.disconnect(), 2000);
     }
-  }
-
-  /**
-   * Get readable article text or whole innerText from the content side.
-   *
-   * @returns {string} text from the page
-   */
-  async getContentText() {
-    const win = this.browsingContext?.window;
-    const doc = win?.document;
-    const article = await lazy.ReaderMode.parseDocument(doc);
-    return {
-      readerMode: !!article?.textContent,
-      selection: (article?.textContent || doc?.body?.innerText || "")
-        .trim()
-        // Replace duplicate whitespace with either a single newline or space
-        .replace(/(\s*\n\s*)|\s{2,}/g, (_, newline) => (newline ? "\n" : " ")),
-    };
   }
 
   didDestroy() {

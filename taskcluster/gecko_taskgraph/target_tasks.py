@@ -321,15 +321,6 @@ def accept_awsy_task(try_name, platform):
     return False
 
 
-def filter_unsupported_artifact_builds(task, parameters):
-    try_config = parameters.get("try_task_config", {})
-    if not try_config.get("use-artifact-builds", False):
-        return True
-
-    supports_artifact_builds = task.attributes.get("supports-artifact-builds", True)
-    return supports_artifact_builds
-
-
 def filter_out_shippable(task):
     return not task.attributes.get("shippable", False)
 
@@ -536,9 +527,15 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
         # do it somewhat hackily. Android doesn't have variants other than shippable
         # and ccov so it is pretty straightforward to check for. Other platforms
         # have many variants, but none of the regular opt builds we're looking for
-        # have a "-" in their platform name, so this works (for now).
+        # have a "-" in their platform name, so this works (for now). The
+        # Android nightly-as-release build is an opt build and is not
+        # shippable. But it is not a regular opt build. Thus exclude it
+        # by name.
         is_regular_opt = (
-            family == "android" and not shippable and not ccov
+            family == "android"
+            and not shippable
+            and not ccov
+            and "nightlyasrelease" not in build_platform
         ) or "-" not in build_platform
 
         if build_type != "opt" or not is_regular_opt:
@@ -962,13 +959,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "safari" in try_name and "video-playback-latency" in try_name:
                     return True
                 if "safari" and "benchmark" in try_name:
-                    # JetStream 3 fails with Safari 18.3 but not Safari-TP.
-                    # See bug 1996277.
-                    if (
-                        "safari-jetstream3" in try_name
-                        and "macosx1500-aarch64" in platform
-                    ):
-                        return False
                     return True
         # Android selection
         elif accept_raptor_android_build(platform):
@@ -988,10 +978,7 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return True
             if "chrome-m" in try_name and (
                 ("ebay" in try_name and "live" not in try_name)
-                or (
-                    "live" in try_name
-                    and ("facebook" in try_name or "dailymail" in try_name)
-                )
+                or ("live" in try_name and "dailymail" in try_name)
             ):
                 return False
             # Ignore all fennec tests here, we run those weekly
@@ -1237,6 +1224,31 @@ def target_tasks_nightly_all(full_task_graph, parameters, graph_config):
     )
 
 
+@register_target_task("appservices")
+def target_tasks_appservices(full_task_graph, parameters, graph_config):
+    """Select the tasks that build app-services in tree and their tests"""
+
+    def counterpart_runs(task):
+        source = task.attributes.get("duplicate-of")
+        if source is None and "-appservices/" in task.label:
+            source = task.label.replace("-appservices/", "/")
+        counterpart = full_task_graph.tasks.get(source)
+        if counterpart is None:
+            return True
+        return bool(counterpart.attributes.get("run_on_projects"))
+
+    return [
+        l
+        for l, t in full_task_graph.tasks.items()
+        if (
+            t.attributes.get("build_platform", "").endswith("-appservices")
+            or "-appservices/" in t.attributes.get("test_platform", "")
+            or t.kind.endswith("-appservices")
+        )
+        and counterpart_runs(t)
+    ]
+
+
 # Run Searchfox analysis once daily.
 @register_target_task("searchfox_index")
 def target_tasks_searchfox(full_task_graph, parameters, graph_config):
@@ -1473,6 +1485,19 @@ def target_tasks_codereview(full_task_graph, parameters, graph_config):
 
         # Analyzer tasks
         if task.attributes.get("code-review") is True:
+            return True
+
+        return False
+
+    return [l for l, t in full_task_graph.tasks.items() if filter(t)]
+
+
+@register_target_task("codereview-build-test")
+def target_tasks_codereview_build_test(full_task_graph, parameters, graph_config):
+    """Select all build and test tasks that should run as part of code review pushes."""
+
+    def filter(task):
+        if task.attributes.get("code-review-build-test") is True:
             return True
 
         return False

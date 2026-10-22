@@ -565,6 +565,10 @@ object.
 
 The <i>options</i> argument is as for [`Debugger.Frame.prototype.eval`][fr eval].
 
+This method also accepts an `allowRedeclaringExistingLexicalBinding` option;
+see the [`allowRedeclaringExistingLexicalBinding` option](#allowredeclaringexistinglexicalbinding-option)
+section, under `executeInGlobalWithBindings` below, for details.
+
 Note: If this method is called on an object whose owner
 [Debugger object][debugger-object] has an onNativeCall handler, only hooks
 on objects associated with that debugger will be called during the evaluation.
@@ -609,9 +613,37 @@ declarative environment, which is the eval code's `LexicalEnvironment`.)
 
 The <i>options</i> argument is as for [`Debugger.Frame.prototype.eval`][fr eval].
 
+This method also accepts an `allowRedeclaringExistingLexicalBinding` option.
+This option is incompatible with `useInnerBindings` and throws if both are
+set.
+
 Note: If this method is called on an object whose owner
 [Debugger object][debugger-object] has an onNativeCall handler, only hooks
 on objects associated with that debugger will be called during the evaluation.
+
+#### `allowRedeclaringExistingLexicalBinding` option
+This option is only recognized by `executeInGlobal` and
+`executeInGlobalWithBindings` (without `useInnerBindings`); passing it to
+`Debugger.Frame.prototype.eval` and its variants throws an error, as does
+setting it together with `useInnerBindings`.
+
+When true, redeclaring an existing global **lexical** binding (`let`,
+`const`, or `class`) with another lexical declaration of the same name
+reinitializes that binding instead of throwing a redeclaration error. This
+lets console-like consumers re-run a `let`/`const` declaration across
+separate evaluations.
+
+This does not relax any other kind of conflict:
+
+* A lexical declaration can still not be introduced where a `var` or
+  function declaration (including a block-level function declaration, which
+  creates a `var`-like global binding via Annex B semantics) of the same
+  name already exists, and vice versa. Both directions still throw.
+* A redeclaration that changes a binding's const-ness still throws:
+  `let x = 1;` followed by `const x = 2;`, or vice versa, is an error even
+  with this option set.
+* Two declarations of the same name within the *same* evaluation are still
+  a parse-time redeclaration error, regardless of this option.
 
 ### `createSource(options)`
 If the referent is a global object, return a new JavaScript source in the

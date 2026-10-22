@@ -107,7 +107,10 @@ add_task(async function testWindowCreate() {
           [{ type: "popup" }],
           {
             popupWindow: true,
-            chromeFlags: ["CHROME_OPENAS_DIALOG"],
+            chromeFlags: [
+              "CHROME_OPENAS_DIALOG",
+              "CHROME_SUPPRESS_INITIAL_FULLSCREEN",
+            ],
           },
           true
         );

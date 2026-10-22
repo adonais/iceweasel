@@ -34,13 +34,14 @@ class MOZ_RAII ReentrancyGuard {
     mEntered = true;
 #endif
   }
-  ~ReentrancyGuard() {
 #ifdef DEBUG
-    mEntered = false;
+  ~ReentrancyGuard() { mEntered = false; }
+#else
+  // FIXME: It would be better to mark this variable as [[maybe_unused]] but
+  // this is currently not supported by the sixgill plugin.
+  ~ReentrancyGuard() {}  // NOLINT(modernize-use-equals-default)
 #endif
-  }
 
- private:
   ReentrancyGuard(const ReentrancyGuard&) = delete;
   void operator=(const ReentrancyGuard&) = delete;
 };

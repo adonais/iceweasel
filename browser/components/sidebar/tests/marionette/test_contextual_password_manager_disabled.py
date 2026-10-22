@@ -49,7 +49,7 @@ class TestContextualPasswordManagerDisabled(MarionetteTestCase):
         self.marionette.execute_async_script(
             """
             let resolve = arguments[0];
-            let { BrowserInitState } = ChromeUtils.importESModule("resource:///modules/BrowserGlue.sys.mjs");
+            let { BrowserInitState } = ChromeUtils.importESModule("moz-src:///browser/components/BrowserGlue.sys.mjs");
 
             (async () => {
                 await BrowserInitState.startupIdleTaskPromise;

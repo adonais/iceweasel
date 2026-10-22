@@ -438,6 +438,9 @@ add_task(
           new content.MouseEvent("mousedown", { bubbles: true })
         );
         smartbar.inputField.focus();
+        smartbar.dispatchEvent(
+          new content.MouseEvent("mouseup", { bubbles: true })
+        );
         return smartbar.view.isOpen;
       });
 

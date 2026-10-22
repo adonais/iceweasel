@@ -23,7 +23,7 @@ const baseConfig = env => ({
     rules: [
       {
         test: /\.jsx?$/,
-        exclude: /node_modules[\\/](?!@fluent[\\/]).*/,
+        exclude: /node_modules[\\/]/,
         loader: vendored("babel-loader"),
         options: {
           presets: [vendored("@babel/preset-react")],

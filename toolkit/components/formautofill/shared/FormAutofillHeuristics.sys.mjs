@@ -1390,6 +1390,22 @@ export const FormAutofillHeuristics = {
       return [autocompleteInfo.fieldName, inferredInfo];
     }
 
+    // A present but unparseable autocomplete attribute (e.g.
+    // autocomplete="shopify checkout") is the site saying it does not want
+    // browser autofill on this field, so leave the field unclassified. An
+    // empty field name keeps it out of every section, so it is neither offered
+    // a dropdown of its own nor filled alongside its siblings (Bug 1999789).
+    if (
+      FormAutofill.suppressUnrecognizedAutocomplete &&
+      lazy.FormAutofillUtils.hasUnrecognizedAutocomplete(
+        element,
+        autocompleteInfo
+      )
+    ) {
+      inferredInfo.autocompleteInfo = autocompleteInfo;
+      return ["", inferredInfo];
+    }
+
     const fields = this._getPossibleFieldNames(element);
 
     // "email" type of input is accurate for heuristics to determine its Email

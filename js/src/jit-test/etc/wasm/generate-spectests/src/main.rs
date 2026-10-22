@@ -28,8 +28,8 @@ struct Config {
 }
 
 impl Config {
-    fn find_repo_mut(&mut self, name: &str) -> Option<&mut Repo> {
-        self.repos.iter_mut().find(|x| &x.name == name)
+    fn find_repo(&self, name: &str) -> &Repo {
+        self.repos.iter().find(|x| &x.name == name).unwrap()
     }
 }
 
@@ -91,13 +91,33 @@ enum Merge {
     Conflicted,
 }
 
+impl Merge {
+    fn label(&self) -> &'static str {
+        match self {
+            Merge::Standalone => "standalone",
+            Merge::Merged => "merged",
+            Merge::Conflicted => "conflicted",
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Status {
     commit_base_hash: String,
     commit_final_message: String,
     merged: Merge,
-    built: bool,
+    build_error: Option<String>,
+    num_wast_tests: usize,
+    num_js_tests: usize,
 }
+
+impl Status {
+    fn is_degraded(&self, repo: &Repo) -> bool {
+        (!repo.skip_wast && self.num_wast_tests == 0) || (!repo.skip_js && self.num_js_tests == 0)
+    }
+}
+
+const EXIT_DEGRADED: i32 = 2;
 
 // Roll-your-own CLI utilities
 
@@ -140,22 +160,31 @@ fn change_dir(dir: &str) -> impl Drop {
     previous
 }
 
-fn find(dir: &str) -> Vec<PathBuf> {
+fn find(dirs: &[&str]) -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
-    fn find(dir: &str, paths: &mut Vec<PathBuf>) {
-        for entry in fs::read_dir(dir).unwrap().map(|x| x.unwrap()) {
-            let path = entry.path();
+    fn find(dir_path: &str, paths: &mut Vec<PathBuf>) {
+        match fs::read_dir(dir_path) {
+            Ok(dir) => {
+                for entry in dir.map(|x| x.unwrap()) {
+                    let path = entry.path();
 
-            if entry.file_type().unwrap().is_dir() {
-                find(path.to_str().unwrap(), paths);
-            } else {
-                paths.push(path);
+                    if entry.file_type().unwrap().is_dir() {
+                        find(path.to_str().unwrap(), paths);
+                    } else {
+                        paths.push(path);
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Failed to read from {}: {}", dir_path, e);
             }
         }
     }
 
-    find(dir, &mut paths);
+    for dir in dirs {
+        find(dir, &mut paths);
+    }
     paths
 }
 
@@ -174,7 +203,7 @@ fn main() {
     env_logger::init();
 
     // Load the config
-    let mut config: Config =
+    let config: Config =
         toml::from_str(&fs::read_to_string("config.toml").expect("failed to read config.toml"))
             .expect("invalid config.toml");
 
@@ -208,36 +237,102 @@ fn main() {
         }
     }
 
-    // Abort if we had a failure
-    if !failures.is_empty() {
-        warn!("Failed.");
-        for (name, err) in &failures {
-            warn!("{}: (failure) {:?}", name, err);
-        }
-        std::process::exit(1);
-    }
-
-    // Display successful results
-    info!("Done.");
     for (name, status) in &successes {
-        let repo = config.find_repo_mut(&name).unwrap();
         lock.set_commit(&name, &status.commit_base_hash);
 
         info!(
-            "{}: ({} {}) {}",
-            repo.name,
-            match status.merged {
-                Merge::Standalone => "standalone",
-                Merge::Merged => "merged",
-                Merge::Conflicted => "conflicted",
+            "{}: (merge {}, {}) {}",
+            name,
+            status.merged.label(),
+            if status.build_error.is_none() {
+                "building"
+            } else {
+                "build broken"
             },
-            if status.built { "building" } else { "broken" },
             status.commit_final_message.trim_end()
         );
     }
 
+    print!("{}", summary(&config, &successes, &failures));
+    if !failures.is_empty() {
+        std::process::exit(1);
+    }
+
     // Commit the new lock file
     write_string("config-lock.toml", &toml::to_string_pretty(&lock).unwrap()).unwrap();
+
+    // Report missing tests via the exit code.
+    if successes
+        .iter()
+        .any(|(name, status)| status.is_degraded(config.find_repo(name)))
+    {
+        std::process::exit(EXIT_DEGRADED);
+    }
+}
+
+fn summary(
+    config: &Config,
+    successes: &[(String, Status)],
+    failures: &[(String, anyhow::Error)],
+) -> String {
+    use std::fmt::Write;
+
+    let name_width = successes
+        .iter()
+        .map(|(name, _)| name.len())
+        .chain(failures.iter().map(|(name, _)| name.len()))
+        .max()
+        .unwrap_or(0);
+
+    let mut out = String::new();
+    writeln!(out, "\n=== summary ===").unwrap();
+    for (name, status) in successes {
+        writeln!(
+            out,
+            "  {:<width$}  {:<10}  {:>4} wast, {:>4} js",
+            name,
+            status.merged.label(),
+            status.num_wast_tests,
+            status.num_js_tests,
+            width = name_width
+        )
+        .unwrap();
+    }
+    for (name, _) in failures {
+        writeln!(out, "  {:<width$}  FAILED", name, width = name_width).unwrap();
+    }
+
+    let mut problems = Vec::new();
+    for (name, err) in failures {
+        problems.push(format!("{}: failed to generate tests: {:?}", name, err));
+    }
+    for (name, status) in successes {
+        if let Merge::Conflicted = status.merged {
+            problems.push(format!(
+                "{}: merge with parent had conflicts, generated tests from {} without merging",
+                name, status.commit_base_hash
+            ));
+        }
+        if let Some(err) = &status.build_error {
+            problems.push(format!("{}: wast2js failed: {}", name, err));
+        }
+        let repo = config.find_repo(name);
+        if !repo.skip_wast && status.num_wast_tests == 0 {
+            problems.push(format!("{}: no wast tests were generated", name));
+        }
+        if !repo.skip_js && status.num_js_tests == 0 && status.build_error.is_none() {
+            problems.push(format!("{}: no js tests were generated", name));
+        }
+    }
+
+    if !problems.is_empty() {
+        writeln!(out, "\nProblems:").unwrap();
+        for problem in &problems {
+            writeln!(out, "  {}", problem).unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+    out
 }
 
 fn clean_and_init_dirs(specs_dir: &str) {
@@ -297,11 +392,11 @@ fn build_repo(repo: &Repo, config: &Config, lock: &Lock) -> Result<Status> {
 
     // Try to build the test suite on this commit. This may fail due to merging
     // with a parent repo, in which case we will try again in an unmerged state.
-    let mut built = false;
-    match try_build_tests(&exclude) {
-        Ok(()) => built = true,
-        Err(err) => warn!("Failed to build tests: {:?}", err),
-    };
+    let mut build_error = None;
+    if let Err(err) = try_build_tests(&exclude) {
+        warn!("Failed to build tests: {:?}", err);
+        build_error = Some(format!("{:?}", err));
+    }
     // if try_build_tests(&exclude).is_err() {
     //     if repo.parent.is_some() {
     //         warn!(
@@ -337,11 +432,15 @@ fn build_repo(repo: &Repo, config: &Config, lock: &Lock) -> Result<Status> {
     let include = RegexSetBuilder::new(&included_files).build().unwrap();
 
     // Copy over all the desired test-suites
+    let mut num_wast_tests = 0;
+    let mut num_js_tests = 0;
     if !repo.skip_wast {
-        copy_tests(repo, "test/core", "../tests", "wast", &include, &exclude);
+        for dir in &["test/core", "test/custom"] {
+            num_wast_tests += copy_tests(repo, dir, "../tests", "wast", &include, &exclude);
+        }
     }
-    if built && !repo.skip_js {
-        copy_tests(repo, "js", "../tests", "js", &include, &exclude);
+    if build_error.is_none() && !repo.skip_js {
+        num_js_tests = copy_tests(repo, "js", "../tests", "js", &include, &exclude);
         copy_directives(repo, config)?;
     }
 
@@ -349,7 +448,9 @@ fn build_repo(repo: &Repo, config: &Config, lock: &Lock) -> Result<Status> {
         commit_final_message,
         commit_base_hash,
         merged,
-        built,
+        build_error,
+        num_wast_tests,
+        num_js_tests,
     })
 }
 
@@ -389,13 +490,18 @@ fn try_build_tests(exclude: &RegexSet) -> Result<()> {
     let _ = fs::remove_dir_all("./js");
     fs::create_dir("./js")?;
 
-    let paths = find("./test/core/");
-    for path in paths {
+    for path in &find(&["./test/core/", "./test/custom/"]) {
         if path.extension() != Some(OsStr::new("wast")) {
             continue;
         }
 
-        let stripped_path = path.strip_prefix("./test/core/").unwrap();
+        let stripped_path = path;
+        let stripped_path = stripped_path
+            .strip_prefix("./test/core/")
+            .unwrap_or(&stripped_path);
+        let stripped_path = stripped_path
+            .strip_prefix("./test/custom/")
+            .unwrap_or(&stripped_path);
         let stripped_path_str = stripped_path.to_str().unwrap();
         if exclude.is_match(stripped_path_str) {
             continue;
@@ -423,8 +529,9 @@ fn copy_tests(
     test_name: &str,
     include: &RegexSet,
     exclude: &RegexSet,
-) {
-    for path in find(src_dir) {
+) -> usize {
+    let mut num_copied = 0;
+    for path in find(&[src_dir]) {
         let stripped_path = path.strip_prefix(src_dir).unwrap();
         let stripped_path_str = stripped_path.to_str().unwrap();
 
@@ -438,8 +545,16 @@ fn copy_tests(
             .join(&stripped_path);
         let out_dir = out_path.parent().unwrap();
         let _ = fs::create_dir_all(out_dir);
+        let is_harness_file = stripped_path
+            .components()
+            .any(|x| x.as_os_str() == "harness");
         fs::copy(path, out_path).unwrap();
+
+        if !is_harness_file {
+            num_copied += 1;
+        }
     }
+    num_copied
 }
 
 fn copy_directives(repo: &Repo, config: &Config) -> Result<()> {
@@ -468,13 +583,21 @@ fn find_tests_changed(repo: &Repo) -> Result<Vec<String>> {
     let files_changed = if let Some(parent) = repo.parent.as_ref() {
         run(
             "git",
-            &["diff", "--name-only", &repo.name, &parent, "test/core"],
+            &[
+                "diff",
+                "--name-only",
+                &repo.name,
+                &parent,
+                "--",
+                "test/core",
+                "test/custom",
+            ],
         )?
         .lines()
         .map(|x| PathBuf::from(x))
         .collect()
     } else {
-        find("test/core")
+        find(&["test/core", "test/custom"])
     };
 
     let mut tests_changed = Vec::new();

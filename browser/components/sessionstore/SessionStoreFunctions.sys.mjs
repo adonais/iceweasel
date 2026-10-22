@@ -58,7 +58,7 @@ var SessionStoreFuncInternal = {
       aData.scroll = scroll.toJSON();
     }
 
-    SessionStore.updateSessionStoreFromTablistener(
+    SessionStore.updateSessionStoreFromChild(
       aBrowser,
       aBrowsingContext,
       aPermanentKey,
@@ -77,7 +77,7 @@ var SessionStoreFuncInternal = {
     aEpoch,
     aData
   ) {
-    SessionStore.updateSessionStoreFromTablistener(
+    SessionStore.updateSessionStoreFromChild(
       aBrowser,
       aBrowsingContext,
       aPermanentKey,

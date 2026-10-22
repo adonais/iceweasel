@@ -158,6 +158,7 @@ class RemoteMediaManagerChild final
 
  protected:
   void HandleFatalError(const char* aMsg) override;
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
   explicit RemoteMediaManagerChild(RemoteMediaIn aLocation);

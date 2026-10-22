@@ -17,7 +17,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginCSVImport: "resource://gre/modules/LoginCSVImport.sys.mjs",
   LoginExport: "resource://gre/modules/LoginExport.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   ChangePasswordURLs:

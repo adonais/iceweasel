@@ -91,10 +91,6 @@ export class nsContentDispatchChooser {
     }
 
     if ("mailto" === aURI.scheme) {
-      Glean.protocolhandlerMailto.visit.record({
-        triggered_externally: aTriggeredExternally,
-      });
-
       const browser = aBrowsingContext?.topFrameElement;
       // Only show the picker when "always ask" is configured for mailto; a
       // configured default handler is launched directly by the flow below.
@@ -141,12 +137,6 @@ export class nsContentDispatchChooser {
               .getService(Ci.nsIHandlerService)
               .store(aHandler);
           } catch (error) {
-            Glean.protocolhandlerMailto.error.record({
-              reason:
-                handler === MAILTO_SYSTEM_DEFAULT_ID
-                  ? "launch_system_default"
-                  : "launch_webmail",
-            });
             console.error(error);
           }
         }
@@ -264,7 +254,6 @@ export class nsContentDispatchChooser {
     } catch (error) {
       // Rethrow so the caller can fall back to the default protocol handling
       // rather than dropping the click.
-      Glean.protocolhandlerMailto.error.record({ reason: "dialog_failed" });
       console.error(error);
       throw error;
     }
@@ -272,25 +261,18 @@ export class nsContentDispatchChooser {
     // "Not now" / dismissal leaves the seed values in outArgs untouched, so the
     // selected handler and checkbox state are only meaningful once confirmed.
     if (!outArgs.getProperty("openHandler")) {
-      Glean.protocolhandlerMailto.promptClick.record({ button: "not_now" });
       return null;
     }
 
     const useSystemDefault =
       outArgs.getProperty("preferredAction") ==
       Ci.nsIHandlerInfo.useSystemDefault;
-    const alwaysAsk = outArgs.getProperty("alwaysAskBeforeHandling");
-    Glean.protocolhandlerMailto.promptClick.record({
-      button: "set_default",
-      handler: useSystemDefault ? "system_default" : "webmail",
-      always_ask: alwaysAsk,
-    });
 
     return {
       handler: useSystemDefault
         ? MAILTO_SYSTEM_DEFAULT_ID
         : outArgs.getProperty("preferredApplicationHandler"),
-      alwaysAsk,
+      alwaysAsk: outArgs.getProperty("alwaysAskBeforeHandling"),
     };
   }
 

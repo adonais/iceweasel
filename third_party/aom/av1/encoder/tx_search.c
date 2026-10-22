@@ -130,19 +130,22 @@ int64_t av1_pixel_diff_dist(const MACROBLOCK *x, int plane, int blk_row,
   const int txb_cols = block_size_wide[tx_bsize];
   const int txb_rows = block_size_high[tx_bsize];
   get_visible_dimensions(x, plane, plane_bsize, blk_col, blk_row, txb_cols,
-                         txb_rows, &visible_cols, &visible_rows, true);
-  const int diff_stride = block_size_wide[plane_bsize];
-  const int16_t *diff = x->plane[plane].src_diff;
+                         txb_rows, /*clip_dims=*/true, &visible_cols,
+                         &visible_rows);
 
-  diff += ((blk_row * diff_stride + blk_col) << MI_SIZE_LOG2);
-  uint64_t sse =
-      aom_sum_squares_2d_i16(diff, diff_stride, visible_cols, visible_rows);
-  if (block_mse_q8 != NULL) {
-    if (visible_cols > 0 && visible_rows > 0)
+  uint64_t sse = 0;
+  if (visible_cols > 0 && visible_rows > 0) {
+    const int diff_stride = block_size_wide[plane_bsize];
+    const int16_t *diff = x->plane[plane].src_diff;
+
+    diff += ((blk_row * diff_stride + blk_col) << MI_SIZE_LOG2);
+    sse = aom_sum_squares_2d_i16(diff, diff_stride, visible_cols, visible_rows);
+    if (block_mse_q8 != NULL) {
       *block_mse_q8 =
           (unsigned int)((256 * sse) / (visible_cols * visible_rows));
-    else
-      *block_mse_q8 = 0;
+    }
+  } else {
+    if (block_mse_q8 != NULL) *block_mse_q8 = 0;
   }
   return sse;
 }
@@ -157,15 +160,18 @@ static inline int64_t pixel_diff_stats(
   const int txb_cols = block_size_wide[tx_bsize];
   const int txb_rows = block_size_high[tx_bsize];
   get_visible_dimensions(x, plane, plane_bsize, blk_col, blk_row, txb_cols,
-                         txb_rows, &visible_cols, &visible_rows, true);
-  const int diff_stride = block_size_wide[plane_bsize];
-  const int16_t *diff = x->plane[plane].src_diff;
+                         txb_rows, /*clip_dims=*/true, &visible_cols,
+                         &visible_rows);
 
-  diff += ((blk_row * diff_stride + blk_col) << MI_SIZE_LOG2);
   uint64_t sse = 0;
-  int sum = 0;
-  sse = aom_sum_sse_2d_i16(diff, diff_stride, visible_cols, visible_rows, &sum);
   if (visible_cols > 0 && visible_rows > 0) {
+    const int diff_stride = block_size_wide[plane_bsize];
+    const int16_t *diff = x->plane[plane].src_diff;
+
+    diff += ((blk_row * diff_stride + blk_col) << MI_SIZE_LOG2);
+    int sum = 0;
+    sse =
+        aom_sum_sse_2d_i16(diff, diff_stride, visible_cols, visible_rows, &sum);
     double norm_factor = 1.0 / (visible_cols * visible_rows);
     int sign_sum = sum > 0 ? 1 : -1;
     // Conversion to transform domain
@@ -184,12 +190,20 @@ static inline int64_t pixel_diff_stats(
 // Uses simple features on top of DCT coefficients to quickly predict
 // whether optimal RD decision is to skip encoding the residual.
 // The sse value is stored in dist.
-static int predict_skip_txfm(MACROBLOCK *x, BLOCK_SIZE bsize, int64_t *dist,
+static int predict_skip_txfm(const AV1_COMP *cpi, MACROBLOCK *x,
+                             BLOCK_SIZE bsize, int64_t *dist,
                              int reduced_tx_set) {
+  const MACROBLOCKD *xd = &x->e_mbd;
+#if CONFIG_AV1_HIGHBITDEPTH
+  if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+    if (av1_is_skip_txfm_penalized(cpi, x, bsize)) return 0;
+  }
+#else
+  (void)cpi;
+#endif
   const TxfmSearchParams *txfm_params = &x->txfm_search_params;
   const int bw = block_size_wide[bsize];
   const int bh = block_size_high[bsize];
-  const MACROBLOCKD *xd = &x->e_mbd;
   const int16_t dc_q = av1_dc_quant_QTX(x->qindex, 0, xd->bd);
 
   *dist = av1_pixel_diff_dist(x, 0, 0, 0, bsize, bsize, NULL);
@@ -971,8 +985,7 @@ static inline void recon_intra(const AV1_COMP *cpi, MACROBLOCK *x, int plane,
 }
 
 // Compute the pixel domain distortion from src and dst on all visible 4x4s in
-// the
-// transform block.
+// the transform block.
 static unsigned pixel_dist(const AV1_COMP *const cpi, const MACROBLOCK *x,
                            int plane, const uint8_t *src, const int src_stride,
                            const uint8_t *dst, const int dst_stride,
@@ -984,7 +997,8 @@ static unsigned pixel_dist(const AV1_COMP *const cpi, const MACROBLOCK *x,
   txb_rows = block_size_high[tx_bsize];
 
   get_visible_dimensions(x, plane, plane_bsize, blk_col, blk_row, txb_cols,
-                         txb_rows, &visible_cols, &visible_rows, true);
+                         txb_rows, /*clip_dims=*/true, &visible_cols,
+                         &visible_rows);
   assert(visible_rows > 0);
   assert(visible_cols > 0);
 
@@ -2099,8 +2113,9 @@ static void search_tx_type(const AV1_COMP *cpi, MACROBLOCK *x, int plane,
 
   int is_border_block = 0;
   if (cpi->do_border_pad) {
-    is_border_block = get_visible_dimensions(
-        x, plane, plane_bsize, blk_col, blk_row, txw, txh, NULL, NULL, true);
+    is_border_block =
+        get_visible_dimensions(x, plane, plane_bsize, blk_col, blk_row, txw,
+                               txh, /*clip_dims=*/true, NULL, NULL);
     if (is_border_block)
       av1_subtract_txb(x, plane, plane_bsize, blk_col, blk_row, tx_size,
                        best_tx_type, cpi->do_border_pad);
@@ -2946,13 +2961,33 @@ static int64_t uniform_txfm_yrd(const AV1_COMP *const cpi, MACROBLOCK *x,
   }
   // Check if forcing the block to skip transform leads to smaller RD cost.
   if (is_inter && !rd_stats->skip_txfm && !xd->lossless[mbmi->segment_id]) {
-    int64_t temp_skip_txfm_rd =
-        RDCOST(x->rdmult, skip_txfm_rate, rd_stats->sse);
-    if (temp_skip_txfm_rd <= rd) {
-      rd = temp_skip_txfm_rd;
-      rd_stats->rate = 0;
-      rd_stats->dist = rd_stats->sse;
-      rd_stats->skip_txfm = 1;
+#if CONFIG_AV1_HIGHBITDEPTH
+    if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+      int64_t no_skip_dist, skip_dist;
+      av1_get_tx_skip_dist(cpi, x, bs, rd_stats->dist, rd_stats->sse,
+                           &no_skip_dist, &skip_dist);
+      const int64_t temp_skip_txfm_rd =
+          RDCOST(x->rdmult, skip_txfm_rate, skip_dist);
+      const int64_t temp_no_skip_txfm_rd =
+          RDCOST(x->rdmult, rd_stats->rate + no_skip_txfm_rate + tx_size_rate,
+                 no_skip_dist);
+      if (temp_skip_txfm_rd <= temp_no_skip_txfm_rd) {
+        rd = temp_skip_txfm_rd;
+        rd_stats->rate = 0;
+        rd_stats->dist = rd_stats->sse;
+        rd_stats->skip_txfm = 1;
+      }
+    } else
+#endif
+    {
+      const int64_t temp_skip_txfm_rd =
+          RDCOST(x->rdmult, skip_txfm_rate, rd_stats->sse);
+      if (temp_skip_txfm_rd <= rd) {
+        rd = temp_skip_txfm_rd;
+        rd_stats->rate = 0;
+        rd_stats->dist = rd_stats->sse;
+        rd_stats->skip_txfm = 1;
+      }
     }
   }
 
@@ -3593,7 +3628,7 @@ void av1_pick_recursive_tx_size_type_yrd(const AV1_COMP *cpi, MACROBLOCK *x,
   // context and terminate early.
   int64_t dist;
   if (txfm_params->skip_txfm_level &&
-      predict_skip_txfm(x, bsize, &dist,
+      predict_skip_txfm(cpi, x, bsize, &dist,
                         cpi->common.features.reduced_tx_set_used)) {
     set_skip_txfm(x, rd_stats, bsize, dist);
     // Save the RD search results into mb_rd_record.
@@ -3666,7 +3701,7 @@ void av1_pick_uniform_tx_size_type_yrd(const AV1_COMP *const cpi, MACROBLOCK *x,
   int64_t dist;
   if (tx_params->skip_txfm_level && is_inter &&
       !xd->lossless[mbmi->segment_id] &&
-      predict_skip_txfm(x, bs, &dist,
+      predict_skip_txfm(cpi, x, bs, &dist,
                         cpi->common.features.reduced_tx_set_used)) {
     // Populate rdstats as per skip decision
     set_skip_txfm(x, rd_stats, bs, dist);
@@ -3867,14 +3902,23 @@ int av1_txfm_search(const AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
 
   int choose_skip_txfm = rd_stats->skip_txfm;
   if (!choose_skip_txfm && !xd->lossless[mbmi->segment_id]) {
+    int64_t no_skip_dist = rd_stats->dist;
+    int64_t skip_dist = rd_stats->sse;
+#if CONFIG_AV1_HIGHBITDEPTH
+    if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+      av1_get_tx_skip_dist(cpi, x, bsize, rd_stats->dist, rd_stats->sse,
+                           &no_skip_dist, &skip_dist);
+    }
+#endif
     const int64_t rdcost_no_skip_txfm = RDCOST(
         x->rdmult, rd_stats_y->rate + rd_stats_uv->rate + skip_txfm_cost[0],
-        rd_stats->dist);
+        no_skip_dist);
     const int64_t rdcost_skip_txfm =
-        RDCOST(x->rdmult, skip_txfm_cost[1], rd_stats->sse);
+        RDCOST(x->rdmult, skip_txfm_cost[1], skip_dist);
     if (rdcost_no_skip_txfm >= rdcost_skip_txfm) choose_skip_txfm = 1;
   }
   if (choose_skip_txfm) {
+    const int naturally_skip = rd_stats->skip_txfm;
     rd_stats_y->rate = 0;
     rd_stats_uv->rate = 0;
     rd_stats->rate = mode_rate + skip_txfm_cost[1];
@@ -3882,13 +3926,15 @@ int av1_txfm_search(const AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
     rd_stats_y->dist = rd_stats_y->sse;
     rd_stats_uv->dist = rd_stats_uv->sse;
     mbmi->skip_txfm = 1;
-    if (rd_stats->skip_txfm) {
+    rd_stats->skip_txfm = 1;
+    if (naturally_skip) {
       const int64_t tmprd = RDCOST(x->rdmult, rd_stats->rate, rd_stats->dist);
       if (tmprd > ref_best_rd) return 0;
     }
   } else {
     rd_stats->rate += skip_txfm_cost[0];
     mbmi->skip_txfm = 0;
+    rd_stats->skip_txfm = 0;
   }
 
   return 1;

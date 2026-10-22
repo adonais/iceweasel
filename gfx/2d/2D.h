@@ -31,6 +31,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/FontData.h"
 #include "nsRegionFwd.h"
 
@@ -340,7 +341,7 @@ class LinearGradientPatternT : public Pattern {
  public:
   /// For constructor parameter description, see member data documentation.
   LinearGradientPatternT(const Point& aBegin, const Point& aEnd,
-                         RefPtr<GradientStops> aStops,
+                         REF<GradientStops> aStops,
                          const Matrix& aMatrix = Matrix())
       : mBegin(aBegin),
         mEnd(aEnd),
@@ -350,7 +351,8 @@ class LinearGradientPatternT : public Pattern {
   PatternType GetType() const override { return PatternType::LINEAR_GRADIENT; }
 
   Pattern* CloneWeak() const override {
-    return new Weak(mBegin, mEnd, do_AddRef(mStops), mMatrix);
+    return new Weak(mBegin, mEnd, ThreadSafeWeakPtr<GradientStops>{mStops},
+                    mMatrix);
   }
 
   bool IsWeak() const override {
@@ -400,7 +402,7 @@ class RadialGradientPatternT : public Pattern {
   /// For constructor parameter description, see member data documentation.
   RadialGradientPatternT(const Point& aCenter1, const Point& aCenter2,
                          Float aRadius1, Float aRadius2,
-                         RefPtr<GradientStops> aStops,
+                         REF<GradientStops> aStops,
                          const Matrix& aMatrix = Matrix())
       : mCenter1(aCenter1),
         mCenter2(aCenter2),
@@ -412,8 +414,8 @@ class RadialGradientPatternT : public Pattern {
   PatternType GetType() const override { return PatternType::RADIAL_GRADIENT; }
 
   Pattern* CloneWeak() const override {
-    return new Weak(mCenter1, mCenter2, mRadius1, mRadius2, do_AddRef(mStops),
-                    mMatrix);
+    return new Weak(mCenter1, mCenter2, mRadius1, mRadius2,
+                    ThreadSafeWeakPtr<GradientStops>{mStops}, mMatrix);
   }
 
   bool IsWeak() const override {
@@ -462,7 +464,7 @@ class ConicGradientPatternT : public Pattern {
  public:
   /// For constructor parameter description, see member data documentation.
   ConicGradientPatternT(const Point& aCenter, Float aAngle, Float aStartOffset,
-                        Float aEndOffset, RefPtr<GradientStops> aStops,
+                        Float aEndOffset, REF<GradientStops> aStops,
                         const Matrix& aMatrix = Matrix())
       : mCenter(aCenter),
         mAngle(aAngle),
@@ -475,7 +477,7 @@ class ConicGradientPatternT : public Pattern {
 
   Pattern* CloneWeak() const override {
     return new Weak(mCenter, mAngle, mStartOffset, mEndOffset,
-                    do_AddRef(mStops), mMatrix);
+                    ThreadSafeWeakPtr<GradientStops>{mStops}, mMatrix);
   }
 
   bool IsWeak() const override {
@@ -523,7 +525,7 @@ class SurfacePatternT : public Pattern {
 
  public:
   /// For constructor parameter description, see member data documentation.
-  SurfacePatternT(RefPtr<SourceSurface> aSourceSurface, ExtendMode aExtendMode,
+  SurfacePatternT(REF<SourceSurface> aSourceSurface, ExtendMode aExtendMode,
                   const Matrix& aMatrix = Matrix(),
                   SamplingFilter aSamplingFilter = SamplingFilter::GOOD,
                   const IntRect& aSamplingRect = IntRect())
@@ -536,8 +538,8 @@ class SurfacePatternT : public Pattern {
   PatternType GetType() const override { return PatternType::SURFACE; }
 
   Pattern* CloneWeak() const override {
-    return new Weak(do_AddRef(mSurface), mExtendMode, mMatrix, mSamplingFilter,
-                    mSamplingRect);
+    return new Weak(ThreadSafeWeakPtr<SourceSurface>{mSurface}, mExtendMode,
+                    mMatrix, mSamplingFilter, mSamplingRect);
   }
 
   bool IsWeak() const override {
@@ -1215,81 +1217,25 @@ struct GlyphBuffer {
 };
 
 #ifdef MOZ_ENABLE_FREETYPE
-class SharedFTFace;
-
-/** SharedFTFaceData abstracts data that may be used to back a SharedFTFace.
- * Its main function is to manage the lifetime of the data and ensure that it
- * lasts as long as the face.
- */
-class SharedFTFaceData {
- public:
-  /** Utility for creating a new face from this data. */
-  virtual already_AddRefed<SharedFTFace> CloneFace(int aFaceIndex = 0) {
-    return nullptr;
-  }
-  /** Binds the data's lifetime to the face. */
-  virtual void BindData() = 0;
-  /** Signals that the data is no longer needed by a face. */
-  virtual void ReleaseData() = 0;
-};
-
-/** Wrapper class for ref-counted SharedFTFaceData that handles calling the
- * appropriate ref-counting methods
- */
-template <class T>
-class SharedFTFaceRefCountedData : public SharedFTFaceData {
- public:
-  void BindData() { static_cast<T*>(this)->AddRef(); }
-  void ReleaseData() { static_cast<T*>(this)->Release(); }
-};
-
-// Helper class used for clearing out user font data when FT font
-// face is destroyed. Since multiple faces may use the same data, be
-// careful to assure that the data is only cleared out when all uses
-// expire. The font entry object contains a refptr to FTUserFontData and
-// each FT face created from that font entry contains a refptr to that
-// same FTUserFontData object.
-// This is also attached to FT faces for installed fonts (recording the
-// filename, rather than storing the font data) if variations are present.
-class FTUserFontData final
-    : public mozilla::gfx::SharedFTFaceRefCountedData<FTUserFontData> {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FTUserFontData)
-
-  explicit FTUserFontData(FontData* aFontData) : mFontData(aFontData) {}
-  explicit FTUserFontData(const char* aFilename) : mFilename(aFilename) {}
-
-  const uint8_t* GetData() const {
-    return mFontData ? mFontData->Data() : nullptr;
-  }
-  uint32_t Length() const { return mFontData ? mFontData->Length() : 0; }
-
-  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace(
-      int aFaceIndex = 0) override;
-
- private:
-  ~FTUserFontData() = default;
-
-  std::string mFilename;
-  RefPtr<FontData> mFontData;
-};
-
 /** SharedFTFace is a shared wrapper around an FT_Face. It is ref-counted,
  * unlike FT_Face itself, so that it may be shared among many users with
  * RefPtr. Users should take care to lock SharedFTFace before accessing any
  * FT_Face fields that may change to ensure exclusive access to it. It also
- * allows backing data's lifetime to be bound to it via SharedFTFaceData so
- * that the data will not disappear before the face does.
+ * allows backing data's lifetime to be bound to it so that the data will not
+ * disappear before the face does.
  */
 class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SharedFTFace)
 
-  explicit SharedFTFace(FT_Face aFace, SharedFTFaceData* aData);
+  SharedFTFace(FT_Face aFace, UniquePtr<char[]>&& aFilename, int aFaceIndex);
+  SharedFTFace(FT_Face aFace, FontData* aFontData, int aFaceIndex);
   virtual ~SharedFTFace();
 
   FT_Face GetFace() const { return mFace; }
-  SharedFTFaceData* GetData() const { return mData; }
+  const char* GetFilename() const { return mFilename.get(); }
+  const RefPtr<FontData>& GetFontData() const { return mFontData; }
+  int GetFaceIndex() const { return mFaceIndex; }
 
   /** Locks the face for exclusive access by a given owner. Returns false if
    * the given owner is acquiring the lock for the first time, and true if
@@ -1314,14 +1260,21 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
     }
   }
 
+  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace();
+
  private:
-  FT_Face mFace;
-  SharedFTFaceData* mData;
-  Mutex mLock;
+  FT_Face mFace = nullptr;
+  // The filename, if used, must have the same lifetime as the FT_Face.
+  UniquePtr<char[]> mFilename;
+  // Since multiple faces may use the same data, use RefPtr to assure that the
+  // data is only cleared out when all uses expire.
+  RefPtr<FontData> mFontData;
+  int mFaceIndex = 0;
+  Mutex mLock{"SharedFTFace::mLock"};
   // Remember the last owner of the lock, even after unlocking, to allow users
   // to avoid reinitializing state on the FT face if the last owner hasn't
   // changed by the next time it is locked with the same owner.
-  Atomic<const void*> mLastLockOwner;
+  Atomic<const void*> mLastLockOwner{nullptr};
 };
 #endif
 
@@ -2416,14 +2369,12 @@ class GFX2D_API Factory {
 
   static FT_Face NewFTFace(FT_Library aFTLibrary, const char* aFileName,
                            int aFaceIndex);
-  static already_AddRefed<SharedFTFace> NewSharedFTFace(FT_Library aFTLibrary,
-                                                        const char* aFilename,
+  static already_AddRefed<SharedFTFace> NewSharedFTFace(const char* aFilename,
                                                         int aFaceIndex);
   static FT_Face NewFTFaceFromData(FT_Library aFTLibrary, const uint8_t* aData,
                                    uint32_t aLength, int aFaceIndex);
   static already_AddRefed<SharedFTFace> NewSharedFTFaceFromData(
-      FT_Library aFTLibrary, FontData* aFontData, int aFaceIndex,
-      SharedFTFaceData* aSharedData = nullptr);
+      FontData* aFontData, int aFaceIndex);
   static void ReleaseFTFace(FT_Face aFace);
   static FT_Error LoadFTGlyph(FT_Face aFace, uint32_t aGlyphIndex,
                               int32_t aFlags);

@@ -261,7 +261,6 @@ def host_linker_libpaths_bat(libs):
 
 
 set_config("HOST_LINKER_LIBPATHS", host_linker_libpaths)
-set_config("HOST_LINKER_LIBPATHS_BAT", host_linker_libpaths_bat)
 
 
 @depends(valid_windows_sdk_dir, valid_ucrt_sdk_dir, host)
@@ -508,6 +507,8 @@ with only_when(target_is_windows & depends(c_compiler)(lambda c: c.type != "clan
     # strsafe.h on mingw uses macros for function deprecation that pollutes namespace
     # causing problems with local implementations with the same name.
     set_define("STRSAFE_NO_DEPRECATE", True)
+    # abseil defaults to the pthread_setspecific thread identity mode on mingw.
+    set_define("ABSL_FORCE_THREAD_IDENTITY_MODE", "ABSL_THREAD_IDENTITY_MODE_USE_CPP11")
 
     set_config("WIN32_CONSOLE_EXE_LDFLAGS", ["-mconsole"])
     set_config("WIN32_GUI_EXE_LDFLAGS", ["-mwindows"])

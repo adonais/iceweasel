@@ -161,7 +161,7 @@ AudioEncoderMultiChannelOpusImpl::AudioEncoderMultiChannelOpusImpl(
 }
 
 AudioEncoderMultiChannelOpusImpl::~AudioEncoderMultiChannelOpusImpl() {
-  RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
+  RTC_CHECK_EQ(WebRtcOpus_EncoderFree(inst_), 0);
 }
 
 size_t AudioEncoderMultiChannelOpusImpl::SufficientOutputBufferSize() const {
@@ -197,52 +197,53 @@ bool AudioEncoderMultiChannelOpusImpl::RecreateEncoderInstance(
 
 bool AudioEncoderMultiChannelOpusImpl::RecreateEncoderInstance() {
   if (inst_)
-    RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_EncoderFree(inst_), 0);
   input_buffer_.clear();
   input_buffer_.reserve(Num10msFramesPerPacket() * SamplesPer10msFrame());
   RTC_CHECK_EQ(
-      0, WebRtcOpus_MultistreamEncoderCreate(
-             &inst_, config_.num_channels,
-             config_.application ==
-                     AudioEncoderMultiChannelOpusConfig::ApplicationMode::kVoip
-                 ? 0
-                 : 1,
-             config_.num_streams, config_.coupled_streams,
-             config_.channel_mapping.data()));
+      WebRtcOpus_MultistreamEncoderCreate(
+          &inst_, config_.num_channels,
+          config_.application ==
+                  AudioEncoderMultiChannelOpusConfig::ApplicationMode::kVoip
+              ? 0
+              : 1,
+          config_.num_streams, config_.coupled_streams,
+          config_.channel_mapping.data()),
+      0);
   const int bitrate = GetBitrateBps(config_);
-  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
+  RTC_CHECK_EQ(WebRtcOpus_SetBitRate(inst_, bitrate), 0);
   RTC_LOG(LS_VERBOSE) << "Set Opus bitrate to " << bitrate << " bps.";
   if (config_.fec_enabled) {
-    RTC_CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_EnableFec(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus enable FEC";
   } else {
-    RTC_CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_DisableFec(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus disable FEC";
   }
   RTC_CHECK_EQ(
-      0, WebRtcOpus_SetMaxPlaybackRate(inst_, config_.max_playback_rate_hz));
+      WebRtcOpus_SetMaxPlaybackRate(inst_, config_.max_playback_rate_hz), 0);
   RTC_LOG(LS_VERBOSE) << "Set Opus playback rate to "
                       << config_.max_playback_rate_hz << " hz.";
 
   // Use the DEFAULT complexity.
   RTC_CHECK_EQ(
-      0, WebRtcOpus_SetComplexity(inst_, AudioEncoderOpusConfig().complexity));
+      WebRtcOpus_SetComplexity(inst_, AudioEncoderOpusConfig().complexity), 0);
   RTC_LOG(LS_VERBOSE) << "Set Opus coding complexity to "
                       << AudioEncoderOpusConfig().complexity;
 
   if (config_.dtx_enabled) {
-    RTC_CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_EnableDtx(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus enable DTX";
   } else {
-    RTC_CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_DisableDtx(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus disable DTX";
   }
 
   if (config_.cbr_enabled) {
-    RTC_CHECK_EQ(0, WebRtcOpus_EnableCbr(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_EnableCbr(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus enable CBR";
   } else {
-    RTC_CHECK_EQ(0, WebRtcOpus_DisableCbr(inst_));
+    RTC_CHECK_EQ(WebRtcOpus_DisableCbr(inst_), 0);
     RTC_LOG(LS_VERBOSE) << "Opus disable CBR";
   }
   num_channels_to_encode_ = NumChannels();

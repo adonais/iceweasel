@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.menu.data.BannerMenuItem
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.store.MenuEvent
@@ -37,7 +38,8 @@ import mozilla.components.ui.icons.R as iconsR
 /**
  * Display a grid of [MenuItem]s using [MenuGridItem].
  *
- * @param items The list of [MenuItem]s to display.
+ * @param items The list of [MenuItem]s to display. Items without an icon and [BannerMenuItem]s, which need the full
+ *   width of the menu, are not shown.
  * @param onInteraction The callback to invoke when a menu item is interacted with.
  * @param modifier The modifier to apply to this layout.
  * @param isSticky Whether this group is sticky.
@@ -51,7 +53,7 @@ internal fun MenuGridContainer(
     isSticky: Boolean = false,
     backgroundColor: Color = if (isSticky) MaterialTheme.colorScheme.surface else Color.Transparent,
 ) {
-    val displayedItems = items.filter { it.icon != null }
+    val displayedItems = items.filter { it !is BannerMenuItem && it.icon != null }
     Row(
         modifier =
             modifier.fillMaxWidth().height(IntrinsicSize.Min).applyGridGroupStyle(isSticky, backgroundColor).semantics {

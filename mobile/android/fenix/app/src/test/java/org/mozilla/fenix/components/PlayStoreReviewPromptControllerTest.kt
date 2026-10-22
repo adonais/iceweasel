@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.Lifecycle
@@ -16,6 +17,8 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
+import io.mockk.every
+import io.mockk.mockk
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,10 +27,8 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.assertUnused
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -67,25 +68,20 @@ class PlayStoreReviewPromptControllerTest {
     }
 
     @Test
-    fun `GIVEN activity is destroyed WHEN tryPromptReview is called THEN doesn't launch review flow`() = runTest {
-        val reviewManager = SuccessfulReviewManager(testContext)
+    fun `GIVEN activity is destroyed WHEN Play Store launch fails THEN falls back to the web listing`() {
+        val activity = mockk<Activity>(relaxed = true)
+        var openedInNewTab = false
+        val openInNewTab = { _: String -> openedInNewTab = true }
         val controller =
             PlayStoreReviewPromptController(
-                manager = reviewManager,
+                manager = mockk(relaxed = true),
                 numberOfAppLaunches = { 5 },
             )
-        launchActivity<ComponentActivity>().use { scenario ->
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            scenario.onActivity { activity ->
-                activity.lifecycleScope
-                    .launch {
-                        scenario.moveToState(Lifecycle.State.DESTROYED)
-                        controller.tryPromptReview(activity)
-                    }
-                    .joinBlocking()
-            }
-        }
-        assertFalse(reviewManager.promptHasBeenRequested)
+        every { activity.startActivity(any()) } throws ActivityNotFoundException()
+
+        controller.tryLaunchPlayStoreReview(activity, openInNewTab)
+
+        assertTrue(openedInNewTab)
     }
 
     @Test

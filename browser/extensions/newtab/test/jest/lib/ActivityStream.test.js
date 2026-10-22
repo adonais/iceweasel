@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { readFileSync } from "fs";
+import path from "path";
 import { CONTENT_MESSAGE_TYPE } from "common/Actions.mjs";
 import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import { DEFAULT_SITES } from "lib/DefaultSites.sys.mjs";
 import {
   ActivityStream,
+  MARKET_PREF_FALLBACKS,
   PREFS_CONFIG,
   csvPrefHasValue,
 } from "lib/ActivityStream.sys.mjs";
@@ -79,6 +82,9 @@ function argsStub(fallback = () => undefined) {
   return fn;
 }
 
+const MARKET_GATE_PREF =
+  "browser.newtabpage.activity-stream.widgets.marketGate.enabled";
+
 const STORIES_REGION_LOCALE_PREF =
   "browser.newtabpage.activity-stream.discoverystream.stories-region-locale-config";
 
@@ -98,6 +104,11 @@ describe("ActivityStream", () => {
       "prefs",
       "urlFormatter",
     ]);
+    // Market gating ships off; turn it on so the gating tests exercise it.
+    services.prefs.getBoolPref = argsStub(
+      (_pref, defaultValue) => defaultValue
+    );
+    services.prefs.getBoolPref.whenCalledWith(MARKET_GATE_PREF).returns(true);
     region = { home: "US", REGION_TOPIC: "browser-region-updated" };
     nimbusFeatures = {
       pocketNewtab: { getVariable: argsStub() },
@@ -177,6 +188,12 @@ describe("ActivityStream", () => {
         "intl:app-locales-changed"
       );
     });
+    it("should call addObserver for the market gate pref", () => {
+      expect(services.prefs.addObserver).toHaveBeenCalledWith(
+        MARKET_GATE_PREF,
+        as
+      );
+    });
   });
   describe("#uninit", () => {
     beforeEach(() => {
@@ -202,6 +219,12 @@ describe("ActivityStream", () => {
       expect(services.obs.removeObserver).toHaveBeenCalledWith(
         as,
         "intl:app-locales-changed"
+      );
+    });
+    it("should call removeObserver for the market gate pref", () => {
+      expect(services.prefs.removeObserver).toHaveBeenCalledWith(
+        MARKET_GATE_PREF,
+        as
       );
     });
   });
@@ -403,6 +426,540 @@ describe("ActivityStream", () => {
       services.locale.appLocaleAsBCP47 = "fr";
       as._updateDynamicPrefs();
       expect(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value).toBe(false);
+    });
+  });
+  describe("marketGate", () => {
+    let getStringPrefStub;
+    const AVAILABLE_PREF = "widgets.system.enabled";
+    const ENABLED_PREF = "widgets.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it("should be on everywhere when no lists are set", () => {
+      region.home = "KE";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(true);
+    });
+    it("should turn off a blocked region", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("CN,JP,RU");
+      region.home = "JP";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it("should let the block list win over the allow list", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-config`)
+        .returns("JP,CZ");
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("JP");
+      region.home = "JP";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it("should turn off a region absent from a populated allow list", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-config`)
+        .returns("CZ");
+      region.home = "KE";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it("should ignore locale when only the region lists are set", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-config`)
+        .returns("CZ");
+      region.home = "CZ";
+      services.locale.appLocaleAsBCP47 = "cs";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+    });
+    it("should turn off a blocked locale", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.locale-block`)
+        .returns("en-US");
+      region.home = "CZ";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it("should wait for the region when a list restricts it", () => {
+      // Bug 2063361: showing the widget and then taking it away is worse than
+      // a brief absence, so an unresolved region loses to a populated list.
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("CN,JP,RU");
+      region.home = "";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it("should not wait for the region when no list restricts it", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("");
+      region.home = "";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(true);
+    });
+    it("should ignore the lists on Nightly", () => {
+      const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+      globalThis.AppConstants.NIGHTLY_BUILD = true;
+      try {
+        getStringPrefStub
+          .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+          .returns("CN,JP,RU");
+        region.home = "JP";
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+      } finally {
+        globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+      }
+    });
+  });
+  describe("marketGate - lists", () => {
+    let getStringPrefStub;
+    const CONTAINER_PREF = "widgets.system.enabled";
+    const AVAILABLE_PREF = "widgets.system.lists.enabled";
+    const ENABLED_PREF = "widgets.lists.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each(["CZ", "US"])(
+      "should be available but off by default in %s",
+      geo => {
+        region.home = geo;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      }
+    );
+    it("should not follow the container block list", () => {
+      // Blocking the container does not narrow the widget's own prefs; the
+      // container gate is applied separately by isWidgetsContainerVisible.
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("JP");
+      region.home = "JP";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(CONTAINER_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+    });
+    it("should be unavailable and off in PL", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.lists.region-block`)
+        .returns("PL");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+  });
+  describe("marketGate - focus timer", () => {
+    let getStringPrefStub;
+    const AVAILABLE_PREF = "widgets.system.focusTimer.enabled";
+    const ENABLED_PREF = "widgets.focusTimer.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each(["CZ", "US"])(
+      "should be available but off by default in %s",
+      geo => {
+        region.home = geo;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      }
+    );
+    it("should be unavailable and off in PL", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.focusTimer.region-block`)
+        .returns("PL");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+  });
+  describe("marketGate - clocks", () => {
+    let getStringPrefStub;
+    const AVAILABLE_PREF = "widgets.system.clocks.enabled";
+    const ENABLED_PREF = "widgets.clocks.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each(["CZ", "US"])(
+      "should be available but off by default in %s",
+      geo => {
+        region.home = geo;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      }
+    );
+    it("should be unavailable and off in PL", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.clocks.region-block`)
+        .returns("PL");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+  });
+  describe("marketGate - picture of the day", () => {
+    let getStringPrefStub;
+    const AVAILABLE_PREF = "widgets.system.pictureOfTheDay.enabled";
+    const ENABLED_PREF = "widgets.pictureOfTheDay.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each(["CZ", "US"])(
+      "should be available but off by default in %s",
+      geo => {
+        region.home = geo;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      }
+    );
+    it("should be unavailable and off in PL", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.pictureOfTheDay.region-block`)
+        .returns("PL");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+  });
+  describe("market-gated widgets on Nightly", () => {
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    it.each([
+      ["lists", false, true],
+      ["focusTimer", false, true],
+      ["clocks", false, true],
+      ["pictureOfTheDay", false, true],
+      ["crossword", false, true],
+      ["lists", true, false],
+      ["focusTimer", true, false],
+      ["clocks", true, false],
+      ["pictureOfTheDay", true, false],
+      ["crossword", true, false],
+    ])(
+      "should make %s available on Nightly (enforceOnNightly=%s, on=%s)",
+      (widget, enforce, expected) => {
+        const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+        globalThis.AppConstants.NIGHTLY_BUILD = true;
+        services.prefs.getStringPref = argsStub(
+          (_pref, defaultValue) => defaultValue
+        );
+        services.prefs.getBoolPref
+          .whenCalledWith(`${BRANCH}widgets.marketGate.enforceOnNightly`, false)
+          .returns(enforce);
+        try {
+          region.home = "US";
+          services.locale.appLocaleAsBCP47 = "en-US";
+          as._updateDynamicPrefs();
+          expect(
+            PREFS_CONFIG.get(`widgets.system.${widget}.enabled`).value
+          ).toBe(true);
+          expect(PREFS_CONFIG.get(`widgets.${widget}.enabled`).value).toBe(
+            expected
+          );
+        } finally {
+          globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+        }
+      }
+    );
+  });
+  describe("privacy widget defaults", () => {
+    const AVAILABLE_PREF = "widgets.system.privacy.enabled";
+    const ENABLED_PREF = "widgets.privacy.enabled";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      services.prefs.getStringPref = argsStub(
+        (_pref, defaultValue) => defaultValue
+      );
+    });
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+    it("should stay unavailable and off in Nightly", () => {
+      const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+      globalThis.AppConstants.NIGHTLY_BUILD = true;
+      try {
+        region.home = "US";
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      } finally {
+        globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+      }
+    });
+  });
+  describe("marketGate - crossword", () => {
+    const AVAILABLE_PREF = "widgets.system.crossword.enabled";
+    const ENABLED_PREF = "widgets.crossword.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      const getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.crossword.locale-config`)
+        .returns("en-CA,en-GB,en-US");
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.crossword.region-block`)
+        .returns("PL");
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each([
+      ["US", "en-US"],
+      ["DE", "en-GB"],
+      ["JP", "en-CA"],
+    ])(
+      "should be available but off by default in %s with %s",
+      (geo, locale) => {
+        region.home = geo;
+        services.locale.appLocaleAsBCP47 = locale;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+        expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+      }
+    );
+    it.each(["de", "fr", "ja"])(
+      "should be unavailable in a non-English locale (%s)",
+      locale => {
+        region.home = "US";
+        services.locale.appLocaleAsBCP47 = locale;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      }
+    );
+    it("should be unavailable in PL even in an English locale", () => {
+      region.home = "PL";
+      services.locale.appLocaleAsBCP47 = "en-US";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+    });
+    it.each([
+      [false, true],
+      [true, false],
+    ])(
+      "on Nightly with enforceOnNightly=%s, availability in de is %s",
+      (enforce, expected) => {
+        const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+        globalThis.AppConstants.NIGHTLY_BUILD = true;
+        services.prefs.getBoolPref = argsStub(
+          (_pref, defaultValue) => defaultValue
+        );
+        services.prefs.getBoolPref
+          .whenCalledWith(`${BRANCH}widgets.marketGate.enforceOnNightly`, false)
+          .returns(enforce);
+        services.prefs.getBoolPref
+          .whenCalledWith(MARKET_GATE_PREF)
+          .returns(true);
+        try {
+          region.home = "US";
+          services.locale.appLocaleAsBCP47 = "de";
+          as._updateDynamicPrefs();
+          expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(expected);
+        } finally {
+          globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+        }
+      }
+    );
+  });
+  describe("market gating on by default", () => {
+    it("should make widgets available when nothing sets the pref", () => {
+      services.prefs.getBoolPref = argsStub(
+        (_pref, defaultValue) => defaultValue
+      );
+      services.prefs.getStringPref = argsStub(
+        (_pref, defaultValue) => defaultValue
+      );
+      region.home = "CZ";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.marketGate.enabled").value).toBe(true);
+      expect(PREFS_CONFIG.get("widgets.system.lists.enabled").value).toBe(true);
+    });
+  });
+  describe("market gating turned off", () => {
+    const SYSTEM_PREFS = [
+      "widgets.system.enabled",
+      "widgets.system.lists.enabled",
+      "widgets.system.focusTimer.enabled",
+      "widgets.system.clocks.enabled",
+      "widgets.system.pictureOfTheDay.enabled",
+      "widgets.system.crossword.enabled",
+    ];
+    const USER_PREFS = [
+      "widgets.enabled",
+      "widgets.lists.enabled",
+      "widgets.focusTimer.enabled",
+      "widgets.clocks.enabled",
+      "widgets.pictureOfTheDay.enabled",
+      "widgets.privacy.enabled",
+      "widgets.crossword.enabled",
+      "widgets.stocks.enabled",
+      "widgets.recentSearches.enabled",
+    ];
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      services.prefs.getStringPref = argsStub(
+        (_pref, defaultValue) => defaultValue
+      );
+      services.prefs.getBoolPref = argsStub(
+        (_pref, defaultValue) => defaultValue
+      );
+      services.prefs.getBoolPref
+        .whenCalledWith(MARKET_GATE_PREF)
+        .returns(false);
+      region.home = "US";
+    });
+    it.each([false, true])(
+      "should restore the pre-gating defaults (Nightly: %s)",
+      nightly => {
+        const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+        globalThis.AppConstants.NIGHTLY_BUILD = nightly;
+        try {
+          as._updateDynamicPrefs();
+          for (const pref of SYSTEM_PREFS) {
+            expect([pref, PREFS_CONFIG.get(pref).value]).toEqual([pref, false]);
+          }
+          for (const pref of USER_PREFS) {
+            expect([pref, PREFS_CONFIG.get(pref).value]).toEqual([pref, true]);
+          }
+        } finally {
+          globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+        }
+      }
+    );
+    it("should rewrite the default branch each time the pref flips", () => {
+      let gated = true;
+      services.prefs.getBoolPref = jest.fn((pref, defaultValue) =>
+        pref === MARKET_GATE_PREF ? gated : defaultValue
+      );
+      const wasNightly = globalThis.AppConstants.NIGHTLY_BUILD;
+      globalThis.AppConstants.NIGHTLY_BUILD = false;
+      const defaults = () => [
+        as._defaultPrefs.get("widgets.system.lists.enabled"),
+        as._defaultPrefs.get("widgets.lists.enabled"),
+        as._defaultPrefs.get("widgets.privacy.enabled"),
+      ];
+      try {
+        as._updateDynamicPrefs();
+
+        gated = false;
+        as.observe(null, "nsPref:changed", MARKET_GATE_PREF);
+        expect(defaults()).toEqual([false, true, true]);
+
+        gated = true;
+        as.observe(null, "nsPref:changed", MARKET_GATE_PREF);
+        expect(defaults()).toEqual([true, false, false]);
+      } finally {
+        globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
+      }
+    });
+  });
+  describe("market gating on a host without the firefox.js prefs", () => {
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    let getStringPrefStub;
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it.each(["CN", "JP", "RU"])(
+      "should make widgets available and on in %s",
+      geo => {
+        region.home = geo;
+        as._updateDynamicPrefs();
+        expect(PREFS_CONFIG.get("widgets.system.enabled").value).toBe(true);
+        expect(PREFS_CONFIG.get("widgets.enabled").value).toBe(true);
+      }
+    );
+    it("should keep Lists available but off in the US", () => {
+      region.home = "US";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.system.lists.enabled").value).toBe(true);
+      expect(PREFS_CONFIG.get("widgets.lists.enabled").value).toBe(false);
+    });
+    it("should make Lists unavailable in PL", () => {
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.system.lists.enabled").value).toBe(
+        false
+      );
+    });
+    it("should keep Crossword English-only", () => {
+      region.home = "US";
+      services.locale.appLocaleAsBCP47 = "de";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.system.crossword.enabled").value).toBe(
+        false
+      );
+    });
+    it("should have a fallback matching every widget market pref in firefox.js", () => {
+      const firefoxJs = readFileSync(
+        path.resolve(__dirname, "../../../../../app/profile/firefox.js"),
+        "utf8"
+      );
+      const prefs = [
+        ...firefoxJs.matchAll(
+          /^pref\("(browser\.newtabpage\.activity-stream\.widgets\.[^"]+\.(?:region|locale)-(?:block|config))",\s*"([^"]*)"\);/gm
+        ),
+      ].map(([, name, value]) => [name, value]);
+      expect(prefs.length).toBeGreaterThan(0);
+      for (const [name, value] of prefs) {
+        expect([name, MARKET_PREF_FALLBACKS.get(name)]).toEqual([name, value]);
+      }
+    });
+    it("should let a pref that exists win over the fallback", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.lists.region-block`)
+        .returns("");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.system.lists.enabled").value).toBe(true);
+    });
+  });
+  describe("stocks widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.stocks.enabled").value).toBe(false);
+      expect(PREFS_CONFIG.get("widgets.system.stocks.enabled").value).toBe(
+        false
+      );
+    });
+  });
+  describe("recent searches widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.recentSearches.enabled").value).toBe(
+        false
+      );
+      expect(
+        PREFS_CONFIG.get("widgets.system.recentSearches.enabled").value
+      ).toBe(false);
     });
   });
   describe("getWeatherWidgetSize", () => {

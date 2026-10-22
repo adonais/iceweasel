@@ -82,3 +82,19 @@ private fun PreviewVoiceSelection() {
         }
     }
 }
+
+@PreviewLightDark
+@Composable
+private fun PreviewNoOfflineVoicesAvailableError() {
+    AcornTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            VoiceSelection(
+                expanded = true,
+                availableVoices = emptyList(),
+                selectedVoice = null,
+                onVoiceClick = { _ -> },
+                onDismissRequest = {},
+            )
+        }
+    }
+}

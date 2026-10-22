@@ -1464,9 +1464,8 @@ const documentToSubmitMap = new WeakMap();
  * looks through them to find links which looks like adverts and sends back
  * a notification to SearchTelemetry for possible telemetry reporting.
  *
- * Only the partner details and the fact that at least one ad was found on the
- * page are returned to SearchTelemetry. If no ads are found, no notification is
- * given.
+ * Only the partner details and whether at least one ad was found on the page
+ * are returned to SearchTelemetry.
  */
 export class SearchSERPTelemetryChild extends JSWindowActorChild {
   /**
@@ -1536,18 +1535,17 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
       hasAds = this.#checkForSponsoredSubframes(this.document, providerInfo);
     }
 
-    if (hasAds) {
-      this.sendAsyncMessage("SearchTelemetry:PageInfo", {
-        hasAds,
-        url,
-      });
-    }
+    this.sendAsyncMessage("SearchTelemetry:PageInfo", {
+      hasAds,
+      url,
+    });
 
     if (
       providerInfo.components?.length &&
       (eventType == "load" || eventType == "pageshow")
     ) {
-      this.#checkForPageImpressionComponents();
+      let elementBasedAttributes =
+        this.#detectImpressionAttributes(providerInfo);
 
       // Start performance measurements.
       let start = ChromeUtils.now();
@@ -1565,6 +1563,7 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
       documentToEventCallbackMap.set(this.document, pageActionCallback);
 
       let componentToVisibilityMap, hrefToComponentMap;
+      let scan = "complete";
       try {
         let result = searchAdImpression.categorize(anchors, doc);
         componentToVisibilityMap = result.componentToVisibilityMap;
@@ -1572,7 +1571,16 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
       } catch (e) {
         // Cancel the timer if an error encountered.
         Glean.serp.categorizationDuration.cancel(timerId);
+        scan = "error";
       }
+
+      // The impression is sent after categorization so that it can report
+      // the outcome of the scan.
+      this.sendAsyncMessage("SearchTelemetry:PageImpression", {
+        url,
+        elementBasedAttributes,
+        scan,
+      });
 
       if (componentToVisibilityMap && hrefToComponentMap) {
         // End measurements.
@@ -1626,25 +1634,24 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
   /**
    * Checks for the presence of certain components on the page that are
    * required for recording the page impression.
+   *
+   * @param {object} providerInfo
+   *   The provider information for the page.
+   * @returns {object}
+   *   The attributes of the impression that depend on elements on the page.
    */
-  #checkForPageImpressionComponents() {
-    let url = this.document.documentURI;
-    let providerInfo = this._getProviderInfoForUrl(url);
-    if (providerInfo.components?.length) {
-      searchAdImpression.providerInfo = providerInfo;
-      let start = ChromeUtils.now();
-      let elementBasedAttributes =
-        searchAdImpression.detectImpressionAttributes(this.document);
-      ChromeUtils.addProfilerMarker(
-        "SearchSERPTelemetryChild.#recordImpression",
-        start,
-        "Detected impression components"
-      );
-      this.sendAsyncMessage("SearchTelemetry:PageImpression", {
-        url,
-        elementBasedAttributes,
-      });
-    }
+  #detectImpressionAttributes(providerInfo) {
+    searchAdImpression.providerInfo = providerInfo;
+    let start = ChromeUtils.now();
+    let elementBasedAttributes = searchAdImpression.detectImpressionAttributes(
+      this.document
+    );
+    ChromeUtils.addProfilerMarker(
+      "SearchSERPTelemetryChild.#recordImpression",
+      start,
+      "Detected impression components"
+    );
+    return elementBasedAttributes;
   }
 
   #checkForSponsoredSubframes(document, providerInfo) {

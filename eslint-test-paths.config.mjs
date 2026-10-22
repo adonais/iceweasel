@@ -78,7 +78,6 @@ const extraBrowserTestPaths = [
   "toolkit/xre/test/",
   "browser/components/customizableui/test/",
   "browser/components/preferences/tests/",
-  "browser/components/safebrowsing/content/test/",
   "browser/components/sessionstore/test/",
   "browser/components/shell/test/",
   "browser/components/touchbar/tests/",

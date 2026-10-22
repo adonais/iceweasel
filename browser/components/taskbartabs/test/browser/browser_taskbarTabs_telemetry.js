@@ -7,11 +7,13 @@ ChromeUtils.defineESModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   TaskbarTabsRegistry:
-    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsRegistry.sys.mjs",
   TaskbarTabsWindowManager:
-    "resource:///modules/taskbartabs/TaskbarTabsWindowManager.sys.mjs",
-  TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
-  TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsWindowManager.sys.mjs",
+  TaskbarTabsPin:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs",
+  TaskbarTabsUtils:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
@@ -229,7 +231,7 @@ add_task(async function testMoveToTaskbarHighLevelMetric() {
   sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
   sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
   const { TaskbarTabs } = ChromeUtils.importESModule(
-    "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs"
+    "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs"
   );
 
   Services.fog.testResetFOG();

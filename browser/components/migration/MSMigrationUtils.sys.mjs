@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { ctypes } from "resource://gre/modules/ctypes.sys.mjs";
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
 
 const lazy = {};
 

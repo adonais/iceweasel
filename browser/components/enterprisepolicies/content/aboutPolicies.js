@@ -422,6 +422,7 @@ function generateDocumentation() {
     Certificates: "CertificatesDescription",
     DisableFirefoxAccounts: "DisableFirefoxAccounts1",
     DisableMasterPasswordCreation: "DisablePrimaryPasswordCreation",
+    DisablePasswordReveal: "DisablePasswordReveal2",
     DisableSetDesktopBackground: "DisableSetAsDesktopBackground",
     FirefoxHome: "FirefoxHome2",
     Permissions: "Permissions2",

@@ -4,11 +4,13 @@
 "use strict";
 
 const { TaskbarTabs } = ChromeUtils.importESModule(
-  "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs"
+  "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs"
 );
 
 add_task(async function test_PIN_TASKBAR_TAB_success() {
-  const stub = sinon.stub(TaskbarTabs, "findOrCreateTaskbarTab").resolves();
+  const stub = sinon
+    .stub(TaskbarTabs, "findOrCreateTaskbarTab")
+    .resolves({ created: true });
 
   const action = {
     type: "PIN_TASKBAR_TAB",
@@ -31,6 +33,31 @@ add_task(async function test_PIN_TASKBAR_TAB_success() {
     "requested to pin even if it already exists"
   );
   Assert.equal(result, true, "returns true when the tab is newly created");
+
+  stub.restore();
+});
+
+add_task(async function test_PIN_TASKBAR_TAB_already_pinned() {
+  const stub = sinon
+    .stub(TaskbarTabs, "findOrCreateTaskbarTab")
+    .resolves({ created: false });
+
+  const action = {
+    type: "PIN_TASKBAR_TAB",
+    data: {
+      url: EXAMPLE_URL,
+      name: "Example",
+      iconUrl: "https://example.com/icon.png",
+    },
+  };
+
+  const result = await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.strictEqual(
+    result,
+    null,
+    "returns null when a Taskbar Tab already existed for this URL"
+  );
 
   stub.restore();
 });

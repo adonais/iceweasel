@@ -5,15 +5,17 @@
    - Nova themes (see ThemesList.sys.mjs). Every env() below is a parameter the
    - embedder may set, with the default theme colors as fallback. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="92" viewBox="0 0 680 92" preserveAspectRatio="none" fill="none">
-  <path id="active-tab" d="M23 5.5h132c9.113 0 16.5 7.387 16.5 16.5s-7.387 16.5-16.5 16.5H23c-9.113 0-16.5-7.387-16.5-16.5S13.887 5.5 23 5.5Z"/>
-  <path id="tabbar-text" fill-opacity=".7" d="M28 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H30a2 2 0 0 1-2-2M191 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H193a2 2 0 0 1-2-2"/>
-  <path id="toolbar-background" d="M0 44h680v48H0z"/>
-  <circle class="toolbar-icon" cx="24" cy="68" r="6.25" stroke-width="1.5"/>
-  <circle class="toolbar-icon" cx="60" cy="68" r="6.25" stroke-width="1.5"/>
-  <path id="appmenu-icon" stroke-linecap="round" stroke-width="1.5" d="M662.25 73.75h-12.5M662.25 67.75h-12.5M662.25 61.75h-12.5"/>
-  <path id="urlbar" stroke-width="1.5" d="M130 52.75h386c8.422 0 15.25 6.828 15.25 15.25S524.422 83.25 516 83.25H130c-8.422 0-15.25-6.828-15.25-15.25s6.828-15.25 15.25-15.25Z"/>
-  <circle class="toolbar-icon" cx="130" cy="68" r="6.25" stroke-width="1.5"/>
-  <path id="urlbar-text" fill-opacity=".7" d="M146 68a2 2 0 0 1 2-2h304a2 2 0 1 1 0 4H148a2 2 0 0 1-2-2"/>
+  <g id="chrome-ui">
+    <path id="active-tab" d="M23 5.5h132c9.113 0 16.5 7.387 16.5 16.5s-7.387 16.5-16.5 16.5H23c-9.113 0-16.5-7.387-16.5-16.5S13.887 5.5 23 5.5Z"/>
+    <path id="tabbar-text" fill-opacity=".7" d="M28 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H30a2 2 0 0 1-2-2M191 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H193a2 2 0 0 1-2-2"/>
+    <path id="toolbar-background" d="M0 44h680v48H0z"/>
+    <circle class="toolbar-icon" cx="24" cy="68" r="6.25" stroke-width="1.5"/>
+    <circle class="toolbar-icon" cx="60" cy="68" r="6.25" stroke-width="1.5"/>
+    <path id="appmenu-icon" stroke-linecap="round" stroke-width="1.5" d="M662.25 73.75h-12.5M662.25 67.75h-12.5M662.25 61.75h-12.5"/>
+    <path id="urlbar" stroke-width="1.5" d="M130 52.75h386c8.422 0 15.25 6.828 15.25 15.25S524.422 83.25 516 83.25H130c-8.422 0-15.25-6.828-15.25-15.25s6.828-15.25 15.25-15.25Z"/>
+    <circle class="toolbar-icon" cx="130" cy="68" r="6.25" stroke-width="1.5"/>
+    <path id="urlbar-text" fill-opacity=".7" d="M146 68a2 2 0 0 1 2-2h304a2 2 0 1 1 0 4H148a2 2 0 0 1-2-2"/>
+  </g>
   <defs>
     <linearGradient id="active-tab-stroke" x1="42.796" x2="165.407" y1="6.835" y2="64.925" gradientUnits="userSpaceOnUse">
       <stop stop-color="#b89cff"/>
@@ -47,6 +49,15 @@
     --toolbar-background: env(--toolbar-background, light-dark(#fff, #1d1b1f));
     --urlbar-background: env(--urlbar-background, light-dark(#fff, #252428));
     --urlbar-border: env(--urlbar-border, light-dark(#d6d5da, #3f3e42));
+  }
+
+  /* Mirrors the UI elements without mirroring the tabbar background gradient
+     in RTL locales (see Bug 2073245, and Bug 2075200 for the more general
+     issue). */
+  #chrome-ui {
+    transform: env(--rtl-flip, none);
+    transform-box: view-box;
+    transform-origin: center;
   }
 
   #tabbar-text,

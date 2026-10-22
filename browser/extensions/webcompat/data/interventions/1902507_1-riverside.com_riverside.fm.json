@@ -8,7 +8,7 @@
   },
   "interventions": [
     {
-      "platforms": ["all"],
+      "platforms": [],
       "only_channels": ["nightly"],
       "content_scripts": {
         "all_frames": true,

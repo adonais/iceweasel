@@ -1474,12 +1474,16 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
     }
   }
 
-  // Look for an existing connection with this remote address.  If one is not
-  // found or it is found but the existing remote candidate has an older
-  // generation, then we can create a new connection for this address.
+  // Look for an existing connection with this remote address. If one is not
+  // found or a connection exists with an older generation remote candidate and
+  // is not selected, then we can create a new connection for this address.
+  // Any selected connection is kept so that it can be used to send data during
+  // ICE restart per RFC 8445. The skipped connection would be pruned later when
+  // a new generation connection is selected at the end of ICE restart.
   Connection* connection = port->GetConnection(remote_candidate.address());
-  if (connection == nullptr || connection->remote_candidate().generation() <
-                                   remote_candidate.generation()) {
+  if (connection == nullptr ||
+      (!connection->selected() && connection->remote_candidate().generation() <
+                                      remote_candidate.generation())) {
     // Don't create a connection if this is a candidate we received in a
     // message and we are not allowed to make outgoing connections.
     PortInterface::CandidateOrigin origin = GetOrigin(port, origin_port);
@@ -1498,7 +1502,15 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
     return true;
   }
 
-  // No new connection was created.
+  // No new connection was created. Log the cases.
+  if (connection->selected()) {
+    RTC_LOG(LS_INFO) << port->ToString()
+                     << ": A selected connection exists. Skip creating "
+                     << "connection for remote candidate: "
+                     << remote_candidate.ToSensitiveString();
+    return false;
+  }
+
   // It is not legal to try to change any of the parameters of an existing
   // connection; however, the other side can send a duplicate candidate.
   if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {

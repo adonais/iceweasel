@@ -40,7 +40,7 @@ function report(what) {
 
 ```javascript
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-  "resource://gre/modules/jsdebugger.sys.mjs"
+  "moz-src:///devtools/platform/jsdebugger.sys.mjs"
 );
 const { console } = ChromeUtils.importESModule(
   "resource://gre/modules/Console.sys.mjs"

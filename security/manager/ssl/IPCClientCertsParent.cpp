@@ -63,7 +63,7 @@ mozilla::ipc::IPCResult IPCClientCertsParent::RecvFindObjects(
         n = CERT_LIST_NEXT(n);
         continue;
     }
-    Certificate cert(certDER);
+    Certificate cert(certDER, false);
     aObjects->AppendElement(std::move(cert));
 
     n = CERT_LIST_NEXT(n);
@@ -79,24 +79,35 @@ mozilla::ipc::IPCResult IPCClientCertsParent::RecvSign(ByteArray aCert,
                                                        ByteArray aData,
                                                        ByteArray aParams,
                                                        ByteArray* aSignature) {
-  SECItem certItem = {siBuffer, const_cast<uint8_t*>(aCert.data().Elements()),
-                      static_cast<unsigned int>(aCert.data().Length())};
   aSignature->data().Clear();
+  nsTArray<uint8_t> signature;
+  SignDataGivenCertificate(aCert.data(), aData.data(), aParams.data(),
+                           signature, nullptr);
+  aSignature->data().Assign(signature);
+  return IPC_OK();
+}
 
+void SignDataGivenCertificate(const nsTArray<uint8_t>& certificate,
+                              const nsTArray<uint8_t>& data,
+                              const nsTArray<uint8_t>& params,
+                              nsTArray<uint8_t>& signature, void* ctx) {
+  signature.Clear();
+  SECItem certItem = {siBuffer, const_cast<uint8_t*>(certificate.Elements()),
+                      static_cast<unsigned int>(certificate.Length())};
   UniqueCERTCertificate cert(CERT_NewTempCertificate(
       CERT_GetDefaultCertDB(), &certItem, nullptr, false, true));
   if (!cert) {
-    return IPC_OK();
+    return;
   }
-  UniqueSECKEYPrivateKey key(PK11_FindKeyByAnyCert(cert.get(), nullptr));
+  UniqueSECKEYPrivateKey key(PK11_FindKeyByAnyCert(cert.get(), ctx));
   if (!key) {
-    return IPC_OK();
+    return;
   }
-  SECItem hash = {siBuffer, aData.data().Elements(),
-                  static_cast<unsigned int>(aData.data().Length())};
-  SECItem params = {siBuffer, aParams.data().Elements(),
-                    static_cast<unsigned int>(aParams.data().Length())};
-  SECItem* paramsPtr = aParams.data().Length() > 0 ? &params : nullptr;
+  SECItem hashItem = {siBuffer, const_cast<uint8_t*>(data.Elements()),
+                      static_cast<unsigned int>(data.Length())};
+  SECItem paramsItem = {siBuffer, const_cast<uint8_t*>(params.Elements()),
+                        static_cast<unsigned int>(params.Length())};
+  SECItem* paramsPtr = params.Length() > 0 ? &paramsItem : nullptr;
   CK_MECHANISM_TYPE mechanism;
   switch (key->keyType) {
     case ecKey:
@@ -104,14 +115,14 @@ mozilla::ipc::IPCResult IPCClientCertsParent::RecvSign(ByteArray aCert,
       break;
     case rsaKey:
       // If we have params, this is RSA-PSS.
-      if (aParams.data().Length() > 0) {
+      if (params.Length() > 0) {
         mechanism = CKM_RSA_PKCS_PSS;
       } else {
         // If this is a DigestInfo or a TLS 1.0 MD5/SHA1 hash, this is RSA-PKCS.
         // Otherwise, this is an emsa-pss-encoded digest that should be signed
         // with raw RSA.
-        UniqueSGNDigestInfo digestInfo(SGN_DecodeDigestInfo(&hash));
-        if (digestInfo || aData.data().Length() == 36) {
+        UniqueSGNDigestInfo digestInfo(SGN_DecodeDigestInfo(&hashItem));
+        if (digestInfo || data.Length() == 36) {
           mechanism = CKM_RSA_PKCS;
         } else {
           mechanism = CKM_RSA_X_509;
@@ -119,17 +130,16 @@ mozilla::ipc::IPCResult IPCClientCertsParent::RecvSign(ByteArray aCert,
       }
       break;
     default:
-      return IPC_OK();
+      return;
   }
   uint32_t len = PK11_SignatureLen(key.get());
   UniqueSECItem sig(::SECITEM_AllocItem(nullptr, nullptr, len));
-  SECStatus srv =
-      PK11_SignWithMechanism(key.get(), mechanism, paramsPtr, sig.get(), &hash);
+  SECStatus srv = PK11_SignWithMechanism(key.get(), mechanism, paramsPtr,
+                                         sig.get(), &hashItem);
   if (srv != SECSuccess) {
-    return IPC_OK();
+    return;
   }
-  aSignature->data().AppendElements(sig->data, sig->len);
-  return IPC_OK();
+  signature.AppendElements(sig->data, sig->len);
 }
 
 }  // namespace mozilla::psm

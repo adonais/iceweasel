@@ -21,7 +21,6 @@
 #include "common_video/h264/sps_parser.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/logging.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -256,7 +255,6 @@ void GenerateFakeSps(const VuiHeader& vui, Buffer* out_buffer) {
 void TestSps(const VuiHeader& vui,
              const ColorSpace* color_space,
              SpsVuiRewriter::ParseResult expected_parse_result) {
-  LogMessage::LogToDebug(LS_VERBOSE);
   Buffer original_sps;
   GenerateFakeSps(vui, &original_sps);
 
@@ -344,8 +342,6 @@ INSTANTIATE_TEST_SUITE_P(
                         SpsVuiRewriter::ParseResult::kVuiRewritten)));
 
 TEST(SpsVuiRewriterOutgoingVuiTest, ParseOutgoingBitstreamOptimalVui) {
-  LogMessage::LogToDebug(LS_VERBOSE);
-
   Buffer optimal_sps;
   GenerateFakeSps(kVuiNoFrameBuffering, &optimal_sps);
 
@@ -360,8 +356,6 @@ TEST(SpsVuiRewriterOutgoingVuiTest, ParseOutgoingBitstreamOptimalVui) {
 }
 
 TEST(SpsVuiRewriterOutgoingVuiTest, ParseOutgoingBitstreamNoVui) {
-  LogMessage::LogToDebug(LS_VERBOSE);
-
   Buffer sps;
   GenerateFakeSps(kVuiNotPresent, &sps);
 
@@ -391,8 +385,6 @@ TEST(SpsVuiRewriterOutgoingVuiTest, ParseOutgoingBitstreamNoVui) {
 }
 
 TEST(SpsVuiRewriterOutgoingAudTest, ParseOutgoingBitstreamWithAud) {
-  LogMessage::LogToDebug(LS_VERBOSE);
-
   Buffer optimal_sps;
   GenerateFakeSps(kVuiNoFrameBuffering, &optimal_sps);
 

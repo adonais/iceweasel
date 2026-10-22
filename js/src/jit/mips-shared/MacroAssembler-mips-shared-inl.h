@@ -1265,8 +1265,8 @@ void MacroAssembler::branchTestGCThingImpl(Condition cond, const T& address,
 void MacroAssembler::branchTestPrimitive(Condition cond, Register tag,
                                          Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTag(JS::detail::ValueUpperExclPrimitiveTag), label,
-       (cond == Equal) ? Below : AboveOrEqual);
+  ma_b(tag, ImmTag(JSVAL_TAG_OBJECT), label,
+       (cond == Equal) ? NotEqual : Equal);
 }
 
 void MacroAssembler::branchTestMagic(Condition cond, Register tag,

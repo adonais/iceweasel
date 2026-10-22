@@ -22,9 +22,6 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "media-gpu"
 support-files = [
@@ -734,9 +731,6 @@ tags = "capturestream"
 
 ["test_bug1113600.html"]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1198168
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug && socketprocess_e10s", # Bug 1713410
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1198168
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1713410
 ]
 

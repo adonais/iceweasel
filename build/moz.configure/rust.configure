@@ -320,6 +320,8 @@ def rust_supported_targets(rustc):
             if t.startswith("thumb"):
                 cpu, rest = t.split("-", 1)
                 retry = "-".join(("arm", rest))
+            elif t.endswith("-windows-gnullvm"):
+                retry = t.removesuffix("llvm")
             else:
                 continue
             try:
@@ -351,9 +353,11 @@ def detect_rustc_target(host_or_target, arm_target, rust_supported_targets):
         elif not candidates:
             return None
 
-        # config.guess uses the "pc" vendor for x86/x86_64 where rust uses its
-        # generic "unknown" vendor; normalize so we correlate on the right one.
-        vendor = "unknown" if host_or_target.vendor == "pc" else host_or_target.vendor
+        vendor = (
+            host_or_target.vendor
+            if any(c.target.vendor == host_or_target.vendor for c in candidates)
+            else "unknown"
+        )
 
         # We have multiple candidates. There are two cases where we can try to
         # narrow further down using extra information from the build system.
@@ -362,7 +366,7 @@ def detect_rustc_target(host_or_target, arm_target, rust_supported_targets):
             if host_or_target.abi == "msvc":
                 suffix = "windows-msvc"
             elif host_or_target.abi == "mingw":
-                suffix = "windows-gnu"
+                suffix = "windows-gnullvm"
             narrowed = [
                 c for c in candidates if c.rust_target.endswith("-{}".format(suffix))
             ]
@@ -1059,11 +1063,6 @@ set_config("MOZ_CARGO_BUILD_STD_ARGS", ["-Zbuild-std=std,panic_abort"], when=tsa
 set_config("MOZ_RUSTFLAGS_AFTER_EXTRA", ["-Clto=off"], when=developer_options)
 
 
-@depends(target, c_compiler)
-def rust_target_is_mingw_clang(target, c_compiler):
-    return target.kernel == "WINNT" and c_compiler.type == "clang"
-
-
 # Work around https://github.com/rust-lang/rust/issues/112480
 @depends(debug_rust, rust_target_triple)
 def rust_check_alignment_workaround(debug_rust, rust_target):
@@ -1076,8 +1075,6 @@ def rust_check_alignment_workaround(debug_rust, rust_target):
     tsan,
     rust_lto_eligible,
     rust_check_alignment_workaround,
-    rust_target_is_mingw_clang,
-    llvm_dlltool,
 )
 def rustflags_target_common(
     fpu,
@@ -1085,8 +1082,6 @@ def rustflags_target_common(
     tsan,
     lto_eligible,
     check_alignment_workaround,
-    mingw_clang,
-    llvm_dlltool,
 ):
     flags = []
     # Enable neon and disable restriction to 16 FPU registers when neon is enabled
@@ -1101,8 +1096,6 @@ def rustflags_target_common(
         flags.append("-Cembed-bitcode=yes")
     if check_alignment_workaround:
         flags.append("-Zmir-enable-passes=-CheckAlignment")
-    if mingw_clang and llvm_dlltool:
-        flags += ["-C", f"dlltool={llvm_dlltool}"]
     return flags
 
 
@@ -1212,14 +1205,6 @@ set_config(
     "MOZ_RUST_LIBRARY_RUSTCFLAGS",
     ["-C", "target-feature=-crt-static"],
     when=depends(target.os)(lambda os: os == "WASI"),
-)
-
-# With mingw-clang, we need to avoid rustc passing -nodefaultlibs to clang so
-# that it adds clang_rt.
-set_config(
-    "MOZ_RUST_PROGRAM_RUSTCFLAGS",
-    ["-C", "default-linker-libraries=yes"],
-    when=rust_target_is_mingw_clang,
 )
 
 set_config("MOZ_RUSTC_BOOTSTRAP_FORCE", "1", when=rust_check_alignment_workaround)
@@ -1423,21 +1408,6 @@ def cargo_wrap_host_ldflags(host_ldflags, host, libpaths, libpaths_bat):
 
 
 set_config("MOZ_CARGO_HOST_LDFLAGS", cargo_wrap_host_ldflags)
-
-
-# Rustc assumes that *-windows-gnu targets build with mingw-gcc and manually
-# add runtime libraries that don't exist with mingw-clang. We created dummy
-# libraries in build/win32 under the object directory, but that's not enough,
-# because some of the wanted symbols that come from these libraries are
-# available in a different library, that we add manually.
-@depends(build_environment, when=rust_target_is_mingw_clang)
-@imports("os")
-def rust_program_ldflags(build_environment):
-    win32 = normsep(os.path.join(build_environment.topobjdir, "build", "win32"))
-    return [f"-L{win32}", "-lunwind"]
-
-
-set_config("MOZ_RUST_PROGRAM_LDFLAGS", rust_program_ldflags)
 
 
 # Set COREAUDIO_SDK_PATH for third_party/rust/coreaudio-sys/build.rs

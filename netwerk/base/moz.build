@@ -49,7 +49,6 @@ XPIDL_SOURCES += [
     "nsIIOService.idl",
     "nsILoadContextInfo.idl",
     "nsILoadGroup.idl",
-    "nsILoadGroupChild.idl",
     "nsILoadInfo.idl",
     "nsIMIMEInputStream.idl",
     "nsIMockNetworkLayerController.idl",

@@ -334,7 +334,6 @@ skip-if = [
 
 ["test_sharedworker_event_listener_leaks.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Disabled on Linux64 opt asan, bug 1493563
   "os == 'win' && debug && xorigin", # high frequency intermittent
 ]
 

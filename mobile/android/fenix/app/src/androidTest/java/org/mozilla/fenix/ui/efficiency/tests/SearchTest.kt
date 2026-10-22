@@ -29,10 +29,13 @@ import org.mozilla.fenix.ui.efficiency.helpers.RequiresDeniedRuntimePermission
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
 import org.mozilla.fenix.ui.efficiency.pageObjects.HistorySearchGroupPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SystemSettingsPage
+import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchDefaultSearchEngineSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsTurnOnSyncSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SystemSettingsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
@@ -174,6 +177,34 @@ class SearchTest : BaseTest(LaunchConfig(isPocketEnabled = false)) {
 
             on.home.navigateToPage()
         }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1232638
+    @Critical
+    @Test
+    fun defaultSearchCodeDuckDuckGoUSTest() {
+        on.settingsSearchDefaultSearchEngine
+            .navigateToPage()
+            .mozClick(SettingsSearchDefaultSearchEngineSelectors.DEFAULT_SEARCH_ENGINE_OPTION("DuckDuckGo"))
+
+        on.home.navigateToPage()
+
+        on.searchBar
+            .navigateToPage()
+            .mozEnterText(queryString, SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozPressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+            .mozWaitUntilAbsent(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+
+        on.browserPage.navigateToPage().verifyUrl(queryString)
+
+        on.mainMenu.navigateToPage().mozClick(MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON)
+
+        on.browserPage.navigateToPage()
+
+        on.mainMenu
+            .navigateToPage()
+            .mozClick(MainMenuSelectors.BOOKMARKS_BUTTON)
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM_URL("https://duckduckgo.com/?t=fpas&q=firefox"))
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2154215

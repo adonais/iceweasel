@@ -13,21 +13,6 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-const { PreferenceExperiments } = ChromeUtils.importESModule(
-  "resource://normandy/lib/PreferenceExperiments.sys.mjs"
-);
-const { PreferenceRollouts } = ChromeUtils.importESModule(
-  "resource://normandy/lib/PreferenceRollouts.sys.mjs"
-);
-const { AddonStudies } = ChromeUtils.importESModule(
-  "resource://normandy/lib/AddonStudies.sys.mjs"
-);
-const { NormandyTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/NormandyTestUtils.sys.mjs"
-);
-
-NormandyTestUtils.init({ Assert });
-
 add_task(async function snapshotSchema() {
   let snapshot = await Troubleshoot.snapshot();
   try {
@@ -116,134 +101,6 @@ add_task(async function printingPreferences() {
     "The pref should be absent because it's not a print pref."
   );
   prefs.forEach(p => Services.prefs.deleteBranch(p));
-});
-
-add_task(function normandy() {
-  const {
-    preferenceStudyFactory,
-    branchedAddonStudyFactory,
-    preferenceRolloutFactory,
-  } = NormandyTestUtils.factories;
-
-  return NormandyTestUtils.decorate(
-    PreferenceExperiments.withMockExperiments([
-      preferenceStudyFactory({
-        userFacingName: "Test Pref Study B",
-        branch: "test-branch-pref",
-      }),
-      preferenceStudyFactory({
-        userFacingName: "Test Pref Study A",
-        branch: "test-branch-pref",
-      }),
-    ]),
-    AddonStudies.withStudies([
-      branchedAddonStudyFactory({
-        userFacingName: "Test Addon Study B",
-        branch: "test-branch-addon",
-      }),
-      branchedAddonStudyFactory({
-        userFacingName: "Test Addon Study A",
-        branch: "test-branch-addon",
-      }),
-    ]),
-    PreferenceRollouts.withTestMock({
-      rollouts: [
-        preferenceRolloutFactory({
-          statue: "ACTIVE",
-          slug: "test-pref-rollout-b",
-        }),
-        preferenceRolloutFactory({
-          statue: "ACTIVE",
-          slug: "test-pref-rollout-a",
-        }),
-      ],
-    }),
-    async function testNormandyInfoInTroubleshooting({
-      prefExperiments,
-      addonStudies,
-      prefRollouts,
-    }) {
-      let snapshot = await Troubleshoot.snapshot();
-      let info = snapshot.normandy;
-      // The order should be flipped, since each category is sorted by slug.
-      Assert.deepEqual(
-        info.prefStudies,
-        [prefExperiments[1], prefExperiments[0]],
-        "prefs studies should exist in the right order"
-      );
-      Assert.deepEqual(
-        info.addonStudies,
-        [addonStudies[1], addonStudies[0]],
-        "addon studies should exist in the right order"
-      );
-      Assert.deepEqual(
-        info.prefRollouts,
-        [prefRollouts[1], prefRollouts[0]],
-        "pref rollouts should exist in the right order"
-      );
-    }
-  )();
-});
-
-add_task(function normandyErrorHandling() {
-  return NormandyTestUtils.decorate(
-    NormandyTestUtils.withStub(PreferenceExperiments, "getAllActive", {
-      returnValue: Promise.reject("Expected error - PreferenceExperiments"),
-    }),
-    NormandyTestUtils.withStub(AddonStudies, "getAllActive", {
-      returnValue: Promise.reject("Expected error - AddonStudies"),
-    }),
-    NormandyTestUtils.withStub(PreferenceRollouts, "getAllActive", {
-      returnValue: Promise.reject("Expected error - PreferenceRollouts"),
-    }),
-    async function testNormandyErrorHandling() {
-      let consoleEndFn = TestUtils.listenForConsoleMessages();
-      let snapshot = await Troubleshoot.snapshot();
-      let info = snapshot.normandy;
-      Assert.deepEqual(
-        info.prefStudies,
-        [],
-        "prefs studies should be an empty list if there is an error"
-      );
-      Assert.deepEqual(
-        info.addonStudies,
-        [],
-        "addon studies should be an empty list if there is an error"
-      );
-      Assert.deepEqual(
-        info.prefRollouts,
-        [],
-        "pref rollouts should be an empty list if there is an error"
-      );
-      let msgs = await consoleEndFn();
-      let expectedSet = new Set([
-        /Expected error - PreferenceExperiments/,
-        /Expected error - AddonStudies/,
-        /Expected error - PreferenceRollouts/,
-      ]);
-
-      for (let msg of msgs) {
-        msg = msg.wrappedJSObject;
-        if (msg.level != "error") {
-          continue;
-        }
-
-        let msgContents = msg.arguments[0];
-        for (let expected of expectedSet) {
-          if (expected.test(msgContents)) {
-            expectedSet.delete(expected);
-            break;
-          }
-        }
-      }
-
-      Assert.equal(
-        expectedSet.size,
-        0,
-        "Should have no messages left in the expected set"
-      );
-    }
-  )();
 });
 
 add_task(async function themes() {
@@ -1166,39 +1023,6 @@ const SNAPSHOT_SCHEMA = {
       type: "object",
       required: AppConstants.MOZ_NORMANDY,
       properties: {
-        addonStudies: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              userFacingName: { type: "string", required: true },
-              branch: { type: "string", required: true },
-            },
-          },
-          required: true,
-        },
-        prefRollouts: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              slug: { type: "string", required: true },
-              state: { type: "string", required: true },
-            },
-          },
-          required: true,
-        },
-        prefStudies: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              userFacingName: { type: "string", required: true },
-              branch: { type: "string", required: true },
-            },
-          },
-          required: true,
-        },
         nimbusExperiments: {
           type: "array",
           items: {

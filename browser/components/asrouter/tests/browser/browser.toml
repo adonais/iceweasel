@@ -14,20 +14,13 @@ tags = "remote-settings"
 ["browser_asrouter_group_frequency.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone", # Bug 1775851
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775851
 ]
 
 ["browser_asrouter_group_userprefs.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1775852
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt && socketprocess_networking", # Bug 1775852
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775852
-]
 
 ["browser_asrouter_infobar.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1892548
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1892548
 ]
 
 ["browser_asrouter_menu_messages.js"]
@@ -52,9 +45,6 @@ run-if = [
 
 ["browser_asrouter_toolbarbadge.js"]
 tags = "remote-settings"
-skip-if = [
-  "a11y_checks", # Bug 1854515 and 1858041 to investigate intermittent a11y_checks results (fails on Autoland, passes on Try)
-]
 
 ["browser_asrouter_universal_infobar.js"]
 
@@ -83,7 +73,11 @@ skip-if = [
 
 ["browser_multistage_spotlight_telemetry.js"]
 
+["browser_pinnable_sites_personalized.js"]
+
 ["browser_remote_l10n.js"]
+
+["browser_spotlight_carousel_nav.js"]
 
 ["browser_trigger_listeners.js"]
 https_first_disabled = true

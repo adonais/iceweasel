@@ -5,184 +5,230 @@
 package org.mozilla.focus.menu.browser
 
 import android.content.Context
-import android.graphics.Typeface
-import androidx.appcompat.R as appcompatR
-import mozilla.components.browser.menu.WebExtensionBrowserMenuBuilder
-import mozilla.components.browser.menu.item.BrowserMenuCategory
-import mozilla.components.browser.menu.item.BrowserMenuDivider
-import mozilla.components.browser.menu.item.BrowserMenuImageSwitch
-import mozilla.components.browser.menu.item.BrowserMenuImageText
-import mozilla.components.browser.menu.item.BrowserMenuItemToolbar
-import mozilla.components.browser.menu.item.SimpleBrowserMenuItem
-import mozilla.components.browser.menu.item.WebExtensionPlaceholderMenuItem
+import android.graphics.drawable.Drawable
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import mozilla.components.browser.state.selector.findCustomTab
-import mozilla.components.browser.state.state.CustomTabSessionState
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.CustomTabMenuItem
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
+import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.menu.data.MenuAttribution
+import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.MenuItemBadge
+import mozilla.components.compose.menu.data.MenuItemsGroup
+import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.ui.MenuItemIconDrawable
+import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
+import org.mozilla.focus.menu.CustomTabMenuItemTapped
+import org.mozilla.focus.menu.MenuItemTapped
+import org.mozilla.focus.menu.MenuItems
 import org.mozilla.focus.menu.ToolbarMenu
-import org.mozilla.focus.theme.resolveAttribute
+
+private const val NAVIGATION_GROUP_ID = "navigation"
+private const val WEBPAGE_GROUP_ID = "webpage"
+private const val MOVE_OUTSIDE_GROUP_ID = "move_outside"
+private const val CUSTOM_ITEMS_GROUP_ID = "custom_items"
 
 /**
- * A menu designed for Custom Tabs.
+ * The menu shown while browsing in a custom tab.
  *
- * @param context The Android context.
- * @param store The browser store, used to retrieve session information.
- * @param currentTabId The ID of the currently selected tab.
- * @param isOnboardingTab Whether the current tab is an onboarding tab, in which case some menu items will be hidden.
- * @param onItemTapped A callback invoked when a menu item is tapped.
+ * @param context [Context] used to know in which size and color to show the icon the WebCompat Reporter extension
+ *   provides.
+ * @param browserStore [BrowserStore] used to know the state of the current page.
+ * @param customTabId Id of the custom tab this menu is shown for.
+ * @param appName Name of this application, shown in the item for opening the current page in it.
+ * @param isOnboardingTab Whether this is an onboarding custom tab, from which the current page cannot be opened
+ *   somewhere else.
  */
 class CustomTabMenu(
-    private val context: Context,
-    private val store: BrowserStore,
-    private val currentTabId: String,
-    private val isOnboardingTab: Boolean = false,
-    private val onItemTapped: (ToolbarMenu.FocusMenuItem) -> Unit = {},
-) : ToolbarMenu {
+    context: Context,
+    private val browserStore: BrowserStore,
+    private val customTabId: String,
+    private val appName: String,
+    private val isOnboardingTab: Boolean,
+) : MenuItems {
+    private val reporterIcon =
+        WebCompatReporterIcon(context, browserStore) { webCompatReporterAction(findCustomTab(customTabId)) }
 
-    private val selectedSession: CustomTabSessionState?
-        get() = store.state.findCustomTab(currentTabId)
-
-    override val menuBuilder by lazy {
-        WebExtensionBrowserMenuBuilder(
-            items = menuItems,
-            store = store,
+    /** Attributes the menu to this application, which opened the custom tab of another one. */
+    val attribution =
+        MenuAttribution(
+            title = Text.Resource(R.string.menu_custom_tab_branding, listOf(appName)),
+            showAtTop = false,
+            icon = MenuItemIconRes(R.drawable.onboarding_logo),
         )
-    }
 
-    override val menuToolbar by lazy {
-        val back =
-            BrowserMenuItemToolbar.TwoStateButton(
-                primaryImageResource = iconsR.drawable.mozac_ic_back_24,
-                primaryContentDescription = context.getString(R.string.content_description_back),
-                primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
-                isInPrimaryState = {
-                    selectedSession?.content?.canGoBack == true
-                },
-                secondaryImageTintResource = context.theme.resolveAttribute(R.attr.disabled),
-                disableInSecondaryState = true,
-                longClickListener = { onItemTapped.invoke(ToolbarMenu.CustomTabItem.Back) },
-            ) {
-                onItemTapped.invoke(ToolbarMenu.CustomTabItem.Back)
-            }
+    override val menuGroups: Flow<List<MenuItemsGroup>> =
+        combine(browserStore.flow(), reporterIcon.flow()) { state, icon -> menuGroupsFor(state, icon) }
+            .distinctUntilChanged()
 
-        val forward =
-            BrowserMenuItemToolbar.TwoStateButton(
-                primaryImageResource = iconsR.drawable.mozac_ic_forward_24,
-                primaryContentDescription = context.getString(R.string.content_description_forward),
-                primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
-                isInPrimaryState = {
-                    selectedSession?.content?.canGoForward != false
-                },
-                secondaryImageTintResource = context.theme.resolveAttribute(R.attr.disabled),
-                disableInSecondaryState = true,
-                longClickListener = { onItemTapped.invoke(ToolbarMenu.CustomTabItem.Forward) },
-            ) {
-                onItemTapped.invoke(ToolbarMenu.CustomTabItem.Forward)
-            }
+    override fun currentMenuGroups(): List<MenuItemsGroup> = menuGroupsFor(browserStore.state, reporterIcon.current)
 
-        val refresh =
-            BrowserMenuItemToolbar.TwoStateButton(
-                primaryImageResource = iconsR.drawable.mozac_ic_arrow_clockwise_24,
-                primaryContentDescription = context.getString(R.string.content_description_reload),
-                primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
-                isInPrimaryState = {
-                    selectedSession?.content?.loading == false
-                },
-                secondaryImageResource = iconsR.drawable.mozac_ic_cross_24,
-                secondaryContentDescription = context.getString(R.string.content_description_stop),
-                secondaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
-                disableInSecondaryState = false,
-                longClickListener = { onItemTapped.invoke(ToolbarMenu.CustomTabItem.Reload) },
-            ) {
-                if (selectedSession?.content?.loading == true) {
-                    onItemTapped.invoke(ToolbarMenu.CustomTabItem.Stop)
-                } else {
-                    onItemTapped.invoke(ToolbarMenu.CustomTabItem.Reload)
-                }
-            }
-        BrowserMenuItemToolbar(listOf(back, forward, refresh))
-    }
+    private fun menuGroupsFor(
+        browserState: BrowserState,
+        reportSiteIssueIcon: Drawable?,
+    ): List<MenuItemsGroup> {
+        val customTab = browserState.findCustomTab(customTabId)
+        val reportSiteIssueAction = browserState.webCompatReporterAction(customTab)
 
-    private val menuItems by lazy {
-        val findInPage =
-            BrowserMenuImageText(
-                label = context.getString(R.string.find_in_page),
-                imageResource = iconsR.drawable.mozac_ic_search_24,
-            ) {
-                onItemTapped.invoke(ToolbarMenu.CustomTabItem.FindInPage)
-            }
-
-        val desktopMode =
-            BrowserMenuImageSwitch(
-                imageResource = iconsR.drawable.mozac_ic_device_desktop_24,
-                label = context.getString(R.string.preference_performance_request_desktop_site2),
-                initialState = {
-                    selectedSession?.content?.desktopMode != false
-                },
-            ) { checked ->
-                onItemTapped.invoke(ToolbarMenu.CustomTabItem.RequestDesktop(checked))
-            }
-
-        val reportSiteIssue =
-            WebExtensionPlaceholderMenuItem(
-                id = WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID,
-                iconTintColorResource = context.theme.resolveAttribute(R.attr.primaryText),
+        return CustomTabMenuStatus(
+                canGoBack = customTab?.content?.canGoBack == true,
+                canGoForward = customTab?.content?.canGoForward == true,
+                isLoading = customTab?.content?.loading == true,
+                isDesktopMode = customTab?.content?.desktopMode == true,
+                isPdf = customTab?.content?.isPdf == true,
+                canOpenSomewhereElse = !isOnboardingTab,
+                appName = appName,
+                reportSiteIssueTitle = reportSiteIssueAction?.title,
+                reportSiteIssueIcon = reportSiteIssueIcon,
+                customItems = customTab?.config?.menuItems.orEmpty(),
             )
-
-        val addToHomescreen =
-            BrowserMenuImageText(
-                label = context.getString(R.string.menu_add_to_home_screen),
-                imageResource = iconsR.drawable.mozac_ic_add_to_homescreen_24,
-            ) {
-                onItemTapped.invoke(ToolbarMenu.CustomTabItem.AddToHomeScreen)
-            }
-
-        val menuItems =
-            mutableListOf(
-                menuToolbar,
-                BrowserMenuDivider(),
-                findInPage,
-                desktopMode.apply { visible = { selectedSession?.content?.isPdf == false } },
-                reportSiteIssue,
-                BrowserMenuDivider(),
-                addToHomescreen,
-            )
-
-        if (!isOnboardingTab) {
-            val appName = context.getString(R.string.app_name)
-            val openInFocus =
-                SimpleBrowserMenuItem(label = context.getString(R.string.menu_open_with_default_browser2, appName)) {
-                    onItemTapped.invoke(ToolbarMenu.CustomTabItem.OpenInBrowser)
-                }
-            menuItems.add(openInFocus)
-
-            val openInApp =
-                SimpleBrowserMenuItem(label = context.getString(R.string.menu_open_with_a_browser2)) {
-                    onItemTapped.invoke(ToolbarMenu.CustomTabItem.OpenInApp)
-                }
-            menuItems.add(openInApp)
-        }
-
-        val poweredBy =
-            BrowserMenuCategory(
-                label =
-                    context.getString(
-                        R.string.menu_custom_tab_branding,
-                        context.getString(R.string.app_name),
-                    ),
-                textSize = CAPTION_TEXT_SIZE,
-                textColorResource = context.theme.resolveAttribute(R.attr.secondaryText),
-                backgroundColorResource = context.theme.resolveAttribute(appcompatR.attr.colorPrimary),
-                textStyle = Typeface.NORMAL,
-            )
-
-        menuItems.add(poweredBy)
-        menuItems.toList()
-    }
-
-    companion object {
-        private const val CAPTION_TEXT_SIZE = 12f
+            .toMenuGroups()
     }
 }
+
+/** All properties based on which the menu of a custom tab can be built. */
+private data class CustomTabMenuStatus(
+    val canGoBack: Boolean,
+    val canGoForward: Boolean,
+    val isLoading: Boolean,
+    val isDesktopMode: Boolean,
+    val isPdf: Boolean,
+    val canOpenSomewhereElse: Boolean,
+    val appName: String,
+    val reportSiteIssueTitle: String?,
+    val reportSiteIssueIcon: Drawable?,
+    val customItems: List<CustomTabMenuItem>,
+)
+
+private fun CustomTabMenuStatus.toMenuGroups(): List<MenuItemsGroup> =
+    listOf(
+            MenuItemsGroup.Grid(id = NAVIGATION_GROUP_ID, items = navigationItems(), isSticky = true),
+            MenuItemsGroup.Row(
+                id = WEBPAGE_GROUP_ID,
+                items = listOfNotNull(findInPageItem(), desktopSiteItem(), reportSiteIssueItem()),
+            ),
+            MenuItemsGroup.Row(id = MOVE_OUTSIDE_GROUP_ID, items = openItems()),
+            MenuItemsGroup.Row(id = CUSTOM_ITEMS_GROUP_ID, items = customMenuItems()),
+        )
+        .filter { it.items.isNotEmpty() }
+
+private fun CustomTabMenuStatus.navigationItems(): List<MenuItem> =
+    listOf(
+        menuItem(
+            title = R.string.content_description_back,
+            icon = iconsR.drawable.mozac_ic_back_24,
+            item = ToolbarMenu.CustomTabItem.Back,
+            state = if (canGoBack) MenuItemState.DEFAULT else MenuItemState.DISABLED,
+        ),
+        menuItem(
+            title = R.string.content_description_forward,
+            icon = iconsR.drawable.mozac_ic_forward_24,
+            item = ToolbarMenu.CustomTabItem.Forward,
+            state = if (canGoForward) MenuItemState.DEFAULT else MenuItemState.DISABLED,
+        ),
+        if (isLoading) {
+            menuItem(
+                title = R.string.content_description_stop,
+                icon = iconsR.drawable.mozac_ic_cross_24,
+                item = ToolbarMenu.CustomTabItem.Stop,
+            )
+        } else {
+            menuItem(
+                title = R.string.content_description_reload,
+                icon = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+                item = ToolbarMenu.CustomTabItem.Reload,
+            )
+        },
+    )
+
+private fun findInPageItem(): MenuItem =
+    menuItem(
+        title = R.string.find_in_page,
+        icon = iconsR.drawable.mozac_ic_search_24,
+        item = ToolbarMenu.CustomTabItem.FindInPage,
+    )
+
+private fun CustomTabMenuStatus.desktopSiteItem(): MenuItem? {
+    if (isPdf) return null
+
+    val state = if (isDesktopMode) MenuItemState.ACTIVE else MenuItemState.DEFAULT
+
+    return menuItem(
+        title = R.string.preference_performance_request_desktop_site2,
+        icon = iconsR.drawable.mozac_ic_device_desktop_24,
+        item = ToolbarMenu.CustomTabItem.RequestDesktop(isChecked = !isDesktopMode),
+        state = state,
+        badge =
+            MenuItemBadge(
+                text =
+                    Text.Resource(if (isDesktopMode) R.string.preference_state_on else R.string.preference_state_off),
+                state = state,
+            ),
+    )
+}
+
+private fun CustomTabMenuStatus.reportSiteIssueItem(): MenuItem? = reportSiteIssueTitle?.let { title ->
+    StandardMenuItem(
+        title = Text.String(title),
+        icon = reportSiteIssueIcon?.let { MenuItemIconDrawable(it) },
+        onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.ReportSiteIssue),
+    )
+}
+
+private fun CustomTabMenuStatus.openItems(): List<MenuItem> =
+    listOfNotNull(
+        menuItem(
+            title = R.string.menu_add_to_home_screen,
+            icon = iconsR.drawable.mozac_ic_add_to_homescreen_24,
+            item = ToolbarMenu.CustomTabItem.AddToHomeScreen,
+        ),
+        if (canOpenSomewhereElse) {
+            StandardMenuItem(
+                title = Text.Resource(R.string.menu_open_with_default_browser2, listOf(appName)),
+                onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.OpenInBrowser),
+            )
+        } else {
+            null
+        },
+        if (canOpenSomewhereElse) {
+            StandardMenuItem(
+                title = Text.Resource(R.string.menu_open_with_a_browser2),
+                onClickEvent = MenuItemTapped(ToolbarMenu.CustomTabItem.OpenInApp),
+            )
+        } else {
+            null
+        },
+    )
+
+/** The items the application which opened this custom tab asked to be shown in its menu. */
+private fun CustomTabMenuStatus.customMenuItems(): List<MenuItem> = customItems.map { item ->
+    StandardMenuItem(
+        title = Text.String(item.name),
+        onClickEvent = CustomTabMenuItemTapped(item),
+    )
+}
+
+private fun menuItem(
+    @StringRes title: Int,
+    @DrawableRes icon: Int,
+    item: ToolbarMenu.CustomTabItem,
+    state: MenuItemState = MenuItemState.DEFAULT,
+    badge: MenuItemBadge? = null,
+): MenuItem =
+    StandardMenuItem(
+        title = Text.Resource(title),
+        contentDescription = Text.Resource(title),
+        icon = MenuItemIconRes(iconRes = icon),
+        onClickEvent = MenuItemTapped(item),
+        badge = badge,
+        state = state,
+    )

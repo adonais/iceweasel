@@ -23,6 +23,8 @@ tags = "os_integration"
 
 ["browser_accessibility_zoom.js"]
 
+["browser_addressBarNavigation.js"]
+
 ["browser_appearance_pane.js"]
 
 ["browser_backup_visibility.js"]
@@ -77,6 +79,8 @@ skip-if = [
 
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
+
+["browser_tabs_browsing_highlightToSearch.js"]
 
 ["browser_tabs_browsing_pane.js"]
 

@@ -53,7 +53,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   MessagingSystemAllowlists:
     "resource://messaging-system/lib/MessagingSystemAllowlists.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   ON_SERVICE_ENABLED_NOTIFICATION:
     "resource://gre/modules/FxAccountsCommon.sys.mjs",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
@@ -64,7 +65,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PushNotificationHelper:
     "resource://gre/modules/PushNotificationHelper.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+  Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   SelectableProfileService:
@@ -74,7 +75,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
+  TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
@@ -205,11 +206,12 @@ export const SpecialMessageActions = {
     };
 
     try {
-      await lazy.TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
+      let { created } = await lazy.TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
         manifest,
         ensurePinned: true,
       });
-      return true;
+      // If an existing tab is found, don't report that one was created.
+      return created ? true : null;
     } catch (e) {
       console.error("Failed to pin Taskbar Tab:", e);
       return false;

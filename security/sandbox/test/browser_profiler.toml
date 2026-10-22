@@ -1,8 +1,9 @@
 [DEFAULT]
-skip-if = [
-  "ccov",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # bug 1784517 for sandbox, bug 1885381 for profiler
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # bug 1784517 for sandbox, bug 1885381 for profiler
+# security/sandbox is not built on Linux asan/tsan, nor in ccov builds, so there
+# is no sandbox for this test to exercise there. See bug 1784517. The profiler
+# also has unresolved TSan issues, tracked in bug 1885381.
+run-if = [
+  "os == 'linux' && !asan && !tsan && !ccov",
 ]
 tags = "contentsandbox"
 
@@ -16,6 +17,3 @@ prefs = [
 environment = "MOZ_SANDBOX_LOGGING_FOR_TESTS=1"
 
 ["browser_sandbox_profiler.js"]
-run-if = [
-  "os == 'linux'",
-]

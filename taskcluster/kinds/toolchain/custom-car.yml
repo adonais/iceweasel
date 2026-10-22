@@ -34,8 +34,10 @@ macosx64-aarch64-custom-car:
             symbol_level=0,
             target_cpu="arm64",
             use_clang_modules=false,
-            use_v8_context_snapshot=false,
-            v8_symbol_level=0
+            v8_symbol_level=0,
+            # metagen re-runs gn in a temp out dir, where the
+            # //out/Default/MacOSX.sdk path falls outside root_build_dir.
+            v8_use_metagen=false
         ]
         toolchain-artifact: public/build/car_macosx_arm.tar.zst
     fetches:

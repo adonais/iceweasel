@@ -9,6 +9,7 @@ import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.selectedNormalTab
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.mozilla.fenix.components.menu.middleware.getTabUrl
@@ -83,7 +84,10 @@ fun BrowserState.partitionNormalTabsByActiveTime(
  * Get if there's a browser history item to get back to or if the current URL is of a story from application's
  * homescreen that we should get back to.
  */
-fun BrowserState.canGoBackInHistoryOrToStories() =
-    selectedTab?.let {
-        it.content.canGoBack || it.hasUrlOfInternallyOpenedStory()
-    } ?: false
+fun BrowserState.canGoBackInHistoryOrToStories(): Boolean = selectedTab?.canGoBackInHistoryOrToStories() ?: false
+
+/**
+ * Get if there's a browser history item of this tab to get back to or if its URL is of a story from application's
+ * homescreen that we should get back to.
+ */
+fun SessionState.canGoBackInHistoryOrToStories(): Boolean = content.canGoBack || hasUrlOfInternallyOpenedStory()

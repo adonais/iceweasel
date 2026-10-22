@@ -165,18 +165,16 @@ This is a workaround for a [known](https://github.com/amzn/style-dictionary/issu
 You will also see many places where `@base` is referenced in a value definition. This is a bit of a gotcha - even though `@base` isn't part of the token name, we still need to include it when using Style Dictionary's syntax for [variable references/aliases](https://amzn.github.io/style-dictionary/#/tokens?id=referencing-aliasing). That means the following CSS:
 
 ```css
---input-text-min-height: var(--button-min-height);
+--input-min-height: var(--button-min-height);
 ```
 
 Will look like this in our JSON:
 
 ```json
 "input": {
-  "text": {
-    "min": {
-      "height": {
-        "value": "{button.min.height.@base}"
-      }
+  "min": {
+    "height": {
+      "value": "{button.min.height.@base}"
     }
   }
 }

@@ -398,6 +398,8 @@ add_task(async function test_impression_undefined() {
         is_shopping_page: "true",
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       adImpressions: [],
       abandonment: {

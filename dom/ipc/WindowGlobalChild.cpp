@@ -315,8 +315,10 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
     ManagedEndpoint<PWindowGlobalParent> endpoint =
         ipChild->OpenPWindowGlobalEndpoint(wgc);
-    ipParent->BindPWindowGlobalEndpoint(std::move(endpoint),
-                                        wgc->WindowContext()->Canonical());
+    if (!ipParent->BindPWindowGlobalEndpoint(
+            std::move(endpoint), wgc->WindowContext()->Canonical())) {
+      return nullptr;
+    }
   } else {
     RefPtr<BrowserChild> browserChild =
         BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));

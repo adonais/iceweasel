@@ -5,7 +5,7 @@ function run_test() {
     Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
   });
   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-    "resource://gre/modules/jsdebugger.sys.mjs"
+    "moz-src:///devtools/platform/jsdebugger.sys.mjs"
   );
   addDebuggerToGlobal(globalThis);
   const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(

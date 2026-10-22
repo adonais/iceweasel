@@ -17,9 +17,8 @@
 #  include "WMFDecoderModule.h"
 #endif
 #ifdef MOZ_WIDGET_ANDROID
-#  include "AndroidDecoderModule.h"
-#  include "mozilla/java/MediaDrmProxyWrappers.h"
-#  include "nsMimeTypes.h"
+#  include "MediaCodecsSupport.h"
+#  include "mozilla/gfx/gfxVars.h"
 #endif
 
 #ifdef MOZ_WMF_CDM
@@ -32,8 +31,8 @@ namespace mozilla {
 bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
 #ifdef MOZ_WIDGET_ANDROID
   // Check if we can use MediaDrm for this keysystem.
-  if (mozilla::java::MediaDrmProxy::IsSchemeSupported(
-          NS_ConvertUTF16toUTF8(aKeySystem))) {
+  if (IsWidevineKeySystem(aKeySystem) &&
+      gfx::gfxVars::WidevineSupport() == media::DrmSchemeSupport::Supported) {
     return true;
   }
   // Check if we can use our bundled Clearkey plugin.
@@ -138,51 +137,33 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
   config->mVideoRobustness.AppendElement(u"SW_SECURE_DECODE"_ns);
 
 #if defined(MOZ_WIDGET_ANDROID)
-  // MediaDrm.isCryptoSchemeSupported only allows passing
-  // "video/mp4" or "video/webm" for mimetype string.
-  // See
-  // https://developer.android.com/reference/android/media/MediaDrm.html#isCryptoSchemeSupported(java.util.UUID,
-  // java.lang.String) for more detail.
-  typedef struct {
-    const nsCString& mMimeType;
-    const nsCString& mEMECodecType;
-    const char16_t* mCodecType;
-    KeySystemConfig::ContainerSupport* mSupportType;
-  } DataForValidation;
+  if (gfx::gfxVars::WidevineSupport() != media::DrmSchemeSupport::Supported) {
+    return;
+  }
 
-  DataForValidation validationList[] = {
-      {nsCString(VIDEO_MP4), EME_CODEC_H264, java::MediaDrmProxy::AVC,
-       &config->mMP4},
-      {nsCString(VIDEO_MP4), EME_CODEC_VP9, java::MediaDrmProxy::AVC,
-       &config->mMP4},
-      {nsCString(VIDEO_MP4), EME_CODEC_AV1, java::MediaDrmProxy::AV1,
-       &config->mMP4},
-      {nsCString(AUDIO_MP4), EME_CODEC_AAC, java::MediaDrmProxy::AAC,
-       &config->mMP4},
-      {nsCString(AUDIO_MP4), EME_CODEC_FLAC, java::MediaDrmProxy::FLAC,
-       &config->mMP4},
-      {nsCString(AUDIO_MP4), EME_CODEC_OPUS, java::MediaDrmProxy::OPUS,
-       &config->mMP4},
-      {nsCString(VIDEO_WEBM), EME_CODEC_VP8, java::MediaDrmProxy::VP8,
-       &config->mWebM},
-      {nsCString(VIDEO_WEBM), EME_CODEC_VP9, java::MediaDrmProxy::VP9,
-       &config->mWebM},
-      {nsCString(VIDEO_WEBM), EME_CODEC_AV1, java::MediaDrmProxy::AV1,
-       &config->mWebM},
-      {nsCString(AUDIO_WEBM), EME_CODEC_VORBIS, java::MediaDrmProxy::VORBIS,
-       &config->mWebM},
-      {nsCString(AUDIO_WEBM), EME_CODEC_OPUS, java::MediaDrmProxy::OPUS,
-       &config->mWebM},
+  struct {
+    const nsLiteralCString& mEMECodecType;
+    media::MediaCodec mCodec;
+    KeySystemConfig::ContainerSupport* mSupportType;
+  } validationList[] = {
+      {EME_CODEC_H264, media::MediaCodec::H264, &config->mMP4},
+      {EME_CODEC_VP9, media::MediaCodec::VP9, &config->mMP4},
+      {EME_CODEC_AV1, media::MediaCodec::AV1, &config->mMP4},
+      {EME_CODEC_AAC, media::MediaCodec::AAC, &config->mMP4},
+      {EME_CODEC_FLAC, media::MediaCodec::FLAC, &config->mMP4},
+      {EME_CODEC_OPUS, media::MediaCodec::Opus, &config->mMP4},
+      {EME_CODEC_VP8, media::MediaCodec::VP8, &config->mWebM},
+      {EME_CODEC_VP9, media::MediaCodec::VP9, &config->mWebM},
+      {EME_CODEC_AV1, media::MediaCodec::AV1, &config->mWebM},
+      {EME_CODEC_VORBIS, media::MediaCodec::Vorbis, &config->mWebM},
+      {EME_CODEC_OPUS, media::MediaCodec::Opus, &config->mWebM},
   };
 
+  const auto supported = gfx::gfxVars::PlatformMediaCodecsSupported();
   for (const auto& data : validationList) {
-    if (java::MediaDrmProxy::IsCryptoSchemeSupported(kWidevineKeySystemName,
-                                                     data.mMimeType)) {
-      if (!AndroidDecoderModule::SupportsMimeType(data.mMimeType).isEmpty()) {
-        data.mSupportType->SetCanDecryptAndDecode(data.mEMECodecType);
-      } else {
-        data.mSupportType->SetCanDecrypt(data.mEMECodecType);
-      }
+    if (media::MCSInfo::SupportsSoftwareDecode(supported, data.mCodec) ||
+        media::MCSInfo::SupportsHardwareDecode(supported, data.mCodec)) {
+      data.mSupportType->SetCanDecryptAndDecode(data.mEMECodecType);
     }
   }
 #else

@@ -27,6 +27,10 @@ struct FileIOMarker : public BaseMarkerType<FileIOMarker> {
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable,
                                                MS::Location::TimelineFileIO};
+  static constexpr const char* TableLabel =
+      "{marker.data.source ? '(' : ''}{marker.data.source}"
+      "{marker.data.source ? ') ' : ''}{marker.data.operation}"
+      "{marker.data.filename ? ' — ' : ''}{marker.data.filename}";
 
   // Tech note: If `ToNumber()` returns a uint64_t, the conversion to int64_t is
   // "implementation-defined" before C++20. This is acceptable here, because

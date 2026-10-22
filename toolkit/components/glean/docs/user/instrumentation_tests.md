@@ -75,12 +75,17 @@ version of those metrics and pings that was current at the time the artifacts we
 This isn't a problem unless:
 * You are changing a metric or ping that is used in instrumentation in the compiled code, or
 * You are using `testSubmission` or
-  `testBeforeNextSubmit` in JavaScript for a ping submitted in the Rust code.
+  `testBeforeNextSubmit` in JavaScript for a ping submitted in the Rust code, or
+* You are testing whether an `object` metric's value matches its schema.
+  JOG doesn't validate object schemas
+  (see [bug 2050219](https://bugzilla.mozilla.org/show_bug.cgi?id=2050219)),
+  so values that don't match can be stored without an `invalid_value` error.
+  You'll need a full build to test schema validation.
 
 When in doubt, simply test your new test in artifact mode
 (by e.g. passing `--enable-artifact-builds` to `mach try`)
 before submitting it.
-If it doesn't pass in artifact mode because of one of these two cases,
+If it doesn't pass in artifact mode because of one of these cases,
 you may need to skip your test whenever FOG's artifact build support is enabled:
 * xpcshell:
 ```js

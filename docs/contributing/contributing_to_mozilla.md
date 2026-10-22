@@ -29,12 +29,12 @@ Mozilla maintains small and large projects and we are thrilled to have contribut
 very diverse skills:
 
 - If you know **C++,** **Rust,** **JavaScript,** **HTML** or **CSS**,
-  you can {ref}`contribute to the core layers <Firefox Contributors' Quick Reference>` of
+  you can {doc}`contribute to the core layers <contribution_quickref>` of
   Firefox and many other Mozilla projects.
 - If you know **Rust**, you can also contribute to the [Rust programming
   language](https://github.com/rust-lang/rust) itself, numerous crates like [grcov](https://github.com/mozilla/grcov/)
   or [Stylo](/layout/StyleSystemOverview.md), Firefox's parallel CSS engine, {searchfox}`WebRender <gfx/wr/>`, Firefox's GPU-based 2D rendering engine, and [Neqo](https://github.com/mozilla/neqo), our QUIC/HTTP3 networking stack.
-- If you know **Kotlin**, you can contribute to {ref}`Firefox for Android <Firefox Contributors' Quick Reference>` (code name: "Fenix"). {searchfox}`Fenix's code <mobile/android/>` is integrated into the same repository as Firefox Desktop.
+- If you know **Kotlin**, you can contribute to {doc}`Firefox for Android <contribution_quickref>` (code name: "Fenix"). {searchfox}`Fenix's code <mobile/android/>` is integrated into the same repository as Firefox Desktop.
 - If you know **Swift**, you can contribute to [Firefox and Firefox Focus for
   iOS](https://github.com/mozilla-mobile/firefox-ios).
 - If you know **C++**, you can contribute to our [VPN client](https://github.com/mozilla-mobile/mozilla-vpn-client).

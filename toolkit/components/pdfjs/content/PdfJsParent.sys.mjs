@@ -774,7 +774,7 @@ export class PdfJsParent extends JSWindowActorParent {
   }
 
   _saveURL(aMsg) {
-    const { blobUrl, originalUrl, filename } = aMsg.data;
+    const { blobUrl, originalUrl, filename, isModified } = aMsg.data;
     this.browser.documentGlobal.saveURL(
       blobUrl /* aURL */,
       originalUrl /* aOriginalURL */,
@@ -794,7 +794,8 @@ export class PdfJsParent extends JSWindowActorParent {
           URL.revokeObjectURL(blobUrl);
         }
         Services.obs.notifyObservers(null, "pdfjs:saveComplete");
-      }
+      } /* aSaveCompleteCallback */,
+      isModified /* aPreferSourceDirectory */
     );
   }
 

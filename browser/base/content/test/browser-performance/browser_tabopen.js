@@ -23,7 +23,9 @@ const EXPECTED_REFLOWS = [
  */
 add_task(async function () {
   // Force-enable tab animations
-  gReduceMotionOverride = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
 
   // TODO (bug 1702653): Disable tab shadows for tests since the shadow
   // can extend outside of the boundingClientRect. The tabRect will need

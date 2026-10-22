@@ -2,8 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-input-search.tagmap.d.ts" />
+
 import { html, ifDefined } from "../vendor/lit.all.mjs";
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 /**
  * A search input custom element.
@@ -22,7 +24,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
  * @property {string} title - The title attribute, mapped onto the inner input.
  */
-export default class MozInputSearch extends MozInputText {
+export class MozInputSearch extends MozInputText {
   // The amount of milliseconds that we wait before firing the "search" event.
   static #searchDebounceDelayMs = 500;
 
@@ -51,7 +53,10 @@ export default class MozInputSearch extends MozInputText {
   }
 
   inputStylesTemplate() {
-    return html`${super.inputStylesTemplate()}`;
+    return html`<link
+      rel="stylesheet"
+      href="chrome://global/content/elements/moz-input-search.css"
+    />`;
   }
 
   handleInput(e) {

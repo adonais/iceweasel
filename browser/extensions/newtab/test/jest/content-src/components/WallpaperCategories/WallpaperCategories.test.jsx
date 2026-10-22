@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "react";
-import { render, fireEvent, act, waitFor } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { actionTypes as at } from "common/Actions.mjs";
 import { _WallpaperCategories as WallpaperCategories } from "content-src/components/WallpaperCategories/WallpaperCategories";
 
@@ -66,11 +66,6 @@ const Harness = React.forwardRef(function Harness(
 });
 
 describe("<WallpaperCategories>", () => {
-  beforeAll(() => {
-    globalThis.URL.createObjectURL = file => `blob:${file.name}`;
-    globalThis.URL.revokeObjectURL = () => {};
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -517,15 +512,13 @@ describe("<WallpaperCategories>", () => {
       },
     ];
 
-    // The library is not reachable by URL, so the picker gets thumbnail bytes
-    // and makes its own object URLs. Stands in for a Blob.
-    const THUMBNAILS = SAVED.map(({ filename }) => {
-      const file = new Blob([filename], { type: "image/jpeg" });
-      file.name = filename;
-      return { filename, file };
-    });
+    const tileUrl = filename => `moz-newtab-wallpaper://library/${filename}`;
 
-    const thumbnailUrl = filename => `blob:${filename}`;
+    // Both the folder tile and the tiles inside it draw their picture with an
+    // img, so a CSS background does not hold a full resolution decode.
+    const previewOf = element =>
+      element.querySelector(".your-images-preview") ??
+      element.parentElement.querySelector(".your-images-preview");
 
     const withSavedWallpapers = (customWallpapers = SAVED, values = {}) => ({
       ...DEFAULT_PROPS,
@@ -544,11 +537,6 @@ describe("<WallpaperCategories>", () => {
         ...DEFAULT_PROPS.Wallpapers,
         categories: ["custom-wallpaper", "celestial"],
         customWallpapers,
-        customWallpaperThumbnails: THUMBNAILS.filter(thumbnail =>
-          customWallpapers.some(
-            wallpaper => wallpaper.filename === thumbnail.filename
-          )
-        ),
       },
     });
 
@@ -577,8 +565,8 @@ describe("<WallpaperCategories>", () => {
 
     it("shows the applied image even before the library catches up", () => {
       // The pref and the wallpaper URL reach the page ahead of the library. If
-      // the tile waited for a library thumbnail it would show the previous
-      // image, which is worse than showing nothing.
+      // the tile waited for the library list it would show the previous image,
+      // which is worse than showing nothing.
       const props = withSavedWallpapers();
       const { container } = render(
         <Harness
@@ -600,36 +588,13 @@ describe("<WallpaperCategories>", () => {
       );
 
       const tile = container.querySelector("#custom-wallpaper");
-      expect(tile.style.backgroundImage).toBe(
-        "url(moz-newtab-wallpaper://the-new-one)"
+      const preview = previewOf(tile);
+      expect(preview).toHaveAttribute(
+        "src",
+        "moz-newtab-wallpaper://the-new-one"
       );
-      expect(tile.style.backgroundPosition).toBe("top right");
+      expect(preview.style.objectPosition).toBe("top right");
       expect(tile).not.toHaveClass("theme-custom-wallpaper");
-    });
-
-    it("keeps the add an image look until the thumbnail arrives", () => {
-      // Thumbnails come from the parent after the panel opens. Without this the
-      // folder tile draws nothing at all in that window.
-      const props = withSavedWallpapers();
-      const { container, rerender } = render(
-        <Harness
-          {...props}
-          Wallpapers={{ ...props.Wallpapers, customWallpaperThumbnails: [] }}
-        />
-      );
-
-      const tile = () => container.querySelector("#custom-wallpaper");
-      expect(tile()).toHaveClass("your-images-folder");
-      expect(tile()).toHaveClass("theme-custom-wallpaper");
-      expect(tile().style.backgroundImage).toBe("");
-
-      act(() => {
-        rerender(<Harness {...props} />);
-      });
-
-      expect(tile()).toHaveClass("your-images-folder");
-      expect(tile()).not.toHaveClass("theme-custom-wallpaper");
-      expect(tile().style.backgroundImage).not.toBe("");
     });
 
     it("turns the tile into a folder once an image is saved", () => {
@@ -640,8 +605,9 @@ describe("<WallpaperCategories>", () => {
         "data-l10n-id",
         "newtab-wallpaper-your-images-folder"
       );
-      expect(tile.style.backgroundImage).toBe(
-        `url(${thumbnailUrl(SAVED[0].filename)})`
+      expect(previewOf(tile)).toHaveAttribute(
+        "src",
+        tileUrl(SAVED[0].filename)
       );
       expect(
         container.querySelector('label[for="custom-wallpaper"]')
@@ -655,8 +621,9 @@ describe("<WallpaperCategories>", () => {
       });
       const { container } = render(<Harness {...props} />);
       const tile = container.querySelector("#custom-wallpaper");
-      expect(tile.style.backgroundImage).toBe(
-        `url(${thumbnailUrl(SAVED[1].filename)})`
+      expect(previewOf(tile)).toHaveAttribute(
+        "src",
+        tileUrl(SAVED[1].filename)
       );
       expect(tile).toHaveClass("selected");
     });
@@ -669,13 +636,53 @@ describe("<WallpaperCategories>", () => {
         '.your-images input[type="radio"]'
       );
       expect(images).toHaveLength(SAVED.length);
-      expect(images[0].style.backgroundImage).toBe(
-        `url(${thumbnailUrl(SAVED[0].filename)})`
+      expect(previewOf(images[0])).toHaveAttribute(
+        "src",
+        tileUrl(SAVED[0].filename)
       );
-      expect(images[1].style.backgroundPosition).toBe("top right");
+      expect(previewOf(images[1]).style.objectPosition).toBe("top right");
       expect(container.querySelector("#your-images-add")).toHaveClass(
         "theme-custom-wallpaper"
       );
+    });
+
+    it("keeps the pictures out of the accessibility tree", () => {
+      // The radio and the folder button carry the name, so a second one off
+      // the picture would be read out twice.
+      const { container } = render(<Harness {...withSavedWallpapers()} />);
+      const folder = previewOf(container.querySelector("#custom-wallpaper"));
+      fireEvent.click(container.querySelector("#custom-wallpaper"));
+
+      const previews = [
+        folder,
+        ...container.querySelectorAll(".your-images-item .your-images-preview"),
+      ];
+      expect(previews).toHaveLength(SAVED.length + 1);
+      for (const preview of previews) {
+        expect(preview.tagName).toBe("IMG");
+        expect(preview).toHaveAttribute("alt", "");
+        expect(preview).toHaveAttribute("aria-hidden", "true");
+        expect(preview).toHaveAttribute("draggable", "false");
+      }
+    });
+
+    it("loads the folder preview eagerly and saved previews lazily", () => {
+      // A library can run to a hundred photos. Fetching the ones below the
+      // fold on open doubled what the picker cost. The folder tile is always
+      // on screen, so it stays eager.
+      const { container } = render(<Harness {...withSavedWallpapers()} />);
+      const folder = previewOf(container.querySelector("#custom-wallpaper"));
+      expect(folder).not.toHaveAttribute("loading");
+
+      fireEvent.click(container.querySelector("#custom-wallpaper"));
+
+      const inFolder = container.querySelectorAll(
+        ".your-images-item .your-images-preview"
+      );
+      expect(inFolder).toHaveLength(SAVED.length);
+      for (const preview of inFolder) {
+        expect(preview).toHaveAttribute("loading", "lazy");
+      }
     });
 
     it("names each saved image and the add tile once", () => {
@@ -1067,42 +1074,50 @@ describe("<WallpaperCategories>", () => {
       );
     });
 
-    it("asks again when the applied wallpaper changes", () => {
-      // A page from the startup cache never sees the library broadcast, so a
-      // change to the library alone would never reach it. The applied pref does.
-      // Restored with no thumbnail bytes, which is the state that needs them.
-      const props = withSavedWallpapers();
-      props.Wallpapers.customWallpaperThumbnails = [];
-      const { container, rerender } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
+    it("asks for the library when a startup cache page opens the panel", () => {
+      // A page from the startup cache never sees the library broadcast, so it
+      // opens with an empty list and has to ask for one itself.
+      const props = withSavedWallpapers([]);
+      const { rerender } = render(
+        <Harness {...{ ...props, panelShowing: false }} />
+      );
+      props.dispatch.mockClear();
 
       const requests = () =>
         props.dispatch.mock.calls.filter(
-          ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
+          ([action]) => action.type === at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST
         ).length;
 
-      // Control: re-rendering with nothing changed must not ask again.
-      props.dispatch.mockClear();
       act(() => {
         rerender(<Harness {...props} />);
       });
-      expect(requests()).toBe(0);
+      expect(requests()).toBe(1);
 
-      // The applied wallpaper moving is the signal that does reach the page.
+      // Re-rendering with nothing changed must not ask again.
       act(() => {
-        rerender(
-          <Harness
-            {...props}
-            Prefs={{
-              values: {
-                ...props.Prefs.values,
-                "newtabWallpapers.customWallpaper.uuid": `v1-custom-light-center-1-${UUID_THREE}`,
-              },
-            }}
-          />
-        );
+        rerender(<Harness {...props} />);
       });
       expect(requests()).toBe(1);
+    });
+
+    it("asks again even when the page already holds a list", () => {
+      // What the startup cache holds can be out of date: another window may
+      // have added or removed an image since the page was written.
+      const props = withSavedWallpapers();
+      const { rerender } = render(
+        <Harness {...{ ...props, panelShowing: false }} />
+      );
+      props.dispatch.mockClear();
+
+      act(() => {
+        rerender(<Harness {...props} />);
+      });
+
+      expect(
+        props.dispatch.mock.calls.some(
+          ([action]) => action.type === at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST
+        )
+      ).toBe(true);
     });
 
     it("keeps the arrow-key tab stop across a re-render", () => {
@@ -1222,24 +1237,7 @@ describe("<WallpaperCategories>", () => {
       );
     });
 
-    it("drops thumbnail object URLs when the panel closes", () => {
-      const revoked = [];
-      globalThis.URL.revokeObjectURL = url => revoked.push(url);
-
-      const props = withSavedWallpapers();
-      const { container, rerender } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
-      expect(revoked).toHaveLength(0);
-
-      rerender(<Harness {...{ ...props, panelShowing: false }} />);
-
-      expect(revoked.sort()).toEqual(
-        SAVED.map(({ filename }) => `blob:${filename}`).sort()
-      );
-      globalThis.URL.revokeObjectURL = () => {};
-    });
-
-    it("asks for thumbnails again when the feature is turned back on", () => {
+    it("asks for the library when the feature is turned back on", () => {
       const off = withSavedWallpapers(SAVED, {
         "newtabWallpapers.customWallpaper.library.enabled": false,
       });
@@ -1249,30 +1247,14 @@ describe("<WallpaperCategories>", () => {
       rerender(<Harness {...withSavedWallpapers()} />);
 
       const asked = off.dispatch.mock.calls.some(
-        ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
+        ([action]) => action.type === at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST
       );
       expect(asked).toBe(true);
     });
 
-    it("clears the thumbnail bytes out of this tab when the panel closes", () => {
-      const props = withSavedWallpapers();
-      const { container, rerender } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
-      props.dispatch.mockClear();
-
-      rerender(<Harness {...{ ...props, panelShowing: false }} />);
-
-      const cleared = props.dispatch.mock.calls.filter(
-        ([action]) =>
-          action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_SET &&
-          !action.data.length
-      );
-      expect(cleared).toHaveLength(1);
-    });
-
-    // Bug 2072951: applying leaves the library alone, so re-fetching it mints a
-    // new blob URL per tile and the whole grid reloads for a frame.
-    it("does not ask for thumbnails again when a picture is applied", () => {
+    // Bug 2072951: applying leaves the library alone, so asking for it again
+    // only churns the grid.
+    it("does not ask for the library again when a picture is applied", () => {
       const props = withSavedWallpapers();
       const { rerender } = render(<Harness {...props} />);
       props.dispatch.mockClear();
@@ -1292,57 +1274,9 @@ describe("<WallpaperCategories>", () => {
       );
 
       const asked = props.dispatch.mock.calls.some(
-        ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
+        ([action]) => action.type === at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST
       );
       expect(asked).toBe(false);
-    });
-
-    // The thumbnails and the applied pref can land in one update. A check on
-    // derived state would still read the pre-setState value and ask again.
-    it("does not ask twice when the thumbnails and the applied picture arrive together", () => {
-      const props = withSavedWallpapers();
-      props.Wallpapers.customWallpaperThumbnails = [];
-      const { rerender } = render(<Harness {...props} />);
-      props.dispatch.mockClear();
-
-      rerender(
-        <Harness
-          {...{
-            ...props,
-            Wallpapers: {
-              ...props.Wallpapers,
-              customWallpaperThumbnails: THUMBNAILS,
-            },
-            Prefs: {
-              values: {
-                ...props.Prefs.values,
-                "newtabWallpapers.customWallpaper.uuid": SAVED[1].filename,
-              },
-            },
-          }}
-        />
-      );
-
-      const asked = props.dispatch.mock.calls.filter(
-        ([action]) => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST
-      );
-      expect(asked).toHaveLength(0);
-    });
-
-    it("ignores thumbnails a startup cache restore turned into plain objects", () => {
-      const props = withSavedWallpapers();
-      props.Wallpapers.customWallpaperThumbnails = SAVED.map(
-        ({ filename }) => ({ filename, file: {} })
-      );
-
-      const { container } = render(<Harness {...props} />);
-      fireEvent.click(container.querySelector("#custom-wallpaper"));
-
-      const images = container.querySelectorAll(
-        '.your-images input[type="radio"]'
-      );
-      expect(images).toHaveLength(SAVED.length);
-      expect(images[0].style.backgroundImage).toBe("");
     });
 
     // Nova is not shipped yet, so the folder has to work in the classic layout
@@ -1373,208 +1307,6 @@ describe("<WallpaperCategories>", () => {
       const folderTile = container.querySelector("#custom-wallpaper");
       expect(folderTile).not.toBe(addTile);
       expect(document.activeElement).toBe(folderTile);
-    });
-
-    describe("scaling images the parent could not", () => {
-      // jsdom has neither of the image APIs the real scaling uses, so these
-      // stand in for them. What is under test is the wiring, not the scaling.
-      let realCreateImageBitmap;
-      let realOffscreenCanvas;
-      let closed;
-
-      beforeEach(() => {
-        closed = [];
-        realCreateImageBitmap = globalThis.createImageBitmap;
-        realOffscreenCanvas = globalThis.OffscreenCanvas;
-        globalThis.createImageBitmap = async () => ({
-          width: 1000,
-          height: 500,
-          close: () => closed.push(true),
-        });
-        globalThis.OffscreenCanvas = class {
-          constructor(width, height) {
-            this.width = width;
-            this.height = height;
-          }
-          getContext() {
-            return { drawImage: () => {} };
-          }
-          async convertToBlob() {
-            return new Blob(["scaled"], { type: "image/jpeg" });
-          }
-        };
-      });
-
-      afterEach(() => {
-        globalThis.createImageBitmap = realCreateImageBitmap;
-        globalThis.OffscreenCanvas = realOffscreenCanvas;
-      });
-
-      const unscaled = filename => ({
-        filename,
-        file: new Blob(["a full size image"], { type: "image/png" }),
-        needsThumbnail: true,
-      });
-
-      const propsWith = (entries, values = {}) => {
-        const props = withSavedWallpapers(SAVED, values);
-        props.Wallpapers.customWallpaperThumbnails = entries;
-        return props;
-      };
-
-      it("scales one the parent sent whole and sends it back", async () => {
-        const props = propsWith([unscaled(SAVED[0].filename)]);
-        render(<Harness {...props} />);
-
-        await waitFor(() => {
-          const sent = props.dispatch.mock.calls
-            .map(([action]) => action)
-            .find(
-              action => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE
-            );
-          expect(sent).toBeTruthy();
-          expect(sent.data.filename).toBe(SAVED[0].filename);
-          expect(sent.data.thumbnail).toBeInstanceOf(Blob);
-        });
-      });
-
-      it("leaves alone anything that already has one", async () => {
-        const props = propsWith([
-          { filename: SAVED[0].filename, file: new Blob(["thumb"]) },
-        ]);
-        render(<Harness {...props} />);
-
-        await Promise.resolve();
-        expect(
-          props.dispatch.mock.calls
-            .map(([action]) => action)
-            .some(
-              action => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE
-            )
-        ).toBe(false);
-      });
-
-      const madeCalls = props =>
-        props.dispatch.mock.calls
-          .map(([action]) => action)
-          .filter(
-            action => action.type === at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE
-          );
-
-      it("never starts while the panel is shut", async () => {
-        const props = propsWith([unscaled(SAVED[0].filename)]);
-        props.panelShowing = false;
-        render(<Harness {...props} />);
-
-        await Promise.resolve();
-        await Promise.resolve();
-        expect(madeCalls(props)).toHaveLength(0);
-      });
-
-      it("stops when the panel is closed part way through", async () => {
-        // Hold the scaling open so the panel can close while it is in flight.
-        let finishScaling;
-        globalThis.OffscreenCanvas = class {
-          getContext() {
-            return { drawImage: () => {} };
-          }
-          convertToBlob() {
-            return new Promise(resolve => {
-              finishScaling = () => resolve(new Blob(["scaled"]));
-            });
-          }
-        };
-
-        const props = propsWith([unscaled(SAVED[0].filename)]);
-        const { rerender } = render(<Harness {...props} />);
-        await waitFor(() => expect(finishScaling).toBeDefined());
-        // Sanity: with the panel left open this same setup does dispatch.
-        expect(madeCalls(props)).toHaveLength(0);
-
-        const closed = { ...props, panelShowing: false };
-        rerender(<Harness {...closed} />);
-        finishScaling();
-        // Long enough that the positive case below would have dispatched by
-        // now, so a pass here means it stopped rather than it being early.
-        await new Promise(resolve => setTimeout(resolve, 20));
-
-        expect(madeCalls(props)).toHaveLength(0);
-      });
-
-      it("tries again after the panel closed part way through", async () => {
-        // The set that stops repeat work must not remember one that never
-        // finished, or that tab would never scale it again.
-        let finishScaling;
-        const holding = () =>
-          class {
-            getContext() {
-              return { drawImage: () => {} };
-            }
-            convertToBlob() {
-              return new Promise(resolve => {
-                finishScaling = () => resolve(new Blob(["scaled"]));
-              });
-            }
-          };
-        globalThis.OffscreenCanvas = holding();
-
-        const props = propsWith([unscaled(SAVED[0].filename)]);
-        const { rerender } = render(<Harness {...props} />);
-        await waitFor(() => expect(finishScaling).toBeDefined());
-
-        rerender(<Harness {...props} panelShowing={false} />);
-        finishScaling();
-        await new Promise(resolve => setTimeout(resolve, 20));
-        expect(madeCalls(props)).toHaveLength(0);
-
-        // Reopening asks the parent again, which replies with a fresh payload.
-        // A new array, since the picker only reacts to a changed reference.
-        finishScaling = undefined;
-        globalThis.OffscreenCanvas = holding();
-        const reopened = {
-          ...props,
-          panelShowing: true,
-          Wallpapers: {
-            ...props.Wallpapers,
-            customWallpaperThumbnails: [unscaled(SAVED[0].filename)],
-          },
-        };
-        rerender(<Harness {...reopened} />);
-        await waitFor(() => expect(finishScaling).toBeDefined());
-        finishScaling();
-
-        await waitFor(() => expect(madeCalls(props)).toHaveLength(1));
-      });
-
-      it("works the same in the classic layout", async () => {
-        const props = propsWith([unscaled(SAVED[0].filename)], {
-          "nova.enabled": false,
-        });
-        render(<Harness {...props} />);
-
-        await waitFor(() => expect(madeCalls(props)).toHaveLength(1));
-      });
-
-      it("does send it when the panel stays open, so the test above means something", async () => {
-        let finishScaling;
-        globalThis.OffscreenCanvas = class {
-          getContext() {
-            return { drawImage: () => {} };
-          }
-          convertToBlob() {
-            return new Promise(resolve => {
-              finishScaling = () => resolve(new Blob(["scaled"]));
-            });
-          }
-        };
-
-        const props = propsWith([unscaled(SAVED[0].filename)]);
-        render(<Harness {...props} />);
-        await waitFor(() => expect(finishScaling).toBeDefined());
-        finishScaling();
-
-        await waitFor(() => expect(madeCalls(props)).toHaveLength(1));
-      });
     });
 
     describe("classic layout", () => {

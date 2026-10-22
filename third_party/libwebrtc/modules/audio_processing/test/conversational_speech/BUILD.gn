@@ -55,23 +55,24 @@ rtc_library("lib") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
 
-rtc_library("unittest") {
-  testonly = true
-  sources = [
-    "generator_unittest.cc",
-    "mock_wavreader.cc",
-    "mock_wavreader.h",
-    "mock_wavreader_factory.cc",
-    "mock_wavreader_factory.h",
-  ]
-  deps = [
-    ":lib",
-    "../../../../common_audio",
-    "../../../../rtc_base:logging",
-    "../../../../rtc_base:safe_conversions",
-    "../../../../test:fileutils",
-    "../../../../test:test_support",
-    "//testing/gtest",
-    "//third_party/abseil-cpp/absl/strings:string_view",
-  ]
+if (rtc_include_tests) {
+  rtc_cc_test("generator_unittest") {
+    sources = [
+      "generator_unittest.cc",
+      "mock_wavreader.cc",
+      "mock_wavreader.h",
+      "mock_wavreader_factory.cc",
+      "mock_wavreader_factory.h",
+    ]
+    deps = [
+      ":lib",
+      "../../../../common_audio",
+      "../../../../rtc_base:logging",
+      "../../../../rtc_base:safe_conversions",
+      "../../../../test:fileutils",
+      "../../../../test:test_support",
+      "//testing/gtest",
+      "//third_party/abseil-cpp/absl/strings:string_view",
+    ]
+  }
 }

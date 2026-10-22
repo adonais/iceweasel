@@ -9,9 +9,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import mozilla.components.support.base.ext.isNotificationChannelEnabled
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -25,6 +25,7 @@ class PrivacyReportNotificationScheduler(
     private val applicationContext: Context,
     private val settings: Settings,
 ) : DefaultLifecycleObserver {
+    private var isScheduled = false
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
@@ -46,25 +47,43 @@ class PrivacyReportNotificationScheduler(
         // If the tracking protection feature is disabled then don't schedule the notification.
         if (!settings.shouldUseTrackingProtection) {
             PrivacyReportNotificationWorker.cancel(applicationContext)
+            isScheduled = false
+            return
+        }
+
+        if (!settings.weeklyPrivacyNotificationFeatureFlagEnabled) {
+            PrivacyReportNotificationWorker.cancel(applicationContext)
+            isScheduled = false
             return
         }
 
         val notificationManager = NotificationManagerCompat.from(applicationContext)
-        val featureEnabled = settings.weeklyPrivacyNotificationFeatureFlagEnabled
 
-        if (featureEnabled && notificationManager.areNotificationsEnabled()) {
+        if (notificationManager.areNotificationsEnabled()) {
             // Register the channel so that it appears in the Android Settings App even
             // before the first notification is sent.
             ensurePrivacyReportNotificationChannelExists(applicationContext)
         }
 
-        val shouldSchedule =
-            featureEnabled && notificationManager.isNotificationChannelEnabled(PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID)
+        val onboardingCompletedTimestamp = settings.onboardingCompletedTimestamp
+        val availability = privacyReportNotificationAvailability(applicationContext)
+        TrackingProtection.privacyReportNotificationAvailability.set(availability.telemetryId)
 
-        if (shouldSchedule) {
+        if (availability == PrivacyReportNotificationAvailability.AVAILABLE) {
+            // Users who never completed onboarding are not eligible for this feature.
+            if (onboardingCompletedTimestamp < 0) {
+                return
+            }
+
+            if (isScheduled) {
+                return
+            }
+
             PrivacyReportNotificationWorker.schedule(applicationContext, settings, dateTimeProvider)
+            isScheduled = true
         } else {
             PrivacyReportNotificationWorker.cancel(applicationContext)
+            isScheduled = false
         }
     }
 }

@@ -68,8 +68,9 @@ class RecentVisitsFeature(
                     historyMetadataStorage.getHistoryMetadataSince(Long.MIN_VALUE)
                 }
 
-                val historyHighlights = getHistoryHighlights(highlights.await(), allHistoryMetadata.await())
-                val historyGroups = getHistorySearchGroups(allHistoryMetadata.await())
+                val historyMetadata = allHistoryMetadata.await()
+                val historyHighlights = getHistoryHighlights(highlights.await(), historyMetadata)
+                val historyGroups = getHistorySearchGroups(historyMetadata)
 
                 updateState(historyHighlights, historyGroups)
             }

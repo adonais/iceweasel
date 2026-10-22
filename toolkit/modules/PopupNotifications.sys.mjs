@@ -24,7 +24,7 @@ const FULLSCREEN_TRANSITION_TIME_SHOWN_OFFSET_MS = 2000;
 // SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER * the configured delay.
 const SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER = 20;
 
-// Enumerated values for the POPUP_NOTIFICATION_STATS telemetry histogram.
+// Enumerated values for the popup_notification.stats metric.
 const TELEMETRY_STAT_OFFERED = 0;
 const TELEMETRY_STAT_ACTION_1 = 1;
 const TELEMETRY_STAT_ACTION_2 = 2;
@@ -214,8 +214,8 @@ Notification.prototype = {
   },
 
   /**
-   * Adds an enumerated value to the POPUP_NOTIFICATION_STATS histogram,
-   * ensuring that it is recorded at most once for each distinct Notification.
+   * Adds an enumerated value to the popup_notification.stats metric, ensuring
+   * that it is recorded at most once for each distinct Notification.
    *
    * Statistics for reopened notifications are recorded in separate buckets.
    *

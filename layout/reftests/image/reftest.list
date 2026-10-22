@@ -78,11 +78,13 @@ skip-if(Android) == chrome://reftest/content/image/moz-broken-matching-lazy-load
 # clipped to the snapped height (bug 2070683).
 pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == image-refframe-fractional-raster-1.html?100.6,0 image-fractional-raster-1-ref.html?101,201,200
 
-# The same for a fractional scroll offset, which shifts the phase by a different
-# route: the scroll offset is normalized out of the item in app units and
-# re-applied by WebRender rounded to a whole device pixel, so the image snaps a
-# row above where the unscrolled arithmetic puts it and its raster is again a
-# row taller than the snapped rect. That is where WebRender snaps to, so the
-# pairing only holds on the WebRender path.
-skip-if(useDrawSnapshot) pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == image-scrolled-fractional-raster-1.html?300.5,0.5 image-fractional-raster-1-ref.html?300,201,200
+# A fractional scroll offset must not change the raster size: the scroll offset
+# is normalized out of the item in app units and re-applied by WebRender rounded
+# to a whole device pixel, so the image's rect is snapped at its unscrolled
+# position, and the raster size has to be picked there too. Picked at the
+# scrolled position it would come out a row taller than the snapped rect at
+# this phase and the right size at others, so the image would change shape on
+# every other repaint during a scroll (bug 2080185). That is where WebRender
+# snaps to, so the pairing only holds on the WebRender path.
+skip-if(useDrawSnapshot) pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == image-scrolled-fractional-raster-1.html?300.5,0.5 image-fractional-raster-1-ref.html?300,200,200
 == unknown-protocol.html unknown-protocol-ref.html

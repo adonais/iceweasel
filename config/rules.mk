@@ -41,8 +41,6 @@ EXEC			= exec
 # Testing frameworks support
 ################################################################################
 
-testxpcobjdir = $(DEPTH)/_tests/xpcshell
-
 ifdef ENABLE_TESTS
 ifdef CPP_UNIT_TESTS
 ifdef COMPILE_ENVIRONMENT
@@ -58,16 +56,6 @@ CPP_UNIT_TESTS_DEST = $(DIST)/cppunittests
 CPP_UNIT_TESTS_TARGET = target
 INSTALL_TARGETS += CPP_UNIT_TESTS
 endif
-
-run-cppunittests::
-	@$(PYTHON3) $(MOZILLA_DIR)/testing/runcppunittests.py --xre-path=$(DIST)/bin --symbols-path=$(DIST)/crashreporter-symbols $(CPP_UNIT_TESTS)
-
-cppunittests-remote:
-	$(PYTHON3) -u $(MOZILLA_DIR)/testing/remotecppunittests.py \
-		--xre-path=$(DEPTH)/dist/bin \
-		--localLib=$(DEPTH)/dist/$(MOZ_APP_NAME) \
-		--deviceIP=${TEST_DEVICE} \
-		$(CPP_UNIT_TESTS) $(EXTRA_TEST_ARGS); \
 
 endif # COMPILE_ENVIRONMENT
 endif # CPP_UNIT_TESTS
@@ -180,7 +168,6 @@ CMOBJS = $(notdir $(CMSRCS:.m=.$(OBJ_SUFFIX)))
 CMMOBJS = $(notdir $(CMMSRCS:.mm=.$(OBJ_SUFFIX)))
 # ASFILES can have different extensions (.s, .asm)
 ASOBJS = $(notdir $(addsuffix .$(OBJ_SUFFIX),$(basename $(ASFILES))))
-RS_STATICLIB_CRATE_OBJ = $(addprefix lib,$(notdir $(RS_STATICLIB_CRATE_SRC:.rs=.$(LIB_SUFFIX))))
 ifndef OBJS
 _OBJS = $(COBJS) $(SOBJS) $(CPPOBJS) $(CMOBJS) $(CMMOBJS) $(ASOBJS) $(CWASMOBJS) $(CPPWASMOBJS)
 OBJS = $(strip $(_OBJS))
@@ -203,15 +190,6 @@ SIMPLE_PROGRAMS :=
 HOST_SHARED_LIBRARY :=
 HOST_PROGRAM :=
 HOST_SIMPLE_PROGRAMS :=
-endif
-
-ifdef MACH
-ifndef NO_BUILDSTATUS_MESSAGES
-define BUILDSTATUS
-@echo 'BUILDSTATUS@$(relativesrcdir) $1'
-
-endef
-endif
 endif
 
 define SUBMAKE # $(call SUBMAKE,target,directory,static)
@@ -265,14 +243,6 @@ ifneq (,$(SHARED_LIBRARY))
 _LOADER_PATH := @rpath
 EXTRA_DSO_LDOPTS	+= -dynamiclib -install_name $(_LOADER_PATH)/$(@F) -compatibility_version 1 -current_version 1
 endif
-endif
-
-#
-# GNU doesn't have path length limitation
-#
-
-ifeq ($(OS_ARCH),GNU)
-OS_CPPFLAGS += -DPATH_MAX=1024 -DMAXPATHLEN=1024
 endif
 
 #
@@ -516,7 +486,7 @@ $(SHARED_LIBRARY): $(OBJS) $(call resfile,$(SHARED_LIBRARY)) $(STATIC_LIBS) $(GL
 	$(REPORT_BUILD)
 	$(call BUILDSTATUS,START_SharedLib $@)
 	$(RM) $@
-	$(MKSHLIB) $(if $(filter clang-cl_WINNT,$(CC_TYPE)_$(OS_ARCH)),-IMPLIB:$(basename $(@F)).lib )$($(notdir $@)_OBJS) $(filter %.res,$^) $(RELRHACK_LDFLAGS) $(LDFLAGS) $(STATIC_LIBS) $(SHARED_LIBS) $(EXTRA_DSO_LDOPTS) $(MOZ_GLUE_LDFLAGS) $(OS_LIBS)
+	$(MKSHLIB) $(if $(filter clang-cl_WINNT,$(CC_TYPE)_$(OS_ARCH)),-IMPLIB:$(basename $(@F)).lib )$($(notdir $@)_OBJS) $(filter %.res,$^) $(RELRHACK_LDFLAGS) $(LDFLAGS) $(STATIC_LIBS) $(SHARED_LIBS) $(EXTRA_DSO_LDOPTS) $(OS_LIBS)
 	$(call py_action,check_binary,$@)
 
 ifeq (clang-cl_WINNT,$(CC_TYPE)_$(OS_ARCH))
@@ -538,12 +508,6 @@ endef
 $(foreach f,$(CSRCS) $(SSRCS) $(CPPSRCS) $(CMSRCS) $(CMMSRCS) $(ASFILES),$(eval $(call src_objdep,$(f),$(OBJ_SUFFIX))))
 $(foreach f,$(HOST_CSRCS) $(HOST_CPPSRCS),$(eval $(call src_objdep,$(f),$(OBJ_SUFFIX),host_)))
 $(foreach f,$(WASM_CSRCS) $(WASM_CPPSRCS),$(eval $(call src_objdep,$(f),wasm)))
-
-# The Rust compiler only outputs library objects, and so we need different
-# mangling to generate dependency rules for it.
-mk_global_crate_libname = $(basename lib$(notdir $1)).$(LIB_SUFFIX)
-crate_src_libdep = $(call mk_global_crate_libname,$1): $1 $$(call mkdir_deps,$$(MDDEPDIR))
-$(foreach f,$(RS_STATICLIB_CRATE_SRC),$(eval $(call crate_src_libdep,$(f))))
 
 $(OBJS) $(HOST_OBJS) $(PROGOBJS) $(HOST_PROGOBJS): $(GLOBAL_DEPS)
 

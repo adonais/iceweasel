@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
 
 #include <cstdint>
+#include <tuple>
 
 #include "rtc_base/buffer.h"
 #include "test/gmock.h"
@@ -18,7 +19,6 @@
 #include "test/rtcp_packet_parser.h"
 
 using ::testing::ElementsAreArray;
-using ::testing::make_tuple;
 using webrtc::rtcp::RapidResyncRequest;
 
 namespace webrtc {
@@ -46,7 +46,7 @@ TEST(RtcpPacketRapidResyncRequestTest, Create) {
 
   Buffer packet = rrr.Build();
 
-  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
+  EXPECT_THAT(std::make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 

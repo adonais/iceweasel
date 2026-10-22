@@ -19,8 +19,8 @@ The function has these parameter:
 
 shm
 
-: The handle returned from {ref}`PR_OpenSharedMemory`.
+: The handle returned from {doc}`pr_opensharedmemory`.
 
 ### Returns
 
-{ref}`PRStatus`.
+{doc}`prstatus`.

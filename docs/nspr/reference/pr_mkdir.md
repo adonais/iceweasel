@@ -45,15 +45,15 @@ Possible values include the following:
 
 - If successful, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. The actual reason can be retrieved
-  via {ref}`PR_GetError`.
+  via {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_MkDir` creates a new directory with the pathname `name`. All the
+{doc}`pr_mkdir` creates a new directory with the pathname `name`. All the
 path components up to but not including the leaf component must already
 exist. For example, if the pathname of the directory to be created is
 `a/b/c/d`, the directory `a/b/c` must already exist.
 
 ## See Also
 
-{ref}`PR_RmDir`
+{doc}`pr_rmdir`

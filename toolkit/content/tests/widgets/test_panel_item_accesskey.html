@@ -22,6 +22,23 @@
         <panel-item accesskey="S">Second item</panel-item>
         <panel-item>Third item</panel-item>
       </panel-list>
+      <panel-list id="shared">
+        <panel-item accesskey="b" intended-duplicate-accesskey="" hidden
+          >Hidden</panel-item
+        >
+        <panel-item accesskey="b" intended-duplicate-accesskey="" disabled
+          >Disabled</panel-item
+        >
+        <panel-item accesskey="b" intended-duplicate-accesskey=""
+          >Bing</panel-item
+        >
+        <panel-item accesskey="o">Other</panel-item>
+        <panel-item accesskey="B" intended-duplicate-accesskey=""
+          >Bookmarks</panel-item
+        >
+        <panel-item accesskey="h">History</panel-item>
+        <panel-item accesskey='"'>Quote</panel-item>
+      </panel-list>
     </div>
 
     <script class="testbody" type="application/javascript">
@@ -113,6 +130,69 @@
 
         is(secondClickCount, 1, "The other listener wasn't fired");
         is(thirdClickCount, 1, "The accesskey worked unmodified");
+      });
+
+      add_task(async function testSharedAccessKey() {
+        let panelList = document.getElementById("shared");
+        let [hiddenItem, disabledItem, bing, other, bookmarks, history, quote] =
+          panelList.children;
+        let clicks = [];
+        for (let item of panelList.children) {
+          item.addEventListener("click", () => clicks.push(item));
+        }
+        let activeItem = () => document.activeElement;
+
+        let panelShown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show();
+        await panelShown;
+        history.focus();
+
+        synthesizeKey("b", {});
+        is(activeItem(), bing, "The key wraps around to the first match");
+        synthesizeKey("b", {});
+        is(activeItem(), bookmarks, "The key moves to the next match");
+        synthesizeKey("b", {});
+        is(activeItem(), bing, "The key wraps around again");
+        ok(panelList.open, "The panel stays open");
+        isDeeply(clicks, [], "No item was activated");
+        ok(
+          !hiddenItem.matches(":focus") && !disabledItem.matches(":focus"),
+          "Hidden and disabled items are skipped"
+        );
+
+        synthesizeKey("KEY_ArrowDown", {});
+        is(activeItem(), other, "Arrow keys resume from the selected match");
+
+        synthesizeKey("b", {});
+        is(activeItem(), bookmarks, "The key moves to the match after focus");
+        let panelHidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey("KEY_Enter", {});
+        await panelHidden;
+        isDeeply(clicks, [bookmarks], "Enter activated the match");
+
+        info("A key that one visible item has activates it right away");
+        clicks = [];
+        bookmarks.hidden = true;
+        panelShown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show();
+        await panelShown;
+        history.focus();
+        panelHidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey("b", {});
+        await panelHidden;
+        isDeeply(clicks, [bing], "The visible item was activated");
+        bookmarks.hidden = false;
+
+        info("A punctuation accesskey activates its item");
+        clicks = [];
+        panelShown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show();
+        await panelShown;
+        history.focus();
+        panelHidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey('"', {});
+        await panelHidden;
+        isDeeply(clicks, [quote], "The item with the quote key was activated");
       });
     </script>
   </body>

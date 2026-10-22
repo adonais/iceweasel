@@ -1266,8 +1266,6 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-
   AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(aChannel);
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();

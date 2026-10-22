@@ -28,6 +28,8 @@ support-files = [
 
 ["browser_bouncetracking_iframe_popup.js"]
 
+["browser_bouncetracking_initiator_credit.js"]
+
 ["browser_bouncetracking_ipv6.js"]
 
 ["browser_bouncetracking_mode_prefs.js"]

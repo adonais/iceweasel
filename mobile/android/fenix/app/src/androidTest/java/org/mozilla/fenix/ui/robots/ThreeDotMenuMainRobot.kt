@@ -35,6 +35,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import mozilla.components.browser.menu.R as menuR
+import mozilla.components.compose.menu.R as MozacMenuR
 import org.hamcrest.Matchers.allOf
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
@@ -400,7 +401,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             .onNodeWithText(getStringResource(R.string.browser_menu_default_banner_subtitle_2))
             .assertIsDisplayed()
         composeTestRule
-            .onNodeWithContentDescription(getStringResource(R.string.browser_menu_default_banner_dismiss_promotion))
+            .onNodeWithContentDescription(getStringResource(MozacMenuR.string.mozac_menu_banner_dismiss_description))
             .assertIsDisplayed()
     }
 

@@ -278,10 +278,6 @@ addAccessibleTask(
     ]);
     // set contentEditable on the body
     await invokeContentTask(browser, [], () => {
-      // XXX (bug 2074310) we have to add another property here
-      // to force the body to get an acc, since `contentEditable`
-      // alone doesn't work :(
-      content.document.body.setAttribute("aria-label", "body");
       content.document.body.contentEditable = "true";
     });
     await evs;
@@ -373,4 +369,28 @@ addAccessibleTask(
     chrome: true,
     topLevel: true,
   }
+);
+
+/**
+ * Test that a node without an Accessible gets an Accessible if it becomes
+ * contentEditable. This is similar to testBodyBecomesEditable, but with an
+ * arbitrary node instead of the body.
+ */
+addAccessibleTask(
+  `<span id="editable"></span>`,
+  async function testEditableBecomesAccessible(browser, docAcc) {
+    // initially, the span shouldn't have an Accessible.
+    let editable = findAccessibleChildByID(docAcc, "editable");
+    ok(!editable, "editable does not have an Accessible");
+
+    const shown = waitForEvent(EVENT_SHOW, "editable");
+    info("Setting contentEditable on editable");
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("editable").contentEditable = "true";
+    });
+    editable = (await shown).accessible;
+    ok(editable, "editable has an Accessible");
+    testStates(editable, 0, EXT_STATE_EDITABLE);
+  },
+  { chrome: true, topLevel: true }
 );

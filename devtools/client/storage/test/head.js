@@ -1025,6 +1025,9 @@ function setPermission(url, permission) {
   Cc["@mozilla.org/permissionmanager;1"]
     .getService(nsIPermissionManager)
     .addFromPrincipal(principal, permission, nsIPermissionManager.ALLOW_ACTION);
+  registerCleanupFunction(() =>
+    Services.perms.removeFromPrincipal(principal, permission)
+  );
 }
 
 function toggleSidebar() {

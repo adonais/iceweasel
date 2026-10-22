@@ -1473,7 +1473,7 @@ export const AIWindow = {
 
     lazy.CustomizableUI.createWidget({
       id: "ai-window-toggle",
-      l10nId: "toolbar-switcher-customizable-label",
+      l10nId: "toolbar-switcher-customizable-label-v2",
       type: "view",
       viewId: "ai-window-toggle-view",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,

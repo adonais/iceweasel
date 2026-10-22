@@ -239,6 +239,7 @@ enum class OpKind {
   ResumeThrowRef,
   Switch,
   GuardSuspending,
+  ExternToCont,
 #  endif
 };
 
@@ -873,6 +874,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool readSwitch(uint32_t* contTypeIndex, uint32_t* tagIndex,
                                 ValueVector* args, Value* cont);
   [[nodiscard]] bool readGuardSuspending(uint32_t* tagIndex);
+  [[nodiscard]] bool readExternToCont(uint32_t* contTypeIndex, Value* ref);
 #endif  // ENABLE_WASM_JSPI
 
   // At a location where readOp is allowed, peek at the next opcode
@@ -4591,6 +4593,19 @@ inline bool OpIter<Policy>::readGuardSuspending(uint32_t* tagIndex) {
   MOZ_ASSERT(Classify(op_) == OpKind::GuardSuspending);
   MOZ_ASSERT(codeMeta_.isBuiltinModule());
   return readTagIndex(tagIndex);
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readExternToCont(uint32_t* contTypeIndex,
+                                             Value* ref) {
+  MOZ_ASSERT(Classify(op_) == OpKind::ExternToCont);
+  MOZ_ASSERT(codeMeta_.isBuiltinModule());
+  if (!readContTypeIndex(contTypeIndex) ||
+      !popWithType(RefType::extern_(), ref)) {
+    return false;
+  }
+  const TypeDef& contTypeDef = codeMeta_.types->type(*contTypeIndex);
+  return push(RefType::fromTypeDef(&contTypeDef, true));
 }
 
 #endif  // ENABLE_WASM_JSPI

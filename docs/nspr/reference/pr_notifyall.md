@@ -16,7 +16,7 @@ The function has the following parameter:
 
 `mon`
 
-: A reference to an existing structure of type {ref}`PRMonitor`. The
+: A reference to an existing structure of type {doc}`prmonitor`. The
   monitor object referenced must be one for which the calling thread
   currently holds the lock.
 
@@ -29,10 +29,10 @@ The function returns one of the following values:
 
 ## Description
 
-A call to {ref}`PR_NotifyAll` causes all of the threads waiting on the
+A call to {doc}`pr_notifyall` causes all of the threads waiting on the
 monitor to be scheduled to be promoted to a ready state. If no threads
 are waiting, the operation is no-op.
 
-{ref}`PR_NotifyAll` should be used with some care. The expense of
+{doc}`pr_notifyall` should be used with some care. The expense of
 scheduling multiple threads increases dramatically as the number of
 threads increases.

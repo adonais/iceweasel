@@ -86,6 +86,9 @@
       <meta-data
         android:name="io.sentry.feedback.use-shake-gesture"
         android:value="false" />
+      <meta-data
+        android:name="io.sentry.memory-limiter.enable"
+        android:value="false" />
 
       <!-- Disable various data enrichment sources by default and have app opt in
            as they are needed. -->

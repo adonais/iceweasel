@@ -5,3 +5,5 @@
 GeneratedFile(
     "buildconfig.rs", script="generate_buildconfig.py", entry_point="generate"
 )
+
+PYTHON_UNITTEST_MANIFESTS += ["python.toml"]

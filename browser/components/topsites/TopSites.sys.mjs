@@ -368,7 +368,6 @@ class _TopSites {
         isDefault: true,
         url: siteData.url,
         hostname,
-        sendAttributionRequest: !!siteData.send_attribution_request,
       };
       if (siteData.url_urlbar_override) {
         link.url_urlbar = siteData.url_urlbar_override;

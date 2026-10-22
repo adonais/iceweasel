@@ -242,6 +242,12 @@ static void exn_finalize(JS::GCContext* gcx, JSObject* obj) {
   }
 }
 
+// The fileName and lineNumber arguments are non-standard. Only use these
+// arguments if converting them can't throw or have side-effects.
+static bool IsUsableLegacyErrorArg(const Value& v) {
+  return v.isString() || v.isNumber() || v.isBoolean() || v.isNullOrUndefined();
+}
+
 static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
                                       unsigned messageArg, JSExnType exnType,
                                       HandleObject proto) {
@@ -283,7 +289,8 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
 
   RootedString fileName(cx);
   uint32_t sourceId = 0;
-  if (!hasOptions && args.length() > messageArg + 1) {
+  if (!hasOptions && args.length() > messageArg + 1 &&
+      IsUsableLegacyErrorArg(args[messageArg + 1])) {
     fileName = ToString<CanGC>(cx, args[messageArg + 1]);
   } else {
     fileName = cx->runtime()->emptyString;
@@ -303,7 +310,8 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
 
   uint32_t lineNumber;
   JS::ColumnNumberOneOrigin columnNumber;
-  if (!hasOptions && args.length() > messageArg + 2) {
+  if (!hasOptions && args.length() > messageArg + 2 &&
+      IsUsableLegacyErrorArg(args[messageArg + 2])) {
     if (!ToUint32(cx, args[messageArg + 2], &lineNumber)) {
       return nullptr;
     }

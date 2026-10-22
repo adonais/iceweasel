@@ -21,11 +21,6 @@
 #  include "mozilla/ipc/UtilityProcessImpl.h"
 #endif  // defined(XP_WIN) && defined(MOZ_SANDBOX)
 
-#ifdef MOZ_WIDGET_ANDROID
-#  include "mozilla/StaticPrefs_media.h"
-#  include "AndroidDecoderModule.h"
-#endif
-
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/RemoteDecodeUtils.h"
 
@@ -119,12 +114,6 @@ void UtilityMediaServiceParent::Start(
 
   DebugOnly<bool> ok = std::move(aEndpoint).Bind(this);
   MOZ_ASSERT(ok);
-
-#ifdef MOZ_WIDGET_ANDROID
-  if (StaticPrefs::media_utility_android_media_codec_enabled()) {
-    AndroidDecoderModule::SetSupportedMimeTypes();
-  }
-#endif
 
   auto supported = media::MCSInfo::GetSupportFromFactory();
   (void)SendUpdateMediaCodecsSupported(GetRemoteMediaInFromKind(mKind),

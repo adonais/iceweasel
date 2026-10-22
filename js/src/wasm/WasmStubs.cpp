@@ -770,6 +770,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   // Call into the real function. Note that, due to the throw stub, fp, instance
   // and pinned registers may be clobbered.
   masm.assertStackAlignment(WasmStackAlignment);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
 
@@ -792,6 +793,10 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   WasmPop(masm, argv);
 
   WasmPop(masm, InstanceReg);
+
+  // Once we have the original InstanceReg, we can restore our FP environment
+  // for returning back to C++ code.
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   // Pop the stack pointer to its value right before dynamic alignment.
 #ifdef JS_CODEGEN_ARM64
@@ -910,6 +915,15 @@ static void GenerateBigIntInitialization(MacroAssembler& masm,
                       SymbolicAddress::AllocateBigInt);
   masm.storeCallPointerResult(scratch);
 
+  // AllocateBigInt goes through a builtin thunk, which upon return enters the
+  // wasm FP environment (it assumes it's always called by a wasm function). We
+  // should be in the system FP environment and so we need to reset it.
+  //
+  // The InstanceReg is live for the call above, and it is preserved by the
+  // builtin thunk.
+  MOZ_ASSERT(wasm::NeedsBuiltinThunk(SymbolicAddress::AllocateBigInt));
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
+
   masm.assertStackAlignment(ABIStackAlignment);
   masm.freeStack(frameSize);
 
@@ -951,14 +965,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   // frame.
 
   MOZ_ASSERT(masm.framePushed() == 0);
-
-  if (funcType.hasUnexposableArgOrRet()) {
-    GenerateJitEntryLoadInstance(masm);
-    CallSymbolicAddress(masm, !fe.hasEagerStubs(),
-                        SymbolicAddress::ReportV128JSCall);
-    GenerateJitEntryThrow(masm);
-    return FinishOffsets(masm, offsets);
-  }
+  MOZ_RELEASE_ASSERT(!funcType.hasUnexposableArgOrRet());
 
   // Avoid overlapping aligned stack arguments area with ExitFooterFrame.
   const unsigned AlignedExitFooterFrameSize =
@@ -1240,6 +1247,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   // Call into the real function.
   masm.assertStackAlignment(WasmStackAlignment);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
 
@@ -1251,6 +1259,10 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   // if the callee performed a tail call.
   masm.moveToStackPtr(FramePointer);
   masm.setFramePushed(0);
+
+  // wasm preserves InstanceReg across the call, so it is safe to use here to
+  // restore the FP environment before returning to the JS JIT.
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   // Store the return value in the JSReturnOperand.
   Label exception;
@@ -1354,6 +1366,17 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     CallSymbolicAddress(masm, !fe.hasEagerStubs(),
                         SymbolicAddress::CoerceInPlace_JitEntry);
     masm.assertStackAlignment(ABIStackAlignment);
+
+    // CoerceInPlace_JitEntry goes through a builtin thunk, which upon return
+    // enters the wasm FP environment (it assumes it's always called by a wasm
+    // function). We should be in the system FP environment and so we need to
+    // reset it.
+    //
+    // The InstanceReg is live for the call above, and it is preserved by the
+    // builtin thunk.
+    MOZ_ASSERT(
+        wasm::NeedsBuiltinThunk(SymbolicAddress::CoerceInPlace_JitEntry));
+    GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
     // No widening is required, as the return value is used as a bool.
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
@@ -1542,6 +1565,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   masm.assertStackAlignment(WasmStackAlignment);
   MoveSPForJitABI(masm);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   masm.callJit(ImmPtr(callee));
 #ifdef JS_CODEGEN_ARM64
   // WASM does not always keep PSP in sync with SP.  So reinitialize it as it
@@ -1550,6 +1574,10 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 #endif
   masm.freeStackTo(fakeFramePushed);
   masm.assertStackAlignment(WasmStackAlignment);
+
+  // The call to wasm above preserves InstanceReg, so it is safe to use here
+  // to restore the FP environment before returning to the JS JIT.
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   // Store the return value in the appropriate place.
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
@@ -1752,7 +1780,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
                                         unsigned funcImportIndex,
                                         const FuncType& funcType,
                                         unsigned argOffset, Register scratch,
-                                        Register scratch2, Label* throwLabel) {
+                                        Register scratch2) {
   MOZ_ASSERT(scratch != scratch2);
 
   // This is `sizeof(Frame)` because the wasm ABIArgIter handles adding the
@@ -2250,7 +2278,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
 
   // 4. Fill the arguments.
   FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex, funcType,
-                              argOffset, scratch, scratch2, throwLabel);
+                              argOffset, scratch, scratch2);
 
   // 5. Preserve the instance register. We store it at a fixed negative offset
   // to the frame pointer so that we can recover it after the call without
@@ -2648,9 +2676,10 @@ static const LiveRegisterSet RegsToPreserve(
                          (uint32_t(1) << Registers::fp) |
                          (uint32_t(1) << Registers::sp) |
                          (uint32_t(1) << Registers::zero))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
 #  ifdef ENABLE_JIT_SIMD
-#    error "high lanes of SIMD registers need to be saved too."
+    FloatRegisterSet(FloatRegisters::AllSimd128Mask));
+#  else
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
 #  endif
 #elif defined(JS_CODEGEN_RISCV64)
 static const LiveRegisterSet RegsToPreserve(
@@ -2741,6 +2770,10 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
       Address(FramePointer, wasm::FrameWithInstances::calleeInstanceOffset()),
       InstanceReg);
 
+  // We are leaving wasm code to run the trap handler, which must always see
+  // an IEEE FP environment.
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
+
   // Grab the stack pointer before we do any stack switches or dynamic
   // alignment. Store it in a register that won't be used in the stack switch
   // operation.
@@ -2801,12 +2834,20 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   masm.freeStack(sizeof(void*) * 2);
 #endif
 
+  // We are about to resume wasm code. This must happen before restoring the
+  // registers below, because the interrupted wasm code need not have had the
+  // instance in InstanceReg. InstanceReg still holds the instance we loaded
+  // above because it is non-volatile in the system ABI.
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
+
   // Otherwise, the return value is the TrapData::resumePC we must jump to.
   // We must restore register state before jumping, which will clobber
   // ReturnReg, so store ReturnReg in the above-reserved stack slot which we
   // use to jump to via ret.
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
   masm.PopRegsInMask(RegsToPreserve);
+
 #ifdef JS_CODEGEN_ARM64
   WasmPop(masm, lr);
   masm.abiret();
@@ -2989,12 +3030,31 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
     }
   }
 
-  wasm::CallSiteDesc callSite(CallSiteKind::FuncRef);
-  wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
-  CodeOffset fastCallOffset;
-  CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
-                   nullptr);
+  // InstanceReg, the pinned registers and the realm already belong to the
+  // funcref's instance (see ContStack::prepare), so call it directly. Nothing
+  // below uses the instance after the call, so the call is marked slow without
+  // restoring it: a cross-instance return_call from the callee then collapses
+  // its frame without a hidden return_call trampoline frame.
+#  ifdef DEBUG
+  Label sameInstance;
+  masm.branchPtr(
+      Assembler::Equal,
+      Address(WasmCallRefReg, FunctionExtended::offsetOfExtendedSlot(
+                                  FunctionExtended::WASM_INSTANCE_SLOT)),
+      InstanceReg, &sameInstance);
+  masm.breakpoint();
+  masm.bind(&sameInstance);
+#  endif
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     WasmCallerInstanceOffsetBeforeCall));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     WasmCalleeInstanceOffsetBeforeCall));
+  masm.loadPtr(Address(WasmCallRefReg,
+                       FunctionExtended::offsetOfExtendedSlot(
+                           FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT)),
+               WasmCallRefCallScratchReg0);
+  masm.wasmMarkedSlowCall(wasm::CallSiteDesc(CallSiteKind::FuncRef),
+                          WasmCallRefCallScratchReg0);
 
   // The current stack pointer might not match the one before the call if the
   // callee performed a tail call, so recover it from FP before reading the
@@ -3140,6 +3200,11 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
   masm.loadStackPtr(Address(rfe, ResumeFromException::offsetOfStackPointer()));
   MoveSPForJitABI(masm);
   wasm::ClobberWasmRegsForLongJmp(masm, scratch1);
+
+  // We are about to re-enter wasm code, disable denormals if wasm requires
+  // that.
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
+
   masm.jump(scratch1);
 }
 
@@ -3156,6 +3221,10 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   offsets->begin = masm.currentOffset();
 
+  // Every jump to this stub is expected to happen in the system FP
+  // environment.
+  AssertDenormalsEnabled(masm);
+
   // Conservatively, the stack pointer can be unaligned and we must align it
   // dynamically.
   masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
@@ -3165,6 +3234,16 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   // Allocate space for exception or regular resume information.
   masm.reserveStack(sizeof(jit::ResumeFromException));
+#ifdef JS_HW_SHADOW_STACK
+  // Read the shadow stack pointer on entry to HandleThrow so
+  // that the exception handling logic knows the shadow stack entry
+  // corresponding to where JIT/WASM frame iteration begins.
+  masm.moveShadowStackPtrTo(scratch1);
+  masm.storePtr(
+      scratch1,
+      Address(masm.getStackPointer(),
+              jit::ResumeFromException::offsetOfShadowStackPointer()));
+#endif
   masm.moveStackPtrTo(scratch1);
 
   MIRTypeVector handleThrowTypes;

@@ -339,6 +339,14 @@ class ImageAnalzer:
                 + 60 * 1000 * int(time.group(1))
             )
             total_time_seconds += time_seconds
+            # Fenix process names may be tagged with "sandboxed_" (see bug
+            # 2079728) and "_disable_art_image_" (see bug 2005825) but that
+            # should be ignored for the process names used here.
+            if "org.mozilla.fenix" in process_name:
+                process_name = process_name.replace(":sandboxed_", ":").replace(
+                    "_disable_art_image_", ""
+                )
+
             if "org.mozilla.fenix:tab" in process_name:
                 process_name = "org.mozilla.fenix:tab"
             if (
@@ -346,12 +354,6 @@ class ImageAnalzer:
                 and "sandboxed_process" in process_name
             ):
                 process_name = "com.android.chrome:sandboxed_process"
-
-            # Fenix process names may be tagged with "_disable_art_image_" (see
-            # bug 2005825) but that should be ignored for the process names used
-            # here.
-            if "org.mozilla.fenix" in process_name:
-                process_name = process_name.replace("_disable_art_image_", "")
 
             if process_name not in self.cpu_data.keys():
                 self.cpu_data[process_name] = {}

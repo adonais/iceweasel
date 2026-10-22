@@ -73,6 +73,7 @@ UNIFIED_SOURCES += [
     "TestThreadPoolListener.cpp",
     "TestThreadUtils.cpp",
     "TestThrottledEventQueue.cpp",
+    "TestTimerThreadMonitor.cpp",
     "TestTimeStamp.cpp",
     "TestTokenizer.cpp",
     "TestUTF.cpp",
@@ -178,6 +179,7 @@ SOURCES += [
 
 LOCAL_INCLUDES += [
     "../../base",
+    "../../threads",
     "/toolkit/components/telemetry/tests/gtest",
     "/xpcom/components",
 ]

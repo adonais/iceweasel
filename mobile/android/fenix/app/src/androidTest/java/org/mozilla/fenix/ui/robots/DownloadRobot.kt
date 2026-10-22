@@ -63,7 +63,7 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
             TAG,
             "verifyDownloadPrompt: Waiting for $waitingTime ms for the \"Download file?\" download prompt to exist",
         )
-        itemWithResId("org.mozilla.fenix.debug:id/parentPanel").waitForExists(waitingTime)
+        itemWithResId("$packageName:id/parentPanel").waitForExists(waitingTime)
         Log.i(
             TAG,
             "verifyDownloadPrompt: Waited for $waitingTime ms for the \"Download file?\" download prompt to exist",

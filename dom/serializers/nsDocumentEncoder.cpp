@@ -1082,12 +1082,12 @@ nsDocumentEncoder::RangeSerializer::GetStartAndEndContentForRecursionLevel(
   const auto& inclusiveAncestorsOfEnd =
       mRangeBoundariesInclusiveAncestorsAndOffsets.mInclusiveAncestorsOfEnd;
   int32_t start = mStartRootIndex - aDepth;
-  if (start >= 0 && (uint32_t)start <= inclusiveAncestorsOfStart.Length()) {
+  if (start >= 0 && (uint32_t)start < inclusiveAncestorsOfStart.Length()) {
     result.mStart = inclusiveAncestorsOfStart[start];
   }
 
   int32_t end = mEndRootIndex - aDepth;
-  if (end >= 0 && (uint32_t)end <= inclusiveAncestorsOfEnd.Length()) {
+  if (end >= 0 && (uint32_t)end < inclusiveAncestorsOfEnd.Length()) {
     result.mEnd = inclusiveAncestorsOfEnd[end];
   }
 

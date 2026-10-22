@@ -26,6 +26,7 @@ MOZ_SRC_FILES += [
     "UrlbarPrefs.sys.mjs",
     "UrlbarProviderAboutPages.sys.mjs",
     "UrlbarProviderActionsSearchMode.sys.mjs",
+    "UrlbarProviderAddonsShortcutMoved.sys.mjs",
     "UrlbarProviderAiChat.sys.mjs",
     "UrlbarProviderAliasEngines.sys.mjs",
     "UrlbarProviderAutofill.sys.mjs",

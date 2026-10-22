@@ -121,6 +121,10 @@ unit tests, source-code analysis, or measurement work. While source-test tasks r
 a source checkout, it is still possible for them to depend on a build artifact, though
 often they do not.
 
+## source-test-appservices
+
+Copies of source-test tasks that build application-services in tree.
+
 ## code-review
 
 Publish issues found by source-test tasks on Phabricator.
@@ -853,13 +857,25 @@ used for verifying third party Rust code is consistent.
 
 Build android-components.
 
+## build-components-appservices
+
+Copies of build-components tasks that build application-services in tree.
+
 ## build-bundle
 
 Build Focus, Klar, and Fenix android app bundles.
 
+## build-bundle-appservices
+
+Copies of build-bundle tasks that build application-services in tree.
+
 ## build-apk
 
 Build Focus, Klar, and Fenix apks.
+
+## build-apk-appservices
+
+Copies of build-apk tasks that build application-services in tree.
 
 ## build-samples-browser
 
@@ -877,17 +893,33 @@ Sign Focus, Klar, and Fenix android app bundles.
 
 Sign Focus, Klar, and Fenix apks.
 
+## signing-apk-appservices
+
+Sign the apks built by build-apk-appservices.
+
 ## test-components
 
 Test android-components
+
+## test-components-appservices
+
+Copies of test-components tasks that build application-services in tree.
 
 ## test-apk
 
 Test Focus, Klar, and Fenix apks.
 
+## test-apk-appservices
+
+Copies of test-apk tasks that build application-services in tree.
+
 ## ui-test-apk
 
 User interface tests for Focus, Klar, and Fenix apks.
+
+## ui-test-apk-appservices
+
+User interface tests for the apks signed by signing-apk-appservices.
 
 ## android-browsertime
 
@@ -912,8 +944,8 @@ A beetmover task for android APKs and AABs.
 ## push-android
 
 Push Focus, Klar and Fenix to the Android app stores: AABs to Google Play,
-Focus and Fenix APKs to the Samsung Galaxy Store, and Fenix APKs to the Huawei
-AppGallery.
+Focus and Fenix APKs to the Samsung Galaxy Store, Fenix APKs to the Huawei
+AppGallery, and the Fenix universal APK to the vivo App Store.
 
 ## android-l10n
 

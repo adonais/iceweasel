@@ -23,6 +23,8 @@
     <item quantity="one">Ба пеш %1$d сония</item>
     <item quantity="other">Ба пеш %1$d сония</item>
   </plurals>
+  <!-- Error text shown on the Listen to Page media player when the text-to-speech engine fails to convert the article into spoken audio -->
+  <string name="mozac_feature_listentopage_error_audio_not_available">Аудио дастрас нест</string>
   <!-- Listen to Page media player: content description for the button that closes the player. -->
   <string name="mozac_feature_listentopage_close">Пӯшидан</string>
   <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->

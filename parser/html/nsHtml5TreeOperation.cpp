@@ -716,7 +716,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
   // 7. Let definition be the result of looking up a custom element definition
   // given registry, namespace, localName, and is.
   const bool isCustomElement = aCreator == NS_NewCustomElement || isAtom;
-  CustomElementDefinition* customElementDefinition = nullptr;
+  RefPtr<CustomElementDefinition> customElementDefinition;
 
   /// customElementDefinition is only used if willExecuteScript is true,
   /// which will only be the case if parser is not in fragment parsing.

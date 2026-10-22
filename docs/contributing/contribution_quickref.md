@@ -6,7 +6,7 @@ Some parts of this process, including cloning and compiling, can take a long tim
 If at any point you get stuck, please don't hesitate to ask at [https://chat.mozilla.org](https://chat.mozilla.org)
 in the [#introduction](https://chat.mozilla.org/#/room/#introduction:mozilla.org) channel.
 
-Don’t hesitate to look at the {ref}`Getting Set Up To Work On The Firefox Codebase<Getting Set Up To Work On The Firefox Codebase>` for a more detailed tutorial.
+Don’t hesitate to look at the {doc}`Getting Set Up To Work On The Firefox Codebase </setup/index>` for a more detailed tutorial.
 
 ## Before you start
 
@@ -24,17 +24,17 @@ Please obtain an API Token (Settings >> Conduit API Tokens)
 
 2. Download the [MozillaBuild Package.](https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe) Installation directory should be:
 
-   ```shell
-   $ c:\mozilla-build\
+   ```text
+   c:\mozilla-build\
    ```
 
-3. Before moving on to the next steps, make sure to fulfill the {ref}`Windows prerequisites <Building Firefox On Windows>`
+3. Before moving on to the next steps, make sure to fulfill the {doc}`Windows prerequisites </setup/windows_build>`
 
 :::{note}
 All the commands of this tutorial must be run in the shell provided with the MozillaBuild Package (start-shell.bat)
 :::
 
-{ref}`More information on building Firefox on Windows <Building Firefox On Windows>`
+{doc}`More information on building Firefox on Windows </setup/windows_build>`
 
 ## Bootstrap a copy of the Firefox source code
 
@@ -43,7 +43,7 @@ You can download the source code and have Firefox automatically download and ins
 Downloading can take from 40 minutes to two hours (depending on your connection) and the repository should be less than 5GB (~ 20GB after the build).
 
 The **default options are recommended**.
-If you're not planning to write C++ or Rust code, select {ref}`Artifact Mode <Understanding Artifact Builds>`
+If you're not planning to write C++ or Rust code, select {doc}`Artifact Mode <build/artifact_builds>`
 and follow the instructions at the end of the bootstrap for creating a mozconfig file.
 
 ### To Setup Firefox On Windows
@@ -57,7 +57,7 @@ wget https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/p
 python3 bootstrap.py
 ```
 
-More information on {ref}`building Firefox for Windows <Building Firefox On Windows>`.
+More information on {doc}`building Firefox for Windows </setup/windows_build>`.
 
 ### To Setup Firefox On macOS and Linux
 
@@ -67,7 +67,7 @@ curl -L https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/mai
 python3 bootstrap.py
 ```
 
-More information on {ref}`building Firefox for Linux <Building Firefox On Linux>` and {ref}`building Firefox for MacOS <Building Firefox On MacOS>`.
+More information on {doc}`building Firefox for Linux </setup/linux_build>` and {doc}`building Firefox for MacOS </setup/macos_build>`.
 
 ### To Setup Firefox for Android
 
@@ -77,7 +77,7 @@ curl -L https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/mai
 python3 bootstrap.py
 ```
 
-More information on {ref}`building Firefox for Android <Firefox for Android>`
+More information on {doc}`building Firefox for Android </mobile/android/index>`
 
 ## To set up your editor
 
@@ -91,11 +91,11 @@ Setting up your editor is an important part of the contributing process. Having
 linting and other features integrated, saves you time and will help with reducing
 build and reviews cycles.
 
-See our {ref}`editor page for more information about how to set up your favorite editor <Editor / IDE integration>`.
+See our {doc}`editor page for more information about how to set up your favorite editor <editor>`.
 
 ## More advanced git configuration
 
-See the {ref}`Git tips and tricks page <Git Tricks>` to use a personal fork, and for other useful git configurations.
+See the {doc}`Git tips and tricks page <git-tricks>` to use a personal fork, and for other useful git configurations.
 
 ## To build & run
 
@@ -117,9 +117,9 @@ The Firefox build system will download sccache automatically.
 
 :::{note}
 The default build is a compiled build with optimizations. Check out the
-{ref}`mozconfig file documentation <Configuring Build Options>`
+{doc}`mozconfig file documentation </setup/configuring_build_options>`
 to see other build options. If you don't plan to change C++ or Rust code,
-an {ref}`artifact build <Understanding Artifact Builds>` will be faster.
+an {doc}`artifact build <build/artifact_builds>` will be faster.
 :::
 
 To run it:
@@ -130,7 +130,7 @@ To run it:
 
 This command will open your locally built Firefox in a new window.
 
-{ref}`More information about building Firefox on Linux <Building Firefox On Linux>` / {ref}`More information about building Firefox on MacOS <Building Firefox On MacOS>`
+{doc}`More information about building Firefox on Linux </setup/linux_build>` / {doc}`More information about building Firefox on MacOS </setup/macos_build>`
 
 If you encounter build errors, please reference the more detailed "Building Firefox" on your specific operating system document and specifically the "Troubleshooting" section.
 
@@ -178,7 +178,7 @@ For example, here is an example of a good commit message:
 "Bug 123456 - Null-check presentation shell so we don't crash when a button removes itself
 during its own onclick handler. r=person"
 
-To {ref}`find a reviewer or a review group <Getting reviews>`, the easiest way is to run
+To {doc}`find a reviewer or a review group <reviews>`, the easiest way is to run
 `mach file-info reviewers` on the files you modified:
 
 ```shell
@@ -197,7 +197,7 @@ To visualize your patch in the repository, run:
 git show
 ```
 
-{ref}`More information on how to work with stack of patches <Working with stack of patches Quick Reference>`
+{doc}`More information on how to work with stack of patches <stack_quickref>`
 
 ## To make sure the change follows the coding style
 
@@ -210,7 +210,7 @@ To detect coding style violations, use mach lint:
 ./mach lint path/to/the/file/or/directory/you/changed --fix
 ```
 
-{ref}`More information <Code quality>`
+{doc}`More information </code-quality/index>`
 
 ## To test a change locally
 
@@ -221,7 +221,7 @@ always easy to parse the results.
 ./mach test dom/serviceworkers
 ```
 
-To run tests based on {ref}`GTest` (C/C++ based unit tests), run:
+To run tests based on {doc}`/gtest/index` (C/C++ based unit tests), run:
 
 ```shell
 ./mach gtest 'QuotaManager.*'
@@ -231,7 +231,7 @@ To run tests based on {ref}`GTest` (C/C++ based unit tests), run:
 
 Running all the tests for Firefox takes a very long time and requires multiple
 operating systems with various configurations. To build Firefox and run its
-tests on continuous integration servers (CI), multiple {ref}`options to select tasks <Selectors>`
+tests on continuous integration servers (CI), multiple {doc}`options to select tasks </tools/try/selectors/index>`
 are available.
 
 To automatically select the tasks that are most likely to be affected by your changes, run:
@@ -263,7 +263,7 @@ You can ask your reviewer to submit the patch for you if you don't have that
 level of access.
 :::
 
-{ref}`More information <Pushing to Try>`
+{doc}`More information </tools/try/index>`
 
 ## To submit a patch
 
@@ -345,7 +345,7 @@ git rebase -i
 
 The submission step is the same as for the initial patch.
 
-{ref}`More information on how to work with stack of patches <Working with stack of patches Quick Reference>`
+{doc}`More information on how to work with stack of patches <stack_quickref>`
 
 ## Retrieve new changes from the repository
 
@@ -370,7 +370,7 @@ channel.
 
 The landing procedure will automatically close the review and the bug.
 
-{ref}`More information <How to submit a patch>`
+{doc}`More information <how_to_submit_a_patch>`
 
 ## Contributing to GeckoView
 
@@ -379,9 +379,9 @@ GeckoView setup and contribution docs live in [geckoview.dev](https://geckoview.
 
 ## More documentation about contribution
 
-{ref}`How to Contribute Code to Firefox`
+{doc}`/setup/contributing_code`
 
-{ref}`Contributing to Mozilla projects`
+{doc}`contributing_to_mozilla`
 
 <https://mozilla-version-control-tools.readthedocs.io/en/latest/devguide/contributing.html>
 

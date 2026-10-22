@@ -5,9 +5,13 @@
 #ifndef jit_loong64_Assembler_loong64_h
 #define jit_loong64_Assembler_loong64_h
 
+#include <cstdint>
+#include <optional>
+#include <tuple>
 #include <utility>
 
 #include "jit/CompactBuffer.h"
+#include "jit/IonTypes.h"
 #include "jit/JitCode.h"
 #include "jit/loong64/Architecture-loong64.h"
 #include "jit/shared/Assembler-shared.h"
@@ -97,7 +101,10 @@ static constexpr Register64 ReturnReg64(ReturnReg);
 static constexpr FloatRegister ReturnFloat32Reg{FloatRegisters::f0,
                                                 FloatRegisters::Single};
 static constexpr FloatRegister ReturnDoubleReg = f0;
-static constexpr FloatRegister ReturnSimd128Reg = InvalidFloatReg;
+#if defined(ENABLE_JIT_SIMD)
+static constexpr FloatRegister ReturnSimd128Reg{FloatRegisters::f0,
+                                                FloatRegisters::Simd128};
+#endif
 
 // Scratch register used for runtime call patching.
 // See MacroAssembler::patchNopToCall and MacroAssembler::PatchWrite_NearCall.
@@ -109,7 +116,12 @@ static constexpr FloatRegister ScratchDoubleReg = f23;
 static constexpr FloatRegister ScratchFloat32Reg2{FloatRegisters::f22,
                                                   FloatRegisters::Single};
 static constexpr FloatRegister ScratchDoubleReg2 = f22;
-static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
+#if defined(ENABLE_JIT_SIMD)
+static constexpr FloatRegister ScratchSimd128Reg{FloatRegisters::f23,
+                                                 FloatRegisters::Simd128};
+static constexpr FloatRegister ScratchSimd128Reg2{FloatRegisters::f22,
+                                                  FloatRegisters::Simd128};
+#endif
 
 struct ScratchFloat32Scope : public AutoFloatRegisterScope {
   explicit ScratchFloat32Scope(MacroAssembler& masm)
@@ -130,6 +142,28 @@ struct ScratchDoubleScope2 : public AutoFloatRegisterScope {
   explicit ScratchDoubleScope2(MacroAssembler& masm)
       : AutoFloatRegisterScope(masm, ScratchDoubleReg2) {}
 };
+
+#if defined(ENABLE_JIT_SIMD)
+struct ScratchSimd128Scope : public AutoFloatRegisterScope {
+  explicit ScratchSimd128Scope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchSimd128Reg) {}
+};
+
+struct ScratchSimd128Scope2 : public AutoFloatRegisterScope {
+  explicit ScratchSimd128Scope2(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchSimd128Reg2) {}
+};
+#else
+struct ScratchSimd128Scope : public AutoFloatRegisterScope {
+  explicit ScratchSimd128Scope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, InvalidFloatReg) {}
+};
+
+struct ScratchSimd128Scope2 : public AutoFloatRegisterScope {
+  explicit ScratchSimd128Scope2(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, InvalidFloatReg) {}
+};
+#endif
 
 class Assembler;
 
@@ -258,8 +292,6 @@ static_assert(JitStackAlignment % sizeof(Value) == 0 &&
                   JitStackValueAlignment >= 1,
               "Stack alignment should be a non-zero multiple of sizeof(Value)");
 
-// TODO(loong64): this is just a filler to prevent a build failure. The
-// LoongArch SIMD alignment requirements still need to be explored.
 static constexpr uint32_t SimdMemoryAlignment = 16;
 
 static_assert(CodeAlignment % SimdMemoryAlignment == 0,
@@ -673,6 +705,287 @@ enum OpcodeField {
   op_frint_d = 0x4792U << 10,
   op_movcf2fr = 0x114d4U << 8,
   op_movcf2gr = 0x114dcU << 8,
+
+  op_vfmadd_s = 0x91U << 20,
+  op_vfmadd_d = 0x92U << 20,
+  op_vfnmsub_s = 0x9dU << 20,
+  op_vfnmsub_d = 0x9eU << 20,
+  op_vfcmp_cond_s = 0xc5U << 20,
+  op_vfcmp_cond_d = 0xc6U << 20,
+  op_vbitsel_v = 0xd1U << 20,
+  op_vshuf_b = 0xd5U << 20,
+  op_vld = 0xb0U << 22,
+  op_vst = 0xb1U << 22,
+  op_vldrepl_d = 0x602U << 19,
+  op_vldrepl_w = 0x302U << 20,
+  op_vldrepl_h = 0x182U << 21,
+  op_vldrepl_b = 0xc2U << 22,
+  op_vstelm_d = 0x622U << 19,
+  op_vstelm_w = 0x312U << 20,
+  op_vstelm_h = 0x18aU << 21,
+  op_vstelm_b = 0xc6U << 22,
+  op_vldx = 0x7080U << 15,
+  op_vstx = 0x7088U << 15,
+  op_vseq_b = 0xe000U << 15,
+  op_vseq_h = 0xe001U << 15,
+  op_vseq_w = 0xe002U << 15,
+  op_vseq_d = 0xe003U << 15,
+  op_vsle_b = 0xe004U << 15,
+  op_vsle_h = 0xe005U << 15,
+  op_vsle_w = 0xe006U << 15,
+  op_vsle_d = 0xe007U << 15,
+  op_vsle_bu = 0xe008U << 15,
+  op_vsle_hu = 0xe009U << 15,
+  op_vsle_wu = 0xe00aU << 15,
+  op_vslt_b = 0xe00cU << 15,
+  op_vslt_h = 0xe00dU << 15,
+  op_vslt_w = 0xe00eU << 15,
+  op_vslt_d = 0xe00fU << 15,
+  op_vslt_bu = 0xe010U << 15,
+  op_vslt_hu = 0xe011U << 15,
+  op_vslt_wu = 0xe012U << 15,
+  op_vadd_b = 0xe014U << 15,
+  op_vadd_h = 0xe015U << 15,
+  op_vadd_w = 0xe016U << 15,
+  op_vadd_d = 0xe017U << 15,
+  op_vsub_b = 0xe018U << 15,
+  op_vsub_h = 0xe019U << 15,
+  op_vsub_w = 0xe01aU << 15,
+  op_vsub_d = 0xe01bU << 15,
+  op_vsadd_b = 0xe08cU << 15,
+  op_vsadd_h = 0xe08dU << 15,
+  op_vssub_b = 0xe090U << 15,
+  op_vssub_h = 0xe091U << 15,
+  op_vsadd_bu = 0xe094U << 15,
+  op_vsadd_hu = 0xe095U << 15,
+  op_vssub_bu = 0xe098U << 15,
+  op_vssub_hu = 0xe099U << 15,
+  op_vhaddw_h_b = 0xe0a8U << 15,
+  op_vhaddw_w_h = 0xe0a9U << 15,
+  op_vhaddw_hu_bu = 0xe0b0U << 15,
+  op_vhaddw_wu_hu = 0xe0b1U << 15,
+  op_vadda_b = 0xe0b8U << 15,
+  op_vadda_h = 0xe0b9U << 15,
+  op_vadda_w = 0xe0baU << 15,
+  op_vadda_d = 0xe0bbU << 15,
+  op_vavgr_bu = 0xe0d4U << 15,
+  op_vavgr_hu = 0xe0d5U << 15,
+  op_vmax_b = 0xe0e0U << 15,
+  op_vmax_h = 0xe0e1U << 15,
+  op_vmax_w = 0xe0e2U << 15,
+  op_vmin_b = 0xe0e4U << 15,
+  op_vmin_h = 0xe0e5U << 15,
+  op_vmin_w = 0xe0e6U << 15,
+  op_vmax_bu = 0xe0e8U << 15,
+  op_vmax_hu = 0xe0e9U << 15,
+  op_vmax_wu = 0xe0eaU << 15,
+  op_vmin_bu = 0xe0ecU << 15,
+  op_vmin_hu = 0xe0edU << 15,
+  op_vmin_wu = 0xe0eeU << 15,
+  op_vmul_h = 0xe109U << 15,
+  op_vmul_w = 0xe10aU << 15,
+  op_vmul_d = 0xe10bU << 15,
+  op_vmulwev_h_b = 0xe120U << 15,
+  op_vmulwev_w_h = 0xe121U << 15,
+  op_vmulwev_d_w = 0xe122U << 15,
+  op_vmulwod_h_b = 0xe124U << 15,
+  op_vmulwod_w_h = 0xe125U << 15,
+  op_vmulwod_d_w = 0xe126U << 15,
+  op_vmulwev_h_bu = 0xe130U << 15,
+  op_vmulwev_w_hu = 0xe131U << 15,
+  op_vmulwev_d_wu = 0xe132U << 15,
+  op_vmulwod_h_bu = 0xe134U << 15,
+  op_vmulwod_w_hu = 0xe135U << 15,
+  op_vmulwod_d_wu = 0xe136U << 15,
+  op_vmaddwev_w_h = 0xe159U << 15,
+  op_vmaddwod_w_h = 0xe15dU << 15,
+  op_vsll_b = 0xe1d0U << 15,
+  op_vsll_h = 0xe1d1U << 15,
+  op_vsll_w = 0xe1d2U << 15,
+  op_vsll_d = 0xe1d3U << 15,
+  op_vsrl_b = 0xe1d4U << 15,
+  op_vsrl_h = 0xe1d5U << 15,
+  op_vsrl_w = 0xe1d6U << 15,
+  op_vsrl_d = 0xe1d7U << 15,
+  op_vsra_b = 0xe1d8U << 15,
+  op_vsra_h = 0xe1d9U << 15,
+  op_vsra_w = 0xe1daU << 15,
+  op_vsra_d = 0xe1dbU << 15,
+  op_vpackev_b = 0xe22cU << 15,
+  op_vpackev_h = 0xe22dU << 15,
+  op_vpackev_w = 0xe22eU << 15,
+  op_vpackod_b = 0xe230U << 15,
+  op_vpackod_h = 0xe231U << 15,
+  op_vpackod_w = 0xe232U << 15,
+  op_vilvl_b = 0xe234U << 15,
+  op_vilvl_h = 0xe235U << 15,
+  op_vilvl_w = 0xe236U << 15,
+  op_vilvl_d = 0xe237U << 15,
+  op_vilvh_b = 0xe238U << 15,
+  op_vilvh_h = 0xe239U << 15,
+  op_vilvh_w = 0xe23aU << 15,
+  op_vilvh_d = 0xe23bU << 15,
+  op_vpickev_b = 0xe23cU << 15,
+  op_vpickev_h = 0xe23dU << 15,
+  op_vpickev_w = 0xe23eU << 15,
+  op_vpickod_b = 0xe240U << 15,
+  op_vpickod_h = 0xe241U << 15,
+  op_vpickod_w = 0xe242U << 15,
+  op_vand_v = 0xe24cU << 15,
+  op_vor_v = 0xe24dU << 15,
+  op_vxor_v = 0xe24eU << 15,
+  op_vnor_v = 0xe24fU << 15,
+  op_vandn_v = 0xe250U << 15,
+  op_vorn_v = 0xe251U << 15,
+  op_vsigncov_b = 0xe25cU << 15,
+  op_vsigncov_h = 0xe25dU << 15,
+  op_vsigncov_w = 0xe25eU << 15,
+  op_vsigncov_d = 0xe25fU << 15,
+  op_vfadd_s = 0xe261U << 15,
+  op_vfadd_d = 0xe262U << 15,
+  op_vfsub_s = 0xe265U << 15,
+  op_vfsub_d = 0xe266U << 15,
+  op_vfmul_s = 0xe271U << 15,
+  op_vfmul_d = 0xe272U << 15,
+  op_vfdiv_s = 0xe275U << 15,
+  op_vfdiv_d = 0xe276U << 15,
+  op_vfmax_s = 0xe279U << 15,
+  op_vfmax_d = 0xe27aU << 15,
+  op_vfmin_s = 0xe27dU << 15,
+  op_vfmin_d = 0xe27eU << 15,
+  op_vfcvt_s_d = 0xe28dU << 15,
+  op_vftintrz_w_d = 0xe296U << 15,
+  op_vshuf_w = 0xe2f6U << 15,
+  op_vseqi_b = 0xe500U << 15,
+  op_vseqi_h = 0xe501U << 15,
+  op_vseqi_w = 0xe502U << 15,
+  op_vseqi_d = 0xe503U << 15,
+  op_vslei_b = 0xe504U << 15,
+  op_vslei_h = 0xe505U << 15,
+  op_vslei_w = 0xe506U << 15,
+  op_vslei_d = 0xe507U << 15,
+  op_vslei_bu = 0xe508U << 15,
+  op_vslei_hu = 0xe509U << 15,
+  op_vslei_wu = 0xe50aU << 15,
+  op_vslei_du = 0xe50bU << 15,
+  op_vslti_b = 0xe50cU << 15,
+  op_vslti_h = 0xe50dU << 15,
+  op_vslti_w = 0xe50eU << 15,
+  op_vslti_d = 0xe50fU << 15,
+  op_vslti_bu = 0xe510U << 15,
+  op_vslti_hu = 0xe511U << 15,
+  op_vslti_wu = 0xe512U << 15,
+  op_vslti_du = 0xe513U << 15,
+  op_vaddi_bu = 0xe514U << 15,
+  op_vaddi_hu = 0xe515U << 15,
+  op_vaddi_wu = 0xe516U << 15,
+  op_vaddi_du = 0xe517U << 15,
+  op_vbsll_v = 0xe51cU << 15,
+  op_vbsrl_v = 0xe51dU << 15,
+  op_vpcnt_b = 0x1ca708U << 10,
+  op_vpcnt_h = 0x1ca709U << 10,
+  op_vpcnt_w = 0x1ca70aU << 10,
+  op_vpcnt_d = 0x1ca70bU << 10,
+  op_vneg_b = 0x1ca70cU << 10,
+  op_vneg_h = 0x1ca70dU << 10,
+  op_vneg_w = 0x1ca70eU << 10,
+  op_vneg_d = 0x1ca70fU << 10,
+  op_vmskltz_b = 0x1ca710U << 10,
+  op_vmskltz_h = 0x1ca711U << 10,
+  op_vmskltz_w = 0x1ca712U << 10,
+  op_vmskltz_d = 0x1ca713U << 10,
+  op_vmskgez_b = 0x1ca714U << 10,
+  op_vmsknz_b = 0x1ca718U << 10,
+  op_vfsqrt_s = 0x1ca739U << 10,
+  op_vfsqrt_d = 0x1ca73aU << 10,
+  op_vfrecip_s = 0x1ca73dU << 10,
+  op_vfrsqrt_s = 0x1ca741U << 10,
+  op_vfrintrm_s = 0x1ca751U << 10,
+  op_vfrintrm_d = 0x1ca752U << 10,
+  op_vfrintrp_s = 0x1ca755U << 10,
+  op_vfrintrp_d = 0x1ca756U << 10,
+  op_vfrintrz_s = 0x1ca759U << 10,
+  op_vfrintrz_d = 0x1ca75aU << 10,
+  op_vfrintrne_s = 0x1ca75dU << 10,
+  op_vfrintrne_d = 0x1ca75eU << 10,
+  op_vfcvtl_d_s = 0x1ca77cU << 10,
+  op_vffint_s_w = 0x1ca780U << 10,
+  op_vffint_s_wu = 0x1ca781U << 10,
+  op_vffint_d_l = 0x1ca782U << 10,
+  op_vffint_d_lu = 0x1ca783U << 10,
+  op_vffintl_d_w = 0x1ca784U << 10,
+  op_vftintrz_w_s = 0x1ca792U << 10,
+  op_vftintrz_l_d = 0x1ca793U << 10,
+  op_vftintrz_wu_s = 0x1ca79cU << 10,
+  op_vftintrz_lu_d = 0x1ca79dU << 10,
+  op_vexth_h_b = 0x1ca7b8U << 10,
+  op_vexth_w_h = 0x1ca7b9U << 10,
+  op_vexth_d_w = 0x1ca7baU << 10,
+  op_vexth_hu_bu = 0x1ca7bcU << 10,
+  op_vexth_wu_hu = 0x1ca7bdU << 10,
+  op_vexth_du_wu = 0x1ca7beU << 10,
+  op_vreplgr2vr_b = 0x1ca7c0U << 10,
+  op_vreplgr2vr_h = 0x1ca7c1U << 10,
+  op_vreplgr2vr_w = 0x1ca7c2U << 10,
+  op_vreplgr2vr_d = 0x1ca7c3U << 10,
+  op_vinsgr2vr_b = 0x1cbaeU << 14,
+  op_vinsgr2vr_h = 0x3975eU << 13,
+  op_vinsgr2vr_w = 0x72ebeU << 12,
+  op_vinsgr2vr_d = 0xe5d7eU << 11,
+  op_vpickve2gr_b = 0x1cbbeU << 14,
+  op_vpickve2gr_h = 0x3977eU << 13,
+  op_vpickve2gr_w = 0x72efeU << 12,
+  op_vpickve2gr_d = 0xe5dfeU << 11,
+  op_vpickve2gr_bu = 0x1cbceU << 14,
+  op_vpickve2gr_hu = 0x3979eU << 13,
+  op_vpickve2gr_wu = 0x72f3eU << 12,
+  op_vreplvei_b = 0x1cbdeU << 14,
+  op_vreplvei_h = 0x397beU << 13,
+  op_vreplvei_w = 0x72f7eU << 12,
+  op_vreplvei_d = 0xe5efeU << 11,
+  op_vsllwil_h_b = 0x39841U << 13,
+  op_vsllwil_w_h = 0x1cc21U << 14,
+  op_vsllwil_d_w = 0xe611U << 15,
+  op_vsllwil_hu_bu = 0x39861U << 13,
+  op_vsllwil_wu_hu = 0x1cc31U << 14,
+  op_vsllwil_du_wu = 0xe619U << 15,
+  op_vbitclri_w = 0xe621U << 15,
+  op_vbitclri_d = 0x7311U << 16,
+  op_vbitseti_w = 0xe629U << 15,
+  op_vbitrevi_w = 0xe631U << 15,
+  op_vbitrevi_d = 0x7319U << 16,
+  op_vsat_h = 0x1cc91U << 14,
+  op_vsat_w = 0xe649U << 15,
+  op_vsat_d = 0x7325U << 16,
+  op_vsat_hu = 0x1cca1U << 14,
+  op_vsat_wu = 0xe651U << 15,
+  op_vsat_du = 0x7329U << 16,
+  op_vslli_b = 0x39961U << 13,
+  op_vslli_h = 0x1ccb1U << 14,
+  op_vslli_w = 0xe659U << 15,
+  op_vslli_d = 0x732dU << 16,
+  op_vsrli_b = 0x39981U << 13,
+  op_vsrli_h = 0x1ccc1U << 14,
+  op_vsrli_w = 0xe661U << 15,
+  op_vsrli_d = 0x7331U << 16,
+  op_vsrai_b = 0x399a1U << 13,
+  op_vsrai_h = 0x1ccd1U << 14,
+  op_vsrai_w = 0xe669U << 15,
+  op_vsrai_d = 0x7335U << 16,
+  op_vssrani_b_h = 0x1cd81U << 14,
+  op_vssrani_h_w = 0xe6c1U << 15,
+  op_vssrani_bu_h = 0x1cd91U << 14,
+  op_vssrani_hu_w = 0xe6c9U << 15,
+  op_vextrins_d = 0x1ce0U << 18,
+  op_vextrins_w = 0x1ce1U << 18,
+  op_vextrins_h = 0x1ce2U << 18,
+  op_vextrins_b = 0x1ce3U << 18,
+  op_vshuf4i_b = 0x1ce4U << 18,
+  op_vshuf4i_h = 0x1ce5U << 18,
+  op_vshuf4i_w = 0x1ce6U << 18,
+  op_vshuf4i_d = 0x1ce7U << 18,
+  op_vori_b = 0x1cf5U << 18,
+  op_vldi = 0x1cf8U << 18,
 };
 
 // int check.
@@ -685,6 +998,17 @@ inline constexpr bool is_intN(int64_t x, unsigned n) {
 inline constexpr bool is_uintN(int64_t x, unsigned n) {
   MOZ_ASSERT((0 < n) && (n < 64));
   return !(x >> n);
+}
+
+/// Sign-extend the number in the bottom B bits of X to a 64-bit integer.
+/// Requires B <= 64.
+template <unsigned B>
+static constexpr int64_t SignExtend64(uint64_t x) {
+  static_assert(B <= 64, "Bit width out of range.");
+  if constexpr (B == 0) {
+    return 0;
+  }
+  return int64_t(x << (64 - B)) >> (64 - B);
 }
 
 class Operand;
@@ -1462,6 +1786,367 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_fstx_s(FloatRegister fd, Register rj, Register rk);
   BufferOffset as_fstx_d(FloatRegister fd, Register rj, Register rk);
 
+  // LSX (128-bit SIMD) instructions
+  BufferOffset as_vfmadd_s(FloatRegister vd, FloatRegister vj, FloatRegister vk,
+                           FloatRegister va);
+  BufferOffset as_vfmadd_d(FloatRegister vd, FloatRegister vj, FloatRegister vk,
+                           FloatRegister va);
+  BufferOffset as_vfnmsub_s(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk, FloatRegister va);
+  BufferOffset as_vfnmsub_d(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk, FloatRegister va);
+  BufferOffset as_vfcmp_cond_s(FPUCondition cond, FloatRegister vd,
+                               FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfcmp_cond_d(FPUCondition cond, FloatRegister vd,
+                               FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vbitsel_v(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk, FloatRegister va);
+  BufferOffset as_vshuf_b(FloatRegister vd, FloatRegister vj, FloatRegister vk,
+                          FloatRegister va);
+  BufferOffset as_vld(FloatRegister vd, Register rj, uint32_t imm12);
+  BufferOffset as_vst(FloatRegister vd, Register rj, uint32_t imm12);
+  BufferOffset as_vldrepl_d(FloatRegister vd, Register rj, uint32_t imm9);
+  BufferOffset as_vldrepl_w(FloatRegister vd, Register rj, uint32_t imm10);
+  BufferOffset as_vldrepl_h(FloatRegister vd, Register rj, uint32_t imm11);
+  BufferOffset as_vldrepl_b(FloatRegister vd, Register rj, uint32_t imm12);
+  BufferOffset as_vstelm_d(FloatRegister vd, Register rj, int32_t si8,
+                           uint32_t lane);
+  BufferOffset as_vstelm_w(FloatRegister vd, Register rj, int32_t si8,
+                           uint32_t lane);
+  BufferOffset as_vstelm_h(FloatRegister vd, Register rj, int32_t si8,
+                           uint32_t lane);
+  BufferOffset as_vstelm_b(FloatRegister vd, Register rj, int32_t si8,
+                           uint32_t lane);
+  BufferOffset as_vldx(FloatRegister vd, Register rj, Register rk);
+  BufferOffset as_vstx(FloatRegister vd, Register rj, Register rk);
+  BufferOffset as_vseq_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vseq_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vseq_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vseq_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_bu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_hu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsle_wu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_bu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_hu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslt_wu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadd_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadd_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadd_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadd_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsub_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsub_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsub_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsub_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsadd_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsadd_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vssub_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vssub_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsadd_bu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vsadd_hu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vssub_bu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vssub_hu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vhaddw_h_b(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vhaddw_w_h(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vhaddw_hu_bu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vhaddw_wu_hu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vadda_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadda_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadda_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vadda_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vavgr_bu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vavgr_hu(FloatRegister vd, FloatRegister vj,
+                           FloatRegister vk);
+  BufferOffset as_vmax_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmax_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmax_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmax_bu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmax_hu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmax_wu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_bu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_hu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmin_wu(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmul_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmul_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmul_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vmulwev_h_b(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwev_w_h(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwev_d_w(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwod_h_b(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwod_w_h(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwod_d_w(FloatRegister vd, FloatRegister vj,
+                              FloatRegister vk);
+  BufferOffset as_vmulwev_h_bu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmulwev_w_hu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmulwev_d_wu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmulwod_h_bu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmulwod_w_hu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmulwod_d_wu(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmaddwev_w_h(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vmaddwod_w_h(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vsll_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsll_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsll_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsll_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsrl_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsrl_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsrl_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsrl_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsra_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsra_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsra_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsra_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vpackev_b(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpackev_h(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpackev_w(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpackod_b(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpackod_h(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpackod_w(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vilvl_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvl_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvl_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvl_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvh_b(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvh_h(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvh_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vilvh_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vpickev_b(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpickev_h(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpickev_w(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpickod_b(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpickod_h(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vpickod_w(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vand_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vor_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vxor_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vnor_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vandn_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vorn_v(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vsigncov_b(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vsigncov_h(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vsigncov_w(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vsigncov_d(FloatRegister vd, FloatRegister vj,
+                             FloatRegister vk);
+  BufferOffset as_vfadd_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfadd_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfsub_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfsub_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmul_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmul_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfdiv_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfdiv_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmax_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmax_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmin_s(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfmin_d(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vfcvt_s_d(FloatRegister vd, FloatRegister vj,
+                            FloatRegister vk);
+  BufferOffset as_vftintrz_w_d(FloatRegister vd, FloatRegister vj,
+                               FloatRegister vk);
+  BufferOffset as_vshuf_w(FloatRegister vd, FloatRegister vj, FloatRegister vk);
+  BufferOffset as_vslei_b(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslei_h(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslei_w(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslei_d(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslei_bu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslei_hu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslei_wu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslei_du(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vaddi_bu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vseqi_b(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vseqi_h(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vseqi_w(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vseqi_d(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslti_b(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslti_h(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslti_w(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslti_d(FloatRegister vd, FloatRegister vj, int32_t imm5);
+  BufferOffset as_vslti_bu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslti_hu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslti_wu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslti_du(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vaddi_hu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vaddi_wu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vaddi_du(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vbsll_v(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vbsrl_v(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vpcnt_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vpcnt_h(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vpcnt_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vpcnt_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vneg_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vneg_h(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vneg_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vneg_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmskltz_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmskltz_h(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmskltz_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmskltz_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmskgez_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vmsknz_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfsqrt_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfsqrt_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrecip_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrsqrt_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrm_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrm_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrp_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrp_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrz_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrz_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrne_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfrintrne_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vfcvtl_d_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vffint_s_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vffint_s_wu(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vffint_d_l(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vffint_d_lu(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vffintl_d_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vftintrz_w_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vftintrz_l_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vftintrz_wu_s(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vftintrz_lu_d(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_h_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_w_h(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_d_w(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_hu_bu(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_wu_hu(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vexth_du_wu(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vreplgr2vr_b(FloatRegister vd, Register rj);
+  BufferOffset as_vreplgr2vr_h(FloatRegister vd, Register rj);
+  BufferOffset as_vreplgr2vr_w(FloatRegister vd, Register rj);
+  BufferOffset as_vreplgr2vr_d(FloatRegister vd, Register rj);
+  BufferOffset as_vinsgr2vr_b(FloatRegister vd, Register rj, uint32_t imm4);
+  BufferOffset as_vinsgr2vr_h(FloatRegister vd, Register rj, uint32_t imm3);
+  BufferOffset as_vinsgr2vr_w(FloatRegister vd, Register rj, uint32_t imm2);
+  BufferOffset as_vinsgr2vr_d(FloatRegister vd, Register rj, uint32_t imm1);
+  BufferOffset as_vpickve2gr_b(Register rd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vpickve2gr_h(Register rd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vpickve2gr_w(Register rd, FloatRegister vj, uint32_t imm2);
+  BufferOffset as_vpickve2gr_d(Register rd, FloatRegister vj, uint32_t imm1);
+  BufferOffset as_vpickve2gr_bu(Register rd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vpickve2gr_hu(Register rd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vpickve2gr_wu(Register rd, FloatRegister vj, uint32_t imm2);
+  BufferOffset as_vreplvei_b(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vreplvei_h(FloatRegister vd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vreplvei_w(FloatRegister vd, FloatRegister vj, uint32_t imm2);
+  BufferOffset as_vreplvei_d(FloatRegister vd, FloatRegister vj, uint32_t imm1);
+  BufferOffset as_vsllwil_h_b(FloatRegister vd, FloatRegister vj,
+                              uint32_t imm3);
+  BufferOffset as_vsllwil_w_h(FloatRegister vd, FloatRegister vj,
+                              uint32_t imm4);
+  BufferOffset as_vsllwil_d_w(FloatRegister vd, FloatRegister vj,
+                              uint32_t imm5);
+  BufferOffset as_vsllwil_hu_bu(FloatRegister vd, FloatRegister vj,
+                                uint32_t imm3);
+  BufferOffset as_vsllwil_wu_hu(FloatRegister vd, FloatRegister vj,
+                                uint32_t imm4);
+  BufferOffset as_vsllwil_du_wu(FloatRegister vd, FloatRegister vj,
+                                uint32_t imm5);
+  BufferOffset as_vbitclri_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vbitclri_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vbitseti_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vbitrevi_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vbitrevi_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vsat_h(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vsat_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vsat_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vsat_hu(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vsat_wu(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vsat_du(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vslli_b(FloatRegister vd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vslli_h(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vslli_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vslli_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vsrli_b(FloatRegister vd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vsrli_h(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vsrli_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vsrli_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vsrai_b(FloatRegister vd, FloatRegister vj, uint32_t imm3);
+  BufferOffset as_vsrai_h(FloatRegister vd, FloatRegister vj, uint32_t imm4);
+  BufferOffset as_vsrai_w(FloatRegister vd, FloatRegister vj, uint32_t imm5);
+  BufferOffset as_vsrai_d(FloatRegister vd, FloatRegister vj, uint32_t imm6);
+  BufferOffset as_vssrani_b_h(FloatRegister vd, FloatRegister vj,
+                              uint32_t imm4);
+  BufferOffset as_vssrani_h_w(FloatRegister vd, FloatRegister vj,
+                              uint32_t imm5);
+  BufferOffset as_vssrani_bu_h(FloatRegister vd, FloatRegister vj,
+                               uint32_t imm4);
+  BufferOffset as_vssrani_hu_w(FloatRegister vd, FloatRegister vj,
+                               uint32_t imm5);
+  BufferOffset as_vextrins_d(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vextrins_w(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vextrins_h(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vextrins_b(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vshuf4i_b(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vshuf4i_h(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vshuf4i_w(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vshuf4i_d(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vori_b(FloatRegister vd, FloatRegister vj, uint32_t imm8);
+  BufferOffset as_vldi(FloatRegister vd, int32_t imm13);
+
+  // Try to encode |v| into the si13 field of vldi instruction. The result is
+  // returned as the lower 13 bits.
+  static std::optional<uint16_t> EncodeVldiImmediate(const SimdConstant& v);
+
+  // Check if |value| can be encoded directly as an immediate in the emitted
+  // instruction for |op|, without needing an extra scratch register.
+  static bool CanEncodeSimdCompareImmediateFor(wasm::SimdOp op,
+                                               const SimdConstant& value);
+
+  // Try to encode |rhs| into the [su]i5 field of vs{le,lt}i.[bhdw]{,u} and
+  // vseqi.[bhdw], iff |rhs| is a splat to all lanes.
+  template <typename T>
+  static std::optional<int64_t> EncodeSimdCompareImmediate(
+      const SimdConstant& rhs, Condition cond);
+
   // label operations
   void bind(Label* label, BufferOffset boff = BufferOffset());
   virtual void bind(InstImm* inst, uintptr_t branch, uintptr_t target) = 0;
@@ -1475,6 +2160,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   void as_break(uint32_t code);
 
  public:
+  static bool HasLSX() { return LOONG64Flags::HasLsxExtension(); };
   static bool SupportsFloatingPoint() {
 #if defined(__loongarch_hard_float) || defined(JS_SIMULATOR_LOONG64)
     return true;
@@ -1484,6 +2170,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   }
   static bool SupportsUnalignedAccesses() { return true; }
   static bool SupportsFastUnalignedFPAccesses() { return true; }
+  static bool SupportsWasmSimd() { return LOONG64Flags::HasLsxExtension(); }
   static bool SupportsFloat64To16() { return false; }
   static bool SupportsFloat32To16() { return false; }
 
@@ -1674,6 +2361,13 @@ class InstReg : public Instruction {
     MOZ_ASSERT(is_uintN(cond, 5));
   }
 
+  InstReg(OpcodeField op, int32_t cond, FloatRegister vk, FloatRegister vj,
+          FloatRegister vd)
+      : Instruction(op | (cond & CONDMask) << CONDShift | FK(vk) | FJ(vj) |
+                    FD(vd)) {
+    MOZ_ASSERT(is_uintN(cond, 5));
+  }
+
   uint32_t extractRK() {
     return extractBitField(RKShift + RKBits - 1, RKShift);
   }
@@ -1784,6 +2478,13 @@ class InstImm : public Instruction {
     MOZ_ASSERT(is_intN(si12, 12));
   }
 
+  // For LSX (128-bit SIMD) immediates.  The immediate always starts at bit
+  // 10; its width varies per instruction format (2RI1 .. 2RI12).
+  static uint32_t genSimdImm(uint32_t value, uint32_t bits) {
+    MOZ_ASSERT(bits >= 1 && bits <= 21);
+    return value & ((uint32_t(1) << bits) - 1);
+  }
+
   void setOpcode(OpcodeField op, uint32_t opBits) {
     // opBits not greater than 24.
     MOZ_ASSERT(opBits < 25);
@@ -1817,6 +2518,214 @@ class InstImm : public Instruction {
     uint32_t fcc_info = (data >> 5) & 0x1F;
     data = (data & ~BOffImm26Mask) | (low16 << Imm16Shift) | high5 |
            (fcc_info << 5);
+  }
+  InstImm(OpcodeField op, uint32_t imm, FloatRegister vj, FloatRegister vd,
+          uint32_t imm_bits)
+      : Instruction(op | genSimdImm(imm, imm_bits) << RKShift | FJ(vj) |
+                    FD(vd)) {
+    // (signed, width)
+    mozilla::DebugOnly<std::optional<std::tuple<bool, uint32_t>>> imm_format;
+    switch (op) {
+      // ui1 formats.
+      case op_vreplvei_d:
+        imm_format = std::make_tuple(false, 1);
+        break;
+      // ui2 formats.
+      case op_vreplvei_w:
+        imm_format = std::make_tuple(false, 2);
+        break;
+      // ui3 formats.
+      case op_vslli_b:
+      case op_vsrli_b:
+      case op_vsrai_b:
+      case op_vsllwil_h_b:
+      case op_vsllwil_hu_bu:
+      case op_vreplvei_h:
+        imm_format = std::make_tuple(false, 3);
+        break;
+      // ui4 formats.
+      case op_vslli_h:
+      case op_vsrli_h:
+      case op_vsrai_h:
+      case op_vsllwil_w_h:
+      case op_vsllwil_wu_hu:
+      case op_vsat_h:
+      case op_vsat_hu:
+      case op_vssrani_b_h:
+      case op_vssrani_bu_h:
+      case op_vreplvei_b:
+        imm_format = std::make_tuple(false, 4);
+        break;
+      // ui5 formats.
+      case op_vaddi_bu:
+      case op_vaddi_hu:
+      case op_vaddi_wu:
+      case op_vaddi_du:
+      case op_vslei_bu:
+      case op_vslei_hu:
+      case op_vslei_wu:
+      case op_vslei_du:
+      case op_vslti_bu:
+      case op_vslti_hu:
+      case op_vslti_wu:
+      case op_vslti_du:
+      case op_vslli_w:
+      case op_vsrli_w:
+      case op_vsrai_w:
+      case op_vsllwil_d_w:
+      case op_vsllwil_du_wu:
+      case op_vsat_w:
+      case op_vsat_wu:
+      case op_vbitclri_w:
+      case op_vbitrevi_w:
+      case op_vbitseti_w:
+      case op_vbsll_v:
+      case op_vbsrl_v:
+      case op_vssrani_h_w:
+      case op_vssrani_hu_w:
+        imm_format = std::make_tuple(false, 5);
+        break;
+      // si5 formats.
+      case op_vseqi_b:
+      case op_vseqi_h:
+      case op_vseqi_w:
+      case op_vseqi_d:
+      case op_vslei_b:
+      case op_vslei_h:
+      case op_vslei_w:
+      case op_vslei_d:
+      case op_vslti_b:
+      case op_vslti_h:
+      case op_vslti_w:
+      case op_vslti_d:
+        imm_format = std::make_tuple(true, 5);
+        break;
+      // ui6 formats.
+      case op_vslli_d:
+      case op_vsrli_d:
+      case op_vsrai_d:
+      case op_vsat_d:
+      case op_vsat_du:
+      case op_vbitclri_d:
+      case op_vbitrevi_d:
+        imm_format = std::make_tuple(false, 6);
+        break;
+      // ui8 formats.
+      case op_vori_b:
+      case op_vextrins_b:
+      case op_vextrins_h:
+      case op_vextrins_w:
+      case op_vextrins_d:
+      case op_vshuf4i_b:
+      case op_vshuf4i_h:
+      case op_vshuf4i_w:
+      case op_vshuf4i_d:
+        imm_format = std::make_tuple(false, 8);
+        break;
+      default:
+        break;
+    }
+#ifdef DEBUG
+    MOZ_ASSERT(imm_format.value.has_value(),
+               "unknown VdVj[SU]k${imm_bits} instruction");
+    const auto& [is_signed, width] = *imm_format.value;
+    MOZ_ASSERT(width == imm_bits);
+    MOZ_ASSERT_IF(is_signed, is_intN(static_cast<int32_t>(imm), width));
+    MOZ_ASSERT_IF(!is_signed, is_uintN(imm, width));
+#endif
+  }
+  InstImm(OpcodeField op, uint32_t imm, Register rj, FloatRegister vd,
+          uint32_t imm_bits)
+      : Instruction(op | genSimdImm(imm, imm_bits) << RKShift | RJ(rj) |
+                    FD(vd)) {
+    // (signed, width)
+    mozilla::DebugOnly<std::optional<std::tuple<bool, uint32_t>>> imm_format;
+    switch (op) {
+      case op_vinsgr2vr_d:
+        imm_format = std::make_tuple(false, 1);
+        break;
+      case op_vinsgr2vr_w:
+        imm_format = std::make_tuple(false, 2);
+        break;
+      case op_vinsgr2vr_h:
+        imm_format = std::make_tuple(false, 3);
+        break;
+      case op_vinsgr2vr_b:
+        imm_format = std::make_tuple(false, 4);
+        break;
+      case op_vldrepl_d:
+        imm_format = std::make_tuple(true, 9);
+        break;
+      case op_vldrepl_w:
+        imm_format = std::make_tuple(true, 10);
+        break;
+      case op_vldrepl_h:
+        imm_format = std::make_tuple(true, 11);
+        break;
+      case op_vldrepl_b:
+      case op_vld:
+      case op_vst:
+        imm_format = std::make_tuple(true, 12);
+        break;
+      default:
+        break;
+    }
+#ifdef DEBUG
+    MOZ_ASSERT(imm_format.value.has_value(),
+               "unknown VdJ[SU]k${imm_bits} instruction");
+    const auto& [is_signed, width] = *imm_format.value;
+    MOZ_ASSERT(width == imm_bits);
+    MOZ_ASSERT_IF(is_signed, is_intN(static_cast<int32_t>(imm), width));
+    MOZ_ASSERT_IF(!is_signed, is_uintN(imm, width));
+#endif
+  }
+  InstImm(OpcodeField op, uint32_t imm, FloatRegister vj, Register rd,
+          uint32_t imm_bits)
+      : Instruction(op | genSimdImm(imm, imm_bits) << RKShift | FJ(vj) |
+                    RD(rd)) {
+    // (signed, width)
+    mozilla::DebugOnly<std::optional<std::tuple<bool, uint32_t>>> imm_format;
+    switch (op) {
+      case op_vpickve2gr_d:
+        imm_format = std::make_tuple(false, 1);
+        break;
+      case op_vpickve2gr_w:
+      case op_vpickve2gr_wu:
+        imm_format = std::make_tuple(false, 2);
+        break;
+      case op_vpickve2gr_h:
+      case op_vpickve2gr_hu:
+        imm_format = std::make_tuple(false, 3);
+        break;
+      case op_vpickve2gr_b:
+      case op_vpickve2gr_bu:
+        imm_format = std::make_tuple(false, 4);
+        break;
+      default:
+        break;
+    }
+#ifdef DEBUG
+    MOZ_ASSERT(imm_format.value.has_value(),
+               "unknown DVjUk${imm_bits} instruction");
+    const auto& [is_signed, width] = *imm_format.value;
+    MOZ_ASSERT(width == imm_bits);
+    MOZ_ASSERT_IF(is_signed, is_intN(static_cast<int32_t>(imm), width));
+    MOZ_ASSERT_IF(!is_signed, is_uintN(imm, width));
+#endif
+  }
+  // vldi: si13 at bits 17:5.
+  InstImm(OpcodeField op, int32_t si13, FloatRegister vd)
+      : Instruction(op | (uint32_t(si13) & 0x1FFFU) << 5 | FD(vd)) {
+    MOZ_ASSERT(is_intN(si13, 13));
+  }
+  // vstelm.*: si8 at bits 17:10, the lane index at bits 21:18.
+  InstImm(OpcodeField op, int32_t si8, uint32_t lane, uint32_t lane_bits,
+          Register rj, FloatRegister vd)
+      : Instruction(op | (uint32_t(si8) & 0xFFU) << 10 |
+                    ((lane & ((uint32_t(1) << lane_bits) - 1)) << 18) | RJ(rj) |
+                    FD(vd)) {
+    MOZ_ASSERT(is_intN(si8, 8));
+    MOZ_ASSERT(is_uintN(lane, lane_bits));
   }
 };
 

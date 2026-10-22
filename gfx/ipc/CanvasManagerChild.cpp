@@ -44,11 +44,6 @@ void CanvasManagerChild::ActorDestroy(ActorDestroyReason aReason) {
 }
 
 void CanvasManagerChild::DestroyInternal() {
-  if (mActiveResourceTracker) {
-    mActiveResourceTracker->AgeAllGenerations();
-    mActiveResourceTracker.reset();
-  }
-
   if (mCanvasChild) {
     mCanvasChild->Destroy();
     mCanvasChild = nullptr;
@@ -56,6 +51,11 @@ void CanvasManagerChild::DestroyInternal() {
 
   if (auto* shutdownManager = CanvasShutdownManager::Get()) {
     shutdownManager->OnRemoteCanvasLost();
+  }
+
+  if (mActiveResourceTracker) {
+    mActiveResourceTracker->AgeAllGenerations();
+    mActiveResourceTracker.reset();
   }
 }
 

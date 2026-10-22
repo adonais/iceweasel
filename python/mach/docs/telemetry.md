@@ -4,7 +4,7 @@
 
 [Glean](https://mozilla.github.io/glean/) is used to collect telemetry, and uses the metrics
 defined in the `metrics.yaml` files in-tree.
-These files are all documented in a single {ref}`generated file here<metrics>`.
+These files are all documented in a single {doc}`generated file here <metrics>`.
 
 ```{toctree}
 :maxdepth: 1
@@ -31,7 +31,7 @@ def custom_command(command_context):
 
 ## Updating Generated Metrics Docs
 
-When a `metrics.yaml` is added/changed/removed, {ref}`the metrics document<metrics>` will need to be updated:
+When a `metrics.yaml` is added/changed/removed, {doc}`the metrics document <metrics>` will need to be updated:
 
 ```
 ./mach doc mach-telemetry

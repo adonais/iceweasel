@@ -23,7 +23,7 @@ conventions:
   `PR_JoinThread`
 - Preprocessor macros begin with the letters `PR` and are followed by
   all uppercase characters separated with the underscore character
-  (`_`), like this: `PR_BYTES_PER_SHORT`, {ref}`PR_EXTERN`
+  (`_`), like this: `PR_BYTES_PER_SHORT`, {doc}`pr_extern`
 
 (nspr-threads)=
 
@@ -39,7 +39,7 @@ To an NSPR client, a thread is represented by a pointer to an opaque
 structure of type `PRThread`. A thread is created by an explicit
 client request and remains a valid, independent execution entity until
 it returns from its root function or the process abnormally terminates.
-({ref}`PRThread` and functions for creating and manipulating threads are
+({doc}`prthread` and functions for creating and manipulating threads are
 described in detail in [Threads](threads.md).)
 
 NSPR threads are lightweight in the sense that they are cheaper than
@@ -62,8 +62,8 @@ NSPR threads are scheduled in two separate domains:
   threads correspond to native threads on the host OS.
 
 NSPR threads can also be either user threads or system threads. NSPR
-provides a function, {ref}`PR_Cleanup`, that synchronizes process
-termination. {ref}`PR_Cleanup` waits for the last user thread to exit
+provides a function, {doc}`pr_cleanup`, that synchronizes process
+termination. {doc}`pr_cleanup` waits for the last user thread to exit
 before returning, whereas it ignores system threads when determining
 when a process should exit. This arrangement implies that a system
 thread should not have volatile data that needs to be safely stored
@@ -168,8 +168,8 @@ only.
 NSPR threads are interruptible, with some constraints and
 inconsistencies.
 
-To interrupt a thread, the caller of {ref}`PR_Interrupt` must have the NSPR
-reference to the target thread ({ref}`PRThread`). When the target is
+To interrupt a thread, the caller of {doc}`pr_interrupt` must have the NSPR
+reference to the target thread ({doc}`prthread`). When the target is
 interrupted, it is rescheduled from the point at which it was blocked,
 with a status error indicating that it was interrupted. NSPR recognizes
 only two areas where a thread may be interrupted: waiting on a condition
@@ -186,9 +186,9 @@ Locking prevents access to some resource, such as a piece of shared
 data: that is, it enforces mutual exclusion. Notification involves
 passing synchronization information among cooperating threads.
 
-In NSPR, a **mutual exclusion lock** (or **mutex**) of type {ref}`PRLock`
+In NSPR, a **mutual exclusion lock** (or **mutex**) of type {doc}`prlock`
 controls locking, and associated **condition variables** of type
-{ref}`PRCondVar` communicate changes in state among threads. When a
+{doc}`prcondvar` communicate changes in state among threads. When a
 programmer associates a mutex with an arbitrary collection of data, the
 mutex provides a protective **monitor** around the data.
 
@@ -199,9 +199,9 @@ mutex provides a protective **monitor** around the data.
 In general, a monitor is a conceptual entity composed of a mutex, one or
 more condition variables, and the monitored data. Monitors in this
 generic sense should not be confused with the monitor type used in Java
-programming. In addition to {ref}`PRLock`, NSPR provides another mutex
-type, {ref}`PRMonitor`, which is reentrant and can have only one associated
-condition variable. {ref}`PRMonitor` is intended for use with Java and
+programming. In addition to {doc}`prlock`, NSPR provides another mutex
+type, {doc}`prmonitor`, which is reentrant and can have only one associated
+condition variable. {doc}`prmonitor` is intended for use with Java and
 reflects the Java approach to thread synchronization.
 
 To access the data in the monitor, the thread performing the access must
@@ -353,10 +353,10 @@ void *dequeue()
 ```
 
 :::{note}
-**Caution**: The semantics of {ref}`PR_WaitCondVar` assume that the
+**Caution**: The semantics of {doc}`pr_waitcondvar` assume that the
 monitor is about to be exited. This assumption implies that the
 monitored invariant must be reinstated before calling
-{ref}`PR_WaitCondVar`. Failure to do this will cause subtle but painful
+{doc}`pr_waitcondvar`. Failure to do this will cause subtle but painful
 bugs.
 :::
 
@@ -365,19 +365,19 @@ no other thread may modify or (in most cases) even observe the protected
 data from outside the monitor, the thread can safely make any
 modifications needed. When the changes have been completed, the thread
 notifies the condition associated with the data and exits the monitor
-using {ref}`PR_NotifyCondVar`. Logically, each such notification promotes
+using {doc}`pr_notifycondvar`. Logically, each such notification promotes
 one thread that was waiting on the condition to a ready state. An
-alternate form of notification ({ref}`PR_NotifyAllCondVar`) promotes all
+alternate form of notification ({doc}`pr_notifyallcondvar`) promotes all
 threads waiting on a condition to the ready state. If no threads were
 waiting, the notification is a no-op.
 
 Waiting on a condition variable is an interruptible operation. Another
-thread could target the waiting thread and issue a {ref}`PR_Interrupt`,
+thread could target the waiting thread and issue a {doc}`pr_interrupt`,
 causing a waiting thread to resume. In such cases the return from the
 wait operation indicates a failure and definitively indicates that the
 cause of the failure is an interrupt.
 
-A call to {ref}`PR_WaitCondVar` may also resume because the interval
+A call to {doc}`pr_waitcondvar` may also resume because the interval
 specified on the wait call has expired. However, this fact cannot be
 unambiguously delivered, so no attempt is made to do so. If the logic of
 a program allows for timing of waits on conditions, then the clock must

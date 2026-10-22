@@ -191,7 +191,6 @@ support-files = [
 ["test_allowMedia.html"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt",
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1434744
 ]
 
 ["test_anchor_href_cache_invalidation.html"]
@@ -374,7 +373,6 @@ support-files = ["file_script_module.html"]
 tags = "openwindow"
 skip-if = [
   "os == 'android' && debug",
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1533759
 ]
 
 ["test_window_open_from_closing.html"]

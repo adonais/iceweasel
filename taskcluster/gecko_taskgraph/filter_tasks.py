@@ -12,7 +12,6 @@ from gecko_taskgraph.target_tasks import (
     filter_by_regex,
     filter_by_uncommon_try_tasks,
     filter_out_shippable,
-    filter_unsupported_artifact_builds,
     target_tasks_default,
 )
 
@@ -44,7 +43,6 @@ def target_tasks_try_auto(full_task_graph, parameters, graph_config):
         if filter_by_uncommon_try_tasks(t.label)
         and filter_by_regex(t.label, include_regexes, mode="include")
         and filter_by_regex(t.label, exclude_regexes, mode="exclude")
-        and filter_unsupported_artifact_builds(t, parameters)
         and filter_out_shippable(t)
     ]
     return list(set(filtered_for_default) & set(filtered_for_try_auto))

@@ -88,19 +88,22 @@ def get_binary(path, app_name):
     return binary
 
 
-def install(src, dest):
+def install(src, dest, verify=True):
     """Install a zip, exe, tar.gz, tar.bz2, tar.xz or dmg file, and return the path of
     the installation folder.
 
     :param src: Path to the install file
     :param dest: Path to install to (to ensure we do not overwrite any existent
                  files the folder should not exist yet)
+    :param verify: Whether to verify the checksum of a dmg file when attaching it.
+                   Only affects dmg files on macOS; other formats verify
+                   integrity as part of extraction.
     """
     if not is_installer(src):
         msg = f"{src} is not a valid installer file"
         if "://" in src:
             try:
-                return _install_url(src, dest)
+                return _install_url(src, dest, verify=verify)
             except Exception:
                 exc, val, tb = sys.exc_info()
                 error = InvalidSource(f"{msg} ({val})")
@@ -122,7 +125,7 @@ def install(src, dest):
             # MSIX packages _are_ ZIP files, so we need to look for them first.
             install_dir = _install_msix(src)
         elif src.lower().endswith(".dmg"):
-            install_dir = _install_dmg(src, dest)
+            install_dir = _install_dmg(src, dest, verify=verify)
         elif src.lower().endswith(".exe"):
             install_dir = _install_exe(src, dest)
         elif zipfile.is_zipfile(src) or tarfile.is_tarfile(src):
@@ -265,13 +268,16 @@ def uninstall(install_folder):
     mozfile.remove(install_folder)
 
 
-def _install_url(url, dest):
+def _install_url(url, dest, verify=True):
     """Saves a url to a temporary file, and passes that through to the
     install function.
 
     :param url: Url to the install file
     :param dest: Path to install to (to ensure we do not overwrite any existent
                  files the folder should not exist yet)
+    :param verify: Whether to verify the checksum of a dmg file when attaching it.
+                   Only affects dmg files on macOS; other formats verify
+                   integrity as part of extraction.
     """
     r = requests.get(url, stream=True)
     name = tempfile.mkstemp()[1]
@@ -279,18 +285,19 @@ def _install_url(url, dest):
         with open(name, "w+b") as fh:
             for chunk in r.iter_content(chunk_size=16 * 1024):
                 fh.write(chunk)
-        result = install(name, dest)
+        result = install(name, dest, verify=verify)
     finally:
         mozfile.remove(name)
     return result
 
 
-def _install_dmg(src, dest_app):
+def _install_dmg(src, dest_app, verify=True):
     """Extract a dmg file into the destination folder and return the
     application folder.
 
     src -- DMG image which has to be extracted
     dest -- the path to extract to
+    verify -- whether to verify the checksum of the image when attaching it
 
     """
     if mozinfo.isLinux:
@@ -340,10 +347,11 @@ def _install_dmg(src, dest_app):
             # to older macOS versions. According to the Apple docs, the hdiutil
             # output is stable and is based on the tab separators. Therefore,
             # $3 should give us the mounted path.
+            verify_flag = "" if verify else " -noverify"
             app_dir = (
                 subprocess
                 .check_output(
-                    f'hdiutil attach -noautoopen -nobrowse -readonly "{src}"'
+                    f'hdiutil attach -noautoopen -nobrowse -readonly{verify_flag} "{src}"'
                     "| grep /Volumes/ | awk 'BEGIN{FS=\"\t\"} {print $3}'",
                     shell=True,
                     stderr=subprocess.STDOUT,
@@ -519,6 +527,13 @@ def install_cli(argv=sys.argv[1:]):
         default="firefox",
         help="Application being installed. [default: %default]",
     )
+    parser.add_option(
+        "--no-verify",
+        dest="verify",
+        action="store_false",
+        default=True,
+        help="Skip checksum verification when attaching a dmg file.",
+    )
 
     (options, args) = parser.parse_args(argv)
     if not len(args) == 1:
@@ -530,7 +545,7 @@ def install_cli(argv=sys.argv[1:]):
     if os.path.isdir(src):
         binary = get_binary(src, app_name=options.app)
     else:
-        install_path = install(src, options.dest)
+        install_path = install(src, options.dest, verify=options.verify)
         binary = get_binary(install_path, app_name=options.app)
 
     print(binary)

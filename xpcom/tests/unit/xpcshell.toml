@@ -101,14 +101,12 @@ run-if = [
 skip-if = [
   "os == 'android'", # Bug 1631671
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 676998
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 676998
   "os == 'win'", # Bug 1325609
 ]
 
 ["test_nsIProcess_stress.js"]
 skip-if = [
   "ccov", # bug 1394989
-  "os == 'win'", # bug 676412, test isn't needed on windows and runs really slowly
 ]
 
 ["test_pipe.js"]

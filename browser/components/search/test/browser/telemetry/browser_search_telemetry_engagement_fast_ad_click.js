@@ -61,12 +61,15 @@ add_setup(async function () {
     SEARCH_TELEMETRY_SHARED.LOAD_TIMEOUT,
     LONG_LOAD_TIMEOUT_MS
   );
+  Services.ppmm.sharedData.flush();
+  await waitForIdle();
 
   registerCleanupFunction(async () => {
     Services.ppmm.sharedData.set(
       SEARCH_TELEMETRY_SHARED.LOAD_TIMEOUT,
       DEFAULT_LOAD_TIMEOUT_MS
     );
+    Services.ppmm.sharedData.flush();
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
     resetTelemetry();
@@ -143,6 +146,8 @@ add_task(async function test_ad_click_before_ad_impressions_reported() {
       impression: {
         shopping_tab_displayed: "unknown",
         has_ai_summary: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       engagements: [
         {

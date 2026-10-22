@@ -14,6 +14,6 @@ typedef PRTimeParameters (PR_CALLBACK_DECL *PRTimeParamFn)
 
 ## Description
 
-The type {ref}`PRTimeParamFn` represents a callback function that, when
+The type {doc}`prtimeparamfn` represents a callback function that, when
 given a time instant in GMT, returns the time zone information (offset
 from GMT and DST offset) at that time instant.

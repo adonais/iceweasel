@@ -29,8 +29,7 @@ class JSWindowActorParent final : public JSActor {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(JSWindowActorParent, JSActor)
 
-  explicit JSWindowActorParent(nsISupports* aGlobal = nullptr)
-      : JSActor(aGlobal) {}
+  explicit JSWindowActorParent(nsISupports* aGlobal = nullptr);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;

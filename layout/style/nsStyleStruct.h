@@ -1046,7 +1046,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   StyleImplicitGridTracks mGridAutoRows;
   mozilla::StyleAspectRatio mAspectRatio;
   mozilla::StyleGridAutoFlow mGridAutoFlow;
-  mozilla::StyleMasonryAutoFlow mMasonryAutoFlow;
 
   mozilla::StyleContentDistribution mAlignContent;
   mozilla::StyleItemPlacement mAlignItems;

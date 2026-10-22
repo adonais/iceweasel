@@ -79,19 +79,6 @@ class TextProperty {
     this.updateIsUnusedVariable();
   }
 
-  get computedProperties() {
-    return this.computed
-      .filter(computed => computed.name !== this.name)
-      .map(computed => {
-        return {
-          isOverridden: computed.overridden,
-          name: computed.name,
-          priority: computed.priority,
-          value: computed.value,
-        };
-      });
-  }
-
   /**
    * Returns whether or not the declaration's name is known.
    *

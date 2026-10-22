@@ -30,9 +30,10 @@ DECLARE_ALIGNED(16, static const uint16_t, kDeinterleaveTbl[8]) = {
 // (x, y) in src and the other at (x + u, y + v) in ref.
 // This function returns the sum of squared pixel differences between
 // the two regions.
-static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
-                                      int width, int height, int stride, int x,
-                                      int y, double u, double v, int16_t *dt) {
+static inline void compute_flow_error(const uint8_t *src, int src_stride,
+                                      const uint8_t *ref, int ref_stride,
+                                      int width, int height, int x, int y,
+                                      double u, double v, int16_t *dt) {
   // Split offset into integer and fractional parts, and compute cubic
   // interpolation kernels
   const int u_int = (int)floor(u);
@@ -62,16 +63,16 @@ static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
   const int y0 = clamp(y + v_int, -9, height);
 
   // Horizontal convolution.
-  const uint8_t *ref_start = ref + (y0 - 1) * stride + (x0 - 1);
+  const uint8_t *ref_start = ref + (y0 - 1) * ref_stride + (x0 - 1);
   const int16x4_t h_kernel_s16 = vmovn_s32(vld1q_s32(h_kernel));
   const int16x8_t h_filter = vcombine_s16(h_kernel_s16, vdup_n_s16(0));
   const uint16x8_t idx = vld1q_u16(kDeinterleaveTbl);
 
   for (int i = 0; i < DISFLOW_PATCH_SIZE + 3; ++i) {
-    svuint16_t r0 = svld1ub_u16(svptrue_b16(), ref_start + i * stride + 0);
-    svuint16_t r1 = svld1ub_u16(svptrue_b16(), ref_start + i * stride + 1);
-    svuint16_t r2 = svld1ub_u16(svptrue_b16(), ref_start + i * stride + 2);
-    svuint16_t r3 = svld1ub_u16(svptrue_b16(), ref_start + i * stride + 3);
+    svuint16_t r0 = svld1ub_u16(svptrue_b16(), ref_start + i * ref_stride + 0);
+    svuint16_t r1 = svld1ub_u16(svptrue_b16(), ref_start + i * ref_stride + 1);
+    svuint16_t r2 = svld1ub_u16(svptrue_b16(), ref_start + i * ref_stride + 2);
+    svuint16_t r3 = svld1ub_u16(svptrue_b16(), ref_start + i * ref_stride + 3);
 
     int16x8_t s0 = vreinterpretq_s16_u16(svget_neonq_u16(r0));
     int16x8_t s1 = vreinterpretq_s16_u16(svget_neonq_u16(r1));
@@ -123,7 +124,7 @@ static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
     sum_hi = vmlal_lane_s16(sum_hi, vget_high_s16(t2), v_filter, 2);
     sum_hi = vmlal_lane_s16(sum_hi, vget_high_s16(t3), v_filter, 3);
 
-    uint8x8_t s = vld1_u8(src + (i + y) * stride + x);
+    uint8x8_t s = vld1_u8(src + (i + y) * src_stride + x);
     int16x8_t s_s16 = vreinterpretq_s16_u16(vshll_n_u8(s, 3));
 
     // This time, we have to round off the 6 extra bits which were kept
@@ -232,9 +233,10 @@ static inline void compute_flow_vector(const int16_t *dx, int dx_stride,
   vst1_s32(b, vmovn_s64(b_s64[0]));
 }
 
-void aom_compute_flow_at_point_sve(const uint8_t *src, const uint8_t *ref,
-                                   int x, int y, int width, int height,
-                                   int stride, double *u, double *v) {
+void aom_compute_flow_at_point_sve(const uint8_t *src, int src_stride,
+                                   const uint8_t *ref, int ref_stride, int x,
+                                   int y, int width, int height, double *u,
+                                   double *v) {
   double M_inv[4];
   int b[2];
   int16_t dt[DISFLOW_PATCH_SIZE * DISFLOW_PATCH_SIZE];
@@ -242,14 +244,15 @@ void aom_compute_flow_at_point_sve(const uint8_t *src, const uint8_t *ref,
   int16_t dy[DISFLOW_PATCH_SIZE * DISFLOW_PATCH_SIZE];
 
   // Compute gradients within this patch
-  const uint8_t *src_patch = &src[y * stride + x];
-  sobel_filter_x(src_patch, stride, dx, DISFLOW_PATCH_SIZE);
-  sobel_filter_y(src_patch, stride, dy, DISFLOW_PATCH_SIZE);
+  const uint8_t *src_patch = &src[y * src_stride + x];
+  sobel_filter_x(src_patch, src_stride, dx, DISFLOW_PATCH_SIZE);
+  sobel_filter_y(src_patch, src_stride, dy, DISFLOW_PATCH_SIZE);
 
   compute_flow_matrix(dx, DISFLOW_PATCH_SIZE, dy, DISFLOW_PATCH_SIZE, M_inv);
 
   for (int itr = 0; itr < DISFLOW_MAX_ITR; itr++) {
-    compute_flow_error(src, ref, width, height, stride, x, y, *u, *v, dt);
+    compute_flow_error(src, src_stride, ref, ref_stride, width, height, x, y,
+                       *u, *v, dt);
     compute_flow_vector(dx, DISFLOW_PATCH_SIZE, dy, DISFLOW_PATCH_SIZE, dt,
                         DISFLOW_PATCH_SIZE, b);
 

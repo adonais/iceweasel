@@ -96,11 +96,10 @@ will need to obtain a stacktrace manually:
 
 ### Windows
 
-See the article {ref}`Create a stacktrace with Windbg <How to get a stacktrace with WinDbg>` for information
+See the article {doc}`Create a stacktrace with Windbg <stacktrace_windbg>` for information
 on how to do this.
 
-For a full process dump, see {ref}`How to get a process dump with Windows
-Task Manager`.
+For a full process dump, see {doc}`process_dump_task_manager`.
 
 ### macOS
 

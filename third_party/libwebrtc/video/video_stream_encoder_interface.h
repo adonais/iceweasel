@@ -21,7 +21,6 @@
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/units/data_rate.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_layers_allocation.h"
@@ -54,9 +53,6 @@ class VideoStreamEncoderInterface {
         bool is_svc,
         VideoEncoderConfig::ContentType content_type,
         int min_transmit_bitrate_bps) = 0;
-
-    virtual void OnBitrateAllocationUpdated(
-        const VideoBitrateAllocation& allocation) = 0;
 
     virtual void OnVideoLayersAllocationUpdated(
         VideoLayersAllocation allocation) = 0;

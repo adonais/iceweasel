@@ -259,6 +259,9 @@ typescript:
             - 'browser/components/urlbar/**/*.ts'
             - 'browser/extensions/newtab/**/*.*js'
             - 'browser/extensions/newtab/**/*.ts'
+            - 'browser/extensions/newtab/tsconfig.json'
+            - 'devtools/client/settings/**/*.*js'
+            - 'devtools/client/settings/**/*.ts'
             - 'toolkit/components/extensions/**/*.*js'
             - 'toolkit/components/extensions/**/*.ts'
             - 'toolkit/components/places/**/*.*js'
@@ -658,6 +661,7 @@ clippy:
             - '**/*.rs'
             - '**/Cargo.toml'
             - 'tools/lint/clippy.yml'
+            - 'build/cargo/cargo-clippy.yaml'
     fetches:
         toolchain:
             - linux64-clang

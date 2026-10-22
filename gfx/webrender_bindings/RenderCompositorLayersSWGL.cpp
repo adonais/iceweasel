@@ -224,9 +224,9 @@ void RenderCompositorLayersSWGL::UnmapTile() {
   mCurrentTile = nullptr;
 }
 
-void RenderCompositorLayersSWGL::CreateSurface(
-    wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-    wr::DeviceIntSize aTileSize, bool aIsOpaque) {
+void RenderCompositorLayersSWGL::CreateSurface(wr::NativeSurfaceId aId,
+                                               wr::DeviceIntSize aTileSize,
+                                               bool aIsOpaque) {
   MOZ_RELEASE_ASSERT(mSurfaces.find(aId) == mSurfaces.end());
   auto surface = DoCreateSurface(aTileSize, aIsOpaque);
   mSurfaces.insert({aId, std::move(surface)});

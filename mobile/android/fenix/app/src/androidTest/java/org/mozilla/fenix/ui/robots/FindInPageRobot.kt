@@ -22,6 +22,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 
@@ -58,16 +59,16 @@ class FindInPageRobot {
     }
 
     fun enterFindInPageQuery(expectedText: String) {
-        mDevice.waitNotNull(Until.findObject(By.res("org.mozilla.fenix.debug:id/find_in_page_query_text")), waitingTime)
+        mDevice.waitNotNull(Until.findObject(By.res("$packageName:id/find_in_page_query_text")), waitingTime)
         Log.i(TAG, "enterFindInPageQuery: Trying to clear find in page bar text")
         findInPageQuery().perform(clearText())
         Log.i(TAG, "enterFindInPageQuery: Cleared find in page bar text")
-        mDevice.waitNotNull(Until.gone(By.res("org.mozilla.fenix.debug:id/find_in_page_result_text")), waitingTime)
+        mDevice.waitNotNull(Until.gone(By.res("$packageName:id/find_in_page_result_text")), waitingTime)
         Log.i(TAG, "enterFindInPageQuery: Trying to type $expectedText in find in page bar")
         findInPageQuery().perform(typeText(expectedText))
         Log.i(TAG, "enterFindInPageQuery: Typed $expectedText in find page bar")
         mDevice.waitNotNull(
-            Until.findObject(By.res("org.mozilla.fenix.debug:id/find_in_page_result_text")),
+            Until.findObject(By.res("$packageName:id/find_in_page_result_text")),
             waitingTime,
         )
     }

@@ -154,3 +154,6 @@ path:mobile/android/fenix/gradle/wrapper/gradle-wrapper.properties
 path:mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt
 path:mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt
 path:mobile/android/version.txt
+
+# for the in-tree app-services gradle dependencies toolchain task
+path:third_party/application-services/.buildconfig-android.yml

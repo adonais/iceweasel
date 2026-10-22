@@ -17,7 +17,7 @@ Services.scriptloader.loadSubScript(
 );
 
 const { DevToolsStartup } = ChromeUtils.importESModule(
-  "resource:///modules/DevToolsStartup.sys.mjs"
+  "moz-src:///devtools/startup/DevToolsStartup.sys.mjs"
 );
 
 const startup = new DevToolsStartup();

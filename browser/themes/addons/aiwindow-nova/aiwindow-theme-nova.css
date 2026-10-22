@@ -14,6 +14,7 @@
 
 body {
   --tabpanel-background-color: transparent;
+  --chrome-content-separator-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
 }
 
 #navigator-toolbox {
@@ -24,8 +25,4 @@ body {
 .tab-preview-thumbnail-container > canvas {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--ai-background-color);
-}
-
-:root[aiwindow-immersive-view] #tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
-  --chrome-content-separator-color: transparent;
 }

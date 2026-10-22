@@ -392,23 +392,9 @@ function setupProfile() {
   // FOG needs to be initialized in order for data to flow.
   Services.fog.initializeFOG();
 
-  // Much of this setup is copied from toolkit/profile/xpcshell/head.js. It is
-  // needed in order to put the xpcshell test environment into the state where
-  // it thinks its profile is the one pointed at by
-  // nsIToolkitProfileService.currentProfile.
-  let gProfD = do_get_profile();
-  let gDataHome = gProfD.clone();
-  gDataHome.append("data");
-  gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-  let gDataHomeLocal = gProfD.clone();
-  gDataHomeLocal.append("local");
-  gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-  let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
-    Ci.nsIXREDirProvider
-  );
-  xreDirProvider.setUserDataDirectory(gDataHome, false);
-  xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+  // Put the xpcshell test environment into the state where it thinks its
+  // profile is the one pointed at by nsIToolkitProfileService.currentProfile.
+  do_get_profile();
 
   let profileSvc = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
     Ci.nsIToolkitProfileService

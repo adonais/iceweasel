@@ -97,7 +97,12 @@ add_task(async function testWebExtensionsToolboxNetmonitor() {
   const waitForHeaders = waitUntil(() =>
     monitorDocument.querySelector(".headers-overview")
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  // Clicking the row's centre would hit a column resizer.
+  EventUtils.synthesizeMouseAtCenter(
+    firstRequest.querySelector(".requests-list-file"),
+    {},
+    monitor.panelWin
+  );
   await waitForHeaders;
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
   await selectNetmonitorContextMenuItem(

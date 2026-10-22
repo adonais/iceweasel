@@ -15,7 +15,7 @@ using mozilla::layers::ScrollableLayerGuid from "mozilla/layers/ScrollableLayerG
 using mozilla::layers::TouchBehaviorFlags from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::AsyncDragMetrics from "mozilla/layers/AsyncDragMetrics.h";
 using mozilla::layers::GeckoContentController_TapType from "mozilla/layers/GeckoContentControllerTypes.h";
-using mozilla::layers::APZHandledResult from "mozilla/layers/APZInputBridge.h";
+using mozilla::layers::APZHandledResult from "mozilla/layers/APZBridge.h";
 
 namespace mozilla {
 namespace layers {

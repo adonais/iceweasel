@@ -57,6 +57,10 @@
   <string name="mozac_feature_prompts_allow">اجازت ݙیوو</string>
   <!-- Text of a negative button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_deny">انکار کرو</string>
+  <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
+  <string name="mozac_feature_prompts_popup_dialog_title">کیا تساں ایں سائیٹ کوں کھولݨ دی اجازت ݙیندے ہو؟</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">کیا ایں سائیٹ تے ری ڈائریکٹ کرݨ دی اجازت ݙیندے ہو؟</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">بھلا تہاکوں پک ہے؟</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
@@ -65,6 +69,12 @@
   <string name="mozac_feature_prompts_before_unload_stay">راہوو</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">چھوڑو</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s، %2$s کیتے پاس کی (passkey) بݨاوݨ چاہندا ہے۔</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s، %2$s کیتے پاس کی (passkey) استعمال کرݨ چاہندا ہے۔</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">جاری</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">ہک مہینہ چُݨو</string>
   <!-- January (short description), used on the month chooser dialog. -->
@@ -124,6 +134,12 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">ڈیٹا ولدا پٹھو</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">منسوخ</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">فائل اپ لوڈ کرو</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">\"%1$s\" توں اپلوڈ کرݨ توں پہلاں یقینی بݨاؤ جو تساں ایں سائیٹ تے بھروسہ کریندے ہیوے۔</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">اپ لوڈ کرو</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">منسوخ</string>
   <!--
@@ -156,6 +172,10 @@
   <string name="mozac_feature_prompts_collapse_address_content_description_2">محفوظ تھئے پتے ولھیٹو</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">پتے منیج کرو</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">پتہ محفوظ کروں؟</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">پتہ اپڈیٹ کروں؟</string>
   <!--
     Federated Credential Management prompts
 
@@ -180,4 +200,6 @@
     Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
   -->
   <string name="mozac_feature_relay_chip_text">ای میل ماسک ورتو</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">نواں! %s ای میل ماسکس ہݨ موبائل تے دستیاب ہن۔</string>
 </resources>

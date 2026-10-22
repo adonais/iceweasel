@@ -345,7 +345,10 @@ class BrowserToolbarMiddleware(
                 navController.nav(
                     R.id.browserFragment,
                     when (settings.isMenuCustomizationEnabled) {
-                        true -> BrowserFragmentDirections.actionBrowserFragmentToMenuFragment()
+                        true ->
+                            BrowserFragmentDirections.actionBrowserFragmentToMenuFragment(
+                                accessPoint = MenuAccessPoint.Browser
+                            )
                         else ->
                             BrowserFragmentDirections.actionGlobalMenuDialogFragment(
                                 accesspoint = MenuAccessPoint.Browser
@@ -1295,9 +1298,17 @@ class BrowserToolbarMiddleware(
                 ActionButtonRes(
                     drawableResId =
                         if (browserScreenStore.state.readerModeStatus.isActive) {
-                            iconsR.drawable.mozac_ic_reader_view_fill_24
+                            if (settings.listenToPageFeatureFlagEnabled) {
+                                iconsR.drawable.mozac_ic_reader_view_audio_fill_24
+                            } else {
+                                iconsR.drawable.mozac_ic_reader_view_fill_24
+                            }
                         } else {
-                            iconsR.drawable.mozac_ic_reader_view_24
+                            if (settings.listenToPageFeatureFlagEnabled) {
+                                iconsR.drawable.mozac_ic_reader_view_audio_24
+                            } else {
+                                iconsR.drawable.mozac_ic_reader_view_24
+                            }
                         },
                     contentDescription =
                         if (browserScreenStore.state.readerModeStatus.isActive) {

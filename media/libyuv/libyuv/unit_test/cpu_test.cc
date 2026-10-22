@@ -163,6 +163,15 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   }
 #endif  // defined(__loongarch__)
 
+#if defined(__wasm__)
+  int has_wasm = TestCpuFlag(kCpuHasWASM);
+  if (has_wasm) {
+    int has_wasm_simd = TestCpuFlag(kCpuHasWASMSIMD);
+    printf("Has WASM 0x%x\n", has_wasm);
+    printf("Has WASM SIMD 0x%x\n", has_wasm_simd);
+  }
+#endif  // defined(__wasm__)
+
 #if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
     defined(_M_X64)
   int has_x86 = TestCpuFlag(kCpuHasX86);
@@ -288,6 +297,12 @@ TEST_F(LibYUVBaseTest, TestCompilerMacros) {
 #ifdef __loongarch__
   printf("__loongarch__ %d\n", __loongarch__);
 #endif
+#ifdef __wasm__
+  printf("__wasm__ %d\n", __wasm__);
+#endif
+#ifdef __wasm_simd128__
+  printf("__wasm_simd128__ %d\n", __wasm_simd128__);
+#endif
 #ifdef _WIN32
   printf("_WIN32 %d\n", _WIN32);
 #endif
@@ -366,7 +381,9 @@ TEST_F(LibYUVBaseTest, TestLinuxAArch64) {
   expected |= kCpuHasSME;
   ASSERT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x82f3ffU));
 
-  // TODO: Check for SME2 feature detection from Apple M4
+  // Check for SME2 feature detection.
+  expected |= kCpuHasSME2;
+  ASSERT_EQ(expected, AArch64CpuCaps(0x3fffffffU, 0x200082f3ffULL));
 }
 #endif
 

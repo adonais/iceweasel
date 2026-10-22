@@ -21,7 +21,7 @@ class NetworkConnectionIdlingResource(private val networkConnected: Boolean) : I
         InstrumentationRegistry.getInstrumentation().context.getSystemService<ConnectivityManager>()
 
     override fun getName(): String {
-        return this::javaClass.name
+        return javaClass.name
     }
 
     override fun isIdleNow(): Boolean {

@@ -119,7 +119,7 @@ if CONFIG['TARGET_CPU'] in ('mips32', 'mips64', 'ppc64'):
 if CONFIG['TARGET_CPU'] == 'loongarch64':
     # In ABI1.0, the compilers disable 128bit SIMD defautly; in ABI2.0, it
     # enable defaultly. The below flags can maintain compatibility.
-    CXXFLAGS += ['-mlsx']
+    CXXFLAGS += CONFIG['LSX_FLAGS']
     if (
         CONFIG['CC_TYPE'] == 'clang'
         and int(CONFIG["CC_VERSION"].split(".")[0]) >= 18
@@ -131,10 +131,10 @@ if CONFIG['TARGET_CPU'] == 'loongarch64':
 
     SOURCES += ['skia/src/opts/SkOpts_lasx.cpp']
     SOURCES['skia/src/opts/SkOpts_lasx.cpp'].flags += skia_opt_flags
-    SOURCES['skia/src/core/SkBitmapProcState_opts_lasx.cpp'].flags += ['-mlasx']
-    SOURCES['skia/src/core/SkBlitRow_opts_lasx.cpp'].flags += ['-mlasx']
-    SOURCES['skia/src/core/SkSwizzler_opts_lasx.cpp'].flags += ['-mlasx']
-    SOURCES['skia/src/opts/SkOpts_lasx.cpp'].flags += ['-mlasx']
+    SOURCES['skia/src/core/SkBitmapProcState_opts_lasx.cpp'].flags += CONFIG['LASX_FLAGS']
+    SOURCES['skia/src/core/SkBlitRow_opts_lasx.cpp'].flags += CONFIG['LASX_FLAGS']
+    SOURCES['skia/src/core/SkSwizzler_opts_lasx.cpp'].flags += CONFIG['LASX_FLAGS']
+    SOURCES['skia/src/opts/SkOpts_lasx.cpp'].flags += CONFIG['LASX_FLAGS']
 """
 
 import json

@@ -708,7 +708,11 @@ class TestManifestLoader(TestLoader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.finder = FileFinder(self.topsrcdir)
-        self.reader = self.mozbuild_reader(config_mode="empty")
+        # Checkouts in automation are clean, checking it again on sparse
+        # checkouts (e.g. in decision tasks) is slow.
+        self.reader = self.mozbuild_reader(
+            config_mode="empty", vcs_check_clean="MOZ_AUTOMATION" not in os.environ
+        )
         self.variables = {f"{k}_MANIFESTS": v[0] for k, v in TEST_MANIFESTS.items()}
         self.variables.update({f"{f.upper()}_MANIFESTS": f for f in REFTEST_FLAVORS})
 
@@ -1545,7 +1549,7 @@ class TestResolver(MozbuildObject):
             # one or none are defined, but not both
             tests = list(self.resolve_tests(paths=[relpath]))
             if not tests:
-                tests = list(self.resolve_tests(tags=entry))
+                tests = list(self.resolve_tests(tags=[entry]))
             run_tests.extend(tests)
 
             if not tests:

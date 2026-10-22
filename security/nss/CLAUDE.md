@@ -6,11 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NSS uses GYP + Ninja as its primary build system, driven by `build.sh` (or the `mach` wrapper):
 
+**Always build with `--dist`.** The default output directory, `../dist`, is outside the checkout, so
+checkouts that sit side by side share it and silently overwrite each other's libraries and binaries.
+Give each checkout its own directory and export it as `DIST`, which `tests/all.sh` and every `mach` subcommand
+also read:
+
 ```sh
-./build.sh          # debug build → ../dist/Debug/
-./build.sh -o       # optimized build → ../dist/Release/
-./build.sh -c       # clean + build
-./mach build        # equivalent wrapper
+export DIST=$PWD/../dist-$(basename $PWD)
+./build.sh --dist=$DIST          # debug build → $DIST/Debug/
+./build.sh --dist=$DIST -o       # optimized build → $DIST/Release/
+./build.sh --dist=$DIST -c       # clean + build
+./mach build                     # equivalent wrapper; passes --dist=$DIST itself
 ```
 
 Common flags:
@@ -20,7 +26,7 @@ Common flags:
 - `--disable-tests` — skip building test binaries
 - `-t <arch>` — cross-compile (x64, ia32, aarch64, …)
 
-Output lands in `out/[Debug|Release]/` (build artifacts) and `../dist/[Debug|Release]/` (headers, libs, binaries).
+Output lands in `out/[Debug|Release]/` (build artifacts) and `$DIST/[Debug|Release]/` (headers, libs, binaries).
 
 A legacy Make-based build (`make nss_build_all`) also exists via `coreconf/` but GYP is preferred for new work.
 
@@ -35,16 +41,28 @@ NSS_TESTS=ssl_gtests NSS_CYCLES=standard ./all.sh  # skip stress cycles
 
 Available suites: `cipher`, `ssl`, `ssl_gtests`, `gtests`, `cert`, `smime`, `fips`, `ec`, `bogo`, `interop`, `policy`, and others. See `tests/all.sh` for the full list.
 
-GTest binaries require a certificate database. Helper scripts create one and then invoke the binary:
+GTest binaries require a certificate database. Helper scripts create one, then you run the binary.
+Set `LD_LIBRARY_PATH` first so the binaries (and `certutil`) load the freshly built libraries
+rather than a system NSS:
 ```sh
-# SSL gtests
-./tests/ssl_gtests/ssl_gtest_db.sh ./ssl_gtest_certdb ../dist/Debug/bin/certutil
-../dist/Debug/bin/ssl_gtests -d ./ssl_gtest_certdb
+export LD_LIBRARY_PATH=$DIST/Debug/lib
 
-# Other gtests
-./tests/gtests/gtest_db.sh ./gtest_certdb ../dist/Debug/bin/certutil
-../dist/Debug/bin/pkcs11testmodule_gtest -d ./gtest_certdb   # example
+# SSL gtests
+./tests/ssl_gtests/ssl_gtest_db.sh ./ssl_gtest_certdb $DIST/Debug/bin/certutil
+$DIST/Debug/bin/ssl_gtest -d ./ssl_gtest_certdb
+
+# Other gtests (pk11_gtest, freebl_gtest, der_gtest, ...)
+./tests/gtests/gtest_db.sh ./gtest_certdb $DIST/Debug/bin/certutil
+$DIST/Debug/bin/pk11_gtest -d ./gtest_certdb -s $PWD/gtests/pk11_gtest -w
 ```
+
+`tests/gtests/gtests.sh` passes two extra flags to every gtest binary except `ssl_gtest`; do the same
+when running them by hand:
+- `-s <source>/gtests/<binary>`: test-vector (e.g. Wycheproof) lookups are relative to this. Without it
+  those tests fail with "error opening vectors".
+- `-w`: open the database read-write. Tests that create token objects fail without it.
+
+`ssl_gtest` has its own `main()` and takes only `-d`.
 
 ## Code formatting and linting
 

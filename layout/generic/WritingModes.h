@@ -7,6 +7,7 @@
 
 #include <ostream>
 
+#include "fmt/ostream.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
@@ -2176,6 +2177,18 @@ inline bool StyleMaxSize::BehavesLikeInitialValue(LogicalAxis aAxis) const {
                                       : BehavesLikeInitialValueOnBlockAxis();
 }
 
+template <>
+inline bool StyleSize::BehavesLikeStretch(LogicalAxis aAxis) const {
+  return aAxis == LogicalAxis::Inline ? BehavesLikeStretchOnInlineAxis()
+                                      : BehavesLikeStretchOnBlockAxis();
+}
+
+template <>
+inline bool StyleMaxSize::BehavesLikeStretch(LogicalAxis aAxis) const {
+  return aAxis == LogicalAxis::Inline ? BehavesLikeStretchOnInlineAxis()
+                                      : BehavesLikeStretchOnBlockAxis();
+}
+
 }  // namespace mozilla
 
 // Definitions of inline methods for nsStylePosition, declared in
@@ -2391,5 +2404,16 @@ inline mozilla::UsedClear nsStyleDisplay::UsedClear(
   MOZ_ASSERT_UNREACHABLE("all cases are handled above!");
   return mozilla::UsedClear::None;
 }
+
+template <>
+struct fmt::formatter<mozilla::WritingMode> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::LogicalPoint> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::LogicalSize> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::LogicalMargin> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::LogicalRect> : fmt::ostream_formatter {};
 
 #endif  // WritingModes_h_

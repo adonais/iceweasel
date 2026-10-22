@@ -145,7 +145,6 @@ module.exports = [
       "browser/extensions/newtab/content-src/components/Weather/_Weather.scss",
       "browser/extensions/newtab/content-src/components/Widgets/FocusTimer/_FocusTimer.scss",
       "browser/extensions/newtab/content-src/components/Widgets/Lists/_Lists.scss",
-      "browser/extensions/newtab/content-src/components/Widgets/SportsWidget/_SportsWidget.scss",
       "browser/extensions/newtab/content-src/components/Widgets/Weather/_Weather.scss",
       "browser/extensions/newtab/content-src/components/Widgets/WeatherForecast/WeatherForecast.scss",
       "browser/extensions/newtab/content-src/components/Widgets/_Widgets.scss",

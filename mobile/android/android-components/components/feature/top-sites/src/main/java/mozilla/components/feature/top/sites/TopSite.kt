@@ -15,7 +15,7 @@ sealed class TopSite {
     /**
      * This top site was added as a default by the application.
      *
-     * @property id Unique ID of this top site.
+     * @property id Unique ID of this top site. This can be `null` when it is not supplied.
      * @property title The title of the top site.
      * @property url The URL of the top site.
      * @property createdAt The optional date the top site was added.

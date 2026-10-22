@@ -1,8 +1,8 @@
 # PRHostEnt
 
 A structure that defines a list of network addresses. This structure is
-output from {ref}`PR_GetHostByName` and {ref}`PR_GetHostByAddr` and passed to
-{ref}`PR_EnumerateHostEnt`. Clients should avoid directly accessing any of
+output from {doc}`pr_gethostbyname` and {doc}`pr_gethostbyaddr` and passed to
+{doc}`pr_enumeratehostent`. Clients should avoid directly accessing any of
 the structure's fields.
 
 ## Syntax
@@ -59,12 +59,12 @@ This structure is used by many of the network address functions. All
 addresses are passed in host order and returned in network order
 (suitable for use in system calls).
 
-Use the network address functions to manipulate the {ref}`PRHostEnt`
+Use the network address functions to manipulate the {doc}`prhostent`
 structure. To make the transition to IP version 6 easier, it's best to
-treat {ref}`PRHostEnt` as an opaque structure.
+treat {doc}`prhostent` as an opaque structure.
 
 ## Note
 
 `WINSOCK.H` defines `h_addrtype` and `h_length` as a 16-bit field,
 whereas other platforms treat it as a 32-bit field. The `#ifdef` in
-the structure allows direct assignment of the {ref}`PRHostEnt` structure.
+the structure allows direct assignment of the {doc}`prhostent` structure.

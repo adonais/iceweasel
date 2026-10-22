@@ -22,7 +22,12 @@ from taskgraph.util.taskcluster import get_artifact_from_index
 from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import TEST_CONFIGS
-from gecko_taskgraph.util.bugbug import CT_LOW, BugbugTimeoutException, push_schedules
+from gecko_taskgraph.util.bugbug import (
+    CT_LOW,
+    BugbugTimeoutException,
+    get_confidence_threshold,
+    push_schedules,
+)
 
 logger = logging.getLogger(__name__)
 here = os.path.abspath(os.path.dirname(__file__))
@@ -286,7 +291,22 @@ def get_runtimes(platform, suite_name):
     return manifest_runtimes
 
 
-def resolve_manifest_runtimes(all_runtimes, manifests):
+@functools.cache
+def _included_runtimes(platform, suite_name):
+    """Map each ".toml" manifest to the runtimes of the "<manifest>:<included>"
+    keys of `get_runtimes(platform, suite_name)`, in iteration order."""
+    included = {}
+    for key, value in get_runtimes(platform, suite_name).items():
+        pos = key.find(":")
+        while pos != -1:
+            parent = key[:pos]
+            if parent.endswith(".toml"):
+                included.setdefault(parent, []).append(value)
+            pos = key.find(":", pos + 1)
+    return included
+
+
+def resolve_manifest_runtimes(platform, suite_name, manifests):
     """Match manifests to their runtimes, aggregating included sub-manifests.
 
     Runtime data keys can be either "manifest.toml" for direct matches or
@@ -294,13 +314,16 @@ def resolve_manifest_runtimes(all_runtimes, manifests):
     aggregates both into a single runtime per parent manifest.
 
     Args:
-        all_runtimes (dict): Raw runtime data from get_runtimes().
+        platform (str): Platform used to find runtime info.
+        suite_name (str): Suite used to find runtime info.
         manifests (iterable): Manifest paths to look up.
 
     Returns:
         A dict mapping manifest paths to their total runtime in seconds.
         Manifests with no runtime data are omitted.
     """
+    all_runtimes = get_runtimes(platform, suite_name)
+    included_runtimes = _included_runtimes(platform, suite_name)
     runtimes = {}
     for manifest in manifests:
         total_runtime = 0
@@ -310,12 +333,10 @@ def resolve_manifest_runtimes(all_runtimes, manifests):
             total_runtime += all_runtimes[manifest]
             found = True
 
-        if manifest.endswith(".toml"):
-            prefix = manifest + ":"
-            for key, value in all_runtimes.items():
-                if key.startswith(prefix):
-                    total_runtime += value
-                    found = True
+        if manifest in included_runtimes:
+            for value in included_runtimes[manifest]:
+                total_runtime += value
+            found = True
 
         if found:
             runtimes[manifest] = total_runtime
@@ -335,8 +356,7 @@ def chunk_manifests(suite, platform, chunks, manifests):
         A list of length `chunks` where each item contains a list of manifests
         that run in that chunk.
     """
-    all_runtimes = get_runtimes(platform, suite)
-    runtimes = resolve_manifest_runtimes(all_runtimes, manifests)
+    runtimes = resolve_manifest_runtimes(platform, suite, manifests)
 
     # Log if some manifests are missing runtime data
     manifests_without_data = [m for m in manifests if m not in runtimes]
@@ -407,72 +427,68 @@ class DefaultLoader(BaseManifestLoader):
         )
 
     @functools.cache
+    def _get_all_manifests(self, suite):
+        return frozenset(
+            chunk_by_runtime.get_manifest(t) for t in self.get_tests(suite)
+        )
+
+    @functools.cache
+    def _get_wpt_manifests(self, suite, subsuite, mozinfo_tags):
+        manifests = set()
+
+        # Subsuites only partition the (very large) testharness suite. The
+        # reftest/crashtest/wdspec/print-reftest suites are not split, so
+        # they keep every manifest; excluding subsuite paths here would drop
+        # e.g. canvas reftests and webgpu crashtests from every job, since
+        # the subsuite jobs only run testharness (see bug 2017833). Subsuites
+        # whose tests can't run in these jobs (e.g. webgpu CTS reftests, which
+        # need the webgpu job's --timeout-multiplier) are excluded at runtime
+        # via --exclude-tag in kind.yml instead.
+        if suite != "web-platform-tests":
+            for t in self.get_tests(suite):
+                if mozinfo_tags and not any(
+                    x in t.get("tags", []) for x in mozinfo_tags
+                ):
+                    continue
+                manifests.add(t["manifest"])
+            return manifests
+
+        if subsuite:
+            prefixes = tuple(
+                prefix
+                for path in WPT_SUBSUITES[subsuite]
+                for prefix in ("/" + path, "/_mozilla/" + path)
+            )
+        else:
+            prefixes = tuple(
+                prefix
+                for paths in WPT_SUBSUITES.values()
+                for path in paths
+                for prefix in ("/" + path, "/_mozilla/" + path)
+            )
+
+        for t in self.get_tests(suite):
+            if mozinfo_tags and not any(x in t.get("tags", []) for x in mozinfo_tags):
+                continue
+
+            manifest = t["manifest"]
+            if manifest.startswith(prefixes) == bool(subsuite):
+                manifests.add(manifest)
+        return manifests
+
+    @functools.cache
     def get_manifests(self, suite, frozen_mozinfo):
         mozinfo = dict(frozen_mozinfo)
-
-        tests = self.get_tests(suite)
 
         mozinfo_tags = json.loads(mozinfo.get("tag", "[]"))
 
         if "web-platform-tests" in suite:
-            manifests = set()
-
-            # Subsuites only partition the (very large) testharness suite. The
-            # reftest/crashtest/wdspec/print-reftest suites are not split, so
-            # they keep every manifest; excluding subsuite paths here would drop
-            # e.g. canvas reftests and webgpu crashtests from every job, since
-            # the subsuite jobs only run testharness (see bug 2017833). Subsuites
-            # whose tests can't run in these jobs (e.g. webgpu CTS reftests, which
-            # need the webgpu job's --timeout-multiplier) are excluded at runtime
-            # via --exclude-tag in kind.yml instead.
-            if suite != "web-platform-tests":
-                for t in tests:
-                    if mozinfo_tags and not any(
-                        x in t.get("tags", []) for x in mozinfo_tags
-                    ):
-                        continue
-                    manifests.add(t["manifest"])
-                return {
-                    "active": list(manifests),
-                    "skipped": [],
-                    "other_dirs": {},
-                }
-
-            subsuite = next((x for x in WPT_SUBSUITES.keys() if mozinfo.get(x)), None)
-
-            if subsuite:
-                subsuite_paths = WPT_SUBSUITES[subsuite]
-                for t in tests:
-                    if mozinfo_tags and not any(
-                        x in t.get("tags", []) for x in mozinfo_tags
-                    ):
-                        continue
-
-                    manifest = t["manifest"]
-                    if any(
-                        manifest.startswith("/" + x)
-                        or manifest.startswith("/_mozilla/" + x)
-                        for x in subsuite_paths
-                    ):
-                        manifests.add(manifest)
-            else:
-                all_subsuite_paths = [
-                    path for paths in WPT_SUBSUITES.values() for path in paths
-                ]
-                for t in tests:
-                    if mozinfo_tags and not any(
-                        x in t.get("tags", []) for x in mozinfo_tags
-                    ):
-                        continue
-
-                    manifest = t["manifest"]
-                    if not any(
-                        manifest.startswith("/" + path)
-                        or manifest.startswith("/_mozilla/" + path)
-                        for path in all_subsuite_paths
-                    ):
-                        manifests.add(manifest)
-
+            subsuite = None
+            if suite == "web-platform-tests":
+                subsuite = next(
+                    (x for x in WPT_SUBSUITES.keys() if mozinfo.get(x)), None
+                )
+            manifests = self._get_wpt_manifests(suite, subsuite, tuple(mozinfo_tags))
             return {
                 "active": list(manifests),
                 "skipped": [],
@@ -502,15 +518,14 @@ class DefaultLoader(BaseManifestLoader):
             filters.extend([tags([x]) for x in mozinfo_tags])
 
         m = TestManifest()
-        m.tests = tests
+        m.tests = self.get_tests(suite)
         active_tests = m.active_tests(
             disabled=False, exists=False, filters=filters, **mozinfo
         )
 
         active_manifests = {chunk_by_runtime.get_manifest(t) for t in active_tests}
 
-        skipped_manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
-        skipped_manifests.difference_update(active_manifests)
+        skipped_manifests = self._get_all_manifests(suite) - active_manifests
         return {
             "active": list(active_manifests),
             "skipped": list(skipped_manifests),
@@ -544,10 +559,9 @@ class BugbugLoader(DefaultLoader):
             self.timedout = True
             return self.get_manifests(suite, mozinfo)
 
+        threshold = get_confidence_threshold(data, "groups", self.CONFIDENCE_THRESHOLD)
         bugbug_manifests = {
-            m
-            for m, c in data.get("groups", {}).items()
-            if c >= self.CONFIDENCE_THRESHOLD
+            m for m, c in data.get("groups", {}).items() if c >= threshold
         }
 
         manifests["active"] = list(set(manifests["active"]) & bugbug_manifests)

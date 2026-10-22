@@ -46,20 +46,25 @@ async function openContextMenuForSelector(browser, selector) {
     }
   );
 
-  // add the offsets of the <browser> in the chrome window
-  let browserOffsets = browser.getBoundingClientRect();
-  let offsetX = browserOffsets.x + inputCoords.x;
-  let offsetY = browserOffsets.y + inputCoords.y;
-
   // Synthesize a right mouse click over the input element, we have to trigger
   // both events because formfill code relies on this event happening before the contextmenu
   // (which it does for real user input) in order to not show the password autocomplete.
-  let eventDetails = { type: "mousedown", button: 2 };
-  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  let eventDetails = { button: 2 };
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    inputCoords.x,
+    inputCoords.y,
+    eventDetails,
+    browser
+  );
 
   // Synthesize a contextmenu event to actually open the context menu.
   eventDetails = { type: "contextmenu", button: 2 };
-  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    inputCoords.x,
+    inputCoords.y,
+    eventDetails,
+    browser
+  );
 
   await SpecialPowers.spawn(browser, [], async () => {
     await content.contextmenuPromise;

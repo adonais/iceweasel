@@ -7,6 +7,7 @@
 #include "mozilla/TextUtils.h"
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
 #include "NamespaceImports.h"
 
 #include "builtin/TestingUtility.h"  // js::CreateScriptPrivate
@@ -14,6 +15,7 @@
 #include "js/MapAndSet.h"
 #include "js/Modules.h"
 #include "js/Prefs.h"
+#include "js/Promise.h"             // JS::AddPromiseReactions
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_GetProperty
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
@@ -259,9 +261,13 @@ static JSObject* CreateDynamicImportClosure(JSContext* cx, HandleValue referrer,
 }
 
 /* static */
-bool ModuleLoader::DynamicImportLoadResolved(JSContext* cx,
-                                             HandleValue hostDefined) {
-  RootedObject closure(cx, &hostDefined.toObject());
+bool ModuleLoader::DynamicImportLoadResolved(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject closure(
+      cx, &js::GetFunctionNativeReserved(&args.callee().as<JSFunction>(),
+                                         LoadReactionHostDefinedSlot)
+               .toObject());
 
   RootedValue referrer(cx, JS::GetReservedSlot(closure, ClosureReferrerSlot));
   RootedObject moduleRequest(
@@ -270,17 +276,32 @@ bool ModuleLoader::DynamicImportLoadResolved(JSContext* cx,
   RootedObject module(
       cx, &JS::GetReservedSlot(closure, ClosureModuleSlot).toObject());
 
-  return JS::FinishLoadingImportedModule(cx, referrer, moduleRequest, payload,
-                                         module, /* usePromise = */ true);
+  if (!JS::FinishLoadingImportedModule(cx, referrer, moduleRequest, payload,
+                                       module, /* usePromise = */ true)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
 }
 
 /* static */
-bool ModuleLoader::DynamicImportLoadRejected(JSContext* cx,
-                                             HandleValue hostDefined,
-                                             HandleValue error) {
-  RootedObject closure(cx, &hostDefined.toObject());
+bool ModuleLoader::DynamicImportLoadRejected(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject closure(
+      cx, &js::GetFunctionNativeReserved(&args.callee().as<JSFunction>(),
+                                         LoadReactionHostDefinedSlot)
+               .toObject());
+
   RootedValue payload(cx, JS::GetReservedSlot(closure, ClosurePayloadSlot));
-  return JS::FinishLoadingImportedModuleFailed(cx, payload, error);
+  RootedValue error(cx, args.get(DynamicImportLoadRejectedErrorArg));
+  if (!JS::FinishLoadingImportedModuleFailed(cx, payload, error)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
 }
 
 // See https://github.com/tc39/test262/blob/main/INTERPRETING.md#modules
@@ -363,10 +384,38 @@ bool ModuleLoader::loadImportedModule(JSContext* cx, JS::HandleValue referrer,
       return false;
     }
 
+    RootedFunction onResolved(
+        cx, js::NewFunctionWithReserved(cx, DynamicImportLoadResolved,
+                                        DynamicImportLoadResolvedNumArgs, 0,
+                                        "resolved"));
+    if (!onResolved) {
+      return false;
+    }
+
+    RootedFunction onRejected(
+        cx, js::NewFunctionWithReserved(cx, DynamicImportLoadRejected,
+                                        DynamicImportLoadRejectedNumArgs, 0,
+                                        "rejected"));
+    if (!onRejected) {
+      return false;
+    }
+
     RootedValue hostDefined(cx, ObjectValue(*closure));
-    if (!JS::LoadRequestedModules(cx, module, hostDefined,
-                                  DynamicImportLoadResolved,
-                                  DynamicImportLoadRejected)) {
+    RootedObject onResolvedObj(cx, JS_GetFunctionObject(onResolved));
+    js::SetFunctionNativeReserved(onResolvedObj, LoadReactionHostDefinedSlot,
+                                  hostDefined);
+
+    RootedObject onRejectedObj(cx, JS_GetFunctionObject(onRejected));
+    js::SetFunctionNativeReserved(onRejectedObj, LoadReactionHostDefinedSlot,
+                                  hostDefined);
+
+    RootedObject loadPromise(cx);
+    if (!JS::LoadRequestedModules(cx, module, hostDefined, &loadPromise)) {
+      return false;
+    }
+
+    if (!JS::AddPromiseReactions(cx, loadPromise, onResolvedObj,
+                                 onRejectedObj)) {
       return false;
     }
 

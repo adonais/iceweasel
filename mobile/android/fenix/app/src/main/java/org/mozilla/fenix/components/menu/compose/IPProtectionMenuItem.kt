@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -91,6 +92,7 @@ internal fun IPProtectionMenuItem(
         ) {
             Badge(
                 badgeText = statusDescription,
+                modifier = Modifier.clearAndSetSemantics {},
                 state = badgeState(state.status),
             )
 

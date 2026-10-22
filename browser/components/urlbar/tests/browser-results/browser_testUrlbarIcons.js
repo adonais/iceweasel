@@ -190,3 +190,40 @@ add_task(async function test_icon_updates() {
   await UrlbarTestUtils.promisePopupClose(window);
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function test_superseded_icon_update_does_not_paint() {
+  let engine = SearchService.visibleEngines[1];
+  let engineIcon = await engine.getIconURL();
+
+  gURLBar.searchMode = { engineName: engine.name };
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) == engineIcon,
+    "The engine's icon is shown while its search mode is active"
+  );
+
+  // Hold this lookup, which starts in search mode, so the update that leaves
+  // search mode finishes first, as a tab switch can make it.
+  let { promise: held, resolve: release } = Promise.withResolvers();
+  let store = gURLBar.controller.engineStore;
+  store.init = () => {
+    delete store.init;
+    return held;
+  };
+  let superseded = gURLBar.searchModeSwitcher.updateSearchIcon({
+    searchModeChanged: true,
+  });
+
+  gURLBar.searchMode = null;
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) != engineIcon,
+    "The icon leaves the engine's search mode with it"
+  );
+
+  release();
+  await superseded;
+  Assert.notEqual(
+    getSwitcherIconUrl(window),
+    engineIcon,
+    "The superseded lookup did not paint the engine's icon again"
+  );
+});

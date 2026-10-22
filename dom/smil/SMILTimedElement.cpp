@@ -5,6 +5,7 @@
 #include "SMILTimedElement.h"
 
 #include <algorithm>
+#include <ranges>
 
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ContentEvents.h"
@@ -1181,8 +1182,8 @@ void SMILTimedElement::ClearIntervals() {
   ResetCurrentInterval();
 
   // Remove old intervals
-  for (int32_t i = mOldIntervals.Length() - 1; i >= 0; --i) {
-    mOldIntervals[i]->Unlink();
+  for (auto& oldInterval : std::views::reverse(mOldIntervals)) {
+    oldInterval->Unlink();
   }
   mOldIntervals.Clear();
 }

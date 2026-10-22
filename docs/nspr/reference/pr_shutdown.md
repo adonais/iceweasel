@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a connected socket.
+: A pointer to a {doc}`prfiledesc` object representing a connected socket.
 
 `how`
 
@@ -36,7 +36,7 @@ The function returns one of the following values:
 
 - Upon successful completion of shutdown request, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. Further information can be obtained
-  by calling {ref}`PR_GetError`.
+  by calling {doc}`pr_geterror`.
 
 ## Description
 

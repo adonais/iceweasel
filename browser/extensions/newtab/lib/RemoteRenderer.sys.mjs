@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import {DeferredTask} from "resource://gre/modules/DeferredTask.sys.mjs"
+ * @import {RemoteSettingsClient} from "resource://services-settings/RemoteSettingsClient.sys.mjs"
+ */
+
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 // Ideally, we'd have this be a separate JSON file that can be loaded at runtime
@@ -36,18 +41,16 @@ const lazy = XPCOMUtils.declareLazy({
     pref: PREF_REMOTE_RENDERER_VERSION,
     default: "",
   },
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
-  return console.createInstance({
-    prefix: "RemoteRenderer",
-    maxLogLevel: Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.remote-renderer.log",
-      false
-    )
-      ? "Debug"
-      : "Warn",
-  });
+  logConsole: () =>
+    console.createInstance({
+      prefix: "RemoteRenderer",
+      maxLogLevel: Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.remote-renderer.log",
+        false
+      )
+        ? "Debug"
+        : "Warn",
+    }),
 });
 
 /**
@@ -719,7 +722,7 @@ export class RemoteRenderer {
   /**
    * Opens a cache entry for reading.
    *
-   * @param {nsIURI} uri - Cache key URI
+   * @param {nsIURI} resourceURI - Cache key URI
    * @returns {Promise<nsICacheEntry|null>}
    */
   async openCacheEntry(resourceURI) {

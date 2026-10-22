@@ -26,10 +26,11 @@
     <dimen name="urlinput_height">57dp</dimen>
 
     <dimen name="browser_toolbar_height">56dp</dimen>
+    <dimen name="dropdown_item_text_size">16sp</dimen>
 
-    <!-- Override the default menu width values from AC. -->
-    <dimen name="mozac_browser_menu_width_min" tools:ignore="UnusedResources">112dp</dimen>
-    <dimen name="mozac_browser_menu_width_max" tools:ignore="UnusedResources">314dp</dimen>
+    <!-- Override the default menu item heights from AC. -->
+    <dimen name="mozac_menu_item_min_height" tools:ignore="UnusedResources">48dp</dimen>
+    <dimen name="mozac_menu_item_with_summary_min_height" tools:ignore="UnusedResources">52dp</dimen>
 
     <!-- Preferences. -->
     <dimen name="radio_button_preference_height">48dp</dimen>

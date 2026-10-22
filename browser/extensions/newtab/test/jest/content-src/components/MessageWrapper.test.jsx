@@ -168,22 +168,30 @@ describe("<MessageWrapper>", () => {
     }
   });
 
-  describe("MESSAGE_IMPRESSION on intersection", () => {
-    let observerCallbacks;
+  describe("MESSAGE_IMPRESSION and MESSAGE_NOTIFY_VISIBILITY on intersection", () => {
+    let observers;
     let visibilityDescriptor;
+    let visibilityState;
+
+    function createObserver(callback) {
+      const observer = {
+        callback,
+        targets: new Set(),
+        observe: jest.fn(el => observer.targets.add(el)),
+        unobserve: jest.fn(el => observer.targets.delete(el)),
+        disconnect: jest.fn(() => observer.targets.clear()),
+      };
+      observers.push(observer);
+      return observer;
+    }
 
     beforeEach(() => {
-      observerCallbacks = [];
+      observers = [];
       // The real IntersectionObserver stub in jest-setup never invokes its
       // callback, so replace it locally to capture and manually fire it.
-      jest.spyOn(global, "IntersectionObserver").mockImplementation(cb => {
-        observerCallbacks.push(cb);
-        return {
-          observe: jest.fn(),
-          unobserve: jest.fn(),
-          disconnect: jest.fn(),
-        };
-      });
+      jest
+        .spyOn(global, "IntersectionObserver")
+        .mockImplementation(createObserver);
 
       // MessageWrapper only dispatches an impression when the tab is visible,
       // and jsdom defaults document.visibilityState to "prerender".
@@ -191,9 +199,10 @@ describe("<MessageWrapper>", () => {
         document,
         "visibilityState"
       );
+      visibilityState = "visible";
       Object.defineProperty(document, "visibilityState", {
         configurable: true,
-        get: () => "visible",
+        get: () => visibilityState,
       });
     });
 
@@ -211,9 +220,21 @@ describe("<MessageWrapper>", () => {
     });
 
     function fireIntersection() {
-      const callback = observerCallbacks[observerCallbacks.length - 1];
+      const { callback } = observers[observers.length - 1];
       act(() => {
         callback([{ isIntersecting: true, target: {} }]);
+      });
+    }
+
+    // Unlike fireIntersection, this only fires for elements that are still
+    // observed, and passes the real element, as the platform does.
+    function scrollObservedIntoView() {
+      act(() => {
+        for (const observer of observers) {
+          for (const target of [...observer.targets]) {
+            observer.callback([{ isIntersecting: true, target }]);
+          }
+        }
       });
     }
 
@@ -234,6 +255,62 @@ describe("<MessageWrapper>", () => {
         ([action]) => action.type === at.MESSAGE_IMPRESSION
       );
       expect(impressionCalls).toHaveLength(1);
+    });
+
+    function impressionCalls(dispatch) {
+      return dispatch.mock.calls.filter(
+        ([action]) => action.type === at.MESSAGE_IMPRESSION
+      );
+    }
+
+    function notifyVisibleCalls(dispatch) {
+      return dispatch.mock.calls.filter(
+        ([action]) =>
+          action.type === at.MESSAGE_NOTIFY_VISIBILITY && action.data === true
+      );
+    }
+
+    it("does not dispatch MESSAGE_NOTIFY_VISIBILITY until the message intersects", () => {
+      const dispatch = jest.fn();
+      render(
+        <WrapWithProvider state={VISIBLE_MESSAGE_STATE}>
+          <MessageWrapper dispatch={dispatch}>
+            <Child />
+          </MessageWrapper>
+        </WrapWithProvider>
+      );
+
+      expect(notifyVisibleCalls(dispatch)).toHaveLength(0);
+
+      fireIntersection();
+
+      expect(notifyVisibleCalls(dispatch)).toHaveLength(1);
+    });
+
+    it("counts an intersection that happened while the tab was hidden once the tab is shown", () => {
+      visibilityState = "hidden";
+      const dispatch = jest.fn();
+      render(
+        <WrapWithProvider state={VISIBLE_MESSAGE_STATE}>
+          <MessageWrapper dispatch={dispatch}>
+            <Child />
+          </MessageWrapper>
+        </WrapWithProvider>
+      );
+
+      scrollObservedIntoView();
+
+      expect(notifyVisibleCalls(dispatch)).toHaveLength(0);
+      expect(impressionCalls(dispatch)).toHaveLength(0);
+
+      visibilityState = "visible";
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      scrollObservedIntoView();
+
+      expect(notifyVisibleCalls(dispatch)).toHaveLength(1);
+      expect(impressionCalls(dispatch)).toHaveLength(1);
     });
   });
 });

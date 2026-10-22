@@ -16,7 +16,6 @@ clang=$MOZ_FETCHES_DIR/clang/bin/clang
 case "$target" in
 aarch64-apple-darwin)
   arch=arm64
-  export MACOSX_DEPLOYMENT_TARGET=11.0
   compiler_wrapper() {
     echo exec \$MOZ_FETCHES_DIR/clang/bin/$1 -mcpu=apple-m1 \"\$@\" > $1
     chmod +x $1
@@ -27,27 +26,33 @@ aarch64-apple-darwin)
   ;;
 x86_64-apple-darwin)
   arch=x86_64
-  export MACOSX_DEPLOYMENT_TARGET=10.15
   ;;
 esac
 
 case "$target" in
 *-apple-darwin)
+  MACOS_TARGET=$target
+  . $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
   EXTRA_CMAKE_FLAGS="
     $EXTRA_CMAKE_FLAGS
-    -DCMAKE_LINKER=$MOZ_FETCHES_DIR/clang/bin/ld64.lld
-    -DCMAKE_LIPO=$MOZ_FETCHES_DIR/clang/bin/llvm-lipo
+    -DCMAKE_LINKER=$MACOS_LD
     -DCMAKE_SYSTEM_NAME=Darwin
     -DCMAKE_SYSTEM_VERSION=$MACOSX_DEPLOYMENT_TARGET
-    -DCMAKE_OSX_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.5.sdk
+    -DCMAKE_OSX_SYSROOT=$MACOS_SDK
     -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
     -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld
-    -DDARWIN_osx_ARCHS=$arch
-    -DDARWIN_osx_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.5.sdk
-    -DDARWIN_macosx_OVERRIDE_SDK_VERSION=11.0
-    -DDARWIN_osx_BUILTIN_ARCHS=$arch
     -DLLVM_DEFAULT_TARGET_TRIPLE=$target
   "
+  if [ "$what" = "compiler-rt" ]; then
+    EXTRA_CMAKE_FLAGS="
+      $EXTRA_CMAKE_FLAGS
+      -DCMAKE_LIPO=$MACOS_LIPO
+      -DDARWIN_osx_ARCHS=$arch
+      -DDARWIN_osx_SYSROOT=$MACOS_SDK
+      -DDARWIN_macosx_OVERRIDE_SDK_VERSION=11.0
+      -DDARWIN_osx_BUILTIN_ARCHS=$arch
+    "
+  fi
   # compiler-rt build script expects to find `codesign` in $PATH.
   # Give it a fake one.
   echo "#!/bin/sh" > codesign

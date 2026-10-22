@@ -186,8 +186,11 @@ class BuildBackend(LoggingMixin):
     def consume_finished(self):
         """Called when consume() has completed handling all objects."""
 
-    def build(self, config, output, jobs, verbose, what=None):
+    def build(self, config, output, jobs, verbose, what=None, append_env=None):
         """Called when 'mach build' is executed.
+
+        ``append_env`` holds environment variables every command of the build
+        runs with, such as the PGO mode.
 
         This should return the status value of a subprocess, where 0 denotes
         success and any other value is an error code. A return value of None

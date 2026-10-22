@@ -90,6 +90,7 @@
         const TEST_LABEL = "Testing...";
         const TEST_DESCRIPTION = "Testing description..";
         const TEST_SUPPORT_PAGE = "Testing support page..";
+        const TEST_ARIA_LABEL = "Testing aria-label";
 
         let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
         let picker = renderTarget.querySelector("moz-visual-picker");
@@ -140,13 +141,60 @@
           );
         });
 
+        picker.label = undefined;
+        picker.setAttribute("aria-label", TEST_ARIA_LABEL);
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          innerFieldset.getAttribute("aria-label"),
+          TEST_ARIA_LABEL,
+          "The radio group starts with aria-label on the inner fieldset."
+        );
+        is(
+          picker.getAttribute("aria-label"),
+          null,
+          "The radio group host has no aria-label, since it's on the inner fieldset."
+        );
+
         picker.type = "listbox";
         await picker.updateComplete;
         await picker.fieldset.updateComplete;
         is(
           innerFieldset.getAttribute("role"),
+          "presentation",
+          "The inner fieldset is presentational when the inputs container owns the listbox role."
+        );
+        is(
+          innerFieldset.getAttribute("aria-orientation"),
+          null,
+          "The inner fieldset no longer owns the listbox orientation."
+        );
+        is(
+          innerFieldset.getAttribute("aria-label"),
+          null,
+          "The inner fieldset no longer owns the listbox accessible name."
+        );
+        let listboxContainer =
+          picker.fieldset.shadowRoot.querySelector("#inputs");
+        is(
+          listboxContainer.getAttribute("role"),
           "listbox",
-          "Visual picker container is a listbox after changing its type."
+          "The existing inputs container owns the listbox role."
+        );
+        is(
+          listboxContainer.getAttribute("aria-orientation"),
+          "horizontal",
+          "The existing inputs container owns the listbox orientation."
+        );
+        is(
+          listboxContainer.getAttribute("aria-label"),
+          TEST_ARIA_LABEL,
+          "The existing inputs container owns the listbox accessible name."
+        );
+        is(
+          picker.getAttribute("aria-label"),
+          null,
+          "The host drops aria-label in listbox mode."
         );
 
         items.forEach(item => {
@@ -156,6 +204,81 @@
             "Visual picker items use the 'option' role after the picker type is changed."
           );
         });
+      });
+
+      add_task(async function testListboxAriaLabelUpdatesAfterTypeChange() {
+        const INITIAL_NAME = "Initial listbox name";
+        const UPDATED_NAME = "Updated listbox name";
+        let { picker } = await renderVisualPicker();
+        picker.label = undefined;
+        picker.setAttribute("aria-label", INITIAL_NAME);
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+
+        picker.type = "listbox";
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        let listbox = picker.fieldset.shadowRoot.querySelector("#inputs");
+        picker.scrollIntoView();
+        await TestUtils.waitForCondition(
+          () => gAccService.getAccessibleFor(listbox),
+          "The listbox accessible is created."
+        );
+        testName(listbox, INITIAL_NAME);
+
+        picker.ariaLabel = UPDATED_NAME;
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          picker.ariaLabel,
+          UPDATED_NAME,
+          "The picker exposes the updated ariaLabel property."
+        );
+        testName(listbox, UPDATED_NAME);
+      });
+
+      add_task(async function testRadioAriaLabelUpdatesAfterListbox() {
+        const INITIAL_NAME = "Initial radio group name";
+        const UPDATED_NAME = "Updated radio group name";
+        let { picker } = await renderVisualPicker();
+        picker.label = undefined;
+        picker.setAttribute("aria-label", INITIAL_NAME);
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+
+        picker.type = "listbox";
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        let listbox = picker.fieldset.shadowRoot.querySelector("#inputs");
+        is(
+          listbox.getAttribute("aria-label"),
+          INITIAL_NAME,
+          "The listbox starts with the host's accessible name."
+        );
+
+        picker.type = "radio";
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        let radiogroup = picker.fieldset.shadowRoot.querySelector("fieldset");
+        is(
+          radiogroup.getAttribute("role"),
+          "radiogroup",
+          "The fieldset regains its radiogroup role."
+        );
+        is(
+          radiogroup.getAttribute("aria-label"),
+          INITIAL_NAME,
+          "The radio group retains its name after leaving listbox mode."
+        );
+
+        picker.setAttribute("aria-label", UPDATED_NAME);
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          radiogroup.getAttribute("aria-label"),
+          UPDATED_NAME,
+          "Changing the host aria-label renames the radio group."
+        );
       });
 
       add_task(async function testVisualPickerItemText() {
@@ -878,11 +1001,15 @@
       // https://www.w3.org/WAI/ARIA/apg/patterns/listbox/#wai-ariaroles,states,andproperties
       add_task(async function testListboxPickerRoleStatesProperties() {
         const LISTBOX_LABEL = "I'm a listbox";
+        const LISTBOX_ARIA_LABEL = "Fallback listbox label";
+        const LISTBOX_DESCRIPTION = "Listbox description";
         let listboxTemplate = html`
           <moz-visual-picker
             type="listbox"
             label=${LISTBOX_LABEL}
             value="first"
+            aria-label=${LISTBOX_ARIA_LABEL}
+            description=${LISTBOX_DESCRIPTION}
           >
             <moz-visual-picker-item value="first">
               <div class="slotted">In the slot</div>
@@ -908,26 +1035,50 @@
 
         let innerFieldset =
           picker.fieldset.shadowRoot.querySelector("fieldset");
-
-        is(
-          innerFieldset.getAttribute("aria-orientation"),
-          "horizontal",
-          "The top level picker element's aria-orientation is set to 'horizontal'"
-        );
+        let listboxContainer =
+          picker.fieldset.shadowRoot.querySelector("#inputs");
+        let legend = picker.fieldset.shadowRoot.querySelector("legend");
 
         is(
           innerFieldset.getAttribute("role"),
+          "presentation",
+          "The fieldset is presentational when the inputs container owns the listbox role."
+        );
+        is(
+          listboxContainer.getAttribute("role"),
           "listbox",
-          "A listbox picker exposes its container role on the inner fieldset."
+          "The existing inputs container owns the listbox role."
+        );
+        is(
+          listboxContainer.getAttribute("aria-labelledby"),
+          "label",
+          "The visible legend labels the listbox."
+        );
+        is(
+          listboxContainer.getAttribute("aria-label"),
+          null,
+          "The aria-label fallback is not used when a visible label exists."
+        );
+        is(
+          listboxContainer.getAttribute("aria-describedby"),
+          "description",
+          "The visible description describes the listbox."
+        );
+        is(
+          listboxContainer.getAttribute("aria-orientation"),
+          "horizontal",
+          "The listbox container's aria-orientation is horizontal."
         );
         await TestUtils.waitForCondition(
-          () => gAccService.getAccessibleFor(innerFieldset),
-          "Accessible is created for the listbox picker's inner fieldset."
+          () => gAccService.getAccessibleFor(listboxContainer),
+          "Accessible is created for the listbox container."
         );
-        testRole(innerFieldset, ROLE_LISTBOX);
-        testName(innerFieldset, LISTBOX_LABEL);
+        let listboxAccessible = gAccService.getAccessibleFor(listboxContainer);
+        testRole(listboxContainer, ROLE_LISTBOX);
+        testName(listboxContainer, LISTBOX_LABEL);
+        testDescr(listboxContainer, LISTBOX_DESCRIPTION);
         testStates(
-          innerFieldset,
+          listboxContainer,
           0,
           EXT_STATE_HORIZONTAL,
           0,
@@ -949,11 +1100,53 @@
             slottedItems.includes(item),
             "Item is contained by the listbox element."
           );
+          is(
+            gAccService.getAccessibleFor(item.itemEl).parent,
+            listboxAccessible,
+            "Each picker item is an accessibility child of the listbox."
+          );
         });
 
-        let legend = picker.fieldset.shadowRoot.querySelector("legend");
+        is(legend.id, "label", "The visible legend has a stable ID.");
         is(legend.innerText, LISTBOX_LABEL, "The listbox element is labelled.");
         ok(BrowserTestUtils.isVisible(legend), "The listbox label is visible.");
+
+        picker.label = undefined;
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          listboxContainer.getAttribute("aria-labelledby"),
+          null,
+          "The listbox no longer references the removed visible label."
+        );
+        is(
+          listboxContainer.getAttribute("aria-label"),
+          LISTBOX_ARIA_LABEL,
+          "The listbox uses aria-label when no visible label exists."
+        );
+        testName(listboxContainer, LISTBOX_ARIA_LABEL);
+
+        is(
+          listboxContainer.getAttribute("aria-disabled"),
+          null,
+          "The listbox container has no aria-disabled when the picker is enabled."
+        );
+        picker.disabled = true;
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          listboxContainer.getAttribute("aria-disabled"),
+          "true",
+          "The listbox container exposes aria-disabled when the picker is disabled."
+        );
+        picker.disabled = false;
+        await picker.updateComplete;
+        await picker.fieldset.updateComplete;
+        is(
+          listboxContainer.getAttribute("aria-disabled"),
+          null,
+          "The aria-disabled attribute is removed when the picker is enabled again."
+        );
 
         ok(firstItem.checked, "The first item is selected.");
         is(

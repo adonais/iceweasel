@@ -17,7 +17,6 @@
   preview/aiWindow.ftl                             (../locales-preview/aiWindow.ftl)
   preview/smartTabGroups.ftl                       (%chrome/overrides/smartTabGroups.ftl)
   preview/privacyPreferences.ftl                   (../locales-preview/privacyPreferences.ftl)
-  preview/autoTabGrouping.ftl                      (../locales-preview/autoTabGrouping.ftl)
   preview/remoteControl.ftl                          (../locales-preview/remoteControl.ftl)
   preview/miniWindow.ftl                           (../locales-preview/miniWindow.ftl)
 

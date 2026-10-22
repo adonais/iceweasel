@@ -4148,7 +4148,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
             thereEp=thereEp,
         )
 
-        # void BindPEndpoint(ManagedEndpoint<PHere>&& aEndpoint, PHere* aActor)
+        # bool BindPEndpoint(ManagedEndpoint<PHere>&& aEndpoint, PHere* aActor)
         bindmeth = MethodDefn(
             MethodDecl(
                 "Bind%sEndpoint" % managed.name(),
@@ -4157,6 +4157,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                     Decl(self.protocol.managedCxxType(managed, self.side), actor.name),
                 ],
                 ret=Type.BOOL,
+                warn_unused=True,
             )
         )
         bindmeth.addcode(

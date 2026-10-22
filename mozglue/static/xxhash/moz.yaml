@@ -1,0 +1,30 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: mozglue
+
+origin:
+  name: xxHash
+  description: Extremely fast non-cryptographic hash algorithm
+
+  url: https://github.com/Cyan4973/xxHash
+
+  release: v0.8.4 (2026-09-18T17:29:23-07:00).
+  revision: v0.8.4
+
+  license: BSD-2-Clause
+  license-file: LICENSE
+
+vendoring:
+  url: https://github.com/Cyan4973/xxHash
+  source-hosting: github
+  tracking: tag
+
+  exclude:
+    - "**"
+
+  include:
+    - LICENSE
+    - xxhash.c
+    - xxhash.h

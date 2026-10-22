@@ -11,7 +11,7 @@ addAccessibleTask(
   <option id="option2">2</option>
 </select>
   `,
-  async function testBasic(browser) {
+  async function testBasic(browser, docAcc) {
     async function setSelected(id, selected) {
       let changed = waitForEvent(EVENT_STATE_CHANGE, id);
       await invokeContentTask(browser, [id, selected], (cId, cSelected) => {
@@ -39,6 +39,7 @@ addAccessibleTask(
     await setSelected("option2", true);
     attrs = await runPython(`
       from comtypes.automation import IEnumVARIANT
+      global enumerator
       enumerator = select.accSelection.QueryInterface(IEnumVARIANT)
       # Deliberately pass 3 instead of 2 to ensure Next handles this gracefully.
       selection = enumerator.Next(3)
@@ -47,6 +48,24 @@ addAccessibleTask(
     is(attrs.length, 2, "accSelection returned 2 items");
     ok(attrs[0].includes("id:option1;"), "First item is option1");
     ok(attrs[1].includes("id:option2;"), "Second item is option2");
+
+    info("Calling IEnumVARIANT::Reset on existing enumerator");
+    await runPython(`enumerator.Reset()`);
+    info("Removing select");
+    let reordered = waitForEvent(EVENT_REORDER, docAcc);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("select").remove();
+    });
+    await reordered;
+    info("Calling IEnumVARIANT::Next");
+    // The Accessibles are dead, so we can't fetch their attributes. This is
+    // expected. We just want to make sure this returns 2 objects without
+    // crashing.
+    is(
+      await runPython(`len(enumerator.Next(3))`),
+      2,
+      "Next returned 2 objects"
+    );
   },
   { chrome: true, topLevel: true }
 );

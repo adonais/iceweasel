@@ -27,13 +27,11 @@ class TopSiteStateTest {
     private fun buildState(
         count: Int = 12,
         showMoreShortcuts: Boolean = true,
-        isAddShortcutEnabled: Boolean = true,
     ): TopSiteState {
         val settings: Settings =
             mockk(relaxed = true) {
                 every { showTopSitesFeature } returns true
                 every { this@mockk.showMoreShortcuts } returns showMoreShortcuts
-                every { enableAddShortcutsImprovement } returns isAddShortcutEnabled
             }
         val appState =
             AppState(
@@ -74,15 +72,5 @@ class TopSiteStateTest {
     @Test
     fun `GIVEN only a couple of shortcuts THEN the toggle is still enabled`() {
         assertTrue(buildState(count = 2).isExpandToggleEnabled)
-    }
-
-    @Test
-    fun `GIVEN the add shortcut setting is on THEN it is carried into the state`() {
-        assertTrue(buildState(isAddShortcutEnabled = true).isAddShortcutEnabled)
-    }
-
-    @Test
-    fun `GIVEN the add shortcut setting is off THEN it is carried into the state`() {
-        assertFalse(buildState(isAddShortcutEnabled = false).isAddShortcutEnabled)
     }
 }

@@ -59,11 +59,11 @@ void aom_highbd_convolve_copy_neon(const uint16_t *src, ptrdiff_t src_stride,
                                    int h) {
   if (w < 4) {  // copy2
     do {
-      memmove(dst, src, 2 * sizeof(*src));
+      memcpy(dst, src, 2 * sizeof(*src));
       src += src_stride;
       dst += dst_stride;
 
-      memmove(dst, src, 2 * sizeof(*src));
+      memcpy(dst, src, 2 * sizeof(*src));
       src += src_stride;
       dst += dst_stride;
       h -= 2;

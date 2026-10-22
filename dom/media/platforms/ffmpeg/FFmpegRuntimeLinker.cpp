@@ -6,8 +6,7 @@
 
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
-// Bundled ffvpx pin (-I media/ffvpx on this TU).
-#include "libavcodec/version.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "prlink.h"
 
 namespace mozilla {
@@ -203,15 +202,8 @@ bool FFmpegRuntimeLinker::Init() {
 
 /* static */
 bool FFmpegRuntimeLinker::PreferSystemFFmpegForVulkan() {
-  if (!Init() || !sLibAV.avcodec_version) {
-    return false;
-  }
-  const unsigned version = sLibAV.avcodec_version();
-  const bool prefer = version >= LIBAVCODEC_VERSION_INT;
-  FFMPEGP_LOG("System libavcodec {:#x} {} ffvpx {:#x}, prefer: {}", version,
-              prefer ? ">=" : "<",
-              static_cast<unsigned>(LIBAVCODEC_VERSION_INT), prefer);
-  return prefer;
+  return StaticPrefs::
+      media_hardware_video_decoding_vulkan_prefer_system_ffmpeg();
 }
 
 /* static */

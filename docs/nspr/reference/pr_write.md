@@ -19,7 +19,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to the {ref}`PRFileDesc` object for a file or socket.
+: A pointer to the {doc}`prfiledesc` object for a file or socket.
 
 `buf`
 
@@ -35,12 +35,12 @@ One of the following values:
 
 - A positive number indicates the number of bytes successfully written.
 - The value -1 indicates that the operation failed. The reason for the
-  failure is obtained by calling {ref}`PR_GetError`.
+  failure is obtained by calling {doc}`pr_geterror`.
 
 ## Description
 
-The thread invoking {ref}`PR_Write` blocks until all the data is written or
+The thread invoking {doc}`pr_write` blocks until all the data is written or
 the write operation fails. Therefore, the return value is equal to
-either `amount` (success) or -1 (failure). Note that if {ref}`PR_Write`
+either `amount` (success) or -1 (failure). Note that if {doc}`pr_write`
 returns -1, some data (less than `amount` bytes) may have been written
 before an error occurred.

@@ -44,3 +44,6 @@ default-browser-guidance-notification-v2-title = Finish making { -brand-short-na
 default-browser-guidance-notification-v2-body = In Settings, select “Set default” for { -brand-short-name }.
 
 default-browser-guidance-notification-v2-title-only = Finish making { -brand-short-name } your default browser in Settings
+
+default-browser-guidance-notification-auto-trigger-title = Open your links with { -brand-short-name }
+default-browser-guidance-notification-auto-trigger-body = Choose { -brand-short-name } as your default browser in Settings.

@@ -2267,18 +2267,18 @@ void RangeAnalysis::analyzeLoopPhi(const LoopIterationBound* loopBound,
     return;
   }
 
-  Range* initRange = initial->range();
+  Range initRange(initial);
   if (modified.constant > 0) {
-    if (initRange && initRange->hasInt32LowerBound()) {
-      phi->range()->refineLower(initRange->lower());
+    if (initRange.hasInt32LowerBound()) {
+      phi->range()->refineLower(initRange.lower());
     }
     phi->range()->setSymbolicLower(
         SymbolicBound::New(alloc(), nullptr, initialSum));
     phi->range()->setSymbolicUpper(
         SymbolicBound::New(alloc(), loopBound, limitSum));
   } else {
-    if (initRange && initRange->hasInt32UpperBound()) {
-      phi->range()->refineUpper(initRange->upper());
+    if (initRange.hasInt32UpperBound()) {
+      phi->range()->refineUpper(initRange.upper());
     }
     phi->range()->setSymbolicUpper(
         SymbolicBound::New(alloc(), nullptr, initialSum));

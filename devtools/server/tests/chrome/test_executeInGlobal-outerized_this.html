@@ -18,7 +18,7 @@ object.
 <script>
 "use strict";
 
-const {addDebuggerToGlobal} = ChromeUtils.importESModule("resource://gre/modules/jsdebugger.sys.mjs");
+const {addDebuggerToGlobal} = ChromeUtils.importESModule("moz-src:///devtools/platform/jsdebugger.sys.mjs");
 addDebuggerToGlobal(globalThis);
 
 window.onload = function() {

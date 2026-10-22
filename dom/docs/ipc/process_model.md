@@ -2,7 +2,7 @@
 
 The complete set of recognized process types is defined in {searchfox}`GeckoProcessTypes <xpcom/geckoprocesstypes_generator/geckoprocesstypes/__init__.py>`.
 
-For more details on how process types are added and managed by IPC, see the process creation documentation {ref}`Gecko Processes`.
+For more details on how process types are added and managed by IPC, see the process creation documentation {doc}`/ipc/processes`.
 
 ## Diagram
 
@@ -365,4 +365,4 @@ This test-only process type is intended for use when writing IPDL unit tests. Ho
 :sandboxed?: yes, customizable
 ```
 
-The utility process is used to provide a simple way to implement IPC actor with some more specific sandboxing properties, in case where you don't need or want to deal with the extra complexity of adding a whole new process type but you just want to apply different sandboxing policies. Details can be found in {ref}`Utility Process`.
+The utility process is used to provide a simple way to implement IPC actor with some more specific sandboxing properties, in case where you don't need or want to deal with the extra complexity of adding a whole new process type but you just want to apply different sandboxing policies. Details can be found in {doc}`/ipc/utility_process`.

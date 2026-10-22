@@ -1,5 +1,5 @@
 <?xml version="1.0" standalone="no"?>
-<svg width="315px" height="445px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="210px" height="297px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
    <svg viewBox="0 0 21000 29700" id="thetarget">
 <style>
       rect {
@@ -20,7 +20,7 @@ function place() {
       let baseleft = 2000;
       let basetop = 2000;
       let width = 60;
-      let height = 539;
+      let height = 500;
       let coldiff = 120;
       let rowdiff = 600;
       for (let row = 0; row <= 60; row++) {

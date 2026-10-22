@@ -62,8 +62,8 @@ std::ostream& DebugValue(std::ostream& aOut, T* aValue) {
 // This handle all non-pointer types, with a specialization for XPCOM types.
 template <typename T>
 std::ostream& DebugValue(std::ostream& aOut, const T& aValue) {
-  if constexpr (std::is_base_of<nsTSubstring<char>, T>::value ||
-                std::is_base_of<nsTSubstring<char16_t>, T>::value) {
+  if constexpr (std::is_base_of_v<nsTSubstring<char>, T> ||
+                std::is_base_of_v<nsTSubstring<char16_t>, T>) {
     return aOut << '"' << aValue << '"';
   } else {
     return aOut << aValue;
@@ -107,7 +107,7 @@ std::ostream& operator<<(std::ostream& aOut,
 // Don't define this for char[], since operator<<(ostream&, char*) is already
 // defined.
 template <typename T, size_t N,
-          typename = std::enable_if_t<!std::is_same<T, char>::value>>
+          typename = std::enable_if_t<!std::is_same_v<T, char>>>
 std::ostream& operator<<(std::ostream& aOut, const T (&aArray)[N]) {
   return aOut << mozilla::Span(aArray);
 }

@@ -1219,6 +1219,24 @@ void RemoteMediaManagerChild::HandleFatalError(const char* aMsg) {
   dom::ContentChild::FatalErrorIfNotUsingGPUProcess(aMsg, OtherChildID());
 }
 
+void RemoteMediaManagerChild::ActorDestroy(ActorDestroyReason aWhy) {
+  // A stale actor that has already been replaced must not reject the wait
+  // for its successor.
+  if (GetSingleton(mLocation) != this) {
+    return;
+  }
+  StaticMutexAutoLock lock(sProcessSupportedMutex);
+  CodecSupportState& state = sCodecSupportState[mLocation];
+  if (state.mHolder.IsEmpty()) {
+    return;
+  }
+  LOGE("Remote process '{}' went away before reporting codec support",
+       RemoteMediaInToStr(mLocation));
+  state.mHolder.Reject(aWhy == NormalShutdown ? NS_ERROR_ILLEGAL_DURING_SHUTDOWN
+                                              : NS_ERROR_FAILURE,
+                       __func__);
+}
+
 void RemoteMediaManagerChild::SetSupported(
     RemoteMediaIn aLocation, const media::MediaCodecsSupported& aSupported) {
   MozPromiseHolder<CodecSupportPromise> holder;

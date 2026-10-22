@@ -152,6 +152,7 @@
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/PushManager.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -309,6 +310,8 @@
 #include "nsTLiteralString.h"
 #include "nsTObserverArray.h"
 #include "nsTStringRepr.h"
+#include "nsThread.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
 #include "nsWindowMemoryReporter.h"
@@ -1151,6 +1154,10 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   }
   StartDying();
 
+  if (JSObject* global = GetWrapperPreserveColor()) {
+    js::SetRealmIsDyingHint(global);
+  }
+
   ClearHasPointerRawUpdateEventListeners();
 
   if (mDoc && mDoc->GetWindowContext()) {
@@ -1308,6 +1315,7 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   mConsole = nullptr;
   mCookieStore = nullptr;
   mDocumentPiP = nullptr;
+  mPushManager = nullptr;
   mCloseWatcherManager = nullptr;
 
   mPaintWorklet = nullptr;
@@ -1504,6 +1512,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConsole)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCookieStore)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPiP)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPushManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaintWorklet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExternal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIntlUtils)
@@ -2168,15 +2177,7 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     case eMouseUp:
     case eDragEnd:
       if (aVisitor.mEvent->IsTrusted()) {
-        sMouseDown = false;
-        if (sDragServiceDisabled) {
-          nsCOMPtr<nsIDragService> ds =
-              do_GetService("@mozilla.org/widget/dragservice;1");
-          if (ds) {
-            sDragServiceDisabled = false;
-            ds->Unsuppress();
-          }
-        }
+        MouseButtonReleased();
       }
       break;
     default:
@@ -2184,6 +2185,22 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   aVisitor.SetParentTarget(GetParentTarget(), true);
+}
+
+/* static */
+void nsGlobalWindowInner::MouseButtonReleased() {
+  if (!sMouseDown) {
+    return;
+  }
+  sMouseDown = false;
+  if (sDragServiceDisabled) {
+    nsCOMPtr<nsIDragService> ds =
+        do_GetService("@mozilla.org/widget/dragservice;1");
+    if (ds) {
+      sDragServiceDisabled = false;
+      ds->Unsuppress();
+    }
+  }
 }
 
 // Editor library types for about:blank compat workaround
@@ -3903,8 +3920,13 @@ already_AddRefed<BrowsingContext> nsGlobalWindowInner::GetChildWindow(
 }
 
 void nsGlobalWindowInner::RefreshRealmPrincipal() {
-  JS::SetRealmPrincipals(js::GetNonCCWObjectRealm(GetWrapperPreserveColor()),
-                         nsJSPrincipals::get(mDoc->NodePrincipal()));
+  JS::Realm* realm = js::GetNonCCWObjectRealm(GetWrapperPreserveColor());
+  nsJSPrincipals* existing = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
+  nsJSPrincipals* jsPrincipals = nsJSPrincipals::get(mDoc->NodePrincipal());
+  if (existing != jsPrincipals) {
+    HoldOldPrincipal(existing);
+  }
+  JS::SetRealmPrincipals(realm, jsPrincipals);
 }
 
 void nsGlobalWindowInner::RefreshReduceTimerPrecisionCallerType() {
@@ -7616,6 +7638,14 @@ DocumentPictureInPicture* nsGlobalWindowInner::DocumentPictureInPicture() {
   return mDocumentPiP;
 }
 
+mozilla::dom::PushManager* nsGlobalWindowInner::GetPushManager(
+    JSContext* aCx, ErrorResult& aRv) {
+  if (!mPushManager) {
+    mPushManager = PushManager::Create(aCx, this, aRv);
+  }
+  return mPushManager;
+}
+
 bool nsGlobalWindowInner::IsSecureContext() const {
   JS::Realm* realm = js::GetNonCCWObjectRealm(GetWrapperPreserveColor());
   return JS::GetIsSecureContext(realm);
@@ -7952,6 +7982,25 @@ void nsGlobalWindowInner::NoteMediaSourceURL(const nsACString& aURL) {
 void nsGlobalWindowInner::UnnoteMediaSourceURL(const nsACString& aURL) {
   DebugOnly<bool> found = mMediaSourceURLs.RemoveElementSorted(aURL);
   MOZ_ASSERT(found, "MediaSourceURL should have been noted");
+}
+
+void nsGlobalWindowInner::HoldOldPrincipal(nsIPrincipal* aPrincipal) {
+  mOldPrincipals.AppendElement(aPrincipal);
+  Dispatch(NewRunnableMethod(
+      "nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop", this,
+      &nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop));
+}
+
+void nsGlobalWindowInner::ClearOldPrincipalsIfNotNestedEventLoop() {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsThread* mainThread = nsThreadManager::get().GetCurrentThread();
+  if (mainThread && mainThread->RecursionDepth() > 1) {
+    // Not OK to clear old principals from a nested event loop. In order
+    // to avoid spamming the nested event loop with runnables, just give
+    // up and leave the old principals around.
+    return;
+  }
+  mOldPrincipals.Clear();
 }
 
 void nsPIDOMWindowInner::MaybeSetHasPointerRawUpdateEventListeners() {

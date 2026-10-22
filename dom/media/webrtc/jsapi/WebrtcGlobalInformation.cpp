@@ -267,23 +267,42 @@ void WebrtcGlobalInformation::GatherHistory() {
 
   MOZ_ASSERT(XRE_IsParentProcess());
   using StatsPromise = PWebrtcGlobalParent::GetStatsPromise;
-  auto resolveThenAppendStatsHistory = [](RefPtr<StatsPromise>&& promise) {
-    auto AppendStatsHistory = [](StatsPromise::ResolveOrRejectValue&& result) {
-      if (result.IsReject()) {
-        return;
-      }
-      for (auto& report : result.ResolveValue()) {
-        WebrtcGlobalStatsHistory::Record(
-            MakeUnique<RTCStatsReportInternal>(std::move(report)));
-      }
-    };
-    promise->Then(GetMainThreadSerialEventTarget(), __func__,
-                  std::move(AppendStatsHistory));
+  auto appendStatsHistory = [](StatsPromise::ResolveOrRejectValue&& aResult) {
+    if (aResult.IsReject()) {
+      return;
+    }
+    for (auto& report : aResult.ResolveValue()) {
+      WebrtcGlobalStatsHistory::Record(
+          MakeUnique<RTCStatsReportInternal>(std::move(report)));
+    }
   };
+  // Each process gets a new request only once the reply to its previous one
+  // has been handled, so a process that does not reply only loses its own
+  // history.
   for (const auto& cp : WebrtcContentParents::GetAll()) {
-    resolveThenAppendStatsHistory(cp->SendGetStats(emptyFilter));
+    if (cp->mHistoryRequestPending) {
+      continue;
+    }
+    cp->mHistoryRequestPending = true;
+    cp->SendGetStats(emptyFilter)
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [cp, appendStatsHistory](
+                   StatsPromise::ResolveOrRejectValue&& aResult) {
+                 cp->mHistoryRequestPending = false;
+                 appendStatsHistory(std::move(aResult));
+               });
   }
-  resolveThenAppendStatsHistory(GetStatsPromiseForThisProcess(emptyFilter));
+  static bool sHistoryRequestPending = false;
+  if (!sHistoryRequestPending) {
+    sHistoryRequestPending = true;
+    GetStatsPromiseForThisProcess(emptyFilter)
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [appendStatsHistory](StatsPromise::ResolveOrRejectValue&& aResult) {
+              sHistoryRequestPending = false;
+              appendStatsHistory(std::move(aResult));
+            });
+  }
 }
 
 void WebrtcGlobalInformation::GetAllStats(
@@ -696,7 +715,8 @@ mozilla::ipc::IPCResult WebrtcGlobalParent::RecvPeerConnectionFinalStats(
   return IPC_OK();
 }
 
-MOZ_IMPLICIT WebrtcGlobalParent::WebrtcGlobalParent() : mShutdown(false) {
+MOZ_IMPLICIT WebrtcGlobalParent::WebrtcGlobalParent()
+    : mShutdown(false), mHistoryRequestPending(false) {
   MOZ_COUNT_CTOR(WebrtcGlobalParent);
 }
 

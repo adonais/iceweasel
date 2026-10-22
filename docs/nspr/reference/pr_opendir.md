@@ -20,14 +20,14 @@ The function has the following parameter:
 
 ### Returns
 
-- If the directory is successfully opened, a {ref}`PRDir` object is
+- If the directory is successfully opened, a {doc}`prdir` object is
   dynamically allocated and the function returns a pointer to it.
 - If the directory cannot be opened, the function returns `NULL`.
 
 ## Description
 
-{ref}`PR_OpenDir` opens the directory specified by the pathname `name`
-and returns a pointer to a directory stream (a {ref}`PRDir` object) that
-can be passed to subsequent {ref}`PR_ReadDir` calls to get the directory
-entries (files and subdirectories) in the directory. The {ref}`PRDir`
-pointer should eventually be closed by a call to {ref}`PR_CloseDir`.
+{doc}`pr_opendir` opens the directory specified by the pathname `name`
+and returns a pointer to a directory stream (a {doc}`prdir` object) that
+can be passed to subsequent {doc}`pr_readdir` calls to get the directory
+entries (files and subdirectories) in the directory. The {doc}`prdir`
+pointer should eventually be closed by a call to {doc}`pr_closedir`.

@@ -59,7 +59,7 @@ class SearchSuggestionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        searchSuggestionsViewModel.state.observe(viewLifecycleOwner) { state ->
+        searchSuggestionsViewModel.state.observe(viewLifecycleOwner) { state: State ->
             binding.enableSearchSuggestionsContainer.isVisible = false
             binding.noSuggestionsContainer.isVisible = false
 

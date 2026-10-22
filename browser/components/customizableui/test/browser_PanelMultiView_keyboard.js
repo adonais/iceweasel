@@ -592,6 +592,28 @@ add_task(async function testActivationMousedown() {
   await hidePopup();
 });
 
+// Test that keyboard activation doesn't leave the mouse button pressed, which
+// would suppress drag and drop on the next window move or resize.
+add_task(async function testActivationMouseup() {
+  await openPopup();
+  await expectFocusAfterKey("ArrowDown", gMainButton1);
+  let events = [];
+  let listener = e => events.push(e.type);
+  for (let type of ["mousedown", "mouseup", "click"]) {
+    gMainButton1.addEventListener(type, listener);
+  }
+  EventUtils.synthesizeKey(" ");
+  Assert.deepEqual(
+    events,
+    ["mousedown", "mouseup", "click"],
+    "mouseup dispatched between mousedown and click"
+  );
+  for (let type of ["mousedown", "mouseup", "click"]) {
+    gMainButton1.removeEventListener(type, listener);
+  }
+  await hidePopup();
+});
+
 // Test that tab and the arrow keys aren't overridden in embedded documents.
 async function testTabArrowsEmbeddedDoc(aView, aEmbedder) {
   await openPopup();

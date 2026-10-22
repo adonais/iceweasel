@@ -905,6 +905,10 @@ enum class SimdOp {
 
   // Mozilla extensions
   MozPMADDUBSW = 0x201,
+  MozI8x16TestBits = 0x202,
+  MozI16x8TestBits = 0x203,
+  MozI32x4TestBits = 0x204,
+  MozI64x2TestBits = 0x205,
 
   Limit
 };
@@ -1082,6 +1086,10 @@ enum class MozOp {
 #ifdef ENABLE_WASM_JSPI
   // Check that there is a WebAssembly.promising function ready to suspend to.
   GuardSuspending,
+
+  // Reinterpret an externref as (ref null $T) where $T is a cont type. This is
+  // unchecked, and must only be used on values known to be continuations.
+  ExternToCont,
 #endif
 
   Limit
@@ -1155,7 +1163,24 @@ static const char NameSectionName[] = "name";
 static const char SourceMappingURLSectionName[] = "sourceMappingURL";
 static const char BranchHintingSectionName[] = "metadata.code.branch_hint";
 
-enum class NameType { Module = 0, Function = 1, Local = 2 };
+enum class NameType : uint8_t {
+  Module = 0,
+  Function = 1,
+  Local = 2,
+  Label = 3,
+  Type = 4,
+  Table = 5,
+  Memory = 6,
+  Global = 7,
+  ElemSegment = 8,
+  DataSegment = 9,
+  Field = 10,
+  Tag = 11,
+  Param = 12,
+  TagParam = 13,
+
+  Last,
+};
 
 enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 

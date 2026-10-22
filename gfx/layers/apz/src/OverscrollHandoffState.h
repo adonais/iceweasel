@@ -103,14 +103,24 @@ class OverscrollHandoffChain {
   // Determine whether any APZC along this handoff chain is autoscroll.
   bool HasAutoscrollApzc() const;
 
-  // Find the first APZC in this handoff chain that can be scrolled by |aInput|.
-  // Since overscroll-behavior can restrict handoff in some directions,
-  // |aOutAllowedScrollDirections| is populated with the scroll directions
-  // in which scrolling of the returned APZC is allowed.
-  // |aIncludeOverscroll| is an optional flag whether to consider overscrollable
-  // as scrollable or not.
+  // Determine whether any APZC along this handoff chain has an animation
+  // running.
+  bool HasAnimatingApzc() const;
+
+  // Find the APZC in this handoff chain that |aInput| should be applied to.
+  // The chain is scanned from the innermost APZC outwards for the first one
+  // that can be scrolled by |aInput|. If none can, and |aIncludeOverscroll| is
+  // Yes, the APZCs the scan reached are examined again, this time from the
+  // outermost inwards, for the first one that can show an overscroll effect
+  // instead. That second pass currently only runs for pan gestures.
+  // |aOutAllowedScrollDirections| is populated with the overscroll-behavior
+  // handoff restrictions of the APZCs that precede the returned one: the
+  // caller rebuilds the handoff chain from the returned APZC, so those APZCs
+  // drop out of it and can no longer enforce their own restrictions when the
+  // scroll is dispatched. Nothing drops out of the chain when nullptr is
+  // returned, so both directions are reported in that case.
   enum class IncludeOverscroll : bool { No, Yes };
-  RefPtr<AsyncPanZoomController> FindFirstScrollable(
+  RefPtr<AsyncPanZoomController> FindScrollTarget(
       const InputData& aInput, ScrollDirections* aOutAllowedScrollDirections,
       IncludeOverscroll aIncludeOverscroll = IncludeOverscroll::Yes) const;
 

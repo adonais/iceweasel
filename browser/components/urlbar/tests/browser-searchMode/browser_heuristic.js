@@ -220,3 +220,84 @@ add_task(async function remote() {
     );
   });
 });
+
+// Types a URL in a remote engine search mode.  The heuristic should search for
+// it.
+add_task(async function remoteUrl() {
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "example.org",
+    });
+    await UrlbarTestUtils.enterSearchMode(window, {
+      engineName: "Test",
+    });
+
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.equal(
+      result.type,
+      UrlbarShared.RESULT_TYPE.SEARCH,
+      "Result type should be SEARCH"
+    );
+    Assert.ok(result.heuristic, "Result should be heuristic");
+
+    let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    EventUtils.synthesizeKey("KEY_Enter");
+    await loadPromise;
+    Assert.equal(
+      gBrowser.currentURI.spec,
+      "https://example.com/?q=example.org",
+      "Engine's SERP should have loaded"
+    );
+  });
+});
+
+// Types a URL in a remote engine search mode with navigation enabled in search
+// mode.  The heuristic should visit it.
+add_task(async function remoteUrlNavigationEnabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.always", true]],
+  });
+
+  // eslint-disable-next-line sdl/no-insecure-url
+  const expectedUrl = "http://example.org/";
+  for (let closeView of [false, true]) {
+    info(`Pressing Enter with the view ${closeView ? "closed" : "open"}`);
+    await BrowserTestUtils.withNewTab("about:blank", async () => {
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "example.org",
+      });
+      await UrlbarTestUtils.enterSearchMode(window, {
+        engineName: "Test",
+      });
+
+      let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+      Assert.equal(
+        result.type,
+        UrlbarShared.RESULT_TYPE.URL,
+        "Result type should be URL"
+      );
+      Assert.equal(result.url, expectedUrl, "Result URL is the typed URL");
+      Assert.ok(result.heuristic, "Result should be heuristic");
+
+      if (closeView) {
+        await UrlbarTestUtils.promisePopupClose(window);
+      }
+
+      // Schemeless HTTPS-First may upgrade the load, so check only the host.
+      let loadPromise = BrowserTestUtils.browserLoaded(
+        gBrowser.selectedBrowser
+      );
+      EventUtils.synthesizeKey("KEY_Enter");
+      await loadPromise;
+      Assert.equal(
+        gBrowser.currentURI.host,
+        "example.org",
+        "The typed URL should have loaded"
+      );
+    });
+  }
+
+  await SpecialPowers.popPrefEnv();
+});

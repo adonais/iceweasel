@@ -93,6 +93,11 @@ async function testUnaccessedOrigins() {
     await requestFinished(request);
   }
 
+  info("Resetting");
+
+  request = reset();
+  await requestFinished(request);
+
   info("Updating last access time of selected origins");
 
   for (let index = 0; index < 10; index++) {
@@ -102,11 +107,6 @@ async function testUnaccessedOrigins() {
   for (let index = 10; index < 20; index++) {
     updateOriginLastAccessTime(index, -7 * SEC_PER_MONTH);
   }
-
-  info("Resetting");
-
-  request = reset();
-  await requestFinished(request);
 
   info("Setting pref");
 

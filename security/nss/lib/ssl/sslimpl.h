@@ -432,7 +432,9 @@ struct sslSessionIDStr {
      * be modified only when the sid is not in any cache.
      */
 
-    CERTCertificate *peerCert;
+    /* DER of the peer's end-entity certificate.  Owned by the sid; empty if
+     * the peer did not send a certificate. */
+    SECItem peerCertDER;
     SECItemArray peerCertStatus;        /* client only */
     const char *peerID;                 /* client only */
     const char *urlSvrName;             /* client only */
@@ -1032,7 +1034,20 @@ struct sslSecurityInfoStr {
     sslBuffer writeBuf; /*xmitBufLock*/
 
     CERTCertificate *localCert;
-    CERTCertificate *peerCert;
+    /* The peer's end-entity certificate, held as DER rather than as a
+     * CERTCertificate so that the handshake does not have to instantiate a
+     * CERTCertificate or consult a certificate database.  |peerCertSPKI| is
+     * the subjectPublicKeyInfo parsed out of |peerCertDER| when it was set,
+     * so that the certificate is only ever decoded once.  Both are owned by
+     * this struct and are set and cleared together, by
+     * ssl_SetPeerCertificate() and ssl_ClearPeerCertificate(); both are empty
+     * if the peer did not send a certificate.  The (few) places that have to
+     * hand a CERTCertificate to an application build one with
+     * CERT_NewTempCertificate(). */
+    SECItem peerCertDER;
+    CERTSubjectPublicKeyInfo *peerCertSPKI;
+    /* The peer's ephemeral key from ServerKeyExchange -- not the key in
+     * |peerCertDER|. */
     SECKEYPublicKey *peerKey;
 
     SSLAuthType authType;
@@ -1649,6 +1664,16 @@ extern PRBool ssl_SignatureSchemeEnabled(const sslSocket *ss,
 extern PRBool ssl_IsSupportedSignatureScheme(SSLSignatureScheme scheme);
 extern SECStatus ssl_CheckSignatureSchemeConsistency(
     sslSocket *ss, SSLSignatureScheme scheme, CERTSubjectPublicKeyInfo *spki);
+/* Parse the subjectPublicKeyInfo out of a DER-encoded certificate without
+ * instantiating a lasting CERTCertificate and without touching any
+ * certificate database.  Free the result with
+ * SECKEY_DestroySubjectPublicKeyInfo(). */
+extern CERTSubjectPublicKeyInfo *ssl_ExtractSPKIFromDER(const SECItem *derCert);
+/* Install |derCert| as the peer's end-entity certificate, replacing any
+ * previous one.  Fails if no subjectPublicKeyInfo can be parsed out of it. */
+extern SECStatus ssl_SetPeerCertificate(sslSecurityInfo *sec,
+                                        const SECItem *derCert);
+extern void ssl_ClearPeerCertificate(sslSecurityInfo *sec);
 extern SECStatus ssl_ParseSignatureSchemes(const sslSocket *ss, PLArenaPool *arena,
                                            SSLSignatureScheme **schemesOut,
                                            unsigned int *numSchemesOut,

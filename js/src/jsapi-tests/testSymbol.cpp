@@ -12,7 +12,7 @@ BEGIN_TEST(testSymbol_New) {
   RootedString desc(cx, nullptr);
   RootedSymbol sym1(cx);
   CHECK(sym1 = NewSymbol(cx, desc));
-  CHECK_NULL(GetSymbolDescription(sym1));
+  CHECK_NULL(GetSymbolDescription(cx, sym1));
   RootedValue v(cx, SymbolValue(sym1));
   CHECK_EQUAL(JS_TypeOfValue(cx, v), JSTYPE_SYMBOL);
 
@@ -22,7 +22,7 @@ BEGIN_TEST(testSymbol_New) {
 
   CHECK(desc = JS_NewStringCopyZ(cx, "ponies"));
   CHECK(sym2 = NewSymbol(cx, desc));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym2)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym2)), StringValue(desc));
 
   return true;
 }
@@ -35,7 +35,7 @@ BEGIN_TEST(testSymbol_GetSymbolFor) {
   CHECK(desc);
   RootedSymbol sym1(cx);
   CHECK(sym1 = GetSymbolFor(cx, desc));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym1)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym1)), StringValue(desc));
 
   // Calling JS::GetSymbolFor again with the same arguments produces the
   // same Symbol.
@@ -68,7 +68,7 @@ BEGIN_TEST(testSymbol_GetWellKnownSymbol) {
   // The description of a well-known symbol is as specified.
   RootedString desc(cx);
   CHECK(desc = JS_NewStringCopyZ(cx, "Symbol.iterator"));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym1)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym1)), StringValue(desc));
 
   // GetSymbolFor never returns a well-known symbol.
   Rooted<Symbol*> sym2(cx);

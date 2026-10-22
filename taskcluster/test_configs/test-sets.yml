@@ -488,7 +488,6 @@ macosx1500-aarch64-tests:
     - jsreftest
     - marionette-integration
     - marionette-unittest
-    - crashtest
     - mochitest-a11y
     - mochitest-browser-a11y
     - mochitest-browser-chrome
@@ -546,7 +545,6 @@ macosx1470-64-tests:
     - cppunittest
 
 macosx1015-64-qr-tests:
-    - cppunittest
     - crashtest
     - jittest
     - mochitest-media
@@ -583,6 +581,9 @@ macosx1500-64-perftests:
     - browsertime-nav-bench
     - browsertime-tp6-essential
 
+macosx2700-aarch64-perftests:
+    - browsertime-benchmark
+
 # Android
 
 android14-x86_64-tests:
@@ -607,6 +608,10 @@ android14-x86_64-tests:
     - web-platform-tests-eme
     - web-platform-tests-webrtc
     - xpcshell
+
+android14-x86_64-appservices-tests:
+    - cppunittest
+    - gtest
 
 android-hw-aarch64-opt-unittests:
     - jittest
@@ -657,6 +662,9 @@ android-hw-speedometer-tests:
 android-em-arm64-benchmark-tests:
     - browsertime-benchmark-speedometer3-mobile
     - browsertime-benchmark-jetstream3
+
+android-hw-speedometer3-nightlyasrelease:
+    - browsertime-benchmark-speedometer3-mobile
 
 android-hw-power-tests:
     - browsertime-youtube-playback-power-mobile

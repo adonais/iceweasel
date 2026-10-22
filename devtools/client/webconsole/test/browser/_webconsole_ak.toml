@@ -208,9 +208,6 @@ fail-if = [
 
 ["browser_webconsole_block_mixedcontent_securityerrors.js"]
 tags = "mcb"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
-]
 
 ["browser_webconsole_cached_messages.js"]
 
@@ -418,10 +415,6 @@ skip-if = [
 ["browser_webconsole_filter_scroll.js"]
 
 ["browser_webconsole_filters.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2021481
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2021481
-]
 
 ["browser_webconsole_filters_persist.js"]
 

@@ -19,7 +19,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing the file that is to
+: A pointer to a {doc}`prfiledesc` object representing the file that is to
   be mapped to memory.
 
 `size`
@@ -38,7 +38,7 @@ The function has the following parameters:
 
 ### Returns
 
-- If successful, a file mapping of type {ref}`PRFileMap`.
+- If successful, a file mapping of type {doc}`prfilemap`.
 - If unsuccessful, `NULL`.
 
 ## Description
@@ -54,9 +54,9 @@ typedef enum PRFileMapProtect {
 } PRFileMapProtect;
 ```
 
-{ref}`PR_CreateFileMap` only prepares for the mapping a file to memory. The
-returned file-mapping object must be passed to {ref}`PR_MemMap` to actually
+{doc}`pr_createfilemap` only prepares for the mapping a file to memory. The
+returned file-mapping object must be passed to {doc}`pr_memmap` to actually
 map a section of the file to memory.
 
-The file-mapping object should be closed with a {ref}`PR_CloseFileMap` call
+The file-mapping object should be closed with a {doc}`pr_closefilemap` call
 when it is no longer needed.

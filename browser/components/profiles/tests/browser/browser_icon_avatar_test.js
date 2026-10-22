@@ -58,6 +58,22 @@ add_task(async function test_avatar_selector_icon_focus() {
         // Icon view is the default, so the moz-visual-picker is rendered.
         const avatarPicker = avatarSelector.avatarPicker;
         await avatarPicker.updateComplete;
+        await ContentTaskUtils.waitForCondition(
+          () => avatarPicker.ariaLabel,
+          "Waiting for the avatar picker accessible name"
+        );
+        await avatarPicker.fieldset.updateComplete;
+        const avatarListbox =
+          avatarPicker.fieldset.shadowRoot.querySelector("#inputs");
+        Assert.ok(
+          avatarListbox.getAttribute("aria-label"),
+          "The avatar listbox exposes its localized accessible name"
+        );
+        Assert.equal(
+          avatarPicker.getAttribute("aria-label"),
+          null,
+          "The avatar picker host drops aria-label in listbox mode"
+        );
 
         Assert.equal(
           avatarPicker.value,
@@ -66,6 +82,26 @@ add_task(async function test_avatar_selector_icon_focus() {
         );
 
         const items = [...avatarSelector.avatars];
+        const [firstRect, secondRect] = items
+          .slice(0, 2)
+          .map(item => item.getBoundingClientRect());
+        const expectedGap = Number.parseFloat(
+          content.getComputedStyle(avatarListbox).columnGap
+        );
+        const actualGap = Math.max(
+          secondRect.left - firstRect.right,
+          firstRect.left - secondRect.right
+        );
+        Assert.less(
+          Math.abs(actualGap - expectedGap),
+          0.5,
+          "The exported inputs part controls the gap between avatar items"
+        );
+        Assert.equal(
+          content.getComputedStyle(avatarListbox).justifyContent,
+          "center",
+          "The avatar item layout container uses centering"
+        );
         const selectedItem = items.find(item => item.value === "star");
         Assert.ok(selectedItem, "Selected avatar item should exist");
         Assert.notEqual(

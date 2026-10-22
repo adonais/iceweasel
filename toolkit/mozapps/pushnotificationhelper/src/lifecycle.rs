@@ -36,10 +36,6 @@ use windows_sys::Win32::System::Threading::{
     SYNCHRONIZATION_SYNCHRONIZE,
 };
 
-// TODO: drop once windows-sys names its own import libraries (Bug 2071329).
-#[link(name = "advapi32")]
-unsafe extern "system" {}
-
 struct OwnedHandle(HANDLE);
 
 // SAFETY: Win32 handles belong to the process rather than to a thread, so any

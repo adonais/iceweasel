@@ -414,7 +414,7 @@ html|textarea {
   font-size: inherit;
   padding: var(--space-small);
   margin: var(--space-xxsmall) var(--space-xsmall);
-  min-height: var(--input-text-min-height);
+  min-height: var(--input-min-height);
 }
 
 html|textarea {
@@ -898,35 +898,6 @@ input[type="text"][warning]:enabled:not(:focus) {
   box-shadow:
     0 0 0 1px var(--input-border-color-warning),
     0 0 0 4px var(--input-box-shadow-color-warning);
-}
-
-/* Cards */
-
-.card {
-  background: var(--background-color-box);
-  /* Needed for high-contrast where the border will appear. */
-  border: 1px solid var(--card-border-color);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-box-shadow);
-  margin: 0 0 var(--space-small);
-  /* Remove the border from the overall padding. */
-  padding: calc(var(--card-padding) - 1px);
-  transition: box-shadow 150ms;
-}
-
-.card:not(.card-no-hover):hover {
-  box-shadow: var(--card-box-shadow-hover);
-}
-
-.card-heading-image {
-  border-top-left-radius: var(--border-radius-small);
-  border-top-right-radius: var(--border-radius-small);
-  margin-block: calc(var(--card-padding) * -1) var(--card-padding);
-  margin-inline: calc(var(--card-padding) * -1);
-}
-
-.card-heading-image:dir(rtl) {
-  transform: scaleX(-1);
 }
 
 /* Sidebar footer links */

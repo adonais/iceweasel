@@ -90,6 +90,7 @@ class FrameEncodeSettingsBuilderForTest : public FrameEncodeSettingsBuilder {
   FrameEncodeSettingsBuilderForTest& Cqp(int target_qp);
   FrameEncodeSettingsBuilderForTest& S(int spatial_id);
   FrameEncodeSettingsBuilderForTest& T(int temporal_id);
+  FrameEncodeSettingsBuilderForTest& Res(webrtc::Resolution resolution);
   FrameEncodeSettingsBuilderForTest& Res(int width, int height);
   FrameEncodeSettingsBuilderForTest& Upd(std::optional<int> update_buffer);
   FrameEncodeSettingsBuilderForTest& Ref(std::vector<int> reference_buffers);

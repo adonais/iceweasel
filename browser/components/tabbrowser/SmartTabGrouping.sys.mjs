@@ -29,15 +29,36 @@ import { embeddingsGeneratorFactory } from "chrome://global/content/ml/Embedding
  * @typedef {import("chrome://global/content/ml/EmbeddingsGenerator.sys.mjs").EmbeddingsGenerator} EmbeddingsGenerator
  */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   NLP: "resource://gre/modules/NLP.sys.mjs",
   MLEngineParent:
     "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs",
   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",
+  suggestOtherTabsMethod: {
+    pref: "browser.tabs.groups.smart.suggestOtherTabsMethod",
+    default: "LOGISTIC_REGRESSION",
+  },
+  topicModelRevision: {
+    pref: "browser.tabs.groups.smart.topicModelRevision",
+    default: "latest",
+  },
+  // Test/Nimbus override to pick the clustering method, e.g. "AGGLOMERATIVE".
+  clusterMethod: {
+    pref: "browser.tabs.groups.smart.clusterMethod",
+    default: "",
+  },
+  // AGGLOMERATIVE cosine-distance cutoff, as an int in thousandths (800 => 0.80).
+  // 0 keeps the config default. Stored as an int since prefs have no float type.
+  agglomerativeThresholdInt: {
+    pref: "browser.tabs.groups.smart.agglomerativeThresholdInt",
+    default: 0,
+  },
+  nearestNeighborThresholdInt: {
+    pref: "browser.tabs.groups.smart.nearestNeighborThresholdInt",
+    default: 275,
+  },
 });
 
 const LATEST_MODEL_REVISION = "latest";
@@ -48,41 +69,6 @@ export const SUGGEST_OTHER_TABS_METHODS = {
   NEAREST_NEIGHBOR: "NEAREST_NEIGHBOR",
   LOGISTIC_REGRESSION: "LOGISTIC_REGRESSION",
 };
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "suggestOtherTabsMethod",
-  "browser.tabs.groups.smart.suggestOtherTabsMethod"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "topicModelRevision",
-  "browser.tabs.groups.smart.topicModelRevision"
-);
-
-// Test/Nimbus override to pick the clustering method, e.g. "AGGLOMERATIVE".
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "clusterMethod",
-  "browser.tabs.groups.smart.clusterMethod",
-  ""
-);
-
-// AGGLOMERATIVE cosine-distance cutoff, as an int in thousandths (800 => 0.80).
-// 0 keeps the config default. Stored as an int since prefs have no float type.
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "agglomerativeThresholdInt",
-  "browser.tabs.groups.smart.agglomerativeThresholdInt",
-  0
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "nearestNeighborThresholdInt",
-  "browser.tabs.groups.smart.nearestNeighborThresholdInt"
-);
 
 const EMBED_TEXT_KEY = "combined_text";
 // Cap the items compared when scoring cluster cohesion so the O(n^2) pairwise

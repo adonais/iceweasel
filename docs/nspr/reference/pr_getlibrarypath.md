@@ -25,4 +25,4 @@ This function retrieves the current default library pathname, copies it,
 and returns the copy. If sufficient storage cannot be allocated to
 contain the copy, the function returns `NULL`. Storage for the result
 is allocated by the runtime and becomes the responsibility of the
-caller. When it is no longer used, free it using {ref}`PR_FreeLibraryName`.
+caller. When it is no longer used, free it using {doc}`pr_freelibraryname`.

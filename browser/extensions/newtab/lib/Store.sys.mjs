@@ -23,9 +23,9 @@ export class Store {
     this._middleware = this._middleware.bind(this);
     // Bind each redux method so we can call it directly from the Store. E.g.,
     // store.dispatch() will call store._store.dispatch();
-    for (const method of ["dispatch", "getState", "subscribe"]) {
-      this[method] = (...args) => this._store[method](...args);
-    }
+    this.dispatch = (...args) => this._store.dispatch(...args);
+    this.getState = (...args) => this._store.getState(...args);
+    this.subscribe = (...args) => this._store.subscribe(...args);
     this.feeds = new Map();
     this._prefs = new Prefs();
     this._messageChannel = new ActivityStreamMessageChannel({
@@ -65,7 +65,7 @@ export class Store {
    *
    * @param  {string} feedName The name of a feed, as defined in the object
    *                           passed to Store.init
-   * @param {Action} initAction An optional action to initialize the feed
+   * @param {object} initAction An optional action to initialize the feed
    */
   initFeed(feedName, initAction) {
     const feed = this._feedFactories.get(feedName)();
@@ -81,7 +81,7 @@ export class Store {
    *
    * @param  {string} feedName The name of a feed, as defined in the object
    *                           passed to Store.init
-   * @param {Action} uninitAction An optional action to uninitialize the feed
+   * @param {object} uninitAction An optional action to uninitialize the feed
    */
   uninitFeed(feedName, uninitAction) {
     const feed = this.feeds.get(feedName);
@@ -116,9 +116,9 @@ export class Store {
    * @param  {Map} feedFactories A Map of feeds with the name of the pref for
    *                                the feed as the key and a function that
    *                                constructs an instance of the feed.
-   * @param {Action} initAction An optional action that will be dispatched
+   * @param {object} initAction An optional action that will be dispatched
    *                            to feeds when they're created.
-   * @param {Action} uninitAction An optional action for when feeds uninit.
+   * @param {object} uninitAction An optional action for when feeds uninit.
    */
   init(feedFactories, initAction, uninitAction) {
     this._feedFactories = feedFactories;

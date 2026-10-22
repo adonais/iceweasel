@@ -14,11 +14,13 @@ rtc_library("scream_feedback") {
     "scream_feedback.h",
   ]
   deps = [
+    ":scream_v2_parameters",
     "../../../api/transport:ecn_marking",
     "../../../api/transport:network_control",
     "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
+    "../../../rtc_base:checks",
   ]
 }
 
@@ -154,6 +156,7 @@ if (rtc_include_tests) {
     sources = [ "scream_feedback_unittest.cc" ]
     deps = [
       ":scream_feedback",
+      ":scream_v2_parameters",
       "../../../api/transport:ecn_marking",
       "../../../api/transport:network_control",
       "../../../api/units:data_size",

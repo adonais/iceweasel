@@ -104,7 +104,15 @@ class DOMLocalization : public intl::Localization {
                          nsTArray<Nullable<L10nMessage>>& aTranslations,
                          nsXULPrototypeDocument* aProto, ErrorResult& aRv);
 
+  // `aSubtreeRoot` must itself be a subtree root, i.e. the result of
+  // `nsINode::SubtreeRoot()`.
   bool SubtreeRootInRoots(nsINode* aSubtreeRoot) {
+    MOZ_ASSERT(aSubtreeRoot->SubtreeRoot() == aSubtreeRoot);
+    // A connected root that is its own subtree root - which every ShadowRoot
+    // is - answers this without walking the set.
+    if (mRoots.Contains(aSubtreeRoot)) {
+      return true;
+    }
     for (const auto* key : mRoots) {
       nsINode* subtreeRoot = key->SubtreeRoot();
       if (subtreeRoot == aSubtreeRoot) {

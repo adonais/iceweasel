@@ -235,6 +235,26 @@ attribute.
 </panel-list>
 ```
 
+### Keyboard shortcuts
+
+Setting the `shortcut` attribute shows a keyboard shortcut after the label. The
+text is hidden from assistive technology, so also set `aria-keyshortcuts` to
+expose the shortcut.
+
+```html
+<panel-list>
+  <panel-item shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New</panel-item>
+  <panel-item shortcut="Ctrl+S" aria-keyshortcuts="Control+S">Save</panel-item>
+</panel-list>
+```
+
+```html story
+<panel-list stay-open open>
+  <panel-item shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New</panel-item>
+  <panel-item shortcut="Ctrl+S" aria-keyshortcuts="Control+S">Save</panel-item>
+</panel-list>
+```
+
 ### Matching anchor width
 
 When using the `panel-list` like a `select` dropdown, it's nice to have it match

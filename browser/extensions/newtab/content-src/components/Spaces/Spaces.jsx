@@ -49,9 +49,11 @@ function isRtl() {
  *   and absent for the V1 ones.
  * @param {string} [props.defaultId] - space to open on, when that is not the
  *   leftmost one. Defaults to the leftmost.
+ * @param {boolean} [props.arrows] - navigate with an arrow at each edge that
+ *   has a space beyond it, instead of the tablist
  * @param {Function} props.dispatch - Redux dispatch, for switch telemetry
  */
-export function Spaces({ spaces, defaultId, dispatch }) {
+export function Spaces({ spaces, defaultId, arrows, dispatch }) {
   // By id, not index: turning a space off shifts the indices after it.
   const [activeId, setActiveId] = useState(defaultId ?? spaces[0]?.id);
   // Falls back to the leftmost space when the active one is turned off.
@@ -188,6 +190,44 @@ export function Spaces({ spaces, defaultId, dispatch }) {
     [activeIndex, switchTo]
   );
 
+  // Labelled with the space it leads to.
+  const renderArrow = (offset, direction) => {
+    // Wraps, so the first space's previous arrow leads to the last.
+    const targetIndex = (activeIndex + offset + spaces.length) % spaces.length;
+    const target = spaces[targetIndex];
+    return (
+      target && (
+        <div className={`spaces-arrow-rail ${direction}`}>
+          <moz-button
+            class="spaces-arrow"
+            type="primary"
+            iconsrc={`chrome://global/skin/icons/shaft-arrow-${direction === "prev" ? "left" : "right"}.svg`}
+            iconposition={direction === "prev" ? "end" : undefined}
+            label={target.label}
+            data-l10n-id={
+              target.label ? undefined : SPACE_META[target.id].l10nId
+            }
+            // Marks keyboard focus for the CSS name reveal. A mouse click also
+            // focuses the arrow, and moz-button does not expose :focus-visible,
+            // so this asks its inner button instead.
+            onFocus={event =>
+              event.currentTarget.toggleAttribute(
+                "focusvisible",
+                !!event.currentTarget.shadowRoot?.activeElement?.matches(
+                  ":focus-visible"
+                )
+              )
+            }
+            onBlur={event =>
+              event.currentTarget.removeAttribute("focusvisible")
+            }
+            onClick={() => switchTo(targetIndex, "arrow")}
+          />
+        </div>
+      )
+    );
+  };
+
   return (
     <div
       className="spaces-container"
@@ -195,51 +235,59 @@ export function Spaces({ spaces, defaultId, dispatch }) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {arrows && (
+        <>
+          {renderArrow(-1, "prev")}
+          {renderArrow(1, "next")}
+        </>
+      )}
       <div className="spaces-frame">
         {/* A real tablist, so arrow-key traversal comes with the pattern. */}
-        <div className="spaces-tablist-slot">
-          <div
-            className="spaces-tablist"
-            role="tablist"
-            ref={tablistRef}
-            onKeyDown={onTabKeyDown}
-          >
-            {spaces.map((space, index) => {
-              const isActive = index === activeIndex;
-              return (
-                <button
-                  key={space.id}
-                  id={`spaces-tab-${space.id}`}
-                  className={`spaces-tab${isActive ? " active" : ""}`}
-                  role="tab"
-                  type="button"
-                  aria-selected={isActive}
-                  aria-controls={`spaces-panel-${space.id}`}
-                  tabIndex={isActive ? 0 : -1}
-                  onClick={() => switchTo(index, "tab")}
-                >
-                  {/* A thematic space carries its own label and icon from
+        {!arrows && (
+          <div className="spaces-tablist-slot">
+            <div
+              className="spaces-tablist"
+              role="tablist"
+              ref={tablistRef}
+              onKeyDown={onTabKeyDown}
+            >
+              {spaces.map((space, index) => {
+                const isActive = index === activeIndex;
+                return (
+                  <button
+                    key={space.id}
+                    id={`spaces-tab-${space.id}`}
+                    className={`spaces-tab${isActive ? " active" : ""}`}
+                    role="tab"
+                    type="button"
+                    aria-selected={isActive}
+                    aria-controls={`spaces-panel-${space.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => switchTo(index, "tab")}
+                  >
+                    {/* A thematic space carries its own label and icon from
                   the layout config; SPACE_META covers the V1 spaces, whose
                   labels are localized. An icon the config got wrong is simply
                   absent, and the label still names the tab. */}
-                  {(space.icon ?? SPACE_META[space.id]?.iconsrc) && (
-                    <img
-                      className="spaces-tab-icon"
-                      src={space.icon ?? SPACE_META[space.id].iconsrc}
-                      data-icon-family={space.iconFamily}
-                      alt=""
-                    />
-                  )}
-                  {space.label ? (
-                    <span>{space.label}</span>
-                  ) : (
-                    <span data-l10n-id={SPACE_META[space.id].l10nId} />
-                  )}
-                </button>
-              );
-            })}
+                    {(space.icon ?? SPACE_META[space.id]?.iconsrc) && (
+                      <img
+                        className="spaces-tab-icon"
+                        src={space.icon ?? SPACE_META[space.id].iconsrc}
+                        data-icon-family={space.iconFamily}
+                        alt=""
+                      />
+                    )}
+                    {space.label ? (
+                      <span>{space.label}</span>
+                    ) : (
+                      <span data-l10n-id={SPACE_META[space.id].l10nId} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
         <div className={`spaces-track${animate ? " animate" : ""}`}>
           {spaces.map((space, index) => {
             const isActive = index === activeIndex;
@@ -249,8 +297,9 @@ export function Spaces({ spaces, defaultId, dispatch }) {
                 id={`spaces-panel-${space.id}`}
                 className={`space${isActive ? " active" : ""}`}
                 style={{ "--space-offset": index - activeIndex }}
-                role="tabpanel"
-                aria-labelledby={`spaces-tab-${space.id}`}
+                // The arrows variant has no tabs to label the panels.
+                role={arrows ? undefined : "tabpanel"}
+                aria-labelledby={arrows ? undefined : `spaces-tab-${space.id}`}
                 aria-hidden={isActive ? undefined : "true"}
                 inert={!isActive}
               >

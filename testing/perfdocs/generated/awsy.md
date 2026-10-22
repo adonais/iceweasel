@@ -38,10 +38,6 @@ AWSY tests consist of three types: TP5\*, TP6, and Base Memory Usage.
     * awsy-base: None
     * awsy-base-dmd: None
 
-  * {ref}`test-macosx1470-64-shippable/opt <hardware-mac-mini-r8>`
-    * awsy-base: trunk
-    * awsy-base-dmd: None
-
   * {ref}`test-macosx1500-aarch64-shippable/opt <hardware-mac-mini-m4>`
     * awsy-base: trunk
     * awsy-base-dmd: None
@@ -82,10 +78,6 @@ AWSY tests consist of three types: TP5\*, TP6, and Base Memory Usage.
     * awsy-base-dmd: None
     * awsy-dmd: None
 
-  * {ref}`test-macosx1470-64-shippable/opt <hardware-mac-mini-r8>`
-    * awsy-base-dmd: None
-    * awsy-dmd: None
-
   * {ref}`test-macosx1500-aarch64-shippable/opt <hardware-mac-mini-m4>`
     * awsy-base-dmd: None
     * awsy-dmd: None
@@ -120,8 +112,6 @@ AWSY tests consist of three types: TP5\*, TP6, and Base Memory Usage.
 
   * {ref}`test-linux2404-64/opt <hardware-gcp-c3d-standard-8>`
 
-  * {ref}`test-macosx1470-64-shippable/opt <hardware-mac-mini-r8>`
-
   * {ref}`test-macosx1500-aarch64-shippable/opt <hardware-mac-mini-m4>`
 
   * {ref}`test-windows11-64-25h2-shippable/opt <hardware-azure-standard-f8alds-v7>`
@@ -152,9 +142,6 @@ AWSY tests consist of three types: TP5\*, TP6, and Base Memory Usage.
 
   * {ref}`test-linux2404-64/opt <hardware-gcp-c3d-standard-8>`
     * awsy-tp6: None
-
-  * {ref}`test-macosx1470-64-shippable/opt <hardware-mac-mini-r8>`
-    * awsy-tp6: trunk
 
   * {ref}`test-macosx1500-aarch64-shippable/opt <hardware-mac-mini-m4>`
     * awsy-tp6: trunk

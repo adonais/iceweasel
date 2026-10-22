@@ -46,6 +46,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-size-function.mjs",
   getAutocompleteDataForLinearGradientFunction:
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-linear-gradient-function.mjs",
+  getAutocompleteDataForRandomFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-random-function.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -1918,6 +1920,12 @@ class InplaceEditor extends EventEmitter {
         functionTokens: functionStackEntry.tokens,
         getCSSValuesForPropertyName:
           this.#getCSSValuesForPropertyName.bind(this),
+      });
+    }
+
+    if (functionName === "random") {
+      return lazy.getAutocompleteDataForRandomFunction({
+        functionTokens: functionStackEntry.tokens,
       });
     }
 

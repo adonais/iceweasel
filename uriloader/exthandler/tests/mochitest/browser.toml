@@ -11,13 +11,9 @@ support-files = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking" ,
-  "os == 'win' && os_version == '11.26200' && opt", # Bug 1776014
 ]
 
 ["browser_auto_close_window_nodialog.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200'", # Bug 2019745
-]
 support-files = [
   "download_page.html",
   "download.bin",

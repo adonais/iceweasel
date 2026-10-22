@@ -97,7 +97,6 @@ enum class PrefersColorSchemeOverride : uint8_t;
 }  // namespace dom
 namespace gfx {
 class FontPaletteValueSet;
-class PaletteCache;
 }  // namespace gfx
 }  // namespace mozilla
 
@@ -429,10 +428,10 @@ class nsPresContext : public nsISupports,
   mozilla::ScreenIntCoord GetKeyboardHeight() const;
 
   /**
-   * Returns true if the software keyboard is hidden or
-   * the document is `interactive-widget=resizes-content` mode.
+   * Returns true if the software keyboard is visible and the document is
+   * `interactive-widget=overlays-content` mode.
    */
-  bool IsKeyboardHiddenOrResizesContentMode() const;
+  bool IsKeyboardVisibleOnOverlaysContent() const;
 
   /**
    * Returns the maximum height of the dynamic toolbar if the toolbar state is
@@ -945,8 +944,6 @@ class nsPresContext : public nsISupports,
   void FlushFontPaletteValues();
   void MarkFontPaletteValuesDirty() { mFontPaletteValuesDirty = true; }
 
-  mozilla::gfx::PaletteCache& FontPaletteCache();
-
   // Ensure that it is safe to hand out CSS rules outside the layout
   // engine by ensuring that all CSS style sheets have unique inners
   // and, if necessary, synchronously rebuilding all style data.
@@ -1239,8 +1236,6 @@ class nsPresContext : public nsISupports,
   const nsStaticAtom* mMedium;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
   RefPtr<mozilla::gfx::FontPaletteValueSet> mFontPaletteValueSet;
-
-  mozilla::UniquePtr<mozilla::gfx::PaletteCache> mFontPaletteCache;
 
   // TODO(emilio): Maybe lazily create and put under a UniquePtr if this grows a
   // lot?

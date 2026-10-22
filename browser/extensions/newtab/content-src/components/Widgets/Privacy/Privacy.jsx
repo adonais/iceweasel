@@ -24,6 +24,7 @@ import { useWidgetCelebration } from "../useWidgetCelebration";
 import { useCountUp } from "../useCountUp";
 import { usePageVisible } from "../usePageVisible";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 
 const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
@@ -616,12 +617,10 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
     >
       <div className="privacy-title-wrapper">
         <div className="privacy-context-menu-wrapper">
-          <moz-button
+          <WidgetMenuButton
             className="privacy-context-menu-button"
-            iconSrc="chrome://global/skin/icons/more.svg"
             menuId="privacy-context-menu"
-            type="ghost"
-            data-l10n-id="newtab-privacy-widget-menu-button"
+            l10nId="newtab-privacy-widget-open-menu-button"
           />
           <panel-list className="panel-list-no-icons" id="privacy-context-menu">
             {widgetsMayBeMaximized && (

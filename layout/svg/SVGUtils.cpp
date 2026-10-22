@@ -1565,8 +1565,7 @@ gfxMatrix SVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame) {
     trans = nsStyleTransformMatrix::ReadTransforms(
         properties.mTranslate, properties.mRotate, properties.mScale,
         properties.mMotion.ptrOr(nullptr), properties.mTransform, refBox,
-        AppUnitsPerCSSPixel(), aFrame->Style()->EffectiveZoom(),
-        nsStyleTransformMatrix::Zoomed::Yes);
+        AppUnitsPerCSSPixel(), nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   trans.ChangeBasis(svgTransformOrigin);

@@ -19,6 +19,7 @@
 #include "mozilla/dom/RemoteWorkerControllerChild.h"
 #include "mozilla/dom/ServiceWorkerRegistrationInfo.h"
 #include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
@@ -36,6 +37,7 @@
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
+#include "nsQueryObject.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
@@ -324,7 +326,25 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
       SynthesizeResponse(
           std::move(aResult.get_ParentToParentSynthesizeResponseArgs()));
       break;
-    case ParentToParentFetchEventRespondWithResult::TResetInterceptionArgs:
+    case ParentToParentFetchEventRespondWithResult::TResetInterceptionArgs: {
+      auto& stream = aResult.get_ResetInterceptionArgs().uploadStream();
+      nsCOMPtr<nsIChannel> channel;
+      MOZ_ALWAYS_SUCCEEDS(
+          mInterceptedChannel->GetChannel(getter_AddRefs(channel)));
+      RefPtr<net::HttpBaseChannel> upload = do_QueryObject(channel);
+      bool isStreaming = upload && upload->UploadStreamIsStreaming();
+      if (stream || isStreaming) {
+        // A streaming upload was handed to the worker, so the channel can only
+        // be reset if the worker returns the stream unread. Anything else would
+        // put a request with an empty body on the wire.
+        nsresult rv = stream && isStreaming
+                          ? upload->InternalSetUploadStream(stream->mStream)
+                          : NS_ERROR_UNEXPECTED;
+        if (NS_FAILED(rv)) {
+          CancelInterception(rv);
+          break;
+        }
+      }
       mInterceptedChannel->SetFetchHandlerStart(
           aResult.get_ResetInterceptionArgs().timeStamps().fetchHandlerStart());
       mInterceptedChannel->SetFetchHandlerFinish(
@@ -333,6 +353,7 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
               .fetchHandlerFinish());
       ResetInterception(false);
       break;
+    }
     case ParentToParentFetchEventRespondWithResult::TCancelInterceptionArgs:
       mInterceptedChannel->SetFetchHandlerStart(
           aResult.get_CancelInterceptionArgs()

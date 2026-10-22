@@ -23,14 +23,15 @@ import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import java.time.LocalDate
-import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.feature.contextmenu.R as contextmenuR
 import mozilla.components.feature.findinpage.R as findinpageR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.mozilla.focus.R
 import org.mozilla.focus.helpers.Constants.RETRY_COUNT
+import org.mozilla.focus.helpers.TestHelper.getStringResource
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.pageLoadingTime
@@ -93,7 +94,7 @@ class BrowserRobot {
     fun refreshPageIfStillLoading(pageContent: String) {
         browserScreen {}
             .openMainMenu {
-                when (mDevice.findObject(UiSelector().description("Reload website")).exists()) {
+                when (isReloadButtonDisplayed()) {
                     true -> ThreeDotMainMenuRobot.Transition().clickReloadButton {}
                     false -> {
                         ThreeDotMainMenuRobot.Transition().clickStopLoadingButton {
@@ -478,7 +479,9 @@ class BrowserRobot {
 
         fun openMainMenu(interact: ThreeDotMainMenuRobot.() -> Unit): ThreeDotMainMenuRobot.Transition {
             browserURLbar.waitForExists(waitingTime)
-            mainMenu.check(matches(isDisplayed())).perform(click())
+            assertTrue(mainMenu.waitForExists(waitingTime))
+            mainMenu.click()
+            mDevice.waitForIdle()
 
             ThreeDotMainMenuRobot().interact()
             return ThreeDotMainMenuRobot.Transition()
@@ -562,7 +565,8 @@ private val eraseBrowsingButton = onView(withContentDescription("Erase browsing 
 
 private val tabsCounter = onView(withId(tabcounterR.id.counter_root))
 
-private val mainMenu = onView(withId(toolbarR.id.mozac_browser_toolbar_menu))
+private val mainMenu
+    get() = mDevice.findObject(UiSelector().description(getStringResource(R.string.content_description_menu)))
 
 private val shareAppsList = mDevice.findObject(UiSelector().resourceId("android:id/resolver_list"))
 

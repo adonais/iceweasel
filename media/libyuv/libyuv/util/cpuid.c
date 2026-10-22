@@ -14,9 +14,9 @@
 
 #ifdef __linux__
 #include <ctype.h>
-#include <sys/utsname.h>
-#include <signal.h>
 #include <setjmp.h>
+#include <signal.h>
+#include <sys/utsname.h>
 #endif
 
 #include "libyuv/cpu_id.h"
@@ -42,7 +42,7 @@ static void KernelVersion(int* version) {
 }
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
 static sigjmp_buf vdpphps_jmpbuf;
 static void vdpphps_sigill_handler(int sig) {
   (void)sig;
@@ -135,6 +135,15 @@ int main(int argc, const char* argv[]) {
     printf("Has LASX 0x%x\n", has_lasx);
   }
 #endif  // defined(__loongarch__)
+
+#if defined(__wasm__)
+  int has_wasm = TestCpuFlag(kCpuHasWASM);
+  if (has_wasm) {
+    int has_wasm_simd = TestCpuFlag(kCpuHasWASMSIMD);
+    printf("Has WASM 0x%x\n", has_wasm);
+    printf("Has WASM SIMD 0x%x\n", has_wasm_simd);
+  }
+#endif  // defined(__wasm__)
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || \
     defined(_M_X64)
@@ -230,7 +239,10 @@ int main(int argc, const char* argv[]) {
 
       if (sigsetjmp(vdpphps_jmpbuf, 1) == 0) {
         // VDPPHPS xmm0, xmm0, xmm0
-        __asm__ volatile(".byte 0x62, 0xf2, 0x7c, 0x08, 0x52, 0xc0" : : : "xmm0");
+        __asm__ volatile(".byte 0x62, 0xf2, 0x7c, 0x08, 0x52, 0xc0"
+                         :
+                         :
+                         : "xmm0");
         printf("Works!\n");
       } else {
         printf("Crashed (SIGILL)!\n");

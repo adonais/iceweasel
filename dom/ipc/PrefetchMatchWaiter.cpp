@@ -27,6 +27,8 @@ PrefetchMatchWaiter::PrefetchMatchWaiter(WindowGlobalParent* aWGP, nsIURI* aURI,
       aTimeout.ToMilliseconds()));
 }
 
+PrefetchMatchWaiter::~PrefetchMatchWaiter() = default;
+
 already_AddRefed<PrefetchMatchWaiter> PrefetchMatchWaiter::Create(
     WindowGlobalParent* aWGP, nsIURI* aURI, TimeDuration aTimeout) {
   RefPtr<PrefetchMatchWaiter> self =

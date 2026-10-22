@@ -821,10 +821,9 @@ class FlexfecObserver : public test::EndToEndTest {
     } else {
       EXPECT_EQ(test::VideoTestConstants::kFakeVideoSendPayloadType,
                 rtp_packet.PayloadType());
-      EXPECT_THAT(
-          ::testing::make_tuple(test::VideoTestConstants::kVideoSendSsrcs,
-                                num_video_streams_),
-          ::testing::Contains(rtp_packet.Ssrc()));
+      EXPECT_THAT(std::make_tuple(test::VideoTestConstants::kVideoSendSsrcs,
+                                  num_video_streams_),
+                  ::testing::Contains(rtp_packet.Ssrc()));
       sent_media_ = true;
     }
 
@@ -3282,8 +3281,8 @@ class Vp9Test : public VideoSendStreamTest,
                 public ::testing::WithParamInterface<ParameterizationType> {
  public:
   Vp9Test()
-      : params_(::testing::get<Vp9TestParams>(GetParam())),
-        use_scalability_mode_identifier_(::testing::get<bool>(GetParam())) {}
+      : params_(std::get<Vp9TestParams>(GetParam())),
+        use_scalability_mode_identifier_(std::get<bool>(GetParam())) {}
 
  protected:
   const Vp9TestParams params_;

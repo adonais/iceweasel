@@ -2749,10 +2749,18 @@ nsresult HTMLEditor::PasteInternal(nsIClipboard::ClipboardType aClipboardType,
 }
 
 nsresult HTMLEditor::HandlePasteTransferable(
-    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable) {
-  // InitializeDataTransfer may fetch input stream in aTransferable, so it
-  // may be invalid after calling this.
-  aEditActionData.InitializeDataTransfer(&aTransferable);
+    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable,
+    DataTransfer* aDataTransfer) {
+  if (aDataTransfer) {
+    // aDataTransfer was already created from aTransferable by the caller.
+    // Reuse it, because creating another one would try to read the input
+    // streams in aTransferable a second time.
+    aEditActionData.InitializeDataTransfer(aDataTransfer);
+  } else {
+    // InitializeDataTransfer may fetch input stream in aTransferable, so it
+    // may be invalid after calling this.
+    aEditActionData.InitializeDataTransfer(&aTransferable);
+  }
 
   nsresult rv = aEditActionData.MaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {

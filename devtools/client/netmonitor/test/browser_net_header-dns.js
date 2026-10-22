@@ -29,10 +29,7 @@ add_task(async function testCheckDNSResolution() {
   const waitForTab = waitUntil(
     () => document.querySelectorAll(".tabpanel-summary-label")[0]
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await waitForTab;
 
   const dnsEl = [...document.querySelectorAll(".headers-summary")].find(

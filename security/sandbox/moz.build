@@ -238,8 +238,30 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "-Wno-unused-but-set-global"
     ]
 
-LICENSED_UNDER += [
+LICENSED_UNDER += ["chromium"]
+# The Chromium-licensed copies outside chromium/: the rest of
+# chromium-shim/ is Mozilla-written stubs for files Chromium generates, and in
+# glibc_hack/ only the vendored namespace_sandbox.cc and the excerpt
+# extract-sandbox.py cuts out of it -- the copy SandboxLaunch.cpp compiles --
+# are Chromium's; the script itself is ours.
+LICENSED_UNDER["chromium"].paths = [
     "chromium",
+    "chromium-shim/base/check_version_internal.h",
+    "chromium-shim/base/debug/stack_trace.cpp",
+    "chromium-shim/sandbox/win/src/registry_*",
+    "linux/launch/glibc_hack/namespace_sandbox.inc",
+    "linux/launch/glibc_hack/sandbox/linux/services/namespace_sandbox.cc",
+]
+
+LICENSES += ["cityhash"]
+LICENSES["cityhash"].title = "CityHash License"
+LICENSES["cityhash"].text = "LICENSE-NOTICE-cityhash.txt"
+LICENSES["cityhash"].spdx = "MIT"
+LICENSES["cityhash"].subcomponent = True
+
+LICENSED_UNDER += ["cityhash"]
+LICENSED_UNDER["cityhash"].paths = [
+    "chromium/base/third_party/cityhash",
 ]
 
 LICENSED_UNDER += ["superfasthash"]

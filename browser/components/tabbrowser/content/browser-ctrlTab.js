@@ -103,7 +103,8 @@ var tabPreviews = {
    *   snapshot is safe for storage and aShouldCache is true, the snapshot is
    *   converted to a blob image, stored and cached, and drawn in the returned
    *   canvas. The thumbnail can then be recovered even if the browser is
-   *   discarded. Otherwise, the canvas itself is cached in aTab.__thumbnail.
+   *   discarded. Otherwise, or if the stored image fails to load, the canvas
+   *   itself is cached in aTab.__thumbnail.
    *   Resolves to null if a fatal exception occurred during thumbnail capture.
    */
   capture: async function tabPreviews_capture(aTab, aShouldCache) {
@@ -114,6 +115,8 @@ var tabPreviews = {
 
     if (doStore && aShouldCache) {
       await PageThumbs.captureAndStore(browser);
+      // This can fail on Windows while another capture of the same URL is
+      // replacing the stored file.
       let img = await this.loadImage(uri);
       if (img) {
         // Cache the stored blob image for future use.
@@ -121,21 +124,20 @@ var tabPreviews = {
         aTab.__thumbnail_lastURI = uri;
         // Draw the stored blob image in the canvas.
         canvas.getContext("2d").drawImage(img, 0, 0);
-      } else {
-        canvas = null;
+        return canvas;
       }
-    } else {
-      try {
-        await PageThumbs.captureToCanvas(browser, canvas);
-        if (aShouldCache) {
-          // Cache the canvas itself for future use.
-          aTab.__thumbnail = canvas;
-          aTab.__thumbnail_lastURI = uri;
-        }
-      } catch (error) {
-        console.error(error);
-        canvas = null;
+    }
+
+    try {
+      await PageThumbs.captureToCanvas(browser, canvas);
+      if (aShouldCache) {
+        // Cache the canvas itself for future use.
+        aTab.__thumbnail = canvas;
+        aTab.__thumbnail_lastURI = uri;
       }
+    } catch (error) {
+      console.error(error);
+      canvas = null;
     }
 
     return canvas;

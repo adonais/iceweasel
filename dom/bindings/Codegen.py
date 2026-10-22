@@ -4703,6 +4703,14 @@ class CGWrapWithCacheMethod(CGAbstractMethod):
         )
 
         if self.descriptor.proxy:
+            if self.descriptor.hasLegacyUnforgeableMembers:
+                failureCode = fill(
+                    """
+                    DOMProxyHandler::ClearExpandoOnWrapFailure(aReflector);
+                    $*{failureCode}
+                    """,
+                    failureCode=failureCode,
+                )
             finalize = "DOMProxyHandler::getInstance()->finalize"
         else:
             finalize = FINALIZE_HOOK_NAME
@@ -4843,8 +4851,6 @@ class CGWrapNonWrapperCacheMethod(CGAbstractMethod):
         )
 
     def definition_body(self):
-        failureCode = "return false;\n"
-
         declareProto = DeclareProto(self.descriptor, noGivenProto=self.noGivenProto)
         if self.noGivenProto:
             assertGivenProto = ""
@@ -4853,6 +4859,15 @@ class CGWrapNonWrapperCacheMethod(CGAbstractMethod):
                 """
                 MOZ_ASSERT_IF(aGivenProto, js::IsObjectInContextCompartment(aGivenProto, aCx));
                 """
+            )
+        failureCode = "return false;\n"
+        if self.descriptor.proxy and self.descriptor.hasLegacyUnforgeableMembers:
+            failureCode = fill(
+                """
+                DOMProxyHandler::ClearExpandoOnWrapFailure(aReflector);
+                $*{failureCode}
+                """,
+                failureCode=failureCode,
             )
         return fill(
             """
@@ -14610,9 +14625,12 @@ class CGResolveOwnPropertyViaResolve(CGAbstractBindingMethod):
               // to avoid re-resolving the properties if someone deletes
               // them.
               JSAutoRealm ar(cx, obj);
-              JS_MarkCrossZoneId(cx, id);
+              JS::Rooted<jsid> wrappedId(cx, id);
+              if (!JS_WrapId(cx, &wrappedId)) {
+                return false;
+              }
               JS::Rooted<mozilla::Maybe<JS::PropertyDescriptor>> objDesc(cx);
-              if (!self->DoResolve(cx, obj, id, &objDesc)) {
+              if (!self->DoResolve(cx, obj, wrappedId, &objDesc)) {
                 return false;
               }
               // If desc->value() is undefined, then the DoResolve call
@@ -14621,7 +14639,7 @@ class CGResolveOwnPropertyViaResolve(CGAbstractBindingMethod):
               if (objDesc.isSome() &&
                   !objDesc->value().isUndefined()) {
                 JS::Rooted<JS::PropertyDescriptor> defineDesc(cx, *objDesc);
-                if (!JS_DefinePropertyById(cx, obj, id, defineDesc)) {
+                if (!JS_DefinePropertyById(cx, obj, wrappedId, defineDesc)) {
                   return false;
                 }
               }
@@ -15850,7 +15868,10 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
         args = [
             Argument("JSContext*", "cx"),
             Argument("JS::Handle<JSObject*>", "proxy"),
-            Argument("JS::Handle<jsid>", "id"),
+            Argument(
+                "JS::Handle<jsid>",
+                "idArg" if descriptor.isMaybeCrossOriginObject() else "id",
+            ),
             Argument("JS::ObjectOpResult&", "opresult"),
         ]
         ClassMethod.__init__(
@@ -15870,13 +15891,16 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
         if self.descriptor.isMaybeCrossOriginObject():
             delete += dedent(
                 """
+                JS::Rooted<jsid> id(cx, idArg);
                 if (!IsPlatformObjectSameOrigin(cx, proxy)) {
                   return ReportCrossOriginDenial(cx, id, "delete"_ns);
                 }
 
                 // Safe to enter the Realm of proxy now.
                 JSAutoRealm ar(cx, proxy);
-                JS_MarkCrossZoneId(cx, id);
+                if (!JS_WrapId(cx, &id)) {
+                  return false;
+                }
                 """
             )
 
@@ -16077,8 +16101,10 @@ class CGDOMJSProxyHandler_ownPropNames(ClassMethod):
                   JSAutoRealm ar(cx, proxy);
                   $*{addExpandoProps}
                 }
-                for (auto& id : props) {
-                  JS_MarkCrossZoneId(cx, id);
+                for (size_t i = 0; i < props.length(); i++) {
+                  if (!JS_WrapId(cx, props[i])) {
+                    return false;
+                  }
                 }
                 """,
                 addExpandoProps=addExpandoProps,
@@ -16106,7 +16132,10 @@ class CGDOMJSProxyHandler_hasOwn(ClassMethod):
         args = [
             Argument("JSContext*", "cx"),
             Argument("JS::Handle<JSObject*>", "proxy"),
-            Argument("JS::Handle<jsid>", "id"),
+            Argument(
+                "JS::Handle<jsid>",
+                "idArg" if descriptor.isMaybeCrossOriginObject() else "id",
+            ),
             Argument("bool*", "bp"),
         ]
         ClassMethod.__init__(
@@ -16118,6 +16147,7 @@ class CGDOMJSProxyHandler_hasOwn(ClassMethod):
         if self.descriptor.isMaybeCrossOriginObject():
             maybeCrossOrigin = dedent(
                 """
+                JS::Rooted<jsid> id(cx, idArg);
                 if (!IsPlatformObjectSameOrigin(cx, proxy)) {
                   // Just hand this off to BaseProxyHandler to do the slow-path thing.
                   // The BaseProxyHandler code is OK with this happening without entering the
@@ -16127,7 +16157,9 @@ class CGDOMJSProxyHandler_hasOwn(ClassMethod):
 
                 // Now safe to enter the Realm of proxy and do the rest of the work there.
                 JSAutoRealm ar(cx, proxy);
-                JS_MarkCrossZoneId(cx, id);
+                if (!JS_WrapId(cx, &id)) {
+                  return false;
+                }
                 """
             )
         else:
@@ -16225,7 +16257,10 @@ class CGDOMJSProxyHandler_get(ClassMethod):
             Argument("JSContext*", "cx"),
             Argument("JS::Handle<JSObject*>", "proxy"),
             Argument("JS::Handle<JS::Value>", "receiver"),
-            Argument("JS::Handle<jsid>", "id"),
+            Argument(
+                "JS::Handle<jsid>",
+                "idArg" if descriptor.isMaybeCrossOriginObject() else "id",
+            ),
             Argument("JS::MutableHandle<JS::Value>", "vp"),
         ]
         ClassMethod.__init__(
@@ -16277,6 +16312,7 @@ class CGDOMJSProxyHandler_get(ClassMethod):
                 MOZ_ASSERT(!xpc::WrapperFactory::IsXrayWrapper(proxy),
                             "Should not have a XrayWrapper here");
 
+                JS::Rooted<jsid> id(cx, idArg);
                 if (!IsPlatformObjectSameOrigin(cx, proxy)) {
                   return CrossOriginGet(cx, proxy, receiver, id, vp);
                 }
@@ -16288,7 +16324,9 @@ class CGDOMJSProxyHandler_get(ClassMethod):
                   if (!MaybeWrapValue(cx, &wrappedReceiver)) {
                     return false;
                   }
-                  JS_MarkCrossZoneId(cx, id);
+                  if (!JS_WrapId(cx, &id)) {
+                    return false;
+                  }
 
                   $*{getUnforgeableOrExpando}
                   if (!expandoHasProp) {
@@ -16814,13 +16852,16 @@ class CGDOMJSProxyHandler_getOwnPropertyDescriptor(ClassMethod):
                 // Enter the Realm of "proxy" so we can work with it.
                 JSAutoRealm ar(cx, proxy);
 
-                JS_MarkCrossZoneId(cx, id);
+                JS::Rooted<jsid> wrappedId(cx, id);
+                if (!JS_WrapId(cx, &wrappedId)) {
+                  return false;
+                }
 
                 // The spec messes around with configurability of the returned
                 // descriptor here, but it's not clear what should actually happen
                 // here.  See <https://github.com/whatwg/html/issues/4157>.  For
                 // now, keep our old behavior and don't do any magic.
-                if (!dom::DOMProxyHandler::getOwnPropertyDescriptor(cx, proxy, id, desc)) {
+                if (!dom::DOMProxyHandler::getOwnPropertyDescriptor(cx, proxy, wrappedId, desc)) {
                   return false;
                 }
               }
@@ -16947,9 +16988,12 @@ class CGDOMJSProxyHandler_set(ClassMethod):
               return false;
             }
 
-            JS_MarkCrossZoneId(cx, id);
+            JS::Rooted<jsid> wrappedId(cx, id);
+            if (!JS_WrapId(cx, &wrappedId)) {
+              return false;
+            }
 
-            return dom::DOMProxyHandler::set(cx, proxy, id, wrappedValue, wrappedReceiver, result);
+            return dom::DOMProxyHandler::set(cx, proxy, wrappedId, wrappedValue, wrappedReceiver, result);
             """
         )
 

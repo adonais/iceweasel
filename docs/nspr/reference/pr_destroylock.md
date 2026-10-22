@@ -12,7 +12,7 @@ void PR_DestroyLock(PRLock *lock);
 
 ### Parameter
 
-{ref}`PR_DestroyLock` has one parameter:
+{doc}`pr_destroylock` has one parameter:
 
 `lock`
 

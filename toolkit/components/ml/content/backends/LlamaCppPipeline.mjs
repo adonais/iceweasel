@@ -69,6 +69,16 @@ export class LlamaCppPipeline {
   #errorFactory = null;
   #metrics = [];
 
+  /** @type {Map<any, {cancelled: boolean, reader: ReadableStreamDefaultReader|null, drained: Promise<void>|null}>} */
+  #runs = new Map();
+
+  /**
+   * Resolves once a cancelled generation has released the backend.
+   *
+   * @type {Promise<void>|null}
+   */
+  #drained = null;
+
   constructor(generator, options, errorFactory) {
     /** @type {LlamaRunner} */
     this.generator = generator;
@@ -240,6 +250,12 @@ export class LlamaCppPipeline {
     inferenceProgressCallback = null,
     port = null
   ) {
+    // A cancelled generation owns the backend until its thread drains.
+    await this.#drained;
+
+    const currentRun = { cancelled: false, reader: null, drained: null };
+    this.#runs.set(requestId, currentRun);
+
     try {
       let endPromptTime = null;
 
@@ -285,9 +301,23 @@ export class LlamaCppPipeline {
         stopOnEndOfGenerationTokens,
       });
 
+      // An async iterator's return() rejects while a read is outstanding,
+      // which is exactly when a cancellation arrives. Generation starts on
+      // the first read.
+      const reader = stream.getReader();
+      currentRun.reader = reader;
+      if (currentRun.cancelled) {
+        await this.#endGeneration(currentRun);
+      }
+
       let chunkStartTime = ChromeUtils.now();
       let tokenCount = 0;
-      for await (const chunk of stream) {
+      while (true) {
+        const { value: chunk, done } = await reader.read();
+        if (done) {
+          break;
+        }
+
         const isPrompt = chunk.phase == "prompt";
 
         if (isPrompt && chunk.isPhaseCompleted) {
@@ -398,6 +428,51 @@ export class LlamaCppPipeline {
       });
 
       throw backendError;
+    } finally {
+      this.#runs.delete(requestId);
+      this.#endGeneration(currentRun);
     }
+  }
+
+  /**
+   * Ends a run's generation stream, at most once per run.
+   *
+   * Cancelling a stream closes it before the backend has released its thread,
+   * so a later cancel on the same stream resolves immediately. Reusing the
+   * first promise keeps `#drained` tracking the backend rather than the
+   * stream.
+   *
+   * @param {{reader: ReadableStreamDefaultReader|null, drained: Promise<void>|null}} currentRun
+   * @returns {Promise<void>|null} Resolves once the backend is free, or null
+   *          if the run never opened a stream.
+   */
+  #endGeneration(currentRun) {
+    if (!currentRun.reader) {
+      return null;
+    }
+
+    currentRun.drained ??= currentRun.reader.cancel().catch(error => {
+      lazy.console.warn("Ending the generation stream failed", error);
+    });
+    this.#drained = currentRun.drained;
+
+    return currentRun.drained;
+  }
+
+  /**
+   * Ends an in-flight generation, leaving the run to report what it generated
+   * so far. Returns once the backend is free for the next generation.
+   *
+   * @param {string|number|null} requestId - The request to cancel. Unknown ids
+   *        are ignored: the run may have finished on its own already.
+   */
+  async cancel(requestId) {
+    const currentRun = this.#runs.get(requestId);
+    if (!currentRun) {
+      return;
+    }
+
+    currentRun.cancelled = true;
+    await this.#endGeneration(currentRun);
   }
 }

@@ -472,11 +472,7 @@ void aom_upsampled_pred_c(MACROBLOCKD *xd, const AV1_COMMON *const cm,
   const InterpFilterParams *filter = av1_get_filter(subpel_search);
 
   if (!subpel_x_q3 && !subpel_y_q3) {
-    for (int i = 0; i < height; i++) {
-      memcpy(comp_pred, ref, width * sizeof(*comp_pred));
-      comp_pred += width;
-      ref += ref_stride;
-    }
+    aom_convolve_copy_c(ref, ref_stride, comp_pred, width, width, height);
   } else if (!subpel_y_q3) {
     const int16_t *const kernel =
         av1_get_interp_filter_subpel_kernel(filter, subpel_x_q3 << 1);
@@ -488,15 +484,14 @@ void aom_upsampled_pred_c(MACROBLOCKD *xd, const AV1_COMMON *const cm,
     aom_convolve8_vert_c(ref, ref_stride, comp_pred, width, NULL, -1, kernel,
                          16, width, height);
   } else {
-    DECLARE_ALIGNED(16, uint8_t,
-                    temp[((MAX_SB_SIZE * 2 + 16) + 16) * MAX_SB_SIZE]);
+    uint8_t *temp = comp_pred;
     const int16_t *const kernel_x =
         av1_get_interp_filter_subpel_kernel(filter, subpel_x_q3 << 1);
     const int16_t *const kernel_y =
         av1_get_interp_filter_subpel_kernel(filter, subpel_y_q3 << 1);
     const int intermediate_height =
         (((height - 1) * 8 + subpel_y_q3) >> 3) + filter->taps;
-    assert(intermediate_height <= (MAX_SB_SIZE * 2 + 16) + 16);
+    assert(intermediate_height < (MAX_SB_SIZE + SUBPEL_TAPS));
     aom_convolve8_horiz_c(ref - ref_stride * ((filter->taps >> 1) - 1),
                           ref_stride, temp, MAX_SB_SIZE, kernel_x, 16, NULL, -1,
                           width, intermediate_height);
@@ -558,11 +553,8 @@ void aom_highbd_upsampled_pred_c(MACROBLOCKD *xd,
   if (!subpel_x_q3 && !subpel_y_q3) {
     const uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
     uint16_t *comp_pred = CONVERT_TO_SHORTPTR(comp_pred8);
-    for (int i = 0; i < height; i++) {
-      memcpy(comp_pred, ref, width * sizeof(*comp_pred));
-      comp_pred += width;
-      ref += ref_stride;
-    }
+    aom_highbd_convolve_copy_c(ref, ref_stride, comp_pred, width, width,
+                               height);
   } else if (!subpel_y_q3) {
     const int16_t *const kernel =
         av1_get_interp_filter_subpel_kernel(filter, subpel_x_q3 << 1);
@@ -574,19 +566,19 @@ void aom_highbd_upsampled_pred_c(MACROBLOCKD *xd,
     aom_highbd_convolve8_vert_c(ref8, ref_stride, comp_pred8, width, NULL, -1,
                                 kernel, 16, width, height, bd);
   } else {
-    DECLARE_ALIGNED(16, uint16_t,
-                    temp[((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE]);
+    uint16_t *temp = CONVERT_TO_SHORTPTR(comp_pred8);
+    const uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
     const int16_t *const kernel_x =
         av1_get_interp_filter_subpel_kernel(filter, subpel_x_q3 << 1);
     const int16_t *const kernel_y =
         av1_get_interp_filter_subpel_kernel(filter, subpel_y_q3 << 1);
     const int intermediate_height =
         (((height - 1) * 8 + subpel_y_q3) >> 3) + filter->taps;
-    assert(intermediate_height <= (MAX_SB_SIZE * 2 + 16) + 16);
-    aom_highbd_convolve8_horiz_c(ref8 - ref_stride * ((filter->taps >> 1) - 1),
-                                 ref_stride, CONVERT_TO_BYTEPTR(temp),
-                                 MAX_SB_SIZE, kernel_x, 16, NULL, -1, width,
-                                 intermediate_height, bd);
+    assert(intermediate_height < (MAX_SB_SIZE + SUBPEL_TAPS));
+    aom_highbd_convolve8_horiz_c(
+        CONVERT_TO_BYTEPTR(ref - ref_stride * ((filter->taps >> 1) - 1)),
+        ref_stride, CONVERT_TO_BYTEPTR(temp), MAX_SB_SIZE, kernel_x, 16, NULL,
+        -1, width, intermediate_height, bd);
     aom_highbd_convolve8_vert_c(
         CONVERT_TO_BYTEPTR(temp + MAX_SB_SIZE * ((filter->taps >> 1) - 1)),
         MAX_SB_SIZE, comp_pred8, width, NULL, -1, kernel_y, 16, width, height,

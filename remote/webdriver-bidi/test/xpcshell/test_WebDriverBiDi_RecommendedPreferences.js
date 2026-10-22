@@ -28,11 +28,11 @@ add_task(async function test_start_dynamicStart_doesNotApplyPreferences() {
     );
     await bidi.start();
     ok(
-      !Services.prefs.prefHasUserValue(APPLIED_PREF),
+      !RecommendedPreferences.alteredPrefs.has(APPLIED_PREF),
       `${APPLIED_PREF} was not applied for a dynamic start`
     );
     ok(
-      !Services.prefs.prefHasUserValue(BIDI_PREF),
+      !RecommendedPreferences.alteredPrefs.has(BIDI_PREF),
       `${BIDI_PREF} was not applied for a dynamic start`
     );
     equal(
@@ -42,13 +42,16 @@ add_task(async function test_start_dynamicStart_doesNotApplyPreferences() {
     );
     await bidi.stop();
   } finally {
-    RecommendedPreferences.restoreAllPreferences();
+    RecommendedPreferences.resetForTesting();
     Services.prefs.clearUserPref("remote.prefs.recommended");
   }
 });
 
 add_task(async function test_start_browserAutomation_appliesPreferences() {
   Services.prefs.setBoolPref("remote.prefs.recommended", true);
+
+  const originalBidiPref = Services.prefs.getBoolPref(BIDI_PREF);
+
   let bidi;
   try {
     bidi = new WebDriverBiDi(
@@ -57,25 +60,38 @@ add_task(async function test_start_browserAutomation_appliesPreferences() {
     await bidi.start();
 
     ok(
-      Services.prefs.prefHasUserValue(APPLIED_PREF),
+      Services.prefs.getBoolPref(APPLIED_PREF, false),
       `${APPLIED_PREF} was applied for browser automation`
     );
     ok(
-      Services.prefs.prefHasUserValue(BIDI_PREF),
+      Services.prefs.getBoolPref(BIDI_PREF),
       `${BIDI_PREF} was applied for browser automation`
+    );
+    ok(
+      !Services.prefs.prefHasUserValue(APPLIED_PREF),
+      `${APPLIED_PREF} was not set on the user branch`
+    );
+    ok(
+      !Services.prefs.prefHasUserValue(BIDI_PREF),
+      `${BIDI_PREF} was not set on the user branch`
     );
 
     await bidi.stop();
   } finally {
-    RecommendedPreferences.restoreAllPreferences();
+    RecommendedPreferences.resetForTesting();
     Services.prefs.clearUserPref("remote.prefs.recommended");
   }
 
-  ok(
-    !Services.prefs.prefHasUserValue(APPLIED_PREF),
-    `${APPLIED_PREF} was restored`
+  equal(
+    Services.prefs.getPrefType(APPLIED_PREF),
+    Services.prefs.PREF_INVALID,
+    `${APPLIED_PREF} was removed`
   );
-  ok(!Services.prefs.prefHasUserValue(BIDI_PREF), `${BIDI_PREF} was restored`);
+  equal(
+    Services.prefs.getBoolPref(BIDI_PREF),
+    originalBidiPref,
+    `${BIDI_PREF} was restored`
+  );
 });
 
 /**

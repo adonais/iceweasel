@@ -16,12 +16,10 @@ export class AboutDebugging {
   QueryInterface = ChromeUtils.generateQI([nsIAboutModule]);
 
   newChannel(_, loadInfo) {
-    const chan = Services.io.newChannelFromURIWithLoadInfo(
+    return Services.io.newChannelFromURIWithLoadInfo(
       Services.io.newURI("chrome://devtools/content/aboutdebugging/index.html"),
       loadInfo
     );
-    chan.owner = Services.scriptSecurityManager.getSystemPrincipal();
-    return chan;
   }
 
   getURIFlags() {

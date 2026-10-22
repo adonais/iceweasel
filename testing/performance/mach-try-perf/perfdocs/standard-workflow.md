@@ -9,7 +9,7 @@ This page is a guide for the standard workflow when working with `./mach try per
 
 ## Starting off with Mach Try Perf
 
-In {ref}`Mach Try Perf`, there's information about the purpose of tool along with and overview of the features. Here we'll explain how to start working with it.
+In {doc}`mach-try-perf`, there's information about the purpose of tool along with and overview of the features. Here we'll explain how to start working with it.
 
 When `mach try perf` is run, the exact same interface as seen with `./mach try fuzzy` will be shown, and everything works in the same way. However, instead of individual tasks, categories of tasks are displayed. To find more information what a particular category, or a selection of categories, will run on try, add the `--no-push` option to output a JSON file in your command console with all the selected tasks. Follow [bug 1826190](https://bugzilla.mozilla.org/show_bug.cgi?id=1826190) for improvements to this.
 

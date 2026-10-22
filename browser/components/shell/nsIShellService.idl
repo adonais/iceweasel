@@ -23,6 +23,20 @@ interface nsIShellService : nsISupports
   boolean isDefaultBrowser([optional] in boolean aForAllTypes);
 
   /**
+   * Asynchronously determines whether or not Firefox is the "Default Browser."
+   *
+   * New callers should prefer this method over isDefaultBrowser(). The
+   * synchronous version may be removed once existing callers have been
+   * migrated to the asynchronous API. See bug 2074009.
+   *
+   * @param aForAllTypes  true if the check should be made for HTTP and HTML.
+   *                      false if the check should be made for HTTP only.
+   *                      This parameter may be ignored on some platforms.
+   */
+  [implicit_jscontext]
+  Promise isDefaultBrowserAsync([optional] in boolean aForAllTypes);
+
+  /**
    * Registers Firefox as the "Default Browser."
    *
    * @param aForAllUsers   Whether or not Firefox should attempt

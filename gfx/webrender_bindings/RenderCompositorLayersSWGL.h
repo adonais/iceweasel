@@ -66,8 +66,8 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
                wr::DeviceIntRect aValidRect, void** aData,
                int32_t* aStride) override;
   void UnmapTile() override;
-  void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-                     wr::DeviceIntSize aTileSize, bool aIsOpaque) override;
+  void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aTileSize,
+                     bool aIsOpaque) override;
   void CreateExternalSurface(wr::NativeSurfaceId aId, bool aIsOpaque) override;
   void DestroySurface(NativeSurfaceId aId) override;
   void CreateTile(wr::NativeSurfaceId, int32_t aX, int32_t aY) override;

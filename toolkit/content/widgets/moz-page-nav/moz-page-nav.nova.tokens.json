@@ -9,7 +9,10 @@
           "value": "{button.background.color.active}"
         },
         "selected": {
-          "value": "{color.accent.primary.@base}"
+          "value": {
+            "default": "{button.background.color.primary.@base}",
+            "forcedColors": "{button.background.color.selected}"
+          }
         }
       }
     },
@@ -52,7 +55,10 @@
     "text": {
       "color": {
         "selected": {
-          "value": "{button.text.color.primary.@base}"
+          "value": {
+            "default": "{button.text.color.primary.@base}",
+            "forcedColors": "{button.text.color.selected}"
+          }
         }
       }
     }

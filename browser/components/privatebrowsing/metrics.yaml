@@ -50,59 +50,44 @@ private_browsing.reset_pbm:
     expires: never
 
 aboutprivatebrowsing:
-  click_info_link:
+  basics_modal_shown:
     type: event
     description: >
-      This is recorded when a user clicks a link on the private browsing
-      newtab.
-      This event was generated to correspond to the Legacy Telemetry event
-      aboutprivatebrowsing.click#info_link.
-    bugs: &aboutprivatebrowsing_click_bugs
-      - https://bugzil.la/1709344
-      - https://bugzil.la/1754635
-      - https://bugzil.la/1781973
-      - https://bugzil.la/1811146
-      - https://bugzil.la/1841925
-      - https://bugzil.la/1871197
-      - https://bugzil.la/1922609
-      - https://bugzil.la/1952111
-      - https://bugzil.la/1984459
-      - https://bugzil.la/2005390
-    data_reviews: &aboutprivatebrowsing_click_data_reviews
-      - https://bugzil.la/1709344
-      - https://bugzil.la/1754635
-      - https://bugzil.la/1781973
-      - https://bugzil.la/1811146
-      - https://bugzil.la/1841925
-      - https://bugzil.la/1871197
-      - https://phabricator.services.mozilla.com/D225937
-      - https://bugzil.la/1984459
-      - https://bugzil.la/2005390
-    notification_emails: &aboutprivatebrowsing_click_emails
-      - emz@mozilla.com
-      - tihuang@mozilla.com
-    expires: 160
+      Recorded when the "Private Window basics" spotlight is shown, after the
+      user clicks the link that triggers it.
+    bugs: &pbw_redesign_bugs
+      - https://bugzil.la/2074586
+    data_reviews: &pbw_redesign_data_reviews
+      - https://bugzil.la/2074586
+    notification_emails: &pbw_redesign_emails
+      - hthai@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
 
-  click_promo_link:
+  click_private_window_basics_link:
     type: event
     description: >
-      This is recorded when a user clicks a link on the private browsing
-      newtab.
-      This event was generated to correspond to the Legacy Telemetry event
-      aboutprivatebrowsing.click#promo_link.
-    bugs: *aboutprivatebrowsing_click_bugs
-    data_reviews: *aboutprivatebrowsing_click_data_reviews
-    notification_emails: *aboutprivatebrowsing_click_emails
-    expires: 160
+      Recorded when a user clicks the "Private Window basics" link on the
+      redesigned private browsing newtab.
+    bugs: *pbw_redesign_bugs
+    data_reviews: *pbw_redesign_data_reviews
+    notification_emails: *pbw_redesign_emails
+    data_sensitivity:
+      - interaction
+    expires: never
 
-  click_dismiss_button:
+  intro_animation_played:
     type: event
     description: >
-      This is recorded when a user clicks a link on the private browsing
-      newtab.
-      This event was generated to correspond to the Legacy Telemetry event
-      aboutprivatebrowsing.click#dismiss_button.
-    bugs: *aboutprivatebrowsing_click_bugs
-    data_reviews: *aboutprivatebrowsing_click_data_reviews
-    notification_emails: *aboutprivatebrowsing_click_emails
-    expires: 160
+      Recorded when the intro animation plays on the redesigned private
+      browsing newtab. It plays once per profile, so this counts the profiles
+      that saw it rather than the number of plays. The exposure event for the
+      privateWindowRedesign feature is the denominator: it is recorded every
+      time the redesigned page renders, animation or not.
+    bugs: *pbw_redesign_bugs
+    data_reviews: *pbw_redesign_data_reviews
+    notification_emails: *pbw_redesign_emails
+    data_sensitivity:
+      - interaction
+    expires: never

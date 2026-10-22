@@ -58,6 +58,29 @@ describe("Discovery Stream <SafeAnchor>", () => {
     expect(notCancelled).toBe(false);
   });
 
+  it("should pass dwellLabel to the OPEN_LINK action", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <SafeAnchor dispatch={dispatch} dwellLabel="story_organic" />
+    );
+
+    fireEvent.click(container.querySelector("a"));
+
+    expect(dispatch.mock.calls[0][0].data).toHaveProperty(
+      "dwell_label",
+      "story_organic"
+    );
+  });
+
+  it("should leave dwell_label unset for anchors that did not opt in", () => {
+    const dispatch = jest.fn();
+    const { container } = render(<SafeAnchor dispatch={dispatch} />);
+
+    fireEvent.click(container.querySelector("a"));
+
+    expect(dispatch.mock.calls[0][0].data.dwell_label).toBeUndefined();
+  });
+
   it("should call onLinkClick if provided", () => {
     const onLinkClick = jest.fn();
     const { container } = render(<SafeAnchor onLinkClick={onLinkClick} />);

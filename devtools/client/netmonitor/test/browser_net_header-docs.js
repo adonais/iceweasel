@@ -19,10 +19,7 @@ add_task(async function testHeadersLearnMoreLink() {
   await performRequests(monitor, tab, 2);
 
   // Open Headers panel for the customized request sent by html_post-data-test-page.html.
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
 
   await waitForDOM(document, "#responseHeaders, #requestHeaders", 2);
 

@@ -104,6 +104,7 @@ const KeyValParam enc_valid_params[] = {
   std::make_tuple("auto-intra-tools-off", "1"),  // uint
   std::make_tuple("min-gf-interval", "10"),      // uint
   std::make_tuple("min-partition-size", "4"),    // int
+  std::make_tuple("resize-mode", "3"),           // uint
   std::make_tuple("tune", "psnr"),               // enum
 };
 
@@ -121,6 +122,7 @@ const KeyValParam enc_invalid_params[] = {
   std::make_tuple("tune", "PsnR1"),
   // out of range
   std::make_tuple("cq-level", "1000"),
+  std::make_tuple("resize-mode", "10"),
 };
 
 INSTANTIATE_TEST_SUITE_P(KeyValAPI, EncValidTest,

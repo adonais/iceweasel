@@ -88,7 +88,7 @@ add_task(async function test_prefs() {
   const testAppBuild = Services.appinfo.appBuildID;
   const testAppDisplayVersion = ClientEnvironmentBase.version;
   const testChannel = ClientEnvironmentBase.channel;
-  const testIsDefault = ClientEnvironmentBase.isDefaultBrowser;
+  const testIsDefault = await ClientEnvironmentBase.isDefaultBrowser;
   const testDistributionId = ClientEnvironmentBase.distribution;
   await UsageReporting.ensureInitialized();
   let profileAccessor = await ProfileAge();

@@ -28,6 +28,7 @@ import androidx.test.uiautomator.UiSelector
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.containsString
+import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.LISTS_MAXSWIPES
 import org.mozilla.fenix.helpers.Constants.TAG
@@ -51,7 +52,7 @@ class SettingsSubMenuAboutRobot {
 
         val packageInfo = context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
         val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
-        val buildNVersion = "${packageInfo.versionName} (Build #$versionCode)\n"
+        val buildNVersion = "${packageInfo.versionName} (Build #$versionCode)"
         val geckoVersion =
             org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION + "-" + org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
         val asVersion = mozilla.components.Build.APPLICATION_SERVICES_VERSION
@@ -89,12 +90,10 @@ class SettingsSubMenuAboutRobot {
     }
 
     fun verifyCurrentTimestamp() {
-        Log.i(TAG, "verifyCurrentTimestamp: Trying to verify that the about section contains \"debug build\"")
-        onView(withId(R.id.build_date))
-            // Currently UI tests run against debug builds, which display a hard-coded string 'debug build'
-            // instead of the date. See https://github.com/mozilla-mobile/fenix/pull/10812#issuecomment-633746833
-            .check(matches(withText(containsString("debug build"))))
-        Log.i(TAG, "verifyCurrentTimestamp: Verified that the about section contains \"debug build\"")
+        val buildDate = BuildConfig.BUILD_DATE
+        Log.i(TAG, "verifyCurrentTimestamp: Trying to verify that the about section contains \"$buildDate\"")
+        onView(withId(R.id.build_date)).check(matches(withText(containsString(buildDate))))
+        Log.i(TAG, "verifyCurrentTimestamp: Verified that the about section contains \"$buildDate\"")
     }
 
     fun verifyAboutToolbar() {

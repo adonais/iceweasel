@@ -7,10 +7,10 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { EdgeProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/EdgeProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/EdgeProfileMigrator.sys.mjs"
 );
 const { MSMigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/MSMigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/MSMigrationUtils.sys.mjs"
 );
 
 /**

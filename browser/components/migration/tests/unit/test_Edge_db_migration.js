@@ -4,9 +4,11 @@ const { ctypes } = ChromeUtils.importESModule(
   "resource://gre/modules/ctypes.sys.mjs"
 );
 const { ESE, KERNEL, gLibs, COLUMN_TYPES, declareESEFunction, loadLibraries } =
-  ChromeUtils.importESModule("resource:///modules/ESEDBReader.sys.mjs");
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/migration/ESEDBReader.sys.mjs"
+  );
 const { EdgeProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/EdgeProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/EdgeProfileMigrator.sys.mjs"
 );
 
 let gESEInstanceCounter = 1;

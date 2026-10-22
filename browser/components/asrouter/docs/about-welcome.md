@@ -120,6 +120,36 @@ The `carousel-card` type displays a single select tile inside a card with a full
 
 ![Carousel Card](./carousel-card.png)
 
+##### Carousel Navigation Pills
+
+A `carousel-card` item may define a `pill`, which renders it into a
+`moz-segmented-control` row above the cards. `pill.icon` must be a `chrome://`
+SVG authored with `context-fill` so it can recolour on the selected pill and in
+High Contrast Mode. Selecting a pill scrolls its card
+to the centre and marks it selected. The pill row only renders when at least two
+items define a `pill`, and it respects per-item `targeting` because the pills and
+the cards come from the same `data` array. Set `tiles.pill_nav_label` to override
+the group's accessible name.
+
+```js
+tiles: {
+  type: "single-select",
+  pill_nav_label: { raw: "Feature highlights" },
+  data: [
+    {
+      id: "tab-groups",
+      type: "carousel-card",
+      pill: {
+        label: { raw: "Tab Groups" },
+        icon: "chrome://browser/skin/tabs.svg",
+      },
+      label: { raw: "Tab Groups" },
+      body: { raw: "Keep related tabs together in named groups." },
+    },
+  ],
+}
+```
+
 #### Theme Picker
 Allows users to select from a set of themes to personalize the browser’s appearance.
 

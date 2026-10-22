@@ -355,6 +355,19 @@ describe("Auto Tab Grouping toolbar button", () => {
         "The forward arrow moves focus to the first tab"
       );
 
+      EventUtils.synthesizeKey("KEY_End", {}, win);
+      Assert.equal(
+        win.document.activeElement,
+        tabRows.at(-1),
+        "End jumps to the last tab"
+      );
+      EventUtils.synthesizeKey("KEY_Home", {}, win);
+      Assert.equal(
+        win.document.activeElement,
+        tabRows[0],
+        "Home jumps back to the first tab"
+      );
+
       EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
       Assert.equal(
         win.document.activeElement,
@@ -618,6 +631,18 @@ describe("Auto Tab Grouping toolbar button", () => {
         flyoutList.getAttribute("data-l10n-id"),
         "smartwindow-group-tabs-flyout-list",
         "Flyout's accessible name is localized via Fluent"
+      );
+      await TestUtils.waitForCondition(
+        () =>
+          accService.getAccessibleFor(flyoutList)?.role ===
+          Ci.nsIAccessibleRole.ROLE_MENUPOPUP,
+        "Flyout is exposed as a menu"
+      );
+      const flyoutTab = flyoutList.querySelector(".swgt-flyout-tab");
+      Assert.equal(
+        accService.getAccessibleFor(flyoutTab).role,
+        Ci.nsIAccessibleRole.ROLE_MENUITEM,
+        "Each tab in the flyout is a menu item"
       );
       Assert.equal(
         suggestionRow.getAttribute("aria-expanded"),

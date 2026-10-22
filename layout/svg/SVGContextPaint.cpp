@@ -234,14 +234,7 @@ bool SVGContextPaint::IsSolidColor(Tag aTag) const {
 
 DeviceColor SVGContextPaint::AsSolidColor(Tag aTag) const {
   MOZ_ASSERT(IsSolidColor(aTag), "Must be solid color");
-
-  imgDrawingParams dummy;
-  RefPtr<gfxPattern> pattern =
-      mPaint[aTag].GetPattern(nullptr, 1.0f, nullptr, gfxMatrix(), dummy);
-
-  DeviceColor color;
-  MOZ_ASSERT(pattern->GetSolidColor(color));
-  return color;
+  return ToDeviceColor(mPaint[aTag].AsSolidColor());
 }
 
 already_AddRefed<gfxPattern> SVGContextPaint::GetPattern(
@@ -325,8 +318,8 @@ already_AddRefed<gfxPattern> SVGContextPaint::Paint::GetPattern(
 uint32_t SVGContextPaint::Hash() const {
   uint32_t hash = 0;
 
-  if (IsSolidColor(Tag::Fill)) {
-    hash = HashGeneric(hash, AsSolidColor(Tag::Fill).ToABGR());
+  if (mPaint[Tag::Fill].IsSolidColor()) {
+    hash = HashGeneric(hash, mPaint[Tag::Fill].AsSolidColor());
   } else {
     // Arbitrary number, just to avoid trivial hash collisions between pairs of
     // instances where one embedding context has fill set to the same value as
@@ -334,8 +327,8 @@ uint32_t SVGContextPaint::Hash() const {
     hash = 1;
   }
 
-  if (IsSolidColor(Tag::Stroke)) {
-    hash = HashGeneric(hash, AsSolidColor(Tag::Stroke).ToABGR());
+  if (mPaint[Tag::Stroke].IsSolidColor()) {
+    hash = HashGeneric(hash, mPaint[Tag::Stroke].AsSolidColor());
   }
 
   if (mOpacity[Tag::Fill] != 1.0f) {

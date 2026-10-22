@@ -156,7 +156,7 @@ debugger.
 
 Determining the correct process to attach to is a little tricky because
 the mapping from process ID (pid) to process name is not always clear.
-Gecko content child processes have names like `:tab_disable_art_image_0`
+Gecko content child processes have names like `:sandboxed_tab_disable_art_image_0`
 at this time.
 
 If you attach `Dual` debuggers to both the main process and a content
@@ -214,7 +214,7 @@ android {
 
 #### Using Android Studio on Windows
 
-You can now use {ref}`artifact builds <Understanding Artifact Builds>`
+You can now use {doc}`artifact builds </contributing/build/artifact_builds>`
 mode on [MozillaBuild environment](https://wiki.mozilla.org/MozillaBuild) even if you are
 not using WSL. If you want to debug GeckoView using Android Studio on
 Windows, you have to set an additional environment variable via the

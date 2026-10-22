@@ -11,6 +11,7 @@ MODULE = nss
 #     mpi_unittest.cc
 #     ghash_unittest.cc
 CPPSRCS = \
+        aes_ctr_unittest.cc \
         ecl_unittest.cc \
         rsa_unittest.cc \
         cmac_unittests.cc \

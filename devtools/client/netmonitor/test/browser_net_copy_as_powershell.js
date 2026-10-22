@@ -134,7 +134,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://example.com/browser/devtools/cl
     const { document } = monitor.panelWin;
 
     const items = document.querySelectorAll(".request-list-item");
-    EventUtils.sendMouseEvent({ type: "mousedown" }, items[items.length - 1]);
+    clickOnRequestRow(items[items.length - 1]);
     EventUtils.sendMouseEvent(
       { type: "contextmenu" },
       document.querySelectorAll(".request-list-item")[0]

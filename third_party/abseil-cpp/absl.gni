@@ -24,6 +24,8 @@ declare_args() {
   moz_webrtc_build = true
 }
 
+CHECK_INCLUDES_STRICT_PUBLIC_INCLUDES_PRIVATE = false
+
 template("absl_source_set") {
   source_set(target_name) {
     if (defined(invoker.testonly) && invoker.testonly && !absl_build_tests) {

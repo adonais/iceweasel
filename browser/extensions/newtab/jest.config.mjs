@@ -35,6 +35,8 @@ export default {
     "content-src/**/*.js",
     "!content-src/**/*.test.*",
   ],
-  coverageReporters: ["lcov", "text-summary"],
-  coverageDirectory: "logs/jest-coverage",
+  // projectRoot makes lcov paths relative to the repository root, which the
+  // code coverage bot and Searchfox need.
+  coverageReporters: [["lcov", { projectRoot: "../../.." }], "text-summary"],
+  coverageDirectory: "logs/coverage",
 };

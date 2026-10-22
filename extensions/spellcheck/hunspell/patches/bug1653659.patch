@@ -1,6 +1,6 @@
 --- a/src/csutil.cxx
 +++ b/src/csutil.cxx
-@@ -98,11 +98,7 @@
+@@ -99,11 +99,7 @@
  #endif
  
  #ifdef MOZILLA_CLIENT
@@ -13,7 +13,7 @@
  #endif
  
  #ifndef MOZILLA_CLIENT
-@@ -2341,91 +2337,8 @@
+@@ -2316,91 +2312,8 @@ const struct cs_info* get_current_cs(const std::string& es) {
    return ccs;
  }
  #else
@@ -106,25 +106,25 @@
  }
  #endif
  
-@@ -2488,7 +2401,7 @@
+@@ -2463,7 +2376,7 @@ unsigned short unicodetoupper(unsigned short c, int langnum) {
    return static_cast<unsigned short>(u_toupper(c));
  #else
  #ifdef MOZILLA_CLIENT
 -  return ToUpperCase((char16_t)c);
 +  return moz_hunspell_ToUpperCase((char16_t)c);
  #else
-   return utf_tbl[c].cupper;
- #endif
-@@ -2505,7 +2418,7 @@
+   unsigned short up = utf_pages[utf_page_index[c >> 8]][c & 0xFF].cupper;
+   return up ? up : c;
+@@ -2481,7 +2394,7 @@ unsigned short unicodetolower(unsigned short c, int langnum) {
    return static_cast<unsigned short>(u_tolower(c));
  #else
  #ifdef MOZILLA_CLIENT
 -  return ToLowerCase((char16_t)c);
 +  return moz_hunspell_ToLowerCase((char16_t)c);
  #else
-   return utf_tbl[c].clower;
- #endif
-@@ -2515,6 +2428,11 @@
+   unsigned short lo = utf_pages[utf_page_index[c >> 8]][c & 0xFF].clower;
+   return lo ? lo : c;
+@@ -2492,6 +2405,11 @@ unsigned short unicodetolower(unsigned short c, int langnum) {
  int unicodeisalpha(unsigned short c) {
  #ifdef OPENOFFICEORG
    return u_isalpha(c);
@@ -134,7 +134,7 @@
 +  (void)c;
 +  return 0;
  #else
-   return utf_tbl[c].cletter;
+   return utf_pages[utf_page_index[c >> 8]][c & 0xFF].cletter;
  #endif
 --- a/src/csutil.hxx
 +++ b/src/csutil.hxx

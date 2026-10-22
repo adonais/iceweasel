@@ -154,20 +154,24 @@ void PolicyContainer::InitFromOther(PolicyContainer* aOther) {
   }
 
   if (aOther->mCSP) {
-    RefPtr<nsCSPContext> csp = new nsCSPContext();
-    csp = new nsCSPContext();
+    RefPtr csp = MakeRefPtr<nsCSPContext>();
     csp->InitFromOther(nsCSPContext::Cast(aOther->mCSP));
     mCSP = csp;
   }
 
   if (aOther->mIntegrityPolicy) {
-    RefPtr<dom::IntegrityPolicy> integrityPolicy = new dom::IntegrityPolicy();
+    RefPtr integrityPolicy = MakeRefPtr<IntegrityPolicy>();
     integrityPolicy->InitFromOther(
         IntegrityPolicy::Cast(aOther->mIntegrityPolicy));
     mIntegrityPolicy = integrityPolicy;
   }
 
-  // TODO(Bug 2073404): Support ConnectionAllowlists
+  if (aOther->mConnectionAllowlists) {
+    // Unlike CSP, connection allowlists are not mutable, so they don't need to
+    // be cloned.
+    mConnectionAllowlists = aOther->mConnectionAllowlists;
+    mConnectionAllowlists->Freeze();  // Avoid accidental modifications.
+  }
 
   mIPAddressSpace = aOther->mIPAddressSpace;
 }

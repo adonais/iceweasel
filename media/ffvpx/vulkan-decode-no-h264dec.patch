@@ -1,0 +1,25 @@
+diff --git a/media/ffvpx/libavcodec/vulkan_decode.c b/media/ffvpx/libavcodec/vulkan_decode.c
+--- a/media/ffvpx/libavcodec/vulkan_decode.c
++++ b/media/ffvpx/libavcodec/vulkan_decode.c
+@@ -24,7 +24,7 @@
+ #include "libavutil/avassert.h"
+ #include "libavutil/mem.h"
+ #include "libavutil/vulkan_loader.h"
+-#include "h264dec.h"
++/* #include "h264dec.h" */
+ 
+ #define DECODER_IS_SDR(codec_id) \
+     (((codec_id) == AV_CODEC_ID_FFV1) || \
+@@ -770,10 +770,12 @@
+ 
+         h264_profile->pictureLayout =
+             VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_KHR;
++        /*
+         const H264Context *h = avctx->priv_data;
+         if (h && h->ps.sps && !h->ps.sps->frame_mbs_only_flag)
+             h264_profile->pictureLayout =
+                 VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_KHR;
++        */
+     } else if (avctx->codec_id == AV_CODEC_ID_H265) {
+         dec_caps->pNext = h265_caps;
+         usage->pNext = h265_profile;

@@ -11,7 +11,7 @@ Most of the code should be located in `browser/extensions/newtab`
 - Backend feeds: `browser/extensions/newtab/lib/*Feed.sys.mjs`
 - Redux actions: `browser/extensions/newtab/common/Actions.mjs`
 - Redux reducers: `browser/extensions/newtab/common/Reducers.sys.mjs`
-- Tests: `browser/extensions/newtab/test/unit/` (matches source structure)
+- Tests: `browser/extensions/newtab/test/jest/` (matches source structure)
 
 ## Redux Patterns
 - Action types defined in `common/Actions.mjs` with enum pattern
@@ -32,11 +32,11 @@ Most of the code should be located in `browser/extensions/newtab`
 - Final package copied to `browser/components/newtab/` by mach
 
 ## Testing
-- Test framework: Karma + Enzyme + Sinon
+- Test framework: Jest + React Testing Library
 - Run unit tests: `./mach test browser/components/newtab/test/xpcshell && ./mach npm test --prefix=browser/extensions/newtab`
 - Run browser (mochi) tests: `./mach test browser/components/newtab/test/browser` — you probably want to run with `--headless`
-- Unit Test files mirror source structure: `test/unit/content-src/components/Card/Card.test.js`
-- Use test utilities from `test/unit/utils.js` for mocks (FakePrefs, GlobalOverrider, etc.)
+- Unit Test files mirror source structure: `test/jest/content-src/components/Card.test.jsx`
+- Use test utilities from `test/jest/test-utils.jsx` for mocks (`stubGlobals`, `mockServices`, `WrapWithProvider`)
 
 ## Train-Hopping Compatibility
 
@@ -80,6 +80,6 @@ The version is when the workaround can be removed (once that Firefox version hit
 
 ## Configuration Files
 - `webpack.system-addon.config.js` - Webpack bundling config
-- `karma.mc.config.js` - Test runner with coverage thresholds
+- `jest.config.mjs` - Unit test runner configuration
 - `yamscripts.yml` - npm script definitions (compile with `npm run yamscripts`)
 - `.eslintrc.mjs` - ESLint configuration

@@ -373,12 +373,27 @@ if CONFIG["MOZ_GENERATE_SBOM"]:
     # tracked moz.yaml and Cargo.lock's whole graph: there is no dependency
     # list short enough to be worth maintaining against the alternative of
     # regenerating a document only the builds that ask for it produce.
+    sbom_deps = [
+        "!/licenses.json",
+        "!/.cargo/config.toml",
+        "/Cargo.lock",
+    ]
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+        # The Gradle export writes GeckoView's runtime dependencies.
+        sbom_deps += ["!/widget/android/generated_geckoview_files"]
     GeneratedFile(
         "sbom.json",
         script="/python/mozbuild/mozbuild/action/generate_sbom.py",
         entry_point="generate_file",
+        extra_deps=sbom_deps,
+        force=True,
+    )
+    # What builds and tests the tree, described apart from what it ships.
+    GeneratedFile(
+        "sbom-build-tooling.json",
+        script="/python/mozbuild/mozbuild/action/generate_sbom.py",
+        entry_point="generate_build_tooling_file",
         extra_deps=[
-            "!/licenses.json",
             "!/.cargo/config.toml",
             "/Cargo.lock",
         ],

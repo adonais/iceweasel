@@ -338,6 +338,7 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
         if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
           return;
         }
+        AutoSearchingForCertificates _;
         // NSS seems not to differentiate between "no potential issuers found"
         // and "there was an error trying to retrieve the potential issuers." We
         // assume there was no error if CERT_CreateSubjectCertList returns
@@ -1739,6 +1740,20 @@ bool LoadOSClientCertsModule() {
   return false;
 #endif
 }
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+extern "C" {
+// Extern declaration of the C_GetFunctionList function in the remotecerts
+// module. NSS calls it to obtain the list of functions comprising this module.
+// ppFunctionList must be a valid pointer.
+CK_RV RemoteCerts_C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+}  // extern "C"
+
+bool LoadRemoteCertsModule() {
+  return LoadUserModuleFromXul(kRemoteCertsModuleName.get(),
+                               RemoteCerts_C_GetFunctionList);
+}
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 bool LoadLoadableRoots(const nsCString& dir) {
   int unusedModType;

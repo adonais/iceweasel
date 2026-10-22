@@ -20,7 +20,7 @@ cat > out/last_commit_position.h <<EOF
 #endif  // OUT_LAST_COMMIT_POSITION_H_
 EOF
 
-ninja -C out -v
+ninja -C out -v gn$exe_suffix
 
 STAGE=gn
 mkdir -p $UPLOAD_DIR $STAGE

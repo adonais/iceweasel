@@ -142,7 +142,21 @@ size_t RenderAndroidImageReaderImageTextureHost::Bytes() {
 }
 
 gfx::SurfaceFormat RenderAndroidImageReaderImageTextureHost::GetFormat() const {
-  return mFormat;
+  MOZ_ASSERT(mFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+             mFormat == gfx::SurfaceFormat::R8G8B8X8);
+
+  if (mFormat == gfx::SurfaceFormat::R8G8B8A8) {
+    return gfx::SurfaceFormat::B8G8R8A8;
+  }
+
+  if (mFormat == gfx::SurfaceFormat::R8G8B8X8) {
+    return gfx::SurfaceFormat::B8G8R8X8;
+  }
+
+  gfxCriticalNoteOnce
+      << "Unexpected color format of RenderAndroidImageReaderImageTextureHost";
+
+  return gfx::SurfaceFormat::UNKNOWN;
 }
 
 already_AddRefed<gfx::DataSourceSurface>

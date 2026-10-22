@@ -21,12 +21,18 @@
 #include "absl/strings/string_view.h"
 #include "api/rtc_error.h"
 #include "p2p/base/p2p_constants.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 namespace {
+
+// ice-char = ALPHA / DIGIT / "+" / "/", RFC 8839 section 5.6.
+bool IsValidIceChar(char c) {
+  return absl::ascii_isalnum(c) || c == '+' || c == '/';
+}
 
 bool IsIceChar(char c) {
   // Note: '-', '=', '#' and '_' are *not* valid ice-chars but temporarily
@@ -39,7 +45,7 @@ bool IsIceChar(char c) {
         << "the future. See https://crbug.com/1053756";
     return true;
   }
-  return absl::ascii_isalnum(c) || c == '+' || c == '/';
+  return IsValidIceChar(c);
 }
 
 RTCError ValidateIceUfrag(absl::string_view raw_ufrag) {
@@ -200,6 +206,13 @@ TransportDescription& TransportDescription::operator=(
   identity_fingerprint.reset(CopyFingerprint(from.identity_fingerprint.get()));
   cryptex = from.cryptex;
   return *this;
+}
+
+void TransportDescription::AddOption(absl::string_view option) {
+  // ice-option-tag is 1*ice-char, RFC 8839 section 5.6.
+  RTC_DCHECK(!option.empty() && absl::c_all_of(option, IsValidIceChar))
+      << "Invalid ice-option-tag: " << option;
+  transport_options.emplace_back(option);
 }
 
 }  // namespace webrtc

@@ -108,7 +108,7 @@ class AutocompleteRowItem extends MozLitElement {
   }
 
   renderSecondaryActionButton() {
-    const { type, action, actions, label } = this.actions.secondary;
+    const { type, action, actions, label, tooltip } = this.actions.secondary;
     if (!action && !actions) {
       return "";
     }
@@ -131,7 +131,8 @@ class AutocompleteRowItem extends MozLitElement {
       @mouseup=${stopMouseEvents}
       @click=${onClick}
       type="icon ghost"
-      title=${ifDefined(label)}
+      title=${ifDefined(tooltip ?? label)}
+      .ariaLabel=${tooltip ? label : null}
       .ariaHasPopup=${actions ? "menu" : null}
       .ariaExpanded=${actions ? String(!!this.menuopen) : null}
       .iconSrc=${this.getSecondaryActionItemIcon(type)}

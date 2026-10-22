@@ -63,8 +63,6 @@ __depth :=
 endif
 $(foreach __d,$(__depth) .,$(eval __depth = $(wordlist 2,$(words $(__depth)),$(__depth))$(eval -include $(subst $(space),/,$(strip $(srcdir) $(__depth) defs.mk)))))
 
-COMMA = ,
-
 # Sanity check some variables
 CHECK_VARS := \
  XPI_NAME \
@@ -105,8 +103,6 @@ ifdef XPI_NAME
 ACDEFINES += -DXPI_NAME=$(XPI_NAME)
 endif
 
-CC := $(CC_WRAPPER) $(CC)
-CXX := $(CXX_WRAPPER) $(CXX)
 MKDIR ?= mkdir
 SLEEP ?= sleep
 TOUCH ?= touch
@@ -173,8 +169,8 @@ endif
 
 LDFLAGS		= $(MOZ_LTO_LDFLAGS) $(COMPUTED_LDFLAGS) $(PGO_LDFLAGS)
 
-COMPILE_CFLAGS	= $(MOZ_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
-COMPILE_CXXFLAGS = $(MOZ_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
+COMPILE_CFLAGS	= $(MOZ_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS)
+COMPILE_CXXFLAGS = $(MOZ_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS)
 COMPILE_CMFLAGS = $(MOZ_LTO_CFLAGS) $(OS_COMPILE_CMFLAGS) $(MOZBUILD_CMFLAGS)
 COMPILE_CMMFLAGS = $(MOZ_LTO_CFLAGS) $(OS_COMPILE_CMMFLAGS) $(MOZBUILD_CMMFLAGS)
 ASFLAGS = $(COMPUTED_ASFLAGS)
@@ -185,8 +181,8 @@ HOST_CXXFLAGS = $(COMPUTED_HOST_CXXFLAGS) $(_HOST_DEPEND_CFLAGS)
 HOST_C_LDFLAGS = $(COMPUTED_HOST_LDFLAGS) $(COMPUTED_HOST_C_LDFLAGS)
 HOST_CXX_LDFLAGS = $(COMPUTED_HOST_LDFLAGS) $(COMPUTED_HOST_CXX_LDFLAGS)
 
-WASM_CFLAGS = $(COMPUTED_WASM_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
-WASM_CXXFLAGS = $(COMPUTED_WASM_CXXFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
+WASM_CFLAGS = $(COMPUTED_WASM_CFLAGS) $(_DEPEND_CFLAGS)
+WASM_CXXFLAGS = $(COMPUTED_WASM_CXXFLAGS) $(_DEPEND_CFLAGS)
 
 ifdef MOZ_LTO_OBJECT_PATH
 # When linking on macOS, debug info is not linked along with the final binary,
@@ -281,9 +277,6 @@ endif
 ######################################################################
 
 ifeq ($(OS_ARCH),Darwin)
-ifndef NSDISTMODE
-NSDISTMODE=absolute_symlink
-endif
 PWD := $(CURDIR)
 endif
 
@@ -298,13 +291,13 @@ endif # WINNT
 ifeq (,$(CROSS_COMPILE)$(filter-out WINNT, $(OS_ARCH)))
 INSTALL = $(NSINSTALL) -t
 
+else ifeq ($(OS_ARCH),Darwin)
+INSTALL = $(NSINSTALL) -L $(PWD)
+
 else
+INSTALL = $(NSINSTALL) -R
 
-# This isn't laid out as conditional directives so that NSDISTMODE can be
-# target-specific.
-INSTALL         = $(if $(filter copy, $(NSDISTMODE)), $(NSINSTALL) -t, $(if $(filter absolute_symlink, $(NSDISTMODE)), $(NSINSTALL) -L $(PWD), $(NSINSTALL) -R))
-
-endif # WINNT
+endif
 
 # The default for install_cmd is simply INSTALL
 install_cmd ?= $(INSTALL) $(1)

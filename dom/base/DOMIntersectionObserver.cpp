@@ -695,7 +695,6 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
   Maybe<nsRect> remoteDocumentVisibleRect;
   if (aRoot && aRoot->IsElement()) {
     if ((rootFrame = aRoot->AsElement()->GetPrimaryFrame())) {
-      nsRect rootRectRelativeToRootFrame;
       nsIFrame* containingBlock =
           nsLayoutUtils::GetContainingBlockForClientRect(rootFrame);
       if (ScrollContainerFrame* scrollContainerFrame =

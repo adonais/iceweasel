@@ -12,4 +12,4 @@ typedef struct PRProcess PRProcess;
 
 ## Description
 
-A pointer to the opaque {ref}`PRProcess` structure identifies a process.
+A pointer to the opaque {doc}`prprocess` structure identifies a process.

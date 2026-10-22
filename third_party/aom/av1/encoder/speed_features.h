@@ -1255,6 +1255,11 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   // complexity modes.
   float bias_obmc_mode_rd_scale_pct;
 
+  // Percentage of scaling used to increase the rd cost of GLOBALMV and
+  // GLOBAL_GLOBALMV modes of type ROTZOOM so that encoder decisions are biased
+  // against these modes, favoring low complexity modes.
+  float bias_gm_mode_rd_scale_pct;
+
   // Avoid further evaluation of compound modes using top estimate RD Costs of
   // compound average.
   // Values are 0 (not used),1 - 3 with progressively increasing
@@ -1854,6 +1859,14 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int selective_cdf_update;
   // Use IntraBC for realtime mode.
   int rt_use_intrabc;
+  // Prune IntraBC for nonrd pickmode.
+  int rt_prune_intrabc_nonrd;
+  // Fallback search mode for IntraBC on hash misses in nonrd pickmode.
+  // 0: Full pixel search (Diamond/Hex search)
+  // 1: Block Vector Predictor (BVP) only
+  // 2: BVP + 12-point integer offset probe
+  // 3: Skip fallback search entirely (Hash-only)
+  int rt_intrabc_miss_mode;
 
   // Force only single reference (LAST) for prediction.
   int force_only_last_ref;

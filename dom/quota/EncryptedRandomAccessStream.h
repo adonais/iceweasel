@@ -16,6 +16,7 @@
 #include "mozilla/Result.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsIFileStreams.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsIRandomAccessStream.h"
@@ -121,13 +122,15 @@ namespace mozilla::dom::quota {
  */
 class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
                                         public nsIInputStream,
-                                        public nsIOutputStream {
+                                        public nsIOutputStream,
+                                        public nsIFileMetadata {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
   NS_DECL_NSITELLABLESTREAM
   NS_DECL_NSISEEKABLESTREAM
   NS_DECL_NSIOUTPUTSTREAM
+  NS_DECL_NSIFILEMETADATA
 
   // nsIInputStream
   NS_IMETHOD Read(char* aBuf, uint32_t aCount, uint32_t* _retval) override;

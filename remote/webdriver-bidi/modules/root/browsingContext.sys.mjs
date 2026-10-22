@@ -450,7 +450,9 @@ class BrowsingContextModule extends RootBiDiModule {
       contextId,
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
-    const context = this._getNavigable(contextId);
+    const context = this._getNavigable(contextId, {
+      supportsPrivilegedScope: true,
+    });
 
     const originTypeValues = Object.values(OriginType);
     lazy.assert.that(
@@ -1624,14 +1626,11 @@ class BrowsingContextModule extends RootBiDiModule {
       lazy.pprint`Expected "pageRanges" to be an array, got ${settings.pageRanges}`
     );
 
-    const printSettings = await lazy.print.getPrintSettings(settings);
-    const binaryString = await lazy.print.printToBinaryString(
-      context,
-      printSettings
-    );
+    const printSettings = lazy.print.getPrintSettings(settings);
+    const bytes = await lazy.print.printToBytes(context, printSettings);
 
     return {
-      data: btoa(binaryString),
+      data: bytes.toBase64(),
     };
   }
 

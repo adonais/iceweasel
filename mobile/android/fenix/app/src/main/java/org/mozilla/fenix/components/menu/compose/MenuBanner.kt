@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.text.Text as AcornText
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
+import mozilla.components.compose.menu.data.MenuItemSummary
 import mozilla.components.compose.menu.ui.MenuBanner
+import mozilla.components.compose.menu.ui.MenuItemIconRes
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -40,12 +41,12 @@ fun MenuBanner(
 
     MenuBanner(
         title = AcornText.String(stringResource(id = R.string.browser_menu_default_banner_title, appName)),
-        subtitle = AcornText.Resource(R.string.browser_menu_default_banner_subtitle_2),
-        illustration = painterResource(id = R.drawable.firefox_as_default_banner_illustration),
+        summary =
+            MenuItemSummary(text = AcornText.Resource(R.string.browser_menu_default_banner_subtitle_2), maxLines = 3),
+        icon = MenuItemIconRes(R.drawable.firefox_as_default_banner_illustration),
         onDismiss = onDismiss,
         onClick = onClick,
         modifier = modifier,
-        dismissContentDescription = AcornText.Resource(R.string.browser_menu_default_banner_dismiss_promotion),
     )
 }
 

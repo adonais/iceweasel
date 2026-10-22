@@ -245,16 +245,18 @@ def list_files_and_dirs(dir_path):
     return files, dirs
 
 
+def extension_root_dir(filename):
+    match = re.match(r"(.*distribution/extensions/[^/]*)/", filename)
+    return match.group(1) if match else None
+
+
 def make_add_instruction(filename, manifest):
     """Adds an instruction to the update manifest file."""
-    # Check if the path is an extension directory
-    is_extension = re.search(r"distribution/extensions/.*/", filename) is not None
+    extension_dir = extension_root_dir(filename)
 
-    if is_extension:
-        # Extract the subdirectory to test before adding
-        testdir = re.sub(r"(.*distribution/extensions/[^/]*)/.*", r"\1", filename)
+    if extension_dir is not None:
         with open(manifest, "a") as file:
-            file.write(f'add-if "{testdir}" "{filename}"\n')
+            file.write(f'add-if "{extension_dir}" "{filename}"\n')
     else:
         with open(manifest, "a") as file:
             file.write(f'add "{filename}"\n')
@@ -263,15 +265,21 @@ def make_add_instruction(filename, manifest):
 def check_for_add_if_not_update(filename):
     basename = os.path.basename(filename)
     return (
-        basename in {"channel-prefs.js", "update-settings.ini"}
+        basename in {"channel-prefs.js", "update-settings.ini", "distribution.ini"}
         or re.search(r"(^|/)ChannelPrefs\.framework/", filename)
         or re.search(r"(^|/)UpdateSettings\.framework/", filename)
     )
 
 
 def make_patch_instruction(filename, manifest):
+    extension_dir = extension_root_dir(filename)
     with open(manifest, "a") as manifest_file:
-        manifest_file.write(f'patch "{filename}.patch" "{filename}"\n')
+        if extension_dir is not None:
+            manifest_file.write(
+                f'patch-if "{extension_dir}" "{filename}.patch" "{filename}"\n'
+            )
+        else:
+            manifest_file.write(f'patch "{filename}.patch" "{filename}"\n')
 
 
 def add_remove_instructions(remove_array, manifest):
@@ -287,13 +295,24 @@ def make_add_if_not_instruction(filename, manifest):
 
 def append_remove_instructions(newdir, manifest):
     removed_files_path = os.path.join(newdir, "removed-files")
-    if os.path.exists(removed_files_path):
-        with NamedTemporaryFile() as rmv, open(rmv.name) as f:
-            xz_cmd(("--decompress",), removed_files_path, rmv.name)
-            removed_files = f.readlines()
+    if not os.path.isfile(removed_files_path):
+        # On mac the file only exists at the bundle-relative location.
+        removed_files_path = os.path.join(
+            newdir, "Contents", "Resources", "removed-files"
+        )
+    if os.path.isfile(removed_files_path):
+        removed_files = get_text_from_compressed(removed_files_path).splitlines()
         with open(manifest, "a") as manifest_file:
-            for file in removed_files:
-                manifest_file.write(f'remove "{file.strip()}"\n')
+            for line in removed_files:
+                entry = line.strip()
+                if not entry or entry.startswith("#"):
+                    continue
+                if entry.endswith("/"):
+                    manifest_file.write(f'rmdir "{entry}"\n')
+                elif entry.endswith("/*"):
+                    manifest_file.write(f'rmrfdir "{entry[:-1]}"\n')
+                else:
+                    manifest_file.write(f'remove "{entry}"\n')
 
 
 def validate_mar_channel_id(mar_path, mar_channel_id):
@@ -491,7 +510,10 @@ def make_partial(
         new_file_abs = os.path.join(to_mar_dir, newfile_rel)
         if newfile_rel not in oldfiles:
             patch_file = os.path.join(partials_dir, newfile_rel)
-            make_add_instruction(newfile_rel, manifest_file)
+            if check_for_add_if_not_update(newfile_rel):
+                make_add_if_not_instruction(newfile_rel, manifest_file)
+            else:
+                make_add_instruction(newfile_rel, manifest_file)
             archivefiles.append(newfile_rel)
             shutil.copy2(new_file_abs, patch_file)
 
@@ -596,6 +618,13 @@ def download_file(url, save_path, allow_staging, signing_cert=None):
         verify_signature(save_path, signing_cert)
 
 
+def cleanup_workdir(workdir):
+    try:
+        shutil.rmtree(workdir)
+    except OSError as e:
+        log(f"Could not remove work directory {workdir}: {e}", "cleanup_workdir")
+
+
 def process_single(
     update_number,
     from_mar_url,
@@ -608,6 +637,7 @@ def process_single(
     force,
     staging,
     previousVersion=None,
+    previousBuildNumber=None,
     compute_hashes=False,
     cache_entry=None,
     to_hashes=None,
@@ -632,8 +662,14 @@ def process_single(
         mar_manifest["update_number"] = update_number
         if previousVersion:
             mar_manifest["previousVersion"] = previousVersion
+        if previousBuildNumber:
+            mar_manifest["previousBuildNumber"] = previousBuildNumber
         # Validate the created mar has valid channel id
         if validate_mar_channel_id(target_mar, mar_channel_id):
+            # The scratch tree is only kept when something went wrong, for
+            # debuggability. Peak disk would otherwise grow with the number of
+            # partials.
+            cleanup_workdir(workdir)
             return None, mar_manifest, from_hashes
         else:
             # Since we still want to capture the manifest, we return the exception without raising it
@@ -786,6 +822,7 @@ def main():
                 force=args.force,
                 staging=args.allow_staging_urls,
                 previousVersion=source_data.get("previousVersion"),
+                previousBuildNumber=source_data.get("previousBuildNumber"),
                 compute_hashes=compute_hashes,
                 cache_entry=cache_entry,
                 to_hashes=to_hashes,

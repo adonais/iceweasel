@@ -36,6 +36,7 @@ describe("MultiStageAboutWelcome module", () => {
     globals.set({
       AWEvaluateScreenTargeting: () => {},
       AWGetSelectedTheme: () => Promise.resolve("automatic"),
+      AWGetActiveThemeId: () => Promise.resolve("nova-flare@mozilla.org"),
       AWGetInstalledAddons: () => Promise.resolve(["test-addon-id"]),
       AWGetUnhandledCampaignAction: () => Promise.resolve(false),
       AWSendEventTelemetry: () => {},
@@ -71,6 +72,18 @@ describe("MultiStageAboutWelcome module", () => {
       assert.strictEqual(
         welcomeScreenWrapper.prop("initialTheme"),
         "automatic"
+      );
+    });
+
+    it("should pass activeThemeId prop to WelcomeScreen", async () => {
+      let wrapper = mount(<MultiStageAboutWelcome {...DEFAULT_PROPS} />);
+      await spinEventLoop();
+      wrapper.update();
+
+      let welcomeScreenWrapper = wrapper.find(WelcomeScreen);
+      assert.strictEqual(
+        welcomeScreenWrapper.prop("activeThemeId"),
+        "nova-flare@mozilla.org"
       );
     });
 
@@ -164,6 +177,130 @@ describe("MultiStageAboutWelcome module", () => {
       clock.restore();
       finishStub.restore();
       telemetryStub.restore();
+    });
+
+    describe("out transition timing", () => {
+      let clock;
+
+      // Restored here rather than at the end of each test so that an assertion
+      // failure can't leak fake timers into the rest of the suite.
+      afterEach(() => {
+        clock?.restore();
+        clock = null;
+      });
+
+      const transitionScreens = position => [
+        {
+          id: "SCREEN_1",
+          content: {
+            position,
+            title: "screen 1",
+            primary_button: {
+              label: "Next",
+              action: { navigate: true },
+            },
+          },
+        },
+        {
+          id: "SCREEN_2",
+          content: { position, title: "screen 2" },
+        },
+      ];
+
+      // Mounts a two screen message, clicks through the first screen, and
+      // hands back a clock stopped at the moment the out transition began.
+      const clickThroughFirstScreen = async position => {
+        const wrapper = mount(
+          <MultiStageAboutWelcome
+            {...DEFAULT_PROPS}
+            defaultScreens={transitionScreens(position)}
+            transitions={true}
+          />
+        );
+        await spinEventLoop();
+        wrapper.update();
+
+        clock = sinon.useFakeTimers();
+        wrapper.find("button.primary").simulate("click");
+        wrapper.update();
+        return wrapper;
+      };
+
+      const currentScreen = wrapper =>
+        wrapper.find("main.screen").prop("className");
+
+      it("should advance a card-stack screen after 400ms", async () => {
+        const wrapper = await clickThroughFirstScreen("card-stack");
+
+        clock.tick(399);
+        wrapper.update();
+        assert.include(currentScreen(wrapper), "SCREEN_1");
+
+        clock.tick(2);
+        wrapper.update();
+        assert.include(currentScreen(wrapper), "SCREEN_2");
+      });
+
+      it("should advance other positions after the default 1000ms", async () => {
+        const wrapper = await clickThroughFirstScreen("split");
+
+        clock.tick(999);
+        wrapper.update();
+        assert.include(currentScreen(wrapper), "SCREEN_1");
+
+        clock.tick(2);
+        wrapper.update();
+        assert.include(currentScreen(wrapper), "SCREEN_2");
+      });
+
+      // The card stack's exit animation is owned by MultistageWithDismiss, so
+      // waiting here too would leave an empty slot for the duration.
+      const mountLastScreenOnly = async position => {
+        const wrapper = mount(
+          <MultiStageAboutWelcome
+            {...DEFAULT_PROPS}
+            defaultScreens={[
+              {
+                id: "ONLY_SCREEN",
+                content: {
+                  position,
+                  title: "only screen",
+                  primary_button: {
+                    label: "Done",
+                    action: { navigate: true },
+                  },
+                },
+              },
+            ]}
+            transitions={true}
+          />
+        );
+        await spinEventLoop();
+        wrapper.update();
+        return wrapper;
+      };
+
+      it("should finish immediately from the last card-stack screen", async () => {
+        const wrapper = await mountLastScreenOnly("card-stack");
+        const finishStub = sandbox.stub(global, "AWFinish");
+        clock = sinon.useFakeTimers();
+
+        wrapper.find("button.primary").simulate("click");
+
+        assert.calledOnce(finishStub);
+      });
+
+      it("should still defer finishing for other positions", async () => {
+        const wrapper = await mountLastScreenOnly("split");
+        const finishStub = sandbox.stub(global, "AWFinish");
+        clock = sinon.useFakeTimers();
+
+        wrapper.find("button.primary").simulate("click");
+        assert.notCalled(finishStub);
+
+        clock.tick(1001);
+        assert.calledOnce(finishStub);
+      });
     });
 
     it("should autoAdvance with configurable time and send appropriate telemetry", () => {
@@ -496,6 +633,57 @@ describe("MultiStageAboutWelcome module", () => {
       assert.ok(
         hadImpression,
         "Expected at least one IMPRESSION event after paint"
+      );
+
+      sendEventStub.restore();
+    });
+
+    it("records how a pinnable_sites tile was composed on impression", async () => {
+      const screens = [
+        {
+          id: "TEST_SCREEN_AB",
+          content: {
+            title: "test title",
+            tiles: {
+              type: "pinnable_sites",
+              data: [
+                {
+                  id: "site_1",
+                  url: "https://a.example.com",
+                  personalized: true,
+                },
+                {
+                  id: "site_2",
+                  url: "https://b.example.com",
+                  personalized: true,
+                },
+                { id: "curated-gmail", url: "https://mail.google.com" },
+              ],
+            },
+          },
+        },
+      ];
+      const sendEventStub = sinon.stub(global, "AWSendEventTelemetry");
+
+      mount(
+        <MultiStageAboutWelcome {...DEFAULT_PROPS} defaultScreens={screens} />
+      );
+      await spinEventLoop();
+
+      const impression = sendEventStub
+        .getCalls()
+        .map(c => c.args[0])
+        .find(ping => ping?.event === "IMPRESSION");
+
+      assert.equal(
+        impression.event_context.personalized_sites,
+        2,
+        "the impression records how many rows came from the user's history"
+      );
+      assert.equal(
+        impression.event_context.total_sites,
+        3,
+        "and how many rows there were, so conversion has a per-slot denominator"
       );
 
       sendEventStub.restore();

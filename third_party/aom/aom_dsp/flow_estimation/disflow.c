@@ -172,9 +172,10 @@ static int determine_disflow_correspondence(const ImagePyramid *src_pyr,
     const int patch_tl_x = x0 - DISFLOW_PATCH_CENTER;
     const int patch_tl_y = y0 - DISFLOW_PATCH_CENTER;
     aom_compute_flow_at_point(
-        src_pyr->layers[0].buffer, ref_pyr->layers[0].buffer, patch_tl_x,
+        src_pyr->layers[0].buffer, src_pyr->layers[0].stride,
+        ref_pyr->layers[0].buffer, ref_pyr->layers[0].stride, patch_tl_x,
         patch_tl_y, src_pyr->layers[0].width, src_pyr->layers[0].height,
-        src_pyr->layers[0].stride, &flow_u, &flow_v);
+        &flow_u, &flow_v);
 
     // Use original points (without offsets) when filling in correspondence
     // array
@@ -191,11 +192,11 @@ static int determine_disflow_correspondence(const ImagePyramid *src_pyr,
 // (x, y) in src and the other at (x + u, y + v) in ref.
 // This function returns the sum of squared pixel differences between
 // the two regions.
-static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
-                                       int width, int height, int stride, int x,
-                                       int y, double u, double v,
-                                       const int16_t *dx, const int16_t *dy,
-                                       int *b) {
+static inline void compute_flow_vector(const uint8_t *src, int src_stride,
+                                       const uint8_t *ref, int ref_stride,
+                                       int width, int height, int x, int y,
+                                       double u, double v, const int16_t *dx,
+                                       const int16_t *dy, int *b) {
   memset(b, 0, 2 * sizeof(*b));
 
   // Split offset into integer and fractional parts, and compute cubic
@@ -235,10 +236,10 @@ static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
       const int x_w = x0 + j;
       int arr[4];
 
-      arr[0] = (int)ref[y_w * stride + (x_w - 1)];
-      arr[1] = (int)ref[y_w * stride + (x_w + 0)];
-      arr[2] = (int)ref[y_w * stride + (x_w + 1)];
-      arr[3] = (int)ref[y_w * stride + (x_w + 2)];
+      arr[0] = (int)ref[y_w * ref_stride + (x_w - 1)];
+      arr[1] = (int)ref[y_w * ref_stride + (x_w + 0)];
+      arr[2] = (int)ref[y_w * ref_stride + (x_w + 1)];
+      arr[3] = (int)ref[y_w * ref_stride + (x_w + 2)];
 
       // Apply kernel and round, keeping 6 extra bits of precision.
       //
@@ -270,7 +271,7 @@ static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
       // of precision to match the scale of the dx and dy arrays.
       const int round_bits = DISFLOW_INTERP_BITS + 6 - DISFLOW_DERIV_SCALE_LOG2;
       const int warped = ROUND_POWER_OF_TWO(result, round_bits);
-      const int src_px = src[(x + j) + (y + i) * stride] << 3;
+      const int src_px = src[(x + j) + (y + i) * src_stride] << 3;
       const int dt = warped - src_px;
       b[0] += dx[i * DISFLOW_PATCH_SIZE + j] * dt;
       b[1] += dy[i * DISFLOW_PATCH_SIZE + j] * dt;
@@ -410,9 +411,10 @@ static inline void invert_2x2(const double *M, double *M_inv) {
   M_inv[3] = M[0] * det_inv;
 }
 
-void aom_compute_flow_at_point_c(const uint8_t *src, const uint8_t *ref, int x,
-                                 int y, int width, int height, int stride,
-                                 double *u, double *v) {
+void aom_compute_flow_at_point_c(const uint8_t *src, int src_stride,
+                                 const uint8_t *ref, int ref_stride, int x,
+                                 int y, int width, int height, double *u,
+                                 double *v) {
   double M[4];
   double M_inv[4];
   int b[2];
@@ -420,16 +422,16 @@ void aom_compute_flow_at_point_c(const uint8_t *src, const uint8_t *ref, int x,
   int16_t dy[DISFLOW_PATCH_SIZE * DISFLOW_PATCH_SIZE];
 
   // Compute gradients within this patch
-  const uint8_t *src_patch = &src[y * stride + x];
-  sobel_filter(src_patch, stride, dx, DISFLOW_PATCH_SIZE, 1);
-  sobel_filter(src_patch, stride, dy, DISFLOW_PATCH_SIZE, 0);
+  const uint8_t *src_patch = &src[y * src_stride + x];
+  sobel_filter(src_patch, src_stride, dx, DISFLOW_PATCH_SIZE, 1);
+  sobel_filter(src_patch, src_stride, dy, DISFLOW_PATCH_SIZE, 0);
 
   compute_flow_matrix(dx, DISFLOW_PATCH_SIZE, dy, DISFLOW_PATCH_SIZE, M);
   invert_2x2(M, M_inv);
 
   for (int itr = 0; itr < DISFLOW_MAX_ITR; itr++) {
-    compute_flow_vector(src, ref, width, height, stride, x, y, *u, *v, dx, dy,
-                        b);
+    compute_flow_vector(src, src_stride, ref, ref_stride, width, height, x, y,
+                        *u, *v, dx, dy, b);
 
     // Solve flow equations to find a better estimate for the flow vector
     // at this point
@@ -447,6 +449,9 @@ void aom_compute_flow_at_point_c(const uint8_t *src, const uint8_t *ref, int x,
 
 static void fill_flow_field_borders(double *flow, int width, int height,
                                     int stride) {
+  if (width <= 2 * FLOW_BORDER_INNER || height <= 2 * FLOW_BORDER_INNER) return;
+  assert(width + 2 * FLOW_BORDER_OUTER <= stride);
+
   // Calculate the bounds of the rectangle which was filled in by
   // compute_flow_field() before calling this function.
   // These indices are inclusive on both ends.
@@ -478,7 +483,7 @@ static void fill_flow_field_borders(double *flow, int width, int height,
   for (int i = -FLOW_BORDER_OUTER; i < top_index; i++) {
     double *row = flow + i * stride - FLOW_BORDER_OUTER;
     size_t length = width + 2 * FLOW_BORDER_OUTER;
-    memcpy(row, top_row, length * sizeof(*row));
+    memmove(row, top_row, length * sizeof(*row));
   }
 
   // Bottom area
@@ -486,7 +491,7 @@ static void fill_flow_field_borders(double *flow, int width, int height,
   for (int i = bottom_index + 1; i < height + FLOW_BORDER_OUTER; i++) {
     double *row = flow + i * stride - FLOW_BORDER_OUTER;
     size_t length = width + 2 * FLOW_BORDER_OUTER;
-    memcpy(row, bottom_row, length * sizeof(*row));
+    memmove(row, bottom_row, length * sizeof(*row));
   }
 }
 
@@ -541,6 +546,10 @@ static void fill_flow_field_borders(double *flow, int width, int height,
 // vector, even though these must be interpolated using different source points.
 static void upscale_flow_component(double *flow, int cur_width, int cur_height,
                                    int stride, double *tmpbuf) {
+  assert(cur_width > 0);
+  assert(cur_height > 0);
+  assert(2 * cur_width <= stride);
+
   const int half_len = FLOW_UPSCALE_TAPS / 2;
 
   // Check that the outer border is large enough to avoid needing to clamp
@@ -571,13 +580,13 @@ static void upscale_flow_component(double *flow, int cur_width, int cur_height,
   const double *top_row = &tmpbuf[0];
   for (int i = -FLOW_BORDER_OUTER; i < 0; i++) {
     double *row = &tmpbuf[i * stride];
-    memcpy(row, top_row, 2 * cur_width * sizeof(*row));
+    memmove(row, top_row, 2 * cur_width * sizeof(*row));
   }
 
   const double *bottom_row = &tmpbuf[(cur_height - 1) * stride];
   for (int i = cur_height; i < cur_height + FLOW_BORDER_OUTER; i++) {
     double *row = &tmpbuf[i * stride];
-    memcpy(row, bottom_row, 2 * cur_width * sizeof(*row));
+    memmove(row, bottom_row, 2 * cur_width * sizeof(*row));
   }
 
   // Vertical upscale
@@ -643,10 +652,11 @@ static bool compute_flow_field(const ImagePyramid *src_pyr,
     const PyramidLayer *cur_layer = &src_pyr->layers[level];
     const int cur_width = cur_layer->width;
     const int cur_height = cur_layer->height;
-    const int cur_stride = cur_layer->stride;
 
     const uint8_t *src_buffer = cur_layer->buffer;
+    const int src_stride = cur_layer->stride;
     const uint8_t *ref_buffer = ref_pyr->layers[level].buffer;
+    const int ref_stride = ref_pyr->layers[level].stride;
 
     const int cur_flow_width = cur_width >> DOWNSAMPLE_SHIFT;
     const int cur_flow_height = cur_height >> DOWNSAMPLE_SHIFT;
@@ -669,9 +679,9 @@ static bool compute_flow_field(const ImagePyramid *src_pyr,
         assert(patch_tl_x >= 0);
         assert(patch_tl_y >= 0);
 
-        aom_compute_flow_at_point(src_buffer, ref_buffer, patch_tl_x,
-                                  patch_tl_y, cur_width, cur_height, cur_stride,
-                                  &flow_u[flow_field_idx],
+        aom_compute_flow_at_point(src_buffer, src_stride, ref_buffer,
+                                  ref_stride, patch_tl_x, patch_tl_y, cur_width,
+                                  cur_height, &flow_u[flow_field_idx],
                                   &flow_v[flow_field_idx]);
       }
     }
@@ -728,12 +738,17 @@ free_tmpbuf:
 }
 
 static FlowField *alloc_flow_field(int frame_width, int frame_height) {
+  const int flow_width = frame_width >> DOWNSAMPLE_SHIFT;
+  const int flow_height = frame_height >> DOWNSAMPLE_SHIFT;
+  assert(flow_width > 0);
+  assert(flow_height > 0);
+
   FlowField *flow = (FlowField *)aom_malloc(sizeof(FlowField));
   if (flow == NULL) return NULL;
 
   // Calculate the size of the bottom (largest) layer of the flow pyramid
-  flow->width = frame_width >> DOWNSAMPLE_SHIFT;
-  flow->height = frame_height >> DOWNSAMPLE_SHIFT;
+  flow->width = flow_width;
+  flow->height = flow_height;
   flow->stride = flow->width + 2 * FLOW_BORDER_OUTER;
 
   const size_t flow_size =
@@ -780,17 +795,30 @@ bool av1_compute_global_motion_disflow(
     *mem_alloc_failed = true;
     return false;
   }
+
+  if (src_layers != ref_layers) {
+    return false;
+  }
+
   if (!av1_compute_corner_list(src, bit_depth, downsample_level, src_corners)) {
     *mem_alloc_failed = true;
     return false;
   }
 
-  assert(src_layers == ref_layers);
-
   const int src_width = src_pyramid->layers[0].width;
   const int src_height = src_pyramid->layers[0].height;
-  assert(ref_pyramid->layers[0].width == src_width);
-  assert(ref_pyramid->layers[0].height == src_height);
+  if (ref_pyramid->layers[0].width != src_width ||
+      ref_pyramid->layers[0].height != src_height) {
+    return false;
+  }
+
+  if (src_width < (1 << DOWNSAMPLE_SHIFT) ||
+      src_height < (1 << DOWNSAMPLE_SHIFT)) {
+    return false;
+  }
+  if (src_corners->num_corners == 0) {
+    return false;
+  }
 
   FlowField *flow = alloc_flow_field(src_width, src_height);
   if (!flow) {

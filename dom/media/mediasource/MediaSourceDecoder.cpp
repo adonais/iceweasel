@@ -262,7 +262,18 @@ void MediaSourceDecoder::SetMediaSourceDuration(const TimeUnit& aDuration) {
   if (aDuration.IsPositiveOrZero()) {
     // Truncate to microsecond resolution for consistency with the
     // SourceBuffer.buffered getter.
-    SetExplicitDuration(aDuration.ToBase(USECS_PER_S).ToSeconds());
+    TimeUnit inUsec = aDuration.ToBase(USECS_PER_S);
+    if (inUsec.IsValid()) {
+      SetExplicitDuration(inUsec.ToSeconds());
+    } else {
+      // ToBase(USECS_PER_S) overflows for near-INT64_MAX timestamps; fall back
+      // to floating point precision to avoid crashing.
+      MSE_DEBUG(
+          "SetMediaSourceDuration: duration overflow converting to usecs "
+          "(duration=%s)",
+          aDuration.ToString().get());
+      SetExplicitDuration(aDuration.ToSeconds());
+    }
   } else {
     SetExplicitDuration(PositiveInfinity<double>());
   }

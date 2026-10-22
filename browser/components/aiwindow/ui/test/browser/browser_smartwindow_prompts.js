@@ -1085,6 +1085,68 @@ add_task(
 );
 
 add_task(
+  async function test_fullpage_resume_starters_disabled_by_feature_pref() {
+    const sb = sinon.createSandbox();
+    let win;
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        // Memories on, so the gate under test is the only thing holding back
+        // resume generation.
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
+        ["browser.smartwindow.resumeActivity.enabled", false],
+        // Cards are the other resume surface; leave it on to prove the section
+        // stays empty rather than relying on its own pref being off.
+        ["browser.smartwindow.resumeCards.enabled", true],
+      ],
+    });
+
+    let resumeActivityStubs;
+    try {
+      resumeActivityStubs = await stubResumeActivityGeneration(sb);
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      const buttons = await getPromptButtons(browser);
+      const aiWindow = browser.contentDocument.querySelector("ai-window");
+      const promptsEl = aiWindow.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+
+      Assert.ok(
+        resumeActivityStubs.getMemoriesStub.notCalled,
+        "Resume generation should not run when the feature is disabled"
+      );
+      Assert.deepEqual(
+        promptsEl.prompts.map(prompt => prompt.type),
+        ["chat", "chat", "chat"],
+        "Only the static starters should render: no skeletons and no resume pills"
+      );
+      Assert.equal(
+        buttons.length,
+        3,
+        "Static starters should still be clickable"
+      );
+      Assert.deepEqual(aiWindow.resumeCards, [], "No resume cards should load");
+      Assert.equal(
+        aiWindow.shadowRoot
+          .querySelector("smartwindow-resume-section")
+          .shadowRoot.querySelector(".resume-section-grid"),
+        null,
+        "The resume section should render nothing"
+      );
+    } finally {
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await resumeActivityStubs?.cleanup();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
+add_task(
   async function test_fullpage_resume_starters_disabled_without_existing_memories() {
     const sb = sinon.createSandbox();
     let win;

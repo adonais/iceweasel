@@ -2836,6 +2836,22 @@ TEST_P(JsepSessionTest, RenegotiationAnswererDoesNotRejectStoppedTransceiver) {
   }
 }
 
+TEST_P(JsepSessionTest, SetLocalOfferRejectsChangedFingerprint) {
+  AddTracks(*mSessionOff);
+  std::string offer = CreateOffer();
+  UniquePtr<Sdp> munge(Parse(offer));
+  SdpMediaSection& mediaSection = munge->GetMediaSection(0);
+
+  auto fingerprints = MakeUnique<SdpFingerprintAttributeList>();
+  fingerprints->PushEntry("sha-256", std::vector<uint8_t>(32, 0));
+  mediaSection.GetAttributeList().SetAttribute(std::move(fingerprints));
+
+  std::string sdpString = munge->ToString();
+  JsepSession::Result result =
+      mSessionOff->SetLocalDescription(kJsepSdpOffer, sdpString);
+  ASSERT_EQ(dom::PCError::InvalidModificationError, *result.mError);
+}
+
 TEST_P(JsepSessionTest, ParseRejectsBadMediaFormat) {
   AddTracks(*mSessionOff);
   if (types.front() == SdpMediaSection::MediaType::kApplication) {

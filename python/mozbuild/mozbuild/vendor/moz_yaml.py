@@ -165,6 +165,8 @@ def _schema_1():
             Required("url"): FqdnUrl(),
             Required("license"): Msg(License(), msg="Unsupported License"),
             "license-file": All(str, Length(min=1)),
+            # The npm registry name, which the SBOM uses for a pkg:npm purl.
+            "npm-name": All(str, Length(min=1)),
             Required("release"): All(str, Length(min=1)),
             # The following regex defines a valid git reference
             # The first group [^ ~^:?*[\]] matches 0 or more times anything
@@ -199,8 +201,8 @@ def _schema_1():
                         "blocking": Match(r"^[0-9]+$"),
                         "options": [str],
                         "frequency": Match(
-                            r"^(every|release|[1-9][0-9]* weeks?|[1-9][0-9]* commits?|"
-                            + r"[1-9][0-9]* weeks?, ?[1-9][0-9]* commits?)$"
+                            r"^(every|release|[1-9][0-9]* (weeks?|days?)|[1-9][0-9]* commits?|"
+                            + r"[1-9][0-9]* (weeks?|days?), ?[1-9][0-9]* commits?)$"
                         ),
                         "platform": Match(r"^(windows|linux)$"),
                     }

@@ -142,7 +142,7 @@ async function resendRequestAndWaitForNewRequest(monitor, originalRequestItem) {
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, originalRequestItem);
+  clickOnRequestRow(originalRequestItem);
   await waitForHeaders;
 
   const originalResourceId = getSelectedRequest(store.getState()).id;

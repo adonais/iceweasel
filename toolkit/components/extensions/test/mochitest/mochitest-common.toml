@@ -103,7 +103,6 @@ skip-if = [
   "http2",
   "http3",
   "os == 'android'", # Bug 1845604: test case uses tabHide permission which is not available on Android
-  "tsan", #  Times out on TSan, bug 1612707
   "xorigin", #  Inconsistent pass/fail in opt and debug
 ]
 
@@ -111,7 +110,6 @@ skip-if = [
 skip-if = [
   "os == 'android'", # Bug 1845607
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", #  Bug 1857067
-  "tsan", # Bug 1612707: times out on TSan
 ]
 
 ["test_ext_background_canvas.html"]
@@ -141,9 +139,6 @@ skip-if = [
 ]
 
 ["test_ext_browserAction_openPopup_windowId.html"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1855364, https://bugzilla.mozilla.org/show_bug.cgi?id=1855364#c42
-]
 
 ["test_ext_browserAction_openPopup_without_pref.html"]
 
@@ -247,9 +242,6 @@ skip-if = [
 ]
 
 ["test_ext_contentscript_permission.html"]
-skip-if = [
-  "tsan", # Times out on TSan, bug 1612707
-]
 
 ["test_ext_contentscript_securecontext.html"]
 skip-if = [
@@ -263,7 +255,6 @@ skip-if = [
   "http2",
   "http3",
   "os == 'android'", # Bug 1845615
-  "tsan", # Times out on TSan intermittently, bug 1615184;
 ]
 
 ["test_ext_cookies_containers.html"]
@@ -327,8 +318,6 @@ skip-if = [
 ["test_ext_identity.html"]
 skip-if = [
   "os == 'android'", # Bug 1475887 (API not supported on android yet)
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1777016
-  "tsan", # Bug 1612707
 ]
 
 ["test_ext_idle.html"]
@@ -362,10 +351,6 @@ skip-if = [
 ]
 
 ["test_ext_redirect_jar.html"]
-skip-if = [
-  "os == 'win' && asan", # Bug 1563440
-  "os == 'win' && debug", # Bug 1563440
-]
 
 ["test_ext_request_urlClassification.html"]
 skip-if = [
@@ -612,7 +597,6 @@ skip-if = [
   "http2",
   "http3",
   "os == 'android' && debug", #  bug 1397615
-  "tsan", #  bug 1612707
   "xorigin", #  JavaScript Error: "SecurityError: Permission denied to access property "wrappedJSObject" on cross-origin object" {file: "http://mochi.false-test:8888/tests/SimpleTest/TestRunner.js" line: 157}]
 ]
 
@@ -620,13 +604,11 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
-  "tsan",
 ]
 
 ["test_ext_webrequest_filter.html"]
 skip-if = [
   "os == 'android' && debug", # bug 1452348
-  "tsan", # tsan: bug 1612707
 ]
 
 ["test_ext_webrequest_frameId.html"]

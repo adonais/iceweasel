@@ -65,7 +65,7 @@ bool AcmSendTestOldApi::RegisterCodec(absl::string_view payload_name,
                                       int frame_size_samples) {
   SdpAudioFormat format(payload_name, clockrate_hz, num_channels);
   if (absl::EqualsIgnoreCase(payload_name, "g722")) {
-    RTC_CHECK_EQ(16000, clockrate_hz);
+    RTC_CHECK_EQ(clockrate_hz, 16000);
     format.clockrate_hz = 8000;
   } else if (absl::EqualsIgnoreCase(payload_name, "opus")) {
     RTC_CHECK(num_channels == 1 || num_channels == 2);

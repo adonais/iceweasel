@@ -27,8 +27,8 @@
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/layers/APZBridgeChild.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
-#include "mozilla/layers/APZInputBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorManagerChild.h"
@@ -1351,23 +1351,23 @@ RefPtr<CompositorSession> GPUProcessManager::CreateRemoteSession(
       return nullptr;
     }
 
-    ipc::Endpoint<PAPZInputBridgeParent> parentPipe;
-    ipc::Endpoint<PAPZInputBridgeChild> childPipe;
-    nsresult rv = PAPZInputBridge::CreateEndpoints(
+    ipc::Endpoint<PAPZBridgeParent> parentPipe;
+    ipc::Endpoint<PAPZBridgeChild> childPipe;
+    nsresult rv = PAPZBridge::CreateEndpoints(
         mGPUChild->OtherEndpointProcInfo(), ipc::EndpointProcInfo::Current(),
         &parentPipe, &childPipe);
     if (NS_FAILED(rv)) {
       return nullptr;
     }
-    mGPUChild->SendInitAPZInputBridge(aRootLayerTreeId, std::move(parentPipe));
+    mGPUChild->SendInitAPZBridge(aRootLayerTreeId, std::move(parentPipe));
 
-    RefPtr<APZInputBridgeChild> inputBridge =
-        APZInputBridgeChild::Create(mProcessToken, std::move(childPipe));
-    if (!inputBridge) {
+    RefPtr<APZBridgeChild> apzBridge =
+        APZBridgeChild::Create(mProcessToken, std::move(childPipe));
+    if (!apzBridge) {
       return nullptr;
     }
 
-    apz->SetInputBridge(std::move(inputBridge));
+    apz->SetBridge(std::move(apzBridge));
   }
 
   return MakeRefPtr<RemoteCompositorSession>(aWidget, child, widget,

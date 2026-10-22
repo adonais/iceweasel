@@ -24,6 +24,9 @@ In case of problem, go to `about:logging` find the `Machine Learning` preset
 in the dropdown, start logging, reproduce you issue, upload or save the profile,
 and open a bug with the link or profile file in [Core :: Machine Learning](https://bugzilla.mozilla.org/enter_bug.cgi?product=Core&component=Machine%20Learning)
 
+Page content for AI features is read by the [Page Extractor](/toolkit/components/pageextractor/index.md),
+which is documented separately.
+
 Learn more about the platform:
 
 ```{toctree}

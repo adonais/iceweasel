@@ -5,6 +5,8 @@
 #ifndef nsPipe_h_
 #define nsPipe_h_
 
+#include "nsID.h"
+
 #define NS_PIPE_CONTRACTID "@mozilla.org/pipe;1"
 #define NS_PIPE_CID                           \
   {/* e4a0ee4e-0775-457b-9118-b3ae97a7c758 */ \

@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  isSettingsURL,
+  isSmartPageURL,
+  isTasksURL,
+} from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
@@ -23,23 +29,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * JSWindowActor to pass data between AIChatContent singleton and content pages.
  */
 export class AIChatContentParent extends JSWindowActorParent {
-  #settingsURI = Services.io.newURI("about:settings");
-  #prefsURI = Services.io.newURI("about:preferences");
-  #tasksURI = Services.io.newURI("about:smartwindowtasks");
-
   /**
-   * Returns true if the URI points to a trusted internal page.
-   * Matches about:preferences, about:settings, and about:smartwindowtasks
+   * Returns true if the URI points to an internal page that is safe to open.
+   * Matches about:preferences, about:settings, about:smartwindowtasks, and
+   * generated pages (about:smartpage?page=[slug]). Each page's trust rationale
+   * is documented with its check in TrustedInternalURLs.mjs.
+   *
+   * ai-chat-message composes the same checks when deciding whether a link
+   * stays clickable, and additionally requires a generated page to be in the
+   * conversation's seen URLs, which this process has no access to.
    *
    * @param {nsIURI} uri - A parsed URI object
    * @returns {boolean}
    */
   isTrustedInternalURI(uri) {
-    return (
-      uri.equalsExceptRef(this.#settingsURI) ||
-      uri.equalsExceptRef(this.#prefsURI) ||
-      uri.equalsExceptRef(this.#tasksURI)
-    );
+    const url = URL.parse(uri.spec);
+
+    return isSettingsURL(url) || isTasksURL(url) || isSmartPageURL(url);
   }
 
   dispatchMessageToChatContent(message) {

@@ -200,6 +200,9 @@ class LinkedListElement {
     }
   }
 
+  LinkedListElement& operator=(const LinkedListElement& aOther) = delete;
+  LinkedListElement(const LinkedListElement& aOther) = delete;
+
   /*
    * Get the next element in the list, or nullptr if this is the last element
    * in the list.
@@ -400,9 +403,6 @@ class LinkedListElement {
       Traits::exitList(&aOther);
     }
   }
-
-  LinkedListElement& operator=(const LinkedListElement<T>& aOther) = delete;
-  LinkedListElement(const LinkedListElement<T>& aOther) = delete;
 };
 
 template <typename T>
@@ -480,6 +480,9 @@ class LinkedList {
     }
 #  endif
   }
+
+  LinkedList& operator=(const LinkedList& aOther) = delete;
+  LinkedList(const LinkedList& aOther) = delete;
 
   using iterator = IteratorImpl<false, false>;
   using const_iterator = IteratorImpl<true, false>;
@@ -715,9 +718,6 @@ class LinkedList {
     MOZ_CRASH("element wasn't found in this list!");
 #  endif
   }
-
-  LinkedList& operator=(const LinkedList<T>& aOther) = delete;
-  LinkedList(const LinkedList<T>& aOther) = delete;
 };
 
 template <typename T>

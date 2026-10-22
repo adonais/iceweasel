@@ -481,9 +481,32 @@ already_AddRefed<Promise> LlamaStreamSource::CancelCallbackImpl(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
     ErrorResult& aRv) {
   LOGD_RUNNER("Entered {}", __PRETTY_FUNCTION__);
+
+  // Cancelling only sets a flag the task checks between tokens, so it holds
+  // the backend for a while yet. The generation thread finishes that task
+  // before anything else, so a runnable queued behind it reports when the
+  // backend -- which is not thread-safe, and is shared with the next
+  // generation -- is free.
+  RefPtr<Promise> drained;
+  nsIGlobalObject* global = GetRelevantGlobal();
+  if (global && mGenerateThread && mOriginalEventTarget) {
+    drained = Promise::Create(global, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    InvokeAsync(
+        mGenerateThread, __func__,
+        []() { return GenericPromise::CreateAndResolve(true, __func__); })
+        ->Then(mOriginalEventTarget, __func__,
+               [drained](const GenericPromise::ResolveOrRejectValue&) {
+                 drained->MaybeResolveWithUndefined();
+               });
+  }
+
   ShutdownWorkerThread();
+
   LOGD_RUNNER("Exited {}", __PRETTY_FUNCTION__);
-  return nullptr;
+  return drained.forget();
 }
 
 already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
@@ -590,6 +613,13 @@ already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
           [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
              RefPtr<Promise> aPromise, RefPtr<ReadableStream> aStream)
               MOZ_CAN_RUN_SCRIPT -> already_AddRefed<Promise> {
+                // A cancellation closes the stream with this pull outstanding.
+                if (aStream->State() != ReadableStream::ReaderState::Readable) {
+                  LOGD_RUNNER("{}: The stream is no longer readable",
+                              __PRETTY_FUNCTION__);
+                  return nullptr;
+                }
+
                 if (aValue.isUndefined()) {
                   LOGD_RUNNER(
                       "{}: LlamaStreamSource completed. Closing the stream",

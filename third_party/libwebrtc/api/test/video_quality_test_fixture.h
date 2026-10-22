@@ -27,6 +27,7 @@
 #include "api/test/simulated_network.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
+#include "api/units/time_delta.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/spatial_layer.h"
 #include "api/video_codecs/video_codec.h"
@@ -67,9 +68,21 @@ class VideoQualityTestFixtureInterface {
       bool flexfec = false;
       bool automatic_scaling = false;
       std::string clip_path;  // "Generator" to generate frames instead.
+      std::vector<std::string> clip_paths;
+      TimeDelta camera_switching_interval = TimeDelta::Zero();
       size_t capture_device_index = 0;
       CodecParameterMap sdp_params;
       double encoder_overshoot_factor = 0.0;
+      struct PendulumConfig {
+        std::string image_path = "resources/difficult_photo_1850_1110.yuv";
+        int image_width = 1850;
+        int image_height = 1110;
+        double min_zoom = 1.2;
+        double max_zoom = 3.0;
+        double zoom_speed = 0.3;
+        int noise_level = 20;
+      };
+      std::optional<PendulumConfig> pendulum;
     } video[2];
     struct Audio {
       bool enabled = false;

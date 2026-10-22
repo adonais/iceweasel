@@ -39,8 +39,8 @@ The function returns one of the following values:
 
 - If successful, a pointer to the opaque `PRAddrInfo` structure
   containing the results of the host lookup. Use
-  {ref}`PR_EnumerateAddrInfo` to inspect the {ref}`PRNetAddr` values stored
+  {doc}`pr_enumerateaddrinfo` to inspect the {doc}`prnetaddr` values stored
   in this structure. When no longer needed, this pointer must be
-  destroyed with a call to {ref}`PR_FreeAddrInfo`.
+  destroyed with a call to {doc}`pr_freeaddrinfo`.
 - If unsuccessful, `NULL`. You can retrieve the reason for the
-  failure by calling {ref}`PR_GetError`.
+  failure by calling {doc}`pr_geterror`.

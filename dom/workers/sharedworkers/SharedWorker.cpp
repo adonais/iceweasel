@@ -246,10 +246,10 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   // Register this component to PBackground.
   bool isSecureContext = JS::GetIsSecureContext(js::GetContextRealm(cx));
 
-  Maybe<IPCClientInfo> ipcClientInfo;
   Maybe<ClientInfo> clientInfo = window->GetClientInfo();
-  if (clientInfo.isSome()) {
-    ipcClientInfo.emplace(clientInfo.value().ToIPC());
+  if (clientInfo.isNothing()) {
+    aRv.ThrowInvalidStateError("Cannot create worker without a client");
+    return nullptr;
   }
 
   nsID agentClusterId = nsID::GenerateUUID();
@@ -268,8 +268,9 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       nsString(*compliantString), baseURL, resolvedScriptURL, aOptions,
       loadingPrincipalInfo, principalInfo, partitionedPrincipalInfo,
       loadInfo.mUseRegularPrincipal, loadInfo.mUsingStorageAccess, cjsData,
-      loadInfo.mDomain, isSecureContext, ipcClientInfo, loadInfo.mReferrerInfo,
-      storageAllowed, AntiTrackingUtils::IsThirdPartyWindow(window, nullptr),
+      loadInfo.mDomain, isSecureContext, clientInfo->ToIPC(),
+      loadInfo.mReferrerInfo, storageAllowed,
+      AntiTrackingUtils::IsThirdPartyWindow(window, nullptr),
       loadInfo.mShouldResistFingerprinting, overriddenFingerprintingSettingsArg,
       loadInfo.mIsOn3PCBExceptionList,
       OriginTrials::FromWindow(nsGlobalWindowInner::Cast(window)),

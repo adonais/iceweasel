@@ -496,15 +496,14 @@ already_AddRefed<ScaledFont> UnscaledFontFontconfig::CreateScaledFont(
     return nullptr;
   }
 
-  if (aNumVariations > 0 && face->GetData()) {
-    if (RefPtr<SharedFTFace> varFace = face->GetData()->CloneFace()) {
+  if (aNumVariations > 0) {
+    if (RefPtr<SharedFTFace> varFace = face->CloneFace()) {
       face = varFace;
     }
-  }
-
-  // Only apply variations if we have an explicitly cloned face.
-  if (aNumVariations > 0 && face != GetFace()) {
-    ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    // Only apply variations if we have an explicitly cloned face.
+    if (face != GetFace()) {
+      ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    }
   }
 
   RefPtr<ScaledFontFontconfig> scaledFont =

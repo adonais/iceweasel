@@ -79,7 +79,6 @@ const IS_MAIN_PROCESS =
 // https://github.com/mozilla/experimenter/blob/cca860ba06f07874800423bed616b9f51166d9e0/experimenter/experimenter/experiments/constants.py#L280-L283
 const SECURE_FEATURE_IDS = new Set([
   "prefFlips",
-  "newtabTrainhopAddon",
   "newtabTrainhopAddonDeployment",
 ]);
 

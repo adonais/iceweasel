@@ -1,0 +1,31 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - gecko_taskgraph.transforms.duplicate:transforms
+
+kind-dependencies:
+    - ui-test-apk
+    - signing-apk
+    - signing-apk-appservices
+
+tasks:
+    appservices-in-tree:
+        duplicate:
+            kinds:
+                - ui-test-apk
+            suffix: -appservices-in-tree
+            treeherder-symbol-suffix: -as
+            chain-from:
+                - signing-apk-appservices
+            exclude-labels:
+                - '-(beta|release|nightly)(-|$)'
+        attributes:
+            run_on_projects: []
+        task:
+            extra:
+                treeherder:
+                    tier: 3

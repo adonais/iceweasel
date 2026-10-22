@@ -36,6 +36,8 @@
 
 ["include:../../../../../dom/cache/test/marionette/manifest.toml"]
 
+["include:../../../../../dom/fs/test/marionette/manifest.toml"]
+
 ["include:../../../../../dom/indexedDB/test/marionette/manifest.toml"]
 
 ["include:../../../../../dom/notification/test/marionette/manifest.toml"]

@@ -107,16 +107,16 @@ class MOZ_STACK_CLASS ScopeExit {
 
   void release() { mExecuteOnDestruction = false; }
 
- private:
   explicit ScopeExit(const ScopeExit&) = delete;
   ScopeExit& operator=(const ScopeExit&) = delete;
   ScopeExit& operator=(ScopeExit&&) = delete;
 };
 
 template <typename ExitFunction>
+  requires(std::is_rvalue_reference_v<ExitFunction &&>)
 [[nodiscard]] ScopeExit<ExitFunction> MakeScopeExit(
     ExitFunction&& exitFunction) {
-  return ScopeExit<ExitFunction>(std::move(exitFunction));
+  return ScopeExit<ExitFunction>(std::forward<ExitFunction>(exitFunction));
 }
 
 } /* namespace mozilla */

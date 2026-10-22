@@ -1,8 +1,8 @@
 # PR_Initialize
 
 Provides an alternate form of explicit initialization. In addition to
-establishing the sequence of operations, {ref}`PR_Initialize` implicitly
-calls {ref}`PR_Cleanup` on exiting the primordial function.
+establishing the sequence of operations, {doc}`pr_initialize` implicitly
+calls {doc}`pr_cleanup` on exiting the primordial function.
 
 ## Syntax
 
@@ -18,7 +18,7 @@ PRIntn PR_Initialize(
 
 ### Parameters
 
-{ref}`PR_Initialize` has the following parameters:
+{doc}`pr_initialize` has the following parameters:
 
 `prmain`
 
@@ -47,15 +47,15 @@ The value returned from the root function, `prmain`.
 
 ## Description
 
-{ref}`PR_Initialize` initializes the NSPR runtime and places NSPR between
+{doc}`pr_initialize` initializes the NSPR runtime and places NSPR between
 the caller and the runtime library. This allows `main` to be treated
 like any other function, signaling its completion by returning and
 allowing the runtime to coordinate the completion of the other threads
 of the runtime.
 
-{ref}`PR_Initialize` does not return to its caller until all user threads
+{doc}`pr_initialize` does not return to its caller until all user threads
 have terminated.
 
 The priority of the main (or primordial) thread is
 `PR_PRIORITY_NORMAL`. The thread may adjust its own priority by using
-{ref}`PR_SetThreadPriority`.
+{doc}`pr_setthreadpriority`.

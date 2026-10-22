@@ -50,6 +50,14 @@
   position: absolute;
 }
 
+#holly {
+  animation: 4s linear 0s normal none infinite "holly molly";
+  outline: 5px solid gold;
+  top: 170px;
+  left: 750px;
+  position: absolute;
+}
+
 @-moz-keyframes pacman {
   100% {
     left: 750px;
@@ -79,5 +87,11 @@
 @keyframes moxy {
   to {
     opacity: 0;
+  }
+}
+
+@keyframes "holly molly" {
+  to {
+    outline-color: tomato;
   }
 }

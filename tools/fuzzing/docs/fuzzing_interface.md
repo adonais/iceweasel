@@ -103,7 +103,7 @@ ac_add_options --enable-fuzzing
 
 to your `.mozconfig` is already sufficient for producing a fuzzing build.
 However, for improved crash handling capabilities and to detect additional errors,
-it is strongly recommended to combine libFuzzer with {ref}`AddressSanitizer <Address Sanitizer>`
+it is strongly recommended to combine libFuzzer with {doc}`AddressSanitizer </tools/sanitizer/asan>`
 at least for optimized builds and bugs requiring ASan to reproduce at all
 (e.g. you are working on a bug where ASan reports a memory safety violation
 of some sort).

@@ -22,7 +22,6 @@ skip-if = [
 ["browser_canvas_fingerprinting_resistance.js"]
 skip-if = [
   "debug",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1522069
 ]
 
 ["browser_canvas_rfp_exclusion.js"]
@@ -67,9 +66,6 @@ support-files = ["../browser-webrtc/get_user_media.html"]
 ["browser_temporary_permissions_expiry.js"]
 
 ["browser_temporary_permissions_navigation.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1898701
-]
 
 ["browser_temporary_permissions_tabs.js"]
 

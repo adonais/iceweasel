@@ -139,9 +139,6 @@ support-files = ["worker_bug1697539.js"]
 
 ["test_bug1752863.html"]
 support-files = ["test_bug1752863_worker.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", #  Bug 1755010
-]
 
 ["test_bug1788125.html"]
 
@@ -189,7 +186,6 @@ skip-if = [
 ["test_worker_xhrAbort.html"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win'",
 ]
 
 ["test_worker_xhrAbortDuringTerminate.html"]
@@ -233,9 +229,6 @@ skip-if = [
 ]
 
 ["test_worker_xhr_timeout.html"]
-skip-if = [
-"os == 'win'", # bug 1868894
-]
 
 ["test_xhr_abort_after_load.html"]
 

@@ -461,17 +461,24 @@ nsresult nsAppShellService::JustCreateTopWindow(
 
   RefPtr<AppWindow> window = new AppWindow(aChromeMask);
 
-#ifdef XP_WIN
-  // If the parent is currently fullscreen, tell the child to ignore persisted
-  // full screen states. This way new browser windows open on top of fullscreen
-  // windows normally.
-  if (nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(aParent)) {
-    nsCOMPtr<nsIWidget> widget = baseWin->GetMainWidget();
-    if (widget && widget->SizeMode() == nsSizeMode_Fullscreen) {
-      window->IgnoreXULSizeMode(true);
+  // Ignore a persisted sizemode="fullscreen" either when the caller asked for
+  // it, or when the parent is currently fullscreen. Without this a new window
+  // restores that sizemode and takes a Space of its own, so it never appears
+  // where the user is. The parent case is what keeps new browser windows
+  // opening on top of a fullscreen window; the flag covers callers that pass
+  // no parent, such as an extension popup.
+  bool shouldIgnoreXULSizeMode =
+      aChromeMask & nsIWebBrowserChrome::CHROME_SUPPRESS_INITIAL_FULLSCREEN;
+  if (!shouldIgnoreXULSizeMode) {
+    if (nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(aParent)) {
+      nsCOMPtr<nsIWidget> widget = baseWin->GetMainWidget();
+      shouldIgnoreXULSizeMode =
+          widget && widget->SizeMode() == nsSizeMode_Fullscreen;
     }
   }
-#endif
+  if (shouldIgnoreXULSizeMode) {
+    window->IgnoreXULSizeMode(true);
+  }
 
   widget::InitData widgetInitData;
   if (aIsHiddenWindow) {

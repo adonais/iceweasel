@@ -76,7 +76,7 @@ add_task(async function () {
   store.dispatch(Actions.toggleNetworkDetails());
 
   for (let i = 0; i < expectedRequestsContent.length; i++) {
-    EventUtils.sendMouseEvent({ type: "mousedown" }, requests[i]);
+    clickOnRequestRow(requests[i]);
     await assertRequestContentInHeaderAndRequestSidePanels(
       expectedRequestsContent[i]
     );

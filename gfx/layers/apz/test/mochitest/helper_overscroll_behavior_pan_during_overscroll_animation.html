@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests that a pan gesture interrupting the overscroll animation of a sub
+  scroll container scrolls it when the root has overscroll-behavior: none
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  html {
+    overscroll-behavior: none;
+  }
+  #subframe {
+    width: 400px;
+    height: 90vh;
+    overflow-y: scroll;
+  }
+  #subframe-content {
+    height: 400vh;
+    width: 100%;
+  }
+</style>
+<div id="subframe">
+  <div id="subframe-content"></div>
+</div>
+<script>
+  const subScroller = document.getElementById("subframe");
+  // Leave the sub scroll container room to scroll downward, so that the first
+  // pan gesture targets it and overscrolls it.
+  subScroller.scrollTop = subScroller.scrollTopMax - 1;
+
+  async function test() {
+    const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
+
+    const oneScrollPromise = new Promise(resolve => {
+      subScroller.addEventListener("scroll", resolve, { once: true });
+    });
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, NativePanHandler.delta,
+      NativePanHandler.updatePhase);
+    await promiseApzFlushedRepaints();
+    await oneScrollPromise;
+
+    is(subScroller.scrollTop, subScroller.scrollTopMax,
+       "The sub scroll container should be panned to its bottom edge");
+    ok(isOverscrolled(collectOverscrolledIds(), subScrollId),
+       "The sub scroll container should be overscrolled");
+
+    // Lift the fingers, which starts the overscroll animation.
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+
+    // Interrupt the overscroll animation with a second pan gesture, starting
+    // in the direction that increases the overscroll.
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await promiseApzFlushedRepaints();
+
+    is(subScroller.scrollTop, subScroller.scrollTopMax,
+       "The sub scroll container should still be panned to its bottom edge");
+    ok(isOverscrolled(collectOverscrolledIds(), subScrollId),
+       "The sub scroll container should still be overscrolled");
+
+    // Reverse the direction with enough delta to relieve the overscroll and
+    // then scroll the sub scroll container upward.
+    for (let i = 0; i < 5; i++) {
+      await NativePanHandler.promiseNativePanEvent(
+        subScroller, 100, 100, 0, -NativePanHandler.delta * 4,
+        NativePanHandler.updatePhase);
+    }
+    await promiseApzFlushedRepaints();
+
+    ok(subScroller.scrollTop < subScroller.scrollTopMax,
+         "The second pan gesture should scroll the sub scroll container");
+
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+  }
+
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+</script>

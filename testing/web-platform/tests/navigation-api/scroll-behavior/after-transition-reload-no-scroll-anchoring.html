@@ -3,9 +3,9 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <body>
-<div id="buffer" style="height: 1000px; width: 200vw;"></div>
+<div id="buffer" style="height: 200vh; width: 200vw;"></div>
 <div id="frag"></div>
-<div style="height: 2000px; width: 200vw;"></div>
+<div style="height: 400vh; width: 200vw;"></div>
 <style>
   * {
     overflow-anchor: none;
@@ -41,7 +41,8 @@ promise_test(async t => {
   // Finishing should scroll to #frag, which is 10px up from the current location
   intercept_resolve();
   await reload_promises.finished;
-  assert_equals(window.scrollY, scrollY_after_buffer_remove - 1000 - 10);
+  const bufferY = (window.innerHeight * 200) / 100;
+  assert_equals(window.scrollY, scrollY_after_buffer_remove - bufferY - 10);
 }, "scroll: after-transition should work on a reload navigation");
 </script>
 </body>

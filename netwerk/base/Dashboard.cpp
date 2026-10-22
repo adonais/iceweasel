@@ -160,14 +160,14 @@ class ConnectionData : public nsITransportEventSink,
   void StartTimer(uint32_t aTimeout);
   void StopTimer();
 
-  explicit ConnectionData(Dashboard* target) { mDashboard = target; }
+  explicit ConnectionData(Dashboard* target) : mDashboard(target) {}
 
   nsCOMPtr<nsISocketTransport> mSocket;
   nsCOMPtr<nsIInputStream> mStreamIn;
   nsCOMPtr<nsITimer> mTimer;
   nsMainThreadPtrHandle<nsINetDashboardCallback> mCallback;
   nsIEventTarget* mEventTarget{nullptr};
-  Dashboard* mDashboard;
+  RefPtr<Dashboard> mDashboard;
 
   nsCString mHost;
   uint32_t mPort{0};

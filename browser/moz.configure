@@ -63,10 +63,14 @@ def nsis_installer_files(maintenance_service):
 set_config("NSIS_INSTALLER_FILES", nsis_installer_files)
 
 
-@depends(when=target_is_windows)
+@depends("MOZ_STUB_INSTALLER", when=target_is_windows)
 @imports(_from="mozbuild.nsis", _import="NSIS_BRANDING_FILES")
-def nsis_branding_files():
-    return list(NSIS_BRANDING_FILES)
+@imports(_from="mozbuild.nsis", _import="NSIS_STUB_BRANDING_FILES")
+def nsis_branding_files(stub_installer):
+    files = list(NSIS_BRANDING_FILES)
+    if stub_installer:
+        files += NSIS_STUB_BRANDING_FILES
+    return files
 
 
 set_config("NSIS_BRANDING_FILES", nsis_branding_files)

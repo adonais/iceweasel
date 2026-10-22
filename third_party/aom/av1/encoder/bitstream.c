@@ -2367,13 +2367,20 @@ static inline void write_frame_size(const AV1_COMMON *cm,
                                     struct aom_write_bit_buffer *wb) {
   const int coded_width = cm->superres_upscaled_width - 1;
   const int coded_height = cm->superres_upscaled_height - 1;
+  const SequenceHeader *seq_params = cm->seq_params;
 
   if (frame_size_override) {
-    const SequenceHeader *seq_params = cm->seq_params;
     int num_bits_width = seq_params->num_bits_width;
     int num_bits_height = seq_params->num_bits_height;
     aom_wb_write_literal(wb, coded_width, num_bits_width);
     aom_wb_write_literal(wb, coded_height, num_bits_height);
+  } else {
+    if (cm->superres_upscaled_width != seq_params->max_frame_width ||
+        cm->superres_upscaled_height != seq_params->max_frame_height) {
+      aom_internal_error(cm->error, AOM_CODEC_UNSUP_BITSTREAM,
+                         "Frame dimensions are different from the maximum "
+                         "values when frame_size_override_flag is 0");
+    }
   }
 
   write_superres_scale(cm, wb);
@@ -2977,10 +2984,7 @@ static inline void write_uncompressed_header_obu(
 
   int frame_size_override_flag = 0;
 
-  if (seq_params->reduced_still_picture_hdr) {
-    assert(cm->superres_upscaled_width == seq_params->max_frame_width &&
-           cm->superres_upscaled_height == seq_params->max_frame_height);
-  } else {
+  if (!seq_params->reduced_still_picture_hdr) {
     if (seq_params->frame_id_numbers_present_flag) {
       int frame_id_len = seq_params->frame_id_length;
       aom_wb_write_literal(wb, cm->current_frame_id, frame_id_len);
@@ -3055,117 +3059,109 @@ static inline void write_uncompressed_header_obu(
     }
   }
 
-  if (current_frame->frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     write_frame_size(cm, frame_size_override_flag, wb);
     assert(!av1_superres_scaled(cm) || !features->allow_intrabc);
     if (features->allow_screen_content_tools && !av1_superres_scaled(cm))
       aom_wb_write_bit(wb, features->allow_intrabc);
-  } else {
-    if (current_frame->frame_type == INTRA_ONLY_FRAME) {
-      write_frame_size(cm, frame_size_override_flag, wb);
-      assert(!av1_superres_scaled(cm) || !features->allow_intrabc);
-      if (features->allow_screen_content_tools && !av1_superres_scaled(cm))
-        aom_wb_write_bit(wb, features->allow_intrabc);
-    } else if (current_frame->frame_type == INTER_FRAME ||
-               frame_is_sframe(cm)) {
-      MV_REFERENCE_FRAME ref_frame;
+  } else if (current_frame->frame_type == INTER_FRAME || frame_is_sframe(cm)) {
+    MV_REFERENCE_FRAME ref_frame;
 
-      // NOTE: Error resilient mode turns off frame_refs_short_signaling
-      //       automatically.
+    // NOTE: Error resilient mode turns off frame_refs_short_signaling
+    //       automatically.
 #define FRAME_REFS_SHORT_SIGNALING 0
 #if FRAME_REFS_SHORT_SIGNALING
-      current_frame->frame_refs_short_signaling =
-          seq_params->order_hint_info.enable_order_hint;
+    current_frame->frame_refs_short_signaling =
+        seq_params->order_hint_info.enable_order_hint;
 #endif  // FRAME_REFS_SHORT_SIGNALING
 
-      if (current_frame->frame_refs_short_signaling) {
-        //    In rtc case when cpi->sf.rt_sf.enable_ref_short_signaling is true,
-        //    we turn on frame_refs_short_signaling when the current frame and
-        //    golden frame are in the same order_hint group, and their relative
-        //    distance is <= 64 (in order to be decodable).
+    if (current_frame->frame_refs_short_signaling) {
+      //    In rtc case when cpi->sf.rt_sf.enable_ref_short_signaling is true,
+      //    we turn on frame_refs_short_signaling when the current frame and
+      //    golden frame are in the same order_hint group, and their relative
+      //    distance is <= 64 (in order to be decodable).
 
-        //    For other cases, an example solution for encoder-side
-        //    implementation on frame_refs_short_signaling is also provided in
-        //    this function, where frame_refs_short_signaling is only turned on
-        //    when the encoder side decision on ref frames is identical to that
-        //    at the decoder side.
+      //    For other cases, an example solution for encoder-side
+      //    implementation on frame_refs_short_signaling is also provided in
+      //    this function, where frame_refs_short_signaling is only turned on
+      //    when the encoder side decision on ref frames is identical to that
+      //    at the decoder side.
 
-        current_frame->frame_refs_short_signaling =
-            check_frame_refs_short_signaling(
-                cm, cpi->sf.rt_sf.enable_ref_short_signaling);
-      }
+      current_frame->frame_refs_short_signaling =
+          check_frame_refs_short_signaling(
+              cm, cpi->sf.rt_sf.enable_ref_short_signaling);
+    }
 
-      if (seq_params->order_hint_info.enable_order_hint)
-        aom_wb_write_bit(wb, current_frame->frame_refs_short_signaling);
+    if (seq_params->order_hint_info.enable_order_hint)
+      aom_wb_write_bit(wb, current_frame->frame_refs_short_signaling);
 
-      if (current_frame->frame_refs_short_signaling) {
-        const int lst_ref = get_ref_frame_map_idx(cm, LAST_FRAME);
-        aom_wb_write_literal(wb, lst_ref, REF_FRAMES_LOG2);
+    if (current_frame->frame_refs_short_signaling) {
+      const int lst_ref = get_ref_frame_map_idx(cm, LAST_FRAME);
+      aom_wb_write_literal(wb, lst_ref, REF_FRAMES_LOG2);
 
-        const int gld_ref = get_ref_frame_map_idx(cm, GOLDEN_FRAME);
-        aom_wb_write_literal(wb, gld_ref, REF_FRAMES_LOG2);
-      }
-      int first_ref_map_idx = INVALID_IDX;
-      if (cpi->ppi->rtc_ref.set_ref_frame_config) {
-        for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-          if (cpi->ppi->rtc_ref.reference[ref_frame - 1] == 1) {
-            first_ref_map_idx = cpi->ppi->rtc_ref.ref_idx[ref_frame - 1];
-            break;
-          }
-        }
-      }
+      const int gld_ref = get_ref_frame_map_idx(cm, GOLDEN_FRAME);
+      aom_wb_write_literal(wb, gld_ref, REF_FRAMES_LOG2);
+    }
+    int first_ref_map_idx = INVALID_IDX;
+    if (cpi->ppi->rtc_ref.set_ref_frame_config) {
       for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-        assert(get_ref_frame_map_idx(cm, ref_frame) != INVALID_IDX);
-        if (!current_frame->frame_refs_short_signaling) {
-          if (cpi->ppi->rtc_ref.set_ref_frame_config &&
-              first_ref_map_idx != INVALID_IDX &&
-              cpi->svc.number_spatial_layers == 1 &&
-              !seq_params->order_hint_info.enable_order_hint) {
-            // For the usage of set_ref_frame_config:
-            // for any reference not used set their ref_map_idx
-            // to the first used reference.
-            const int map_idx = cpi->ppi->rtc_ref.reference[ref_frame - 1]
-                                    ? get_ref_frame_map_idx(cm, ref_frame)
-                                    : first_ref_map_idx;
-            aom_wb_write_literal(wb, map_idx, REF_FRAMES_LOG2);
-          } else {
-            aom_wb_write_literal(wb, get_ref_frame_map_idx(cm, ref_frame),
-                                 REF_FRAMES_LOG2);
-          }
-        }
-        if (seq_params->frame_id_numbers_present_flag) {
-          int i = get_ref_frame_map_idx(cm, ref_frame);
-          int frame_id_len = seq_params->frame_id_length;
-          int diff_len = seq_params->delta_frame_id_length;
-          int delta_frame_id_minus_1 =
-              ((cm->current_frame_id - cm->ref_frame_id[i] +
-                (1 << frame_id_len)) %
-               (1 << frame_id_len)) -
-              1;
-          if (delta_frame_id_minus_1 < 0 ||
-              delta_frame_id_minus_1 >= (1 << diff_len)) {
-            aom_internal_error(cm->error, AOM_CODEC_ERROR,
-                               "Invalid delta_frame_id_minus_1");
-          }
-          aom_wb_write_literal(wb, delta_frame_id_minus_1, diff_len);
+        if (cpi->ppi->rtc_ref.reference[ref_frame - 1] == 1) {
+          first_ref_map_idx = cpi->ppi->rtc_ref.ref_idx[ref_frame - 1];
+          break;
         }
       }
-
-      if (!features->error_resilient_mode && frame_size_override_flag) {
-        write_frame_size_with_refs(cm, wb);
-      } else {
-        write_frame_size(cm, frame_size_override_flag, wb);
+    }
+    for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+      assert(get_ref_frame_map_idx(cm, ref_frame) != INVALID_IDX);
+      if (!current_frame->frame_refs_short_signaling) {
+        if (cpi->ppi->rtc_ref.set_ref_frame_config &&
+            first_ref_map_idx != INVALID_IDX &&
+            cpi->svc.number_spatial_layers == 1 &&
+            !seq_params->order_hint_info.enable_order_hint) {
+          // For the usage of set_ref_frame_config:
+          // for any reference not used set their ref_map_idx
+          // to the first used reference.
+          const int map_idx = cpi->ppi->rtc_ref.reference[ref_frame - 1]
+                                  ? get_ref_frame_map_idx(cm, ref_frame)
+                                  : first_ref_map_idx;
+          aom_wb_write_literal(wb, map_idx, REF_FRAMES_LOG2);
+        } else {
+          aom_wb_write_literal(wb, get_ref_frame_map_idx(cm, ref_frame),
+                               REF_FRAMES_LOG2);
+        }
       }
-
-      if (!features->cur_frame_force_integer_mv)
-        aom_wb_write_bit(wb, features->allow_high_precision_mv);
-      write_frame_interp_filter(features->interp_filter, wb);
-      aom_wb_write_bit(wb, features->switchable_motion_mode);
-      if (frame_might_allow_ref_frame_mvs(cm)) {
-        aom_wb_write_bit(wb, features->allow_ref_frame_mvs);
-      } else {
-        assert(features->allow_ref_frame_mvs == 0);
+      if (seq_params->frame_id_numbers_present_flag) {
+        int i = get_ref_frame_map_idx(cm, ref_frame);
+        int frame_id_len = seq_params->frame_id_length;
+        int diff_len = seq_params->delta_frame_id_length;
+        int delta_frame_id_minus_1 =
+            ((cm->current_frame_id - cm->ref_frame_id[i] +
+              (1 << frame_id_len)) %
+             (1 << frame_id_len)) -
+            1;
+        if (delta_frame_id_minus_1 < 0 ||
+            delta_frame_id_minus_1 >= (1 << diff_len)) {
+          aom_internal_error(cm->error, AOM_CODEC_ERROR,
+                             "Invalid delta_frame_id_minus_1");
+        }
+        aom_wb_write_literal(wb, delta_frame_id_minus_1, diff_len);
       }
+    }
+
+    if (!features->error_resilient_mode && frame_size_override_flag) {
+      write_frame_size_with_refs(cm, wb);
+    } else {
+      write_frame_size(cm, frame_size_override_flag, wb);
+    }
+
+    if (!features->cur_frame_force_integer_mv)
+      aom_wb_write_bit(wb, features->allow_high_precision_mv);
+    write_frame_interp_filter(features->interp_filter, wb);
+    aom_wb_write_bit(wb, features->switchable_motion_mode);
+    if (frame_might_allow_ref_frame_mvs(cm)) {
+      aom_wb_write_bit(wb, features->allow_ref_frame_mvs);
+    } else {
+      assert(features->allow_ref_frame_mvs == 0);
     }
   }
 

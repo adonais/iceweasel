@@ -33,80 +33,60 @@ rtc_library("capture_mixer") {
   deps = [ "../../../rtc_base:checks" ]
 }
 
-rtc_library("audio_content_analyzer_unittest") {
-  testonly = true
-  sources = [ "audio_content_analyzer_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+if (rtc_include_tests) {
+  rtc_cc_test("audio_content_analyzer_unittest") {
+    sources = [ "audio_content_analyzer_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("capture_mixer_unittest") {
-  testonly = true
-  sources = [ "capture_mixer_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+  rtc_cc_test("capture_mixer_unittest") {
+    sources = [ "capture_mixer_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("channel_content_remixer_unittest") {
-  testonly = true
-  sources = [ "channel_content_remixer_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+  rtc_cc_test("channel_content_remixer_unittest") {
+    sources = [ "channel_content_remixer_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("dc_levels_estimator_unittest") {
-  testonly = true
-  sources = [ "dc_levels_estimator_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+  rtc_cc_test("dc_levels_estimator_unittest") {
+    sources = [ "dc_levels_estimator_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("energy_estimator_unittest") {
-  testonly = true
-  sources = [ "energy_estimator_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+  rtc_cc_test("energy_estimator_unittest") {
+    sources = [ "energy_estimator_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("remixing_logic_unittest") {
-  testonly = true
-  sources = [ "remixing_logic_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
+  rtc_cc_test("remixing_logic_unittest") {
+    sources = [ "remixing_logic_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 
-rtc_library("saturation_estimator_unittest") {
-  testonly = true
-  sources = [ "saturation_estimator_unittest.cc" ]
-  deps = [
-    ":capture_mixer",
-    "../../../test:test_support",
-  ]
-}
-
-rtc_library("capture_mixer_unittests") {
-  testonly = true
-
-  sources = []
-  deps = [
-    ":audio_content_analyzer_unittest",
-    ":capture_mixer_unittest",
-    ":channel_content_remixer_unittest",
-    ":dc_levels_estimator_unittest",
-    ":energy_estimator_unittest",
-    ":remixing_logic_unittest",
-    ":saturation_estimator_unittest",
-  ]
+  rtc_cc_test("saturation_estimator_unittest") {
+    sources = [ "saturation_estimator_unittest.cc" ]
+    deps = [
+      ":capture_mixer",
+      "../../../test:test_support",
+    ]
+  }
 }

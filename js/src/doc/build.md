@@ -5,9 +5,9 @@ right build tools for your operating system. This will also help you get a copy
 of the source code. You do not need to run the “mach build” command just yet
 though.**
 
-- {ref}`Building Firefox On Linux`
-- {ref}`Building Firefox On Windows`
-- {ref}`Building Firefox On MacOS`
+- {doc}`/setup/linux_build`
+- {doc}`/setup/windows_build`
+- {doc}`/setup/macos_build`
 
 This guide shows you how to build SpiderMonkey using `mach`, which is
 Mozilla's multipurpose build tool. This replaces old guides that advised

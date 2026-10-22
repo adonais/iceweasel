@@ -8,6 +8,10 @@ const AC_L10N = new Localization(
 const CC_URL =
   "https://example.org/browser/browser/extensions/formautofill/test/browser/creditCard/autocomplete_creditcard_basic.html";
 
+const DELETE_TOOLTIP = AC_L10N.formatValueSync(
+  "autocomplete-delete-payment-method"
+);
+
 add_setup(async function setup_storage() {
   await setStorage(TEST_CREDIT_CARD_1);
 });
@@ -36,7 +40,7 @@ add_task(async function test_no_secondary_action_when_pref_disabled() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_flyout_when_pref_enabled() {
+add_task(async function test_trash_button_when_pref_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
@@ -47,20 +51,27 @@ add_task(async function test_flyout_when_pref_enabled() {
       );
       is(
         rowItem.actions.secondary.type,
-        "menupopup",
-        "Payment rows show a flyout secondary action when the pref is on"
+        "delete",
+        "Payment rows show a delete secondary action when the pref is on"
       );
-      is(
-        rowItem.actions.secondary.actions.length,
-        2,
-        "The flyout has an edit and a delete item"
+      ok(
+        !rowItem.actions.secondary.actions,
+        "The trash is a single action, not a flyout"
       );
+
+      const { label, tooltip } = rowItem.actions.secondary;
+      is(tooltip, DELETE_TOOLTIP, "The tooltip stays short and omits the row");
+      ok(
+        label.includes(TEST_CREDIT_CARD_1["cc-number"].slice(-4)),
+        `The accessible name names the row it belongs to, got "${label}"`
+      );
+
       const button = rowItem.shadowRoot.querySelector(
         "moz-button.secondary-action"
       );
       ok(
-        button.iconSrc.endsWith("more.svg"),
-        "The secondary action shows the more icon"
+        button.iconSrc.endsWith("delete.svg"),
+        "The secondary action shows the trash icon"
       );
       await closePopup(browser);
     }
@@ -76,34 +87,26 @@ async function selectFirstRow(browser, item) {
   );
 }
 
-async function openFlyout(rowItem, label) {
+// The Lit render lags the row's selected attribute, so the button can still be
+// hidden when the row is already active. Wait it out before clicking, or the
+// click falls through to the row and fills the form instead.
+async function clickTrashButton(rowItem) {
   const button = rowItem.shadowRoot.querySelector(
     "moz-button.secondary-action"
   );
+
+  await EventUtils.promiseElementReadyForUserInput(button, window, info);
   await TestUtils.waitForCondition(
     () => button.checkVisibility({ checkVisibilityCSS: true }),
-    "Wait for the secondary action button to be visible"
+    "Wait for the trash button to be visible"
   );
-  EventUtils.synthesizeMouseAtCenter(button, {});
-  const menupopup = await TestUtils.waitForCondition(
-    () =>
-      [...document.querySelectorAll("menupopup")].find(m =>
-        [...m.querySelectorAll("menuitem")].some(
-          mi => mi.getAttribute("label") === label
-        )
-      ),
-    "Wait for the flyout menu to open"
-  );
-  if (menupopup.state != "open") {
-    await BrowserTestUtils.waitForEvent(menupopup, "popupshown");
-  }
-  return menupopup;
+  EventUtils.synthesizeMouseAtCenter(button, {}, window);
 }
 
-async function activateDelete(browser, { verified }) {
-  const { FormAutofillUtils } = ChromeUtils.importESModule(
-    "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
-  );
+// Opens the dropdown on a selected row with device sign in stubbed out, so the
+// tests below never depend on a real OS prompt. `verifyArgs` records what the
+// parent asked for, and `restore` puts the real implementation back.
+async function openDeleteTarget(browser, { verified = true } = {}) {
   const originalVerify = FormAutofillUtils.verifyUserOSAuth;
   const verifyArgs = [];
   FormAutofillUtils.verifyUserOSAuth = (...args) => {
@@ -116,20 +119,21 @@ async function activateDelete(browser, { verified }) {
   const rowItem = item.querySelector("autocomplete-row-item");
   await selectFirstRow(browser, item);
 
-  const deleteLabel = rowItem.actions.secondary.actions[1].label;
-  const menupopup = await openFlyout(rowItem, deleteLabel);
-  const menuitem = [...menupopup.querySelectorAll("menuitem")].find(
-    mi => mi.getAttribute("label") === deleteLabel
-  );
-
   return {
-    menupopup,
-    menuitem,
+    rowItem,
     verifyArgs,
     restore: () => {
       FormAutofillUtils.verifyUserOSAuth = originalVerify;
     },
   };
+}
+
+async function acceptRemoval(rowItem) {
+  await withStorageChange("remove", async () => {
+    const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
+    await clickTrashButton(rowItem);
+    await dialogClosed;
+  });
 }
 
 add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
@@ -139,10 +143,9 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
     async browser => {
-      const { menupopup, menuitem, verifyArgs, restore } = await activateDelete(
-        browser,
-        { verified: true }
-      );
+      const { rowItem, verifyArgs, restore } = await openDeleteTarget(browser, {
+        verified: true,
+      });
 
       const dialogClosed = BrowserTestUtils.promiseAlertDialog(
         null,
@@ -169,12 +172,8 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
         }
       );
 
-      menupopup.activateItem(menuitem);
+      await clickTrashButton(rowItem);
       await dialogClosed;
-      await TestUtils.waitForCondition(
-        () => !menupopup.isConnected,
-        "Wait for the flyout to be torn down"
-      );
       await TestUtils.waitForCondition(
         () => browser.autoCompletePopup.popupOpen,
         "Wait for the dropdown to come back after the confirmation"
@@ -188,6 +187,11 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
         verifyArgs[0][0],
         FormAutofill.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF,
         "Device sign in is gated on the payment methods reauth pref"
+      );
+      is(
+        verifyArgs[0][4],
+        false,
+        "Removal does not let the OS key store generate a key it never reads"
       );
       ok(sawDialog, "The confirmation dialog was shown");
       ok(
@@ -220,12 +224,11 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
     async browser => {
-      const { menupopup, menuitem, verifyArgs, restore } = await activateDelete(
-        browser,
-        { verified: false }
-      );
+      const { rowItem, verifyArgs, restore } = await openDeleteTarget(browser, {
+        verified: false,
+      });
 
-      menupopup.activateItem(menuitem);
+      await clickTrashButton(rowItem);
       await TestUtils.waitForCondition(
         () => verifyArgs.length,
         "Wait for device sign in to be requested"
@@ -236,11 +239,167 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
         !sawDialog,
         "No confirmation is shown when device sign in is declined"
       );
+      is(
+        (await getCreditCards()).length,
+        1,
+        "Declining device sign in leaves the payment method in place"
+      );
 
       restore();
       await closePopup(browser);
     }
   );
   Services.obs.removeObserver(observer, "common-dialog-loaded");
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_delete_removes_the_payment_method() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_CREDIT_CARD_1, TEST_CREDIT_CARD_2);
+  const before = await getCreditCards();
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CC_URL },
+    async browser => {
+      const { rowItem, restore } = await openDeleteTarget(browser);
+      const rowCount = getDisplayedPopupItems(browser).length;
+
+      await acceptRemoval(rowItem);
+      restore();
+
+      const remaining = await getCreditCards();
+      is(
+        remaining.length,
+        1,
+        "Confirming the removal deleted one payment method"
+      );
+      ok(
+        before.some(card => !remaining.some(kept => kept.guid == card.guid)),
+        "Exactly one of the stored payment methods is gone"
+      );
+
+      await TestUtils.waitForCondition(
+        () => browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to come back after the removal"
+      );
+      await TestUtils.waitForCondition(
+        () => getDisplayedPopupItems(browser).length == rowCount - 1,
+        "Wait for the restored dropdown to drop the removed row"
+      );
+
+      await closePopup(browser);
+    }
+  );
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(
+  async function test_deleting_the_last_payment_method_closes_the_dropdown() {
+    await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+    await removeAllRecords();
+    await setStorage(TEST_CREDIT_CARD_1);
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: CC_URL },
+      async browser => {
+        const { rowItem, restore } = await openDeleteTarget(browser);
+
+        await acceptRemoval(rowItem);
+        restore();
+
+        is(
+          (await getCreditCards()).length,
+          0,
+          "The last payment method was removed from storage"
+        );
+        await TestUtils.waitForCondition(
+          () => !browser.autoCompletePopup.popupOpen,
+          "Wait for the dropdown to be torn down"
+        );
+      }
+    );
+    await removeAllRecords();
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+add_task(async function test_delete_refuses_an_unknown_guid() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_CREDIT_CARD_1);
+
+  const originalVerify = FormAutofillUtils.verifyUserOSAuth;
+  FormAutofillUtils.verifyUserOSAuth = () => Promise.resolve(true);
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CC_URL },
+    async browser => {
+      await openPopupOn(browser, "#cc-number");
+
+      const actor =
+        browser.browsingContext.currentWindowGlobal.getActor("FormAutofill");
+      const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
+      await actor.onAutoCompleteEntrySelected("FormAutofill:DeleteCreditCard", {
+        guid: "no-such-guid",
+      });
+      await dialogClosed;
+
+      is(
+        (await getCreditCards()).length,
+        1,
+        "A guid that names no stored payment method removes nothing"
+      );
+
+      await TestUtils.waitForCondition(
+        () => browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to come back after the refused removal"
+      );
+      await closePopup(browser);
+    }
+  );
+  FormAutofillUtils.verifyUserOSAuth = originalVerify;
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+// Removal reads no card number, so a card the current key can no longer open
+// must still be removable -- which is when a user most wants to be rid of it.
+// A decrypt that always fails stands in for that card: rotating the real store
+// label would outlive this file and break the next one to save a card.
+add_task(async function test_delete_removes_a_card_that_cannot_be_decrypted() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  await removeAllRecords();
+  await setStorage(TEST_CREDIT_CARD_1);
+
+  const originalDecrypt = OSKeyStore.decrypt;
+  let decryptCalls = 0;
+  OSKeyStore.decrypt = () => {
+    decryptCalls++;
+    return Promise.reject(Components.Exception("", Cr.NS_ERROR_FAILURE));
+  };
+
+  try {
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: CC_URL },
+      async browser => {
+        const { rowItem, restore } = await openDeleteTarget(browser);
+
+        await acceptRemoval(rowItem);
+        restore();
+
+        is(
+          (await getCreditCards()).length,
+          0,
+          "A payment method whose number cannot be decrypted is still removed"
+        );
+        is(decryptCalls, 0, "The removal never reached for the card number");
+      }
+    );
+  } finally {
+    OSKeyStore.decrypt = originalDecrypt;
+  }
+  await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });

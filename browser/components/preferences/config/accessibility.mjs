@@ -114,6 +114,14 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "keyboardCustomkeysLink",
 });
+Preferences.addSetting({
+  id: "addressBarNavigationLink",
+  onUserClick: e => {
+    e.preventDefault();
+    window.gotoPref("paneSearch-addressBarNavigation");
+  },
+});
+Preferences.addSetting({ id: "keyboardLinksBoxGroup" });
 
 /**
  * Helper object for managing the various zoom related settings.
@@ -604,12 +612,26 @@ SettingGroupManager.registerGroups({
         l10nId: "browsing-gtk-use-non-overlay-scrollbars",
       },
       {
-        id: "keyboardCustomkeysLink",
-        l10nId: "settings-keyboard-shortcuts-customkeys-link",
-        control: "moz-box-link",
-        controlAttrs: {
-          href: "about:keyboard",
-        },
+        id: "keyboardLinksBoxGroup",
+        control: "moz-box-group",
+        items: [
+          {
+            id: "keyboardCustomkeysLink",
+            l10nId: "settings-keyboard-shortcuts-customkeys-link",
+            control: "moz-box-link",
+            controlAttrs: {
+              href: "about:keyboard",
+            },
+          },
+          {
+            id: "addressBarNavigationLink",
+            l10nId: "settings-keyboard-shortcuts-addressbar-link",
+            control: "moz-box-link",
+            controlAttrs: {
+              href: "about:preferences#search-addressBarNavigation",
+            },
+          },
+        ],
       },
     ],
   },

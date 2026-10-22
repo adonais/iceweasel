@@ -1514,7 +1514,7 @@ class DatarateTestSVC
                                          1, 0, 400);
     cfg_.g_w = 640;
     cfg_.g_h = 480;
-    const int bitrate_array[2] = { 50, 70 };
+    const int bitrate_array[2] = { 50, 60 };
     cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
     ResetModel();
     SetTargetBitratesFor1SL3TL();

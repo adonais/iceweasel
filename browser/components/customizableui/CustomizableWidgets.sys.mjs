@@ -503,10 +503,23 @@ if (
       node.setAttribute("id", "share-tab-button");
       aDocument.l10n.setAttributes(node, "toolbar-button-share-tab");
 
-      // share-tab-url-item is needed so BrowserUsageTelemetry can find the
-      // node carrying browsersToShare via .closest(".share-tab-url-item").
-      node.classList.add("toolbarbutton-1", "share-tab-url-item");
+      node.classList.add("toolbarbutton-1");
 
+      if (AppConstants.platform == "macosx") {
+        node.classList.add("share-toolbar-picker");
+        node.addEventListener("command", () => {
+          let browser = aDocument.defaultView.gBrowser.selectedBrowser;
+          node.contextBrowserToShare = Cu.getWeakReference(browser);
+          node.browsersToShare = null;
+          lazy.SharingUtils.shareOnMacPicker(node, { injectQR: true });
+        });
+        return node;
+      }
+
+      // share-tab-url-item lets BrowserUsageTelemetry find the node carrying
+      // browsersToShare via .closest(".share-tab-url-item") when a
+      // .share-copy-link item inside the popup is clicked.
+      node.classList.add("share-tab-url-item");
       node.setAttribute("type", "menu");
 
       let popup = aDocument.createXULElement("menupopup");
@@ -809,7 +822,7 @@ if (Services.prefs.getBoolPref("browser.tabs.groups.alternateMenu", false)) {
 
 CustomizableWidgets.push({
   id: "firefox-view-button",
-  l10nId: "toolbar-button-firefox-view-2",
+  l10nId: "toolbar-button-firefox-view-3",
   onCreated(node) {
     node.setAttribute("role", "button");
     node.setAttribute("aria-pressed", "false");

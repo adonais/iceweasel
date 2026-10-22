@@ -1093,7 +1093,6 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   if (!defaultAnchor) {
     return {};
   }
-  const auto compensatingForScroll = aReferenceData.CompensatingForScrollAxes();
   // HACK(dshin, Bug 1999954): This is a workaround. While we try to lay out
   // against the scroll-ignored position of an anchor, chain anchored frames
   // end up containing scroll offset in their position. For now, walk the chain
@@ -1120,6 +1119,8 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   }();
 
   const nsPoint scrollCompensatedDelta = [&]() -> nsPoint {
+    const auto compensatingForScroll =
+        aReferenceData.CompensatingForScrollAxes();
     if (compensatingForScroll.isEmpty()) {
       return {};
     }
@@ -1170,11 +1171,7 @@ static void UpdateScrollShift(
   // but we don't want to trigger a full reflow as a response to scrolling, and
   // it seems to match other browsers and test expectations, see bug 1950251.
   aPositioned->SetPosition(aPositioned->GetPosition() - delta);
-  aPositioned->UpdateOverflow();
-  // Ensure that we propagate the overflow change up
-  // the ancestor chain.
-  // TODO: I think we can just use aPositioned, TRANSFORM_CHANGED and remove the
-  // explicit UpdateOverflow() call above.
+  // Moving aPositioned changes only its parent's overflow areas, not its own.
   aOct.AddFrame(aPositioned->GetParent(),
                 OverflowChangedTracker::CHILDREN_CHANGED);
 }

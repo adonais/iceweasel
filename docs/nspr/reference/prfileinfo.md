@@ -1,7 +1,7 @@
 # PRFileInfo
 
-File information structure used with {ref}`PR_GetFileInfo` and
-{ref}`PR_GetOpenFileInfo`.
+File information structure used with {doc}`pr_getfileinfo` and
+{doc}`pr_getopenfileinfo`.
 
 ## Syntax
 
@@ -24,7 +24,7 @@ The structure has the following fields:
 
 `type`
 
-: Type of file. See {ref}`PRFileType`.
+: Type of file. See {doc}`prfiletype`.
 
 `size`
 
@@ -32,16 +32,16 @@ The structure has the following fields:
 
 `creationTime`
 
-: Creation time per definition of {ref}`PRTime`. See
+: Creation time per definition of {doc}`prtime`. See
   {searchfox}`prtime.h <nsprpub/pr/include/prtime.h>`.
 
 `modifyTime`
 
-: Last modification time per definition of {ref}`PRTime`. See
+: Last modification time per definition of {doc}`prtime`. See
   {searchfox}`prtime.h <nsprpub/pr/include/prtime.h>`.
 
 ### Description
 
-The {ref}`PRFileInfo` structure provides information about a file, a
+The {doc}`prfileinfo` structure provides information about a file, a
 directory, or some other kind of file system object, as specified by the
 `type` field.

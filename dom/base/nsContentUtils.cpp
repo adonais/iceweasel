@@ -124,6 +124,7 @@
 #ifdef FUZZING
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_test.h"
@@ -4769,7 +4770,7 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
           appendedForm = true;
         } else {
           KeyAppendString("fn"_ns, aKey);
-          int32_t index = htmlForms->IndexOf(formElement, false);
+          int32_t index = htmlForms->IndexOf(formElement);
           if (index <= -1) {
             //
             // XXX HACK this uses some state that was dumped into the document
@@ -4811,7 +4812,7 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
           generatedUniqueKey = true;
         } else {
           KeyAppendString("dn"_ns, aKey);
-          int32_t index = htmlFormControls->IndexOf(aContent, true);
+          int32_t index = htmlFormControls->IndexOf(aContent);
           if (index > -1) {
             KeyAppendInt(index, aKey);
             generatedUniqueKey = true;
@@ -7641,7 +7642,9 @@ void nsContentUtils::TriggerLinkClick(
     nsAutoString fileName;
     if ((!aContent->IsHTMLElement(nsGkAtoms::a) &&
          !aContent->IsHTMLElement(nsGkAtoms::area) &&
-         !aContent->IsSVGElement(nsGkAtoms::a)) ||
+         !aContent->IsSVGElement(nsGkAtoms::a) &&
+         !(aContent->IsMathMLElement(nsGkAtoms::a) &&
+           StaticPrefs::mathml_a_element_enabled())) ||
         !aContent->AsElement()->GetAttr(nsGkAtoms::download, fileName) ||
         NS_FAILED(aContent->NodePrincipal()->CheckMayLoad(aLinkURI, true))) {
       fileName.SetIsVoid(true);  // No actionable download attribute was found.
@@ -10237,7 +10240,11 @@ Maybe<BigBuffer> nsContentUtils::GetSurfaceData(DataSourceSurface& aSurface,
     return Nothing();
   }
 
-  BigBuffer surfaceData(maxBufLen);
+  BigBuffer surfaceData = BigBuffer::TryAlloc(maxBufLen);
+  if (surfaceData.Size() != maxBufLen) {
+    aSurface.Unmap();
+    return Nothing();
+  }
   memcpy(surfaceData.Data(), map.mData, bufLen);
   memset(surfaceData.Data() + bufLen, 0, maxBufLen - bufLen);
 
@@ -10841,7 +10848,9 @@ bool nsContentUtils::HasRelNoReferrer(const Element& aElement) {
   // rel=noreferrer is only supported in <a>, <area>, and <form>
   if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
                                     nsGkAtoms::form) &&
-      !aElement.IsSVGElement(nsGkAtoms::a)) {
+      !aElement.IsSVGElement(nsGkAtoms::a) &&
+      !(aElement.IsMathMLElement(nsGkAtoms::a) &&
+        StaticPrefs::mathml_a_element_enabled())) {
     return false;
   }
 
@@ -13020,11 +13029,7 @@ static constexpr uint64_t kIdBits = kIdTotalBits - kIdProcessBits;
 
 /* static */
 uint64_t nsContentUtils::GenerateProcessSpecificId(uint64_t aId) {
-  uint64_t processId = 0;
-  if (XRE_IsContentProcess()) {
-    ContentChild* cc = ContentChild::GetSingleton();
-    processId = cc->GetID();
-  }
+  uint64_t processId = XRE_GetChildID();
 
   MOZ_RELEASE_ASSERT(processId < (uint64_t(1) << kIdProcessBits));
   uint64_t processBits = processId & ((uint64_t(1) << kIdProcessBits) - 1);
@@ -13037,9 +13042,15 @@ uint64_t nsContentUtils::GenerateProcessSpecificId(uint64_t aId) {
 }
 
 /* static */
-std::tuple<uint64_t, uint64_t> nsContentUtils::SplitProcessSpecificId(
+std::tuple<GeckoChildID, uint64_t> nsContentUtils::SplitProcessSpecificId(
     uint64_t aId) {
-  return {aId >> kIdBits, aId & ((uint64_t(1) << kIdBits) - 1)};
+  return {GeckoChildID(aId >> kIdBits), aId & ((uint64_t(1) << kIdBits) - 1)};
+}
+
+/* static */
+bool nsContentUtils::IsProcessSpecificIdFrom(uint64_t aId,
+                                             GeckoChildID aChildID) {
+  return (aId >> kIdBits) == static_cast<uint64_t>(aChildID);
 }
 
 // Next process-local Tab ID.

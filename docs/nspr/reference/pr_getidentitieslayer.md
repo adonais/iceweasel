@@ -19,7 +19,7 @@ The function has the following parameters:
 
 `stack`
 
-: A pointer to a {ref}`PRFileDesc` object that is a layer in a stack of
+: A pointer to a {doc}`prfiledesc` object that is a layer in a stack of
   layers.
 
 `id`

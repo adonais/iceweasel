@@ -22,9 +22,6 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "mtg capturestream"
 support-files = [

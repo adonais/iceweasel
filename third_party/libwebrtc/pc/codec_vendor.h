@@ -11,6 +11,7 @@
 #ifndef PC_CODEC_VENDOR_H_
 #define PC_CODEC_VENDOR_H_
 
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -75,7 +76,7 @@ class CodecVendor {
       RtpTransceiverDirection offer_rtd,
       RtpTransceiverDirection answer_rtd,
       const ContentInfo* current_content,
-      std::vector<Codec> codecs_from_offer,
+      std::span<const Codec> codecs_from_offer,
       PayloadTypeSuggester& pt_suggester);
 
   // Function exposed for issues.webrtc.org/412904801

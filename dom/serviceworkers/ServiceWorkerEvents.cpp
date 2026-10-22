@@ -1122,6 +1122,11 @@ uint8_t* PushMessageData::GetContentsCopy() {
 // This partially implements the parsing algorithm for a simple detection:
 // https://w3c.github.io/push-api/#declarative-push-message
 void PushMessageData::SetUseCounterIfDeclarative(JSContext* aCx) {
+  if (StaticPrefs::dom_push_declarative_enabled()) {
+    // If declarative push is actually enabled, we record the telemetry in the
+    // parent process when the push is received (dom/push/Declarative.cpp).
+    return;
+  }
   // NOTE(krosylight): This could be in the parent process but:
   // 1. The desktop and Android implementations use different modules for push.
   //    The common path starts with PushNotifier which is not a great place for

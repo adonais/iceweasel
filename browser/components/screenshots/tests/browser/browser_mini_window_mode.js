@@ -64,14 +64,15 @@ add_task(async function test_mini_window_mode_shows_single_pop_button() {
         "The overlay was initialized with mini-window mode"
       );
 
-      helper.assertPanelNotVisible();
-
       let buttonIds = await getOverlayButtonIds(browser);
       Assert.deepEqual(
         buttonIds,
         ["mini-window-cancel-button", "reselect-button", "pop"],
         "mini-window mode renders dismiss, reselect and pop buttons"
       );
+
+      await helper.waitForPanel();
+      helper.assertPanelVisible();
 
       ScreenshotsUtils.exit(browser);
 
@@ -120,7 +121,8 @@ add_task(async function test_screenshots_button_takes_over_mini_window() {
         mode: SELECTION_MODES.MINI_WINDOW,
       });
       await waitForOverlayMode(helper, browser, SELECTION_MODES.MINI_WINDOW);
-      helper.assertPanelNotVisible();
+      await helper.waitForPanel();
+      helper.assertPanelVisible();
 
       // The Screenshots toolbar button doesn't own this overlay, so it takes it
       // over instead of toggling it shut the way a second click would.
@@ -170,9 +172,10 @@ add_task(async function test_mini_window_button_takes_over_screenshots() {
         "the overlay rebuilt with the mini-window buttons"
       );
 
-      // Mini-window mode has no buttons panel, so the one screenshots mode left
-      // behind has to be gone.
-      helper.assertPanelNotVisible();
+      // The panel stays, but it has to have been rebuilt as the mini window
+      // chooser rather than left showing the save buttons.
+      await helper.waitForPanel();
+      helper.assertPanelVisible();
 
       ScreenshotsUtils.exit(browser);
       await TestUtils.waitForCondition(
@@ -202,6 +205,64 @@ add_task(async function test_mini_window_entry_point_toggles_closed() {
       await TestUtils.waitForCondition(
         async () => !(await helper.isOverlayInitialized()),
         "Waiting for the overlay to be toggled shut"
+      );
+    }
+  );
+});
+
+/**
+ * Click a button in the content overlay by id.
+ *
+ * @param {XULBrowserElement} browser
+ * @param {string} id
+ */
+async function clickOverlayButton(browser, id) {
+  return SpecialPowers.spawn(browser, [id], buttonId => {
+    let screenshotsChild = content.windowGlobalChild.getActor(
+      "ScreenshotsComponent"
+    );
+    screenshotsChild.overlay.getElementById(buttonId).click();
+  });
+}
+
+add_task(async function test_mini_window_cancel_button_dismisses_overlay() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_PAGE },
+    async browser => {
+      let helper = new ScreenshotsHelper(browser);
+      triggerMiniWindowEntryPoint(browser);
+      await waitForOverlayMode(helper, browser, SELECTION_MODES.MINI_WINDOW);
+
+      await clickOverlayButton(browser, "mini-window-cancel-button");
+
+      await TestUtils.waitForCondition(
+        async () => !(await helper.isOverlayInitialized()),
+        "Waiting for the dismiss button to tear the overlay down"
+      );
+    }
+  );
+});
+
+add_task(async function test_reselect_button_clears_the_selection() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_PAGE },
+    async browser => {
+      let helper = new ScreenshotsHelper(browser);
+      triggerMiniWindowEntryPoint(browser);
+      await waitForOverlayMode(helper, browser, SELECTION_MODES.MINI_WINDOW);
+
+      await helper.dragOverlay(10, 10, 200, 150);
+
+      // Start over drops the selection and hands the crosshairs back. This
+      // goes through the click path, which is wired separately from the
+      // keydown path.
+      await clickOverlayButton(browser, "reselect-button");
+      await helper.assertStateChange("crosshairs");
+
+      ScreenshotsUtils.exit(browser);
+      await TestUtils.waitForCondition(
+        async () => !(await helper.isOverlayInitialized()),
+        "Waiting for the overlay to be torn down"
       );
     }
   );

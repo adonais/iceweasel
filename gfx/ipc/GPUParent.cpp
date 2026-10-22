@@ -45,7 +45,7 @@
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/layers/APZInputBridgeParent.h"
+#include "mozilla/layers/APZBridgeParent.h"
 #include "mozilla/layers/APZPublicUtils.h"  // for apz::InitializeGlobalState
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositeProcessFencesHolderMap.h"
@@ -498,10 +498,9 @@ mozilla::ipc::IPCResult GPUParent::RecvInitUiCompositorController(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult GPUParent::RecvInitAPZInputBridge(
-    const LayersId& aRootLayerTreeId,
-    Endpoint<PAPZInputBridgeParent>&& aEndpoint) {
-  APZInputBridgeParent::Create(aRootLayerTreeId, std::move(aEndpoint));
+mozilla::ipc::IPCResult GPUParent::RecvInitAPZBridge(
+    const LayersId& aRootLayerTreeId, Endpoint<PAPZBridgeParent>&& aEndpoint) {
+  APZBridgeParent::Create(aRootLayerTreeId, std::move(aEndpoint));
   return IPC_OK();
 }
 

@@ -9,13 +9,17 @@ This script downloads all the required PDFs from the test_manifest.json
 file found in the mozilla pdf.js repo.
 """
 
+import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 
 import requests
 from redo import retriable
+
+WEB_ARCHIVE_RE = re.compile(r"^(https?://web\.archive\.org/web/\d+)(/https?://.+)")
 
 
 def log(msg):
@@ -23,31 +27,38 @@ def log(msg):
 
 
 @retriable(attempts=7, sleeptime=5, sleepscale=2)
-def fetch_file(url, filepath):
+def fetch_file(url, filepath, md5):
     """Download a file from the given url to a given file.
 
     :param str url: URL to download file from.
     :param Path filepath: Location to ouput the downloaded file
         (includes the name of the file).
+    :param str md5: Expected MD5 hex digest of the downloaded file.
     """
     size = 4096
     r = requests.get(url, stream=True)
     r.raise_for_status()
 
+    digest = hashlib.md5()
     with filepath.open("wb") as fd:
         for chunk in r.iter_content(size):
+            digest.update(chunk)
             fd.write(chunk)
 
+    if (actual := digest.hexdigest()) != md5:
+        raise Exception(f"{url} has MD5 {actual}, expected {md5}")
 
-def fetch_talos_pdf_link(pdf_path, output_file):
+
+def fetch_talos_pdf_link(pdf_path, output_file, md5):
     """Fetches a PDF file with a link into the output file location.
 
     :param Path pdf_path: Path to a PDF file that contains a URL to download from.
     :param Path output_file: Location (including the file name) to download PDF to.
+    :param str md5: Expected MD5 hex digest of the downloaded PDF.
     """
-    pdf_link = pdf_path.read_text().strip()
+    pdf_link = WEB_ARCHIVE_RE.sub(r"\1if_\2", pdf_path.read_text().strip())
     log(f"Downloading from PDF link: {pdf_link}")
-    fetch_file(pdf_link, output_file)
+    fetch_file(pdf_link, output_file, md5)
 
 
 def gather_talos_pdf(test_folder, pdf_info, output_dir):
@@ -68,7 +79,9 @@ def gather_talos_pdf(test_folder, pdf_info, output_dir):
         log(f"{pdf_file} already exists in output location")
     elif pdf_info.get("link", False):
         fetch_talos_pdf_link(
-            pathlib.Path(test_folder, pdf_file + ".link"), output_pdf_path
+            pathlib.Path(test_folder, pdf_file + ".link"),
+            output_pdf_path,
+            pdf_info["md5"],
         )
     else:
         log(f"Copying PDF to output location {output_pdf_path}")

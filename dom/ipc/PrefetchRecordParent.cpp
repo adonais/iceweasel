@@ -376,6 +376,21 @@ PrefetchRecordParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     return NS_OK;
   }
 
+  // dont use prefetch responses that does not have OK status
+  // Spec Ref:
+  // https://wicg.github.io/nav-speculation/prefetch.html#supports-prefetch
+  if (!mRedirectChain.IsEmpty()) {
+    uint32_t status = mRedirectChain.LastElement().mResponseStatus;
+    if (status < 200 || status > 299) {
+      LOG_SPECRULES_WARN(
+          ("PrefetchRecordParent::OnStopRequest: this=%p final status %u does "
+           "not support prefetch; discarding",
+           this, status));
+      MarkCanceled();
+      return NS_OK;
+    }
+  }
+
   auto* wgp = static_cast<WindowGlobalParent*>(Manager());
 
   // Implements "complete a prefetch record".
@@ -455,6 +470,7 @@ PrefetchRecordParent::AsyncOnChannelRedirect(
     return NS_OK;
   }
   AppendRedirectChainEntry(newURI);
+  ConfigureSecPurpose(aNewChannel);
   aCb->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
 }

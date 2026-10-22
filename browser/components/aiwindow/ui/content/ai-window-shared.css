@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* Tab group color tokens (--tab-group-*) are defined in the tabbrowser chrome
+ * sheet, which the AI window content document does not otherwise load. Import
+ * them here so components rendered in this document (e.g. the mentions panel
+ * group chicklets) can reference the group colors. */
+@import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
+
 :root {
   /* 580px - max width for chat content and smartbar */
   --smartwindow-content-max-width: calc(var(--size-layout-xlarge) + 80px);
@@ -29,6 +35,7 @@
   --smartwindow-shadow: var(--box-shadow-level-2);
 
   --smartwindow-ai-chat-grid-border-color: light-dark(var(--color-violet-10), var(--container-bg, rgba(191, 143, 204, 0.2)));
+  --smartwindow-main-box-shadow: none;
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
@@ -37,6 +44,8 @@
     --smartwindow-icon-color-accent-primary-desaturated: var(--icon-color);
 
     --smartwindow-panel-item-border-radius: var(--border-radius-xlarge);
+    --smartwindow-main-box-shadow: inset 0 120px 120px -120px
+      light-dark(color-mix(in srgb, var(--color-violet-50) 60%, transparent), color-mix(in srgb, var(--color-violet-50) 90%, transparent));
 
     @media not (forced-colors) {
       /* Smart Window Nova Tokens */

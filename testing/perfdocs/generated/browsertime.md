@@ -236,7 +236,7 @@ Other methods for adding additional arguments are:
 
 ## Running Browsertime on Try
 
-You can run all of our Browsertime pageload tests through `./mach try perf` by selecting the `Pageload` category. We use chimera mode in these tests which means that both cold and warm pageload variants are running at the same time. There are a lot of other tests/categories available as well. Documentation about this tool can be found in {ref}`Mach Try Perf`.
+You can run all of our Browsertime pageload tests through `./mach try perf` by selecting the `Pageload` category. We use chimera mode in these tests which means that both cold and warm pageload variants are running at the same time. There are a lot of other tests/categories available as well. Documentation about this tool can be found in {doc}`mach-try-perf`.
 
 For example, the following will select all `Pageload` categories to run on desktop:
 

@@ -939,7 +939,7 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
     return nullptr;
   }
   RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
-      BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride,
+      BackendType::SKIA, map.mData, dataSurface->GetSize(), map.mStride,
       aFormat);
   if (!dt) {
     dataSurface->Unmap();

@@ -1222,6 +1222,9 @@ class Assembler : public AssemblerX86Shared {
   // Do not mask shared implementations.
   using AssemblerX86Shared::call;
 
+  void rdsspq(const Register& reg) { masm.rdsspq_r(reg.encoding()); }
+  void incsspq(const Register& reg) { masm.incsspq_r(reg.encoding()); }
+
   void vcvttsd2sq(FloatRegister src, Register dest) {
     masm.vcvttsd2sq_rr(src.encoding(), dest.encoding());
   }

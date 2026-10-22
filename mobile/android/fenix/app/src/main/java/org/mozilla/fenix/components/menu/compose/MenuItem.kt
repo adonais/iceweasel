@@ -362,11 +362,13 @@ internal fun MenuBadgeItem(
 @Composable
 internal fun Badge(
     badgeText: String,
+    modifier: Modifier = Modifier,
     state: MenuItemState = MenuItemState.ENABLED,
 ) {
     Column(
         modifier =
-            Modifier.clip(CircleShape)
+            modifier
+                .clip(CircleShape)
                 .background(color = getBadgeColor(state))
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

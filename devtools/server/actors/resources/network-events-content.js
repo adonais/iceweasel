@@ -233,7 +233,7 @@ class NetworkEventContentWatcher {
     this.onAvailable([resource]);
 
     if (memoryCacheKey) {
-      networkEventActor.addMemoryCacheData(channel, memoryCacheKey);
+      networkEventActor.addMemoryCacheData(memoryCacheKey);
     }
     networkEventActor.addCacheDetails({ fromCache });
     if (type == RESOURCE_TYPES.BLOCKED) {

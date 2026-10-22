@@ -116,6 +116,7 @@ interface nsILoadGroup : nsIRequest
      * flags (again, courtesy of setting nsIDocShell::defaultLoadFlags before
      * the docShell has created the default request.)
      */
+    [infallible]
     attribute nsLoadFlags defaultLoadFlags;
 
     /**
@@ -124,6 +125,21 @@ interface nsILoadGroup : nsIRequest
      */
     [infallible]
     readonly attribute boolean isBrowsingContextDiscarded;
+
+    /**
+     * The parent of this load group. It is stored with a nsIWeakReference so
+     * there is no requirement for the parentLoadGroup to outlive the child,
+     * nor will the child keep a reference count on the parent.
+     */
+    attribute nsILoadGroup parentLoadGroup;
+
+    /**
+     * The rootLoadGroup is the recursive parent of this load group where
+     * parent is defined as parentLoadGroup if set or loadGroup as a backup
+     * (i.e. parentLoadGroup takes precedence). This load group is the root if
+     * neither parentLoadGroup nor loadGroup are specified.
+     */
+    readonly attribute nsILoadGroup rootLoadGroup;
 
     /** Cancel a single request from the load group. */
     void cancelRequest(in nsIRequest aRequest, in ACString aReason, in nsresult aStatus);

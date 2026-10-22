@@ -979,7 +979,7 @@ export class MozAdsImage {
             throw e;
         }
         try {
-            FfiConverterString.checkType(imageUrl)
+            FfiConverterTypeAdsClientUrl.checkType(imageUrl)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("imageUrl");
@@ -987,7 +987,7 @@ export class MozAdsImage {
             throw e;
         }
         try {
-            FfiConverterString.checkType(url)
+            FfiConverterTypeAdsClientUrl.checkType(url)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("url");
@@ -1011,11 +1011,11 @@ export class MozAdsImage {
          */
         this.format = format;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.imageUrl = imageUrl;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.url = url;
     }
@@ -1040,8 +1040,8 @@ export class FfiConverterTypeMozAdsImage extends FfiConverterArrayBuffer {
             blockKey: FfiConverterString.read(dataStream),
             callbacks: FfiConverterTypeMozAdsCallbacks.read(dataStream),
             format: FfiConverterString.read(dataStream),
-            imageUrl: FfiConverterString.read(dataStream),
-            url: FfiConverterString.read(dataStream),
+            imageUrl: FfiConverterTypeAdsClientUrl.read(dataStream),
+            url: FfiConverterTypeAdsClientUrl.read(dataStream),
         });
     }
     static write(dataStream, value) {
@@ -1049,8 +1049,8 @@ export class FfiConverterTypeMozAdsImage extends FfiConverterArrayBuffer {
         FfiConverterString.write(dataStream, value.blockKey);
         FfiConverterTypeMozAdsCallbacks.write(dataStream, value.callbacks);
         FfiConverterString.write(dataStream, value.format);
-        FfiConverterString.write(dataStream, value.imageUrl);
-        FfiConverterString.write(dataStream, value.url);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.imageUrl);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.url);
     }
 
     static computeSize(value) {
@@ -1059,8 +1059,8 @@ export class FfiConverterTypeMozAdsImage extends FfiConverterArrayBuffer {
         totalSize += FfiConverterString.computeSize(value.blockKey);
         totalSize += FfiConverterTypeMozAdsCallbacks.computeSize(value.callbacks);
         totalSize += FfiConverterString.computeSize(value.format);
-        totalSize += FfiConverterString.computeSize(value.imageUrl);
-        totalSize += FfiConverterString.computeSize(value.url);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.imageUrl);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.url);
         return totalSize
     }
 
@@ -1102,7 +1102,7 @@ export class FfiConverterTypeMozAdsImage extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.imageUrl);
+            FfiConverterTypeAdsClientUrl.checkType(value.imageUrl);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".imageUrl");
@@ -1110,7 +1110,7 @@ export class FfiConverterTypeMozAdsImage extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.url);
+            FfiConverterTypeAdsClientUrl.checkType(value.url);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".url");
@@ -1939,7 +1939,7 @@ export class MozAdsSpoc {
             throw e;
         }
         try {
-            FfiConverterString.checkType(imageUrl)
+            FfiConverterTypeAdsClientUrl.checkType(imageUrl)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("imageUrl");
@@ -1979,7 +1979,7 @@ export class MozAdsSpoc {
             throw e;
         }
         try {
-            FfiConverterString.checkType(url)
+            FfiConverterTypeAdsClientUrl.checkType(url)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("url");
@@ -2011,7 +2011,7 @@ export class MozAdsSpoc {
          */
         this.format = format;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.imageUrl = imageUrl;
         /**
@@ -2031,7 +2031,7 @@ export class MozAdsSpoc {
          */
         this.title = title;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.url = url;
     }
@@ -2064,12 +2064,12 @@ export class FfiConverterTypeMozAdsSpoc extends FfiConverterArrayBuffer {
             domain: FfiConverterString.read(dataStream),
             excerpt: FfiConverterString.read(dataStream),
             format: FfiConverterString.read(dataStream),
-            imageUrl: FfiConverterString.read(dataStream),
+            imageUrl: FfiConverterTypeAdsClientUrl.read(dataStream),
             ranking: FfiConverterTypeMozAdsSpocRanking.read(dataStream),
             sponsor: FfiConverterString.read(dataStream),
             sponsoredByOverride: FfiConverterOptionalString.read(dataStream),
             title: FfiConverterString.read(dataStream),
-            url: FfiConverterString.read(dataStream),
+            url: FfiConverterTypeAdsClientUrl.read(dataStream),
         });
     }
     static write(dataStream, value) {
@@ -2079,12 +2079,12 @@ export class FfiConverterTypeMozAdsSpoc extends FfiConverterArrayBuffer {
         FfiConverterString.write(dataStream, value.domain);
         FfiConverterString.write(dataStream, value.excerpt);
         FfiConverterString.write(dataStream, value.format);
-        FfiConverterString.write(dataStream, value.imageUrl);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.imageUrl);
         FfiConverterTypeMozAdsSpocRanking.write(dataStream, value.ranking);
         FfiConverterString.write(dataStream, value.sponsor);
         FfiConverterOptionalString.write(dataStream, value.sponsoredByOverride);
         FfiConverterString.write(dataStream, value.title);
-        FfiConverterString.write(dataStream, value.url);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.url);
     }
 
     static computeSize(value) {
@@ -2095,12 +2095,12 @@ export class FfiConverterTypeMozAdsSpoc extends FfiConverterArrayBuffer {
         totalSize += FfiConverterString.computeSize(value.domain);
         totalSize += FfiConverterString.computeSize(value.excerpt);
         totalSize += FfiConverterString.computeSize(value.format);
-        totalSize += FfiConverterString.computeSize(value.imageUrl);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.imageUrl);
         totalSize += FfiConverterTypeMozAdsSpocRanking.computeSize(value.ranking);
         totalSize += FfiConverterString.computeSize(value.sponsor);
         totalSize += FfiConverterOptionalString.computeSize(value.sponsoredByOverride);
         totalSize += FfiConverterString.computeSize(value.title);
-        totalSize += FfiConverterString.computeSize(value.url);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.url);
         return totalSize
     }
 
@@ -2158,7 +2158,7 @@ export class FfiConverterTypeMozAdsSpoc extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.imageUrl);
+            FfiConverterTypeAdsClientUrl.checkType(value.imageUrl);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".imageUrl");
@@ -2198,7 +2198,7 @@ export class FfiConverterTypeMozAdsSpoc extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.url);
+            FfiConverterTypeAdsClientUrl.checkType(value.url);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".url");
@@ -2317,7 +2317,7 @@ export class MozAdsTile {
             throw e;
         }
         try {
-            FfiConverterString.checkType(imageUrl)
+            FfiConverterTypeAdsClientUrl.checkType(imageUrl)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("imageUrl");
@@ -2333,7 +2333,7 @@ export class MozAdsTile {
             throw e;
         }
         try {
-            FfiConverterString.checkType(url)
+            FfiConverterTypeAdsClientUrl.checkType(url)
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("url");
@@ -2353,7 +2353,7 @@ export class MozAdsTile {
          */
         this.format = format;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.imageUrl = imageUrl;
         /**
@@ -2361,7 +2361,7 @@ export class MozAdsTile {
          */
         this.name = name;
         /**
-         * @type {string}
+         * @type {AdsClientUrl}
          */
         this.url = url;
     }
@@ -2385,18 +2385,18 @@ export class FfiConverterTypeMozAdsTile extends FfiConverterArrayBuffer {
             blockKey: FfiConverterString.read(dataStream),
             callbacks: FfiConverterTypeMozAdsCallbacks.read(dataStream),
             format: FfiConverterString.read(dataStream),
-            imageUrl: FfiConverterString.read(dataStream),
+            imageUrl: FfiConverterTypeAdsClientUrl.read(dataStream),
             name: FfiConverterString.read(dataStream),
-            url: FfiConverterString.read(dataStream),
+            url: FfiConverterTypeAdsClientUrl.read(dataStream),
         });
     }
     static write(dataStream, value) {
         FfiConverterString.write(dataStream, value.blockKey);
         FfiConverterTypeMozAdsCallbacks.write(dataStream, value.callbacks);
         FfiConverterString.write(dataStream, value.format);
-        FfiConverterString.write(dataStream, value.imageUrl);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.imageUrl);
         FfiConverterString.write(dataStream, value.name);
-        FfiConverterString.write(dataStream, value.url);
+        FfiConverterTypeAdsClientUrl.write(dataStream, value.url);
     }
 
     static computeSize(value) {
@@ -2404,9 +2404,9 @@ export class FfiConverterTypeMozAdsTile extends FfiConverterArrayBuffer {
         totalSize += FfiConverterString.computeSize(value.blockKey);
         totalSize += FfiConverterTypeMozAdsCallbacks.computeSize(value.callbacks);
         totalSize += FfiConverterString.computeSize(value.format);
-        totalSize += FfiConverterString.computeSize(value.imageUrl);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.imageUrl);
         totalSize += FfiConverterString.computeSize(value.name);
-        totalSize += FfiConverterString.computeSize(value.url);
+        totalSize += FfiConverterTypeAdsClientUrl.computeSize(value.url);
         return totalSize
     }
 
@@ -2440,7 +2440,7 @@ export class FfiConverterTypeMozAdsTile extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.imageUrl);
+            FfiConverterTypeAdsClientUrl.checkType(value.imageUrl);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".imageUrl");
@@ -2456,7 +2456,7 @@ export class FfiConverterTypeMozAdsTile extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
-            FfiConverterString.checkType(value.url);
+            FfiConverterTypeAdsClientUrl.checkType(value.url);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".url");

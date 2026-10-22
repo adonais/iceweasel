@@ -53,6 +53,18 @@
   #tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
     --content-area-start-radius: var(--border-radius-medium);
 
+    @media (-moz-platform: macos) {
+      --content-scrollbar-inset-block: 0 var(--border-radius-medium);
+      --content-scrollbar-inset-inline-start: var(--border-radius-medium);
+      --content-scrollbar-inset-inline-end: var(--border-radius-medium);
+
+      :root[macOSNativeFullscreen] & {
+        --content-scrollbar-inset-block: 0;
+        --content-scrollbar-inset-inline-start: 0;
+        --content-scrollbar-inset-inline-end: 0;
+      }
+    }
+
     outline: none;
     box-shadow: none;
     border-block-start: var(--border-width) solid var(--chrome-content-separator-color);
@@ -74,11 +86,41 @@
     :root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-positionend][ai-window-open] & {
       border-inline-start: var(--border-width) solid var(--chrome-content-separator-color);
       border-start-start-radius: var(--content-area-start-radius);
+
+      @media (-moz-platform: macos) {
+        --content-scrollbar-inset-block: 0 var(--content-area-start-radius);
+        --content-scrollbar-inset-inline-start: 0;
+        :root:dir(rtl) & {
+          --content-scrollbar-inset-block: var(--content-area-start-radius) 0;
+        }
+
+        :root:is([macOSNativeFullscreen]) #tabbrowser-tabbox & {
+          --content-scrollbar-inset-block: 0;
+        }
+      }
     }
 
     :root:not([inDOMFullscreen]) #tabbrowser-tabbox:is([sidebar-positionend]:is([sidebar-shown], [sidebar-panel-open]), [ai-window-open]) & {
       border-inline-end: var(--border-width) solid var(--chrome-content-separator-color);
       border-start-end-radius: var(--content-area-start-radius);
+
+      @media (-moz-platform: macos) {
+        --content-scrollbar-inset-inline-end: 0;
+
+        :root:dir(ltr) & {
+          --content-scrollbar-inset-block: var(--content-area-start-radius) 0;
+        }
+      }
+    }
+
+    :root:not([inDOMFullscreen], [macOSNativeFullscreen]) #tabbrowser-tabbox[sidebar-positionend][ai-window-open]:not([sidebar-shown], [sidebar-panel-open]) & {
+      @media (-moz-platform: macos) {
+        --content-scrollbar-inset-inline-end: var(--border-radius-medium);
+
+        :root:dir(ltr) & {
+          --content-scrollbar-inset-block: var(--content-area-start-radius) var(--border-radius-medium);
+        }
+      }
     }
   }
 
@@ -169,6 +211,17 @@
  * it's on the side it's a sibling of browserContainer.
  */
 .browserContainer {
+  /* This container rounds and clips the content area, but the scrollbar being
+     clipped belongs to the content document inside <browser>. Every rule below
+     that sets a border-radius here must set the matching inset, which
+     browser[type="content"] forwards into the content document. */
+
+  @media (-moz-platform: macos) {
+    --content-scrollbar-inset-block: 0;
+    --content-scrollbar-inset-inline-start: 0;
+    --content-scrollbar-inset-inline-end: 0;
+  }
+
   flex: 10000 10000;
   /* To contain the status panel */
   position: relative;
@@ -178,7 +231,7 @@
   min-width: 0;
 
   /* We want to be able to show the frame color behind the clipped radiused corner */
-  background: var(--tabpanel-background-color);
+  background: var(--tabpanel-background-color) padding-box;
 
   display: grid;
   /**
@@ -379,6 +432,13 @@
     opacity: 0;
   }
 
+  @media (-moz-platform: macos) {
+    browser[type="content"] {
+      -moz-scrollbar-inset-block: var(--content-scrollbar-inset-block);
+      -moz-scrollbar-inset-inline: var(--content-scrollbar-inset-inline-start) var(--content-scrollbar-inset-inline-end);
+    }
+  }
+
   /* Exclude browsers with smartwindow-content attribute which inherit
      color-scheme from chrome to follow the browser theme */
   browser[type="content"]:not([smartwindow-content]) {
@@ -442,6 +502,19 @@
     }
 
     .split-view-panel {
+      @media (-moz-platform: macos) {
+        .browserContainer {
+          --content-scrollbar-inset-block: var(--border-radius-medium);
+          --content-scrollbar-inset-inline-start: var(--border-radius-medium);
+          --content-scrollbar-inset-inline-end: var(--border-radius-medium);
+        }
+        :root[inDOMFullscreen] &.split-view-panel-active.deck-selected > .browserContainer {
+          --content-scrollbar-inset-block: 0;
+          --content-scrollbar-inset-inline-start: 0;
+          --content-scrollbar-inset-inline-end: 0;
+        }
+      }
+
       .browserContainer {
         border-radius: var(--border-radius-medium);
         overflow: clip;
@@ -503,6 +576,12 @@
   /* Match the corner radius and separator border of unsplit panels. */
   #tabbrowser-tabpanels[splitview] .split-view-panel > .browserContainer {
     border-radius: var(--border-radius-medium);
+
+    @media (-moz-platform: macos) {
+      --content-scrollbar-inset-block: var(--border-radius-medium);
+      --content-scrollbar-inset-inline-start: var(--border-radius-medium);
+      --content-scrollbar-inset-inline-end: var(--border-radius-medium);
+    }
   }
 
   /* Maintain border around panels to avoid content box changing when activated */
@@ -753,6 +832,27 @@ split-view-footer {
     @media -moz-pref("browser.nova.enabled") {
       --button-border-radius: var(--border-radius-xlarge);
     }
+  }
+
+  #ai-action-button::part(button) {
+    --button-background-color-selected: var(--button-background-color);
+    --button-border-color-selected: var(--button-border-color);
+    --button-text-color-selected: var(--button-text-color);
+
+    width: auto;
+    padding-inline: calc((var(--button-size-icon) - var(--icon-size)) / 2) var(--space-small);
+  }
+
+  #ai-action-button::part(button)::after {
+    content: "";
+    width: var(--icon-size-xsmall);
+    height: var(--icon-size-xsmall);
+    margin-inline-start: var(--space-small);
+    background-image: url("chrome://global/skin/icons/arrow-down-12.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    -moz-context-properties: fill;
+    fill: var(--button-icon-fill);
   }
 }
 

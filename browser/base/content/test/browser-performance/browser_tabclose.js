@@ -20,7 +20,9 @@ const EXPECTED_REFLOWS = [
  */
 add_task(async function () {
   // Force-enable tab animations
-  gReduceMotionOverride = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
 
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
@@ -33,7 +35,7 @@ add_task(async function () {
   });
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  await TestUtils.waitForCondition(() => tab._fullyOpen);
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
 
   let tabStripRect =
     gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();

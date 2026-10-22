@@ -110,8 +110,7 @@ class WebGPUChild final : public PWebGPUChild {
   void RegisterDevice(Device* const aDevice);
   void UnregisterDevice(RawId aDeviceId);
 
-  void QueueSubmit(RawId aSelfId, RawId aDeviceId,
-                   nsTArray<RawId>& aCommandBuffers,
+  void QueueSubmit(RawId aSelfId, nsTArray<RawId>& aCommandBuffers,
                    const nsTArray<RawId>& aUsedExternalTextureSources);
   void NotifyWaitForSubmit(RawId aTextureId);
 

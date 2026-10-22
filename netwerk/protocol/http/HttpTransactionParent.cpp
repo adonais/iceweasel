@@ -117,7 +117,7 @@ nsresult HttpTransactionParent::Init(
   mChannelId = channelId;
   mTransactionObserver = std::move(transactionObserver);
   mCaps = caps;
-  mConnInfo = cinfo->Clone();
+  mConnInfo = cinfo;
   mIsHttp3Used = cinfo->IsHttp3();
 
   HttpConnectionInfoCloneArgs infoArgs;
@@ -424,7 +424,7 @@ bool HttpTransactionParent::Http3Disabled() const {
 
 already_AddRefed<nsHttpConnectionInfo> HttpTransactionParent::GetConnInfo()
     const {
-  RefPtr<nsHttpConnectionInfo> connInfo = mConnInfo->Clone();
+  RefPtr<nsHttpConnectionInfo> connInfo = mConnInfo;
   return connInfo.forget();
 }
 

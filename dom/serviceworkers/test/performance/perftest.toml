@@ -20,11 +20,9 @@ skip-if = [
   "os == 'android'", # 1910127
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1911093
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1911093
-  "tsan", # 1885378
 ]
 
 ["test_update.html"]
 skip-if = [
   "os == 'android'", # 1910127
-  "tsan", # 1885378
 ]

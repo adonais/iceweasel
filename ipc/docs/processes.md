@@ -132,7 +132,7 @@ strive for simplicity.
 
 In the spirit of creating a *responsible* process, the sample will connect
 several components that any deployed Gecko process is likely to need. These
-include configuring a sandbox, {ref}`registration with the CrashReporter service <Crash Reporter>`
+include configuring a sandbox, {doc}`registration with the CrashReporter service </toolkit/crashreporter/crashreporter/index>`
 and ("minimal") XPCOM initialization. Consult documentation for these
 components for more information on their integration.
 
@@ -156,7 +156,7 @@ we call **Demo**.
   and the child is the (first) top-level actor in the new process. It is common
   for this actor to simply take the name of the process type. The sample uses
   `PDemo`, so it creates `DemoParent` and `DemoChild` actor subclasses
-  as usual (see {ref}`IPDL: Inter-Thread and Inter-Process Message Passing`).
+  as usual (see {doc}`ipdl`).
 - A subclass of {searchfox}`GeckoChildProcessHost <ipc/glue/GeckoChildProcessHost.h>`
   that exists in the main process (where new processes are created) and handles
   most of the machinery needed for new process creation. It is common for these
@@ -1147,8 +1147,8 @@ current debug session. The command can be added to `.gdbinit` for ease. At
 the time of this writing, lldb does not support automatically connecting to
 newly spawned processes.
 
-Finally, Linux users can use `rr` for time-travel debugging. See {ref}`Debugging
-Firefox with rr <Debugging Firefox with rr>` for details.
+Finally, Linux users can use `rr` for time-travel debugging. See {doc}`Debugging
+Firefox with rr </contributing/debugging/debugging_firefox_with_rr>` for details.
 
 These solutions are not always desirable. For example, the fact that they hook
 *all* spawned processes can mean that targeting breakpoints to one process

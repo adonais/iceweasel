@@ -52,6 +52,7 @@ class ScreamNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate CreateFirstUpdate(Timestamp now);
   NetworkControlUpdate CreateUpdate(Timestamp now);
   std::optional<PacerConfig> MaybeCreatePacerConfig(Timestamp now);
+  DataRate GetPacingRate() const;
   // Calculates a ratio in [0.0, 1.0] indicating how much the video encoder
   // should reduce its target bitrate (pushback) due to network or pacer queue
   // build-up. Returns 1.0 if data in flight exceeds max_data_in_flight.

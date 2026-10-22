@@ -9,7 +9,7 @@
 :root {
   --identity-box-margin-inline: 4px;
 
-  --urlbar-inner-border-radius: calc(var(--urlbarview-border-radius) - var(--urlbarView-padding));
+  --urlbar-inner-border-radius: calc(var(--urlbarview-border-radius) - var(--urlbarview-padding));
   --urlbar-input-gap: 0.45em;
   --urlbar-height: max(32px, 1.4em);
 

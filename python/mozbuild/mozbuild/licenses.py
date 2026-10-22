@@ -164,6 +164,7 @@ def from_context(context):
             url=fields.url or None,
             paths=fields.paths or (),
             subcomponent=fields.subcomponent,
+            acknowledgement=fields.acknowledgement or None,
         )
 
 

@@ -22,7 +22,7 @@ add_setup(async () => {
   sinon.replace(getSelectableProfileService(), "execProcess", execProcess);
 
   let { nsDefaultCommandLineHandler: browserClh } = ChromeUtils.importESModule(
-    "resource:///modules/BrowserContentHandler.sys.mjs"
+    "moz-src:///browser/components/BrowserContentHandler.sys.mjs"
   );
 
   sinon.replace(browserClh.prototype, "handle", commandLineHandler);

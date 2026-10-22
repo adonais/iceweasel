@@ -1,0 +1,10 @@
+[DEFAULT]
+support-files = [
+  "../../../serviceworkers/test/browser_head.js",
+  "../../../serviceworkers/test/empty.html",
+  "../../../serviceworkers/test/empty_with_utils.html",
+  "../../../serviceworkers/test/utils.js",
+  "push_message_handled_worker.js",
+]
+
+["browser_push_message_handled.js"]

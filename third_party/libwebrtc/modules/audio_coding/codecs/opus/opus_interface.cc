@@ -68,6 +68,9 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
   OpusEncInst* state =
       reinterpret_cast<OpusEncInst*>(calloc(1, sizeof(OpusEncInst)));
   RTC_DCHECK(state);
+  if (state == nullptr) {
+    return -1;
+  }
 
   int error;
   state->encoder = opus_encoder_create(
@@ -111,6 +114,9 @@ int16_t WebRtcOpus_MultistreamEncoderCreate(
   OpusEncInst* state =
       reinterpret_cast<OpusEncInst*>(calloc(1, sizeof(OpusEncInst)));
   RTC_DCHECK(state);
+  if (state == nullptr) {
+    return -1;
+  }
 
   int error;
   const int sample_rate_hz = 48000;
@@ -229,10 +235,10 @@ int16_t WebRtcOpus_SetMaxPlaybackRate(OpusEncInst* inst, int32_t frequency_hz) {
 }
 
 int16_t WebRtcOpus_GetMaxPlaybackRate(OpusEncInst* const inst,
-                                      int32_t* result_hz) {
+                                      int32_t* result_bandwidth) {
   if (inst->encoder) {
-    if (opus_encoder_ctl(inst->encoder, OPUS_GET_MAX_BANDWIDTH(result_hz)) ==
-        OPUS_OK) {
+    if (opus_encoder_ctl(inst->encoder,
+                         OPUS_GET_MAX_BANDWIDTH(result_bandwidth)) == OPUS_OK) {
       return 0;
     }
     return -1;
@@ -263,7 +269,7 @@ int16_t WebRtcOpus_GetMaxPlaybackRate(OpusEncInst* const inst,
     max_bandwidth = bandwidth;
     s++;
   }
-  *result_hz = max_bandwidth;
+  *result_bandwidth = max_bandwidth;
   return 0;
 }
 
@@ -384,6 +390,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst,
   if (inst != nullptr) {
     // Create Opus decoder state.
     state = reinterpret_cast<OpusDecInst*>(calloc(1, sizeof(OpusDecInst)));
+    RTC_DCHECK(state);
     if (state == nullptr) {
       return -1;
     }
@@ -421,6 +428,7 @@ int16_t WebRtcOpus_MultistreamDecoderCreate(
   if (inst != nullptr) {
     // Create Opus decoder state.
     state = reinterpret_cast<OpusDecInst*>(calloc(1, sizeof(OpusDecInst)));
+    RTC_DCHECK(state);
     if (state == nullptr) {
       return -1;
     }
@@ -726,48 +734,6 @@ int WebRtcOpus_PacketHasFec(const uint8_t* payload,
     // The LBRR bit for channel 1 is on the (`silk_frames` + 1)-th bit, and
     // that of channel 2 is on the |(`silk_frames` + 1) * 2 + 1|-th bit.
     if (frame_data[0][0] & (0x80 >> ((n + 1) * (silk_frames + 1) - 1)))
-      return 1;
-  }
-
-  return 0;
-}
-
-int WebRtcOpus_PacketHasVoiceActivity(const uint8_t* payload,
-                                      size_t payload_length_bytes) {
-  if (payload == nullptr || payload_length_bytes == 0)
-    return 0;
-
-  // In CELT_ONLY mode we can not determine whether there is VAD.
-  if (payload[0] & 0x80)
-    return -1;
-
-  int silk_frames = WebRtcOpus_NumSilkFrames(payload);
-  if (silk_frames == 0)
-    return -1;
-
-  const int channels = opus_packet_get_nb_channels(payload);
-  RTC_DCHECK(channels == 1 || channels == 2);
-
-  // Max number of frames in an Opus packet is 48.
-  opus_int16 frame_sizes[48];
-  const unsigned char* frame_data[48];
-
-  // Parse packet to get the frames.
-  int frames =
-      opus_packet_parse(payload, static_cast<opus_int32>(payload_length_bytes),
-                        nullptr, frame_data, frame_sizes, nullptr);
-  if (frames < 0)
-    return -1;
-
-  // Iterate over all Opus frames which may contain multiple SILK frames.
-  for (int frame = 0; frame < frames; frame++) {
-    if (frame_sizes[frame] < 1) {
-      continue;
-    }
-    if (frame_data[frame][0] >> (8 - silk_frames))
-      return 1;
-    if (channels == 2 &&
-        (frame_data[frame][0] << (silk_frames + 1)) >> (8 - silk_frames))
       return 1;
   }
 

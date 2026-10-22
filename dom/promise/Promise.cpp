@@ -23,6 +23,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/MediaStreamError.h"
 #include "mozilla/dom/Promise-inl.h"
@@ -442,14 +443,14 @@ void Promise::CreateWrapper(
 void Promise::MaybeResolve(JSContext* aCx, JS::Handle<JS::Value> aValue) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
-  JS::Rooted<JSObject*> p(aCx, PromiseObj());
 #ifdef NIGHTLY_BUILD
-  const bool ok = p && (StaticPrefs::dom_promise_experimental_safe_resolve()
-                            ? JS::SafeResolve(aCx, p, aValue)
-                            : JS::ResolvePromise(aCx, p, aValue));
-#else
-  const bool ok = p && JS::ResolvePromise(aCx, p, aValue);
+  if (StaticPrefs::dom_promise_experimental_safe_resolve()) {
+    MaybeSafeResolve(aCx, aValue);
+    return;
+  }
 #endif
+  JS::Rooted<JSObject*> p(aCx, PromiseObj());
+  const bool ok = p && JS::ResolvePromise(aCx, p, aValue);
   if (!ok) {
     // Now what?  There's nothing sane to do here.
     JS_ClearPendingException(aCx);
@@ -470,10 +471,18 @@ void Promise::MaybeSafeResolve(JSContext* aCx, JS::Handle<JS::Value> aValue) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
   JS::Rooted<JSObject*> p(aCx, PromiseObj());
-  const bool ok = p && JS::SafeResolve(aCx, p, aValue);
+  bool deferred = false;
+  const bool ok = p && JS::SafeResolve(aCx, p, aValue, &deferred);
   if (!ok) {
     // Now what?  There's nothing sane to do here.
     JS_ClearPendingException(aCx);
+  }
+  if (deferred) {
+    if (nsPIDOMWindowInner* window = mGlobal->GetAsInnerWindow()) {
+      if (Document* doc = window->GetExtantDoc()) {
+        doc->WarnOnceAbout(Document::eSafePromiseResolveReordering);
+      }
+    }
   }
 }
 

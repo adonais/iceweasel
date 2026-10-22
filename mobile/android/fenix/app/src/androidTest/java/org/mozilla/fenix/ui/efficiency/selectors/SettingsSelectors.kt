@@ -16,6 +16,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 object SettingsSelectors : SelectorContainer {
     enum class Group : SelectorGroup {
         GENERAL_SETTINGS_SECTION,
+        GENERAL_SETTINGS_DEFAULT_VALUES,
         SETTINGS_VIEW,
         ABOUT_SETTINGS_SECTION,
         PRIVACY_AND_SECURITY_SETTINGS_SECTION,
@@ -49,7 +50,7 @@ object SettingsSelectors : SelectorContainer {
     val GENERAL_HEADING =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = "General",
+            value = getStringResource(R.string.preferences_category_general),
             description = "the General heading",
             groups = setOf(Group.GENERAL_SETTINGS_SECTION, Group.SETTINGS_VIEW),
         )
@@ -92,9 +93,17 @@ object SettingsSelectors : SelectorContainer {
     val SEARCH_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Search",
+            value = getStringResource(R.string.preferences_search),
             description = "the Search button",
             groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    val SEARCH_DEFAULT_SUMMARY =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = "Google",
+            description = "the Search default summary",
+            groups = setOf(Group.DEFAULT_VALUES, Group.GENERAL_SETTINGS_DEFAULT_VALUES),
         )
 
     // Espresso variant of the Search row, used to assert its summary (the default engine name) via a
@@ -109,41 +118,17 @@ object SettingsSelectors : SelectorContainer {
     val TABS_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Tabs",
+            value = getStringResource(R.string.preferences_tabs),
             description = "the Tabs button",
             groups = setOf(Group.GENERAL_SETTINGS_SECTION),
         )
 
-    val PAGE_SUMMARIES_BUTTON =
+    val TABS_DEFAULT_SUMMARY =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = getStringResource(R.string.preferences_page_summaries),
-            description = "the Page summaries button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
-        )
-
-    val ACCESSIBILITY_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = "Accessibility",
-            description = "the Accessibility button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
-        )
-
-    val AUTOFILL_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = "Autofill",
-            description = "the Autofill button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
-        )
-
-    val CUSTOMIZE_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Customize",
-            description = "the Customize button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+            value = getStringResource(R.string.close_tabs_manually_summary),
+            description = "the Tabs default summary",
+            groups = setOf(Group.DEFAULT_VALUES, Group.GENERAL_SETTINGS_DEFAULT_VALUES),
         )
 
     val HOMEPAGE_BUTTON =
@@ -154,12 +139,93 @@ object SettingsSelectors : SelectorContainer {
             groups = setOf(Group.GENERAL_SETTINGS_SECTION),
         )
 
+    val HOMEPAGE_BUTTON_DEFAULT_SUMMARY =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.opening_screen_after_four_hours_of_inactivity_summary),
+            description = "the Homepage default summary",
+            groups = setOf(Group.DEFAULT_VALUES, Group.GENERAL_SETTINGS_DEFAULT_VALUES),
+        )
+
+    val CUSTOMIZE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_customize),
+            description = "the Customize button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
     val PASSWORDS_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Passwords",
+            value = getStringResource(R.string.preferences_passwords_logins_and_passwords_2),
             description = "the Passwords button",
             groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    // UiAutomator, not Espresso: the "Autofill" label is applied at runtime (the credit_cards row retitled in
+    // SettingsFragment) and the list is still settling right after the Settings transition. An Espresso text click
+    // captures the row's coordinates then taps, so a shift mid-settle lands the tap on the adjacent "Passwords" row;
+    // UiAutomator waits for the "Autofill" text to exist and clicks the node by identity. Exact match (not contains)
+    // so it ignores the "Autofill in..." rows on the Passwords screen. Mirrors PASSWORDS_BUTTON.
+    val AUTOFILL_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_autofill),
+            description = "the Autofill button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    val ACCESSIBILITY_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_accessibility),
+            description = "the Accessibility button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    val LANGUAGE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_language),
+            description = "the Language button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    // Not part of GENERAL_SETTINGS_SECTION: the Translations row is only rendered when the translations
+    // Nimbus feature is enabled and the translation engine is supported (SettingsFragment), which is not
+    // the case on the test emulator. The legacy verifyGeneralSettingsItemsTest never asserted it either.
+    val TRANSLATIONS_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_translations),
+            description = "the Translations button",
+        )
+
+    val PAGE_SUMMARIES_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_page_summaries),
+            description = "the Page summaries button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+        )
+
+    val AI_CONTROLS_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+            value = getStringResource(R.string.preferences_ai_controls),
+            description = "the AI Controls button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SET_AS_DEFAULT_BROWSER_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_set_as_default_browser),
+            description = "the Set as default browser button",
+            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val ABOUT_BUTTON =
@@ -210,14 +276,6 @@ object SettingsSelectors : SelectorContainer {
             groups = setOf(Group.PRIVACY_AND_SECURITY_SETTINGS_SECTION),
         )
 
-    val LANGUAGE_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = getStringResource(R.string.preferences_language),
-            description = "the Language button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
-        )
-
     val OPEN_LINKS_IN_APPS_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
@@ -232,14 +290,6 @@ object SettingsSelectors : SelectorContainer {
             value = "Private browsing",
             description = "the Private browsing button",
             groups = setOf(Group.PRIVACY_AND_SECURITY_SETTINGS_SECTION),
-        )
-
-    val TRANSLATIONS_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Translations",
-            description = "the Translations button",
-            groups = setOf(Group.GENERAL_SETTINGS_SECTION),
         )
 
     val SIGN_IN_BUTTON =
@@ -301,22 +351,6 @@ object SettingsSelectors : SelectorContainer {
             scrollDirection = SwipeDirection.UP,
         )
 
-    val SEARCH_DEFAULT_SUMMARY =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Google",
-            description = "the Search default summary",
-            groups = setOf(Group.DEFAULT_VALUES),
-        )
-
-    val TABS_DEFAULT_SUMMARY =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Close manually",
-            description = "the Tabs default summary",
-            groups = setOf(Group.DEFAULT_VALUES),
-        )
-
     val ETP_DEFAULT_SUMMARY =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
@@ -330,14 +364,6 @@ object SettingsSelectors : SelectorContainer {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Allowed",
             description = "the Notifications default summary",
-            groups = setOf(Group.DEFAULT_VALUES),
-        )
-
-    val SET_AS_DEFAULT_BROWSER_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Set as default browser",
-            description = "the Set as default browser button",
             groups = setOf(Group.DEFAULT_VALUES),
         )
 
@@ -384,6 +410,7 @@ object SettingsSelectors : SelectorContainer {
 
     override val scrollTraversalOrder: Map<SelectorGroup, List<Selector>> =
         mapOf(
+            Group.GENERAL_SETTINGS_SECTION to listOf(AI_CONTROLS_BUTTON, SET_AS_DEFAULT_BROWSER_BUTTON),
             Group.SETTINGS_VIEW to listOf(PRIVACY_AND_SECURITY_HEADING, EXTENSIONS_BUTTON),
             Group.ABOUT_SECTION to listOf(ABOUT_SECTION_TITLE, RATE_ON_GOOGLE_PLAY_BUTTON, ABOUT_FIREFOX_BUTTON),
         )

@@ -39,8 +39,9 @@ def process_manifest(destdir, paths, track, no_symlinks=False, defines={}):
 
     else:
         # If tracking is enabled and there is no file, we don't want to
-        # be removing anything.
-        remove_unaccounted = False
+        # be removing anything. An empty FileRegistry removes nothing and is
+        # faster, because the copier then avoids walking the whole destination.
+        remove_unaccounted = FileRegistry()
         remove_empty_directories = False
         remove_all_directory_symlinks = False
 

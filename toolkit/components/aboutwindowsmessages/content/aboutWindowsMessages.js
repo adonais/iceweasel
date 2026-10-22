@@ -16,19 +16,25 @@ function refreshMessages() {
   for (let i = 0; i < windowTitles.value.length; ++i) {
     let windowCard = templateCard.content
       .cloneNode(true)
-      .querySelector("details");
-    // open the current window by default
-    windowCard.open = i === 0;
-    let summary = windowCard.querySelector("summary");
-    let titleSpan = summary.querySelector("h3.window-card-title");
-    titleSpan.appendChild(document.createTextNode(windowTitles.value[i]));
-    titleSpan.classList.toggle("current-window", windowCard.open);
-    let copyButton = summary.querySelector("button");
+      .querySelector("moz-card");
+    if (i === 0) {
+      windowCard.setAttribute("expanded", "true");
+    }
+    windowCard.setAttribute("heading", windowTitles.value[i]);
+    let copyButtonContainer = windowCard.querySelector(
+      ".copy-button-container"
+    );
+    let copyButton = document.createElement("button");
+    copyButton.setAttribute(
+      "data-l10n-id",
+      "windows-messages-copy-to-clipboard"
+    );
     copyButton.addEventListener("click", async e => {
       e.target.disabled = true;
       await copyMessagesToClipboard(e);
       e.target.disabled = false;
     });
+    copyButtonContainer.appendChild(copyButton);
     let innerUl = document.createElement("ul");
     for (let j = 0; j < windowMessages.value[i].length; ++j) {
       let innerLi = document.createElement("li");

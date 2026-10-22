@@ -105,7 +105,7 @@ HTMLSelectElement::HTMLSelectElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElementWithState(
           std::move(aNodeInfo), aFromParser, FormControlType::Select),
-      mOptions(new HTMLOptionsCollection(this, !!aFromParser)),
+      mOptions(new HTMLOptionsCollection(this)),
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mAutocompleteInfoState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mIsDoneAddingChildren(!aFromParser),
@@ -1197,9 +1197,9 @@ void HTMLSelectElement::RunSelectednessSettingAlgorithm(
 void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
   mIsDoneAddingChildren = true;
 
-  // PrototypeDocumentContentSink and innerHTML (and maybe XMLContentSink?) may
-  // not notify for all children during parsing, so mark the options list dirty
-  // at this point.
+  // PrototypeDocumentContentSink and innerHTML may not notify for all children
+  // during parsing, so mark the options list dirty at this point.
+  // See bug 2075868 about removing this.
   mOptions->SetDirty();
 
   if (nsIContent* firstChild = GetFirstChild()) {

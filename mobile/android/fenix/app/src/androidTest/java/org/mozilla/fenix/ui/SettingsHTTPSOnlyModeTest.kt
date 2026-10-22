@@ -9,6 +9,7 @@ import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -42,6 +43,12 @@ class SettingsHTTPSOnlyModeTest {
     @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1724825
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsHTTPSOnlyModeTest#httpsOnlyModeMenuItemsTest"],
+        bug = 2076438,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun httpsOnlyModeMenuItemsTest() {
         homeScreen(composeTestRule) {}
@@ -125,6 +132,14 @@ class SettingsHTTPSOnlyModeTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2091057
+    @Converted(
+        replacedBy =
+            [
+                "org.mozilla.fenix.ui.efficiency.tests.SettingsHTTPSOnlyModeTest#httpsOnlyModeExceptionPersistsForCurrentSessionTest"
+            ],
+        bug = 2076438,
+        since = "2026-10",
+    )
     @Test
     fun httpsOnlyModeExceptionPersistsForCurrentSessionTest() {
         homeScreen(composeTestRule) {}

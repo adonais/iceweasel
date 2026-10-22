@@ -1283,6 +1283,11 @@ impl ResourceCache {
 
     fn set_image_visible_rect(&mut self, key: ImageKey, rect: &DeviceIntRect) {
         if let Some(image) = self.resources.image_templates.get_mut(key) {
+            // Only blob images are sized by their visible rect; other templates must
+            // keep the size that their data and stride were validated against.
+            if !image.data.is_blob() {
+                return;
+            }
             image.visible_rect = *rect;
             image.descriptor.size = rect.size();
         }
@@ -1749,7 +1754,6 @@ impl ResourceCache {
     /// specified tile size.
     pub fn create_compositor_surface(
         &mut self,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     ) -> NativeSurfaceId {
@@ -1759,7 +1763,6 @@ impl ResourceCache {
             NativeSurfaceOperation {
                 details: NativeSurfaceOperationDetails::CreateSurface {
                     id,
-                    virtual_offset,
                     tile_size,
                     is_opaque,
                 },

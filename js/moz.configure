@@ -319,6 +319,32 @@ set_define("JS_CODEGEN_X64", jit_codegen.x64)
 set_define("JS_CODEGEN_WASM32", jit_codegen.wasm32)
 
 
+# Hardware shadow stack support
+# =======================================================
+option(
+    "--enable-js-hardware-shadow-stack",
+    help="Enable experimental hardware shadow stack support",
+)
+
+
+@depends("--enable-js-hardware-shadow-stack", target, simulator)
+def js_hw_shstk(enabled, target, simulator):
+    if not enabled:
+        return
+
+    if target.cpu != "x86_64":
+        die("--enable-js-hardware-shadow-stack is only supported on x86_64")
+
+    if simulator:
+        die("--enable-js-hardware-shadow-stack is not supported with a JIT simulator")
+
+    return True
+
+
+set_config("JS_HW_SHADOW_STACK", js_hw_shstk)
+set_define("JS_HW_SHADOW_STACK", js_hw_shstk)
+
+
 # Profiling
 # =======================================================
 option(
@@ -805,7 +831,7 @@ def default_jit_simd(jit_enabled, simulator, target):
     if simulator and (simulator[0] != "arm64"):
         return
 
-    if target.cpu in ("x86_64", "x86", "aarch64"):
+    if target.cpu in ("x86_64", "x86", "aarch64", "loongarch64"):
         return True
 
 
@@ -832,10 +858,12 @@ def jit_simd(value, jit_enabled, simulator, target):
     if simulator and (simulator[0] != "arm64"):
         die("--enable-jit-simd is not supported for simulators, except arm64")
 
-    if target.cpu in ("x86_64", "x86", "aarch64"):
+    if target.cpu in ("x86_64", "x86", "aarch64", "loongarch64"):
         return True
 
-    die("--enable-jit-simd only possible when targeting the x86_64/x86/arm64 jits")
+    die(
+        "--enable-jit-simd only possible when targeting the x86_64/x86/arm64/loongarch64 jits"
+    )
 
 
 set_config("ENABLE_JIT_SIMD", jit_simd)

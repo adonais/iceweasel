@@ -194,6 +194,28 @@ registerCleanupFunction(async function policies_headjs_finishWithCleanSlate() {
     "Engine is inactive at the end of the test"
   );
 
+  // PermissionManager refuses to remove EXPIRE_POLICY permissions one by one,
+  // so clear everything and restore the permissions that weren't from policies.
+  let permissions = Services.perms.all;
+  if (permissions.some(p => p.expireType == Services.perms.EXPIRE_POLICY)) {
+    Services.perms.removeAll();
+    for (let p of permissions) {
+      if (
+        p.expireType != Services.perms.EXPIRE_POLICY &&
+        Services.perms.testExactPermissionFromPrincipal(p.principal, p.type) !=
+          p.capability
+      ) {
+        Services.perms.addFromPrincipal(
+          p.principal,
+          p.type,
+          p.capability,
+          p.expireType,
+          p.expireTime
+        );
+      }
+    }
+  }
+
   EnterprisePolicyTesting.resetRunOnceState();
   PoliciesPrefTracker.stop();
 });

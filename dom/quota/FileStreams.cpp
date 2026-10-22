@@ -100,23 +100,22 @@ NS_IMETHODIMP FileQuotaStreamWithWrite<FileStreamBase>::Write(
   QM_SCOPED_CONTEXT("FileStreamWriteFailure"_ns);
 
   const auto resyncQuotaUsage = [this](const auto&) {
-    if (FileQuotaStreamWithWrite::mQuotaObject) {
+    QM_WARNONLY_TRY(([this]() -> Result<Ok, nsresult> {
+      if (!FileQuotaStreamWithWrite::mQuotaObject) {
+        return Ok{};
+      }
+
       // If the write failed, but MaybeUpdateSize above didn't fail, it means we
       // updated the quota usage to a value we don't actually use, so let's
       // force it back to the actual file size.
       int64_t currentSize;
-      const nsresult getSizeRv = FileStreamBase::GetSize(&currentSize);
-      if (NS_SUCCEEDED(getSizeRv)) {
-        const bool res =
-            FileQuotaStreamWithWrite::mQuotaObject->MaybeUpdateSize(
-                currentSize,
-                /* aTruncate */ true);
-        QM_WARNONLY_TRY(OkIf(res));
-        MOZ_ASSERT(res);
-      } else {
-        QM_WARNONLY_TRY(MOZ_TO_RESULT(getSizeRv));
-      }
-    }
+      QM_TRY(MOZ_TO_RESULT(FileStreamBase::GetSize(&currentSize)));
+
+      QM_TRY(
+          MOZ_TO_RESULT(FileQuotaStreamWithWrite::mQuotaObject->MaybeUpdateSize(
+              currentSize, /* aTruncate */ true)));
+      return Ok{};
+    })());
   };
 
   QM_TRY(MOZ_TO_RESULT(FileStreamBase::Write(aBuf, aCount, _retval)),
@@ -129,13 +128,23 @@ mozilla::ipc::RandomAccessStreamParams FileRandomAccessStream::Serialize(
     nsIInterfaceRequestor* aCallbacks) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   MOZ_RELEASE_ASSERT(!mDeserialized);
-  MOZ_ASSERT(mOpenParams.localFile);
 
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
+  // The quota object is looked up using |mOpenParams.localFile|, which is
+  // nulled out as soon as the file is opened. So if this stream has already
+  // been opened, we can't look up the quota object. In that case, the quota
+  // object acquired by |DoOpen()| back then has to be reused. Such a case
+  // happens, for example, because |EncryptedRandomAccessStream::Create()|
+  // opens the file to read the final block of the file this stream wraps.
+  RefPtr<QuotaObject> quotaObject = mQuotaObject;
+  if (!quotaObject) {
+    MOZ_ASSERT(mOpenParams.localFile);
 
-  RefPtr<QuotaObject> quotaObject = quotaManager->GetQuotaObject(
-      mPersistenceType, mOriginMetadata, mClientType, mOpenParams.localFile);
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_ASSERT(quotaManager);
+
+    quotaObject = quotaManager->GetQuotaObject(
+        mPersistenceType, mOriginMetadata, mClientType, mOpenParams.localFile);
+  }
   MOZ_ASSERT(quotaObject);
 
   IPCQuotaObject ipcQuotaObject = quotaObject->Serialize(aCallbacks);

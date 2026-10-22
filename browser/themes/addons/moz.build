@@ -31,7 +31,6 @@ GeneratedFile(
     inputs=[
         "aiwindow-nova/manifest.in.json",
         "/browser/themes/shared/tabbrowser/tab.nova.tokens.json",
-        "/browser/themes/shared/urlbar/urlbarview.tokens.json",
         "/toolkit/themes/shared/design-system/src/tokens/base/background.tokens.json",
         "/toolkit/themes/shared/design-system/src/tokens/base/color.tokens.json",
         "/toolkit/themes/shared/design-system/src/tokens/base/color.nova.tokens.json",

@@ -279,6 +279,10 @@ add_task(
     // Await the search service init to make this deterministic (bug 1885310).
     await SearchService.promiseInitialized;
 
+    // Session restore also triggers an asynchronous default-browser check.
+    // Await it so the environment is updated before checking its contents.
+    await TelemetryEnvironment.testIsDefaultBrowser();
+
     environmentData = TelemetryEnvironment.currentEnvironment;
     TelemetryEnvironmentTesting.checkEnvironmentData(environmentData);
     Assert.ok(
@@ -289,6 +293,10 @@ add_task(
       typeof environmentData.settings.isDefaultBrowser,
       "boolean",
       "isDefaultBrowser must be of the right type."
+    );
+    Assert.equal(
+      typeof Glean.browser.defaultAtLaunch.testGetValue(),
+      "boolean"
     );
 
     // Make sure pref-flipping doesn't overwrite the browser default state.

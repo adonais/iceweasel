@@ -259,6 +259,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
               ? html`<button
                   type="button"
                   class="swgt-row swgt-flyout-row swgt-view-tab-groups"
+                  aria-haspopup="menu"
                   aria-expanded="false"
                   @mouseenter=${e =>
                     this.#emitPreview(e, { groups: true }, "hover")}
@@ -353,6 +354,12 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
         rows[rows.indexOf(row) + step]?.focus();
         break;
       }
+      case "Home":
+      case "End": {
+        const rows = [...this.querySelectorAll(ROW_SELECTOR)];
+        (event.key === "Home" ? rows[0] : rows.at(-1)).focus();
+        break;
+      }
       case "ArrowLeft":
       case "ArrowRight":
         this.#emit("close-flyout");
@@ -373,12 +380,15 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
     if (this.groupsListId) {
       return html`<div
         class="swgt-flyout-list"
-        role="group"
+        role="menu"
         data-l10n-id="smartwindow-group-tabs-groups-list"
         @keydown=${e => this.#onKeyDown(e)}
         @click=${e => this.#onGroupsClick(e)}
       >
-        ${keyed(this.groupsListId, html`<tab-groups-list></tab-groups-list>`)}
+        ${keyed(
+          this.groupsListId,
+          html`<tab-groups-list row-role="menuitem"></tab-groups-list>`
+        )}
       </div>`;
     }
 
@@ -411,7 +421,7 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
   #tabList(tabInfos, onSelect, groupLabel = "") {
     return html`<div
       class="swgt-flyout-list"
-      role="group"
+      role="menu"
       data-l10n-id=${groupLabel
         ? "smartwindow-group-tabs-flyout-list"
         : "smartwindow-group-tabs-duplicates-list"}
@@ -423,6 +433,7 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
           html`<button
             type="button"
             class="swgt-flyout-tab"
+            role="menuitem"
             title=${info.title}
             @click=${() => onSelect(index)}
           >

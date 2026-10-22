@@ -17,7 +17,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/browser/NimbusFeatures.h"
 
-#define AITAB_ENABLED_PREF "browser.smartwindow.aitab.enabled"
 #define REFERRALS_ENABLED_PREF "browser.referrals.enabled"
 #define PROFILES_ENABLED_PREF "browser.profiles.enabled"
 #define ABOUT_WELCOME_CHROME_URL \
@@ -223,7 +222,7 @@ AboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   nsAutoCString path = GetAboutModuleName(aURI);
 
   if (path.EqualsASCII("smartpage") &&
-      !mozilla::Preferences::GetBool(AITAB_ENABLED_PREF, false)) {
+      !mozilla::StaticPrefs::browser_smartwindow_aitab_enabled()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 

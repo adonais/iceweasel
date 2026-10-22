@@ -8,7 +8,7 @@ This document only covers Legacy telemetry, not Glean telemetry.
 Glean metrics are self-documenting and can be looked up in the Glean dictionary.
 
 For information on other telemetry related to the address bar, see the general
-address bar {doc}`telemetry` document. For information on all telemetry in
+{doc}`telemetry` document. For information on all telemetry in
 Firefox, see the toolkit {doc}`/toolkit/components/telemetry/index` document.
 
     :depth: 2

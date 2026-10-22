@@ -449,9 +449,13 @@ function loadFail() {
         pageName +
         "__FAIL"
     );
-    TalosParentProfiler.finishTest().then(() => {
+    if (profilingInfo) {
+      TalosParentProfiler.finishTest().then(() => {
+        plStop(true);
+      });
+    } else {
       plStop(true);
-    });
+    }
   } else {
     dumpLine(
       "__WARNTimeout (" +

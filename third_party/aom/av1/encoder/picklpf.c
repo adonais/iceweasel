@@ -295,8 +295,11 @@ void av1_pick_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
     // Keyframes: filt_guess = q * 0.06699 - 1.60817
     // Other frames: filt_guess = q * inter_frame_multiplier + 2.48225
     //
-    // And high bit depth separately:
-    // filt_guess = q * 0.316206 + 3.87252
+    // 10 bit depth:
+    // filt_guess = q * 0.01976 + 3.87252
+    //
+    // 12 bit depth:
+    // filt_guess = q * 0.00494 + 3.87252
     int filt_guess;
     switch (seq_params->bit_depth) {
       case AOM_BITS_8:

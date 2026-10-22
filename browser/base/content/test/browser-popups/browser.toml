@@ -82,13 +82,11 @@ run-if = [
 ["browser_popup_move.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # Wayland doesn't like moving windows, X11/XWayland unreliable current positions
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # Wayland doesn't like moving windows, X11/XWayland unreliable current positions
 ]
 
 ["browser_popup_move_instant.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # Wayland doesn't like moving windows, X11/XWayland unreliable current positions
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # Wayland doesn't like moving windows, X11/XWayland unreliable current positions
 ]
 
 ["browser_popup_new_window_resize.js"]
@@ -99,7 +97,6 @@ support-files = ["popup_size.html"]
 ["browser_popup_resize.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
 ["browser_popup_resize_clamp.js"]
@@ -107,25 +104,21 @@ skip-if = [
 ["browser_popup_resize_instant.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
 ["browser_popup_resize_repeat.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
 ["browser_popup_resize_repeat_instant.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
 ["browser_popup_resize_revert.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
 ["browser_popup_resize_revert_instant.js"]

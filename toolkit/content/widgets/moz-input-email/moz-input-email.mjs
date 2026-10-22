@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+/// <reference path="./moz-input-email.tagmap.d.ts" />
+
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 /**
  * An email input custom element.
@@ -20,7 +22,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} placeholder - Text to display when the input has no value.
  * @property {string} title - The title attribute, mapped onto the inner input.
  */
-export default class MozInputEmail extends MozInputText {
+export class MozInputEmail extends MozInputText {
   inputTemplate() {
     return super.inputTemplate({ type: "email" });
   }

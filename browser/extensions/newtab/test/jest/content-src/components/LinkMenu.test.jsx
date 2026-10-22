@@ -477,7 +477,7 @@ describe("<LinkMenu>", () => {
 
       blockUrlOption.onClick(FAKE_EVENT);
 
-      expect(dispatch).toHaveBeenCalledTimes(3);
+      expect(dispatch).toHaveBeenCalledTimes(2);
       expect(dispatch).toHaveBeenNthCalledWith(1, blockUrlOption.action);
       const expected = {
         url: site.url,
@@ -521,7 +521,7 @@ describe("<LinkMenu>", () => {
 
       blockUrlOption.onClick(FAKE_EVENT);
 
-      expect(dispatch).toHaveBeenCalledTimes(3);
+      expect(dispatch).toHaveBeenCalledTimes(2);
       expect(dispatch).toHaveBeenNthCalledWith(1, blockUrlOption.action);
       const expected = {
         url: site.url,

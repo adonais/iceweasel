@@ -16,7 +16,7 @@ PRStatus PR_Unlock(PRLock *lock);
 
 ### Parameter
 
-{ref}`PR_Unlock` has one parameter:
+{doc}`pr_unlock` has one parameter:
 
 `lock`
 
@@ -32,4 +32,4 @@ The function returns one of the following values:
 
 ## See Also
 
-- [PR_Lock](PR_Lock)
+- [PR_Lock](pr_lock.md)

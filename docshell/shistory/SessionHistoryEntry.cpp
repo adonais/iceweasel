@@ -6,6 +6,7 @@
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsFrameLoader.h"

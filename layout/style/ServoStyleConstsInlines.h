@@ -12,6 +12,7 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/AspectRatio.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/SVGContentUtils.h"
@@ -209,17 +210,9 @@ inline bool StyleArcInner<T>::DecrementRef() {
   if (count.load(std::memory_order_relaxed) == kStaticRefcount) {
     return false;
   }
-  if (count.fetch_sub(1, std::memory_order_release) != 1) {
+  if (AtomicRefCountDecrement(count) != 0) {
     return false;
   }
-#ifdef MOZ_TSAN
-  // TSan doesn't understand std::atomic_thread_fence, so in order
-  // to avoid a false positive for every time a refcounted object
-  // is deleted, we replace the fence with an atomic operation.
-  count.load(std::memory_order_acquire);
-#else
-  std::atomic_thread_fence(std::memory_order_acquire);
-#endif
   MOZ_LOG_DTOR(this, "ServoArc", 8);
   return true;
 }

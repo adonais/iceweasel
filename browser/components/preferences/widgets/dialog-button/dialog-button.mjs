@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import MozButton from "chrome://global/content/elements/moz-button.mjs";
+import { MozButton } from "chrome://global/content/elements/moz-button.mjs";
 
 class DialogButton extends MozButton {
   /**

@@ -78,40 +78,42 @@ export default class BreachAlert extends MozLitElement {
         href="chrome://browser/content/controlcenter/components/breach-alert-panel.css"
       />
       <div class="container" ?hidden=${this.hidden}>
-        <div class="card">
-          <div class="main">
-            <img
-              class="fox-icon-legacy"
-              src="chrome://browser/content/controlcenter/assets/fox-concern.svg"
-              alt=""
-            />
-            <div class="content">
-              <h2
-                class="heading"
-                data-l10n-id="trustpanel-breachalerts-anonymous-breached-header"
-              ></h2>
-              <p
-                data-l10n-id="trustpanel-breachalerts-anonymous-breached-description"
-              ></p>
+        <moz-card>
+          <div class="card">
+            <div class="main">
+              <img
+                class="fox-icon-legacy"
+                src="chrome://browser/content/controlcenter/assets/fox-concern.svg"
+                alt=""
+              />
+              <div class="content">
+                <h2
+                  class="heading"
+                  data-l10n-id="trustpanel-breachalerts-anonymous-breached-header"
+                ></h2>
+                <p
+                  data-l10n-id="trustpanel-breachalerts-anonymous-breached-description"
+                ></p>
+              </div>
+              <img
+                class="shield-icon"
+                src="chrome://browser/content/controlcenter/assets/breach-alert-shield-warning.svg"
+                alt=""
+              />
             </div>
-            <img
-              class="shield-icon"
-              src="chrome://browser/content/controlcenter/assets/breach-alert-shield-warning.svg"
-              alt=""
-            />
+            <moz-button-group class="action-buttons">
+              <moz-button
+                @click=${this._handleDismiss}
+                data-l10n-id="trustpanel-breachalerts-anonymous-breached-button-dismiss"
+              ></moz-button>
+              <moz-button
+                type="primary"
+                @click=${this._handleCta}
+                data-l10n-id="trustpanel-breachalerts-anonymous-breached-button-check-monitor"
+              ></moz-button>
+            </moz-button-group>
           </div>
-          <moz-button-group>
-            <moz-button
-              @click=${this._handleDismiss}
-              data-l10n-id="trustpanel-breachalerts-anonymous-breached-button-dismiss"
-            ></moz-button>
-            <moz-button
-              type="primary"
-              @click=${this._handleCta}
-              data-l10n-id="trustpanel-breachalerts-anonymous-breached-button-check-monitor"
-            ></moz-button>
-          </moz-button-group>
-        </div>
+        </moz-card>
       </div>
     `;
   }

@@ -39,6 +39,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ClientHandle.h"
 #include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientPrincipalUtils.h"
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ConsoleUtils.h"
 #include "mozilla/dom/ContentParent.h"
@@ -1131,11 +1132,12 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
     // whether we really need to in PushMessageDispatcher::NotifyWorkers.  Since
     // in practice this only affects JS callers that pass data, and we don't
     // have any right now, let's not worry about it.
-    return SendPushEvent(aOriginAttributes, aScope, u""_ns,
-                         Some(aDataBytes.Clone()));
+    SendPushEvent(aOriginAttributes, aScope, u""_ns, Some(aDataBytes.Clone()));
+    return NS_OK;
   }
   MOZ_ASSERT(optional_argc == 0);
-  return SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
+  SendPushEvent(aOriginAttributes, aScope, u""_ns, Nothing());
+  return NS_OK;
 }
 
 nsresult ServiceWorkerManager::SendCookieChangeEvent(
@@ -1161,15 +1163,20 @@ nsresult ServiceWorkerManager::SendCookieChangeEvent(
       aCookie, aCookieDeleted, registration);
 }
 
-nsresult ServiceWorkerManager::SendPushEvent(
+RefPtr<PushHandledPromise> ServiceWorkerManager::SendPushEvent(
     const nsACString& aOriginAttributes, const nsACString& aScope,
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData) {
   OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
-    return NS_ERROR_INVALID_ARG;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
   }
 
-  nsCOMPtr<nsIPrincipal> principal = MOZ_TRY(ScopeToPrincipal(aScope, attrs));
+  auto principalOrErr = ScopeToPrincipal(aScope, attrs);
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return PushHandledPromise::CreateAndReject(principalOrErr.unwrapErr(),
+                                               __func__);
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
 
   // The registration handling a push notification must have an exact scope
   // match. This will try to find an exact match, unlike how fetch may find the
@@ -1177,14 +1184,14 @@ nsresult ServiceWorkerManager::SendPushEvent(
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetRegistration(principal, aScope);
   if (NS_WARN_IF(!registration)) {
-    return NS_ERROR_FAILURE;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(registration->Scope().Equals(aScope));
 
   ServiceWorkerInfo* serviceWorker = registration->GetActive();
   if (NS_WARN_IF(!serviceWorker)) {
-    return NS_ERROR_FAILURE;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   return serviceWorker->WorkerPrivate()->SendPushEvent(aMessageId, aData,
@@ -1599,6 +1606,19 @@ void ServiceWorkerManager::LocalizeAndReportToAllClients(
     const nsTArray<nsString>& aParamArray, uint32_t aFlags,
     const nsCString& aFilename, const nsString& aLine, uint32_t aLineNumber,
     uint32_t aColumnNumber) {
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "ServiceWorkerManager::LocalizeAndReportToAllClients",
+        [scope = aScope, stringKey = nsCString(aStringKey),
+         paramArray = aParamArray.Clone(), aFlags, filename = aFilename,
+         line = aLine, aLineNumber, aColumnNumber]() {
+          LocalizeAndReportToAllClients(scope, stringKey.get(), paramArray,
+                                        aFlags, filename, line, aLineNumber,
+                                        aColumnNumber);
+        }));
+    return;
+  }
+
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (!swm) {
     return;
@@ -2487,6 +2507,18 @@ nsresult ServiceWorkerManager::GetClientRegistration(
 
   // If the document is controlled, the current worker MUST be non-null.
   if (!data->mRegistrationInfo->GetActive()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  // Defense in depth: mControlledClients is keyed on the client id alone, so
+  // verify the client and the registration controlling it are same-origin
+  // before handing the registration back to a fetch event dispatch.  Every
+  // legitimately controlled client already satisfies this, since
+  // ClientSource::SetController() and ClientHandle::Control() both assert it.
+  if (NS_WARN_IF(!ClientMatchPrincipalInfo(aClientInfo.PrincipalInfo(),
+                                           data->mRegistrationInfo->GetActive()
+                                               ->Descriptor()
+                                               .PrincipalInfo()))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 

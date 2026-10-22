@@ -5,7 +5,8 @@
 #ifndef mozilla_dom_CharacterDataBufferImpl_h
 #define mozilla_dom_CharacterDataBufferImpl_h
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 template <size_t size>
 struct Non8BitParameters;

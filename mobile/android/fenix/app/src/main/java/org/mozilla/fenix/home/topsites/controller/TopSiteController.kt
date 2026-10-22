@@ -25,6 +25,7 @@ import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.feature.top.sites.DefaultTopSitesProvider
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.service.mars.MozAdsUseCases
@@ -48,6 +49,7 @@ import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.home.HomeFragmentDirections
+import org.mozilla.fenix.home.blocklist.hasSameBlocklistEntryAs
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.ShortcutsFragmentDirections
@@ -116,6 +118,7 @@ class DefaultTopSiteController(
     private val store: BrowserStore,
     private val appStore: AppStore,
     private val settings: Settings,
+    private val defaultTopSitesProvider: DefaultTopSitesProvider,
     private val addTabUseCase: TabsUseCases.AddNewTabUseCase,
     private val selectTabUseCase: TabsUseCases.SelectTabUseCase,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
@@ -239,9 +242,13 @@ class DefaultTopSiteController(
         }
 
         viewLifecycleScope.launch {
-            with(activity.components.useCases.topSitesUseCase) {
-                removeTopSites(topSite)
-            }
+            // Any top site sharing the URL of a default top site from the provider needs to be added to the blocklist,
+            // whatever its type, otherwise the default top site would reappear in its place.
+            val shouldBlock =
+                defaultTopSitesProvider.getDefaultTopSites().any { it.url.hasSameBlocklistEntryAs(topSite.url) }
+            appStore.dispatch(AppAction.RemoveTopSite(topSite = topSite, shouldBlock = shouldBlock))
+
+            topSitesUseCases.removeTopSites(topSite)
         }
     }
 

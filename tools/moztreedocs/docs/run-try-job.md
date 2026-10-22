@@ -22,5 +22,5 @@ Running try jobs require the user to have try server access.
 
 :::{note}
 To learn more about setting up try server or
-using a different selector head over to {ref}`try server documentation <Pushing to Try>`
+using a different selector head over to {doc}`try server documentation </tools/try/index>`
 :::

@@ -140,12 +140,14 @@ moz-button::part(button) {
   /* MozMessageBar colors by message type */
   :host([type="warning"]) {
     --message-bar-background-color: var(--message-bar-background-color-warning);
+    --message-bar-text-color: var(--message-bar-text-color-warning);
     --message-bar-icon-background-color: var(--message-bar-icon-background-color-warning);
     --message-bar-icon-color: var(--icon-color-warning);
   }
 
   :host([type="success"]) {
     --message-bar-background-color: var(--message-bar-background-color-success);
+    --message-bar-text-color: var(--message-bar-text-color-success);
     --message-bar-icon-background-color: var(--message-bar-icon-background-color-success);
     --message-bar-icon-color: var(--icon-color-success);
   }
@@ -153,6 +155,7 @@ moz-button::part(button) {
   :host([type="error"]),
   :host([type="critical"]) {
     --message-bar-background-color: var(--message-bar-background-color-critical);
+    --message-bar-text-color: var(--message-bar-text-color-critical);
     --message-bar-icon-background-color: var(--message-bar-icon-background-color-critical);
     --message-bar-icon-color: var(--icon-color-critical);
   }

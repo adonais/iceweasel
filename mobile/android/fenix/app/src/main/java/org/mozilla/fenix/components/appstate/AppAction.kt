@@ -91,6 +91,14 @@ sealed class AppAction : Action {
 
     data class TopSitesChange(val topSites: List<TopSite>) : AppAction()
 
+    /**
+     * Action dispatched when the user has removed a top site.
+     *
+     * @property topSite The [TopSite] that was removed.
+     * @property shouldBlock Whether to add the top site to the blocklist.
+     */
+    data class RemoveTopSite(val topSite: TopSite, val shouldBlock: Boolean) : AppAction()
+
     data class RecentTabsChange(val recentTabs: List<RecentTab>) : AppAction()
 
     data class RemoveRecentTab(val recentTab: RecentTab) : AppAction()
@@ -464,6 +472,31 @@ sealed class AppAction : Action {
 
         /** [ReaderViewAction] dispatched to reset the [AppState.readerViewState] to its default state. */
         data object Reset : ReaderViewAction()
+    }
+
+    /** [AppAction]s related to Power Saving Mode. */
+    sealed class PowerSavingModeAction : AppAction() {
+
+        /**
+         * Dispatched when Power Saving Mode is turned on or off.
+         *
+         * @property isActive Whether Power Saving Mode is now active.
+         */
+        data class Changed(val isActive: Boolean) : PowerSavingModeAction()
+
+        /**
+         * Dispatched when Power Saving Mode forced a tab into reader view.
+         *
+         * @property tabId The ID of the tab that was forced into reader view.
+         */
+        data class ReaderViewForced(val tabId: String) : PowerSavingModeAction()
+
+        /**
+         * Dispatched when tabs are no longer in the reader view Power Saving Mode forced them into.
+         *
+         * @property tabIds The IDs of the tabs that left their forced reader view.
+         */
+        data class ForcedReaderViewLeft(val tabIds: Set<String>) : PowerSavingModeAction()
     }
 
     /** [AppAction]s related to the private‐browsing lock feature. */

@@ -49,8 +49,8 @@ instrumented userland, it will cause false positives.**
 
 #### Getting the source
 
-If you don't have a source code repository clone yet, you need to {ref}`get
-yourself a clone of Mozilla-central <Firefox Contributors' Quick Reference>`.
+If you don't have a source code repository clone yet, you need to {doc}`get
+yourself a clone of Mozilla-central </contributing/contribution_quickref>`.
 
 #### Adjusting the build configuration
 

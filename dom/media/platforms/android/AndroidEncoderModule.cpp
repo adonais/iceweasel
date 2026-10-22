@@ -6,7 +6,7 @@
 
 #include "AndroidDataEncoder.h"
 #include "mozilla/Logging.h"
-#include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
+#include "mozilla/gfx/gfxVars.h"
 
 using mozilla::media::EncodeSupport;
 using mozilla::media::EncodeSupportSet;
@@ -23,17 +23,17 @@ EncodeSupportSet AndroidEncoderModule::SupportsCodec(CodecType aCodec) const {
   switch (aCodec) {
     case CodecType::H264:
       supports += EncodeSupport::SoftwareEncode;
-      if (java::HardwareCodecCapabilityUtils::HasHWH264(true /* encoder */)) {
+      if (gfx::gfxVars::UseH264HwEncode()) {
         supports += EncodeSupport::HardwareEncode;
       }
       break;
     case CodecType::VP8:
-      if (java::HardwareCodecCapabilityUtils::HasHWVP8(true /* encoder */)) {
+      if (gfx::gfxVars::UseVP8HwEncode()) {
         supports += EncodeSupport::HardwareEncode;
       }
       break;
     case CodecType::VP9:
-      if (java::HardwareCodecCapabilityUtils::HasHWVP9(true /* encoder */)) {
+      if (gfx::gfxVars::UseVP9HwEncode()) {
         supports += EncodeSupport::HardwareEncode;
       }
       break;

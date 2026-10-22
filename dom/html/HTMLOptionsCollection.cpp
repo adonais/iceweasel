@@ -27,13 +27,12 @@ static bool MatchOption(Element* aElement, int32_t aNamespaceID, nsAtom* aAtom,
   return HTMLOptionsCollection::IsValidOption(*option, *root);
 }
 
-HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aRoot,
-                                             bool aFromParser)
+HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aRoot)
     : ContentList(aRoot, MatchOption, nullptr, aRoot,
                   /* aDeep = */ true, /* aMatchAtom = */ nullptr,
                   /* aMatchNameSpaceId = */ kNameSpaceID_None,
                   /* aFuncMayDependOnAttr = */ false,
-                  /* aLiveList = */ true, aFromParser) {}
+                  /* aLiveList = */ true) {}
 
 HTMLSelectElement* HTMLOptionsCollection::Select() const {
   return static_cast<HTMLSelectElement*>(mRootNode);
@@ -44,7 +43,7 @@ nsresult HTMLOptionsCollection::GetOptionIndex(Element* aOption,
                                                bool aForward, int32_t* aIndex) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
              "Callers must hold a script blocker");
-  BringSelfUpToDate(true);
+  BringSelfUpToDate();
 
   // NOTE: aIndex shouldn't be set if the returned value isn't NS_OK.
   int32_t index;

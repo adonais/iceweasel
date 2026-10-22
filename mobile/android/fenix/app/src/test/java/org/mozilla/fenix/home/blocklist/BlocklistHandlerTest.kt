@@ -14,6 +14,8 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.feature.top.sites.TopSite
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -271,6 +273,16 @@ class BlocklistHandlerTest {
             }
 
         assertEquals(allowedTopSites, filtered)
+    }
+
+    @Test
+    fun `GIVEN urls with different paths WHEN the URL is compared with a blocklist entry THEN return whether they are the same blocklist entry`() {
+        assertTrue("https://www.wikipedia.org/".hasSameBlocklistEntryAs("wikipedia.org"))
+        assertTrue("http://m.wikipedia.org".hasSameBlocklistEntryAs("https://wikipedia.org/"))
+        assertTrue("https://www.wikipedia.org/sampleArticle/".hasSameBlocklistEntryAs("wikipedia.org/sampleArticle"))
+        assertFalse("https://www.wikipedia.org/".hasSameBlocklistEntryAs("https://ja.wikipedia.org/"))
+        assertFalse("https://wikipedia.org".hasSameBlocklistEntryAs("https://wikipedia.org/sampleArticle"))
+        assertFalse("https://wikipedia.org/sampleArticle".hasSameBlocklistEntryAs("https://wikipedia.org/otherArticle"))
     }
 
     private fun defaultTopSite(url: String) = TopSite.Default(id = null, title = url, url = url, createdAt = null)

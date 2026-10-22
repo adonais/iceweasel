@@ -5,6 +5,7 @@
     <title>MozPageNav Tests</title>
     <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <script src="lit-test-helpers.js"></script>
     <link
       rel="stylesheet"
       href="chrome://mochikit/content/tests/SimpleTest/test.css"
@@ -113,9 +114,7 @@
         "chrome://browser/content/utilityOverlay.js",
         this
       );
-      const { BrowserTestUtils } = ChromeUtils.importESModule(
-        "resource://testing-common/BrowserTestUtils.sys.mjs"
-      );
+      const testHelpers = new LitTestHelpers();
 
       const mozPageNav = document.querySelector("moz-page-nav");
 
@@ -405,6 +404,95 @@
           mozPageNav.currentView,
           "The first page nav button is still selected"
         );
+      });
+
+      /**
+       * Tests that arrow keys with modifiers do not navigate
+       */
+      add_task(
+        async function test_keyboard_navigation_ignores_modified_arrows() {
+          let firstPageNavButton = mozPageNav.pageNavButtons[0];
+          let secondPageNavButton = mozPageNav.pageNavButtons[1];
+          let thirdPageNavButton = mozPageNav.pageNavButtons[2];
+
+          secondPageNavButton.activate();
+          await mozPageNav.updateComplete;
+          secondPageNavButton.buttonEl.focus();
+          ok(
+            isActiveElement(secondPageNavButton),
+            "The second page nav button is the active element"
+          );
+
+          // Starting on the second button makes every direction observable.
+          await testHelpers.verifyModifiedArrowKeysIgnored({
+            target: secondPageNavButton.buttonEl,
+            getState: () => mozPageNav.currentView,
+          });
+          is(
+            thirdPageNavButton.view,
+            mozPageNav.currentView,
+            "Bare ArrowDown selects the next page nav button"
+          );
+
+          firstPageNavButton.activate();
+          await mozPageNav.updateComplete;
+        }
+      );
+
+      /**
+       * Tests that Left and Right arrow keys are reversed in RTL
+       */
+      add_task(async function test_keyboard_navigation_rtl() {
+        let firstPageNavButton = mozPageNav.pageNavButtons[0];
+        let secondPageNavButton = mozPageNav.pageNavButtons[1];
+
+        await SpecialPowers.pushPrefEnv({
+          set: [["intl.l10n.pseudo", "bidi"]],
+        });
+        ok(Services.locale.isAppLocaleRTL, "The app locale is RTL");
+
+        firstPageNavButton.activate();
+        await mozPageNav.updateComplete;
+        firstPageNavButton.buttonEl.focus();
+
+        await arrowLeft();
+        is(
+          secondPageNavButton.view,
+          mozPageNav.currentView,
+          "ArrowLeft selects the second page nav button in RTL"
+        );
+        ok(
+          isActiveElement(secondPageNavButton),
+          "The second page nav button is the active element"
+        );
+
+        await arrowRight();
+        is(
+          firstPageNavButton.view,
+          mozPageNav.currentView,
+          "ArrowRight selects the first page nav button in RTL"
+        );
+        ok(
+          isActiveElement(firstPageNavButton),
+          "The first page nav button is the active element"
+        );
+        await arrowRight();
+        is(
+          firstPageNavButton.view,
+          mozPageNav.currentView,
+          "The first page nav button is still selected"
+        );
+
+        await arrowDown();
+        is(
+          secondPageNavButton.view,
+          mozPageNav.currentView,
+          "ArrowDown still selects the next page nav button in RTL"
+        );
+
+        await SpecialPowers.popPrefEnv();
+        firstPageNavButton.activate();
+        await mozPageNav.updateComplete;
       });
 
       add_task(async function test_visibility_change_keyboard_navigation() {

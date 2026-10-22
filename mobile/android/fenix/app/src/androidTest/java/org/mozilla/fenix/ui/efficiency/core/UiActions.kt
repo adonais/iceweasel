@@ -18,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiObject2
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 
 /**
  * Do a thing to a located element, whatever backend it came from, so a verb names its action and nothing else. One copy
@@ -34,8 +35,11 @@ object UiActions {
             element,
             "click",
             espresso = { it.perform(ViewActions.click()) },
+            // A UiObject is resolved on one poll tick and acted on the next; on a screen still animating (e.g. the
+            // launcher settling a freshly-added home-screen shortcut) the node can flicker out in that gap, so bridge
+            // it with waitForExists rather than a single instantaneous exists() that throws on a transient miss.
             uiObject = {
-                if (!it.exists()) throw AssertionError("UiObject does not exist")
+                if (!it.waitForExists(waitingTimeShort)) throw AssertionError("UiObject does not exist")
                 if (!it.click()) throw AssertionError("Failed to click UiObject")
             },
             uiObject2 = { it.click() },
@@ -53,7 +57,7 @@ object UiActions {
             "long click",
             espresso = { it.perform(ViewActions.longClick()) },
             uiObject = {
-                if (!it.exists()) throw AssertionError("UiObject does not exist")
+                if (!it.waitForExists(waitingTimeShort)) throw AssertionError("UiObject does not exist")
                 if (!it.longClick()) throw AssertionError("Failed to long click UiObject")
             },
             uiObject2 = { it.longClick() },

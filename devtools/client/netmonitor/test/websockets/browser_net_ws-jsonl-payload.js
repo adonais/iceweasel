@@ -88,7 +88,7 @@ async function sendAndSelectFrame(payload) {
     "#messages-view .message-list-table .message-list-item",
     2
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
   await clickOnSidebarTab(document, "response");
   await wait;
 
@@ -99,7 +99,7 @@ async function sendAndSelectFrame(payload) {
 
   // The MessagePayload component parses the payload asynchronously.
   await waitForTick();
-  EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
+  clickInView(frames[0]);
 
   return { monitor, messagesView: document.querySelector("#messages-view") };
 }

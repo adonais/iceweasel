@@ -136,7 +136,7 @@ using ReadDependentCBResult = ::mozilla::Result<::mozilla::Ok, DLErrorType>;
 
 static ReadDependentCBResult ReadDependentCB(
     pathstr_t aDependentLib, LibLoadingStrategy aLibLoadingStrategy) {
-#if !defined(MOZ_LINKER) && !defined(__ANDROID__)
+#if !defined(MOZ_LINKER)
   // Don't bother doing a ReadAhead if we're not in the parent process.
   // What we need from the library should already be in the system file
   // cache.

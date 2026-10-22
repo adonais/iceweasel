@@ -9,6 +9,8 @@ type TabMetricsContext = import("../TabMetrics.sys.mjs").TabMetricsContext;
 type TabGroupId = import("../../sessionstore/TabGroupState.sys.mjs").TabGroupId;
 type TabGroupStateData =
   import("../../sessionstore/TabGroupState.sys.mjs").TabGroupStateData;
+type SavedTabGroupStateData =
+  import("../../sessionstore/TabGroupState.sys.mjs").SavedTabGroupStateData;
 
 // TaskbarTabsRegistry keeps its entry class private to Web Apps.
 // TODO(bug 2066310): the tabbrowser has no business holding one.

@@ -1760,17 +1760,15 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Correctness) {
   memset(dst_v_two_stage, 0, uv_plane_size);
   memset(dst_v_opt, 0, uv_plane_size);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, uv_width / 2,
-                     dst_v_opt, uv_width / 2, uv_width,
-                     benchmark_height_, 16);
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, uv_width / 2, dst_v_opt,
+                     uv_width / 2, uv_width, benchmark_height_, 16);
 
   // Benchmark 2 step conversion for comparison.
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetilePlane(tile_uv, tile_width, detiled_uv, uv_width,
-                uv_width, benchmark_height_, 16);
-    SplitUVPlane(detiled_uv, uv_width, dst_u_two_stage,
-                 uv_width / 2, dst_v_two_stage,
-                 uv_width / 2, uv_width / 2,
+    DetilePlane(tile_uv, tile_width, detiled_uv, uv_width, uv_width,
+                benchmark_height_, 16);
+    SplitUVPlane(detiled_uv, uv_width, dst_u_two_stage, uv_width / 2,
+                 dst_v_two_stage, uv_width / 2, uv_width / 2,
                  benchmark_height_);
   }
 
@@ -1811,17 +1809,15 @@ TEST_F(LibYUVPlanarTest, TestDetileSplitUVPlane_Benchmark) {
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags_);
 
-  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, uv_width / 2,
-                     dst_v_c, uv_width / 2, uv_width,
-                     benchmark_height_, 16);
+  DetileSplitUVPlane(tile_uv, tile_width, dst_u_c, uv_width / 2, dst_v_c,
+                     uv_width / 2, uv_width, benchmark_height_, 16);
 
   // Enable optimizations.
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (j = 0; j < benchmark_iterations_; j++) {
-    DetileSplitUVPlane(
-        tile_uv, tile_width, dst_u_opt, uv_width / 2, dst_v_opt,
-        uv_width / 2, uv_width, benchmark_height_, 16);
+    DetileSplitUVPlane(tile_uv, tile_width, dst_u_opt, uv_width / 2, dst_v_opt,
+                       uv_width / 2, uv_width, benchmark_height_, 16);
   }
 
   for (i = 0; i < uv_plane_size; ++i) {
@@ -2289,14 +2285,14 @@ static int TestBlur(int width,
   }
   const int kBpp = 4;
   const int kStride = width * kBpp;
+  const int kCumsumHeight = radius * 2 + 2;
   align_buffer_page_end(src_argb_a, (size_t)kStride * height + off);
-  align_buffer_page_end(dst_cumsum, (size_t)width * height * 16);
+  align_buffer_page_end(dst_cumsum, (size_t)width * kCumsumHeight * 16);
   align_buffer_page_end(dst_argb_c, (size_t)kStride * height);
   align_buffer_page_end(dst_argb_opt, (size_t)kStride * height);
   for (size_t i = 0; i < (size_t)kStride * height; ++i) {
     src_argb_a[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_cumsum, 0, (size_t)width * height * 16);
   memset(dst_argb_c, 0, (size_t)kStride * height);
   memset(dst_argb_opt, 0, (size_t)kStride * height);
 
@@ -2360,32 +2356,36 @@ TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlur_Opt)) {
   ASSERT_LE(max_diff, 1);
 }
 
-static const int kBlurSmallSize = 5;
+static const int kBlurSmallSize = 1;
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Any)) {
   int max_diff =
-      TestBlur(benchmark_width_ + 1, benchmark_height_, benchmark_iterations_,
-               disable_cpu_flags_, benchmark_cpu_info_, +1, 0, kBlurSmallSize);
+      TestBlur((benchmark_width_ + 3) / 4 + 1, (benchmark_height_ + 3) / 4,
+               benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_,
+               +1, 0, kBlurSmallSize);
   ASSERT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Unaligned)) {
   int max_diff =
-      TestBlur(benchmark_width_, benchmark_height_, benchmark_iterations_,
-               disable_cpu_flags_, benchmark_cpu_info_, +1, 1, kBlurSmallSize);
+      TestBlur((benchmark_width_ + 3) / 4, (benchmark_height_ + 3) / 4,
+               benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_,
+               +1, 1, kBlurSmallSize);
   ASSERT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Invert)) {
   int max_diff =
-      TestBlur(benchmark_width_, benchmark_height_, benchmark_iterations_,
-               disable_cpu_flags_, benchmark_cpu_info_, -1, 0, kBlurSmallSize);
+      TestBlur((benchmark_width_ + 3) / 4, (benchmark_height_ + 3) / 4,
+               benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_,
+               -1, 0, kBlurSmallSize);
   ASSERT_LE(max_diff, 1);
 }
 
 TEST_F(LibYUVPlanarTest, DISABLED_ARM(ARGBBlurSmall_Opt)) {
   int max_diff =
-      TestBlur(benchmark_width_, benchmark_height_, benchmark_iterations_,
-               disable_cpu_flags_, benchmark_cpu_info_, +1, 0, kBlurSmallSize);
+      TestBlur((benchmark_width_ + 3) / 4, (benchmark_height_ + 3) / 4,
+               benchmark_iterations_, disable_cpu_flags_, benchmark_cpu_info_,
+               +1, 0, kBlurSmallSize);
   ASSERT_LE(max_diff, 1);
 }
 
@@ -3768,9 +3768,9 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 }
 #endif
 
-#if defined(HAS_MULTIPLYROW_16_AVX512BW) || defined(HAS_MULTIPLYROW_16_AVX2) || \
-    defined(HAS_MULTIPLYROW_16_NEON) || defined(HAS_MULTIPLYROW_16_SME) ||      \
-    defined(HAS_MULTIPLYROW_16_RVV)
+#if defined(HAS_MULTIPLYROW_16_AVX512BW) ||                                 \
+    defined(HAS_MULTIPLYROW_16_AVX2) || defined(HAS_MULTIPLYROW_16_NEON) || \
+    defined(HAS_MULTIPLYROW_16_SME) || defined(HAS_MULTIPLYROW_16_RVV)
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   // Round count up to multiple of 64
   const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
@@ -3811,28 +3811,28 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_AVX2)
-    if (has_avx2) {
+        if (has_avx2) {
       MultiplyRow_16_AVX2(reinterpret_cast<const uint16_t*>(src_pixels_y),
                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                           kPixels);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_SME)
-    if (has_sme) {
+        if (has_sme) {
       MultiplyRow_16_SME(reinterpret_cast<const uint16_t*>(src_pixels_y),
                          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                          kPixels);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_NEON)
-    if (has_neon) {
+        if (has_neon) {
       MultiplyRow_16_NEON(reinterpret_cast<const uint16_t*>(src_pixels_y),
                           reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                           kPixels);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_RVV)
-    if (has_rvv) {
+        if (has_rvv) {
       MultiplyRow_16_RVV(reinterpret_cast<const uint16_t*>(src_pixels_y),
                          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
                          kPixels);
@@ -3854,8 +3854,8 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 
-#if defined(HAS_MULTIPLYROW_16_AVX512BW) || defined(HAS_MULTIPLYROW_16_AVX2) || \
-    defined(HAS_MULTIPLYROW_16_NEON)
+#if defined(HAS_MULTIPLYROW_16_AVX512BW) || \
+    defined(HAS_MULTIPLYROW_16_AVX2) || defined(HAS_MULTIPLYROW_16_NEON)
 TEST_F(LibYUVPlanarTest, MultiplyRow_16_Any) {
   const int kMaxPixels = 256;
   align_buffer_page_end(src_pixels_y, kMaxPixels * 2);
@@ -3885,28 +3885,29 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Any) {
 
 #if defined(HAS_MULTIPLYROW_16_AVX512BW)
     if (has_avx512) {
-      MultiplyRow_16_Any_AVX512BW(reinterpret_cast<const uint16_t*>(src_pixels_y),
-                                  reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
-                                  64, width);
+      MultiplyRow_16_Any_AVX512BW(
+          reinterpret_cast<const uint16_t*>(src_pixels_y),
+          reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64, width);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_AVX2)
-    if (has_avx2) {
+        if (has_avx2) {
       MultiplyRow_16_Any_AVX2(reinterpret_cast<const uint16_t*>(src_pixels_y),
-                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
-                              64, width);
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                              width);
     } else
 #endif
 #if defined(HAS_MULTIPLYROW_16_NEON)
-    if (has_neon) {
+        if (has_neon) {
       MultiplyRow_16_Any_NEON(reinterpret_cast<const uint16_t*>(src_pixels_y),
-                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt),
-                              64, width);
+                              reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                              width);
     } else
 #endif
     {
       MultiplyRow_16_C(reinterpret_cast<const uint16_t*>(src_pixels_y),
-                       reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64, width);
+                       reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 64,
+                       width);
     }
 
     for (int i = 0; i < width * 2; ++i) {
@@ -3918,7 +3919,8 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Any) {
   free_aligned_buffer_page_end(dst_pixels_y_opt);
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
-#endif  // HAS_MULTIPLYROW_16_AVX512BW || HAS_MULTIPLYROW_16_AVX2 || HAS_MULTIPLYROW_16_NEON
+#endif  // HAS_MULTIPLYROW_16_AVX512BW || HAS_MULTIPLYROW_16_AVX2 ||
+        // HAS_MULTIPLYROW_16_NEON
 #endif  // HAS_MULTIPLYROW_16_...
 
 TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
@@ -4088,8 +4090,10 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
 }
 #endif  // HAS_CONVERT16TO8ROW_AVX2
 
-#if defined(HAS_HALFWIDTHROW_16TO8_AVX2) || defined(HAS_HALFWIDTHROW_16TO8_SSSE3) || \
-    defined(HAS_HALFWIDTHROW_16TO8_AVX512BW) || defined(HAS_HALFWIDTHROW_16TO8_NEON)
+#if defined(HAS_HALFWIDTHROW_16TO8_AVX2) ||     \
+    defined(HAS_HALFWIDTHROW_16TO8_SSSE3) ||    \
+    defined(HAS_HALFWIDTHROW_16TO8_AVX512BW) || \
+    defined(HAS_HALFWIDTHROW_16TO8_NEON)
 TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Opt) {
   const int kPixels = (benchmark_width_ * benchmark_height_ + 63) & ~63;
   align_buffer_page_end_16(src_pixels_uv, kPixels * 4);
@@ -4127,19 +4131,19 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Opt) {
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_AVX2)
-    if (has_avx2) {
+        if (has_avx2) {
       HalfWidthRow_16To8_AVX2(src_pixels_uv, kPixels * 2, dst_pixels_uv_opt,
                               16384, kPixels);
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_SSSE3)
-    if (has_ssse3) {
+        if (has_ssse3) {
       HalfWidthRow_16To8_SSSE3(src_pixels_uv, kPixels * 2, dst_pixels_uv_opt,
                                16384, kPixels);
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_NEON)
-    if (has_neon) {
+        if (has_neon) {
       HalfWidthRow_16To8_NEON(src_pixels_uv, kPixels * 2, dst_pixels_uv_opt,
                               16384, kPixels);
     } else
@@ -4196,19 +4200,19 @@ TEST_F(LibYUVPlanarTest, HalfWidthRow_16To8_Any) {
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_AVX2)
-    if (has_avx2) {
+        if (has_avx2) {
       HalfWidthRow_16To8_Any_AVX2(src_pixels_uv, kMaxPixels * 2,
                                   dst_pixels_uv_opt, 16384, width);
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_SSSE3)
-    if (has_ssse3) {
+        if (has_ssse3) {
       HalfWidthRow_16To8_Any_SSSE3(src_pixels_uv, kMaxPixels * 2,
                                    dst_pixels_uv_opt, 16384, width);
     } else
 #endif
 #if defined(HAS_HALFWIDTHROW_16TO8_NEON)
-    if (has_neon) {
+        if (has_neon) {
       HalfWidthRow_16To8_Any_NEON(src_pixels_uv, kMaxPixels * 2,
                                   dst_pixels_uv_opt, 16384, width);
     } else
@@ -4272,8 +4276,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
   MaskCpuFlags(disable_cpu_flags_);
   Convert8To16Plane(src_pixels_y, benchmark_width_,
                     reinterpret_cast<uint16_t*>(dst_pixels_y_c),
-                    benchmark_width_, 10, benchmark_width_,
-                    benchmark_height_);
+                    benchmark_width_, 10, benchmark_width_, benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
@@ -4321,7 +4324,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
                                10, kPixels);
     } else
 #endif
-    if (has_avx2) {
+        if (has_avx2) {
       Convert8To16Row_AVX2(src_pixels_y,
                            reinterpret_cast<uint16_t*>(dst_pixels_y_opt), 10,
                            kPixels);
@@ -4816,6 +4819,11 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
     if (IS_ALIGNED(kPixels, 16)) {
       SwapUVRow = SwapUVRow_NEON;
     }
+  }
+#endif
+#if defined(HAS_SWAPUVROW_RVV)
+  if (TestCpuFlag(kCpuHasRVV)) {
+    SwapUVRow = SwapUVRow_RVV;
   }
 #endif
 

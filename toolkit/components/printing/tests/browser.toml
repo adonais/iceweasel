@@ -60,7 +60,6 @@ support-files = [
 
 ["browser_print_in_container.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && swgl", # Bug 1683730
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
   "os == 'win' && os_version == '11.26100' && debug && verify",
@@ -96,7 +95,7 @@ support-files = [
 
 ["browser_print_silent_about_config.js"]
 # Times out on non-Linux, needs debugging.
-skip-if = ["os == 'win'", "os == 'mac'"]
+skip-if = ["os == 'win'"]
 
 ["browser_print_simplified_mode.js"]
 support-files = ["simplifyNonArticleSample.html"]

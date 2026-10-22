@@ -117,19 +117,17 @@ nsresult nsDragSessionProxy::InvokeDragSessionImpl(
         int32_t stride;
         auto surfaceData =
             nsContentUtils::GetSurfaceData(*dataSurface, &length, &stride);
-        if (surfaceData.isNothing()) {
-          NS_WARNING("Failed to create shared memory for drag session.");
-          return NS_ERROR_FAILURE;
+        if (surfaceData) {
+          LOGI("[%p] %s | sending PBrowser::InvokeDragSession with image data",
+               this, __FUNCTION__);
+          (void)child->SendInvokeDragSession(
+              std::move(transferables), aActionType, std::move(surfaceData),
+              stride, dataSurface->GetFormat(), dragRect, principal,
+              policyContainer, csArgs, mSourceWindowContext,
+              mSourceTopWindowContext);
+          return NS_OK;
         }
-
-        LOGI("[%p] %s | sending PBrowser::InvokeDragSession with image data",
-             this, __FUNCTION__);
-        (void)child->SendInvokeDragSession(
-            std::move(transferables), aActionType, std::move(surfaceData),
-            stride, dataSurface->GetFormat(), dragRect, principal,
-            policyContainer, csArgs, mSourceWindowContext,
-            mSourceTopWindowContext);
-        return NS_OK;
+        NS_WARNING("Failed to create shared memory for drag session.");
       }
     }
   }

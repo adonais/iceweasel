@@ -161,14 +161,18 @@ bool Supports(ISA instruction_set_architecture) {
     //     a) AVX are supported by the CPU,
     //     b) XSAVE is supported by the CPU,
     //     c) XSAVE is enabled by the kernel.
-    // Compiling with MSVC and /arch:AVX2 surprisingly generates BMI2
-    // instructions (see crbug.com/1315519).
     return (cpu_info[2] & 0x10000000) != 0 /* AVX */ &&
            (cpu_info[2] & 0x04000000) != 0 /* XSAVE */ &&
            (cpu_info[2] & 0x08000000) != 0 /* OSXSAVE */ &&
            (xgetbv(0) & 0x00000006) == 6 /* XSAVE enabled by kernel */ &&
+#ifndef _MSC_VER
+           (cpu_info7[1] & 0x00000020) != 0 /* AVX2 */;
+#else
+           // Compiling with MSVC and /arch:AVX2 surprisingly generates BMI2
+           // instructions (see crbug.com/1315519).
            (cpu_info7[1] & 0x00000020) != 0 /* AVX2 */ &&
            (cpu_info7[1] & 0x00000100) != 0 /* BMI2 */;
+#endif  // #ifndef _MSC_VER
   }
 #endif  // WEBRTC_ENABLE_AVX2
   if (instruction_set_architecture == ISA::kFMA3) {

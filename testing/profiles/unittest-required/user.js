@@ -186,6 +186,8 @@ user_pref("toolkit.telemetry.server", "https://{server}/telemetry-dummy/");
 user_pref("telemetry.fog.test.localhost_port", -1);
 user_pref("telemetry.fog.test.activity_limit", -1);
 user_pref("telemetry.fog.test.inactivity_limit", -1);
+// Slow down early "events" pings to make testing easier.
+user_pref("telemetry.fog.test.decelerate_early_events", true);
 // Don't send the 'shutdown' ping using the pingsender on the first session using
 // the 'pingsender' process. Valgrind marks the process as leaky (e.g. see bug 1364068
 // for the 'new-profile' ping) but does not provide enough information

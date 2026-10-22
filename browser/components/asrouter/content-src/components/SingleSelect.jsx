@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 import { Localized } from "./MSLocalized";
 import { TileButton } from "./TileButton";
 import { TileList } from "./TileList";
 import { MultiStageUtils } from "../lib/multistage-utils.mjs";
+import { CarouselNav } from "./CarouselNav";
 
 // This component was formerly "Themes" and continues to support theme
 export const SingleSelect = ({
@@ -20,6 +21,21 @@ export const SingleSelect = ({
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
+
+  const cardRefs = useRef(new Map());
+
+  const handlePillSelect = id => {
+    setActiveSingleSelectSelection(id, singleSelectId);
+    const card = cardRefs.current.get(id);
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)"
+    )?.matches;
+    card?.scrollIntoView?.({
+      behavior: reduceMotion ? "auto" : "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  };
 
   const autoTriggerAllowed = itemAction => {
     // Currently only enabled for sidebar experiment prefs
@@ -92,6 +108,14 @@ export const SingleSelect = ({
 
   return (
     <div className={`tiles-single-select-container`}>
+      {isSingleSelect ? (
+        <CarouselNav
+          items={content.tiles?.data}
+          activeId={activeSingleSelectSelections[singleSelectId]}
+          onSelect={handlePillSelect}
+          navLabel={content.tiles?.pill_nav_label}
+        />
+      ) : null}
       <div>
         <fieldset className={`tiles-single-select-section ${category}`}>
           <Localized text={content.tiles?.subtitle || content.subtitle}>
@@ -159,6 +183,13 @@ export const SingleSelect = ({
                   {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */}
                   <label
                     className={`select-item ${type} ${selected ? " selected" : ""}`}
+                    ref={el => {
+                      if (el) {
+                        cardRefs.current.set(value, el);
+                      } else {
+                        cardRefs.current.delete(value);
+                      }
+                    }}
                     onKeyDown={e => handleKeyDown(e)}
                     style={{
                       ...MultiStageUtils.getValidStyle(

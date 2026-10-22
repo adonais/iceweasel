@@ -211,4 +211,88 @@ object UnifiedTrustPanelSelectors : SelectorContainer {
             value = "Privacy Settings Links available",
             description = "Privacy settings hyperlink",
         )
+
+    // ── Trackers-blocked details sub-panel ─────────────────────────────────────
+    // Opened by clicking the banner (TRACKERS_BLOCKED_ON_SITE) when trackers were blocked. Each category row is a
+    // MenuItem whose label is a count-prefixed plural ("3 cryptominers"), so match the distinctive, count-free
+    // substring. Only categories with at least one blocked tracker are rendered.
+    val TRACKERS_DETAILS_SOCIAL_MEDIA =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = "social media tracker",
+            description = "Trackers details: social media trackers category row",
+        )
+
+    val TRACKERS_DETAILS_CROSS_SITE_COOKIES =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = "cross-site tracking cookie",
+            description = "Trackers details: cross-site cookies category row",
+        )
+
+    val TRACKERS_DETAILS_CRYPTOMINERS =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = "cryptominer",
+            description = "Trackers details: cryptominers category row",
+        )
+
+    val TRACKERS_DETAILS_FINGERPRINTERS =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = "fingerprinter",
+            description = "Trackers details: fingerprinters category row",
+        )
+
+    val TRACKERS_DETAILS_TRACKING_CONTENT =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
+            value = "tracking content",
+            description = "Trackers details: tracking content category row",
+        )
+
+    // ── Individual tracker-category detail panel ───────────────────────────────
+    // Reached by clicking a category row above; shows the category title, a description and a "Blocked" list of
+    // tracker hostnames. We assert the title and the "Blocked" header (hostnames are data-dependent).
+    val CATEGORY_DETAIL_SOCIAL_MEDIA_TITLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.etp_social_media_trackers_title),
+            description = "Category detail: Social Media Trackers title",
+        )
+
+    val CATEGORY_DETAIL_CROSS_SITE_COOKIES_TITLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.etp_cookies_title_2),
+            description = "Category detail: Cross-Site Cookies title",
+        )
+
+    val CATEGORY_DETAIL_CRYPTOMINERS_TITLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.etp_cryptominers_title),
+            description = "Category detail: Cryptominers title",
+        )
+
+    val CATEGORY_DETAIL_FINGERPRINTERS_TITLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.etp_known_fingerprinters_title),
+            description = "Category detail: Known Fingerprinters title",
+        )
+
+    val CATEGORY_DETAIL_TRACKING_CONTENT_TITLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.etp_tracking_content_title),
+            description = "Category detail: Tracking Content title",
+        )
+
+    val CATEGORY_DETAIL_BLOCKED_HEADER =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.enhanced_tracking_protection_blocked),
+            description = "Category detail: Blocked header",
+        )
 }

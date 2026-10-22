@@ -428,6 +428,10 @@ class HostWebGLContext final : public SupportsWeakPtr {
     mContext->PolygonOffsetClampEXT(factor, units, clamp);
   }
 
+  void ClipControlEXT(GLenum origin, GLenum depth) const {
+    mContext->ClipControlEXT(origin, depth);
+  }
+
   void SampleCoverage(GLclampf value, bool invert) const {
     mContext->SampleCoverage(value, invert);
   }

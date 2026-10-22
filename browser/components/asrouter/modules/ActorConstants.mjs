@@ -44,6 +44,7 @@ export const MESSAGE_TYPE_LIST = [
   "EDIT_STATE",
   "AW_EVALUATE_SCREEN_TARGETING",
   "AW_ADD_SCREEN_IMPRESSION",
+  "AW_GET_ACTIVE_THEME_ID",
 ];
 
 export const MESSAGE_TYPE_HASH = MESSAGE_TYPE_LIST.reduce((hash, value) => {

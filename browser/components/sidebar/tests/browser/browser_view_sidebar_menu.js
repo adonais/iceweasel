@@ -76,6 +76,10 @@ add_task(async function test_sidebar_menu_extension_item() {
   const extMenuItem = menu.querySelector(".webextension-menuitem");
 
   ok(extMenuItem, "Extension sidebar menu item appears in View > Sidebar menu");
+  ok(
+    extMenuItem.hasAttribute("auto-accesskey"),
+    "Extension menu item takes its access key from its title"
+  );
 
   // Check the checked state when the extension sidebar is open
   ok(

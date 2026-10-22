@@ -104,6 +104,70 @@ add_task(async function test_mentions_insert_from_context_button() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function test_tab_group_selection_from_context_button() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const groupedTab = BrowserTestUtils.addTab(
+    win.gBrowser,
+    "https://example.com/grouped"
+  );
+  await BrowserTestUtils.browserLoaded(groupedTab.linkedBrowser);
+  const group = win.gBrowser.addTabGroup([groupedTab], {
+    label: "Trip planning",
+    color: "blue",
+  });
+
+  const chip = await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const contextButton = smartbar.querySelector("context-icon-button");
+    contextButton.shadowRoot.querySelector("moz-button").click();
+
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const shadow = panelList.shadowRoot;
+    await ContentTaskUtils.waitForMutationCondition(
+      shadow,
+      { childList: true, subtree: true },
+      () => shadow.querySelector(".panel-tab-group-item panel-item")
+    );
+    shadow.querySelector(".panel-tab-group-item panel-item").click();
+
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
+    Assert.equal(
+      chipContainer.websites.length,
+      1,
+      "Selecting a tab group from the + menu adds one context chip"
+    );
+    const [website] = chipContainer.websites;
+    return {
+      type: website.type,
+      groupId: website.groupId,
+      label: website.label,
+      color: website.color,
+      url: website.url,
+    };
+  });
+
+  Assert.deepEqual(
+    chip,
+    {
+      type: "tabGroup",
+      groupId: group.id,
+      label: "Trip planning",
+      color: "blue",
+      url: undefined,
+    },
+    "The chip is a tab group chip identified by its group ID, with no URL"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(async function test_default_context_chip_sidebar_mode() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;

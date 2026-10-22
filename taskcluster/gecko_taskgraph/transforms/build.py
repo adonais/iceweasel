@@ -8,6 +8,7 @@ kind.
 
 import copy
 import logging
+import re
 
 from mozbuild.artifact_builds import JOB_CHOICES as ARTIFACT_JOBS
 from mozilla_taskgraph.util.attributes import release_level
@@ -117,26 +118,19 @@ def update_channel(config, jobs):
         yield job
 
 
-@transforms.add
-def mozconfig(config, jobs):
-    for job in jobs:
-        resolve_keyed_by(
-            job,
-            "run.mozconfig-variant",
-            item_name=job["name"],
-            **{
-                "release-type": config.params["release_type"],
-            },
-        )
-        mozconfig_variant = job["run"].pop("mozconfig-variant", None)
-        if mozconfig_variant:
-            job["run"].setdefault("extra-config", {})["mozconfig_variant"] = (
-                mozconfig_variant
-            )
-        yield job
-
-
 UNIFY_JOB_SCRIPT = "taskcluster/scripts/misc/unify.sh"
+
+# Toolchains that are only needed to compile or link, which artifact builds
+# don't do. Binaries such as the ONNX runtime come from the build the
+# artifacts are taken from.
+COMPILE_TOOLCHAINS = re.compile(
+    r"^(?:linux64|win64)-(?:clang(?:-.*)?|cctools-port|rust(?:-.*)?|cbindgen"
+    r"|dump_syms|nasm|pkgconf|sccache|winchecksec)$"
+    r"|^(?:sysroot|onnxruntime|dxc|winappsdk)-.*$"
+    r"|^(?:macosx64-sdk|vs)$"
+)
+# Likewise for fetches.
+COMPILE_FETCHES = {"windows-rs"}
 
 
 def _use_artifact(config):
@@ -217,6 +211,18 @@ def use_artifact(config, jobs):
             job["treeherder"]["symbol"] = add_suffix(job["treeherder"]["symbol"], "a")
             job["worker"]["env"]["USE_ARTIFACT"] = "1"
             job["attributes"]["artifact-build"] = True
+            # Artifact builds don't compile anything.
+            job["use-sccache"] = False
+            toolchains = job.get("fetches", {}).get("toolchain")
+            if toolchains:
+                job["fetches"]["toolchain"] = [
+                    t for t in toolchains if not COMPILE_TOOLCHAINS.match(t)
+                ]
+            fetches = job.get("fetches", {}).get("fetch")
+            if fetches:
+                job["fetches"]["fetch"] = [
+                    f for f in fetches if f not in COMPILE_FETCHES
+                ]
         yield job
 
 

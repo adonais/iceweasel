@@ -80,6 +80,7 @@ enum class GLFeature {
   bind_buffer_offset,
   blend_minmax,
   clear_buffers,
+  clip_control,
   copy_buffer,
   copy_image,
   debug,
@@ -141,6 +142,7 @@ enum class GLFeature {
   texture_float_linear,
   texture_half_float,
   texture_half_float_linear,
+  texture_mirror_clamp_to_edge,
   texture_non_power_of_two,
   texture_norm16,
   texture_rg,
@@ -180,6 +182,7 @@ enum class GLRenderer {
   GalliumLlvmpipe,
   MicrosoftBasicRenderDriver,
   SamsungXclipse,
+  RadeonGFX10,
   Other
 };
 
@@ -238,6 +241,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
    * be overridden for an ANGLE implementation.
    */
   virtual bool IsD3DANGLE() const { return false; }
+
+  /**
+   * Returns true if the context is using ANGLE's Metal backend. This should
+   * only be overridden for an ANGLE implementation.
+   */
+  virtual bool IsMetalANGLE() const { return false; }
 
   virtual void GetWSIInfo(nsCString* const out) const = 0;
 
@@ -397,6 +406,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     APPLE_vertex_array_object,
     ARB_ES2_compatibility,
     ARB_ES3_compatibility,
+    ARB_clip_control,
     ARB_color_buffer_float,
     ARB_compatibility,
     ARB_copy_buffer,
@@ -427,6 +437,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     ARB_texture_compression_bptc,
     ARB_texture_compression_rgtc,
     ARB_texture_float,
+    ARB_texture_mirror_clamp_to_edge,
     ARB_texture_non_power_of_two,
     ARB_texture_rectangle,
     ARB_texture_rg,
@@ -440,6 +451,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     CHROMIUM_color_buffer_float_rgba,
     EXT_bgra,
     EXT_blend_minmax,
+    EXT_clip_control,
     EXT_color_buffer_float,
     EXT_color_buffer_half_float,
     EXT_copy_texture,
@@ -473,6 +485,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     EXT_texture_compression_s3tc_srgb,
     EXT_texture_filter_anisotropic,
     EXT_texture_format_BGRA8888,
+    EXT_texture_mirror_clamp_to_edge,
     EXT_texture_norm16,
     EXT_texture_sRGB,
     EXT_texture_storage,
@@ -1612,6 +1625,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     BEFORE_GL_CALL;
     ASSERT_SYMBOL_PRESENT(fPolygonOffsetClamp);
     mSymbols.fPolygonOffsetClamp(factor, units, clamp);
+    AFTER_GL_CALL;
+  }
+
+  void fClipControl(GLenum origin, GLenum depth) {
+    BEFORE_GL_CALL;
+    ASSERT_SYMBOL_PRESENT(fClipControl);
+    mSymbols.fClipControl(origin, depth);
     AFTER_GL_CALL;
   }
 

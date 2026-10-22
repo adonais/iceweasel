@@ -37,6 +37,7 @@ from cmdline import (
     FIREFOX_ANDROID_APPS,
     FIREFOX_APPS,
     GECKO_PROFILER_APPS,
+    SAFARI_APPS,
     TRACE_APPS,
 )
 from condprof.client import ProfileNotFoundError, get_profile
@@ -1017,7 +1018,15 @@ class PerftestDesktop(Perftest):
                         except FileNotFoundError:
                             pass
                     browser_name = self.config["app"]
-                    browser_version = plist.get("CFBundleShortVersionString")
+                    short_version = plist.get("CFBundleShortVersionString")
+                    if self.config["app"] in SAFARI_APPS:
+                        bundle_version = plist.get("CFBundleVersion")
+                        if short_version and bundle_version:
+                            browser_version = f"{short_version} ({bundle_version})"
+                        else:
+                            browser_version = short_version or bundle_version
+                    else:
+                        browser_version = short_version
                 elif "linux" in self.config["platform"]:
                     command = [self.config["binary"], "--version"]
                     proc = subprocess.run(

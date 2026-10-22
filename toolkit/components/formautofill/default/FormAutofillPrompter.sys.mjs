@@ -977,31 +977,81 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     lineTwo.className = "line-two";
 
     lineOne.textContent = lazy.CreditCard.getMaskedNumber(number);
-    lineTwo.textContent = name || "";
+    this.appendCardDetails(lineTwo, name);
 
     description.appendChild(lineOne);
     description.appendChild(lineTwo);
-    description.appendChild(this.createPrivacyPanelLink());
     descriptionWrapper.appendChild(description);
+    descriptionWrapper.appendChild(this.createPrivacyPanelButton());
     docFragment.appendChild(descriptionWrapper);
 
     this.content.appendChild(docFragment);
   }
 
-  createPrivacyPanelLink() {
-    const privacyLinkElement = this.doc.createXULElement("label", {
-      is: "text-link",
-    });
-    privacyLinkElement.setAttribute("useoriginprincipal", true);
-    privacyLinkElement.setAttribute(
-      "href",
-      CreditCardSaveDoorhanger.spotlightURL ||
-        "about:preferences#privacy-payment-methods-autofill"
+  appendCardDetails(line, name) {
+    const parts = [];
+    const args = {};
+    if (name) {
+      parts.push("name");
+      args.name = name;
+    }
+
+    const month = this.newRecord["cc-exp-month"];
+    const year = this.newRecord["cc-exp-year"];
+    if (month && year) {
+      parts.push("expiration");
+      args.month = String(month).padStart(2, "0");
+      args.year = String(year).slice(-2);
+    }
+
+    if (this.hasSubmittedSecurityCode) {
+      parts.push("cvv");
+    }
+
+    if (!parts.length) {
+      return;
+    }
+
+    this.doc.l10n.setAttributes(
+      line,
+      `credit-card-doorhanger-details-${parts.join("-")}`,
+      args
     );
+  }
 
-    this.doc.l10n.setAttributes(privacyLinkElement, "autofill-options-link");
+  appendSecurityCodeCheckbox() {
+    const checkbox = this.doc.createElement("moz-checkbox");
+    checkbox.checked = true;
+    checkbox.setAttribute("support-page", "credit-card-autofill");
+    this.doc.l10n.setAttributes(
+      checkbox,
+      "credit-card-doorhanger-save-security-codes-checkbox"
+    );
+    checkbox.addEventListener("change", () => {
+      Services.prefs.setBoolPref(
+        FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+        checkbox.checked
+      );
+    });
+    this.content.appendChild(checkbox);
+  }
 
-    return privacyLinkElement;
+  createPrivacyPanelButton() {
+    const button = this.doc.createElement("moz-button");
+    button.className = "payments-doorhanger-options-button";
+    button.setAttribute("type", "icon");
+    button.setAttribute("iconsrc", "chrome://global/skin/icons/edit.svg");
+    this.doc.l10n.setAttributes(
+      button,
+      "credit-card-doorhanger-options-button"
+    );
+    button.addEventListener("click", () => {
+      this.chromeWin.openTrustedLinkIn(
+        CreditCardSaveDoorhanger.spotlightURL,
+        "tab"
+      );
+    });
+    return button;
   }
 
   // TODO: Currently, the header and description are unused. Align
@@ -1023,6 +1073,10 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.replaceChildren();
 
     this.appendDescription();
+
+    if (FormAutofill.isAutofillCreditCardCVVEnabled) {
+      this.appendSecurityCodeCheckbox();
+    }
   }
 
   onEventCallback(state) {
@@ -1384,7 +1438,11 @@ CONTENT = {
       l10nId: "credit-card-save-doorhanger-header",
     },
     description: {
-      l10nId: "credit-card-save-doorhanger-description",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-doorhanger-description-security-code"
+          : "credit-card-save-doorhanger-description";
+      },
     },
     content: {},
     footer: {
@@ -1406,6 +1464,7 @@ CONTENT = {
     options: {
       persistWhileVisible: true,
       hideClose: true,
+      popupIconURL: "chrome://global/skin/icons/security.svg",
 
       checkbox: {
         get checked() {
@@ -1442,7 +1501,11 @@ CONTENT = {
       l10nId: "credit-card-update-doorhanger-header",
     },
     description: {
-      l10nId: "credit-card-update-doorhanger-description",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-doorhanger-description-security-code"
+          : "credit-card-update-doorhanger-description";
+      },
     },
     content: {},
     footer: {
@@ -1460,6 +1523,7 @@ CONTENT = {
     options: {
       persistWhileVisible: true,
       hideClose: true,
+      popupIconURL: "chrome://global/skin/icons/security.svg",
     },
   },
 

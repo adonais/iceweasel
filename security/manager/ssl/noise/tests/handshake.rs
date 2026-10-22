@@ -13,7 +13,7 @@ fn qr_initiated() {
     nss_rs::init().expect("nss_rs::init");
 
     let initiator_identity = ecdh_keygen(&EcCurve::P256).expect("initiator_identity");
-    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub");
+    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub").to_vec();
     assert_eq!(65, initiator_pub.len());
     assert_eq!(4, initiator_pub[0]);
     let psk = nss_rs::random();
@@ -63,12 +63,12 @@ fn state_assisted() {
     nss_rs::init().expect("nss_rs::init");
 
     let initiator_identity = ecdh_keygen(&EcCurve::P256).expect("initiator_identity");
-    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub");
+    let initiator_pub = initiator_identity.public.key_data().expect("initiator_pub").to_vec();
     assert_eq!(65, initiator_pub.len());
     assert_eq!(4, initiator_pub[0]);
 
     let responder_identity = ecdh_keygen(&EcCurve::P256).expect("responder_identity");
-    let responder_pub = responder_identity.public.key_data().expect("responder_pub");
+    let responder_pub = responder_identity.public.key_data().expect("responder_pub").to_vec();
     assert_eq!(65, responder_pub.len());
     assert_eq!(4, responder_pub[0]);
 

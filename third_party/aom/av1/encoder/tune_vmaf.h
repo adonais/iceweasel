@@ -45,9 +45,6 @@ struct AV1_COMP;
 void av1_vmaf_blk_preprocessing(struct AV1_COMP *cpi,
                                 const YV12_BUFFER_CONFIG *source);
 
-void av1_vmaf_frame_preprocessing(struct AV1_COMP *cpi,
-                                  const YV12_BUFFER_CONFIG *source);
-
 void av1_vmaf_neg_preprocessing(struct AV1_COMP *cpi,
                                 const YV12_BUFFER_CONFIG *source);
 

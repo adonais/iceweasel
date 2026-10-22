@@ -612,6 +612,10 @@ add_task(async function test_app_menu_signed_out_row() {
     "The button spanning the row is not used when signed out"
   );
   checkAppMenuFxAText(true);
+  checkAppMenuSignedOutRow(
+    null, // No email for the generic signed-out state
+    "fxa-menu-signed-out-description"
+  );
   const signInButton = PanelMultiView.getViewNode(
     document,
     "appMenu-fxa-signed-out-sign-in-button"
@@ -852,12 +856,10 @@ add_task(async function test_ui_state_unverified() {
   await closeFxaPanel();
   await openMainPanel();
 
-  checkPanelUIStatusBar({
-    description: state.email,
-    title: expectedLabel,
-    titleHidden: false,
-    hideFxAText: true,
-  });
+  checkAppMenuSignedOutRow(
+    state.email,
+    "fxa-menu-signed-out-message-unverified"
+  );
 
   await closeTabAndMainPanel();
 });
@@ -1949,6 +1951,69 @@ async function checkSignedOutCard(email, messageL10nId) {
     messageL10nId,
     "Signed-out card shows the status-specific reason"
   );
+}
+
+function checkAppMenuSignedOutRow(email, messageL10nId) {
+  const signedOutRow = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-row"
+  );
+  const signedOutTitle = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-title"
+  );
+  const signedOutMessage = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-message"
+  );
+  const signedOutButton = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-sign-in-button"
+  );
+
+  ok(signedOutRow, "App menu signed-out row element exists");
+  if (!signedOutRow) {
+    return;
+  }
+  ok(
+    BrowserTestUtils.isVisible(signedOutRow),
+    "App menu signed-out row is visible for unverified account"
+  );
+
+  ok(signedOutTitle, "App menu signed-out title element exists");
+  if (signedOutTitle) {
+    if (email) {
+      is(
+        signedOutTitle.textContent,
+        email,
+        "App menu signed-out row shows the email"
+      );
+    } else {
+      is(
+        signedOutTitle.getAttribute("data-l10n-id"),
+        "fxa-menu-signed-out-title",
+        "App menu signed-out title has correct l10n-id when no email"
+      );
+    }
+  }
+
+  ok(signedOutMessage, "App menu signed-out message element exists");
+  if (signedOutMessage) {
+    is(
+      signedOutMessage.getAttribute("data-l10n-id"),
+      messageL10nId,
+      "App menu signed-out row shows the verification message"
+    );
+  }
+
+  ok(signedOutButton, "App menu signed-out sign-in button exists");
+  if (signedOutButton) {
+    is(
+      signedOutButton.getAttribute("data-l10n-id"),
+      "fxa-menu-signed-out-sign-in-button",
+      "App menu signed-out sign-in button has correct l10n-id"
+    );
+  }
 }
 
 function checkManageAccountButton(expectedLabel) {

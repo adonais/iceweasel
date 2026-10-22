@@ -124,7 +124,6 @@ skip-if = [
 
 ["test_webauthn_related_origin.html"]
 skip-if = [
-  "os == 'win'", # Bug 1718296
   "xorigin",
 ]
 

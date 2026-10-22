@@ -35,6 +35,7 @@
 #include "api/call/transport.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "audio/audio_receive_stream.h"
@@ -44,6 +45,7 @@
 #include "jsapi/RTCStatsReport.h"
 #include "media/base/media_constants.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StateWatching.h"
@@ -187,6 +189,7 @@ WebrtcAudioConduit::WebrtcAudioConduit(
       mSendTransport(this),
       mRecvTransport(this),
       mRecvStream(nullptr),
+      mSourceTracker(webrtc::Clock::GetRealTimeClockOnlyUseForRelativeTime()),
       mSendStreamConfig(&mSendTransport),
       mSendStream(nullptr),
       mSendStreamRunning(false),
@@ -704,9 +707,7 @@ void WebrtcAudioConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
   // grab the value now while on the call thread, and dispatch to main
   // to store the cached value if we have new source information.
   // See Bug 1845621.
-  if (mRecvStream) {
-    mCanonicalRtpSources = mRecvStream->GetSources();
-  }
+  mCanonicalRtpSources = mSourceTracker.GetSources();
 
   mRtpPacketEvent.Notify();
   if (mCall->Call()) {
@@ -1086,8 +1087,26 @@ void WebrtcAudioConduit::CreateRecvStream() {
     return;
   }
 
-  mRecvStream =
-      mCall->Call()->CreateAudioReceiveStream(mRecvStreamConfig.Copy());
+  // Config::Copy() does not copy move-only fields like
+  // on_frame_delivered_callback, so it needs to be (re)installed on the copy
+  // that is actually handed to the stream.
+  webrtc::AudioReceiveStreamInterface::Config config = mRecvStreamConfig.Copy();
+  // The receive stream retains this callback (and the RefPtr captured in
+  // it) until DeleteRecvStream() runs it down as part of conduit shutdown,
+  // so there is no cycle beyond that lifetime. Called synchronously on
+  // whatever thread decodes audio, not necessarily mCallThread, so hop over
+  // before touching mSourceTracker, which is not thread-safe.
+  config.on_frame_delivered_callback =
+      [self = RefPtr<WebrtcAudioConduit>(this)](
+          const webrtc::RtpPacketInfos& aPacketInfos,
+          webrtc::Timestamp aTimestamp) {
+        self->mCallThread->Dispatch(NS_NewRunnableFunction(
+            "WebrtcAudioConduit::OnFrameDelivered",
+            [self, aPacketInfos, aTimestamp] {
+              self->mSourceTracker.OnFrameDelivered(aPacketInfos, aTimestamp);
+            }));
+      };
+  mRecvStream = mCall->Call()->CreateAudioReceiveStream(std::move(config));
   // Ensure that we set the jitter buffer target on this stream.
   mRecvStream->SetBaseMinimumPlayoutDelayMs(mJitterBufferTargetMs);
 }

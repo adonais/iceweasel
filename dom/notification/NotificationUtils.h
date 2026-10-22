@@ -40,6 +40,7 @@ enum class PermissionCheckPurpose : uint8_t {
   PermissionAttribute,
   NotificationShow,
   LoadImageForShow,
+  PushSubscribe,
 };
 
 /**

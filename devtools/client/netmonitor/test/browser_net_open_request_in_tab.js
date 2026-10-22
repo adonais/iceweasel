@@ -67,7 +67,7 @@ add_task(async function () {
   async function openLastRequestInTab() {
     const requestItems = document.querySelectorAll(".request-list-item");
     const lastRequest = requestItems[requestItems.length - 1];
-    EventUtils.sendMouseEvent({ type: "mousedown" }, lastRequest);
+    clickOnRequestRow(lastRequest);
     EventUtils.sendMouseEvent({ type: "contextmenu" }, lastRequest);
 
     const onTabOpen = once(gBrowser.tabContainer, "TabOpen", false);
@@ -228,10 +228,7 @@ add_task(async function () {
     const lastRequest = requestItems[requestItems.length - 1];
 
     const onTabOpen = once(gBrowser.tabContainer, "TabOpen", false);
-    EventUtils.sendMouseEvent(
-      { type: "mousedown", button: MIDDLE_MOUSE_BUTTON },
-      lastRequest
-    );
+    clickOnRequestRow(lastRequest, { button: MIDDLE_MOUSE_BUTTON });
     await onTabOpen;
     info("A new tab has been opened");
 

@@ -181,10 +181,10 @@ class NodeInfo final {
    */
   Document* GetDocument() const { return mDocument; }
 
- private:
   NodeInfo() = delete;
   NodeInfo(const NodeInfo& aOther) = delete;
 
+ private:
   // NodeInfo is only constructed by nsNodeInfoManager which is a friend class.
   // aName and aOwnerManager may not be null.
   NodeInfo(nsAtom* aName, nsAtom* aPrefix, int32_t aNamespaceID,

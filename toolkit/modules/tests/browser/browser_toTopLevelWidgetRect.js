@@ -19,8 +19,8 @@ add_task(async function test_toTopLevelWidgetRect() {
     }
   );
 
-  // Dispatch a mousedown event on the browser window coordinates position to
-  // see whether it's fired on the correct position in the content document.
+  // Click on the browser window coordinates position to see whether the
+  // mousedown is fired on the correct position in the content document.
   const mouseDownPromise = BrowserTestUtils.waitForContentEvent(
     tab.linkedBrowser,
     "mousedown",
@@ -39,7 +39,7 @@ add_task(async function test_toTopLevelWidgetRect() {
   EventUtils.synthesizeMouseAtPoint(
     positionInBrowser.x / window.devicePixelRatio,
     positionInBrowser.y / window.devicePixelRatio,
-    { type: "mousedown", button: 1 }
+    { button: 1 }
   );
   await mouseDownPromise;
 

@@ -9,6 +9,8 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Variant.h"
+#include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/IntersectionObserverBinding.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsTArray.h"

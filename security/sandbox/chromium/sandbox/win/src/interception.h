@@ -156,6 +156,10 @@ class InterceptionManager {
   // Calculates the size of the required configuration buffer.
   size_t GetBufferSize() const;
 
+  // Detects if the DLL is likely to be unpatchable in the child and reserves a
+  // byte at its base in the child to force it to a new location.
+  void ReserveBaseIfUnpatchable(const std::wstring& dll, size_t num_functions);
+
   // Sets up a given buffer with all the information that has to be transfered
   // to the child.
   // Returns true on success.

@@ -7,7 +7,7 @@
 const head = {};
 ChromeUtils.defineESModuleGetters(head, {
   TaskbarTabsRegistry:
-    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsRegistry.sys.mjs",
 });
 
 /**

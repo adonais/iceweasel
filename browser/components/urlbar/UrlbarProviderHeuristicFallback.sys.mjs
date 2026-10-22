@@ -127,14 +127,25 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
   static matchUnknownUrl(queryContext) {
     // The user may have typed something like "word?" to run a search.  We
     // should not convert that to a URL.  We should also never convert actual
-    // URLs into URL results when search mode is active or a search mode
-    // restriction token was typed.
+    // URLs into URL results when a search mode restriction token was typed, or
+    // when search mode is active, unless it's an engine search mode and
+    // navigation is enabled in search mode.
     if (
-      queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH ||
       lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(
         queryContext.restrictToken?.value
-      ) ||
-      queryContext.searchMode
+      )
+    ) {
+      return null;
+    }
+    if (queryContext.searchMode) {
+      if (
+        !queryContext.searchMode.engineName ||
+        !queryContext.navigationInSearchModeEnabled
+      ) {
+        return null;
+      }
+    } else if (
+      queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH
     ) {
       return null;
     }

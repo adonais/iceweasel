@@ -9,6 +9,8 @@
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
 
+class SkImage;
+struct SkPoint;
 class SkSurface;
 
 namespace mozilla {
@@ -209,6 +211,8 @@ class GFX2D_API GaussianBlur final {
 
   friend class DrawTargetSkia;
 
+  static SkImage* BlurAlphaMask(SkImage* aAlphaImage, const Point& aSigma,
+                                SkPoint& aOffset);
   bool BlurSkSurface(SkSurface* aSurface) const;
 };
 

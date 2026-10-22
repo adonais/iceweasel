@@ -1347,8 +1347,10 @@ smart_window:
       Recorded when the user selects an inline mention from the list of suggestions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059787
     data_reviews:
       - https://phabricator.services.mozilla.com/D288855
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059787
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1361,6 +1363,10 @@ smart_window:
         description: >
           Number of characters in the mention
       location: *location
+      mention_type: &mention_type
+        type: string
+        description: >
+          What the mention refers to: "tab" or "tab_group"
       mentions_available:
         type: quantity
         unit: count
@@ -1388,6 +1394,79 @@ smart_window:
         unit: count
         description: >
           Number of inline mentions still included in the input
+      message_seq: *message_seq
+
+  agent_command_start:
+    type: event
+    description: |
+      Recorded when the user enters / and the command palette is opened
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060584
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D328209
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      source: &command_source
+        type: string
+        description: >
+          "manual" when the user typed it, or
+          "callout_accepted" when it began from accepting a feature callout
+      location: *location
+      commands_available:
+        type: quantity
+        unit: count
+        description: >
+          Number of commands shown to select from
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  agent_command_select:
+    type: event
+    description: |
+      Recorded when the user selects or enters a command
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060584
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D328209
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      source: *command_source
+      location: *location
+      commands_available:
+        type: quantity
+        unit: count
+        description: >
+          Number of command suggestions available
+      agent: &agent_type
+        type: string
+        description: >
+          The agent the command routes to: "watch", "research", or "schedule"
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  agent_command_remove:
+    type: event
+    description: |
+      Recorded when the user removes the selected command
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060584
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D328209
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      source: *command_source
+      location: *location
+      agent: *agent_type
+      chat_id: *chat_id
       message_seq: *message_seq
 
   add_tabs_click:
@@ -1423,8 +1502,10 @@ smart_window:
       Recorded when the user selected a tab
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059787
     data_reviews:
       - https://phabricator.services.mozilla.com/D288855
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059787
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1432,6 +1513,7 @@ smart_window:
     extra_keys:
       chat_id: *chat_id
       location: *location
+      mention_type: *mention_type
       message_seq: *message_seq
       tabs_available: *tabs_available
       tabs_preselected: *tabs_preselected

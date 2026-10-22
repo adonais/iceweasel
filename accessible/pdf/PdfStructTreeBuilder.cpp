@@ -90,6 +90,9 @@ void PdfStructTreeBuilder::Done(uint64_t aInnerWindowId) {
 
 /* static */
 int PdfStructTreeBuilder::GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId) {
+  if (NS_WARN_IF(!NS_IsMainThread())) {
+    return SkPDF::NodeID::Nothing;
+  }
   if (!sBuilders || sBuilders->IsEmpty()) {
     return SkPDF::NodeID::Nothing;
   }
@@ -185,6 +188,7 @@ void PdfStructTreeBuilder::InitInternal(dom::WindowContext* aWindowContext) {
 }
 
 bool PdfStructTreeBuilder::BuildStructTree(SkPDF::StructureElementNode& aRoot) {
+  MOZ_ASSERT(!mBuilt, "Shouldn't try to build the struct tree more than once");
   RefPtr wgp = dom::WindowGlobalParent::GetByInnerWindowId(mRootInnerWindowId);
   if (!wgp) {
     return false;
@@ -201,6 +205,7 @@ bool PdfStructTreeBuilder::BuildStructTree(SkPDF::StructureElementNode& aRoot) {
     return false;
   }
   BuildStructSubtree(rootAcc, aRoot);
+  mBuilt = true;
   return true;
 }
 
@@ -365,8 +370,8 @@ int PdfStructTreeBuilder::GetPdfIdInternal(uint64_t aInnerWindowId,
   if (auto entry = mAccToPdf.lookup({aInnerWindowId, aAccId})) {
     return entry->value();
   }
-  MOZ_ASSERT_UNREACHABLE(
-      "Display list contains Accessible id which isn't in the map!");
+  MOZ_ASSERT(!mBuilt,
+             "Display list contains Accessible id which isn't in the map!");
   return 0;
 }
 

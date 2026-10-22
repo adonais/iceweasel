@@ -164,6 +164,7 @@ class MockOnCompleteFrameCallback
 constexpr uint32_t kSsrc = 111;
 constexpr int kPayloadType = 100;
 constexpr int kRedPayloadType = 125;
+constexpr TimeDelta kMaxWaitForKeyframe = TimeDelta::Millis(200);
 
 std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceived() {
   constexpr uint16_t kSequenceNumber = 222;
@@ -199,9 +200,9 @@ class RtpVideoStreamReceiver2Test : public ::testing::Test,
     rtp_receive_statistics_ = ReceiveStatistics::Create(&env_.clock());
     rtp_video_stream_receiver_ = std::make_unique<RtpVideoStreamReceiver2>(
         env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-        &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-        &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-        nullptr, nullptr);
+        &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+        nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+        nullptr, nullptr, nullptr);
     rtp_video_stream_receiver_->AddReceiveCodec(kPayloadType,
                                                 kVideoCodecGeneric, {},
                                                 /*raw_payload=*/false);
@@ -777,21 +778,11 @@ TEST_F(RtpVideoStreamReceiver2Test,
                                                               video_header);
 }
 
-// Integration test (full receiver path): reproduces the post-congestion video
-// recovery freeze and verifies recovery. After prolonged subscriber-side loss
-// the publisher's RTP sequence number advances past the 16-bit half-range while
-// the receiver is stalled. When media resumes, the fresh keyframe lands at a
-// sequence number that appears "behind" the pre-stall GoP in modular
-// arithmetic; the stale GoP then shadows reference lookups and every
-// post-recovery delta frame is silently dropped ("has no GoP"), so video stays
-// frozen for 60-150s even though complete frames are arriving. This drives
-// packets through the whole receiver (packet buffer -> frame assembly ->
-// reference finder) and asserts frames keep flowing after the jump.
-// issues.webrtc.org/516639936.
+// FrameDecoded() advances PacketBuffer's cleared boundary. Verify that a
+// recovery keyframe whose sequence number unwraps below that boundary starts a
+// new receive epoch instead of being discarded as already cleared.
 TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
   const CopyOnWriteBuffer data("1234");
-  // Every frame carries the same payload so the mock's bitstream check passes
-  // for all of them and we can assert on the delivered-frame count.
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
 
   auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
@@ -800,26 +791,19 @@ TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
     rtp_packet.SetSequenceNumber(seq);
     rtp_packet.SetTimestamp(rtp_timestamp);
     rtp_packet.SetSsrc(kSsrc);
-    RTPVideoHeader video_header = GetGenericVideoHeader(
-        keyframe ? VideoFrameType::kVideoFrameKey
-                 : VideoFrameType::kVideoFrameDelta);
+    RTPVideoHeader video_header =
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta);
     rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
         data, rtp_packet, video_header);
   };
 
-  // 4 pre-stall frames (1 key + 3 delta) and 141 post-recovery frames
-  // (1 key + 140 delta) must all be delivered. The freeze needs >100
-  // post-recovery deltas to manifest: the finder's routine
-  // (last_seq_num - 100) cleanup eventually erases the new keyframe's GoP,
-  // leaving only the stale wrapped GoP, after which every further delta is
-  // dropped ("has no GoP"). Before the fix the delivered count was ~105.
-  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(145);
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(7)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
 
-  // Pre-stall stream: keyframe followed by a few deltas. Start high so the
-  // post-recovery sequence number wraps past 0. This reproduces the real-world
-  // condition: the stale pre-stall GoP then sorts numerically *after* the new
-  // keyframe and survives the reference finder's routine lower_bound cleanup,
-  // so only the stale-GoP removal can clear it.
   uint16_t seq = 60'000;
   uint32_t ts = 90'000;
   inject(seq, ts, /*keyframe=*/true);
@@ -827,16 +811,287 @@ TEST_F(RtpVideoStreamReceiver2Test, RecoversAfterLargeSequenceNumberJump) {
     inject(++seq, ts += 3'000, /*keyframe=*/false);
   }
 
-  // Prolonged congestion: when media resumes the sequence number has advanced
-  // past the half-range (+40000, wrapping past 0 to ~34467) and the timestamp
-  // has advanced with it. A fresh (PLI-triggered) keyframe arrives, followed
-  // by delta frames.
+  // The sender advances by more than half the 16-bit sequence number range.
   seq += 40'000;
   ts += 40'000u * 3'000u;
   inject(seq, ts, /*keyframe=*/true);
-  for (int i = 0; i < 140; ++i) {
+  for (int i = 0; i < 2; ++i) {
     inject(++seq, ts += 3'000, /*keyframe=*/false);
   }
+
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       RetriesKeyframeRequestAfterLargeSequenceNumberJump) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe,
+                    bool starts_frame = true) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    RTPVideoHeader video_header =
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta);
+    video_header.is_first_packet_in_frame = starts_frame;
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet, video_header);
+  };
+
+  int num_complete_frames = 0;
+  ON_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillByDefault([&](EncodedFrame* frame) {
+        ++num_complete_frames;
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  uint16_t seq = 60'000;
+  uint32_t ts = 90'000;
+  inject(seq, ts, /*keyframe=*/true);
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  seq += 40'000;
+  ts += 40'000u * 3'000u;
+  // The first packet after the outage is the tail of a frame. Discontinuity
+  // detection must not depend on is_first_packet_in_frame.
+  inject(seq, ts, /*keyframe=*/false, /*starts_frame=*/false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(1));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  // Recovery is already pending. Delta frames are discarded without sending
+  // another request before the retry interval expires.
+  time_controller_.AdvanceTime(kMaxWaitForKeyframe - TimeDelta::Millis(1));
+  inject(++seq, ts += 3'000, /*keyframe=*/false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(1));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  // A reordered keyframe from the old timestamp epoch must not end recovery.
+  inject(50'000, 80'000, /*keyframe=*/true);
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  // Treat the first request as lost. A later delta frame triggers a retry.
+  time_controller_.AdvanceTime(TimeDelta::Millis(2));
+  inject(++seq, ts += 3'000, /*keyframe=*/false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(2));
+  EXPECT_THAT(num_complete_frames, Eq(1));
+
+  // The keyframe received after the retried request resumes frame delivery.
+  inject(++seq, ts += 3'000, /*keyframe=*/true);
+  EXPECT_THAT(num_complete_frames, Eq(2));
+  inject(++seq, ts += 3'000, /*keyframe=*/false);
+  EXPECT_THAT(num_complete_frames, Eq(3));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       DoesNotResetForSingleSeverelyReorderedOldPacket) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(3)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  inject(60'000, 90'000, /*keyframe=*/true);
+  inject(60'001, 93'000, /*keyframe=*/false);
+
+  // Its timestamp identifies it as old media, so this packet must not turn a
+  // reordering event into a stream reset.
+  inject(30'000, 80'000, /*keyframe=*/false);
+  inject(60'002, 96'000, /*keyframe=*/false);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       PaddingDoesNotMoveUnwrapperAcrossLargeDiscontinuity) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+  rtp_video_stream_receiver_->StartReceive();
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(3)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  inject(60'000, 90'000, /*keyframe=*/true);
+
+  // Padding is the first packet observed after the outage. It must be ignored
+  // without committing the ambiguous sequence-number epoch.
+  RtpPacketReceived padding;
+  padding.SetPayloadType(kPayloadType);
+  padding.SetSequenceNumber(34'464);
+  padding.SetTimestamp(120'090'000);
+  padding.SetSsrc(kSsrc);
+  rtp_video_stream_receiver_->OnRtpPacket(padding);
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+
+  inject(34'465, 120'093'000, /*keyframe=*/true);
+  inject(34'466, 120'096'000, /*keyframe=*/false);
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       DoesNotEnterRecoveryForNormalSequenceNumberWrap) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(4)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  uint32_t ts = 90'000;
+  for (uint16_t seq :
+       {uint16_t{65'534}, uint16_t{65'535}, uint16_t{0}, uint16_t{1}}) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(ts);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(seq == 65'534
+                                  ? VideoFrameType::kVideoFrameKey
+                                  : VideoFrameType::kVideoFrameDelta));
+    ts += 3'000;
+  }
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       StaleFrameDecodedAfterRecoveryDoesNotClearNewSequenceEpoch) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+  int64_t stale_picture_id = -1;
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      })
+      .WillOnce([&](EncodedFrame* frame) { stale_picture_id = frame->Id(); })
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      })
+      .WillOnce([&](EncodedFrame* frame) {
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  uint16_t seq = 60'000;
+  uint32_t ts = 90'000;
+  inject(seq, ts, /*keyframe=*/true);
+  inject(++seq, ts += 3'000, /*keyframe=*/false);
+
+  seq += 40'000;
+  ts += 40'000u * 3'000u;
+  inject(seq, ts, /*keyframe=*/true);
+  ASSERT_NE(stale_picture_id, -1);
+
+  // Recovery cleared the old frame history, so this delayed callback cannot
+  // move PacketBuffer::ClearTo() into the new epoch.
+  rtp_video_stream_receiver_->FrameDecoded(stale_picture_id);
+  inject(++seq, ts += 3'000, /*keyframe=*/false);
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
+       DelayedVp9FrameDecodedDoesNotClearPastNewestReceivedPacket) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  int num_complete_frames = 0;
+  int64_t delayed_picture_id = -1;
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .Times(5)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        ++num_complete_frames;
+        if (delayed_picture_id == -1) {
+          delayed_picture_id = frame->Id();
+        } else {
+          EXPECT_LT(frame->Id(), delayed_picture_id);
+          rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+        }
+      });
+
+  auto inject_keyframe = [&](uint16_t seq, uint32_t rtp_timestamp,
+                             int picture_id) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+
+    RTPVideoHeader video_header;
+    video_header.codec = kVideoCodecVP9;
+    video_header.frame_type = VideoFrameType::kVideoFrameKey;
+    video_header.is_first_packet_in_frame = true;
+    video_header.is_last_packet_in_frame = true;
+    RTPVideoHeaderVP9 vp9_header;
+    vp9_header.InitRTPVideoHeaderVP9();
+    vp9_header.flexible_mode = true;
+    vp9_header.picture_id = picture_id;
+    vp9_header.temporal_idx = 0;
+    vp9_header.spatial_idx = 0;
+    video_header.video_type_header = vp9_header;
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet, video_header);
+  };
+
+  // A smaller Picture ID space arrives under the same SSRC. Keep the old
+  // frame undecoded while the new frames are decoded and RTP sequence numbers
+  // advance normally by more than half of their 16-bit range.
+  inject_keyframe(20'352, 740'278'071, 13'600);
+  inject_keyframe(40'000, 740'281'071, 100);
+  inject_keyframe(60'000, 740'284'071, 101);
+  inject_keyframe(61'934, 740'285'921, 102);
+  ASSERT_THAT(num_complete_frames, Eq(4));
+  ASSERT_NE(delayed_picture_id, -1);
+
+  // Unwrapping the delayed frame's sequence number relative to 61934 must not
+  // move PacketBuffer's cleared boundary into the future sequence epoch.
+  rtp_video_stream_receiver_->FrameDecoded(delayed_picture_id);
+  inject_keyframe(61'935, 740'288'921, 103);
+  EXPECT_THAT(num_complete_frames, Eq(5));
 }
 
 TEST_F(RtpVideoStreamReceiver2Test,
@@ -1728,9 +1983,9 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrame) {
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver2>(
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-      &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-      &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer, nullptr);
+      &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+      nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+      nullptr, mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             /*raw_payload=*/false);
 
@@ -1761,9 +2016,9 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrameWithAbsoluteCaptureTime) {
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver2>(
       env_, TaskQueueBase::Current(), &mock_transport_, nullptr, nullptr,
-      &config_, rtp_receive_statistics_.get(), nullptr, nullptr,
-      &nack_periodic_processor_, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer, nullptr);
+      &config_, kMaxWaitForKeyframe, rtp_receive_statistics_.get(), nullptr,
+      nullptr, &nack_periodic_processor_, &mock_on_complete_frame_callback_,
+      nullptr, mock_frame_transformer, nullptr);
   receiver->AddReceiveCodec(kPayloadType, kVideoCodecGeneric, {},
                             /*raw_payload=*/false);
 

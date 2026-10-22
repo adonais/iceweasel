@@ -22,16 +22,18 @@
 
 :host([type="accordion"]) {
   summary {
-    padding-block: var(--card-padding-block, var(--card-padding));
+    padding-block-start: var(--card-padding-block-start, var(--card-padding-block, var(--card-padding)));
+    padding-block-end: var(--card-padding-block-end, var(--card-padding-block, var(--card-padding)));
   }
   #content {
-    padding-block-end: var(--card-padding-block, var(--card-padding));
+    padding-block-end: var(--card-padding-block-end, var(--card-padding-block, var(--card-padding)));
   }
 }
 
 :host(:not([type="accordion"])) {
   .moz-card {
-    padding-block: var(--card-padding-block, var(--card-padding));
+    padding-block-start: var(--card-padding-block-start, var(--card-padding-block, var(--card-padding)));
+    padding-block-end: var(--card-padding-block-end, var(--card-padding-block, var(--card-padding)));
   }
   #moz-card-details {
     display: flex;
@@ -100,7 +102,7 @@ summary {
 
 #heading {
   font-size: var(--card-font-size);
-  font-weight: var(--font-weight-heading);
+  font-weight: var(--card-heading-font-weight, var(--font-weight-heading));
 }
 
 #content {
@@ -115,7 +117,7 @@ summary {
   @media (prefers-contrast) {
     :host([type="accordion"]) & {
       border-block-start: 0;
-      padding-block-start: var(--card-padding-block, var(--card-padding));
+      padding-block-start: var(--card-padding-block-start, var(--card-padding-block, var(--card-padding)));
     }
   }
 }
@@ -178,7 +180,7 @@ details {
 
 /* TODO: Probably opt-into this instead with a class or something */
 /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-:host(:has([slot="cover-image"])) {
+:host(:has([slot="cover-image"]:is(img, :not(:empty)))) {
   .moz-card {
     padding-block-start: var(--card-cover-image-padding);
   }

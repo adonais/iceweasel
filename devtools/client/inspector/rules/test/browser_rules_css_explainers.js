@@ -5,7 +5,7 @@
 
 // Test for CSS explainers in the Rules View.
 
-const TEST_URI = `data:text/html,<meta charset=utf8>
+const TEST_URI = `data:text/html,${encodeURIComponent(`<meta charset=utf8>
   <style>
     :root {
       font-size: 16px;
@@ -52,6 +52,14 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
       height: calc(25% + 7px);
       margin-block: calc(10%);
     }
+
+    #single-length-percentage {
+      line-height: 10px;
+      margin: 10% 20px 30em 40lh;
+      background-position-x: 90%;
+      color: hsl(200 30% 90%);
+      --x: 85%;
+    }
   </style>
   <div>CSS explainers</div>
   <ol>
@@ -61,7 +69,8 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
   </ol>
   <aside>
     <div>Side</div>
-  </aside>`;
+    <section id="single-length-percentage">length-percentage</section>
+  </aside>`)}`;
 
 add_task(async function () {
   await pushPref("devtools.inspector.css-explainers", true);
@@ -88,6 +97,16 @@ add_task(async function () {
       ].join("\n"),
     },
   });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "div",
+    propertyName: "height",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "1rem",
+      tooltipText: ["1rem", "16px"].join("\n"),
+    },
+  });
 
   await assertCssExplainersTooltip({
     view,
@@ -108,6 +127,17 @@ add_task(async function () {
     expected: {
       functionText: "calc(1em + 1px)",
       tooltipText: ["calc(1em + 1px)", "calc(24px + 1px)", "25px"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "div::after",
+    propertyName: "line-height",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "1em",
+      tooltipText: ["1em", "24px"].join("\n"),
     },
   });
 
@@ -153,6 +183,27 @@ add_task(async function () {
         "calc(108px + 20px)",
         "128px",
       ].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li",
+    propertyName: "translate",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "1em",
+      tooltipText: ["1em", "36px"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li",
+    propertyName: "translate",
+    lengthPercentageIndex: 1,
+    expected: {
+      lengthPercentageText: "1lh",
+      tooltipText: ["1lh", "20px"].join("\n"),
     },
   });
 
@@ -211,6 +262,16 @@ add_task(async function () {
       tooltipText: ["calc(50% - 2px)", "calc(150px - 2px)", "148px"].join("\n"),
     },
   });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "aside div",
+    propertyName: "width",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "50%",
+      tooltipText: ["50%", "150px"].join("\n"),
+    },
+  });
 
   await assertCssExplainersTooltip({
     view,
@@ -255,56 +316,156 @@ add_task(async function () {
       tooltipText: ["calc(10%)", "10%", "30px"].join("\n"),
     },
   });
+
+  info(
+    "Select #single-length-percentage to check tooltip for non-px length/% not inside functions"
+  );
+  await selectNode("#single-length-percentage", inspector);
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "margin",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "10%",
+      tooltipText: ["10%", "30px"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "margin",
+    lengthPercentageIndex: 1,
+    expected: {
+      lengthPercentageText: "30em",
+      tooltipText: ["30em", "480px"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "margin",
+    lengthPercentageIndex: 2,
+    expected: {
+      lengthPercentageText: "40lh",
+      tooltipText: ["40lh", "400px"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "background-position-x",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "90%",
+      // the % can't be computed here, but we still show the tooltip, so later we
+      // can add some text to explain _why_ we don't support it.
+      tooltipText: ["90%"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "color",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "30%",
+      // the % can't be computed here, it's already the "final" value.
+      tooltipText: ["30%"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "color",
+    lengthPercentageIndex: 1,
+    expected: {
+      lengthPercentageText: "90%",
+      // the % can't be computed here, it's already the "final" value.
+      tooltipText: ["90%"].join("\n"),
+    },
+  });
+  await assertCssExplainersTooltip({
+    view,
+    selector: "#single-length-percentage",
+    propertyName: "--x",
+    lengthPercentageIndex: 0,
+    expected: {
+      lengthPercentageText: "85%",
+      // the % can't be computed here since it's in a custom property declaration.
+      tooltipText: ["85%"].join("\n"),
+    },
+  });
 });
 
 async function assertCssExplainersTooltip({
   view,
   propertyName,
   selector,
+  lengthPercentageIndex,
   functionIndex,
   expected,
 }) {
   const { valueSpan } = getRuleViewProperty(view, selector, propertyName);
-  const functionNameEl =
-    valueSpan.querySelectorAll(".css-explainers-function-name")[
-      functionIndex
-    ] || null;
 
-  is(
-    functionNameEl
-      .closest("[data-function-expression]")
-      .getAttribute("data-function-expression"),
-    expected.functionText,
-    `Got expected data-function-expression attribute for function at index ${functionIndex} in ${propertyName} declaration`
-  );
+  let el;
+  if (Number.isInteger(functionIndex)) {
+    // Assert we have a function (e.g. `calc()`, `min()`, …)
+    el =
+      valueSpan.querySelectorAll(".css-explainers-function-name")[
+        functionIndex
+      ] || null;
+    is(
+      el
+        .closest("[data-function-expression]")
+        .getAttribute("data-function-expression"),
+      expected.functionText,
+      `Got expected data-function-expression attribute for function at index ${functionIndex} in ${propertyName} declaration`
+    );
+  } else if (Number.isInteger(lengthPercentageIndex)) {
+    // Assert we have a length (e.g. `em`, `vw`, …) or percentage
+    el =
+      valueSpan.querySelectorAll("[data-length-expression]")[
+        lengthPercentageIndex
+      ] || null;
+    is(
+      el.getAttribute("data-length-expression"),
+      expected.lengthPercentageText,
+      `Got expected data-length-expression attribute for length/percentage at index ${lengthPercentageIndex} in ${propertyName} declaration`
+    );
+  } else {
+    ok(false, "functionIndex or lengthPercentageIndex should be passed");
+    return;
+  }
 
   // Ensure that the element can be targetted from EventUtils.
-  functionNameEl.scrollIntoView();
+  el.scrollIntoView();
 
   const tooltip = view.tooltips.getTooltip("interactiveTooltip");
   const onTooltipReady = tooltip.once("shown");
   EventUtils.synthesizeMouseAtCenter(
-    functionNameEl,
+    el,
     { type: "mousemove" },
-    functionNameEl.ownerDocument.defaultView
+    el.ownerDocument.defaultView
   );
   await onTooltipReady;
 
   is(
     tooltip.panel.innerText,
     expected.tooltipText,
-    `Tooltip has expected text for function at index ${functionIndex} in ${propertyName} declaration`
+    `Tooltip has expected text for ${Number.isInteger(functionIndex) ? "function" : "length/percentage"} at index ${functionIndex} in ${propertyName} declaration`
   );
 
   info("Hide the tooltip");
   const onHidden = tooltip.once("hidden");
   // Move the mouse elsewhere to hide the tooltip
   EventUtils.synthesizeMouse(
-    functionNameEl.ownerDocument.body,
+    el.ownerDocument.body,
     1,
     1,
     { type: "mousemove" },
-    functionNameEl.ownerDocument.defaultView
+    el.ownerDocument.defaultView
   );
   await onHidden;
 }

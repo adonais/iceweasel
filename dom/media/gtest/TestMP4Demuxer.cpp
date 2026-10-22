@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AOMDecoder.h"
 #include "BufferMediaResource.h"
 #include "DecoderData.h"
 #include "H265.h"
@@ -627,6 +628,60 @@ TEST(MP4Demuxer, SeekHEVC)
                 auto isIDR = H265::IsKeyFrame(first);
                 EXPECT_TRUE(isIDR.isOk() && isIDR.unwrap());
 #endif
+                binding->mTaskQueue->BeginShutdown();
+              },
+              [binding](const MediaResult&) {
+                EXPECT_TRUE(false) << "GetSamples failed after seek";
+                binding->mTaskQueue->BeginShutdown();
+              });
+        },
+        [binding](const MediaResult&) {
+          EXPECT_TRUE(false) << "Seek failed";
+          binding->mTaskQueue->BeginShutdown();
+        });
+  });
+}
+
+// Generated with 1-second GOPs, then stss rewritten so later sync samples
+// are not KEY_FRAME (same shape as test_hevc_open_gop.mp4 CRA vs IDR):
+//   ffmpeg -f lavfi -i testsrc=duration=4:size=128x128:rate=30
+//     -c:v libaom-av1 -cpu-used 8 -crf 40 -g 30 -keyint_min 30 -an
+//     test_av1.mp4
+//   python3 - <<'PY'
+//   from pathlib import Path
+//   p = Path("test_av1.mp4")
+//   b = bytearray(p.read_bytes())
+//   i = b.find(b"stss")
+//   for k, s in enumerate((1, 28, 60, 88)):
+//       b[i+12+4*k:i+16+4*k] = s.to_bytes(4, "big")
+//   p.write_bytes(b)
+//   PY
+// Bitstream KEY_FRAME is samples 1, 31, 61, 91. stss is 1, 28, 60, 88.
+TEST(MP4Demuxer, SeekAV1)
+{
+  RefPtr<MP4DemuxerBinding> binding = new MP4DemuxerBinding("test_av1.mp4");
+
+  // Seek past the first GOP. The nearest stss sync sample is not a KEY_FRAME.
+  // The demuxer must mark the first sample from the bitstream, not stss.
+  const TimeUnit seekTime = TimeUnit::FromSeconds(2.0);
+
+  binding->RunTestAndWait([binding, seekTime]() {
+    binding->mVideoTrack =
+        binding->mDemuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+    binding->mVideoTrack->Seek(seekTime)->Then(
+        binding->mTaskQueue, __func__,
+        [binding, seekTime](TimeUnit aActualTime) {
+          EXPECT_LE(aActualTime, seekTime);
+          binding->mVideoTrack->GetSamples()->Then(
+              binding->mTaskQueue, __func__,
+              [binding,
+               aActualTime](RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples) {
+                EXPECT_GT(aSamples->GetSamples().Length(), 0u);
+                RefPtr<MediaRawData> first = aSamples->GetSamples()[0];
+                EXPECT_TRUE(first->mKeyframe);
+                EXPECT_EQ(first->mTime, aActualTime);
+                EXPECT_TRUE(AOMDecoder::IsKeyframe(
+                    Span<const uint8_t>(first->Data(), first->Size())));
                 binding->mTaskQueue->BeginShutdown();
               },
               [binding](const MediaResult&) {

@@ -1,7 +1,7 @@
 # PR_EnumerateHostEnt
 
-Evaluates each of the possible addresses of a {ref}`PRHostEnt` structure,
-acquired from {ref}`PR_GetHostByName` or {ref}`PR_GetHostByAddr`.
+Evaluates each of the possible addresses of a {doc}`prhostent` structure,
+acquired from {doc}`pr_gethostbyname` or {doc}`pr_gethostbyaddr`.
 
 ## Syntax
 
@@ -29,17 +29,17 @@ The function has the following parameters:
 
 `hostEnt`
 
-: A pointer to a {ref}`PRHostEnt` structure obtained from
-  {ref}`PR_GetHostByName` or {ref}`PR_GetHostByAddr`.
+: A pointer to a {doc}`prhostent` structure obtained from
+  {doc}`pr_gethostbyname` or {doc}`pr_gethostbyaddr`.
 
 `port`
 
-: The port number to be assigned as part of the {ref}`PRNetAddr`
+: The port number to be assigned as part of the {doc}`prnetaddr`
   structure. This parameter is not checked for validity.
 
 `address`
 
-: On input, a pointer to a {ref}`PRNetAddr` structure. On output, this
+: On input, a pointer to a {doc}`prnetaddr` structure. On output, this
   structure is filled in by the runtime if the result of the call is
   greater than 0.
 
@@ -51,9 +51,9 @@ The function returns one of the following values:
   the `enumIndex` parameter for the next call of the enumerator. If
   the function returns 0, the enumeration is ended.
 - If unsuccessful, the function returns -1. You can retrieve the reason
-  for the failure by calling {ref}`PR_GetError`.
+  for the failure by calling {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_EnumerateHostEnt` is a stateless enumerator. The principle input,
-the {ref}`PRHostEnt` structure, is not modified.
+{doc}`pr_enumeratehostent` is a stateless enumerator. The principle input,
+the {doc}`prhostent` structure, is not modified.

@@ -61,6 +61,13 @@ add_task(async function () {
 
   is(gBrowser.selectedTab, secondTab, "Should've switched tabs");
 
+  info("Releasing the mouse button over the new tab");
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#open-mousedown",
+    { type: "mouseup" },
+    secondTab.linkedBrowser
+  );
+
   info("Ensuring we don't switch back");
   await new Promise(resolve => {
     // We need to wait for something _not_ happening, so we need to use an arbitrary setTimeout.

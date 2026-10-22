@@ -36,7 +36,7 @@ object SupportUtils {
     // (e.g. `en` instead of `en-US`).
     const val AMO_HOMEPAGE_FOR_ANDROID = "${BuildConfig.AMO_BASE_URL}/android/"
 
-    enum class SumoTopic(internal val topicStr: String) {
+    enum class SumoTopic(internal val topicStr: String, internal val fragmentStr: String? = null) {
         HELP("faq-android"),
         PRIVATE_BROWSING_MYTHS("common-myths-about-private-browsing"),
         YOUR_RIGHTS("your-rights"),
@@ -49,12 +49,17 @@ object SupportUtils {
         SEARCH_SUGGESTION("how-search-firefox-preview"),
         CUSTOM_SEARCH_ENGINES("custom-search-engines"),
         SYNC_SETUP("how-set-firefox-sync-firefox-android"),
+        CONNECT_ADDITIONAL_DEVICES_TO_SYNC(
+            topicStr = "how-do-i-set-sync-my-computer",
+            fragmentStr = "w_connect-additional-devices-to-sync",
+        ),
         SMARTBLOCK("smartblock-enhanced-tracking-protection"),
         SPONSOR_PRIVACY("sponsor-privacy"),
         HTTPS_ONLY_MODE("https-only-mode-firefox-android"),
         DNS_OVER_HTTPS("configure-dns-over-https-protection-levels-firefox-android"),
         DNS_OVER_HTTPS_LOCAL_PROVIDER(
-            "configure-dns-over-https-protection-levels-firefox-android#w_what-is-a-local-provider"
+            topicStr = "configure-dns-over-https-protection-levels-firefox-android",
+            fragmentStr = "w_what-is-a-local-provider",
         ),
         DNS_OVER_HTTPS_NETWORK("configure-dns-over-https-protection-levels-firefox-android"),
         UNSIGNED_ADDONS("unsigned-addons"),
@@ -93,7 +98,8 @@ object SupportUtils {
         locale: Locale = Locale.getDefault(),
         useMobilePage: Boolean = true,
     ): String {
-        val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
+        val escapedTopic = getEncodedTextUTF8(topic.topicStr)
+        val fragment = if (topic.fragmentStr == null) "" else "#${getEncodedTextUTF8(topic.fragmentStr)}"
         // Remove the whitespace so a search is not triggered:
         val appVersion = context.appVersionName.replace(" ", "")
         val osTarget = "Android"
@@ -104,16 +110,17 @@ object SupportUtils {
             } else {
                 "firefox"
             }
-        return "https://support.mozilla.org/1/$platform/$appVersion/$osTarget/$langTag/$escapedTopic"
+        return "https://support.mozilla.org/1/$platform/$appVersion/$osTarget/$langTag/$escapedTopic$fragment"
     }
 
     /**
      * Gets a support page URL for the corresponding topic. Used when the app version and os are not part of the URL.
      */
     fun getGenericSumoURLForTopic(topic: SumoTopic, locale: Locale = Locale.getDefault()): String {
-        val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
+        val escapedTopic = getEncodedTextUTF8(topic.topicStr)
+        val fragment = if (topic.fragmentStr == null) "" else "#${getEncodedTextUTF8(topic.fragmentStr)}"
         val langTag = getLanguageTag(locale)
-        return "https://support.mozilla.org/$langTag/kb/$escapedTopic"
+        return "https://support.mozilla.org/$langTag/kb/$escapedTopic$fragment"
     }
 
     fun getMozillaPageUrl(page: MozillaPage, locale: Locale = Locale.getDefault()): String {
@@ -157,9 +164,9 @@ object SupportUtils {
         context.startActivity(intent)
     }
 
-    private fun getEncodedTopicUTF8(topic: String): String {
+    private fun getEncodedTextUTF8(text: String): String {
         try {
-            return URLEncoder.encode(topic, "UTF-8")
+            return URLEncoder.encode(text, "UTF-8")
         } catch (e: UnsupportedEncodingException) {
             throw IllegalStateException("utf-8 should always be available", e)
         }

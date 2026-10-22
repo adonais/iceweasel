@@ -102,7 +102,8 @@ static const Etagere::AllocatorOptions kR8AllocatorOptions = {16, 1, 1, 0};
 #endif
 
 SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
-                             const RefPtr<WebGLTexture>& aTexture)
+                             const RefPtr<WebGLTexture>& aTexture,
+                             const dom::ContentParentId& aContentId)
     : BackingTexture(aSize, aFormat, aTexture),
       mAtlasAllocator(
 #ifdef XP_WIN
@@ -111,7 +112,8 @@ SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
                     aSize.width, aSize.height, &kR8AllocatorOptions)
               :
 #endif
-              Etagere::etagere_atlas_allocator_new(aSize.width, aSize.height)) {
+              Etagere::etagere_atlas_allocator_new(aSize.width, aSize.height)),
+      mContentId(aContentId) {
 }
 
 SharedTexture::~SharedTexture() {
@@ -432,7 +434,8 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
 // Try to initialize a new WebGL context. Verifies that the requested size does
 // not exceed the available texture limits and that shader creation succeeded.
 bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
-                           const RefPtr<SharedContextWebgl>& aSharedContext) {
+                           const RefPtr<SharedContextWebgl>& aSharedContext,
+                           const dom::ContentParentId& aContentId) {
   switch (format) {
     case SurfaceFormat::B8G8R8A8:
     case SurfaceFormat::B8G8R8X8:
@@ -453,6 +456,8 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
   mSharedContext = aSharedContext;
   mSharedContext->mDrawTargetCount++;
   gReportedTargetCount++;
+
+  mContentId = aContentId;
 
   if (size_t(std::max(size.width, size.height)) >
       mSharedContext->mMaxTextureSize) {
@@ -583,6 +588,19 @@ bool SharedContextWebgl::Initialize() {
   }
 
   mMaxTextureSize = initResult.limits.maxTex2dSize;
+
+  // Disable PBO upload path on D3D ANGLE where testing has shown this to be a
+  // performance loss.
+  if (mWebgl->GL()->IsD3DANGLE()) {
+    mUseUploadBuffer = false;
+  }
+
+  // Disable PBO upload path on Intel GPUs on macOS with native GL driver due to
+  // broken uploads. See bug 2080436.
+  if (kIsMacOS && initResult.vendor == gl::GLVendor::Intel &&
+      !mWebgl->GL()->IsMetalANGLE()) {
+    mUseUploadBuffer = false;
+  }
 
   if (kIsMacOS) {
     mRasterizationTruncates = initResult.vendor == gl::GLVendor::ATI;
@@ -1060,14 +1078,15 @@ bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
 
 already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
     const IntSize& aSize, SurfaceFormat aFormat,
-    const RefPtr<SharedContextWebgl>& aSharedContext) {
+    const RefPtr<SharedContextWebgl>& aSharedContext,
+    const dom::ContentParentId& aContentId) {
   // Validate the size and format.
   if (!CanCreate(aSize, aFormat)) {
     return nullptr;
   }
 
   RefPtr<DrawTargetWebgl> dt = new DrawTargetWebgl;
-  if (!dt->Init(aSize, aFormat, aSharedContext) || !dt->IsValid()) {
+  if (!dt->Init(aSize, aFormat, aSharedContext, aContentId) || !dt->IsValid()) {
     return nullptr;
   }
 
@@ -2658,10 +2677,9 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     Span<const uint8_t> range(
         map->GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
         std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
-    // Use the shared upload PBO if the data can fit within it. We always use a
-    // fixed size to help allocation performance. Avoid on D3D ANGLE where
-    // testing has shown this to be a performance loss.
-    if (range.Length() <= kUploadBufferSize && !mWebgl->GL()->IsD3DANGLE()) {
+    // Use the shared upload PBO if enabled and the data can fit within it. We
+    // always use a fixed size to help allocation performance.
+    if (mUseUploadBuffer && range.Length() <= kUploadBufferSize) {
       CheckedInt<size_t> uploadOffset =
           RoundUpToMultipleOf(CheckedInt<size_t>(mUploadBufferOffset), 4);
       if (!uploadOffset.isValid()) {
@@ -2855,8 +2873,8 @@ void SharedContextWebgl::BindScratchFramebuffer(TextureHandle* aHandle,
 // Allocate a new texture handle backed by either a standalone texture or as a
 // sub-texture of a larger shared texture.
 already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
-    SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared,
-    bool aRenderable, const WebGLTexture* aAvoid) {
+    DrawTargetWebgl* aDT, SurfaceFormat aFormat, const IntSize& aSize,
+    bool aAllowShared, bool aRenderable, const WebGLTexture* aAvoid) {
   // Don't allow allocating textures bigger than the reported limit.
   if (size_t(std::max(aSize.width, aSize.height)) > mMaxTextureSize) {
     return nullptr;
@@ -2870,13 +2888,17 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
   // The requested page size for shared textures.
   int32_t pageSize = int32_t(std::min(
       StaticPrefs::gfx_canvas_accelerated_shared_page_size(), mMaxTextureSize));
-  if (aAllowShared && std::max(aSize.width, aSize.height) <= pageSize / 2) {
+  if (aAllowShared && aDT &&
+      std::max(aSize.width, aSize.height) <= pageSize / 2) {
     // Ensure that the surface is no bigger than a quadrant of a shared texture
     // page. If so, try to allocate it to a shared texture. Look for any
-    // existing shared texture page with a matching format and allocate
-    // from that if possible.
+    // existing shared texture page with a matching format and allocate from
+    // that if possible. Restrict allocation to pages that only match the
+    // target's content id.
+    const dom::ContentParentId& contentId = aDT->GetContentId();
     for (auto& shared : mSharedTextures) {
-      if (shared->GetFormat() == aFormat &&
+      if (shared->GetContentId() == contentId &&
+          shared->GetFormat() == aFormat &&
           shared->IsRenderable() == aRenderable &&
           shared->GetWebGLTexture() != aAvoid) {
         bool wasEmpty = !shared->HasAllocatedHandles();
@@ -2895,8 +2917,8 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     // format, then allocate a new page to put the request in.
     if (!handle) {
       if (RefPtr<WebGLTexture> tex = mWebgl->CreateTexture()) {
-        RefPtr<SharedTexture> shared =
-            new SharedTexture(IntSize(pageSize, pageSize), aFormat, tex);
+        RefPtr<SharedTexture> shared = new SharedTexture(
+            IntSize(pageSize, pageSize), aFormat, tex, contentId);
         if (aRenderable) {
           shared->MarkRenderable();
         }
@@ -3346,7 +3368,7 @@ bool SharedContextWebgl::DrawRectAccel(
         // surface size may change via a forced update, then don't allocate
         // from a shared texture page.
         handle = AllocateTextureHandle(
-            format, texSize,
+            mCurrentTarget, format, texSize,
             !aForceUpdate && surfacePattern.mExtendMode == ExtendMode::CLAMP);
         if (!handle) {
           MOZ_ASSERT(false);
@@ -3579,7 +3601,7 @@ already_AddRefed<WebGLTexture> SharedContextWebgl::GetFilterInputTexture(
     // There is no existing handle. Try to allocate a new one. If the
     // surface size may change via a forced update, then don't allocate
     // from a shared texture page.
-    handle = AllocateTextureHandle(format, texSize);
+    handle = AllocateTextureHandle(mCurrentTarget, format, texSize);
     if (!handle) {
       MOZ_ASSERT(false);
       return nullptr;
@@ -3645,8 +3667,8 @@ bool SharedContextWebgl::FilterRect(const Rect& aDestRect,
     // If sourcing from a texture handle as input, be careful not to render to
     // a handle with the same exact backing texture, which is not allowed in
     // WebGL.
-    RefPtr<TextureHandle> targetHandle =
-        AllocateTextureHandle(format, targetSize, true, true, tex);
+    RefPtr<TextureHandle> targetHandle = AllocateTextureHandle(
+        mCurrentTarget, format, targetSize, true, true, tex);
     if (!targetHandle) {
       MOZ_ASSERT(false);
       return false;
@@ -3837,7 +3859,8 @@ bool SharedContextWebgl::BlurRectPass(
     // a handle with the same exact backing texture, which is not allowed in
     // WebGL.
     RefPtr<TextureHandle> targetHandle = AllocateTextureHandle(
-        aFilter ? format : SurfaceFormat::A8, targetSize, true, true, tex);
+        mCurrentTarget, aFilter ? format : SurfaceFormat::A8, targetSize, true,
+        true, tex);
     if (!targetHandle) {
       MOZ_ASSERT(false);
       return false;
@@ -4022,7 +4045,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::DownscaleBlurInput(
       IntSize halfSize = (sourceRect.Size() + IntSize(1, 1)) / 2;
       // Allocate a half-size texture for the downscale target.
       RefPtr<TextureHandle> halfHandle = AllocateTextureHandle(
-          aSurface->GetFormat(), halfSize, true, true, fullTex);
+          mCurrentTarget, aSurface->GetFormat(), halfSize, true, true, fullTex);
       if (!halfHandle) {
         break;
       }
@@ -4232,7 +4255,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::ResolveFilterInputAccel(
                     RoundToFactor(aSourceRect.height, roundFactor))
           : aSourceRect.Size();
   RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(aFormat, roundSize, true, true);
+      AllocateTextureHandle(aDT, aFormat, roundSize, true, true);
   if (!handle) {
     return nullptr;
   }
@@ -4601,7 +4624,7 @@ already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
     float aSigma) {
   HashNumber hash =
       PathCacheEntry::HashPath(aPath, aPattern, aTransform, aBounds, aOrigin);
-  for (const RefPtr<PathCacheEntry>& entry : GetChain(hash)) {
+  for (PathCacheEntry* entry : GetChain(hash)) {
     if (entry->MatchesPath(aPath, aPattern, aStrokeOptions, aStrokeMode,
                            aTransform, aBounds, aOrigin, hash, aSigma)) {
       return do_AddRef(entry);
@@ -4637,7 +4660,7 @@ already_AddRefed<PathCacheEntry> PathCache::FindEntry(
     float aSigma, bool aHasSecondaryHandle) {
   HashNumber hash =
       PathCacheEntry::HashPath(aPath, aPattern, aTransform, aBounds, aOrigin);
-  for (const RefPtr<PathCacheEntry>& entry : GetChain(hash)) {
+  for (PathCacheEntry* entry : GetChain(hash)) {
     if (entry->MatchesPath(aPath, aPattern, aStrokeOptions, aStrokeMode,
                            aTransform, aBounds, aOrigin, hash, aSigma) &&
         (!aHasSecondaryHandle || (entry->GetSecondaryHandle() &&
@@ -5014,8 +5037,8 @@ static inline AAStrokeMode SupportsAAStroke(const Pattern& aPattern,
 already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
     const PathVertexRange& aVertexRange, const IntSize& aSize) {
   // Allocate a new texture handle to store the rendered mask.
-  RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(SurfaceFormat::A8, aSize, true, true);
+  RefPtr<TextureHandle> handle = AllocateTextureHandle(
+      mCurrentTarget, SurfaceFormat::A8, aSize, true, true);
   if (!handle) {
     return nullptr;
   }
@@ -6084,7 +6107,7 @@ already_AddRefed<GlyphCacheEntry> GlyphCache::FindEntry(
   IntPoint offset = QuantizeOffset(aTransform, aQuantizeScale, aBuffer);
   IntPoint boundsOffset(offset.x / aQuantizeScale.x,
                         offset.y / aQuantizeScale.y);
-  for (const RefPtr<GlyphCacheEntry>& entry : GetChain(aHash)) {
+  for (GlyphCacheEntry* entry : GetChain(aHash)) {
     if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, offset, boundsOffset,
                              aClipRect, aHash, aStrokeOptions)) {
       return do_AddRef(entry);
@@ -6725,17 +6748,18 @@ std::shared_ptr<gl::SharedSurface> SharedContextWebgl::ExportSharedSurface(
 }
 
 already_AddRefed<SourceSurface> SharedContextWebgl::ImportSurfaceDescriptor(
-    const layers::SurfaceDescriptor& aDesc, const IntSize& aSize,
-    SurfaceFormat aFormat) {
+    DrawTargetWebgl* aDT, const layers::SurfaceDescriptor& aDesc,
+    const IntSize& aSize, SurfaceFormat aFormat) {
   if (IsContextLost()) {
     return nullptr;
   }
 
   RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(aFormat, aSize, true, true);
+      AllocateTextureHandle(aDT, aFormat, aSize, true, true);
   if (!handle) {
     return nullptr;
   }
+
   BackingTexture* backing = handle->GetBackingTexture();
   RefPtr<WebGLTexture> tex = backing->GetWebGLTexture();
   if (mLastTexture != tex) {
@@ -6756,6 +6780,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::ImportSurfaceDescriptor(
   webgl::TexUnpackBlobDesc texDesc = {
       LOCAL_GL_TEXTURE_2D, {uint32_t(aSize.width), uint32_t(aSize.height), 1}};
   texDesc.sd = Some(aDesc);
+  texDesc.destFormat = aFormat;
   texDesc.structuredSrcSize = uvec2::FromSize(aSize);
   GLenum intFormat =
       aFormat == SurfaceFormat::A8 ? LOCAL_GL_R8 : LOCAL_GL_RGBA8;
@@ -6773,7 +6798,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::ImportSurfaceDescriptor(
 already_AddRefed<SourceSurface> DrawTargetWebgl::ImportSurfaceDescriptor(
     const layers::SurfaceDescriptor& aDesc, const IntSize& aSize,
     SurfaceFormat aFormat) {
-  return mSharedContext->ImportSurfaceDescriptor(aDesc, aSize, aFormat);
+  return mSharedContext->ImportSurfaceDescriptor(this, aDesc, aSize, aFormat);
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(

@@ -25,7 +25,7 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
                                                float* const* output) {
   RTC_CHECK_EQ(num_input_channels, parent_->num_in_channels_);
   RTC_CHECK_EQ(num_output_channels, parent_->num_out_channels_);
-  RTC_CHECK_EQ(parent_->block_length_, num_frames);
+  RTC_CHECK_EQ(num_frames, parent_->block_length_);
 
   for (size_t i = 0; i < num_input_channels; ++i) {
     memcpy(parent_->real_buf_.Row(i), input[i], num_frames * sizeof(*input[0]));
@@ -35,7 +35,7 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
 
   size_t block_length =
       RealFourier::ComplexLength(RealFourier::FftOrder(num_frames));
-  RTC_CHECK_EQ(parent_->cplx_length_, block_length);
+  RTC_CHECK_EQ(block_length, parent_->cplx_length_);
   parent_->block_processor_->ProcessAudioBlock(
       parent_->cplx_pre_.Array(), num_input_channels, parent_->cplx_length_,
       num_output_channels, parent_->cplx_post_.Array());
@@ -85,7 +85,7 @@ LappedTransform::LappedTransform(size_t num_in_channels,
   RTC_CHECK(block_processor_);
 
   // block_length_ power of 2?
-  RTC_CHECK_EQ(0, block_length_ & (block_length_ - 1));
+  RTC_CHECK_EQ(block_length_ & (block_length_ - 1), 0);
 }
 
 LappedTransform::~LappedTransform() = default;

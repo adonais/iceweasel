@@ -198,25 +198,19 @@ void SMILAnimationFunction::ComposeResult(const SMILAttr& aSMILAttr,
   if (values.Length() == 1 && !IsToAnimation()) {
     // Single-valued animation
     result = values[0];
-    mPrevSampleWasSingleValueAnimation = true;
+    mPrevSampleWasSingleValueAnimation = !(GetAccumulate() && mRepeatIteration);
 
   } else if (mLastValue) {
     // Sampling last value
-    const SMILValue& last = values.LastElement();
-    result = last;
-
-    // See comment in AccumulateResult: to-animation does not accumulate
-    if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
-      // If the target attribute type doesn't support addition Add will
-      // fail leaving result = last
-      result.Add(last, mRepeatIteration);
-    }
-
+    result = values.LastElement();
   } else {
     // Interpolation
     if (NS_FAILED(InterpolateResult(values, result, aResult))) return;
-
-    if (NS_FAILED(AccumulateResult(values, result))) return;
+  }
+  if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
+    // If the target attribute type doesn't support addition, Add will
+    // fail and we leave result untouched.
+    result.Add(values.LastElement(), mRepeatIteration);
   }
 
   // If additive animation isn't required or isn't supported, set the value.
@@ -426,17 +420,6 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
     rv = NS_OK;
   }
   return rv;
-}
-
-nsresult SMILAnimationFunction::AccumulateResult(const SMILValueArray& aValues,
-                                                 SMILValue& aResult) {
-  if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
-    // If the target attribute type doesn't support addition, Add will
-    // fail and we leave aResult untouched.
-    aResult.Add(aValues.LastElement(), mRepeatIteration);
-  }
-
-  return NS_OK;
 }
 
 /*
@@ -835,7 +818,7 @@ void SMILAnimationFunction::CheckKeySplines(uint32_t aNumValues) {
     return;
   }
 
-  if (mKeySplines.Length() < 1) {
+  if (mKeySplines.IsEmpty()) {
     // keyTimes isn't set or failed preliminary checks
     SetKeySplinesErrorFlag(true);
     return;

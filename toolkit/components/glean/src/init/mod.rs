@@ -41,6 +41,8 @@ pub extern "C" fn fog_init(
     disable_internal_pings: bool,
 ) -> nsresult {
     let upload_enabled = static_prefs::pref!("datareporting.healthreport.uploadEnabled");
+    let enable_store_submitted_pings =
+        static_prefs::pref!("telemetry.fog.enable_store_submitted_pings");
     let recording_enabled = static_prefs::pref!("telemetry.fog.test.localhost_port") < 0;
     let uploader = Some(Box::new(ViaductUploader) as Box<dyn glean::net::PingUploader>);
 
@@ -52,6 +54,7 @@ pub extern "C" fn fog_init(
         // Flipping it around, because no value = defaults to false,
         // so we take in `disable` but pass on `enable`.
         !disable_internal_pings,
+        enable_store_submitted_pings,
     )
     .into()
 }
@@ -81,6 +84,7 @@ pub extern "C" fn fog_init(
         upload_enabled,
         uploader,
         !disable_internal_pings,
+        false,
     )
     .into()
 }
@@ -91,6 +95,7 @@ fn fog_init_internal(
     upload_enabled: bool,
     uploader: Option<Box<dyn glean::net::PingUploader>>,
     enable_internal_pings: bool,
+    enable_store_submitted_pings: bool,
 ) -> Result<(), nsresult> {
     let timer_id = metrics::fog::initializations.start();
 
@@ -103,6 +108,7 @@ fn fog_init_internal(
     conf.upload_enabled = upload_enabled;
     conf.uploader = uploader;
     conf.enable_internal_pings = enable_internal_pings;
+    conf.enable_store_submitted_pings = enable_store_submitted_pings;
 
     // If we're operating in automation without any specific source tags to set,
     // set the tag "automation" so any pings that escape don't clutter the tables.
@@ -181,12 +187,19 @@ fn build_configuration(
         pings_per_interval,
     };
 
+    let acceleration_factor = if static_prefs::pref!("telemetry.fog.test.decelerate_early_events") {
+        0
+    } else {
+        5
+    };
+
     let builder = ConfigurationBuilder::new(false, data_path, application_id)
         .with_delay_ping_lifetime_io(true)
         .with_server_endpoint(server)
         .with_use_core_mps(true)
         .with_trim_data_to_registered_pings(true)
         .with_ping_schedule(pings::ping_schedule())
+        .with_events_ping_acceleration_factor(acceleration_factor)
         .with_rate_limit(rate_limit);
 
     Ok((builder.build(), client_info))

@@ -168,6 +168,7 @@ JS::Zone::Zone(JSRuntime* rt, Kind kind)
       allocNurseryGetterSetters_(true),
       pretenuring(this),
       crossZoneStringWrappers_(this),
+      localSymbolMap_(this),
       shapeZone_(this),
       gcScheduled_(false),
       gcScheduledSaved_(false),
@@ -261,6 +262,7 @@ void Zone::traceWeakCCWEdges(JSTracer* trc) {
   for (CompartmentsInZoneIter comp(this); !comp.done(); comp.next()) {
     comp->traceCrossCompartmentObjectWrapperEdges(trc);
   }
+  traceWeakLocalSymbolEdges(trc);
 }
 
 /* static */
@@ -791,6 +793,46 @@ void Zone::traceScriptTableRoots(JSTracer* trc) {
   if (jitZone()) {
     jitZone()->traceScriptTableRoots(trc);
   }
+}
+
+#ifdef DEBUG
+bool Zone::hasLocalSymbol(JS::Symbol* symbol) {
+  MOZ_ASSERT(symbol->isLocal());
+  auto ptr = localSymbolMap().lookup(symbol->sharedSymbol());
+  MOZ_ASSERT_IF(ptr, ptr->value() == symbol);
+  return ptr.found();
+}
+#endif
+
+void Zone::traceIncomingSymbolEdgesForZoneGC(JSTracer* trc,
+                                             gc::EdgeSelector whichEdges) {
+  MOZ_ASSERT(trc->runtime()->atomsZone()->isGCMarking());
+
+  for (auto iter = localSymbolMap().iter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(iter.get().key()->isShared());
+    MOZ_ASSERT(iter.get().value()->isLocal());
+    if (ShouldTraceEdge(iter.get().value().get(), whichEdges)) {
+      TraceEdge(trc, &iter.get().key(), "shared symbol");
+    }
+  }
+}
+
+void Zone::traceWeakLocalSymbolEdges(JSTracer* trc) {
+  for (auto iter = localSymbolMap().modIter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(iter.get().key()->isShared());
+    MOZ_ASSERT(iter.get().value()->isLocal());
+    auto valueResult = TraceWeakEdge(trc, &iter.get().value(), "local symbol");
+    if (valueResult.isDead()) {
+      iter.remove();
+      continue;
+    }
+#ifdef DEBUG
+    auto keyResult = TraceWeakEdge(trc, &iter.get().key(), "shared symbol");
+    MOZ_ASSERT(keyResult.isLive());  // Held live by the local symbol's pointer.
+    MOZ_ASSERT(!keyResult.wasMoved());
+#endif
+  }
+  localSymbolMap().compact();
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS

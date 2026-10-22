@@ -15,6 +15,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/Try.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsContentUtils.h"
 #include "nsEscape.h"
 #include "nsGlobalWindowInner.h"
@@ -302,6 +303,24 @@ bool WebExtensionPolicyCore::SourceMayAccessPath(
     RefPtr<WebExtensionPolicyCore> policyCore =
         ExtensionPolicyService::GetCoreByHost(aURI.Host());
     return policyCore != nullptr;
+  }
+
+  if (aURI.Scheme() == nsGkAtoms::about) {
+    nsAutoCString aboutModule;
+    if (NS_SUCCEEDED(NS_GetAboutModuleName(aURI.URI(), aboutModule)) &&
+        (aboutModule.EqualsLiteral("newtab") ||
+         aboutModule.EqualsLiteral("home"))) {
+      // For about:newtab/about:home source URIs:
+      // - allow access privileged extensions resources unconditionally
+      //   (without requiring the moz-extension:// URL to be listed as
+      //   web_accessible_resources in the extension manifest).
+      // - disallow access to moz-extension:// URLs that belongs to
+      //   third party unprivileged extensions (opening this up depends
+      //   on enforcing moz-extension:// subframes to be loaded in
+      //   the extension process, see Bug 2070189, to disallow
+      //   unprivileged code from running in the privilegedabout process).
+      return IsPrivileged();
+    }
   }
 
   if (ManifestVersion() < 3) {

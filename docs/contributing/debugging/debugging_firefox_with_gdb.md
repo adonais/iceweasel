@@ -1,7 +1,6 @@
 # Debugging Firefox with GDB
 
-This page details how you can more easily debug Firefox with gdb. {ref}`rr
-<Debugging Firefox with rr>` is most often a better choice to debug a problem,
+This page details how you can more easily debug Firefox with gdb. {doc}`rr <debugging_firefox_with_rr>` is most often a better choice to debug a problem,
 but sometimes it isn't possible to use it, such as attempting to reproduce a
 race condition or when performance is important to reproduce an issue. `rr`
 chaos mode allows reproducing a lot of issues though, and should be tried.
@@ -87,11 +86,11 @@ shells it can be extremely dangerous to use it with root permissions.
 ## Advanced gdb configuration
 
 The preferred method, is using the
-{ref}`mach` command-line tool to run the
+{doc}`/mach/index` command-line tool to run the
 debugger, which can bypass several optional defaults. Use "mach help
 run" to get more details. If inside the source directory, you would use
 "./mach". Please note that
-{ref}`mach is aware of mozconfigs <Configuring Build Options>`.
+{doc}`mach is aware of mozconfigs </setup/configuring_build_options>`.
 
 ```bash
 ./mach run --debug [arguments to pass to firefox]
@@ -184,12 +183,12 @@ JS stack in addition to the C++ stack.
 Please note that if `gdb` has been attached to a process, the stack might be
 printed in the terminal window in which Firefox was started.
 
-See {ref}`Debugging On Windows` for more JS debugging tricks.
+See {doc}`debugging_on_windows` for more JS debugging tricks.
 
 ## How can I debug race conditions
 
-Try {ref}`rr <Debugging Firefox with rr>` first. If this doesn't work, good
-luck, maybe try {ref}`logging <Gecko Logging>` or sprinkling assertions.
+Try {doc}`rr <debugging_firefox_with_rr>` first. If this doesn't work, good
+luck, maybe try {doc}`logging </xpcom/logging>` or sprinkling assertions.
 
 ## I keep getting a SIGSYS, or SIGSEGV in JS/JIT code under gdb even though there is no crash when gdb is not attached. How do I fix it?
 

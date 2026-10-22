@@ -8,6 +8,7 @@
 
 #include "GMPLog.h"
 #include "GMPService.h"
+#include "GMPServiceChild.h"
 #include "VideoLimits.h"
 #include "gmp-video-frame-encoded.h"
 #include "mozIGeckoMediaPluginService.h"
@@ -19,6 +20,7 @@
 #include "nsIConsoleService.h"
 #include "nsIFile.h"
 #include "nsLiteralString.h"
+#include "nsXULAppAPI.h"
 #include "prio.h"
 
 namespace mozilla {
@@ -181,6 +183,9 @@ nsCString GMPInfoFileParser::Get(const nsCString& aKey) const {
 }
 
 bool HaveGMPFor(const nsACString& aAPI, const nsTArray<nsCString>& aTags) {
+  if (!XRE_IsParentProcess()) {
+    return gmp::GeckoMediaPluginServiceChild::HasCapabilityForAPI(aAPI, aTags);
+  }
   nsCOMPtr<mozIGeckoMediaPluginService> mps =
       do_GetService("@mozilla.org/gecko-media-plugin-service;1");
   if (NS_WARN_IF(!mps)) {

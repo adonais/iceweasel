@@ -17,14 +17,13 @@
  *          cancelPendingInstall, mockAboutNewTabUninit, server,
  *          BUILTIN_ADDON_ID, BUILTIN_ADDON_VERSION,
  *          BUILTIN_LOCATION_NAME, PROFILE_LOCATION_NAME,
- *          TRAINHOP_NIMBUS_FEATURE_ID, TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
+ *          TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
  *          TRAINHOP_SCHEDULED_UPDATE_STATE_DELAY_PREF,
  *          TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF */
 
 const {
   AboutNewTabResourceMapping,
   BUILTIN_ADDON_ID,
-  TRAINHOP_NIMBUS_FEATURE_ID,
   TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
   TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID,
   TRAINHOP_XPI_BASE_URL_PREF,
@@ -265,28 +264,15 @@ function assertTrainhopAddonNimbusExposure({
   );
 }
 
-// The effective train-hop version is the max of the two version prefs: the
-// original newtabTrainhopAddon feature owns
-// `browser.newtabpage.trainhopAddon.version` (via setPref), while the
-// co-enrollment deployment feature is tracked by the front-end in
-// `browser.newtabpage.trainhopAddonDeployment.version`. Early startup keeps the
-// train-hop XPI while either is non-empty.
+// The winning train-hop version is tracked by the front-end in
+// `browser.newtabpage.trainhopAddonDeployment.version` (owned exclusively by
+// AboutNewTabResourceMapping for the co-enrollment newtabTrainhopAddonDeployment
+// feature). Early startup keeps the train-hop XPI while it is non-empty.
 function trainhopEffectiveVersionPref() {
-  const original = Services.prefs.getStringPref(
-    "browser.newtabpage.trainhopAddon.version",
-    ""
-  );
-  const deployment = Services.prefs.getStringPref(
+  return Services.prefs.getStringPref(
     "browser.newtabpage.trainhopAddonDeployment.version",
     ""
   );
-  if (!original) {
-    return deployment;
-  }
-  if (!deployment) {
-    return original;
-  }
-  return Services.vc.compare(original, deployment) >= 0 ? original : deployment;
 }
 
 function assertTrainhopAddonVersionPref(expectedTrainhopAddonVersion) {
@@ -294,8 +280,8 @@ function assertTrainhopAddonVersionPref(expectedTrainhopAddonVersion) {
     trainhopEffectiveVersionPref(),
     expectedTrainhopAddonVersion,
     expectedTrainhopAddonVersion
-      ? "Expect the effective train-hop add-on version (max of the original and deployment prefs) to be set while client is enrolled"
-      : "Expect the effective train-hop add-on version to be empty while client is unenrolled"
+      ? "Expect the train-hop add-on version to be set while client is enrolled"
+      : "Expect the train-hop add-on version to be empty while client is unenrolled"
   );
 }
 

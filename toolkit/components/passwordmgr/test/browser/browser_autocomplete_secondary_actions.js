@@ -375,6 +375,84 @@ add_task(async function test_flyout_actions_dispatch_by_index() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_flyout_edit_opens_about_logins() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF, true],
+      ["test.wait300msAfterTabSwitch", true],
+    ],
+  });
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_URL_PATH },
+    async function (browser) {
+      const popup = document.getElementById("PopupAutoComplete");
+      await openACPopup(popup, browser, "#form-basic-username");
+
+      const { item, rowItem, button } = getSecondaryAction(popup, 0);
+      await selectRow(item, 0);
+
+      const editLabel = AC_L10N.formatValueSync("autocomplete-edit-password");
+      const menupopup = await openFlyout(popup, button, editLabel);
+      const editItem = [...menupopup.querySelectorAll("menuitem")].find(
+        mi => mi.getAttribute("label") === editLabel
+      );
+
+      const logins = await Services.logins.getAllLogins();
+      const expectedGuid = logins.find(
+        login => login.username == rowItem.value
+      ).guid;
+
+      const tabOpened = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        url => url.startsWith("about:logins"),
+        true
+      );
+
+      // about:logins redirects to drop the entryPoint param, so the opening URL
+      // has to be captured before the load settles.
+      const originalAddTrustedTab = gBrowser.addTrustedTab;
+      let openedURL;
+      gBrowser.addTrustedTab = (url, ...rest) => {
+        openedURL = url;
+        return originalAddTrustedTab.call(gBrowser, url, ...rest);
+      };
+
+      let tab;
+      try {
+        menupopup.activateItem(editItem);
+        tab = await tabOpened;
+      } finally {
+        gBrowser.addTrustedTab = originalAddTrustedTab;
+      }
+
+      Assert.equal(
+        openedURL,
+        "about:logins?entryPoint=Autocomplete",
+        "about:logins is opened with the autocomplete entry point"
+      );
+
+      await SpecialPowers.spawn(
+        tab.linkedBrowser,
+        [expectedGuid],
+        async guid => {
+          const loginList =
+            content.document.querySelector("login-list").shadowRoot;
+          await ContentTaskUtils.waitForCondition(
+            () =>
+              loginList.querySelector("login-list-item[aria-selected='true']")
+                ?.dataset?.guid === guid,
+            "Wait for the edited login to be preselected"
+          );
+        }
+      );
+
+      BrowserTestUtils.removeTab(tab);
+      await closePopup(popup);
+    }
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
 // Closing the autocomplete panel should tear down any flyout a row left open.
 add_task(async function test_flyout_closes_with_panel() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
@@ -406,6 +484,9 @@ add_task(async function test_flyout_closes_with_panel() {
 });
 
 add_task(async function test_activating_flyout_item_keeps_panel_open() {
+  const { AutoCompleteParent } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/actors/AutoCompleteParent.sys.mjs"
+  );
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: TEST_URL_PATH },
@@ -425,18 +506,25 @@ add_task(async function test_activating_flyout_item_keeps_panel_open() {
         );
       }
 
-      const menuHidden = BrowserTestUtils.waitForEvent(
-        menupopup,
-        "popuphiding"
-      );
-      menupopup.activateItem(menuitems[0]);
-      await menuHidden;
+      const original = AutoCompleteParent.prototype.selectAutoCompleteEntry;
+      AutoCompleteParent.prototype.selectAutoCompleteEntry = () => {};
 
-      Assert.equal(
-        popup.state,
-        "open",
-        "The autocomplete panel stays open after a flyout item is activated"
-      );
+      try {
+        const menuHidden = BrowserTestUtils.waitForEvent(
+          menupopup,
+          "popuphiding"
+        );
+        menupopup.activateItem(menuitems[0]);
+        await menuHidden;
+
+        Assert.equal(
+          popup.state,
+          "open",
+          "The autocomplete panel stays open after a flyout item is activated"
+        );
+      } finally {
+        AutoCompleteParent.prototype.selectAutoCompleteEntry = original;
+      }
 
       await closePopup(popup);
     }
@@ -496,22 +584,31 @@ add_task(async function test_secondary_action_menu_semantics() {
       await openACPopup(popup, browser, "#form-basic-username");
 
       const { item, rowItem, button } = getSecondaryAction(popup, 0);
-      const { label } = rowItem.actions.secondary;
+      const { label, tooltip } = rowItem.actions.secondary;
 
       Assert.ok(
         label.includes("user1"),
         `The button is named after the row it belongs to, got "${label}"`
       );
+      Assert.ok(
+        !tooltip.includes("user1"),
+        `The tooltip stays short and omits the row, got "${tooltip}"`
+      );
+      Assert.ok(
+        label.startsWith(tooltip),
+        "The accessible name starts with the tooltip text"
+      );
 
       const innerButton = button.shadowRoot.querySelector("#main-button");
       Assert.equal(
-        innerButton.getAttribute("title"),
+        innerButton.getAttribute("aria-label"),
         label,
-        "The button's accessible name comes from its title"
+        "The button's accessible name names the row"
       );
-      Assert.ok(
-        !innerButton.hasAttribute("aria-label"),
-        "The name is not duplicated across title and aria-label"
+      Assert.equal(
+        innerButton.getAttribute("title"),
+        tooltip,
+        "The tooltip is the short string, not the accessible name"
       );
       Assert.equal(
         innerButton.getAttribute("aria-haspopup"),

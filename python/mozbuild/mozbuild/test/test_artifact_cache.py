@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import gzip
+import io
 import os
 import time
 import unittest
@@ -9,6 +11,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 import mozunit
+from requests.adapters import HTTPAdapter
+from urllib3 import HTTPResponse
 
 from mozbuild import artifact_cache
 from mozbuild.artifact_cache import ArtifactCache
@@ -23,31 +27,22 @@ CONTENTS = {
 }
 
 
-class FakeResponse:
-    def __init__(self, content):
-        self._content = content
+class FakeAdapter(HTTPAdapter):
+    def __init__(self, gzip_encoded=False):
+        super().__init__()
+        self._gzip_encoded = gzip_encoded
 
-    @property
-    def headers(self):
-        return {"Content-length": str(len(self._content))}
-
-    def iter_content(self, chunk_size):
-        content = memoryview(self._content)
-        while content:
-            yield content[:chunk_size]
-            content = content[chunk_size:]
-
-    def raise_for_status(self):
-        pass
-
-    def close(self):
-        pass
-
-
-class FakeSession:
-    def get(self, url, stream=True):
-        assert stream is True
-        return FakeResponse(CONTENTS[url])
+    def send(self, request, **kwargs):
+        body = CONTENTS[request.url]
+        headers = {}
+        if self._gzip_encoded:
+            body = gzip.compress(body)
+            headers["Content-Encoding"] = "gzip"
+        headers["Content-Length"] = str(len(body))
+        raw = HTTPResponse(
+            body=io.BytesIO(body), headers=headers, status=200, preload_content=False
+        )
+        return self.build_response(request, raw)
 
 
 class TestArtifactCache(unittest.TestCase):
@@ -81,7 +76,7 @@ class TestArtifactCache(unittest.TestCase):
 
     def test_artifact_cache_persistence(self):
         cache = ArtifactCache(self.tmpdir)
-        cache._download_manager.session = FakeSession()
+        cache._download_manager.session.mount("http://", FakeAdapter())
 
         path = cache.fetch("http://server/foo")
         expected = [os.path.basename(path)]
@@ -102,7 +97,7 @@ class TestArtifactCache(unittest.TestCase):
         self.assertEqual(sorted(self.listtmpdir()), sorted(expected))
 
         cache = ArtifactCache(self.tmpdir)
-        cache._download_manager.session = FakeSession()
+        cache._download_manager.session.mount("http://", FakeAdapter())
 
         # Downloading a new file in a new session purges the oldest files in
         # the cache.
@@ -113,7 +108,7 @@ class TestArtifactCache(unittest.TestCase):
 
         # Downloading a file already in the cache leaves the cache untouched
         cache = ArtifactCache(self.tmpdir)
-        cache._download_manager.session = FakeSession()
+        cache._download_manager.session.mount("http://", FakeAdapter())
 
         path = cache.fetch("http://server/qux")
         self.assertEqual(sorted(self.listtmpdir()), sorted(expected))
@@ -123,7 +118,7 @@ class TestArtifactCache(unittest.TestCase):
         # re-downloaded it in the mean time, so the next one (fuga) should be
         # the purged one.
         cache = ArtifactCache(self.tmpdir)
-        cache._download_manager.session = FakeSession()
+        cache._download_manager.session.mount("http://", FakeAdapter())
 
         path = cache.fetch("http://server/bar")
         expected.append(os.path.basename(path))
@@ -133,12 +128,24 @@ class TestArtifactCache(unittest.TestCase):
         # Downloading one file larger than the cache size should still leave
         # MIN_CACHED_ARTIFACTS files.
         cache = ArtifactCache(self.tmpdir)
-        cache._download_manager.session = FakeSession()
+        cache._download_manager.session.mount("http://", FakeAdapter())
 
         path = cache.fetch("http://server/larger")
         expected.append(os.path.basename(path))
         expected = expected[-2:]
         self.assertEqual(sorted(self.listtmpdir()), sorted(expected))
+
+    def test_artifact_cache_content_encoding(self):
+        logged = []
+        cache = ArtifactCache(
+            self.tmpdir, log=lambda level, action, params, fmt: logged.append(params)
+        )
+        cache._download_manager.session.mount("http://", FakeAdapter(gzip_encoded=True))
+
+        path = cache.fetch("http://server/larger")
+        with open(path, "rb") as fh:
+            self.assertEqual(fh.read(), CONTENTS["http://server/larger"])
+        self.assertEqual([p["percent"] for p in logged if "percent" in p], [0.0, 100.0])
 
 
 if __name__ == "__main__":

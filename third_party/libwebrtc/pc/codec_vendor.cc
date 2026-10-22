@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1190,7 +1191,7 @@ RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
     RtpTransceiverDirection offer_rtd,
     RtpTransceiverDirection answer_rtd,
     const ContentInfo* current_content,
-    std::vector<Codec> codecs_from_offer,
+    std::span<const Codec> codecs_from_offer,
     PayloadTypeSuggester& pt_suggester) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();

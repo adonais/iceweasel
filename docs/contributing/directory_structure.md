@@ -8,9 +8,9 @@ using Searchfox (start at <https://searchfox.org/firefox-main/source> for
 the complete firefox source code of branch HEAD).
 
 In order to modify the source, you have to acquire it either by
-downloading a {ref}`snapshot <Firefox Contributors' Quick Reference>` of the sources or
+downloading a {doc}`snapshot <contribution_quickref>` of the sources or
 by checking out the current sources from
-{ref}`the repository <Firefox Contributors' Quick Reference>`.
+{doc}`the repository <contribution_quickref>`.
 
 This document describes the directory structure -- i.e., directories that
 are used by at least some of the
@@ -66,7 +66,7 @@ Security](https://www.mozilla.org/projects/security/components/) .
 
 ## chrome
 
-{ref}`Chrome registry <Chrome Registration>` used with [toolkit](#toolkit)/.
+{doc}`Chrome registry </build/buildsystem/chrome-registration>` used with [toolkit](#toolkit)/.
 These files were originally copies of files in `rdf/chrome/`.
 
 ## config
@@ -93,7 +93,7 @@ an application.
 
 ## dom
 
-- {ref}`IDL definitions <XPIDL>` of the interfaces defined by
+- {doc}`IDL definitions </xpcom/xpidl>` of the interfaces defined by
   the DOM specifications and Mozilla extensions to those interfaces
   (implementations of these interfaces are primarily, but not
   completely, in content).
@@ -198,7 +198,7 @@ Container for implementations of IPC (Inter-Process Communication).
 ## js/src
 
 The JavaScript engine, also known as
-{ref}`SpiderMonkey <SpiderMonkey>`.
+{doc}`SpiderMonkey </js/index>`.
 See also [JavaScript](https://developer.mozilla.org/docs/JavaScript).
 
 ## js/xpconnect
@@ -292,7 +292,7 @@ dynamic linker for Android, a DLL block list for Windows, etc.
 
 ## netwerk
 
-{ref}`Networking library <Networking>`, also known as Necko.
+{doc}`Networking library </networking/index>`, also known as Necko.
 Responsible for doing actual transfers from and to servers, as well as
 for URI handling and related stuff.
 
@@ -304,7 +304,7 @@ interface to these permissions and other cookie features.
 ## nsprpub
 
 Netscape Portable Runtime. Used as an abstraction layer to things like
-threads, file I/O, and socket I/O. See {ref}`NSPR`.
+threads, file I/O, and socket I/O. See {doc}`/nspr/index`.
 
 ## nsprpub/lib
 
@@ -344,12 +344,12 @@ Cross module python code.
 
 ## python/mach
 
-The code for the {ref}`Mach` building tool.
+The code for the {doc}`/mach/index` building tool.
 
 ## security
 
 Contains NSS and PSM, to support cryptographic functions in mozilla
-(like S/MIME, SSL, etc). See {ref}`Network Security Services (NSS)`
+(like S/MIME, SSL, etc). See {doc}`/security/nss/index`
 and
 [Personal Security Manager
 (PSM)](https://www.mozilla.org/projects/security/pki/psm/).

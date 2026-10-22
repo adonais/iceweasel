@@ -102,6 +102,14 @@ option(env="MOZ_SOURCE_REPO", nargs=1, help="Project source repository")
 set_config("MOZ_SOURCE_REPO", depends_if("MOZ_SOURCE_REPO")(lambda src: src[0]))
 option(env="MOZ_SOURCE_CHANGESET", nargs=1, help="Source changeset")
 set_config("MOZ_SOURCE_CHANGESET", depends_if("MOZ_SOURCE_CHANGESET")(lambda v: v[0]))
+option(env="MOZ_SOURCE_GIT_REPO", nargs=1, help="Git mirror of the source repository")
+set_config("MOZ_SOURCE_GIT_REPO", depends_if("MOZ_SOURCE_GIT_REPO")(lambda v: v[0]))
+option(
+    env="MOZ_SOURCE_GIT_CHANGESET", nargs=1, help="Source changeset in the git mirror"
+)
+set_config(
+    "MOZ_SOURCE_GIT_CHANGESET", depends_if("MOZ_SOURCE_GIT_CHANGESET")(lambda v: v[0])
+)
 
 option(
     env="MOZ_INCLUDE_SOURCE_INFO",
@@ -125,6 +133,90 @@ option(
 )
 set_config("BUILT_BY_MOZILLA", depends("--built-by-mozilla")(lambda v: bool(v) or None))
 set_define("BUILT_BY_MOZILLA", depends("--built-by-mozilla")(lambda v: bool(v) or None))
+
+
+# PKCS#11 modules named in the user profile's pkcs11.txt are loaded at startup,
+# before any policy engine runs, from a user-writable file. Disabling this makes
+# PKCS#11 modules load only through trusted configuration (e.g. the
+# SecurityDevices enterprise policy). Enabled by default; enterprise disables it
+# (see browser/moz.configure). Bug 2068739.
+option(
+    "--disable-profile-pkcs11-modules",
+    help="{Enable|Disable} loading PKCS#11 modules named in the user profile",
+)
+
+
+@depends("--disable-profile-pkcs11-modules")
+def disable_profile_pkcs11_modules(value):
+    if not value:
+        return True
+
+
+set_config("MOZ_DISABLE_PROFILE_PKCS11_MODULES", disable_profile_pkcs11_modules)
+set_define("MOZ_DISABLE_PROFILE_PKCS11_MODULES", disable_profile_pkcs11_modules)
+
+
+# Enterprise
+# ==========
+
+option(
+    "--enable-enterprise",
+    default=False,
+    help="Build with enterprise support",
+)
+
+
+@depends("--enable-enterprise")
+def enable_enterprise(value):
+    if value:
+        return True
+
+
+set_config("MOZ_ENTERPRISE", enable_enterprise)
+set_define("MOZ_ENTERPRISE", enable_enterprise)
+
+
+# The profile PKCS#11 module load (see toolkit/moz.configure) is turned off by
+# default for enterprise; module loading is driven by policy, not the
+# user-writable profile pkcs11.txt (bug 2068739).
+imply_option("--enable-profile-pkcs11-modules", False, when="--enable-enterprise")
+
+default_enterprise_console = dependable("FIREFOX_ENTERPRISE_GENERIC")
+
+option(
+    "--with-enterprise-console-url",
+    nargs=1,
+    default=default_enterprise_console,
+    help="Enterprise console address the built browser points at",
+    when=enable_enterprise,
+)
+
+
+@depends(
+    "--with-enterprise-console-url", default_enterprise_console, when=enable_enterprise
+)
+def enterprise_console_url(value, default_url):
+    # --disable-enterprise-console or an empty value falls back to the default.
+    url = value[0] if value and value[0] else default_url
+    if not any([
+        url.startswith("https://"),
+        url.startswith("http://"),
+        url == "FIREFOX_ENTERPRISE_GENERIC",
+    ]):
+        die(
+            "--with-enterprise-console-url must be a http(s):// URL, got %s",
+            url,
+        )
+    # The value is interpolated into a JS string literal in firefox.cfg.
+    if any(c in url for c in '"\\\n\r'):
+        die(
+            "--with-enterprise-console-url must not contain quotes, backslashes or "
+            "newlines"
+        )
+    return url
+
+
+set_config("MOZ_ENTERPRISE_CONSOLE_URL", enterprise_console_url)
 
 
 @depends("MOZ_APP_VENDOR", build_project)
@@ -2899,9 +2991,10 @@ with only_when(requires_wasm_sandboxing & compile_environment):
     option(env="WASM_CFLAGS", nargs=1, help="Options to pass to WASM_CC")
 
     @depends("WASM_CFLAGS", wasm_compile_flags)
+    @imports(_from="mozshellutil", _import="split")
     def wasm_cflags(value, wasm_compile_flags):
         if value:
-            return wasm_compile_flags + value
+            return wasm_compile_flags + split(value[0])
         else:
             return wasm_compile_flags
 
@@ -2910,9 +3003,10 @@ with only_when(requires_wasm_sandboxing & compile_environment):
     option(env="WASM_CXXFLAGS", nargs=1, help="Options to pass to WASM_CXX")
 
     @depends("WASM_CXXFLAGS", wasm_compile_flags)
+    @imports(_from="mozshellutil", _import="split")
     def wasm_cxxflags(value, wasm_compile_flags):
         if value:
-            return wasm_compile_flags + value
+            return wasm_compile_flags + split(value[0])
         else:
             return wasm_compile_flags
 
@@ -3342,17 +3436,21 @@ with only_when(target_is_osx):
 # ==============================================================
 
 # Alternative Crashreporter setting
+# On Enterprise, clear the default value to avoid mozilla.com url compiled into
+# product: correct URL will be derived at runtime when console address is known
 option(
     "--with-crashreporter-url",
     env="MOZ_CRASHREPORTER_URL",
-    default="https://crash-reports.mozilla.com/",
+    default=depends("--enable-enterprise")(
+        lambda enterprise: None if enterprise else "https://crash-reports.mozilla.com/"
+    ),
     nargs=1,
     help="Set an alternative crashreporter url",
 )
 
 set_config(
     "MOZ_CRASHREPORTER_URL",
-    depends("--with-crashreporter-url")(lambda x: x[0].rstrip("/")),
+    depends("--with-crashreporter-url")(lambda x: x[0].rstrip("/") if x else ""),
 )
 
 
@@ -4623,6 +4721,7 @@ with only_when(target_is_windows):
 
 option(
     "--enable-appservices-in-tree",
+    env="MOZ_APPSERVICES_IN_TREE",
     help="Enables building from an in-tree app-services",
 )
 

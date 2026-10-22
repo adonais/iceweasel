@@ -23,7 +23,7 @@ import "chrome://global/content/elements/moz-button-group.mjs";
 import "chrome://global/content/elements/moz-input-text.mjs";
 
 /** @typedef {import("chrome://global/content/vendor/lit.all.mjs").TemplateResult} TemplateResult */
-/** @typedef {import("chrome://global/content/elements/moz-input-text.mjs").default} MozInputText */
+/** @typedef {import("chrome://global/content/elements/moz-input-text.mjs").MozInputText} MozInputText */
 /** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewField} FormReviewField */
 /** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewActionType} FormReviewActionType */
 /** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewErrorType} FormReviewErrorType */

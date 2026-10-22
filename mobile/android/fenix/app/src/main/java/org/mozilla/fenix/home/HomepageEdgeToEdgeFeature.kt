@@ -56,7 +56,6 @@ class HomepageEdgeToEdgeFeature(
 
     private var backgroundView: View? = null
     private var statusBarHeight: Int = 0
-    private var shouldApplyEdgeToEdgeBackgroundOnNextInsets = false
     private var toolbarScope: CoroutineScope? = null
     private var wallpaperScope: CoroutineScope? = null
 
@@ -65,6 +64,9 @@ class HomepageEdgeToEdgeFeature(
             return
         }
 
+        // Set the last known background before observing for updates to ensure the first drawn frame already shows the
+        // right wallpaper.
+        setWallpaper(appStore.state.wallpaperState.currentWallpaper)
         observeWallpaperUpdates()
     }
 
@@ -88,9 +90,10 @@ class HomepageEdgeToEdgeFeature(
 
     private fun setWallpaper(wallpaper: Wallpaper) {
         if (wallpaper == Wallpaper.EdgeToEdge) {
-            if (setupStatusBarBackground()) {
-                setBackground(Background.HomeEdgeToEdge)
+            if (backgroundView == null) {
+                setupStatusBarBackground()
             }
+            setBackground(Background.HomeEdgeToEdge)
         } else {
             removeEdgeToEdgeComponents()
         }
@@ -105,7 +108,6 @@ class HomepageEdgeToEdgeFeature(
                 }
             }
         }
-        shouldApplyEdgeToEdgeBackgroundOnNextInsets = false
         toolbarScope?.cancel()
         toolbarScope = null
         backgroundView = null
@@ -124,20 +126,19 @@ class HomepageEdgeToEdgeFeature(
      * This view is added directly to the DecorView (the root view of the activity window) to ensure it sits behind all
      * other content but can still receive window insets.
      *
-     * @return true if the status bar height is already known and the edge-to-edge background can be applied
-     *   immediately, false if it must be deferred until window insets are received.
+     * The status bar height is not always known yet when this runs - on a newly created window the root insets are only
+     * available once it is attached. The view is added at whatever height is known and resizes itself when insets
+     * arrive; the window background does not wait on it, as it covers the whole window and so does not depend on the
+     * status bar height.
      */
-    private fun setupStatusBarBackground(): Boolean {
-        val rootView = activity.window?.decorView as? ViewGroup ?: return false
+    private fun setupStatusBarBackground() {
+        val rootView = activity.window?.decorView as? ViewGroup ?: return
 
         val rootInsetsTop =
             ViewCompat.getRootWindowInsets(rootView)?.getInsets(WindowInsetsCompat.Type.statusBars())?.top
         if (rootInsetsTop != null) {
             statusBarHeight = rootInsetsTop
         }
-
-        val shouldApplyBackgroundImmediately = statusBarHeight > 0
-        shouldApplyEdgeToEdgeBackgroundOnNextInsets = !shouldApplyBackgroundImmediately
 
         backgroundView =
             View(activity).apply {
@@ -152,11 +153,11 @@ class HomepageEdgeToEdgeFeature(
                 rootView.addView(this, params)
 
                 ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-                    applyStatusBarInsetsAndBackground(this, insets)
+                    applyStatusBarInsets(this, insets)
                     insets
                 }
             }
-        if (shouldApplyEdgeToEdgeBackgroundOnNextInsets) {
+        if (statusBarHeight <= 0) {
             backgroundView?.let(ViewCompat::requestApplyInsets)
         }
 
@@ -168,17 +169,12 @@ class HomepageEdgeToEdgeFeature(
                     }
                 }
         }
-        return shouldApplyBackgroundImmediately
     }
 
-    private fun applyStatusBarInsetsAndBackground(view: View, insets: WindowInsetsCompat) {
+    private fun applyStatusBarInsets(view: View, insets: WindowInsetsCompat) {
         statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
         view.layoutParams.height = statusBarHeight
         view.requestLayout()
-        if (shouldApplyEdgeToEdgeBackgroundOnNextInsets && statusBarHeight > 0) {
-            setBackground(Background.HomeEdgeToEdge)
-            shouldApplyEdgeToEdgeBackgroundOnNextInsets = false
-        }
     }
 
     private fun getStatusBarColor(settings: Settings, toolbarState: BrowserToolbarState): Int {

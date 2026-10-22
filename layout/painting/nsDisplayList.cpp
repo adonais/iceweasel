@@ -6540,12 +6540,10 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   if (aProperties.HasTransform()) {
     // Calling from the compositor side, where we don't have access to frames
     // but transforms already have appropriate zoom applied.
-    const StyleZoom zoom =
-        frame ? frame->Style()->EffectiveZoom() : StyleZoom::ONE;
     result = nsStyleTransformMatrix::ReadTransforms(
         aProperties.mTranslate, aProperties.mRotate, aProperties.mScale,
         aProperties.mMotion.ptrOr(nullptr), aProperties.mTransform, aRefBox,
-        aAppUnitsPerPixel, zoom, nsStyleTransformMatrix::Zoomed::Yes);
+        aAppUnitsPerPixel, nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   // Apply any translation due to 'transform-origin' and/or 'transform-box':
@@ -7025,11 +7023,53 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
   LayoutDeviceSize boundsSize = LayoutDeviceSize::FromAppUnits(
       mChildBounds.Size(), mFrame->PresContext()->AppUnitsPerDevPixel());
 
-  StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params, LayoutDeviceRect(position, boundsSize));
+  // The origin of an outer <svg>'s content goes into its own translation-only
+  // reference frame that WebRender snaps to the device pixel grid, so that the
+  // SVG content is laid out from a pixel aligned origin wherever the <svg>
+  // element lands. The viewBox transform then applies unsnapped inside it.
+  Maybe<StackingContextHelper> originSc;
+  const gfx::Matrix4x4 identity;
+  if (mFrame->IsSVGOuterSVGAnonChildFrame() && !animated &&
+      !mIsTransformSeparator) {
+    // The origin stacking context only copies the state that applies to it.
+    // The rest stays on the inner one, which must remain the direct child of
+    // a perspective or of a 3D rendering context it belongs to. This frame is
+    // never CSS-transformed, so it can't be in either situation.
+    MOZ_ASSERT(!mHasAssociatedPerspective);
+    MOZ_ASSERT(!mFrame->Combines3DTransformWithAncestors());
+    wr::StackingContextParams originParams;
+    // An identity bound transform makes the helper inherit the scale and the
+    // snapping surface transform, which blob rasterization relies on.
+    originParams.mBoundTransform = &identity;
+    originParams.clip = params.clip;
+    originParams.prim_flags = params.prim_flags;
+    originParams.should_snap = true;
+    originSc.emplace(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
+                     originParams, LayoutDeviceRect(position, boundsSize));
+    Maybe<wr::WrSpatialId> originSpatialId = originSc->ReferenceFrameId();
+    MOZ_ASSERT(originSpatialId);
+    // Items take their spatial node from the clip manager, which maps their
+    // ASR to a spatial id. The inner stacking context only overrides that
+    // mapping if it creates a reference frame or has a non-zero origin, which
+    // is not the case with an identity viewBox transform. Override it here so
+    // that the content is always positioned by the snapped origin frame.
+    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(),
+                                                  *originSpatialId);
+    position = LayoutDevicePoint();
+  }
 
-  aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
-      GetChildren(), this, aDisplayListBuilder, sc, aBuilder, aResources);
+  {
+    StackingContextHelper sc(originSc ? *originSc : aSc,
+                             GetActiveScrolledRoot(), mFrame, this, aBuilder,
+                             params, LayoutDeviceRect(position, boundsSize));
+
+    aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
+        GetChildren(), this, aDisplayListBuilder, sc, aBuilder, aResources);
+  }
+
+  if (originSc) {
+    aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
+  }
   return Ok();
 }
 

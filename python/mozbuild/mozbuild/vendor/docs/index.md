@@ -65,6 +65,32 @@ to interact with it.
 :language: text
 ```
 
+## Adding a New Library
+
+A `moz.yaml` vendors into its own directory (or its `vendor-directory`), and
+`mach vendor` deletes everything there that `keep` does not list before
+unpacking. Each library therefore needs a directory of its own, even when two
+are built together.
+
+Once the new manifest reproduces the tree you intend to commit:
+
+- add it to a group's `members` in
+  `taskcluster/kinds/source-test/vendor-verify.yml`; the `vendor(coverage)` job
+  fails when a vendored manifest is not listed in any group;
+- add the directory to `tools/rewriting/ThirdPartyPaths.txt`, the list linters
+  and formatters treat as third-party code;
+- declare its license for `about:license` and the SBOM, as described in
+  {doc}`licensing`;
+- check that re-vendoring at the pinned revision reproduces the committed tree,
+  which is what the vendor-verify job does:
+
+  ```sh
+  ./mach python taskcluster/scripts/misc/verify-vendored-library.py path/to/moz.yaml
+  ```
+
+  Run it on a clean checkout: it restores the whole working tree between
+  libraries.
+
 ## Common Vendoring Operations
 
 Update to the latest upstream revision:

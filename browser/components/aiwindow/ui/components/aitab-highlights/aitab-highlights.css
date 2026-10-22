@@ -1,0 +1,82 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+}
+
+.aitab-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxlarge);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: 60px 118px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-radius: var(--aitab-hero-radius);
+  border: var(--border-width) solid var(--border-color-transparent);
+  color: var(--text-color);
+  container-type: inline-size;
+
+  @media not (forced-colors) {
+    --background-color-box: light-dark(var(--color-violet-desaturated-0, var(--color-violet-0)), var(--color-violet-desaturated-90, var(--color-violet-90)));
+
+    background-color: var(--background-color-box);
+  }
+}
+
+.aitab-highlights-title {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.aitab-highlights-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xlarge);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aitab-highlight {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-large) var(--space-xxlarge);
+  align-items: start;
+
+  & + & {
+    border-block-start: var(--border-width) solid var(--border-color-deemphasized);
+    padding-block-start: var(--space-xlarge);
+  }
+
+  &:only-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @container (max-width: 560px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.aitab-highlight-statement,
+.aitab-highlight-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+.aitab-highlight-evidence {
+  gap: var(--space-large);
+}
+
+.aitab-highlight-title,
+.aitab-highlight-body {
+  overflow-wrap: anywhere;
+}
+
+.aitab-highlight-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}

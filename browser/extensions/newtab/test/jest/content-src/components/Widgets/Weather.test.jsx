@@ -277,7 +277,7 @@ describe("<Weather> (Widgets/Weather)", () => {
       const { container } = renderWeather();
       expect(
         container.querySelector(
-          ".weather-context-menu-button[data-l10n-id='newtab-menu-section-tooltip']"
+          ".weather-context-menu-button[data-l10n-id='newtab-weather-widget-open-menu-button']"
         )
       ).toBeInTheDocument();
     });

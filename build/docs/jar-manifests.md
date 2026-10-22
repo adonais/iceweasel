@@ -3,7 +3,7 @@
 # JAR Manifests
 
 JAR Manifests are plaintext files in the tree that are used to package chrome
-files into `.jar` files and create {ref}`Chrome Registration <Chrome Registration>`
+files into `.jar` files and create {doc}`Chrome Registration <chrome-registration>`
 manifests. JAR Manifests are commonly named `jar.mn`. They are declared in `moz.build` files using the `JAR_MANIFESTS` variable, which makes up a collection of `jar.mn` files.
 All files declared in JAR Manifests are processed and installed into `omni.ja` files in `browser/` and `toolkit/` when building Firefox.
 
@@ -103,7 +103,7 @@ The wildcards in `**/*.ftl` tell the processor to install all Fluent files withi
 
 ## Registering Chrome
 
-{ref}`Chrome Registration <Chrome Registration>` instructions are marked with a percent sign (`%`) at the beginning of the
+{doc}`Chrome Registration <chrome-registration>` instructions are marked with a percent sign (`%`) at the beginning of the
 line, and must be part of the definition of a JAR file. Any additional percents
 signs are replaced with an appropriate relative URL of the JAR file being
 packaged.
@@ -130,4 +130,4 @@ browser.jar:
 ```
 
 Notice how other files declare an installation destination using the `builtin-themes` resource that is defined. As such, a SVG file `preview.svg` for a theme `Alpenglow` may be loaded using the resource URL `resource://builtin-themes/alpenglow/preview.svg`
-so that a preview of the theme is available on `about:addons`. See {ref}`Chrome Registration <Chrome Registration>` for more details on `resource` and other manifest instructions.
+so that a preview of the theme is available on `about:addons`. See {doc}`Chrome Registration <chrome-registration>` for more details on `resource` and other manifest instructions.

@@ -84,3 +84,9 @@
 #ifdef XP_MACOSX
 @DIR_RESOURCES@update-settings.ini
 #endif
+
+# update_telemetry.json was accidentally added invalidating the code signature on macOS.
+# See Bug 2071880.
+#ifdef XP_MACOSX
+update_telemetry.json
+#endif

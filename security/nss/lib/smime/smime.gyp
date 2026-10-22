@@ -30,7 +30,6 @@
         'cmssiginfo.c',
         'cmsudf.c',
         'cmsutil.c',
-        'smimemessage.c',
         'smimeutil.c',
         'smimever.c'
       ],

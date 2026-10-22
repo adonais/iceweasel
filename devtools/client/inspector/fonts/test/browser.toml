@@ -22,9 +22,6 @@ support-files = [
 ["browser_fontinspector.js"]
 
 ["browser_fontinspector_all-fonts.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1963212
-]
 
 ["browser_fontinspector_copy-URL.js"]
 

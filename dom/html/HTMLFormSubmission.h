@@ -45,7 +45,7 @@ class HTMLFormSubmission {
                               FormData* aFormData,
                               HTMLFormSubmission** aFormSubmission);
 
-  MOZ_COUNTED_DTOR_VIRTUAL(HTMLFormSubmission)
+  MOZ_COUNTED_DTOR_VIRTUAL_DECL(HTMLFormSubmission)
 
   /**
    * Submit a name/value pair

@@ -14,6 +14,13 @@ include("${AOM_ROOT}/cmake/util.cmake")
 # config variables are added to the CMake variable cache via the macros provided
 # in util.cmake.
 
+# Only run if this is the main project.
+if(CMAKE_PROJECT_NAME STREQUAL "AOM")
+  # BUILD_SHARED_LIBS is a standard CMake variable, but we declare it here to
+  # make it prominent in the GUI.
+  option(BUILD_SHARED_LIBS "Build shared libraries (DLLs)." OFF)
+endif()
+
 #
 # The variables in this section of the file are detected at configuration time,
 # but can be overridden via the use of CONFIG_* and ENABLE_* values also defined
@@ -89,6 +96,7 @@ set_aom_config_var(CONFIG_AV1_TEMPORAL_DENOISING 0
                    "Build with temporal denoising support.")
 set_aom_config_var(CONFIG_MULTITHREAD 1 "Multithread support.")
 set_aom_config_var(CONFIG_OS_SUPPORT 0 "Internal flag.")
+mark_as_advanced(CONFIG_OS_SUPPORT)
 set_aom_config_var(CONFIG_PIC 0 "Build with PIC enabled.")
 set_aom_config_var(CONFIG_QUANT_MATRIX 1
                    "Build with quantization matrices for AV1 encoder."
@@ -96,7 +104,8 @@ set_aom_config_var(CONFIG_QUANT_MATRIX 1
 set_aom_config_var(CONFIG_REALTIME_ONLY 0
                    "Build for RTC-only. See aomcx.h for all disabled features.")
 set_aom_config_var(CONFIG_RUNTIME_CPU_DETECT 1 "Runtime CPU detection support.")
-set_aom_config_var(CONFIG_SHARED 0 "Build shared libs.")
+set_aom_config_var(CONFIG_SHARED 0 "Internal flag.")
+mark_as_advanced(CONFIG_SHARED)
 set_aom_config_var(CONFIG_WEBM_IO 1 "Enables WebM support.")
 
 # Debugging flags.
@@ -187,6 +196,8 @@ set_aom_config_var(CONFIG_HIGHWAY 0 "Use Highway for SIMD.")
 #
 # Variables in this section control optional features of the build system.
 #
+set_aom_option_var(ENABLE_APPS
+                   "Enables build of main applications (aomenc/aomdec)." ON)
 set_aom_option_var(ENABLE_CCACHE "Enable ccache support." OFF)
 set_aom_option_var(ENABLE_DECODE_PERF_TESTS "Enables decoder performance tests"
                    OFF)

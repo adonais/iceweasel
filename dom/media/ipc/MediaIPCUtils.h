@@ -153,10 +153,12 @@ struct ParamTraits<mozilla::OpusCodecSpecificData> {
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mContainerCodecDelayFrames);
+    WriteParam(aWriter, aParam.mOutputChannels);
     WriteParam(aWriter, *aParam.mHeadersBinaryBlob);
   }
   static bool Read(MessageReader* aReader, paramType* aResult) {
     return ReadParam(aReader, &aResult->mContainerCodecDelayFrames) &&
+           ReadParam(aReader, &aResult->mOutputChannels) &&
            ReadParam(aReader, aResult->mHeadersBinaryBlob.get());
   }
 };

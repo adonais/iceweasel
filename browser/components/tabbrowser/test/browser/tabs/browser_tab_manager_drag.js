@@ -118,10 +118,10 @@ function getTabsListOrderedIds(containerNode) {
  */
 function getTabStripOrderedIds(win) {
   return win.gBrowser.tabContainer.ariaFocusableItems.map(tabStripItem => {
-    if (win.gBrowser.isTab(tabStripItem)) {
+    if (Tabbrowser.isTab(tabStripItem)) {
       return getTabIdFromTab(tabStripItem);
     }
-    if (win.gBrowser.isTabGroupLabel(tabStripItem)) {
+    if (Tabbrowser.isTabGroupLabel(tabStripItem)) {
       return tabStripItem.group.id;
     }
     return "unknown";

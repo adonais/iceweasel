@@ -69,6 +69,8 @@ add_task(async function test_simple_search_page_visit() {
       impression: {
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -100,6 +102,8 @@ add_task(async function test_follow_on_visit() {
       impression: {
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -109,6 +113,8 @@ add_task(async function test_follow_on_visit() {
       impression: {
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,

@@ -41,13 +41,38 @@ export class SmartwindowResumeCard extends MozLitElement {
     );
   }
 
-  #onResumeClick = () => {
+  #wasMoreMenuOpenOnPointerDown = false;
+
+  // Capture the menu state before panel-list closes it on mousedown.
+  #onCardPointerDown = () => {
+    this.#wasMoreMenuOpenOnPointerDown =
+      this.shadowRoot.getElementById(MORE_MENU_ID)?.open ?? false;
+  };
+
+  #onCardClick = event => {
+    // Keyboard-generated clicks have detail 0.
+    const isPointerClick = event.detail > 0;
+    const wasMoreMenuOpen = this.#wasMoreMenuOpenOnPointerDown;
+    this.#wasMoreMenuOpenOnPointerDown = false;
+    if (isPointerClick && wasMoreMenuOpen) {
+      return;
+    }
+
+    const selection = this.ownerDocument.getSelection();
+    if (isPointerClick && selection && !selection.isCollapsed) {
+      return;
+    }
+
     this.#dispatch("resume", { journeyId: this.journeyId });
   };
 
   #onDismissClick = e => {
     e.stopPropagation();
     this.#dispatch("dismiss", { journeyId: this.journeyId });
+  };
+
+  #stopPropagation = e => {
+    e.stopPropagation();
   };
 
   #onMenuItemClick(itemId) {
@@ -94,7 +119,11 @@ export class SmartwindowResumeCard extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/aiwindow/components/smartwindow-resume-card.css"
       />
-      <div class="resume-card">
+      <div
+        class="resume-card"
+        @pointerdown=${this.#onCardPointerDown}
+        @click=${this.#onCardClick}
+      >
         <button
           class="resume-card-dismiss"
           @click=${this.#onDismissClick}
@@ -125,8 +154,9 @@ export class SmartwindowResumeCard extends MozLitElement {
             iconposition="end"
             data-l10n-id="aiwindow-resume-card-more"
             data-l10n-args=${l10nArgs}
+            @click=${this.#stopPropagation}
           ></moz-button>
-          <panel-list id=${MORE_MENU_ID}>
+          <panel-list id=${MORE_MENU_ID} @click=${this.#stopPropagation}>
             <panel-item
               @click=${() => this.#onMenuItemClick("open-tabs")}
               data-l10n-id="aiwindow-resume-card-open-tabs"
@@ -140,7 +170,6 @@ export class SmartwindowResumeCard extends MozLitElement {
             class="resume-card-action-button resume-card-resume-button"
             data-l10n-id="aiwindow-resume-card-resume"
             data-l10n-args=${l10nArgs}
-            @click=${this.#onResumeClick}
           ></moz-button>
         </div>
       </div>

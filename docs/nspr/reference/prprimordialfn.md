@@ -1,6 +1,6 @@
 # PRPrimordialFn
 
-The type for the root function used by {ref}`PR_Initialize` is specified as
+The type for the root function used by {doc}`pr_initialize` is specified as
 follows:
 
 ## Syntax
@@ -11,4 +11,4 @@ typedef PRIntn (PR_CALLBACK *PRPrimordialFn)(PRIntn argc, char **argv);
 
 ## See Also
 
-> - {ref}`PR_Initialize`
+> - {doc}`pr_initialize`

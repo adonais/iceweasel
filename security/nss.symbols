@@ -504,6 +504,7 @@ PORT_ZFree_Util
 SEC_AnyTemplate_Util @DATA@
 SEC_ASN1Decode
 SEC_ASN1DecodeInteger
+SEC_ASN1DecodeInteger_Util
 SEC_ASN1DecodeItem
 SEC_ASN1DecodeItem_Util
 SEC_ASN1Decode_Util

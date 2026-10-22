@@ -84,7 +84,6 @@ By default, no tests are run on commit. To configure which tests run, use
 
 ```shell
 git config newtab.pre-commit.tests jest       # Jest only (~30 seconds)
-git config newtab.pre-commit.tests jest-karma # Jest + Karma/Enzyme (~3-5 minutes)
 git config newtab.pre-commit.tests all        # all tests including xpcshell and browser (10+ minutes)
 git config newtab.pre-commit.tests none       # skip tests (default)
 ```
@@ -93,11 +92,12 @@ To commit despite failing tests, use `git commit --no-verify` to bypass the hook
 
 ## Running tests
 
-The majority of New Tab / Messaging unit tests are written using
-[mocha](https://mochajs.org), and other errors that may show up there are
+New Tab unit tests are written using [Jest](https://jestjs.io) and
+[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/),
+and other errors that may show up there are
 [SCSS](https://sass-lang.com/documentation/syntax) issues flagged by
 [stylelint](https://stylelint.io). These things are all run using
-`npm test` under the `newtab` slug in Treeherder/Try, so if that slug turns
+`npm test` under the `node(newtab)` slug in Treeherder/Try, so if that slug turns
 red, these tests are what is failing. To execute them, do this:
 
 ```shell
@@ -115,21 +115,19 @@ To run newtab specific tests that aren't covered by `mach lint` and
 ```shell
 ./mach npm run lint:stylelint --prefix=browser/extensions/newtab
 ./mach npm run testmc:jest --prefix=browser/extensions/newtab
-./mach npm run testmc:unit --prefix=browser/extensions/newtab
 ```
 
 Mochitests and xpcshell tests run normally, using `mach test`.
 
 ## Code Coverage
 
-Our testing setup will run code coverage tools in addition to just the unit
-tests. It will error out if the code coverage metrics don't meet certain thresholds.
+CI collects Jest code coverage for the unit tests and reports it to the code
+coverage tools and Searchfox. There are no coverage thresholds.
 
-If you see any missing test coverage, you can inspect the coverage report by
-running
+To inspect the coverage report locally, run
 
 ```shell
-./mach npm test --prefix=browser/extensions/newtab &&
+./mach npm run testmc:jest:coverage --prefix=browser/extensions/newtab &&
 ./mach npm run debugcoverage --prefix=browser/extensions/newtab
 ```
 

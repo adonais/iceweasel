@@ -20,6 +20,7 @@ const EXTRA_ARGS_TYPES_ALLOWLIST = [
   "event",
   "memory_distribution",
   "timing_distribution",
+  "labeled_timing_distribution",
 ];
 
 /**

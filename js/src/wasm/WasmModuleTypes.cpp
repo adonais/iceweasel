@@ -300,7 +300,7 @@ size_t CustomSection::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
 }
 
 size_t NameSection::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
-  return funcNames.sizeOfExcludingThis(mallocSizeOf);
+  return funcNames.shallowSizeOfExcludingThis(mallocSizeOf);
 }
 
 const char* wasm::ToString(LimitsKind kind) {

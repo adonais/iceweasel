@@ -112,6 +112,13 @@ def source_repo_header(output):
         output.write("#define MOZ_SOURCE_REPO %s\n" % repo)
         output.write("#define MOZ_SOURCE_URL %s\n" % source)
 
+        git_repo = buildconfig.substs.get("MOZ_SOURCE_GIT_REPO")
+        git_changeset = buildconfig.substs.get("MOZ_SOURCE_GIT_CHANGESET")
+        if git_repo and git_changeset:
+            output.write(
+                "#define MOZ_SOURCE_GIT_URL %s/commit/%s\n" % (git_repo, git_changeset)
+            )
+
 
 def main(args):
     if len(args):

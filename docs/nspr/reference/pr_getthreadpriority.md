@@ -12,7 +12,7 @@ PRThreadPriority PR_GetThreadPriority(PRThread *thread);
 
 ### Parameter
 
-{ref}`PR_GetThreadPriority` has the following parameter:
+{doc}`pr_getthreadpriority` has the following parameter:
 
 `thread`
 

@@ -32,6 +32,7 @@
 #  include <unistd.h>
 
 #  include "prenv.h"
+#  include "xpcpublic.h"
 #  if defined(XP_DARWIN)
 #    include "DarwinFileUtils.h"
 #    if defined(MOZ_WIDGET_COCOA)
@@ -173,7 +174,7 @@ static nsresult GetUnixSystemConfigDir(nsIFile** aFile) {
   ToLowerCase(appName);
 
   nsDependentCString sysConfigDir;
-  if (PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
+  if (xpc::IsInAutomation()) {
     const char* mozSystemConfigDir = PR_GetEnv("MOZ_SYSTEM_CONFIG_DIR");
     if (mozSystemConfigDir) {
       sysConfigDir.Assign(nsDependentCString(mozSystemConfigDir));

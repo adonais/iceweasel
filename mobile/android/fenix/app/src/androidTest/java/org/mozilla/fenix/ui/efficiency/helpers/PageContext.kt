@@ -66,6 +66,7 @@ import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsTabsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsTurnOnSyncPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ShareOverlayPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ShortcutsPage
+import org.mozilla.fenix.ui.efficiency.pageObjects.StoriesPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.TabDrawerPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.TabHistoryPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ToolbarComponent
@@ -133,6 +134,7 @@ class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     val settingsTurnOnSync = SettingsTurnOnSyncPage(composeRule)
     val shareOverlay = ShareOverlayPage(composeRule)
     val shortcuts = ShortcutsPage(composeRule)
+    val stories = StoriesPage(composeRule)
     val tabDrawer = TabDrawerPage(composeRule)
     val tabHistory = TabHistoryPage(composeRule)
     val toolbar = ToolbarComponent(composeRule)

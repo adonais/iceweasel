@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.withContext
 import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.appservices.search.RefinedSearchConfig
@@ -80,32 +81,33 @@ class SearchEngineSelectorRepository(
         distribution: String?,
         searchExtraParams: SearchExtraParams?,
         coroutineContext: CoroutineContext,
-    ): Bundle {
-        try {
-            val config = buildEnvironment(region, locale, distribution)
-            val searchConfig = selector.filterEngineConfiguration(config)
-            val iconsList = searchConfigIconsUpdateService.fetchIconsRecords(searchEngineSelectorConfig.service)
-            val searchEngineList =
-                buildSearchEngineList(
-                    searchConfig = searchConfig,
-                    iconsList = iconsList,
-                )
-            val defaultEngineId = searchConfig.appDefaultEngineId ?: searchConfig.engines.first().identifier
+    ): Bundle =
+        withContext(coroutineContext) {
+            try {
+                val config = buildEnvironment(region, locale, distribution)
+                val searchConfig = selector.filterEngineConfiguration(config)
+                val iconsList = searchConfigIconsUpdateService.fetchIconsRecords(searchEngineSelectorConfig.service)
+                val searchEngineList =
+                    buildSearchEngineList(
+                        searchConfig = searchConfig,
+                        iconsList = iconsList,
+                    )
+                val defaultEngineId = searchConfig.appDefaultEngineId ?: searchConfig.engines.first().identifier
 
-            return Bundle(
-                list = searchEngineList,
-                defaultSearchEngineId = defaultEngineId,
-                searchEnvironmentId = computeNewSearchEnvironmentId(config),
+                return@withContext Bundle(
+                    list = searchEngineList,
+                    defaultSearchEngineId = defaultEngineId,
+                    searchEnvironmentId = computeNewSearchEnvironmentId(config),
+                )
+            } catch (_: Exception) {
+                logger.error("exception in SearchEngineSelectorRepository.load")
+            }
+            return@withContext Bundle(
+                list = emptyList(),
+                defaultSearchEngineId = "",
+                searchEnvironmentId = null,
             )
-        } catch (_: Exception) {
-            logger.error("exception in SearchEngineSelectorRepository.load")
         }
-        return Bundle(
-            list = emptyList(),
-            defaultSearchEngineId = "",
-            searchEnvironmentId = null,
-        )
-    }
 
     private fun buildEnvironment(
         region: RegionState,

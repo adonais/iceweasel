@@ -5,9 +5,7 @@
 package org.mozilla.fenix.components.metrics
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -32,15 +30,13 @@ private const val EXPECTED_UTM_CONTENT_PATTERN_PREFIX = "rta%3A"
  * @param context [Context] used for various system interactions.
  * @param settings The settings object used to persist RTAMO state.
  * @param addonsProvider The provider used to fetch addon download URLs from AMO.
- * @param ioDispatcher Coroutine dispatcher for IO operations.
- * @param scope Coroutine scope to launch IO work in.
+ * @param scope Coroutine scope to launch work in.
  */
 class RtamoAttributionHandler(
     private val context: Context,
     private val settings: Settings,
     private val addonsProvider: AddonsProvider,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val scope: CoroutineScope = CoroutineScope(ioDispatcher),
+    private val scope: CoroutineScope,
 ) {
     private val logger = Logger("RtamoAttributionHandler")
 

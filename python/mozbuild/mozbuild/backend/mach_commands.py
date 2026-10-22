@@ -340,6 +340,8 @@ def rust_analyzer_config(command_context):
                 # build, so it can discover the files created when we run `./mach
                 # cargo check`.
                 "CARGO_TARGET_DIR": command_context.topobjdir,
+                "MOZ_TOPOBJDIR": command_context.topobjdir,
+                "MOZ_TOPSRCDIR": command_context.topsrcdir,
             },
             "buildScripts": {
                 "overrideCommand": cargo_check_command,

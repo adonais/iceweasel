@@ -17,12 +17,14 @@
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/notification/NotificationUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIPushService.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {
@@ -396,9 +398,9 @@ JSObject* PushManager::WrapObject(JSContext* aCx,
 }
 
 // static
-already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
-                                                       const nsAString& aScope,
-                                                       ErrorResult& aRv) {
+already_AddRefed<PushManager> PushManager::Create(GlobalObject& aGlobal,
+                                                  const nsAString& aScope,
+                                                  ErrorResult& aRv) {
   if (!NS_IsMainThread()) {
     RefPtr<PushManager> ret = new PushManager(aScope);
     return ret.forget();
@@ -414,6 +416,38 @@ already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
   RefPtr<PushManager> ret = new PushManager(global, impl);
 
   return ret.forget();
+}
+
+// static
+already_AddRefed<PushManager> PushManager::Create(JSContext* aCx,
+                                                  nsGlobalWindowInner* aWindow,
+                                                  ErrorResult& aRv) {
+  // https://w3c.github.io/push-api/#subscribe-method
+  // Step 5: If this's service worker registration is null:
+  //         1. Set scope to the result of running the basic URL parser given
+  //            "/" and global's associated Document's URL.
+  // (See also similar step in getSubscription())
+  // However, we keep store the scope URL in the push manager
+  // instead of the service worker registration, so we get the scope URL here.
+  nsIURI* documentURI = aWindow->GetDocumentURI();
+  if (NS_WARN_IF(!documentURI)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  nsCOMPtr<nsIURI> scopeURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), "/", documentURI);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  nsAutoCString scopeURL;
+  rv = scopeURI->GetSpec(scopeURL);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  GlobalObject global(aCx, aWindow->GetGlobalJSObject());
+  return Create(global, NS_ConvertUTF8toUTF16(scopeURL), aRv);
 }
 
 bool PushManager::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
@@ -455,8 +489,61 @@ void PushManager::GetSupportedContentEncodings(
   aEncodings.set(object);
 }
 
+static bool IsPushSubscriptionDenied(nsIGlobalObject* aGlobal) {
+  nsCOMPtr<nsIPrincipal> principal;
+  nsCOMPtr<nsIPrincipal> effectiveStoragePrincipal;
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+  if (window) {
+    principal = nsGlobalWindowInner::Cast(window)->GetPrincipal();
+    effectiveStoragePrincipal =
+        nsGlobalWindowInner::Cast(window)->GetEffectiveStoragePrincipal();
+  } else if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
+    principal = workerPrivate->GetPrincipal();
+    effectiveStoragePrincipal = workerPrivate->GetEffectiveStoragePrincipal();
+  }
+  if (!principal || !effectiveStoragePrincipal) {
+    return true;
+  }
+
+  bool denied = notification::IsNotificationForbiddenFor(
+      principal, effectiveStoragePrincipal, true,
+      notification::PermissionCheckPurpose::PushSubscribe);
+  if (denied || !window) {
+    return denied;
+  }
+
+  nsCOMPtr<nsIPrincipal> topLevelPrincipal;
+  BrowsingContext* top = window->GetBrowsingContext()->Top();
+  if (nsPIDOMWindowOuter* outer = top->GetDOMWindow()) {
+    if (nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow()) {
+      topLevelPrincipal = nsGlobalWindowInner::Cast(inner)->GetPrincipal();
+    }
+  }
+  return !topLevelPrincipal || !principal->Subsumes(topLevelPrincipal);
+}
+
 already_AddRefed<Promise> PushManager::Subscribe(
     const PushSubscriptionOptionsInit& aOptions, ErrorResult& aRv) {
+  // XXX(krosylight): Step 11 should happen in parallel per the spec, and after
+  // step 10's applicationServerKey check.
+
+  // Step 11.4: Let permission be request permission to use "push".
+  // NOTE(krosylight): Before requesting, we check whether this principal
+  // can request push permission, as we want to reject requests from third party
+  // iframes.
+
+  // Step 11.5: If permission is "denied", queue a global task on the user
+  // interaction task source using global to reject promise with a
+  // "NotAllowedError" DOMException and terminate these steps.
+  //
+  // NOTE: This check will happen again in Subscribe impl below after asking
+  // permission.
+  if (IsPushSubscriptionDenied(mGlobal)) {
+    aRv.ThrowNotAllowedError(
+        "Permission to create push subscription is denied.");
+    return nullptr;
+  }
+
   if (mImpl) {
     MOZ_ASSERT(NS_IsMainThread());
     return mImpl->Subscribe(aOptions, aRv);

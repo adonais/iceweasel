@@ -38,7 +38,32 @@ internal class ReaderViewConfig(
     private var fontTypeCache: ReaderViewFeature.FontType? = null
     private var fontSizeCache: Int? = null
 
+    /**
+     * Takes precedence over the color scheme the user configured, without overwriting it. Set to `null` to go back to
+     * the user's own choice.
+     */
+    var colorSchemeOverride: ReaderViewFeature.ColorScheme? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                sendMessage(ReaderViewFeature.ACTION_SET_COLOR_SCHEME) { put(ACTION_VALUE, colorScheme.name) }
+            }
+        }
+
     var colorScheme: ReaderViewFeature.ColorScheme
+        get() = colorSchemeOverride ?: userColorScheme
+        set(value) {
+            if (userColorScheme != value) {
+                userColorScheme = value
+                // While an override is in effect it is what is displayed, so there is nothing to apply yet. The new
+                // value is applied once the override is cleared.
+                if (colorSchemeOverride == null) {
+                    sendMessage(ReaderViewFeature.ACTION_SET_COLOR_SCHEME) { put(ACTION_VALUE, value.name) }
+                }
+            }
+        }
+
+    private var userColorScheme: ReaderViewFeature.ColorScheme
         get() {
             if (colorSchemeCache == null) {
                 // Default to a dark theme if either the system or local dark theme is active
@@ -53,11 +78,8 @@ internal class ReaderViewConfig(
             return colorSchemeCache!!
         }
         set(value) {
-            if (colorSchemeCache != value) {
-                colorSchemeCache = value
-                prefs.edit { putString(COLOR_SCHEME_KEY, value.name) }
-                sendMessage(ReaderViewFeature.ACTION_SET_COLOR_SCHEME) { put(ACTION_VALUE, value.name) }
-            }
+            colorSchemeCache = value
+            prefs.edit { putString(COLOR_SCHEME_KEY, value.name) }
         }
 
     var fontType: ReaderViewFeature.FontType

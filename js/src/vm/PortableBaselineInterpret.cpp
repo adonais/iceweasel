@@ -2304,7 +2304,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         {
           PUSH_IC_FRAME();
 
-          if (!ctx.stack.check(sp, sizeof(StackVal) * (totalArgs + 6))) {
+          if (!ctx.stack.check(sp, sizeof(StackVal) * (totalArgs + 7))) {
             ReportOverRecursed(ctx.frameMgr.cxForLocalUseOnly());
             ctx.error = PBIResult::Error;
             return IC_ERROR_SENTINEL();
@@ -2374,6 +2374,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           Value* args = reinterpret_cast<Value*>(sp);
 
           if (isNative) {
+            PUSHNATIVE(StackValNative(callee));
             PUSHNATIVE(StackValNative(argc));
             PUSHNATIVE(
                 StackValNative(MakeFrameDescriptor(FrameType::BaselineStub)));
@@ -4758,13 +4759,15 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
       CACHEOP_CASE(StringToAtom) {
         StringOperandId strId = cacheIRReader.stringOperandId();
+        StringOperandId resultId = cacheIRReader.stringOperandId();
+        BOUNDSCHECK(resultId);
         JSString* str = reinterpret_cast<JSString*>(READ_REG(strId.id()));
         JSAtom* result =
             AtomizeStringNoGC(ctx.frameMgr.cxForLocalUseOnly(), str);
         if (!result) {
           FAIL_IC();
         }
-        WRITE_REG(strId.id(), reinterpret_cast<uint64_t>(result), STRING);
+        WRITE_REG(resultId.id(), reinterpret_cast<uint64_t>(result), STRING);
         DISPATCH_CACHEOP();
       }
 

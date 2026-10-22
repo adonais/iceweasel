@@ -33,6 +33,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
@@ -677,7 +678,7 @@ nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   if (aRequest->IsModuleRequest()) {
     rv = aRequest->AsModuleRequest()->RestartModuleLoad();
   } else {
-    rv = StartLoad(aRequest, Nothing());
+    rv = StartLoad(aRequest);
   }
   if (NS_FAILED(rv)) {
     return rv;
@@ -688,14 +689,12 @@ nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   return NS_BINDING_RETARGETED;
 }
 
-nsresult ScriptLoader::StartLoad(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   if (aRequest->IsModuleRequest()) {
     return aRequest->AsModuleRequest()->StartModuleLoad();
   }
 
-  return StartClassicLoad(aRequest, aCharsetForPreload);
+  return StartClassicLoad(aRequest);
 }
 
 static nsSecurityFlags CORSModeToSecurityFlags(CORSMode aCORSMode) {
@@ -709,9 +708,7 @@ static nsSecurityFlags CORSModeToSecurityFlags(CORSMode aCORSMode) {
   return securityFlags;
 }
 
-void ScriptLoader::OnDelayedReady(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+void ScriptLoader::OnDelayedReady(ScriptLoadRequest* aRequest) {
   if (!mDocument) {
     return;
   }
@@ -728,19 +725,16 @@ void ScriptLoader::OnDelayedReady(
   ProcessPendingRequests();
 }
 
-nsresult ScriptLoader::StartClassicLoad(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+nsresult ScriptLoader::StartClassicLoad(ScriptLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
     // NOTE: The network event need to be dispatched in the current call stack,
     //       in order to reflect it in the DevTools Network Monitor.
-    EmulateNetworkEvents(aRequest, aCharsetForPreload);
+    EmulateNetworkEvents(aRequest);
 
     nsCOMPtr<nsIRunnable> runnable =
-        mozilla::NewRunnableMethod<RefPtr<ScriptLoadRequest>,
-                                   const Maybe<nsAutoString>>(
+        mozilla::NewRunnableMethod<RefPtr<ScriptLoadRequest>>(
             "ScriptLoader::OnDelayedReady", this, &ScriptLoader::OnDelayedReady,
-            aRequest, aCharsetForPreload);
+            aRequest);
     mDocument->Dispatch(runnable.forget());
     return NS_OK;
   }
@@ -763,7 +757,7 @@ nsresult ScriptLoader::StartClassicLoad(
 
   nsSecurityFlags securityFlags = CORSModeToSecurityFlags(aRequest->CORSMode());
 
-  nsresult rv = StartLoadInternal(aRequest, securityFlags, aCharsetForPreload);
+  nsresult rv = StartLoadInternal(aRequest, securityFlags);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1008,8 +1002,7 @@ inline nsLiteralString GetInitiatorType(ScriptLoadRequest* aRequest) {
 
 // static
 nsresult ScriptLoader::PrepareHttpRequestAndInitiatorType(
-    nsIChannel* aChannel, ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+    nsIChannel* aChannel, ScriptLoadRequest* aRequest) {
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
   nsresult rv = NS_OK;
 
@@ -1023,11 +1016,14 @@ nsresult ScriptLoader::PrepareHttpRequestAndInitiatorType(
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     nsAutoString hintCharset;
-    if (!aRequest->GetScriptLoadContext()->IsPreload() &&
-        aRequest->GetScriptLoadContext()->HasScriptElement()) {
-      aRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
-    } else if (aCharsetForPreload.isSome()) {
-      hintCharset = aCharsetForPreload.ref();
+    if (!aRequest->GetScriptLoadContext()->IsPreload()) {
+      if (aRequest->GetScriptLoadContext()->HasScriptElement()) {
+        aRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
+      }
+    } else if (aRequest->mClassicScriptHintEncoding) {
+      nsAutoCString charset;
+      aRequest->mClassicScriptHintEncoding->Name(charset);
+      hintCharset = NS_ConvertUTF8toUTF16(charset);
     }
 
     rv = httpChannel->SetClassicScriptHintCharset(hintCharset);
@@ -1076,9 +1072,8 @@ void ScriptLoader::NotifyPreloadCoalescing(ModuleLoadRequest* aRequest) {
   context->NotifyPreloadCoalescingResult();
 }
 
-nsresult ScriptLoader::StartLoadInternal(
-    ScriptLoadRequest* aRequest, nsSecurityFlags securityFlags,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+nsresult ScriptLoader::StartLoadInternal(ScriptLoadRequest* aRequest,
+                                         nsSecurityFlags securityFlags) {
   nsCOMPtr<nsIChannel> channel;
   nsresult rv = CreateChannelForScriptLoading(
       getter_AddRefs(channel), mDocument, aRequest, securityFlags);
@@ -1120,8 +1115,7 @@ nsresult ScriptLoader::StartLoadInternal(
 
   PrepareRequestPriorityAndRequestDependencies(channel, aRequest);
 
-  rv =
-      PrepareHttpRequestAndInitiatorType(channel, aRequest, aCharsetForPreload);
+  rv = PrepareHttpRequestAndInitiatorType(channel, aRequest);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIIncrementalStreamLoader> loader;
@@ -1203,9 +1197,7 @@ RequestPriority FetchPriorityToRequestPriority(
 }
 }  // namespace
 
-void ScriptLoader::NotifyObserversForCachedScript(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+void ScriptLoader::NotifyObserversForCachedScript(ScriptLoadRequest* aRequest) {
   nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
 
   if (!obsService->HasObservers("http-on-resource-cache-response")) {
@@ -1245,8 +1237,7 @@ void ScriptLoader::NotifyObserversForCachedScript(
 
   PrepareLoadInfoForScriptLoading(channel, aRequest);
 
-  rv =
-      PrepareHttpRequestAndInitiatorType(channel, aRequest, aCharsetForPreload);
+  rv = PrepareHttpRequestAndInitiatorType(channel, aRequest);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -1267,7 +1258,8 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
     CORSMode aCORSMode, const nsAString& aNonce,
     RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
     ReferrerPolicy aReferrerPolicy, ParserMetadata aParserMetadata,
-    ScriptLoadRequestType aRequestType) {
+    ScriptLoadRequestType aRequestType,
+    const Encoding* aClassicScriptPreloadHintEncoding) {
   nsIURI* referrer = mDocument->GetDocumentURIAsReferrer();
   RefPtr<ScriptFetchOptions> fetchOptions =
       new ScriptFetchOptions(aCORSMode, aNonce, aRequestPriority,
@@ -1287,8 +1279,26 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
              (StaticPrefs::dom_speculation_rules_enabled() &&
               aKind == ScriptKind::eSpeculationRules));
 
-  RefPtr<ScriptLoadRequest> request =
-      new ScriptLoadRequest(aKind, aIntegrity, referrer, context);
+  const Encoding* classicScriptHintEncoding = nullptr;
+  if (aKind == ScriptKind::eClassic) {
+    if (aRequestType == ScriptLoadRequestType::Preload) {
+      classicScriptHintEncoding = aClassicScriptPreloadHintEncoding;
+    } else {
+      MOZ_ASSERT(aClassicScriptPreloadHintEncoding == nullptr);
+
+      nsAutoString classicScriptHintCharset;
+      aElement->GetScriptCharset(classicScriptHintCharset);
+      if (!classicScriptHintCharset.IsEmpty()) {
+        classicScriptHintEncoding =
+            Encoding::ForLabel(classicScriptHintCharset);
+      }
+    }
+  } else {
+    MOZ_ASSERT(aClassicScriptPreloadHintEncoding == nullptr);
+  }
+
+  RefPtr<ScriptLoadRequest> request = new ScriptLoadRequest(
+      aKind, aIntegrity, referrer, context, classicScriptHintEncoding);
 
   TryUseCache(aReferrerPolicy, fetchOptions, aURI, request, aElement, aNonce,
               aRequestType);
@@ -1342,6 +1352,52 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
+  }
+
+  if (aRequest->IsClassicScript() &&
+      cacheResult.mCompleteValue->DependsOnClassicScriptHintEncoding() &&
+      cacheResult.mCompleteValue->ClassicScriptEncoding() !=
+          GetClassicScriptFallbackEncoding(aRequest)) {
+    // See ScriptLoadHandler::TrySetDecoder for the
+    // DependsOnClassicScriptHintEncoding flag handling.
+    //
+    // If this branch is taken, there are multiple cases:
+    //   (a) If the request has hint charset, the hint charset should be used
+    //       for decoding the script.  The cache entry is decoded with different
+    //       encoding, and thus this cache entry shouldn't be used.
+    //   (b) If the request has no hint charset, either the document's charset
+    //       or the fallback windows-1252 should be used.
+    //     (b-1) For script preloads performed during the speculative loading,
+    //           the document's charset might not have been reflecting the
+    //           actual document's encoding yet.  In that case, tentatively
+    //           use the in-memory cache for the preload, and let the actual
+    //           script load decide whether to use the preload or not.
+    //           NOTE: Do the same for the case where the the encoding
+    //                 accidentally match due to the uninitialized encoding
+    //                 (UTF-8).
+    //     (b-2) For regular loads, the cache entry is decoded with the
+    //           different encoding, and thus this cache entry shouldn't be
+    //           used.
+    if (aRequestType == ScriptLoadRequestType::Preload &&
+        !aRequest->mClassicScriptHintEncoding && mDocument &&
+        mDocument->GetDocumentCharacterSetSource() == 0) {
+      // This is the (b-1) case above.
+      LOG(
+          ("ScriptLoader (%p): Using in-memory cache with different encoding "
+           "for "
+           "ScriptLoadRequest(%p) for preload without hint charset, performed "
+           "while the document encoding is uninitialized.",
+           this, aRequest));
+    } else {
+      // This is the (a) and (b-2) case above.
+      aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
+      LOG(
+          ("ScriptLoader (%p): Created LoadedScript (%p) for "
+           "ScriptLoadRequest(%p) because cache has different encoding %s.",
+           this, aRequest->getLoadedScript(), aRequest,
+           aRequest->URI()->GetSpecOrDefault().get()));
+      return;
+    }
   }
 
   if (!cacheResult.mCompleteValue->IsSRIMetadataReusableBy(
@@ -1411,14 +1467,12 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   return;
 }
 
-void ScriptLoader::EmulateNetworkEvents(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+void ScriptLoader::EmulateNetworkEvents(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(aRequest->mNetworkMetadata);
   MOZ_ASSERT(!aRequest->IsWasmBytes());
 
-  NotifyObserversForCachedScript(aRequest, aCharsetForPreload);
+  NotifyObserversForCachedScript(aRequest);
 
   {
     nsAutoCString name;
@@ -1595,10 +1649,11 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     ReferrerPolicy referrerPolicy = GetReferrerPolicy(aElement);
     ParserMetadata parserMetadata = GetParserMetadata(aElement);
 
-    request = CreateLoadRequest(
-        aScriptKind, scriptURI, aElement, VoidString(), principal, ourCORSMode,
-        nonce, FetchPriorityToRequestPriority(fetchPriority), sriMetadata,
-        referrerPolicy, parserMetadata, ScriptLoadRequestType::External);
+    request = CreateLoadRequest(aScriptKind, scriptURI, aElement, VoidString(),
+                                principal, ourCORSMode, nonce,
+                                FetchPriorityToRequestPriority(fetchPriority),
+                                sriMetadata, referrerPolicy, parserMetadata,
+                                ScriptLoadRequestType::External, nullptr);
 
     PROFILER_MARKER("ScriptLoader::ProcessExternalScript CreateLoadRequest", JS,
                     {mozilla::MarkerStack::Capture()}, FlowMarker,
@@ -1614,7 +1669,7 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     LOG(("ScriptLoadRequest (%p): Created request for external script",
          request.get()));
 
-    nsresult rv = StartLoad(request, Nothing());
+    nsresult rv = StartLoad(request);
     if (NS_FAILED(rv)) {
       ReportErrorToConsole(request, rv);
 
@@ -1840,7 +1895,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       mDocument->NodePrincipal(), corsMode, nonce,
       FetchPriorityToRequestPriority(fetchPriority),
       SRIMetadata(),  // SRI doesn't apply
-      referrerPolicy, parserMetadata, ScriptLoadRequestType::Inline);
+      referrerPolicy, parserMetadata, ScriptLoadRequestType::Inline, nullptr);
   request->GetScriptLoadContext()->mIsInline = true;
   request->GetScriptLoadContext()->mLineNo = aElement->GetScriptLineNumber();
   request->GetScriptLoadContext()->mColumnNo =
@@ -2044,19 +2099,39 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     request->SetReady();
   }
 
-  nsString preloadCharset(mPreloads[i].mCharset);
   mPreloads.RemoveElementAt(i);
 
   // Double-check that the charset the preload used is the same as the charset
   // we have now.
   nsAutoString elementCharset;
   aElement->GetScriptCharset(elementCharset);
+  const Encoding* elementEncoding = Encoding::ForLabel(elementCharset);
 
   // Bug 1832361: charset and crossorigin attributes shouldn't affect matching
   // of module scripts and modulepreload
-  if (!request->IsModuleRequest() &&
-      (!elementCharset.Equals(preloadCharset) ||
+  if (request->IsClassicScript() &&
+      (request->mClassicScriptHintEncoding != elementEncoding ||
        aElement->GetCORSMode() != request->CORSMode())) {
+    // Drop the preload.
+    request->Cancel();
+    return nullptr;
+  }
+
+  // At the point of script preload, the document's charset might be different
+  // in the following situation:
+  //   1. Document's charset is set to "uninitialied" UTF-8
+  //   2. Speculative load performs a script preload
+  //   3. Script preload uses the "uninitialied" charset as a fallback encoding
+  //      when looking up an in-memory cache entry
+  //   4. An in-memory cache entry is found for the preload
+  //   5. Document's charset is set to different one, by auto-detection etc
+  //   6. Actual script load is performed
+  //
+  // In this case, we should re-validate the fallback encoding.
+  if (request->IsRetrievedFromMemoryCache() &&
+      request->getLoadedScript()->DependsOnClassicScriptHintEncoding() &&
+      request->getLoadedScript()->ClassicScriptEncoding() !=
+          GetClassicScriptFallbackEncoding(elementEncoding)) {
     // Drop the preload.
     request->Cancel();
     return nullptr;
@@ -2735,8 +2810,9 @@ nsresult ScriptLoader::CreateOffThreadTask(
 
   if (aRequest->IsRetrievedAsSerializedStencil()) {
     JS::DecodeOptions decodeOptions(aOptions);
-    RefPtr<ScriptDecodeTask> decodeTask = new ScriptDecodeTask(
-        aRequest->TakeSRIAndSerializedStencil(), aRequest->GetSRILength());
+    RefPtr<ScriptDecodeTask> decodeTask =
+        new ScriptDecodeTask(aRequest->TakeSRIAndSerializedStencil(),
+                             aRequest->GetSerializedStencilOffset());
     nsresult rv = decodeTask->Init(decodeOptions);
     if (NS_FAILED(rv)) {
       aRequest->RestoreSRIAndSerializedStencil(
@@ -4014,6 +4090,28 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
   return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
+const Encoding* ScriptLoader::GetClassicScriptFallbackEncoding(
+    const ScriptLoadRequest* aRequest) {
+  return GetClassicScriptFallbackEncoding(aRequest->mClassicScriptHintEncoding);
+}
+
+const Encoding* ScriptLoader::GetClassicScriptFallbackEncoding(
+    const Encoding* aClassicScriptHintEncoding) {
+  if (aClassicScriptHintEncoding) {
+    return aClassicScriptHintEncoding;
+  }
+
+  // Get the charset from the charset of the document.
+  if (mDocument) {
+    return mDocument->GetDocumentCharacterSet();
+  }
+
+  // Curiously, there are various callers that don't pass aDocument. The
+  // fallback in the old code was ISO-8859-1, which behaved like
+  // windows-1252.
+  return WINDOWS_1252_ENCODING;
+}
+
 nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
   MOZ_ASSERT(!aRequest->IsWasmBytes());
@@ -4041,7 +4139,8 @@ nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
   }
 
   TRACE_FOR_TEST(aRequest, "diskcache:register");
-  MOZ_ASSERT(aRequest->GetSRILength() == aRequest->SRI().length());
+  MOZ_ASSERT(aRequest->GetSerializedStencilOffset() ==
+             aRequest->SRI().length() + LoadedScript::EncodingHeaderSize);
   RegisterForDiskCache(aRequest);
 
   return aRv;
@@ -4385,14 +4484,27 @@ bool ScriptLoader::EncodeAndCompress(
     JS::FrontendContext* aFc, const JS::loader::LoadedScript* aLoadedScript,
     JS::Stencil* aStencil, const JS::TranscodeBuffer& aSRI,
     Vector<uint8_t>& aCompressed) {
-  size_t SRILength = aSRI.length();
-  MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(SRILength));
+  size_t alignedSRILength = aSRI.length();
+  MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(alignedSRILength));
 
   JS::TranscodeBuffer SRIAndSerializedStencil;
   if (!SRIAndSerializedStencil.appendAll(aSRI)) {
     LOG(("LoadedScript (%p): Cannot allocate buffer", aLoadedScript));
     return false;
   }
+
+  MOZ_ASSERT(
+      JS::IsTranscodingBytecodeOffsetAligned(LoadedScript::EncodingHeaderSize));
+
+  if (!SRIAndSerializedStencil.growBy(LoadedScript::EncodingHeaderSize)) {
+    LOG(("LoadedScript (%p): Cannot allocate buffer", aLoadedScript));
+    return false;
+  }
+
+  LoadedScript::EncodingHeader header;
+  aLoadedScript->WriteIntoEncodingHeader(&header);
+  memcpy(SRIAndSerializedStencil.begin() + alignedSRILength, &header,
+         LoadedScript::EncodingHeaderSize);
 
   JS::TranscodeResult result =
       JS::EncodeStencil(aFc, aStencil, SRIAndSerializedStencil);
@@ -4407,8 +4519,9 @@ bool ScriptLoader::EncodeAndCompress(
   }
 
   // TODO probably need to move this to a helper thread
-  if (!ScriptBytecodeCompress(SRIAndSerializedStencil, SRILength,
-                              aCompressed)) {
+  if (!ScriptBytecodeCompress(
+          SRIAndSerializedStencil,
+          alignedSRILength + LoadedScript::EncodingHeaderSize, aCompressed)) {
     return false;
   }
 
@@ -5010,15 +5123,15 @@ nsresult ScriptLoader::SaveSRIHash(
   MOZ_ASSERT(srilen == len);
 
   MOZ_ASSERT(sri.length() == len);
-  aRequest->SetSRILength(len);
 
-  if (aRequest->GetSRILength() != len) {
-    // The serialized stencil is aligned in the buffer, and space might be
-    // reserved for padding after the SRI hash.
-    if (!sri.resize(aRequest->GetSRILength())) {
+  size_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(len);
+  if (alignedSRILength != len) {
+    if (!sri.resize(alignedSRILength)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
+
+  aRequest->SetAlignedSRILength(alignedSRILength);
 
   return NS_OK;
 }
@@ -5553,6 +5666,11 @@ void ScriptLoader::PreloadURI(
   const auto requestPriority = FetchPriorityToRequestPriority(
       nsGenericHTMLElement::ToFetchPriority(aFetchPriority));
 
+  const Encoding* classicScriptHintEncoding = nullptr;
+  if (scriptKind == ScriptKind::eClassic) {
+    classicScriptHintEncoding = Encoding::ForLabel(aCharset);
+  }
+
   // For link type "modulepreload":
   // https://html.spec.whatwg.org/multipage/links.html#link-type-modulepreload
   // Step 11. Let options be a script fetch options whose cryptographic nonce is
@@ -5569,7 +5687,7 @@ void ScriptLoader::PreloadURI(
       sriMetadata, aReferrerPolicy,
       aLinkPreload ? ParserMetadata::NotParserInserted
                    : ParserMetadata::ParserInserted,
-      ScriptLoadRequestType::Preload);
+      ScriptLoadRequestType::Preload, classicScriptHintEncoding);
   request->GetScriptLoadContext()->mIsInline = false;
   request->GetScriptLoadContext()->mScriptFromHead = aScriptFromHead;
   request->GetScriptLoadContext()->SetScriptMode(aDefer, aAsync, aLinkPreload);
@@ -5583,8 +5701,7 @@ void ScriptLoader::PreloadURI(
          request.get(), url.get()));
   }
 
-  nsAutoString charset(aCharset);
-  nsresult rv = StartLoad(request, Some(charset));
+  nsresult rv = StartLoad(request);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -5608,7 +5725,6 @@ void ScriptLoader::PreloadURI(
 
   PreloadInfo* pi = mPreloads.AppendElement();
   pi->mRequest = request;
-  pi->mCharset = aCharset;
 }
 
 void ScriptLoader::AddDeferRequest(ScriptLoadRequest* aRequest) {

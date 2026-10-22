@@ -35,9 +35,6 @@ support-files = [
 ["test_385397.js"]
 
 ["test_399266.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 821781
-]
 
 ["test_402799.js"]
 
@@ -126,6 +123,8 @@ run-if = [
 ["test_broken_folderShortcut_result.js"]
 
 ["test_browserhistory.js"]
+
+["test_canAddURI.js"]
 
 ["test_childlessTags.js"]
 

@@ -1148,7 +1148,28 @@ export class FormAutofillParent extends JSWindowActorParent {
     this.sendAsyncMessage("FormAutofill:RepopulateAutocompletePopup");
   }
 
-  async #confirmCreditCardRemoval() {
+  async #confirmAddressRemoval(guid) {
+    // Read before awaiting: the prompt below takes focus and the actor may be
+    // destroyed by the time it resolves.
+    const chromeWindow = this.manager.browsingContext.topChromeWindow;
+
+    const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
+      chromeWindow,
+      "address"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    // Both stores warn and return for a guid they do not hold.
+    await lazy.gFormAutofillStorage.addresses.remove(guid);
+  }
+
+  async #confirmCreditCardRemoval(guid) {
+    // Read before awaiting: the prompts below take focus and the actor may be
+    // destroyed by the time they resolve.
+    const chromeWindow = this.manager.browsingContext.topChromeWindow;
+
     const promptMessage = FormAutofillUtils.reauthOSPromptMessage(
       "autofill-delete-payment-method-os-prompt-macos",
       "autofill-delete-payment-method-os-prompt-windows",
@@ -1157,9 +1178,17 @@ export class FormAutofillParent extends JSWindowActorParent {
     let verified;
     let result;
     try {
+      // Removing a card never reads its number, so don't let this path create
+      // or unlock the OS key store: where nsIOSKeyStore falls back to NSS that
+      // goes through the internal PKCS#11 slot, which can prompt for the
+      // primary password and fail, over a key this flow never uses.
+      const generateKeyIfNotAvailable = false;
       verified = await FormAutofillUtils.verifyUserOSAuth(
         FormAutofill.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF,
-        promptMessage
+        promptMessage,
+        "",
+        null,
+        generateKeyIfNotAvailable
       );
       result = verified ? "success" : "fail_user_canceled";
     } catch (ex) {
@@ -1172,12 +1201,20 @@ export class FormAutofillParent extends JSWindowActorParent {
       });
     }
 
-    if (verified) {
-      await lazy.AutocompleteRemoveRecord.confirmRemoval(
-        this.manager.browsingContext.topChromeWindow,
-        "payment"
-      );
+    if (!verified || !chromeWindow) {
+      return;
     }
+
+    const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
+      chromeWindow,
+      "payment"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    // Both stores warn and return for a guid they do not hold.
+    await lazy.gFormAutofillStorage.creditCards.remove(guid);
   }
 
   /**
@@ -1208,10 +1245,7 @@ export class FormAutofillParent extends JSWindowActorParent {
 
       case "FormAutofill:DeleteAddress": {
         try {
-          await lazy.AutocompleteRemoveRecord.confirmRemoval(
-            this.manager.browsingContext.topChromeWindow,
-            "address"
-          );
+          await this.#confirmAddressRemoval(data?.guid);
         } catch (ex) {
           lazy.log.warn("Address removal flow failed:", ex);
         } finally {
@@ -1222,7 +1256,7 @@ export class FormAutofillParent extends JSWindowActorParent {
 
       case "FormAutofill:DeleteCreditCard": {
         try {
-          await this.#confirmCreditCardRemoval();
+          await this.#confirmCreditCardRemoval(data?.guid);
         } catch (ex) {
           lazy.log.warn("Payment method removal flow failed:", ex);
         } finally {

@@ -193,11 +193,6 @@ extern NSSCMSRecipientEncryptedKey *NSS_CMSRecipientEncryptedKey_Create(PLArenaP
 /************************************************************************
  * cmsarray.c - misc array functions
  ************************************************************************/
-/*
- * NSS_CMSArray_Alloc - allocate an array in an arena
- */
-extern void **
-NSS_CMSArray_Alloc(PLArenaPool *poolp, int n);
 
 /*
  * NSS_CMSArray_Add - add an element to the end of an array
@@ -236,17 +231,10 @@ NSS_CMSArray_Sort(void **primary, int (*compare)(void *, void *), void **seconda
 /*
  * NSS_CMSAttribute_Create - create an attribute
  *
- * if value is NULL, the attribute won't have a value. It can be added later
- * with NSS_CMSAttribute_AddValue.
+ * if value is NULL, the attribute won't have a value.
  */
 extern NSSCMSAttribute *
 NSS_CMSAttribute_Create(PLArenaPool *poolp, SECOidTag oidtag, SECItem *value, PRBool encoded);
-
-/*
- * NSS_CMSAttribute_AddValue - add another value to an attribute
- */
-extern SECStatus
-NSS_CMSAttribute_AddValue(PLArenaPool *poolp, NSSCMSAttribute *attr, SECItem *value);
 
 /*
  * NSS_CMSAttribute_GetType - return the OID tag

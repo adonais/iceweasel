@@ -5,6 +5,9 @@
 package mozilla.components.feature.search.telemetry
 
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mozilla.components.feature.search.RemoteSettingsRepository
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.org.json.toList
@@ -17,6 +20,7 @@ import org.json.JSONObject
 class SerpTelemetryRepository(
     private val collectionName: String,
     private val remoteSettingsService: RemoteSettingsService,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val logger = Logger("SerpTelemetryRepository")
 
@@ -28,16 +32,18 @@ class SerpTelemetryRepository(
      * application-services.
      */
     suspend fun updateProviderList(): List<SearchProviderModel> =
-        // Despite the name, this reads from the local Remote Settings database rather than the network:
-        // application-services seeds it with the dump packaged in the megazord, and syncing it with the
-        // server is scheduled separately by RemoteSettingsSyncScheduler.
-        RemoteSettingsRepository.fetchRemoteResponse(
-                service = remoteSettingsService,
-                collectionName = collectionName,
-                client = remoteSettingsClient,
-            )
-            ?.mapNotNull { it.fields.toSearchProviderModel() }
-            .orEmpty()
+        withContext(ioDispatcher) {
+            // Despite the name, this reads from the local Remote Settings database rather than the network:
+            // application-services seeds it with the dump packaged in the megazord, and syncing it with the
+            // server is scheduled separately by RemoteSettingsSyncScheduler.
+            RemoteSettingsRepository.fetchRemoteResponse(
+                    service = remoteSettingsService,
+                    collectionName = collectionName,
+                    client = remoteSettingsClient,
+                )
+                ?.mapNotNull { it.fields.toSearchProviderModel() }
+                .orEmpty()
+        }
 }
 
 @VisibleForTesting

@@ -321,7 +321,7 @@
     "expires_in_version": "never",
     "kind": "enumerated",
     "n_values": 8,
-    "description": "DirectWrite system fontlist initialization problem (1=GDI interop, 2=system font collection, 3=no fonts)"
+    "description": "DirectWrite system fontlist initialization problem: 1=GDI interop (removed in bug 2011408), 2=system font collection, 3=no fonts"
   },
   "MAC_INITFONTLIST_TOTAL": {
     "record_in_processes": ["main", "content"],
@@ -1044,17 +1044,6 @@
     "keyed": true,
     "description": "How many extensions were matched to be imported from another browser, keyed by the name of the browser."
   },
-  "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "bug_numbers": [1688653, 1749882, 1777397, 1850888, 1978988, 2010472],
-    "alert_emails": ["passwords-dev@mozilla.org"],
-    "expires_in_version": "160",
-    "kind": "categorical",
-    "labels": ["added", "modified", "error", "no_change"],
-    "releaseChannelCollection": "opt-out",
-    "description": "Results of login import from a CSV/TSV file, by category"
-  },
   "FX_ABOUTHOME_CACHE_CONSTRUCTION": {
     "record_in_processes": ["content"],
     "products": ["firefox"],
@@ -1708,19 +1697,6 @@
     "bug_numbers": [1600335],
     "description": "Firefox: Time in ms spent selecting and matching messages to user profile."
   },
-  "SECURITY_UI": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "seceng-telemetry@mozilla.com",
-      "fxprivacyandsecurity@mozilla.com"
-    ],
-    "bug_numbers": [767676],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 100,
-    "description": "Security-related UI events (addons, form submission, TLS certs, Safe Browsing, updates and geolocation). See /security/manager/ssl/nsISecurityUITelemetry.idl for the specific values."
-  },
   "SEARCH_COUNTS": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -1735,16 +1711,6 @@
     "description": "Records search counts for search access points. The format is: <engine-name>.<search-access-point>. For the urlbar when in search mode, the format is <engine name>.urlbar-searchmode. For the urlbar when an internal @engine shortcut is used, the format is: <engine-name>.alias.",
     "record_into_store": ["main", "account-ecosystem"]
   },
-  "TOUCH_ENABLED_DEVICE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [795307, 1390269],
-    "alert_emails": ["jimm@mozilla.com"],
-    "description": "Boolean indicating if a touch input device is detected."
-  },
   "CRASH_STORE_COMPRESSED_BYTES": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -1753,44 +1719,6 @@
     "high": 1000000,
     "n_buckets": 202,
     "description": "Size (in bytes) of the compressed crash store JSON file."
-  },
-  "POPUP_NOTIFICATION_STATS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "releaseChannelCollection": "opt-out",
-    "alert_emails": ["MattN+telemetry@mozilla.com", "jhofmann@mozilla.com"],
-    "bug_numbers": [1207089, 1536454, 1584554],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "keyed": true,
-    "n_values": 40,
-    "description": "(Bug 1207089) Usage of popup notifications, keyed by ID (0 = Offered, 1..4 = Action (3 is unused), 5 = Click outside (unused), 6 = Leave page, 7 = Use 'X' (unused), 8 = Not now (unused), 10 = Open submenu, 11 = Learn more. Add 20 if happened after reopen.)"
-  },
-  "POPUP_NOTIFICATION_MAIN_ACTION_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["MattN+telemetry@mozilla.com", "jhofmann@mozilla.com"],
-    "bug_numbers": [1207089, 1584554],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "keyed": true,
-    "low": 100,
-    "high": 600000,
-    "n_buckets": 40,
-    "description": "(Bug 1207089) Time in ms between initially requesting a popup notification and triggering the main action, keyed by ID"
-  },
-  "POPUP_NOTIFICATION_DISMISSAL_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["MattN+telemetry@mozilla.com", "jhofmann@mozilla.com"],
-    "bug_numbers": [1207089, 1584554],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "keyed": true,
-    "low": 200,
-    "high": 20000,
-    "n_buckets": 50,
-    "description": "(Bug 1207089) Time in ms between displaying a popup notification and dismissing it without an action the first time, keyed by ID"
   },
   "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CODECS": {
     "record_in_processes": ["main", "content"],
@@ -2274,67 +2202,6 @@
     "high": 500,
     "n_buckets": 15,
     "description": "BACKGROUND THUMBNAILS: Time it took to draw the capture's window to canvas (ms)"
-  },
-  "PAGE_LOAD_ERROR": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "keyed": true,
-    "keys": ["top", "frame"],
-    "n_values": 45,
-    "labels": [
-      "UNKNOWN_PROTOCOL",
-      "FILE_NOT_FOUND",
-      "FILE_ACCESS_DENIED",
-      "UNKNOWN_HOST",
-      "CONNECTION_REFUSED",
-      "PROXY_BAD_GATEWAY",
-      "NET_INTERRUPT",
-      "NET_TIMEOUT",
-      "P_GATEWAY_TIMEOUT",
-      "CSP_FRAME_ANCEST",
-      "CSP_FORM_ACTION",
-      "CSP_NAVIGATE_TO",
-      "XFO_VIOLATION",
-      "PHISHING_URI",
-      "MALWARE_URI",
-      "UNWANTED_URI",
-      "HARMFUL_URI",
-      "CONTENT_CRASHED",
-      "FRAME_CRASHED",
-      "BUILDID_MISMATCH",
-      "NET_RESET",
-      "MALFORMED_URI",
-      "REDIRECT_LOOP",
-      "UNKNOWN_SOCKET",
-      "DOCUMENT_N_CACHED",
-      "OFFLINE",
-      "DOC_PRINTMODE",
-      "PORT_ACCESS",
-      "UNKNOWN_PROXY_HOST",
-      "PROXY_CONNECTION",
-      "PROXY_FORBIDDEN",
-      "P_NOT_IMPLEMENTED",
-      "PROXY_AUTH",
-      "PROXY_TOO_MANY",
-      "CONTENT_ENCODING",
-      "REMOTE_XUL",
-      "UNSAFE_CONTENT",
-      "CORRUPTED_CONTENT",
-      "INTERCEPTION_FAIL",
-      "INADEQUATE_SEC",
-      "BLOCKED_BY_POLICY",
-      "HTTP2_SENT_GOAWAY",
-      "HTTP3_PROTOCOL",
-      "UNCLEAN_SHUTDOWN",
-      "BINDING_FAILED",
-      "otherError"
-    ],
-    "description": "Page load errors. Match values with type of error in nsDocShellTelemetryUtils.cpp",
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "bug_numbers": [1636962]
   },
   "STORAGE_ACCESS_GRANTED_COUNT": {
     "record_in_processes": ["main", "content"],

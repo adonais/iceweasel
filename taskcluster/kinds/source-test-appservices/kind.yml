@@ -1,0 +1,37 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - gecko_taskgraph.transforms.duplicate:transforms
+
+kind-dependencies:
+    - source-test
+
+tasks:
+    appservices-in-tree:
+        duplicate:
+            kinds:
+                - source-test
+            suffix: -appservices-in-tree
+            treeherder-symbol-suffix: -as
+            include-labels:
+                - '^source-test-android-lint-'
+            exclude-labels:
+                - '-(beta|release|nightly)(-|$)'
+        attributes:
+            run_on_projects: []
+            code-review: false
+        dependencies:
+            build-fat-aar: build-fat-aar-android-geckoview-fat-aar-appservices/opt
+            toolchain-linux64-android-gradle-dependencies:
+                toolchain-linux64-android-gradle-dependencies-appservices
+        task:
+            payload:
+                env:
+                    MOZ_APPSERVICES_IN_TREE: "1"
+            extra:
+                treeherder:
+                    tier: 3

@@ -17,12 +17,39 @@ unit tested from sites that do not vendor it.
 import collections
 import json
 import os
+import re
 import subprocess
 
 import mozpack.path as mozpath
 import toml
 
 VENDOR_DIR = "third_party/rust"
+
+# Cargo once took "MIT/Apache-2.0" to mean "MIT OR Apache-2.0", and crates
+# published back then still say so. It is not an SPDX expression.
+RE_LEGACY_LICENSE_SEPARATOR = re.compile(r"\s*/\s*")
+
+# Workspace members that build or test the product rather than being part of
+# it. A crate reached only from these, or only as a dev dependency, is a
+# `tooling` crate. A member missing here counts as shipped, which overstates
+# the product rather than hiding part of it.
+TOOLING_MEMBERS = (
+    "netwerk/test/http3server",
+    "security/manager/ssl/tests/unit/pkcs11testmodule",
+    "security/manager/ssl/tests/unit/test_trust_anchors",
+    "services/app-services-tools/embedded-uniffi-bindgen",
+    "services/app-services-tools/nimbus-fml",
+    "testing/geckodriver",
+    "third_party/application-services/components/example",
+    "third_party/application-services/components/support/find-places-db",
+    "third_party/application-services/components/support/restmail-client",
+    "third_party/application-services/components/support/text-table",
+    "third_party/application-services/tools/embedded-uniffi-bindgen",
+    "third_party/application-services/tools/uniffi-bindgen-library-mode",
+    "toolkit/components/uniffi-bindgen-gecko-js",
+    "toolkit/components/uniffi-bindgen-gecko-js/test-fixtures",
+    "toolkit/library/gtest/rust",
+)
 
 # The crates.io index. Anything else is a git dependency, whose version is the
 # crate's own and therefore not a crates.io release.
@@ -83,7 +110,14 @@ def _purl(package):
     return ("cargo", None, package["name"], package["version"], qualifiers)
 
 
-def dependency_kinds(metadata):
+def member_directory(metadata, package):
+    """A workspace member's directory, relative to the workspace root."""
+    root = mozpath.normsep(metadata.get("workspace_root") or "")
+    directory = mozpath.dirname(mozpath.normsep(package.get("manifest_path") or ""))
+    return mozpath.relpath(directory, root) if root else directory
+
+
+def dependency_kinds(metadata, tooling_members=TOOLING_MEMBERS, report=None):
     """Map each third-party package of a `cargo metadata` document to its kinds.
 
     A crate is reached from the workspace as a normal, a build or a dev
@@ -92,20 +126,74 @@ def dependency_kinds(metadata):
     cannot answer this -- it is the flat union of all three -- so the kinds
     come from `cargo metadata`, whose resolve graph labels every edge.
 
+    The workspace also holds test servers and code generators, listed in
+    ``tooling_members``. What a member reached only from those depends on is
+    labelled `tooling`: hyper and tokio are normal dependencies of the
+    http3server, not of the product.
+
     Returns {(name, version): sorted kinds}. A crate reached both ways carries
     both, which is the common case for something used in tests as well.
+    ``report`` is told about a ``tooling_members`` entry that is no member.
     """
     packages = {package["id"]: package for package in metadata["packages"]}
-    nodes = {node["id"]: node for node in metadata["resolve"]["nodes"]}
+    # Only the nodes `packages` describes: the directory of a member and the
+    # name and version of a result are all read from there, so a node it does
+    # not cover could not be reported on further down anyway. Restricting the
+    # graph once here keeps every packages[] lookup below total.
+    nodes = {
+        node["id"]: node
+        for node in metadata["resolve"]["nodes"]
+        if node["id"] in packages
+    }
+    members = {m for m in metadata["workspace_members"] if m in nodes}
 
     def edges(node_id):
         for dep in nodes[node_id]["deps"]:
             for dep_kind in dep["dep_kinds"]:
                 yield dep["pkg"], dep_kind.get("kind") or "normal"
 
+    directories = {
+        member: member_directory(metadata, packages[member])
+        for member in metadata["workspace_members"]
+        if member in packages
+    }
+    # A member that moved would silently count as shipped again.
+    if report:
+        for stale in sorted(set(tooling_members) - set(directories.values())):
+            report(f"TOOLING_MEMBERS names {stale}, which is no workspace member")
+    tooling = {member for member in members if directories[member] in tooling_members}
+
+    # A member is shipped when a shipped root reaches it, a root being a
+    # member no other member builds. What only tooling members build, like
+    # webdriver under geckodriver, is not.
+    built_by_members = {
+        target
+        for member in members
+        for target, kind in edges(member)
+        if kind != "dev" and target in nodes
+    }
+    shipped = set()
+    queue = collections.deque(
+        member for member in sorted(members - tooling) if member not in built_by_members
+    )
+    while queue:
+        member = queue.popleft()
+        if member in shipped:
+            continue
+        shipped.add(member)
+        queue.extend(
+            target
+            for target, kind in edges(member)
+            if kind != "dev" and target in members
+        )
+
     queue = collections.deque()
-    for member in metadata["workspace_members"]:
-        queue.extend(edges(member))
+    for member in members:
+        for target, kind in edges(member):
+            queue.append((
+                target,
+                kind if kind == "dev" or member in shipped else "tooling",
+            ))
 
     kinds = collections.defaultdict(set)
     seen = set()
@@ -128,11 +216,17 @@ def dependency_kinds(metadata):
     }
 
 
-def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
+def collect_dependency_kinds(
+    topsrcdir, topobjdir=None, cargo=None, log=None, rustc=None
+):
     """Run `cargo metadata` and reduce it to dependency kinds.
 
     ``cargo`` is the configuration's CARGO subst; automation has no bare
     `cargo` on PATH, so falling back to one only helps an unconfigured tree.
+    ``rustc`` is the RUSTC subst, passed through as the `RUSTC` environment
+    variable: resolving the dependency graph makes cargo run `rustc -vV` for
+    the host target and cfgs, and it looks for it on PATH, where the Linux
+    build tasks do not have it. Cargo reads `RUSTC` ahead of PATH.
 
     Returns {} when the answer is not available rather than failing: the
     vendored-source replacement lives in the objdir's generated cargo config,
@@ -156,6 +250,8 @@ def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
             )
             return {}
         environment["CARGO_HOME"] = cargo_home
+    if rustc:
+        environment["RUSTC"] = rustc
 
     try:
         output = subprocess.run(
@@ -164,7 +260,7 @@ def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
             env=environment,
             capture_output=True,
             check=True,
-            text=True,
+            encoding="utf-8",
         ).stdout
     except OSError as error:
         report(f"cannot run {cargo or 'cargo'}: {error}")
@@ -174,7 +270,7 @@ def collect_dependency_kinds(topsrcdir, topobjdir=None, cargo=None, log=None):
         return {}
 
     try:
-        return dependency_kinds(json.loads(output))
+        return dependency_kinds(json.loads(output), report=report)
     except (ValueError, KeyError) as error:
         report(f"output not understood: {type(error).__name__}: {error}")
         return {}
@@ -186,10 +282,8 @@ def crate_records(topsrcdir, lock_path=None, kinds=None):
     ``edges`` maps a record's bom_ref to the bom_refs it depends on, which is
     what turns the SBOM into a graph rather than a flat list.
 
-    ``kinds`` comes from collect_dependency_kinds() and is recorded but not
-    yet serialized: knowing which crates are test-only is the prerequisite for
-    telling an SBOM of what Firefox ships from an SBOM of what the repository
-    builds with.
+    ``kinds`` comes from collect_dependency_kinds(); is_tooling() uses it
+    to tell what Firefox ships from what only builds its tests.
     """
     lock_path = lock_path or mozpath.join(topsrcdir, "Cargo.lock")
     if not os.path.exists(lock_path):
@@ -219,7 +313,7 @@ def crate_records(topsrcdir, lock_path=None, kinds=None):
             properties["moz:cargo.manifest-unreadable"] = manifest_error
         licenses = []
         if metadata.get("license"):
-            licenses = [metadata["license"]]
+            licenses = [RE_LEGACY_LICENSE_SEPARATOR.sub(" OR ", metadata["license"])]
         elif metadata.get("license-file"):
             properties["moz:cargo.license-file"] = metadata["license-file"]
 
@@ -262,3 +356,12 @@ def crate_records(topsrcdir, lock_path=None, kinds=None):
             edges[ref] = dependencies
 
     return records, edges
+
+
+def is_tooling(record):
+    """Is a crate reached only as a dev dependency or from a tooling member?
+
+    Such a crate builds or tests the product and ships in nothing. Without
+    kinds, which an unconfigured tree cannot collect, nothing is known to be.
+    """
+    return bool(record["kinds"]) and set(record["kinds"]) <= {"dev", "tooling"}

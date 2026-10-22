@@ -51,11 +51,6 @@ support-files = [
 run-if = [
   "crashreporter",
 ]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && msix", # Bug 1775837
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && msix", # Bug 1775837
-  "os == 'win' && opt && standalone", # Bug 2028656
-]
 
 ["browser_domainPolicy.js"]
 
@@ -67,16 +62,11 @@ skip-if = [
   "arch == 'x86'",
   "debug",
   "os != 'linux'",
-  "tsan",
 ]
 
 ["browser_hide_tooltip.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1971068
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1971068
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1971068
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && opt", # Bug 1971068
-  "os == 'win' && os_version == '11.26200' && arch == 'x86' && opt", # Bug 1971068
 ]
 
 ["browser_isactiveintab.js"]
@@ -106,7 +96,6 @@ run-if = [
 ]
 skip-if = [
   "asan", # appears to hang the machine
-  "tsan", # appears to hang the machine
 ]
 
 ["browser_wpi_isolate_everything.js"]

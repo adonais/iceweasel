@@ -369,6 +369,14 @@ class LIRGeneratorShared {
   inline void lowerConstantDouble(double d, MInstruction* mir);
   inline void lowerConstantFloat32(float f, MInstruction* mir);
 
+  // Lower the Int32 |op| as a single instruction that shifts one operand by a
+  // constant, if that operand is a shift deferred by lowerForShift. Returns
+  // false if |mir| still needs lowering.
+  bool lowerForALUWithShiftedOperand(JSOp op, MBinaryInstruction* mir,
+                                     MDefinition* lhs, MDefinition* rhs) {
+    return false;
+  }
+
   bool canSpecializeWasmCompareAndSelect(MCompare::CompareType compTy,
                                          MIRType insTy);
   void lowerWasmCompareAndSelect(MWasmSelect* ins, MDefinition* lhs,

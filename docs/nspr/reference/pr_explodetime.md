@@ -19,7 +19,7 @@ The function has these parameters:
 
 `usecs`
 
-: An absolute time in the {ref}`PRTime` format.
+: An absolute time in the {doc}`prtime` format.
 
 `params`
 

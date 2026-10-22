@@ -2674,6 +2674,10 @@ class Element : public FragmentOrElement {
   void VerifySubtreeBloomFilter() const;
 #endif
 
+  // Prevent people from doing pointless checks/casts on Element instances.
+  void IsElement() = delete;
+  void AsElement() = delete;
+
  protected:
   /**
    * Copy attributes and state to another element
@@ -2693,11 +2697,6 @@ class Element : public FragmentOrElement {
    * Register/unregister this element to accesskey map if it supports accesskey.
    */
   virtual void RegUnRegAccessKey(bool aDoReg);
-
- public:
-  // Prevent people from doing pointless checks/casts on Element instances.
-  void IsElement() = delete;
-  void AsElement() = delete;
 
  private:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED

@@ -850,4 +850,103 @@ describe("selectLayoutRender", () => {
       expect(ids[0]).toBe("dupe");
     });
   });
+
+  // @experiment(remove) { bug 2078816 }
+  describe("widget first content slot", () => {
+    const WIDGET_FIRST_PREFS = {
+      ...SPONSORED_STORIES_PREFS,
+      "discoverystream.sections.enabled": true,
+      "feeds.section.topstories": true,
+      "feeds.system.topstories": true,
+      "nova.enabled": true,
+      "pageLayouts.variant": "widget-first-content-slot",
+      "pageLayouts.widgetFirstContentSlot.widget": "crossword",
+      "widgets.enabled": true,
+      "widgets.system.crossword.enabled": true,
+      "widgets.crossword.enabled": true,
+    };
+
+    const renderSections = () => {
+      const layout = {
+        responsiveLayouts: [
+          {
+            columnCount: 1,
+            tiles: [0, 1, 2, 3, 4, 5].map(position => ({
+              position,
+              hasAd: position === 1 || position === 5,
+            })),
+          },
+        ],
+      };
+      const recommendations = ["first", "second"].flatMap(section =>
+        [0, 1, 2, 3, 4, 5].map(i => ({ id: `${section}-${i}`, section }))
+      );
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
+        data: {
+          layout: [
+            {
+              width: 3,
+              components: [{ type: "CardGrid", feed: { url: "foo.com" } }],
+            },
+          ],
+        },
+      });
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_FEED_UPDATE,
+        data: {
+          feed: {
+            data: {
+              recommendations,
+              sections: [
+                { sectionKey: "second", receivedRank: 1, layout },
+                { sectionKey: "first", receivedRank: 0, layout },
+              ],
+            },
+          },
+          url: "foo.com",
+        },
+      });
+      store.dispatch({ type: at.DISCOVERY_STREAM_FEEDS_UPDATE });
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+        data: {
+          lastUpdated: 0,
+          spocs: {
+            newtab_spocs: {
+              items: ["ad1", "ad2", "ad3", "ad4"].map(id => ({
+                id,
+                url: `https://example.com/${id}`,
+              })),
+            },
+          },
+        },
+      });
+      const { layoutRender } = selectLayoutRender({
+        state: store.getState().DiscoveryStream,
+        prefs: WIDGET_FIRST_PREFS,
+      });
+      return layoutRender[0].components[0].data.sections;
+    };
+
+    it("puts the widget first in the top-ranked section only", () => {
+      const [first, second] = renderSections();
+      expect(first.data[0]).toEqual(
+        expect.objectContaining({ type: "widget", widgetId: "crossword" })
+      );
+      expect(second.data.some(item => item.type === "widget")).toBe(false);
+    });
+
+    it("keeps the ads on their tiles and shifts the stories", () => {
+      const [first] = renderSections();
+      expect(first.data.slice(1, 6).map(item => item.id)).toEqual([
+        "ad1",
+        "first-0",
+        "first-1",
+        "first-2",
+        "ad2",
+      ]);
+      expect([first.data[1].pos, first.data[5].pos]).toEqual([1, 5]);
+    });
+  });
 });

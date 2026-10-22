@@ -23,15 +23,6 @@
 <script>
   const subScroller = document.querySelector(`div[class="content"]`);
 
-  // A utility function to collect overscrolled scroll container information.
-  function collectOverscrolledData() {
-    const apzData =
-      SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
-    return apzData.filter(data => {
-      return SpecialPowers.wrap(data).value.split(",").includes("overscrolled");
-    });
-  }
-
   async function panUpwardAndCollectOverscrolled(aOverscrollBehavior) {
     subScroller.style.overscrollBehavior = aOverscrollBehavior;
 
@@ -51,26 +42,26 @@
        `The sub scroll container should be panned to its top edge ` +
        `(${aOverscrollBehavior})`);
 
-    const overscrolledData = collectOverscrolledData();
+    const overscrolledIds = collectOverscrolledIds();
 
     // End the gesture.
     await NativePanHandler.promiseNativePanEvent(
       subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
     await promiseApzFlushedRepaints();
 
-    return overscrolledData;
+    return overscrolledIds;
   }
 
   async function test() {
     const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
 
-    let overscrolledData = await panUpwardAndCollectOverscrolled("chain");
-    ok(!overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+    let overscrolledIds = await panUpwardAndCollectOverscrolled("chain");
+    ok(!isOverscrolled(overscrolledIds, subScrollId),
        "The sub scroll container should not be overscrolled with overscroll-behavior: chain");
 
     // Check if `contain` allows an overscroll as a positive control.
-    overscrolledData = await panUpwardAndCollectOverscrolled("contain");
-    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+    overscrolledIds = await panUpwardAndCollectOverscrolled("contain");
+    ok(isOverscrolled(overscrolledIds, subScrollId),
        "The sub scroll container should be overscrolled with overscroll-behavior: contain");
   }
 

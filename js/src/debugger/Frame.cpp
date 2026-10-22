@@ -992,9 +992,8 @@ static WithEnvironmentObject* CreateBindingsEnv(
   JS::Rooted<JS::Value> val(cx);
   for (size_t i = 0; i < bindingKeys.length(); i++) {
     id = bindingKeys[i];
-    cx->recordRefToId(id);
     val = bindingValues[i];
-    if (!cx->compartment()->wrap(cx, &val) ||
+    if (!cx->wrapOrRecordRefToId(&id) || !cx->compartment()->wrap(cx, &val) ||
         !NativeDefineDataProperty(cx, bindingsObj, id, val, 0)) {
       return nullptr;
     }
@@ -1113,6 +1112,9 @@ static bool EvaluateInEnv(
       break;
     }
     case EvalOptions::EnvKind::Global: {
+      options.setAllowRedeclaringExistingLexicalBinding(
+          evalOptions.allowRedeclaringExistingLexicalBinding());
+
       AutoReportFrontendContext fc(cx);
       script = frontend::CompileGlobalScript(cx, &fc, options, srcBuf,
                                              ScopeKind::Global);
@@ -1132,7 +1134,9 @@ static bool EvaluateInEnv(
 
       MOZ_ASSERT(envArg == &cx->global()->lexicalEnvironment());
 
-      options.setNonSyntacticScope(true);
+      options.setNonSyntacticScope(true)
+          .setAllowRedeclaringExistingLexicalBinding(
+              evalOptions.allowRedeclaringExistingLexicalBinding());
 
       AutoReportFrontendContext fc(cx);
       script = frontend::CompileGlobalScriptWithExtraBindings(

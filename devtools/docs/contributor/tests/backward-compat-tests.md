@@ -6,6 +6,8 @@ either the `same` version, or is older (`beta`, `release`, …).
 
 See [bug 2053559](https://bugzilla.mozilla.org/show_bug.cgi?id=2053559).
 
+Check the job results for the last 30 days on [devtools-backward-monitor](https://juliandescottes.github.io/devtools-backward-monitor/).
+
 ## Technical overview
 
 The tests are written as regular aboutdebugging browser-chrome mochitests. They
@@ -23,6 +25,7 @@ by Marionette, and a few command wrappers are exposed through control.py.
 ## Running the tests
 
 Locally you can run the whole test suite with:
+
 ```
 ./mach devtools-compat-test
 ```
@@ -37,11 +40,12 @@ You can run the suite against our other channels: `release`, `beta`,
 ```
 
 In this case, the devtools-compat-test task will download Firefox for the
-selected channel from https://download.mozilla.org/ and will start it as the
+selected channel from <https://download.mozilla.org/> and will start it as the
 server. The downloaded and installed binaries are cached to speedup successive
 runs.
 
 Use `--headless` to hide all browser windows.
+
 ```
 ./mach devtools-compat-test --headless
 ```
@@ -72,6 +76,8 @@ Three tasks run once a day on mozilla-central, through the
 
 They will be scheduled in regular mozilla-central jobs. You can look for
 previous runs by [filtering on devtools-compat](https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=devtools-compat).
+
+An easier way to find the jobs is to directly check the [monitoring page](https://juliandescottes.github.io/devtools-backward-monitor/).
 
 ## Manual Try push
 

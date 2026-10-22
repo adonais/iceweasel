@@ -59,9 +59,6 @@ fail-if = [
 ["browser_aboutwelcome_multistage_experimentAPI.js"]
 
 ["browser_aboutwelcome_multistage_languageSwitcher.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1757875
-]
 
 ["browser_aboutwelcome_multistage_mr.js"]
 

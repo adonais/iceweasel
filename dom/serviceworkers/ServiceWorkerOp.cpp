@@ -1976,6 +1976,13 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
 
     mFetchHandlerFinish = TimeStamp::Now();
 
+    // https://w3c.github.io/ServiceWorker/#create-fetch-event-and-dispatch-algorithm
+    // Step 17: with no response and a request body whose source is null (a
+    // streaming upload), an unusable body means handle fetch fails.
+    RefPtr<Request> request = fetchEvent->Request_();
+    const bool hasStreamBody = request && request->HasStreamBody();
+    const bool streamBodyUnusable = hasStreamBody && request->IsBodyUnusable();
+
     if (fetchEvent->DefaultPrevented(CallerType::NonSystem)) {
       // https://w3c.github.io/ServiceWorker/#on-fetch-request-algorithm
       // Step 24.1.1: If eventHandled is not null, then reject eventHandled with
@@ -1987,13 +1994,33 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
               NS_ERROR_INTERCEPTION_FAILED,
               FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
           __func__);
+    } else if (streamBodyUnusable) {
+      // Step 22: handleFetchFailed is set, so eventHandled is rejected and the
+      // fetch ends in a network error rather than falling back.
+      mHandled->MaybeRejectWithNetworkError(
+          "Streaming request body was used before network fallback"_ns);
+      mRespondWithPromiseHolder.Resolve(
+          FetchEventRespondWithResult(CancelInterceptionArgs(
+              NS_ERROR_INTERCEPTION_FAILED,
+              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
+          __func__);
     } else {
       // https://w3c.github.io/ServiceWorker/#on-fetch-request-algorithm
       // Step 24.2: If eventHandled is not null, then resolve eventHandled.
+      // Only the fallback consumes the body, so the worker gives up its claim
+      // on it here and hands the unread stream back to the channel.
+      nsCOMPtr<nsIInputStream> fallbackBody;
+      if (hasStreamBody) {
+        IgnoredErrorResult rv;
+        fallbackBody = request->TakeBodyForServiceWorker(aCx, rv);
+      }
       mHandled->MaybeResolveWithUndefined();
       mRespondWithPromiseHolder.Resolve(
           FetchEventRespondWithResult(ResetInterceptionArgs(
-              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
+              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish),
+              fallbackBody ? Some(mozilla::ipc::EagerIPCStream{
+                                 WrapNotNull(fallbackBody)})
+                           : Nothing())),
           __func__);
     }
   } else {

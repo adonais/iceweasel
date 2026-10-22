@@ -186,16 +186,9 @@ class gfxDWriteFontFileLoader : public IDWriteFontFileLoader {
 
   /**
    * Gets the singleton loader instance. Note that when using this font
-   * loader, the key must be a pointer to a unint64_t.
+   * loader, the key must be a pointer to a uint64_t.
    */
-  static IDWriteFontFileLoader* Instance() {
-    if (!mInstance) {
-      mInstance = new gfxDWriteFontFileLoader();
-      mozilla::gfx::Factory::GetDWriteFactory()->RegisterFontFileLoader(
-          mInstance);
-    }
-    return mInstance;
-  }
+  static IDWriteFontFileLoader* Instance();
 
   /**
    * Creates a IDWriteFontFile and IDWriteFontFileStream from aFontData.
@@ -212,9 +205,6 @@ class gfxDWriteFontFileLoader : public IDWriteFontFileLoader {
       gfxDWriteFontFileStream** aFontFileStream);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
- private:
-  static IDWriteFontFileLoader* mInstance;
 };
 
 #endif /* GFX_DWRITECOMMON_H */

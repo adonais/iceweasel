@@ -20,5 +20,5 @@ The function has the following parameter:
 
 ### Returns
 
-If successful, the function returns the {ref}`PRDescIdentity` for the layer
+If successful, the function returns the {doc}`prdescidentity` for the layer
 of the specified file descriptor.

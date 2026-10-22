@@ -16,19 +16,21 @@ we found a Python LRU cache that pickled cleanly, we could remove a lot of
 this code!  Sadly, I found no such candidate implementations, so we pickle
 pylru caches manually.
 
-None of the instances (or the underlying caches) are safe for concurrent use.
-A future need, perhaps.
+ArtifactCache.fetch may be called concurrently from multiple threads.
 """
 
 import binascii
 import hashlib
 import logging
 import os
+import threading
 import urllib.parse as urlparse
 
 import dlmanager
 import mozpack.path as mozpath
+import requests
 
+from mozbuild.build_markers import build_marker
 from mozbuild.dirutils import mkdir
 
 # Using 'DownloadManager' through the provided interface we
@@ -46,8 +48,8 @@ dl_init.__defaults__ = (
 # so don't make this to large!
 MIN_CACHED_ARTIFACTS = 12
 
-# Maximum size of the downloaded artifacts to keep in cache, in bytes (2GiB).
-MAX_CACHED_ARTIFACTS_SIZE = 2 * 1024 * 1024 * 1024
+# Maximum size of the downloaded artifacts to keep in cache, in bytes (4GiB).
+MAX_CACHED_ARTIFACTS_SIZE = 4 * 1024 * 1024 * 1024
 
 
 class ArtifactPersistLimit(dlmanager.PersistLimit):
@@ -82,6 +84,7 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
         self._log = log
         self._registering_dir = False
         self._downloaded_now = set()
+        self._lock = threading.RLock()
 
     def log(self, *args, **kwargs):
         if self._log:
@@ -94,6 +97,10 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
             or os.path.basename(path) == ".metadata_never_index"
         ):
             return
+        with self._lock:
+            self._register_file(path)
+
+    def _register_file(self, path):
         if not self._registering_dir:
             # Touch the file so that subsequent calls to a mach artifact
             # command know it was recently used. While remove_old_files
@@ -112,6 +119,10 @@ class ArtifactPersistLimit(dlmanager.PersistLimit):
         self._registering_dir = False
 
     def remove_old_files(self):
+        with self._lock:
+            self._remove_old_files()
+
+    def _remove_old_files(self):
         from dlmanager import fs
 
         files = sorted(self.files, key=lambda f: f.stat.st_atime)
@@ -155,14 +166,19 @@ class ArtifactCache:
         self._log = log
         self._skip_cache = skip_cache
         self._persist_limit = ArtifactPersistLimit(log)
+        session = requests.Session()
+        session.hooks["response"].append(self._track_response)
         self._download_manager = dlmanager.DownloadManager(
-            self._cache_dir, persist_limit=self._persist_limit
+            self._cache_dir, session=session, persist_limit=self._persist_limit
         )
-        self._last_dl_update = -1
+        self._response = threading.local()
 
     def log(self, *args, **kwargs):
         if self._log:
             self._log(*args, **kwargs)
+
+    def _track_response(self, response, *args, **kwargs):
+        self._response.current = response
 
     def fetch(self, url, force=False):
         fname = os.path.basename(url)
@@ -192,28 +208,34 @@ class ArtifactCache:
             )
             os.remove(path)
 
+        last_dl_update = -1
+
+        def download_progress(dl, _decoded_bytes, total_size):
+            nonlocal last_dl_update
+            if not total_size:
+                return
+            # Content-Length is the compressed size, but dlmanager counts decoded bytes.
+            bytes_so_far = self._response.current.raw.tell()
+            percent = (float(bytes_so_far) / total_size) * 100
+            now = int(percent / 5)
+            if now == last_dl_update:
+                return
+            last_dl_update = now
+            self.log(
+                logging.INFO,
+                "artifact",
+                {
+                    "fname": fname,
+                    "bytes_so_far": bytes_so_far,
+                    "total_size": total_size,
+                    "percent": percent,
+                },
+                "Downloading {fname}... {percent:02.1f} %",
+            )
+
+        dl = None
         try:
-            dl = self._download_manager.download(url, fname)
-
-            def download_progress(dl, bytes_so_far, total_size):
-                if not total_size:
-                    return
-                percent = (float(bytes_so_far) / total_size) * 100
-                now = int(percent / 5)
-                if now == self._last_dl_update:
-                    return
-                self._last_dl_update = now
-                self.log(
-                    logging.INFO,
-                    "artifact",
-                    {
-                        "bytes_so_far": bytes_so_far,
-                        "total_size": total_size,
-                        "percent": percent,
-                    },
-                    "Downloading... {percent:02.1f} %",
-                )
-
+            dl = self._download_manager.download(url, fname, progress=download_progress)
             if dl:
                 self.log(
                     logging.INFO,
@@ -221,8 +243,8 @@ class ArtifactCache:
                     {"path": path},
                     "Downloading artifact to local cache: {path}",
                 )
-                dl.set_progress(download_progress)
-                dl.wait()
+                with build_marker("ArtifactDownload", url, log=self.log):
+                    dl.wait()
             else:
                 self.log(
                     logging.INFO,
@@ -236,8 +258,13 @@ class ArtifactCache:
 
             return os.path.abspath(mozpath.join(self._cache_dir, fname))
         finally:
-            # Cancel any background downloads in progress.
-            self._download_manager.cancel()
+            # Cancel the background download if it is still in progress.
+            if dl:
+                dl.cancel()
+
+    def cancel(self):
+        """Cancel all background downloads in progress."""
+        self._download_manager.cancel()
 
     def clear_cache(self):
         if self._skip_cache:

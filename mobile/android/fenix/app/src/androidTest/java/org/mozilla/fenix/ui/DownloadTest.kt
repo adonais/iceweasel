@@ -27,6 +27,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.downloadPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
+import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
@@ -127,7 +128,7 @@ class DownloadTest {
                     canExpandNotification = false,
                     notificationItem = "png_image.png",
                 )
-                verifySystemNotificationDoesNotExist("Firefox Fenix")
+                verifySystemNotificationDoesNotExist(appName)
             }
             .closeNotificationTray(composeTestRule) {}
     }
@@ -326,7 +327,7 @@ class DownloadTest {
                     canExpandNotification = true,
                     notificationItem = "1GB.zip",
                 )
-                verifySystemNotificationDoesNotExist("Firefox Fenix")
+                verifySystemNotificationDoesNotExist(appName)
             }
     }
 
@@ -350,9 +351,9 @@ class DownloadTest {
                     // On API 34 we first need to expand the system notification before verifying that the app name is
                     // displayed
                     expandNotificationMessage("3GB.zip")
-                    verifySystemNotificationExists("Firefox Fenix")
+                    verifySystemNotificationExists(appName)
                 } else {
-                    verifySystemNotificationExists("Firefox Fenix")
+                    verifySystemNotificationExists(appName)
                 }
             }
     }
@@ -373,7 +374,7 @@ class DownloadTest {
                 clickCancelPrivateDownloadsPromptButton()
             }
             .openNotificationShade {
-                verifySystemNotificationDoesNotExist("Firefox Fenix")
+                verifySystemNotificationDoesNotExist(appName)
             }
     }
 

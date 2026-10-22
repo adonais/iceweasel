@@ -30,6 +30,8 @@ class SpeechLevelEstimator {
   virtual float GetLevelDbfs() const = 0;
   // Returns true if the estimator is confident on its current estimate.
   virtual bool IsConfident() const = 0;
+  // Returns true if the current speech is classified as a background speaker.
+  virtual bool IsBackgroundSpeaker() const = 0;
 
   virtual void Reset() = 0;
 

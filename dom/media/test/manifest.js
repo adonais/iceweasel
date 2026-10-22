@@ -990,6 +990,7 @@ var gDecodeErrorTests = [
   { name: "dirac.ogg", type: "video/ogg" },
   // Invalid files
   { name: "bogus.wav", type: "audio/x-wav" },
+  { name: "invalid-crop-wrap.webm", type: "video/webm" },
 
   { name: "bogus.duh", type: "bogus/duh" },
 ];

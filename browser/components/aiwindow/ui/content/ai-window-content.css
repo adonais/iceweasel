@@ -21,4 +21,11 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    /* Background color is needed in order to have the blur effect on the edges of the chat but keep the box-shadow working in the ai-window fullpage host */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: var(--ai-background-color);
+  }
 }

@@ -6,6 +6,7 @@
 #define mozilla_dom_serviceworkeroppromise_h_
 
 #include "mozilla/MozPromise.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 
@@ -36,6 +37,10 @@ using FetchEventPreloadResponseEndPromise =
 
 using ServiceWorkerOpPromise =
     MozPromise<ServiceWorkerOpResult, nsresult, true>;
+
+// Resolves once a push message's push event has settled, rejects with the
+// reason the event never reached the worker
+using PushHandledPromise = MozPromise<Ok, nsresult, /* IsExclusive = */ true>;
 
 using ServiceWorkerFetchEventOpPromise =
     MozPromise<ServiceWorkerFetchEventOpResult, nsresult, true>;

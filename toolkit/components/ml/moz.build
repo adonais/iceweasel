@@ -24,7 +24,10 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
     DIRS += [
         "backends/llama",
         "ipc",
+        "textgeneration",
     ]
+    if CONFIG["ENABLE_TESTS"]:
+        TEST_DIRS += ["tests/gtest"]
 
 XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 
@@ -43,6 +46,7 @@ XPIDL_SOURCES += [
 
 MOZ_SRC_FILES += [
     "MLModelHubService.sys.mjs",
+    "textgeneration/TextGenerationEngine.sys.mjs",
 ]
 
 UNIFIED_SOURCES += [
@@ -50,6 +54,7 @@ UNIFIED_SOURCES += [
 ]
 
 EXPORTS.mozilla.ml += [
+    "MLProfilerMarkers.h",
     "MLUtils.h",
 ]
 

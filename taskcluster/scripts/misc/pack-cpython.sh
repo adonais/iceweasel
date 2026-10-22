@@ -18,7 +18,7 @@ rm -f api-ms-win-*
 # bundle pip
 $WINE python.exe -m ensurepip
 $WINE python.exe -m pip install --upgrade pip==23.0
-$WINE python.exe -m pip install --only-binary ':all:' -r ${GECKO_PATH}/build/psutil_requirements.txt -r ${GECKO_PATH}/build/zstandard_requirements.txt
+$WINE python.exe -m pip install --only-binary ':all:' -r ${GECKO_PATH}/build/psutil_requirements.txt -r ${GECKO_PATH}/build/zstandard_requirements.txt -r ${GECKO_PATH}/build/pyyaml_requirements.txt
 
 # extra symlinks to have a consistent install with Linux and OSX
 ln -s python.exe python3.exe

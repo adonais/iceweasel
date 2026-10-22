@@ -20,7 +20,7 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "migration"
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "ChromeMigrationUtils.sys.mjs",
     "ChromeProfileMigrator.sys.mjs",
     "FileMigrators.sys.mjs",
@@ -28,13 +28,10 @@ EXTRA_JS_MODULES += [
     "FirefoxSelectableProfileMigrator.sys.mjs",
     "InternalTestingProfileMigrator.sys.mjs",
     "MigrationUtils.sys.mjs",
-    "MigratorBase.sys.mjs",
-    "ProfileMigrator.sys.mjs",
-]
-
-FINAL_TARGET_FILES.actors = [
     "MigrationWizardChild.sys.mjs",
     "MigrationWizardParent.sys.mjs",
+    "MigratorBase.sys.mjs",
+    "ProfileMigrator.sys.mjs",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -44,7 +41,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     UNIFIED_SOURCES += [
         "nsEdgeMigrationUtils.cpp",
     ]
-    EXTRA_JS_MODULES += [
+    MOZ_SRC_FILES += [
         "360seMigrationUtils.sys.mjs",
         "ChromeWindowsLoginCrypto.sys.mjs",
         "EdgeProfileMigrator.sys.mjs",
@@ -56,7 +53,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     EXPORTS += [
         "nsKeychainMigrationUtils.h",
     ]
-    EXTRA_JS_MODULES += [
+    MOZ_SRC_FILES += [
         "ChromeMacOSLoginCrypto.sys.mjs",
         "SafariProfileMigrator.sys.mjs",
     ]

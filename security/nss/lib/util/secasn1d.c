@@ -1281,6 +1281,22 @@ sec_asn1d_prepare_for_contents(sec_asn1d_state *state)
                  */
                 if (item->data == NULL) {
                     PORT_Assert(item->len == 0);
+                    /*
+                     * The allocation below comes from our_pool, which is freed
+                     * when decoding finishes.  Our destination is shared with
+                     * our parent and may be the caller's SECItem, which the
+                     * caller frees itself when decoding without an arena, so
+                     * give ourselves a private one to hold the substring.
+                     */
+                    if (state->parent != NULL && item == state->parent->dest) {
+                        item = (SECItem *)sec_asn1d_zalloc(state->top->our_pool,
+                                                           sizeof(*item));
+                        if (item == NULL) {
+                            state->top->status = decodeError;
+                            break;
+                        }
+                        state->dest = item;
+                    }
                     poolp = state->top->our_pool;
                 } else {
                     alloc_len = 0;
@@ -2247,6 +2263,7 @@ sec_asn1d_concat_substrings(sec_asn1d_state *state)
         unsigned long alloc_len, item_len;
         unsigned char *where;
         SECItem *item;
+        PLArenaPool *poolp;
         PRBool is_bit_string;
 
         item_len = 0;
@@ -2289,11 +2306,26 @@ sec_asn1d_concat_substrings(sec_asn1d_state *state)
             return;
         }
 
+        poolp = state->top->their_pool;
+        if (state->substring) {
+            /*
+             * Our parent copies this into its own result, so allocate it from
+             * our_pool rather than leaking it when decoding without an arena.
+             * It lands above our mark, so drop the mark instead of releasing
+             * it when we pop; our parent's mark still covers everything.
+             */
+            if (state->child != NULL) {
+                PORT_ArenaUnmark(state->top->our_pool, state->our_mark);
+                state->child = NULL;
+                state->our_mark = NULL;
+            }
+            poolp = state->top->our_pool;
+        }
+
         item = (SECItem *)(state->dest);
         PORT_Assert(item != NULL);
         PORT_Assert(item->data == NULL);
-        item->data = (unsigned char *)sec_asn1d_zalloc(state->top->their_pool,
-                                                       alloc_len);
+        item->data = (unsigned char *)sec_asn1d_zalloc(poolp, alloc_len);
         if (item->data == NULL) {
             state->top->status = decodeError;
             return;

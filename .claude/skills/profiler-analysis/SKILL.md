@@ -1,6 +1,7 @@
 ---
 name: profiler-analysis
-description: Analyze Firefox performance profiles using the profiler-cli CLI tool. Trigger when given a profiler.firefox.com or share.firefox.dev link, a local profile path, or when the user wants to investigate an issue in a Firefox profile. Always use this skill instead of WebFetch for Firefox profiler URLs; WebFetch only retrieves the profiler UI's HTML shell and cannot access profile data, whereas profiler-cli downloads and parses the actual profile into a local daemon that supports structured queries over stacks, markers, threads, and samples.
+description: |
+  Analyze Firefox performance profiles using the profiler-cli CLI tool. Trigger when given a profiler.firefox.com or share.firefox.dev link, a local profile path, or when the user wants to investigate an issue in a Firefox profile. Always use this skill instead of WebFetch for Firefox profiler URLs; WebFetch only retrieves the profiler UI's HTML shell and cannot access profile data, whereas profiler-cli downloads and parses the actual profile into a local daemon that supports structured queries over stacks, markers, threads, and samples. Not for capturing a new profile: if no profile exists yet and one has to be recorded use profile-capture instead.
 argument-hint: "[profile path or URL]"
 allowed-tools:
   - Bash(profiler-cli:*)
@@ -16,6 +17,8 @@ You are helping a Mozilla Firefox engineer analyze a Firefox performance profile
 # How to Help the User
 
 Before doing anything else, verify `profiler-cli` is installed by running `profiler-cli --version`. If the command is not found, STOP immediately: tell the user to install it (`npm install -g @firefox-devtools/profiler-cli@latest`) and restart the agent, then end your turn. Do NOT attempt any workaround. In particular, do not download profiles from Taskcluster or artifact URLs, do not fetch them with WebFetch, and do not parse profile JSON by hand. `profiler-cli` is the only supported way to load and analyze a profile, and there is no acceptable fallback.
+
+A profile from a local build or from the firefox-devtools MCP is unsymbolicated. Load it with `profiler-cli load --with-samply <path>`. This needs profiler-cli 0.10.0 or newer; if it is older, tell the user to run `npm install -g @firefox-devtools/profiler-cli@latest` and stop.
 
 When invoked:
 

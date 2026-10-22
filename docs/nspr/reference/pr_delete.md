@@ -25,6 +25,6 @@ One of the following values:
 
 ## Description
 
-{ref}`PR_Delete` deletes a file with the specified pathname `name`. If
+{doc}`pr_delete` deletes a file with the specified pathname `name`. If
 the function fails, the error code can then be retrieved via
-{ref}`PR_GetError`.
+{doc}`pr_geterror`.

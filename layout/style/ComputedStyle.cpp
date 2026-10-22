@@ -236,11 +236,11 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
     }
   }
 
-  if (HasAuthorSpecifiedBorderOrBackground() !=
-      aNewStyle.HasAuthorSpecifiedBorderOrBackground()) {
+  if (HasAuthorOrUserSpecifiedBorderOrBackground() !=
+      aNewStyle.HasAuthorOrUserSpecifiedBorderOrBackground()) {
     const StyleAppearance appearance = StyleDisplay()->EffectiveAppearance();
     if (appearance != StyleAppearance::None &&
-        nsLayoutUtils::AuthorSpecifiedBorderBackgroundDisablesTheming(
+        nsLayoutUtils::AuthorOrUserSpecifiedBorderBackgroundDisablesTheming(
             appearance)) {
       // A background-specified change may cause padding to change, so we may
       // need to reflow.  We use the same hint here as we do for "appearance"

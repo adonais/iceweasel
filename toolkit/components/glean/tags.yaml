@@ -515,6 +515,8 @@ $schema: moz://mozilla.org/schemas/glean/tags/1-0-0
   description: The Bugzilla component which applies to this object.
 'Toolkit :: Printing':
   description: The Bugzilla component which applies to this object.
+'Toolkit :: Push Service':
+  description: The Bugzilla component which applies to this object.
 'Toolkit :: Reader Mode':
   description: The Bugzilla component which applies to this object.
 'Toolkit :: Safe Browsing':

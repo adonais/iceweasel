@@ -1286,6 +1286,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     g.windowUtils.wrCapture();
   }
 
+  ResetRenderingState();
+
   var output;
   var extra;
 
@@ -1454,8 +1456,6 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
   }
   g[isRecordingRef ? "canvas2" : "canvas1"] = g.currentCanvas;
   g.currentCanvas = null;
-
-  ResetRenderingState();
 
   switch (g.currentURLTargetType) {
     case URL_TARGET_TYPE_TEST:

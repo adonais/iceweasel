@@ -5,6 +5,15 @@
 :host {
   display: block;
   width: 100%;
+  --resume-section-empty-border-color: light-dark(var(--color-violet-30), var(--color-violet-60));
+  --resume-section-skeleton-fill-color: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 25%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 35%, transparent)
+  );
+  --resume-section-skeleton-shimmer-color: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 45%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 55%, transparent)
+  );
 }
 
 .resume-section-heading {
@@ -36,4 +45,150 @@
 /* A single card spans the row; trailing odd cards in a longer list don't. */
 .resume-section-grid > :only-child {
   grid-column: 1 / -1;
+}
+
+.resume-section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xsmall);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-large);
+  border: var(--border-width) solid var(--resume-section-empty-border-color);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-color-box);
+}
+
+.resume-section-empty-heading {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  height: var(--size-item-small);
+  color: var(--text-color);
+}
+
+.resume-section-empty-description {
+  font-size: var(--font-size-small);
+  height: var(--size-item-medium);
+  color: var(--text-color-deemphasized);
+}
+
+.resume-section-empty-hide {
+  margin-block-start: var(--space-small);
+  --button-border-radius: var(--border-radius-circle);
+  --button-background-color: transparent;
+  --button-background-color-hover: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 15%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 25%, transparent)
+  );
+  /* moz-button has no default active-state background outside Nova. */
+  --button-background-color-active: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 25%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 35%, transparent)
+  );
+  /* Nova's tokens supply a visible default border; without Nova, moz-button's
+   * border shorthand falls back to a transparent border color, so it must be
+   * set directly rather than through --button-border-color alone. */
+  --button-border: var(--border-width) solid var(--resume-section-empty-border-color);
+  --button-border-color-hover: var(--resume-section-empty-border-color);
+  --button-border-color-active: var(--resume-section-empty-border-color);
+  --button-border-color-selected: var(--resume-section-empty-border-color);
+  --button-text-color: var(--text-color);
+}
+
+.resume-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  box-sizing: border-box;
+  padding: var(--space-large);
+  border: var(--border-width) solid var(--resume-section-empty-border-color);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-color-box);
+}
+
+.resume-card-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+
+.resume-card-skeleton-favicons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+}
+
+.resume-card-skeleton-favicon {
+  width: var(--size-item-small);
+  height: var(--size-item-small);
+  border-radius: var(--border-radius-circle);
+  background-color: var(--resume-section-skeleton-fill-color);
+}
+
+.resume-card-skeleton-tab-count {
+  width: 4em;
+}
+
+.resume-card-skeleton-title {
+  width: 60%;
+}
+
+.resume-card-skeleton-description {
+  width: 95%;
+}
+
+.resume-card-skeleton-description + .resume-card-skeleton-description {
+  width: 75%;
+}
+
+.resume-card-skeleton-actions {
+  display: flex;
+  gap: var(--space-small);
+  margin-block-start: auto;
+  padding-block-start: var(--space-xsmall);
+}
+
+.resume-card-skeleton-button {
+  width: 6em;
+  border-radius: var(--border-radius-circle);
+}
+
+/* Both classes are always applied together in markup; this needs to
+ * out-specificity .resume-section-skeleton-text's own `height`, not just
+ * rely on being declared later in the file. */
+.resume-section-skeleton-text.resume-card-skeleton-button {
+  height: var(--size-item-medium);
+}
+
+/* A non-interactive placeholder bar shown while a card's real content is
+ * still loading. */
+.resume-section-skeleton-text {
+  display: block;
+  height: var(--size-item-xsmall);
+  border-radius: var(--border-radius-circle);
+  background-color: var(--resume-section-skeleton-fill-color);
+  overflow: hidden;
+  position: relative;
+}
+
+.resume-section-skeleton-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, var(--resume-section-skeleton-shimmer-color) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: resume-section-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes resume-section-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-section-skeleton-text::after {
+    animation: none;
+  }
 }

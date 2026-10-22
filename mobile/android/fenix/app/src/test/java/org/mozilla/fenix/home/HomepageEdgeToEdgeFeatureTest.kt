@@ -29,8 +29,10 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
+import org.mozilla.fenix.wallpapers.WallpaperState
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -44,6 +46,9 @@ class HomepageEdgeToEdgeFeatureTest {
         mockk(relaxed = true) {
             every { mode } returns BrowsingMode.Normal
         }
+
+    private fun appStoreWith(wallpaper: Wallpaper) =
+        AppStore(AppState(wallpaperState = WallpaperState.default.copy(currentWallpaper = wallpaper)))
 
     @Test
     fun `GIVEN feature is disabled WHEN feature starts THEN wallpaper updates are not observed`() =
@@ -101,6 +106,224 @@ class HomepageEdgeToEdgeFeatureTest {
             )
             assertEquals(
                 R.drawable.home_background_gradient,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN EdgeToEdge wallpaper is already selected WHEN feature starts THEN the gradient is applied without waiting for a state update`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.EdgeToEdge),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+
+            assertEquals(
+                R.drawable.home_background_gradient,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN the status bar height is not known yet WHEN EdgeToEdge wallpaper is selected THEN the gradient is applied before insets arrive`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val appStore = AppStore()
+            appStore.dispatch(AppAction.WallpaperAction.UpdateCurrentWallpaper(Wallpaper.EdgeToEdge))
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStore,
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(
+                R.drawable.home_background_gradient,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN EdgeToEdge wallpaper is already selected WHEN feature starts THEN status bar background is not duplicated`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val decorView = activity.window.decorView as ViewGroup
+            val initialChildCount = decorView.childCount
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.EdgeToEdge),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(initialChildCount + 1, decorView.childCount)
+        }
+
+    @Test
+    fun `GIVEN another wallpaper is already selected WHEN feature starts THEN the regular background is used and no status bar background is added`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val decorView = activity.window.decorView as ViewGroup
+            val initialChildCount = decorView.childCount
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.Default),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(initialChildCount, decorView.childCount)
+            assertEquals(
+                R.color.fx_mobile_surface,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN EdgeToEdge wallpaper is active WHEN insets arrive THEN status bar background takes the status bar height`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val decorView = activity.window.decorView as ViewGroup
+            val initialChildCount = decorView.childCount
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.EdgeToEdge),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+            testScheduler.advanceUntilIdle()
+
+            val statusBarBackground = decorView.getChildAt(initialChildCount)
+            ViewCompat.dispatchApplyWindowInsets(
+                statusBarBackground,
+                WindowInsetsCompat.Builder()
+                    .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, 42, 0, 0))
+                    .build(),
+            )
+
+            assertEquals(42, statusBarBackground.layoutParams.height)
+        }
+
+    @Test
+    fun `GIVEN insets report no status bar WHEN EdgeToEdge wallpaper is selected THEN the gradient is still applied`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val decorView = activity.window.decorView as ViewGroup
+            val initialChildCount = decorView.childCount
+            val appStore = AppStore()
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStore,
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+            appStore.dispatch(AppAction.WallpaperAction.UpdateCurrentWallpaper(Wallpaper.EdgeToEdge))
+            testScheduler.advanceUntilIdle()
+            ViewCompat.dispatchApplyWindowInsets(
+                decorView.getChildAt(initialChildCount),
+                WindowInsetsCompat.Builder()
+                    .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, 0, 0, 0))
+                    .build(),
+            )
+
+            assertEquals(
+                R.drawable.home_background_gradient,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN EdgeToEdge wallpaper is selected WHEN the feature is stopped and started again THEN the gradient is applied again`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+            val decorView = activity.window.decorView as ViewGroup
+            val initialChildCount = decorView.childCount
+            val feature =
+                HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.EdgeToEdge),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            testScheduler.advanceUntilIdle()
+            feature.stop()
+            feature.start()
+
+            assertEquals(initialChildCount + 1, decorView.childCount)
+            assertEquals(
+                R.drawable.home_background_gradient,
+                shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
+            )
+        }
+
+    @Test
+    fun `GIVEN private mode and EdgeToEdge wallpaper is already selected WHEN feature starts THEN the private background is applied`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+            every { settings.shouldUseBottomToolbar } returns false
+            every { browsingModeManager.mode } returns BrowsingMode.Private
+            val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+
+            HomepageEdgeToEdgeFeature(
+                    appStore = appStoreWith(Wallpaper.EdgeToEdge),
+                    activity = activity,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                    toolbarStore = BrowserToolbarStore(),
+                    mainDispatcher = testDispatcher,
+                )
+                .start()
+
+            assertEquals(
+                R.color.fx_mobile_private_surface,
                 shadowOf(shadowOf(activity.window).backgroundDrawable).createdFromResId,
             )
         }

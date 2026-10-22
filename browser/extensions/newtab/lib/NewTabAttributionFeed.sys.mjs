@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
@@ -30,6 +32,9 @@ const PREF_SYSTEM_SHOW_SPONSORED = "system.showSponsored";
  * - Cleared when user history is cleared.
  */
 export class NewTabAttributionFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
   }

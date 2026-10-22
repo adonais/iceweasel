@@ -268,8 +268,7 @@ add_task(async function test_contextual_manager_toggle() {
   }
   await testCustomizeToggle(
     "viewCPMSidebar",
-    Glean.contextualManager.passwordsEnabled,
-    false // Remove this in bug 1957425
+    Glean.contextualManager.passwordsEnabled
   );
   await SpecialPowers.popPrefEnv();
   await SidebarController.waitUntilStable();
@@ -306,7 +305,7 @@ add_task(async function test_customize_icon_click() {
   SidebarController.hide();
 });
 
-async function testCustomizeToggle(commandID, gleanEvent, checked = true) {
+async function testCustomizeToggle(commandID, gleanEvent) {
   await SidebarController.show("viewCustomizeSidebar");
   const customizeComponent =
     SidebarController.browser.contentDocument.querySelector(
@@ -320,17 +319,13 @@ async function testCustomizeToggle(commandID, gleanEvent, checked = true) {
     {},
     SidebarController.browser.contentWindow
   );
-  Assert.equal(
-    checkbox.checked,
-    !checked,
-    `Checkbox is ${checked ? "un" : ""}checked.`
-  );
+  Assert.ok(!checkbox.checked, "Checkbox is unchecked.");
   let events = gleanEvent.testGetValue();
   Assert.equal(events?.length, 1, "One event was reported.");
   Assert.deepEqual(
     events[0].extra,
-    { checked: `${!checked}` },
-    `Event indicates that the box was ${checked ? "un" : ""}checked.`
+    { checked: "false" },
+    "Event indicates that the box was unchecked."
   );
 
   info(`Re-toggle ${commandID}.`);
@@ -339,17 +334,13 @@ async function testCustomizeToggle(commandID, gleanEvent, checked = true) {
     {},
     SidebarController.browser.contentWindow
   );
-  Assert.equal(
-    checkbox.checked,
-    checked,
-    `Checkbox is ${checked ? "" : "un"}checked.`
-  );
+  Assert.ok(checkbox.checked, "Checkbox is checked.");
   events = gleanEvent.testGetValue();
   Assert.equal(events?.length, 2, "Two events were reported.");
   Assert.deepEqual(
     events[1].extra,
-    { checked: `${checked}` },
-    `Event indicates that the box was ${checked ? "" : "un"}checked.`
+    { checked: "true" },
+    "Event indicates that the box was checked."
   );
 
   SidebarController.hide();

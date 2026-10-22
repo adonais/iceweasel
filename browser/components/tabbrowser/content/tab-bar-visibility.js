@@ -60,15 +60,10 @@ var TabBarVisibility = {
 
     tabsToolbar.collapsed = hideTabsToolbar;
 
-    // Stylize close menu items based on tab visibility. When a window will only
-    // ever have a single tab, only show the option to close the tab, and
-    // simplify the text since we don't need to disambiguate from closing the window.
-    document.getElementById("menu_closeWindow").hidden = hideTabsToolbar;
-    document.l10n.setAttributes(
-      document.getElementById("menu_close"),
-      hideTabsToolbar
-        ? "tabbrowser-menuitem-close"
-        : "tabbrowser-menuitem-close-tab"
-    );
+    // When a window will only ever have a single tab, only show the option to
+    // close the tab. FileMenu simplifies its text since we don't need to
+    // disambiguate from closing the window.
+    document.getElementById("menu_closeWindow").hidden =
+      isSingleTabWindow && hasSingleTab;
   },
 };

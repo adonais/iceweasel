@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -71,10 +73,6 @@ skip-if = [
 ["test_conformance__textures__misc__png-image-types.html"]
 
 ["test_conformance__textures__misc__tex-image-and-sub-image-2d-with-array-buffer-view.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && debug",
-  "os == 'win' && os_version == '11.26200' && debug",
-]
 
 ["test_conformance__textures__misc__tex-image-and-uniform-binding-bugs.html"]
 
@@ -101,8 +99,6 @@ skip-if = [
 ["test_conformance__textures__misc__tex-video-using-tex-unit-non-zero.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
 ]
 
 ["test_conformance__textures__misc__texparameter-test.html"]
@@ -143,8 +139,6 @@ skip-if = [
 
 ["test_conformance__textures__misc__texture-npot-video.html"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100'", # win11 - 50/50 intermittent
-  "os == 'win' && os_version == '11.26200'", # win11 - 50/50 intermittent
   "os == 'android' && os_version == '14' && arch == 'aarch64'", # Bug 1873144
 ]
 
@@ -159,15 +153,10 @@ skip-if = [
 ]
 
 ["test_conformance__textures__misc__texture-size-limit.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
-]
 
 ["test_conformance__textures__misc__texture-size.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'", # Bug 1796057
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
 ]
 
 ["test_conformance__textures__misc__texture-srgb-upload.html"]
@@ -186,8 +175,6 @@ skip-if = [
 
 ["test_conformance__textures__misc__texture-upload-size.html"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
 ]
 

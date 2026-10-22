@@ -10,6 +10,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
+#include "vm/ObjectFuse.h"
 #include "vm/PlainObject.h"
 #include "vm/Realm.h"
 #include "vm/TypedArrayObject.h"
@@ -327,6 +328,17 @@ bool Watchtower::watchProtoChangeSlow(JSContext* cx, HandleObject obj) {
   }
 
   return true;
+}
+
+void Watchtower::watchGlobalLexicalRedeclaration(JSContext* cx,
+                                                 Handle<NativeObject*> obj) {
+  if (!obj->hasObjectFuse()) {
+    return;
+  }
+
+  if (ObjectFuse* fuse = obj->zone()->objectFuses.get(obj)) {
+    fuse->handleGlobalLexicalMutation(cx);
+  }
 }
 
 static void MaybePopArrayConstructorFuses(JSContext* cx, NativeObject* obj,

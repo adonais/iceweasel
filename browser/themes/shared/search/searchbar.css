@@ -92,7 +92,7 @@
    buttons due to event.preventDefault() in SearchOneOffs._on_mousedown(). */
 .searchbar-engine-one-off-item:not([selected]):hover {
   background-color: var(--urlbarview-background-color-hover);
-  color: inherit;
+  color: var(--urlbarview-text-color-hover);
 }
 
 .searchbar-engine-one-off-item[selected] {
@@ -121,6 +121,7 @@
 
 .search-panel-tree > .autocomplete-richlistitem:hover {
   background-color: var(--urlbarview-background-color-hover);
+  color: var(--urlbarview-text-color-hover);
 }
 
 .search-panel-tree > .autocomplete-richlistitem > .ac-type-icon {

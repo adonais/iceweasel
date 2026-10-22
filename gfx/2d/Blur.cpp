@@ -14,9 +14,12 @@
 #include "HelpersSkia.h"
 #include "NumericTools.h"
 #include "Tools.h"
+#include "skia/include/core/SkBlurTypes.h"
 #include "skia/include/core/SkCanvas.h"
 #include "skia/include/core/SkSurface.h"
 #include "skia/include/effects/SkImageFilters.h"
+#include "skia/src/core/SkBlurMask.h"
+#include "skia/src/core/SkMaskBlurFilter.h"
 
 namespace mozilla {
 namespace gfx {
@@ -299,6 +302,47 @@ void GaussianBlur::Blur(uint8_t* aData, int32_t aStride, const IntSize& aSize,
   }
 }
 
+static void FreeBlurredMask(const void*, void* aImage) {
+  SkMaskBuilder::FreeImage(aImage);
+}
+
+// Blurs an A8 image as a coverage mask, which is much cheaper than running a
+// blur image filter over a colored layer. Returns the blurred mask and its
+// offset relative to the source image, or nullptr if this isn't possible.
+SkImage* GaussianBlur::BlurAlphaMask(SkImage* aAlphaImage, const Point& aSigma,
+                                     SkPoint& aOffset) {
+  SkPixmap pixmap;
+  // Skia's mask blur is limited to uniform blur with sigma <= 135.
+  if (aSigma.x != aSigma.y || aSigma.x > 135.0f ||
+      aAlphaImage->colorType() != kAlpha_8_SkColorType ||
+      !aAlphaImage->peekPixels(&pixmap) ||
+      !SkTFitsIn<uint32_t>(pixmap.rowBytes())) {
+    return nullptr;
+  }
+  SkMask src(pixmap.addr8(0, 0), pixmap.bounds(), uint32_t(pixmap.rowBytes()),
+             SkMask::kA8_Format);
+  SkMaskBuilder dst;
+  SkMaskBlurFilter blurFilter(aSigma.x, aSigma.y);
+  if (blurFilter.hasNoBlur()) {
+    return nullptr;
+  }
+  blurFilter.blur(src, &dst);
+  if (dst.image() && dst.format() == SkMask::kA8_Format) {
+    SkPixmap dstPixmap(
+        SkImageInfo::MakeA8(dst.bounds().width(), dst.bounds().height()),
+        dst.image(), dst.rowBytes());
+    if (sk_sp<SkImage> blurred = SkImages::RasterFromPixmap(
+            dstPixmap, FreeBlurredMask, dst.image())) {
+      aOffset = SkPoint::Make(dst.bounds().left(), dst.bounds().top());
+      return blurred.release();
+    }
+  }
+  if (dst.image()) {
+    SkMaskBuilder::FreeImage(dst.image());
+  }
+  return nullptr;
+}
+
 bool GaussianBlur::BlurSkSurface(SkSurface* aSurface) const {
   IntSize size(aSurface->width(), aSurface->height());
   MOZ_ASSERT(mRect.IsEmpty() || size == mRect.Size());
@@ -330,37 +374,47 @@ bool GaussianBlur::BlurSkSurface(SkSurface* aSurface) const {
   canvas->resetMatrix();
   SkPaint blurPaint;
   blurPaint.setBlendMode(SkBlendMode::kSrc);
-  sk_sp<SkImageFilter> blurFilter(SkImageFilters::Blur(
-      mBlurSigma.x, mBlurSigma.y,
-      mClamp ? SkTileMode::kClamp : SkTileMode::kDecal, nullptr));
-  blurPaint.setImageFilter(blurFilter);
+  SkPoint offset = SkPoint::Make(0, 0);
+  sk_sp<SkImage> blurred(
+      !mClamp ? BlurAlphaMask(snapshot.get(), mBlurSigma, offset) : nullptr);
+  if (blurred) {
+    snapshot = blurred;
+  } else {
+    sk_sp<SkImageFilter> blurFilter(SkImageFilters::Blur(
+        mBlurSigma.x, mBlurSigma.y,
+        mClamp ? SkTileMode::kClamp : SkTileMode::kDecal, nullptr));
+    blurPaint.setImageFilter(blurFilter);
+  }
   SkSamplingOptions sampling(SkFilterMode::kNearest);
   auto constraint = SkCanvas::kFast_SrcRectConstraint;
   if (mSkipRect.IsEmpty()) {
-    canvas->drawImage(snapshot, 0, 0, sampling, &blurPaint);
+    canvas->drawImage(snapshot, offset.x(), offset.y(), sampling, &blurPaint);
   } else {
-    SkRect top = SkRect::MakeIWH(size.width, size.height);
-    if (top.intersect(SkRect::MakeLTRB(0, 0, size.width, mSkipRect.y))) {
-      canvas->drawImageRect(snapshot, top, top, sampling, &blurPaint,
-                            constraint);
+    SkRect skipRect = IntRectToSkRect(mSkipRect).makeOffset(-offset);
+    SkRect bounds = SkRect::Make(snapshot->bounds());
+    SkRect top = SkRect::MakeLTRB(bounds.left(), bounds.top(), bounds.right(),
+                                  skipRect.top());
+    if (top.intersect(bounds)) {
+      canvas->drawImageRect(snapshot, top, top.makeOffset(offset), sampling,
+                            &blurPaint, constraint);
     }
-    SkRect left = SkRect::MakeIWH(size.width, size.height);
-    if (left.intersect(
-            SkRect::MakeLTRB(0, mSkipRect.y, mSkipRect.x, mSkipRect.YMost()))) {
-      canvas->drawImageRect(snapshot, left, left, sampling, &blurPaint,
-                            constraint);
+    SkRect left = SkRect::MakeLTRB(bounds.left(), skipRect.top(),
+                                   skipRect.left(), skipRect.bottom());
+    if (left.intersect(bounds)) {
+      canvas->drawImageRect(snapshot, left, left.makeOffset(offset), sampling,
+                            &blurPaint, constraint);
     }
-    SkRect right = SkRect::MakeIWH(size.width, size.height);
-    if (right.intersect(SkRect::MakeLTRB(mSkipRect.XMost(), mSkipRect.y,
-                                         size.width, mSkipRect.YMost()))) {
-      canvas->drawImageRect(snapshot, right, right, sampling, &blurPaint,
-                            constraint);
+    SkRect right = SkRect::MakeLTRB(skipRect.right(), skipRect.top(),
+                                    bounds.right(), skipRect.bottom());
+    if (right.intersect(bounds)) {
+      canvas->drawImageRect(snapshot, right, right.makeOffset(offset), sampling,
+                            &blurPaint, constraint);
     }
-    SkRect bottom = SkRect::MakeIWH(size.width, size.height);
-    if (bottom.intersect(
-            SkRect::MakeLTRB(0, mSkipRect.YMost(), size.width, size.height))) {
-      canvas->drawImageRect(snapshot, bottom, bottom, sampling, &blurPaint,
-                            constraint);
+    SkRect bottom = SkRect::MakeLTRB(bounds.left(), skipRect.bottom(),
+                                     bounds.right(), bounds.bottom());
+    if (bottom.intersect(bounds)) {
+      canvas->drawImageRect(snapshot, bottom, bottom.makeOffset(offset),
+                            sampling, &blurPaint, constraint);
     }
   }
   canvas->restore();

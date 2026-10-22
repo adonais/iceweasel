@@ -10,7 +10,6 @@ license = "MPL-2.0"
 cstr = "0.2"
 env_logger = {version = "0.10", default-features = false } # disable `regex` to reduce code size
 futures-executor = { version = "0.3" }
-lazy_static = "1"
 log = "0.4"
 nserror = { path = "../../../../xpcom/rust/nserror" }
 moz_task = { path = "../../../../xpcom/rust/moz_task" }
@@ -21,6 +20,9 @@ xpcom = { path = "../../../../xpcom/rust/xpcom" }
 
 [target."cfg(any(target_os = \"macos\", target_os = \"ios\"))".dependencies.core-foundation]
 version = "0.9"
+
+[target."cfg(any(target_os = \"macos\", target_os = \"ios\"))".dependencies.lazy_static]
+version = "1"
 
 [target."cfg(any(target_os = \"macos\", target_os = \"ios\"))".dependencies.libloading]
 version = "0.8"

@@ -1,7 +1,7 @@
 # PRAccessHow
 
-This is the declaration for the enumeration {ref}`PRAccessHow`, used in the
-`how` parameter of {ref}`PR_Access`:
+This is the declaration for the enumeration {doc}`praccesshow`, used in the
+`how` parameter of {doc}`pr_access`:
 
 ```{code}
 #include <prio.h>

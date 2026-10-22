@@ -23,7 +23,7 @@ DIRS += [
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
-    # mingw is missing Windows toast notification definitions.
+    # mingw-w64 is missing the WRL headers the toast notification code uses.
     if CONFIG["CC_TYPE"] == "clang-cl":
         if CONFIG["MOZ_NOTIFICATION_SERVER"]:
             DIRS += ["mozapps/notificationserver"]

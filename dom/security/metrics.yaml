@@ -527,4 +527,3 @@ security.ui:
       - seceng-telemetry@mozilla.com
       - fxprivacyandsecurity@mozilla.com
     expires: never
-    telemetry_mirror: SECURITY_UI

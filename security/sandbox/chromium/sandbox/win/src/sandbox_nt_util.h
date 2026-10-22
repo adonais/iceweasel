@@ -116,6 +116,10 @@ std::optional<base::span<const uint8_t>> GetGlobalDelegateData();
 // Returns a reference to imported NT functions.
 const NtExports* GetNtExports();
 
+// Returns whether AllocateNearTo would find space for `size` above `source`,
+// which is where a module's interception thunks have to be allocated.
+bool CanAllocateNearTo(void* source, size_t size);
+
 enum RequiredAccess { READ, WRITE };
 
 // Performs basic user mode buffer validation. In any case, buffers access must

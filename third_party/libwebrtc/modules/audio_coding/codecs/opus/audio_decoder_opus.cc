@@ -34,9 +34,8 @@ AudioDecoderOpusImpl::AudioDecoderOpusImpl(const FieldTrialsView& field_trials,
       generate_plc_(field_trials.IsEnabled("WebRTC-Audio-OpusGeneratePlc")) {
   RTC_DCHECK(num_channels == 1 || num_channels == 2);
   RTC_DCHECK(sample_rate_hz == 16000 || sample_rate_hz == 48000);
-  const int error =
-      WebRtcOpus_DecoderCreate(&dec_state_, channels_, sample_rate_hz_);
-  RTC_DCHECK(error == 0);
+  RTC_CHECK_EQ(
+      WebRtcOpus_DecoderCreate(&dec_state_, channels_, sample_rate_hz_), 0);
   WebRtcOpus_DecoderInit(dec_state_);
 }
 
@@ -121,9 +120,7 @@ int AudioDecoderOpusImpl::PacketDurationRedundant(const uint8_t* encoded,
 
 bool AudioDecoderOpusImpl::PacketHasFec(const uint8_t* encoded,
                                         size_t encoded_len) const {
-  int fec;
-  fec = WebRtcOpus_PacketHasFec(encoded, encoded_len);
-  return (fec == 1);
+  return WebRtcOpus_PacketHasFec(encoded, encoded_len) == 1;
 }
 
 int AudioDecoderOpusImpl::SampleRateHz() const {

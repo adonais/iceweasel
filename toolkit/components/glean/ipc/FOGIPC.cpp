@@ -150,6 +150,12 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount) {
   ProcessType processType = gThisProcessType;
 
+  // Glean now (de)registers its threads, so on shutdown of the dispatcher
+  // thread we need to avoid calling back into Glean.
+  if (aThreadName.EqualsLiteral("glean.dispatcher")) {
+    return;
+  }
+
   if (processType == ProcessType::eUnknown) {
     if (XRE_IsParentProcess()) {
       // During startup we might not have gotten a RecordPowerMetrics call.
@@ -689,7 +695,8 @@ void TestTriggerMetrics(uint32_t aProcessType,
     } break;
     case nsIXULRuntime::PROCESS_TYPE_UTILITY:
       (void)ipc::UtilityProcessManager::GetSingleton()
-          ->GetProcessParent(ipc::SandboxingKind::GENERIC_UTILITY)
+          ->GetSharedKeepAlive(ipc::SandboxingKind::GENERIC_UTILITY)
+          ->GetProcessParent()
           ->SendTestTriggerMetrics()
           ->Then(
               GetCurrentSerialEventTarget(), __func__,

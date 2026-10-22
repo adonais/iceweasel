@@ -1,5 +1,11 @@
 [DEFAULT]
 
+["browser_fontface_buffer_concurrent.js"]
+support-files = [
+  "file_fontface_buffer_concurrent.html",
+  "file_fontface_buffer_concurrent_worker.js",
+]
+
 ["browser_native_font_cache_macos.js"]
 support-files = ["file_native_font_cache_macos.html"]
 run-if = [

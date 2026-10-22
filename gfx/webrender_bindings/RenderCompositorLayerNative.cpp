@@ -287,12 +287,6 @@ void RenderCompositorLayerNative::UnbindNativeLayer() {
   mCurrentlyBoundNativeLayer = nullptr;
 }
 
-void RenderCompositorLayerNative::CreateSurface(
-    wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-    wr::DeviceIntSize aTileSize, bool aIsOpaque) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
 void RenderCompositorLayerNative::CreateExternalSurface(wr::NativeSurfaceId aId,
                                                         bool aIsOpaque) {
   MOZ_RELEASE_ASSERT(mSurfaces.find(aId) == mSurfaces.end());
@@ -373,16 +367,6 @@ void RenderCompositorLayerNative::DestroySurface(NativeSurfaceId aId) {
   MOZ_RELEASE_ASSERT(surfaceCursor != mSurfaces.end());
 
   mSurfaces.erase(surfaceCursor);
-}
-
-void RenderCompositorLayerNative::CreateTile(wr::NativeSurfaceId aId, int aX,
-                                             int aY) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-}
-
-void RenderCompositorLayerNative::DestroyTile(wr::NativeSurfaceId aId, int aX,
-                                              int aY) {
-  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 /* static */

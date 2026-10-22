@@ -61,7 +61,7 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
@@ -3529,19 +3529,15 @@ void nsWindow::DispatchPanGesture(PanGestureInput& aPanInput) {
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
 
-    result = mAPZC->InputBridge()->ReceiveInputEvent(aPanInput);
+    result = mAPZC->Bridge()->ReceiveInputEvent(aPanInput);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return;
     }
   }
 
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
-  if (!mAPZC) {
-    if (MayStartSwipeForNonAPZ(aPanInput)) {
-      return;
-    }
-  } else {
-    event = MayStartSwipeForAPZ(aPanInput, result);
+  if (mAPZC) {
+    event = MayStartSwipe(aPanInput, result);
   }
 
   ProcessUntransformedAPZEvent(&event, result);

@@ -18,6 +18,7 @@
 #include "js/experimental/BindingAllocs.h"
 #include "js/experimental/JitInfo.h"  // JSJitGetterOp, JSJitInfo
 #include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy, js::ToWindowProxyIfWindow
+#include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
@@ -1188,11 +1189,7 @@ MOZ_ALWAYS_INLINE bool MaybeWrapValue(JSContext* cx,
     // the way strings are handled. At present, this is used primarily
     // for structured cloning, so avoiding the overhead of JS_WrapValue
     // calls is less important than for other types.
-    if (rval.isBigInt()) {
-      return JS_WrapValue(cx, rval);
-    }
-    MOZ_ASSERT(rval.isSymbol());
-    JS_MarkCrossZoneId(cx, JS::PropertyKey::Symbol(rval.toSymbol()));
+    return JS_WrapValue(cx, rval);
   }
   return true;
 }
@@ -2846,6 +2843,9 @@ class MOZ_STACK_CLASS BindingJSObjectCreator {
 
   ~BindingJSObjectCreator() {
     if (mReflector) {
+      if (IsDOMProxy(mReflector)) {
+        js::SetProxyPrivate(mReflector, JS::UndefinedValue());
+      }
       JS::SetReservedSlot(mReflector, DOM_OBJECT_SLOT, JS::UndefinedValue());
     }
   }

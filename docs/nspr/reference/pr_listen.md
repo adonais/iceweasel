@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a socket that will
+: A pointer to a {doc}`prfiledesc` object representing a socket that will
   be used to listen for new connections.
 
 `backlog`
@@ -31,12 +31,12 @@ The function returns one of the following values:
 
 - Upon successful completion of listen request, `PR_SUCCESS`.
 - If unsuccessful, `PR_FAILURE`. Further information can be obtained
-  by calling {ref}`PR_GetError`.
+  by calling {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_Listen` turns the specified socket into a rendezvous socket. It
+{doc}`pr_listen` turns the specified socket into a rendezvous socket. It
 creates a queue for pending connections and starts to listen for
 connection requests on the socket. The maximum size of the queue for
 pending connections is specified by the `backlog` parameter. Pending
-connections may be accepted by calling {ref}`PR_Accept`.
+connections may be accepted by calling {doc}`pr_accept`.

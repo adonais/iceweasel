@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NonPrivateTabs: "resource:///modules/OpenTabs.sys.mjs",
   OpenTabsController: "resource:///modules/OpenTabsController.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   SidebarCollapsedWindows:
     "moz-src:///browser/components/sidebar/SidebarCollapsedWindows.sys.mjs",
   SidebarTreeView:
@@ -297,7 +299,7 @@ export class SidebarOpenTabs extends SidebarPage {
     const headerL10nId = isCurrent
       ? "sidebar-opentabs-current-window-header"
       : "sidebar-opentabs-window-header";
-    const windowId = win.__SSi;
+    const windowId = lazy.SessionStore.getWindowId(win);
     const expanded = !lazy.SidebarCollapsedWindows.isCollapsed(win);
     return html`
       <moz-card

@@ -13,6 +13,6 @@ PRErrorCode PR_GetError(void)
 ### Returns
 
 The value returned is a 32-bit number. NSPR provides no direct
-interpretation of the number's value. NSPR does use {ref}`PR_SetError` to
+interpretation of the number's value. NSPR does use {doc}`pr_seterror` to
 set error numbers defined in [Error
 Codes](nspr_error_handling.md#error-codes).

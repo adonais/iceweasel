@@ -8,7 +8,6 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/ProcInfo.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/hwinference/PHWInferenceParent.h"
@@ -16,7 +15,9 @@
 
 namespace mozilla::hwinference {
 
-// HWInference parent process side
+class HWInferenceProcess;
+
+// Main-process side of PHWInference, bound to one process for its lifetime.
 class HWInferenceParent final : public PHWInferenceParent {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HWInferenceParent, override);
@@ -42,30 +43,35 @@ class HWInferenceParent final : public PHWInferenceParent {
     return ipc::UtilityActorName::HwInference;
   }
 
+  // Called by UtilityProcessManager once the process is up.
   nsresult BindToUtilityProcess(
       const RefPtr<ipc::UtilityProcessParent>& aUtilityParent);
 
-  // Resolved once this actor is bound to its utility process, rejected if that
-  // process goes away before it can be.
+  // Resolved once bound, rejected if the process dies or never comes up.
   RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
 
-  // Forwards aEndpoint to the HWInference process once its actor is ready. The
-  // caller must hold a keep-alive, see
-  // UtilityProcessManager::AcquireContentHWInferenceProcess().
-  static void StartContentSpeechRecognition(
+  // Sends aEndpoint once bound. The caller must hold a keep-alive.
+  void StartContentSpeechRecognition(
       Endpoint<PSpeechRecognitionParent>&& aEndpoint,
       dom::ContentParentId aChildId);
 
-  static RefPtr<HWInferenceParent> GetSingleton();
+  // Same for a text generator; aModel is the model file the parent opened.
+  void StartTextGeneration(Endpoint<PTextGenerationChild>&& aEndpoint,
+                           const ipc::FileDescriptor& aModel,
+                           const TextGenerationOptions& aOptions);
 
  private:
   friend PHWInferenceParent;
-  static StaticRefPtr<HWInferenceParent> sInstance;
+  friend class HWInferenceProcess;
+
   ~HWInferenceParent() = default;
 
-  // The utility process this actor is bound to, null until BindToUtilityProcess
-  // and once destroyed. An instance is only ever bound to one process.
-  RefPtr<ipc::UtilityProcessParent> mUtilityParent;
+  // Runs aSend(*this) once bound, drops it if the process never comes up.
+  template <typename Send>
+  void SendWhenReady(Send&& aSend);
+
+  // Cleared once the owner has taken this actor's last report.
+  HWInferenceProcess* mOwner = nullptr;
 
   const RefPtr<GenericNonExclusivePromise::Private> mReadyPromise =
       new GenericNonExclusivePromise::Private(

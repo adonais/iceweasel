@@ -37,6 +37,49 @@ const NetworkConditionsType = {
   Offline: "offline",
 };
 
+// All features currently supported by the specification.
+// @see https://www.w3.org/TR/webdriver-bidi/#cddl-type-emulationmediafeatures.
+const MEDIA_FEATURES = {
+  "any-hover": ["none", "hover"],
+  "any-pointer": ["none", "coarse", "fine"],
+  color: "number",
+  "color-gamut": ["srgb", "p3", "rec2020"],
+  "color-index": "number",
+  "display-mode": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui",
+    "browser",
+    "picture-in-picture",
+  ],
+  "dynamic-range": ["standard", "high"],
+  "environment-blending": ["opaque", "additive", "subtractive"],
+  "forced-colors": ["none", "active"],
+  grid: [0, 1],
+  "horizontal-viewport-segments": "number",
+  hover: ["none", "hover"],
+  "inverted-colors": ["none", "inverted"],
+  monochrome: "number",
+  "nav-controls": ["none", "back"],
+  "overflow-block": ["none", "scroll", "optional-paged", "paged"],
+  "overflow-inline": ["none", "scroll"],
+  pointer: ["none", "coarse", "fine"],
+  "prefers-color-scheme": ["light", "dark"],
+  "prefers-contrast": ["no-preference", "more", "less", "custom"],
+  "prefers-reduced-data": ["no-preference", "reduce"],
+  "prefers-reduced-motion": ["no-preference", "reduce"],
+  "prefers-reduced-transparency": ["no-preference", "reduce"],
+  scan: ["interlace", "progressive"],
+  scripting: ["none", "initial-only", "enabled"],
+  update: ["none", "slow", "fast"],
+  "vertical-viewport-segments": "number",
+  "video-color-gamut": ["srgb", "p3", "rec2020"],
+  "video-dynamic-range": ["standard", "high"],
+};
+
+// The features that are currently supported by the Firefox WebDriver BiDi implementation.
+const SUPPORTED_MEDIA_FEATURES = ["prefers-color-scheme"];
+
 /**
  * Enum of possible natural orientations supported by the
  * emulation.setOrientationOverride command.
@@ -302,6 +345,88 @@ class EmulationModule extends RootBiDiModule {
         supportsGlobalConfiguration: false,
         userContextIds,
         value: locale,
+      },
+    });
+  }
+
+  /**
+   * Set media feature overrides globally or for the provided top-level
+   * navigables or user contexts.
+   *
+   * @param {object=} options
+   * @param {Array<string>=} options.contexts
+   *     Optional list of browsing context ids.
+   * @param {(object|null)} options.features
+   *     Media features to override. Null resets the override.
+   * @param {Array<string>=} options.userContexts
+   *     Optional list of user context ids.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {NoSuchUserContextError}
+   *     Raised if the user context id could not be found.
+   * @throws {UnsupportedOperationError}
+   *     Raised if a media feature is not supported.
+   */
+  async setMediaFeaturesOverride(options = {}) {
+    const {
+      contexts: contextIds,
+      features,
+      userContexts: userContextIds,
+    } = options;
+
+    if (features !== null) {
+      lazy.assert.object(
+        features,
+        lazy.pprint`Expected "features" to be an object, got ${features}`
+      );
+
+      const featuresSupportedBySpec = Object.keys(MEDIA_FEATURES);
+      for (const [feature, value] of Object.entries(features)) {
+        lazy.assert.in(
+          feature,
+          featuresSupportedBySpec,
+          `Expected "features.${feature}" to be one of ${featuresSupportedBySpec}, got "${feature}"`
+        );
+
+        if (!SUPPORTED_MEDIA_FEATURES.includes(feature)) {
+          throw new lazy.error.UnsupportedOperationError(
+            `Overriding the "${feature}" media feature is not supported`
+          );
+        }
+
+        const supportedValue = MEDIA_FEATURES[feature];
+        if (value !== null) {
+          if (supportedValue === "number") {
+            lazy.assert.number(
+              value,
+              `Expected "features.${feature}" to be a number or null, got "${value}"`
+            );
+          } else {
+            lazy.assert.in(
+              value,
+              supportedValue,
+              `Expected "features.${feature}" to be one of ${supportedValue} or null, got "${value}"`
+            );
+          }
+        }
+      }
+    }
+
+    await this.messageHandler.handleCommand({
+      moduleName: "_configuration",
+      commandName: "_applyConfigurationParameters",
+      destination: { type: lazy.RootMessageHandler.type },
+      params: {
+        async: true,
+        category: lazy.SessionDataCategory.MediaFeaturesOverride,
+        contextIds,
+        resetValue: null,
+        supportsGlobalConfiguration: true,
+        userContextIds,
+        value: features,
       },
     });
   }
@@ -705,6 +830,50 @@ export const setLocaleOverrideForBrowsingContext = options => {
 
   const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
   lazy.logger.trace(`[${contextId}] Updated locale override to: ${value}`);
+};
+
+/**
+ * Set media feature overrides for the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object to update.
+ * @param {(object|null)} options.value
+ *     Media features to override. Null resets the overrides.
+ */
+export const setMediaFeaturesOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  if (value === null) {
+    context.prefersColorSchemeOverride = "none";
+
+    lazy.logger.trace(`[${contextId}] Reset media feature overrides`);
+
+    return;
+  }
+
+  for (const [feature, featureValue] of Object.entries(value)) {
+    switch (feature) {
+      case "prefers-color-scheme": {
+        context.prefersColorSchemeOverride =
+          featureValue === null ? "none" : featureValue;
+
+        break;
+      }
+      default: {
+        lazy.logger.warn(
+          `[${contextId}] Update for the media feature ${feature} is not supported`
+        );
+
+        return;
+      }
+    }
+
+    lazy.logger.trace(
+      `[${contextId}] ${featureValue === null ? `Reset media feature override for "${feature}" feature` : `Updated media feature override for "${feature}" feature to: ${JSON.stringify(featureValue)}`}`
+    );
+  }
 };
 
 /**

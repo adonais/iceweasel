@@ -629,7 +629,8 @@ static bool SnapTargetIsFlattenedTreeDescendantOf(
       ResolveSnapTargetToContent(aPossibleAncestor));
 }
 
-static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
+static std::pair<const SnapTarget*, const SnapTarget*>
+GetCandidateInLastTargets(
     const ScrollSnapInfo& aSnapInfo, const nsPoint& aCurrentPosition,
     const UniquePtr<ScrollSnapTargetIds>& aLastSnapTargetIds,
     const nsIContent* aFocusedContent, const nsIContent* aTargetContent,
@@ -763,13 +764,11 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   // Select the first candidate from each set in tree order, using a
   // cross-axis visibility check to prefer targets whose snap area remains
   // visible at the combined snap position.
-  Maybe<nscoord> x, y;
-
   const ScrollSnapInfo::SnapTarget* inlinePick{nullptr};
   const ScrollSnapInfo::SnapTarget* blockPick{nullptr};
   auto pickFromInline = [&]() {
-    Maybe<nscoord>& inlineCoord = isVertical ? y : x;
-    const Maybe<nscoord>& blockCoord = isVertical ? x : y;
+    const Maybe<nscoord> blockCoord =
+        blockPick ? blockPick->mSnapPoint.B(aWM) : Nothing();
     for (const auto* target : effective) {
       // When effective == blockSet, targets may not have an inline snap point.
       const auto& sp = target->mSnapPoint.I(aWM);
@@ -780,7 +779,6 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
                              nsRect(isVertical ? nsPoint(*blockCoord, *sp)
                                                : nsPoint(*sp, *blockCoord),
                                     aSnapInfo.mSnapportSize))) {
-        inlineCoord = sp;
         inlinePick = target;
         return;
       }
@@ -788,8 +786,8 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   };
 
   auto pickFromBlock = [&]() {
-    Maybe<nscoord>& blockCoord = isVertical ? x : y;
-    const Maybe<nscoord>& inlineCoord = isVertical ? y : x;
+    const Maybe<nscoord> inlineCoord =
+        inlinePick ? inlinePick->mSnapPoint.I(aWM) : Nothing();
     for (const auto* target : effective) {
       // When effective == inlineSet, targets may not have a block snap point.
       const auto& sp = target->mSnapPoint.B(aWM);
@@ -800,7 +798,6 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
                               nsRect(isVertical ? nsPoint(*sp, *inlineCoord)
                                                 : nsPoint(*inlineCoord, *sp),
                                      aSnapInfo.mSnapportSize))) {
-        blockCoord = sp;
         blockPick = target;
         return;
       }
@@ -823,7 +820,7 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
     }
   }
 
-  return {x, y};
+  return {inlinePick, blockPick};
 }
 
 Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
@@ -839,9 +836,18 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
                                       aCurrentPosition);
   }
 
-  auto [x, y] =
+  auto [inlineTarget, blockTarget] =
       GetCandidateInLastTargets(aSnapInfo, aCurrentPosition, aLastSnapTargetIds,
                                 aFocusedContent, aTargetContent, aWritingMode);
+
+  Maybe<nscoord> x, y;
+  if (aWritingMode.IsVertical()) {
+    x = blockTarget ? blockTarget->mSnapPoint.mX : Nothing();
+    y = inlineTarget ? inlineTarget->mSnapPoint.mY : Nothing();
+  } else {
+    x = inlineTarget ? inlineTarget->mSnapPoint.mX : Nothing();
+    y = blockTarget ? blockTarget->mSnapPoint.mY : Nothing();
+  }
   if (!x && !y) {
     // In the worst case there's no longer valid snap points previously snapped,
     // try to find new valid snap points.

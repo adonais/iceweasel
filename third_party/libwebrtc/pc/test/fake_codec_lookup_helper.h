@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "absl/base/nullability.h"
+#include "api/field_trials_view.h"
 #include "call/payload_type.h"
 #include "pc/codec_vendor.h"
 #include "pc/connection_context.h"
@@ -26,9 +28,8 @@ class FakeCodecLookupHelper : public CodecLookupHelper {
                                  const FieldTrialsView& field_trials)
       : context_(context),
         field_trials_(&field_trials),
-        codec_vendor_(
-            std::make_unique<::webrtc::CodecVendor>(context->media_engine(),
-                                                    context->use_rtx(),
+        codec_vendor_(std::make_unique<CodecVendor>(context->media_engine(),
+                                                    /*rtx_enabled=*/true,
                                                     *field_trials_)) {}
   webrtc::PayloadTypeSuggester* PayloadTypeSuggester() override {
     // Not used in this test.
@@ -41,8 +42,8 @@ class FakeCodecLookupHelper : public CodecLookupHelper {
   // Used by tests that manipulate the factory's codecs and expect the
   // result to show up in the codec vendor's output.
   void Reset() {
-    codec_vendor_ = std::make_unique<::webrtc::CodecVendor>(
-        context_->media_engine(), context_->use_rtx(), *field_trials_);
+    codec_vendor_ = std::make_unique<CodecVendor>(
+        context_->media_engine(), /*rtx_enabled=*/true, *field_trials_);
   }
 
  private:

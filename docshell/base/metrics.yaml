@@ -161,4 +161,3 @@ page:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: PAGE_LOAD_ERROR

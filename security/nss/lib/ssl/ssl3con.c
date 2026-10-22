@@ -1678,8 +1678,7 @@ SECStatus
 ssl3_VerifySignedHashes(sslSocket *ss, SSLSignatureScheme scheme, SSL3Hashes *hash,
                         SECItem *buf)
 {
-    SECKEYPublicKey *pubKey =
-        SECKEY_ExtractPublicKey(&ss->sec.peerCert->subjectPublicKeyInfo);
+    SECKEYPublicKey *pubKey = SECKEY_ExtractPublicKey(ss->sec.peerCertSPKI);
     if (pubKey == NULL) {
         ssl_MapLowLevelError(SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE);
         return SECFailure;
@@ -6796,7 +6795,7 @@ ssl3_SendClientKeyExchange(sslSocket *ss)
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     if (ss->sec.peerKey == NULL) {
-        serverKey = CERT_ExtractPublicKey(ss->sec.peerCert);
+        serverKey = SECKEY_ExtractPublicKey(ss->sec.peerCertSPKI);
         if (serverKey == NULL) {
             ssl_MapLowLevelError(SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE);
             return SECFailure;
@@ -7712,8 +7711,12 @@ ssl3_HandleServerHelloPart2(sslSocket *ss, const SECItem *sidBytes,
             ss->ssl3.hs.isResuming = PR_TRUE;
 
             /* copy the peer cert from the SID */
-            if (sid->peerCert != NULL) {
-                ss->sec.peerCert = CERT_DupCertificate(sid->peerCert);
+            if (sid->peerCertDER.data != NULL) {
+                rv = ssl_SetPeerCertificate(&ss->sec, &sid->peerCertDER);
+                if (rv != SECSuccess) {
+                    errCode = PORT_GetError();
+                    goto loser;
+                }
             }
 
             /* We are re-using the old MS, so no need to derive again. */
@@ -7870,8 +7873,8 @@ ssl_HandleDHServerKeyExchange(sslSocket *ss, PRUint8 *b, PRUint32 length)
         if (rv != SECSuccess) {
             goto loser; /* alert already sent */
         }
-        rv = ssl_CheckSignatureSchemeConsistency(
-            ss, sigScheme, &ss->sec.peerCert->subjectPublicKeyInfo);
+        rv = ssl_CheckSignatureSchemeConsistency(ss, sigScheme,
+                                                 ss->sec.peerCertSPKI);
         if (rv != SECSuccess) {
             goto alert_loser;
         }
@@ -9620,7 +9623,7 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
          * and this is the first handshake on this connection (not a redo),
          * then drop this old cache entry and start a new session.
          */
-        if ((sid->peerCert == NULL) && ss->opt.requestCertificate &&
+        if ((sid->peerCertDER.data == NULL) && ss->opt.requestCertificate &&
             ((ss->opt.requireCertificate == SSL_REQUIRE_ALWAYS) ||
              (ss->opt.requireCertificate == SSL_REQUIRE_NO_ERROR) ||
              ((ss->opt.requireCertificate == SSL_REQUIRE_FIRST_HANDSHAKE) &&
@@ -9885,8 +9888,15 @@ cipher_found:
             }
 
             ssl_SetSocketSID(ss, sid);
-            if (sid->peerCert != NULL) {
-                ss->sec.peerCert = CERT_DupCertificate(sid->peerCert);
+            /* On a renegotiation |ss->sec| can hold a client certificate while
+             * |sid| has none; keep it rather than clearing unconditionally.
+             * ssl_SetPeerCertificate() already replaces any previous one. */
+            if (sid->peerCertDER.data != NULL) {
+                rv = ssl_SetPeerCertificate(&ss->sec, &sid->peerCertDER);
+                if (rv != SECSuccess) {
+                    errCode = PORT_GetError();
+                    goto loser;
+                }
             }
 
             /*
@@ -10846,8 +10856,8 @@ ssl3_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
             }
             goto loser; /* alert already sent */
         }
-        rv = ssl_CheckSignatureSchemeConsistency(
-            ss, sigScheme, &ss->sec.peerCert->subjectPublicKeyInfo);
+        rv = ssl_CheckSignatureSchemeConsistency(ss, sigScheme,
+                                                 ss->sec.peerCertSPKI);
         if (rv != SECSuccess) {
             errCode = PORT_GetError();
             desc = illegal_parameter;
@@ -11252,7 +11262,8 @@ ssl3_HandleClientKeyExchange(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
     ssl_FreeEphemeralKeyPairs(ss);
     if (rv == SECSuccess) {
-        ss->ssl3.hs.ws = ss->sec.peerCert ? wait_cert_verify : wait_change_cipher;
+        ss->ssl3.hs.ws = ss->sec.peerCertDER.data ? wait_cert_verify
+                                                  : wait_change_cipher;
     } else {
         /* PORT_SetError has been called by all the Handle*ClientKeyExchange
          * functions above.  However, not all error paths result in an alert, so
@@ -11632,13 +11643,12 @@ ssl3_CleanupPeerCerts(sslSocket *ss)
     ss->ssl3.peerCertArena = NULL;
     ss->ssl3.peerCertChain = NULL;
 
-    if (ss->sec.peerCert != NULL) {
+    if (ss->sec.peerCertDER.data != NULL) {
         if (ss->sec.peerKey) {
             SECKEY_DestroyPublicKey(ss->sec.peerKey);
             ss->sec.peerKey = NULL;
         }
-        CERT_DestroyCertificate(ss->sec.peerCert);
-        ss->sec.peerCert = NULL;
+        ssl_ClearPeerCertificate(&ss->sec);
     }
 }
 
@@ -11809,12 +11819,12 @@ ssl3_CompleteHandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
     length -= size;
     remaining -= size;
 
-    ss->sec.peerCert = CERT_NewTempCertificate(ss->dbHandle, &certItem, NULL,
-                                               PR_FALSE, PR_TRUE);
-    if (ss->sec.peerCert == NULL) {
-        /* We should report an alert if the cert was bad, but not if the
-         * problem was just some local problem, like memory error.
-         */
+    /* This keeps the DER and the subjectPublicKeyInfo parsed out of it;
+     * nothing is added to any certificate database.  We should report an alert
+     * if the cert was bad, but not if the problem was just some local problem,
+     * like memory error.
+     */
+    if (ssl_SetPeerCertificate(&ss->sec, &certItem) != SECSuccess) {
         goto ambiguous_err;
     }
 
@@ -11855,8 +11865,6 @@ ssl3_CompleteHandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
         }
         lastCert = c;
     }
-
-    SECKEY_UpdateCertPQG(ss->sec.peerCert);
 
     if (!isServer &&
         ss->version < SSL_LIBRARY_VERSION_TLS_1_3 &&
@@ -11991,7 +11999,8 @@ ssl3_HandleServerSpki(sslSocket *ss)
         sslDelegatedCredential *dc = ss->xtnData.peerDelegCred;
         pubKey = SECKEY_ExtractPublicKey(dc->spki);
         if (!pubKey) {
-            PORT_SetError(SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE);
+            FATAL_ERROR(ss, SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE,
+                        illegal_parameter);
             return SECFailure;
         }
 
@@ -12001,9 +12010,10 @@ ssl3_HandleServerSpki(sslSocket *ss)
          */
         ss->sec.signatureScheme = dc->expectedCertVerifyAlg;
     } else {
-        pubKey = CERT_ExtractPublicKey(ss->sec.peerCert);
+        pubKey = SECKEY_ExtractPublicKey(ss->sec.peerCertSPKI);
         if (!pubKey) {
-            PORT_SetError(SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE);
+            FATAL_ERROR(ss, SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE,
+                        bad_certificate);
             return SECFailure;
         }
     }
@@ -12037,8 +12047,7 @@ ssl3_AuthCertificate(sslSocket *ss)
          * certificate. */
         rv = ssl3_HandleServerSpki(ss);
         if (rv != SECSuccess) {
-            /* Alert sent and code set (if not SSL_ERROR_EXTRACT_PUBLIC_KEY_FAILURE).
-             * In either case, we're done here. */
+            /* Alert sent and code set. */
             errCode = PORT_GetError();
             goto loser;
         }
@@ -12097,10 +12106,15 @@ ssl3_AuthCertificate(sslSocket *ss)
         }
     }
 
-    if (ss->sec.ci.sid->peerCert) {
-        CERT_DestroyCertificate(ss->sec.ci.sid->peerCert);
+    SECITEM_FreeItem(&ss->sec.ci.sid->peerCertDER, PR_FALSE);
+    if (ss->sec.peerCertDER.data) {
+        rv = SECITEM_CopyItem(NULL, &ss->sec.ci.sid->peerCertDER,
+                              &ss->sec.peerCertDER);
+        if (rv != SECSuccess) {
+            errCode = PORT_GetError();
+            goto loser;
+        }
     }
-    ss->sec.ci.sid->peerCert = CERT_DupCertificate(ss->sec.peerCert);
 
     if (!ss->sec.isServer) {
         if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {

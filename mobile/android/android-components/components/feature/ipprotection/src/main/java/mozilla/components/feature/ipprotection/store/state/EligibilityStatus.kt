@@ -6,7 +6,7 @@ package mozilla.components.feature.ipprotection.store.state
 
 /** Whether the user qualifies to use IP Protection. */
 sealed interface EligibilityStatus {
-    /** Feature is yet to initialize. */
+    /** Feature is yet to initialize or no region has been set. */
     data object Unknown : EligibilityStatus
 
     /** Feature is not available for the user, due to the Nimbus config. */

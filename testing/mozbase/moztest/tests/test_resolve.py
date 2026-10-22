@@ -192,7 +192,7 @@ def all_tests(create_tests):
                 "flavor": "browser-chrome",
                 "manifest": "kiwi/browser.toml",
                 "subsuite": "devtools",
-                "tags": "devtools",
+                "tags": "devtools kiwi-tag",
             },
         ),
     ])
@@ -602,6 +602,13 @@ def test_resolve_metadata_file_not_suite(resolver):
     assert suites == set()
     assert len(tests) == 1
     assert tests[0]["file_relpath"] == "apple/test_a11y.html"
+
+
+def test_resolve_metadata_tag_entry(resolver):
+    """Test that an entry which is not a path is looked up as a tag."""
+    suites, tests = resolver.resolve_metadata(["kiwi-tag"])
+    assert suites == set()
+    assert [t["file_relpath"] for t in tests] == ["kiwi/browser_devtools.js"]
 
 
 def test_ancestor_manifest_defaults(resolver, topsrcdir, defaults):

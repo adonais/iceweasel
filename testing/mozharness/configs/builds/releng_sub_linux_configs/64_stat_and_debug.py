@@ -30,7 +30,4 @@ config = {
         "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
         ##
     },
-    # This doesn't actually inherit from anything.
-    "mozconfig_platform": "linux64",
-    "mozconfig_variant": "debug-static-analysis-clang",
 }

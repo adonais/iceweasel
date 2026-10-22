@@ -378,72 +378,177 @@ add_task(async function test_ml_smoke_test_llama_fails() {
 });
 
 add_task(async function test_ml_smoke_test_llama_sequential_runs() {
-  const { cleanup } = await setup();
-  try {
-    const engine = await createEngine({
-      taskName: "text-generation",
-      modelId: "Mozilla/test-llama",
-      modelFile: "TinyStories-656K.Q8_0.gguf",
-      modelRevision: "main",
-      backend: "llama.cpp",
-      numContext: 128,
-    });
+  await runOnBothInferenceProcesses(async () => {
+    const { cleanup } = await setup();
+    try {
+      const engine = await createEngine({
+        taskName: "text-generation",
+        modelId: "Mozilla/test-llama",
+        modelFile: "TinyStories-656K.Q8_0.gguf",
+        modelRevision: "main",
+        backend: "llama.cpp",
+        numContext: 128,
+      });
 
-    const request = {
-      prompt: [
-        { role: "system", content: "blah" },
-        { role: "user", content: "Once upon a time there was" },
-      ],
-      nPredict: 16,
-    };
+      const request = {
+        prompt: [
+          { role: "system", content: "blah" },
+          { role: "user", content: "Once upon a time there was" },
+        ],
+        nPredict: 16,
+      };
 
-    await engine.run(request);
-    await engine.run(request);
-    Assert.ok(true, "Two sequential run() calls completed without rejection");
-  } finally {
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
+      await engine.run(request);
+      await engine.run(request);
+      Assert.ok(true, "Two sequential run() calls completed without rejection");
+    } finally {
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
+    }
+  });
 });
 
 add_task(async function test_ml_smoke_test_llama_overlap_guard() {
-  const { cleanup } = await setup();
-  try {
-    const engine = await createEngine({
-      taskName: "text-generation",
-      modelId: "Mozilla/test-llama",
-      modelFile: "TinyStories-656K.Q8_0.gguf",
-      modelRevision: "main",
-      backend: "llama.cpp",
-      numContext: 128,
-    });
+  await runOnBothInferenceProcesses(async () => {
+    const { cleanup } = await setup();
+    try {
+      const engine = await createEngine({
+        taskName: "text-generation",
+        modelId: "Mozilla/test-llama",
+        modelFile: "TinyStories-656K.Q8_0.gguf",
+        modelRevision: "main",
+        backend: "llama.cpp",
+        numContext: 128,
+      });
 
-    const request = {
-      prompt: [
-        { role: "system", content: "blah" },
-        { role: "user", content: "Once upon a time there was" },
-      ],
-      nPredict: 128,
-    };
+      const request = {
+        prompt: [
+          { role: "system", content: "blah" },
+          { role: "user", content: "Once upon a time there was" },
+        ],
+        nPredict: 128,
+      };
 
-    const results = await Promise.allSettled([
-      engine.run(request),
-      engine.run(request),
-    ]);
+      const results = await Promise.allSettled([
+        engine.run(request),
+        engine.run(request),
+      ]);
 
-    const rejections = results
-      .filter(r => r.status === "rejected")
-      .map(r => String(r.reason?.message ?? r.reason));
+      const rejections = results
+        .filter(r => r.status === "rejected")
+        .map(r => String(r.reason?.message ?? r.reason));
 
-    Assert.ok(
-      rejections.some(m => m.includes("A generation is already in progress")),
-      `Expected a rejection from the LlamaRunner guard, got: ${JSON.stringify(rejections)}`
-    );
-  } finally {
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
+      Assert.ok(
+        rejections.some(m => m.includes("A generation is already in progress")),
+        `Expected a rejection from the LlamaRunner guard, got: ${JSON.stringify(rejections)}`
+      );
+    } finally {
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
+    }
+  });
 });
+
+// Abandoning a generator has to end the underlying run, otherwise the
+// LlamaRunner concurrency guard rejects the next request.
+add_task(
+  async function test_ml_smoke_test_llama_abandoned_generator_allows_next() {
+    await runOnBothInferenceProcesses(async () => {
+      const { cleanup } = await setup();
+      try {
+        const engine = await createEngine({
+          taskName: "text-generation",
+          modelId: "Mozilla/test-llama",
+          modelFile: "TinyStories-656K.Q8_0.gguf",
+          modelRevision: "main",
+          backend: "llama.cpp",
+          numContext: 256,
+        });
+
+        const request = {
+          prompt: [
+            { role: "system", content: "blah" },
+            { role: "user", content: "Once upon a time there was" },
+          ],
+          nPredict: 200,
+        };
+
+        let chunks = 0;
+        for await (const chunk of engine.runWithGenerator(request)) {
+          Assert.ok(chunk, "Received a chunk before abandoning the generator");
+          chunks++;
+          break;
+        }
+        Assert.equal(chunks, 1, "Abandoned the generator after one chunk");
+
+        // Both forms hit the same LlamaRunner guard.
+        const result = await engine.run(request);
+        Assert.ok(
+          result.finalOutput.length,
+          "The request after an abandoned generator generated text"
+        );
+      } finally {
+        await EngineProcess.destroyMLEngine();
+        await cleanup();
+      }
+    });
+  }
+);
+
+// An abandoned run is still recorded as run_inference_success_flow, so
+// engine_run has to report it too.
+add_task(
+  async function test_ml_smoke_test_llama_abandoned_records_engine_run() {
+    await runOnBothInferenceProcesses(async () => {
+      const { cleanup } = await setup();
+      try {
+        const engine = await createEngine({
+          taskName: "text-generation",
+          modelId: "Mozilla/test-llama",
+          modelFile: "TinyStories-656K.Q8_0.gguf",
+          modelRevision: "main",
+          backend: "llama.cpp",
+          numContext: 256,
+        });
+
+        const request = {
+          prompt: [
+            { role: "system", content: "blah" },
+            { role: "user", content: "Once upon a time there was" },
+          ],
+          nPredict: 200,
+        };
+
+        for await (const chunk of engine.runWithGenerator(request)) {
+          Assert.ok(chunk, "Received a chunk before abandoning the generator");
+          break;
+        }
+
+        await waitForCondition(
+          () =>
+            Glean.firefoxAiRuntime.runInferenceSuccessFlow.testGetValue()
+              ?.length,
+          "Waiting for the abandoned run to complete in the child."
+        );
+
+        await waitForCondition(
+          () => Glean.firefoxAiRuntime.engineRun.testGetValue()?.length,
+          "Waiting for engine_run to be recorded for the abandoned run."
+        );
+
+        const [engineRun] = Glean.firefoxAiRuntime.engineRun.testGetValue();
+        Assert.equal(
+          engineRun.extra.backend,
+          "llama.cpp",
+          "The recorded run reports the backend that generated it"
+        );
+      } finally {
+        await EngineProcess.destroyMLEngine();
+        await cleanup();
+      }
+    });
+  }
+);
 
 /**
  * Runs a full end-to-end test on the llama.cpp backend with a model that loads in llama but crashes during inference.
@@ -463,19 +568,21 @@ add_task(async function test_ml_smoke_test_llama_crash() {
  * split across multiple chunks before isPhaseCompleted is set.
  */
 add_task(async function test_ml_smoke_test_llama_long_prompt_metrics() {
-  await llama_works({
-    prompt: [
-      { role: "system", content: "You are a friendly storyteller." },
-      {
-        role: "user",
-        content:
-          "Tell me a short story about a brave little mouse who travels " +
-          "across a great forest, meets many friends along the way, and " +
-          "finally finds a tiny treasure chest hidden behind a waterfall " +
-          "at the top of the tallest hill in the whole valley.",
-      },
-    ],
-    expectMultiChunkPrefill: true,
+  await runOnBothInferenceProcesses(async () => {
+    await llama_works({
+      prompt: [
+        { role: "system", content: "You are a friendly storyteller." },
+        {
+          role: "user",
+          content:
+            "Tell me a short story about a brave little mouse who travels " +
+            "across a great forest, meets many friends along the way, and " +
+            "finally finds a tiny treasure chest hidden behind a waterfall " +
+            "at the top of the tallest hill in the whole valley.",
+        },
+      ],
+      expectMultiChunkPrefill: true,
+    });
   });
 });
 
@@ -486,65 +593,69 @@ add_task(async function test_ml_smoke_test_llama_long_prompt_metrics() {
 // greedy output matches a pinned golden text + SHA-256 hash.
 
 add_task(async function test_ml_smoke_test_llama_output_looks_like_text() {
-  const { cleanup } = await setup();
-  try {
-    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+  await runOnBothInferenceProcesses(async () => {
+    const { cleanup } = await setup();
     try {
-      const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
-      info(`Output: ${text}`);
+      const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+      try {
+        const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+        info(`Output: ${text}`);
 
-      Assert.greater(text.length, 0, "Generation produced text");
-      Assert.notEqual(
-        text.trim(),
-        LLAMA_SMOKE_PROMPT_A[1].content.trim(),
-        "Output is not a verbatim echo of the user prompt"
-      );
+        Assert.greater(text.length, 0, "Generation produced text");
+        Assert.notEqual(
+          text.trim(),
+          LLAMA_SMOKE_PROMPT_A[1].content.trim(),
+          "Output is not a verbatim echo of the user prompt"
+        );
 
-      const pr = printableRatio(text);
-      info(`Printable-ASCII ratio: ${pr.toFixed(3)}`);
-      Assert.greater(
-        pr,
-        0.9,
-        `Output should be mostly printable text (got ${pr.toFixed(3)})`
-      );
+        const pr = printableRatio(text);
+        info(`Printable-ASCII ratio: ${pr.toFixed(3)}`);
+        Assert.greater(
+          pr,
+          0.9,
+          `Output should be mostly printable text (got ${pr.toFixed(3)})`
+        );
 
-      const dr = distinctTokenRatio(text);
-      info(`Distinct-token ratio: ${dr.toFixed(3)}`);
-      Assert.greater(
-        dr,
-        0.3,
-        `Output should not be a degenerate loop (got ${dr.toFixed(3)})`
-      );
+        const dr = distinctTokenRatio(text);
+        info(`Distinct-token ratio: ${dr.toFixed(3)}`);
+        Assert.greater(
+          dr,
+          0.3,
+          `Output should not be a degenerate loop (got ${dr.toFixed(3)})`
+        );
+      } finally {
+        await engine.terminate?.();
+      }
     } finally {
-      await engine.terminate?.();
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
     }
-  } finally {
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
+  });
 });
 
 add_task(async function test_ml_smoke_test_llama_prompt_sensitive() {
-  const { cleanup } = await setup();
-  try {
-    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+  await runOnBothInferenceProcesses(async () => {
+    const { cleanup } = await setup();
     try {
-      const a = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
-      const b = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_B);
-      info(`Prompt A output: ${a}`);
-      info(`Prompt B output: ${b}`);
-      Assert.notEqual(
-        a,
-        b,
-        "Different prompts should produce different greedy outputs"
-      );
+      const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+      try {
+        const a = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+        const b = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_B);
+        info(`Prompt A output: ${a}`);
+        info(`Prompt B output: ${b}`);
+        Assert.notEqual(
+          a,
+          b,
+          "Different prompts should produce different greedy outputs"
+        );
+      } finally {
+        await engine.terminate?.();
+      }
     } finally {
-      await engine.terminate?.();
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
     }
-  } finally {
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
+  });
 });
 
 // Golden-output check. Catches silent changes in token selection
@@ -574,47 +685,49 @@ const LLAMA_SMOKE_GOLDEN = {
 };
 
 add_task(async function test_ml_smoke_test_llama_golden_text() {
-  const arch = Services.sysinfo.getProperty("arch");
-  const isMacIntel = AppConstants.platform === "macosx" && arch !== "aarch64";
-  if (isMacIntel) {
-    ok(
-      true,
-      "Skipping golden-text on macOS Intel 10.15: TinyStories greedy " +
-        "output is in a third arch bucket and within-engine determinism " +
-        "is unreliable there (Bug 2047025)."
-    );
-    return;
-  }
-
-  const golden = LLAMA_SMOKE_GOLDEN[arch];
-  if (!golden) {
-    ok(true, `Skipping golden-text: no output pinned for arch ${arch}.`);
-    return;
-  }
-
-  const { cleanup } = await setup();
-  try {
-    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
-    try {
-      const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
-      const hash = await sha256Hex(text);
-      info(`Greedy text: ${text}`);
-      info(`Greedy SHA-256: ${hash}`);
-      Assert.equal(
-        text,
-        golden.text,
-        "Greedy output matches the pinned golden text"
+  await runOnBothInferenceProcesses(async () => {
+    const arch = Services.sysinfo.getProperty("arch");
+    const isMacIntel = AppConstants.platform === "macosx" && arch !== "aarch64";
+    if (isMacIntel) {
+      ok(
+        true,
+        "Skipping golden-text on macOS Intel 10.15: TinyStories greedy " +
+          "output is in a third arch bucket and within-engine determinism " +
+          "is unreliable there (Bug 2047025)."
       );
-      Assert.equal(
-        hash,
-        golden.hash,
-        "Greedy output hash matches the pinned golden hash"
-      );
-    } finally {
-      await engine.terminate?.();
+      return;
     }
-  } finally {
-    await EngineProcess.destroyMLEngine();
-    await cleanup();
-  }
+
+    const golden = LLAMA_SMOKE_GOLDEN[arch];
+    if (!golden) {
+      ok(true, `Skipping golden-text: no output pinned for arch ${arch}.`);
+      return;
+    }
+
+    const { cleanup } = await setup();
+    try {
+      const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+      try {
+        const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+        const hash = await sha256Hex(text);
+        info(`Greedy text: ${text}`);
+        info(`Greedy SHA-256: ${hash}`);
+        Assert.equal(
+          text,
+          golden.text,
+          "Greedy output matches the pinned golden text"
+        );
+        Assert.equal(
+          hash,
+          golden.hash,
+          "Greedy output hash matches the pinned golden hash"
+        );
+      } finally {
+        await engine.terminate?.();
+      }
+    } finally {
+      await EngineProcess.destroyMLEngine();
+      await cleanup();
+    }
+  });
 });

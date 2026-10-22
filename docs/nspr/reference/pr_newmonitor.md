@@ -15,7 +15,7 @@ PRMonitor* PR_NewMonitor(void);
 
 The function returns one of the following values:
 
-- If successful, a pointer to a {ref}`PRMonitor` object.
+- If successful, a pointer to a {doc}`prmonitor` object.
 - If unsuccessful (for example, if some operating system resource is
   unavailable), `NULL`.
 

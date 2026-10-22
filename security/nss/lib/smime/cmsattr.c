@@ -28,8 +28,7 @@
 /*
  * NSS_CMSAttribute_Create - create an attribute
  *
- * if value is NULL, the attribute won't have a value. It can be added later
- * with NSS_CMSAttribute_AddValue.
+ * if value is NULL, the attribute won't have a value.
  */
 NSSCMSAttribute *
 NSS_CMSAttribute_Create(PLArenaPool *poolp, SECOidTag oidtag, SECItem *value,
@@ -72,39 +71,6 @@ loser:
     PORT_Assert(mark != NULL);
     PORT_ArenaRelease(poolp, mark);
     return NULL;
-}
-
-/*
- * NSS_CMSAttribute_AddValue - add another value to an attribute
- */
-SECStatus
-NSS_CMSAttribute_AddValue(PLArenaPool *poolp, NSSCMSAttribute *attr, SECItem *value)
-{
-    SECItem *copiedvalue;
-    void *mark;
-
-    PORT_Assert(poolp != NULL);
-
-    mark = PORT_ArenaMark(poolp);
-
-    if (value == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        goto loser;
-    }
-
-    if ((copiedvalue = SECITEM_ArenaDupItem(poolp, value)) == NULL)
-        goto loser;
-
-    if (NSS_CMSArray_Add(poolp, (void ***)&(attr->values), (void *)copiedvalue) != SECSuccess)
-        goto loser;
-
-    PORT_ArenaUnmark(poolp, mark);
-    return SECSuccess;
-
-loser:
-    PORT_Assert(mark != NULL);
-    PORT_ArenaRelease(poolp, mark);
-    return SECFailure;
 }
 
 /*

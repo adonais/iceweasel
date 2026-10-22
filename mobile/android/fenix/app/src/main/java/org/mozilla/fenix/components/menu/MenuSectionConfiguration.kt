@@ -13,6 +13,9 @@ sealed interface FenixExpandableMenuItem {
 
 /** All items that can be shown in the menu. */
 sealed interface FenixMenuItem {
+    /** A banner allowing to set this application as the default browser. */
+    data object DefaultBrowserBanner : FenixMenuItem
+
     /** A menu item allowing to customize the reader view. */
     data object CustomizeReaderView : FenixMenuItem
 
@@ -21,6 +24,9 @@ sealed interface FenixMenuItem {
 
     /** A menu item allowing to bookmark the current page, or to edit the bookmark it already has. */
     data object Bookmark : FenixMenuItem
+
+    /** A menu item expanding to the user's extensions, or to a list of recommended ones. */
+    data object Extensions : FenixMenuItem
 
     /** A menu item allowing to start the find in page feature. */
     data object FindInPage : FenixMenuItem
@@ -65,8 +71,29 @@ sealed interface FenixMenuItem {
     /** A menu item allowing to print the current webpage. */
     data object Print : FenixMenuItem
 
+    /** A menu item allowing to sign in or manage the current Mozilla account. */
+    data object MozillaAccount : FenixMenuItem
+
+    /** A menu item allowing to open the application settings. */
+    data object Settings : FenixMenuItem
+
+    /** A menu item allowing to delete the browsing data of this session and quit the application. */
+    data object Quit : FenixMenuItem
+
     /** A menu item allowing to navigate back. */
     data object Back : FenixMenuItem
+
+    /** A menu item allowing to open the history screen. */
+    data object History : FenixMenuItem
+
+    /** A menu item allowing to open the bookmarks screen. */
+    data object Bookmarks : FenixMenuItem
+
+    /** A menu item allowing to open the downloads screen. */
+    data object Downloads : FenixMenuItem
+
+    /** A menu item allowing to open the passwords screen. */
+    data object Passwords : FenixMenuItem
 
     /** A menu item allowing to navigate forward. */
     data object Forward : FenixMenuItem

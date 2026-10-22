@@ -85,10 +85,6 @@ support-files = [
 ["browser_rules_authored.js"]
 
 ["browser_rules_authored_color.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1781471
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1781471
-]
 
 ["browser_rules_authored_override.js"]
 
@@ -338,9 +334,6 @@ fail-if = [
 ["browser_rules_editable-field-focus_02.js"]
 
 ["browser_rules_eyedropper.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1781473
-]
 
 ["browser_rules_stylesheet_text.js"]
 
@@ -349,9 +342,6 @@ skip-if = [
 ["browser_rules_variables-in-pseudo-element_02.js"]
 
 ["browser_rules_variables-jump-to-definition.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
-]
 
 ["browser_rules_variables_01.js"]
 

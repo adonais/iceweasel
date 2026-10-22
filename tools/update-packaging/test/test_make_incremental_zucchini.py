@@ -277,6 +277,107 @@ def test_cache_lookup_none_local_hash(tmp_path):
     assert result is None
 
 
+FIXTURE_DIR = Path(__file__).resolve().parent
+
+
+def test_removed_files_entries_are_classified(tmp_path):
+    """Directory and recursive-directory entries get
+    rmdir/rmrfdir, and blank and commented lines are skipped."""
+    manifest = tmp_path / "updatev3.manifest"
+
+    with mock.patch.object(
+        mz, "get_text_from_compressed", lambda p: Path(p).read_text()
+    ):
+        mz.append_remove_instructions(str(FIXTURE_DIR / "to"), str(manifest))
+    lines = manifest.read_text().splitlines()
+
+    assert 'rmdir "dir/"' in lines
+    assert 'rmdir "notherdir/"' in lines
+    assert 'rmrfdir "recursivedir/meh/"' in lines
+    assert 'remove "removed1.txt"' in lines
+    assert not [line for line in lines if line == 'remove ""']
+    assert not [line for line in lines if "a comment line" in line]
+
+
+def test_append_remove_instructions_reads_bundle_relative_removed_files(tmp_path):
+    """<to>/Contents/Resources/removed-files is used when
+    <to>/removed-files is absent, which is the only location on mac."""
+    manifest = tmp_path / "updatev3.manifest"
+
+    with mock.patch.object(
+        mz, "get_text_from_compressed", lambda p: Path(p).read_text()
+    ):
+        mz.append_remove_instructions(str(FIXTURE_DIR / "to-mac"), str(manifest))
+    lines = manifest.read_text().splitlines()
+
+    assert 'remove "Contents/Resources/removed1.txt"' in lines
+    assert 'rmdir "Contents/Resources/dir/"' in lines
+    assert 'rmrfdir "Contents/MacOS/recursivedir/meh/"' in lines
+    assert not [line for line in lines if "a comment line" in line]
+
+
+def test_append_remove_instructions_prefers_top_level_removed_files(tmp_path):
+    """The fallback must not fire when <to>/removed-files exists."""
+    to_dir = tmp_path / "to"
+    _write(to_dir / "removed-files", b"top-level.txt\n")
+    _write(to_dir / "Contents" / "Resources" / "removed-files", b"bundle.txt\n")
+    manifest = tmp_path / "updatev3.manifest"
+
+    with mock.patch.object(
+        mz, "get_text_from_compressed", lambda p: Path(p).read_text()
+    ):
+        mz.append_remove_instructions(str(to_dir), str(manifest))
+
+    assert manifest.read_text().splitlines() == ['remove "top-level.txt"']
+
+
+def test_instruction_is_conditional_under_extensions(tmp_path):
+    """A file under distribution/extensions/<id>/ gets the conditional
+    instruction against that subdirectory; anything else gets the plain one."""
+    manifest = tmp_path / "updatev3.manifest"
+    extension_dir = "distribution/extensions/diff"
+    in_extension = f"{extension_dir}/file.txt"
+    loose = "distribution/extensions/loose.txt"
+    outside = "extensions/diff/file.txt"
+
+    for rel in (in_extension, loose, outside):
+        mz.make_add_instruction(rel, str(manifest))
+        mz.make_patch_instruction(rel, str(manifest))
+
+    assert manifest.read_text().splitlines() == [
+        f'add-if "{extension_dir}" "{in_extension}"',
+        f'patch-if "{extension_dir}" "{in_extension}.patch" "{in_extension}"',
+        f'add "{loose}"',
+        f'patch "{loose}.patch" "{loose}"',
+        f'add "{outside}"',
+        f'patch "{outside}.patch" "{outside}"',
+    ]
+
+
+def test_check_for_add_if_not_update_matches_common_sh():
+    for path in (
+        "channel-prefs.js",
+        "defaults/pref/channel-prefs.js",
+        "update-settings.ini",
+        "distribution/distribution.ini",
+        "Contents/Resources/distribution/distribution.ini",
+        "Contents/Frameworks/ChannelPrefs.framework/ChannelPrefs",
+        "Contents/Frameworks/UpdateSettings.framework/UpdateSettings",
+    ):
+        assert mz.check_for_add_if_not_update(path), path
+
+
+def test_check_for_add_if_not_update_rejects_other_files():
+    for path in (
+        "distribution/extensions/foo@mozilla.org.xpi",
+        "distribution/policies.json",
+        "application.ini",
+        "notdistribution.ini",
+        "firefox",
+    ):
+        assert not mz.check_for_add_if_not_update(path), path
+
+
 def test_download_file_succeeds_first_try(tmp_path):
     url = "https://archive.mozilla.org/firefox.mar"
     dest = str(tmp_path / "out.mar")
@@ -323,6 +424,73 @@ def test_download_file_raises_after_exhausting_retries(tmp_path):
                 raise AssertionError("Expected DownloadError to be raised")
 
     assert urlretrieve.call_count == mz.DOWNLOAD_ATTEMPTS
+
+
+def _process_single(tmp_path, make_partial, valid_channel_id=True, **kwargs):
+    workdir = tmp_path / "0"
+    (workdir / "from_mar").mkdir(parents=True)
+    (workdir / "from.mar").write_bytes(b"from")
+
+    with mock.patch.object(mz, "make_partial", make_partial):
+        with mock.patch.object(
+            mz, "validate_mar_channel_id", lambda *_: valid_channel_id
+        ):
+            error, mar_manifest, _ = mz.process_single(
+                update_number=1,
+                from_mar_url="http://ftp.mozilla.org/from.mar",
+                to_mar_dir=str(tmp_path / "to_mar"),
+                target_mar=str(tmp_path / "target" / "partial.mar"),
+                mar_channel_id="test",
+                workdir=str(workdir),
+                signing_cert=None,
+                arch="x86",
+                force=None,
+                staging=False,
+                **kwargs,
+            )
+    return workdir, error, mar_manifest
+
+
+def test_process_single_removes_the_workdir_on_success(tmp_path):
+    workdir, error, _ = _process_single(tmp_path, lambda **kwargs: ({}, None))
+
+    assert error is None
+    assert not workdir.exists()
+
+
+def test_process_single_keeps_the_workdir_on_failure(tmp_path):
+    def failing(**kwargs):
+        raise Exception("boom")
+
+    workdir, error, _ = _process_single(tmp_path, failing)
+
+    assert isinstance(error, Exception)
+    assert (workdir / "from_mar").is_dir()
+
+
+def test_process_single_keeps_the_workdir_on_invalid_channel_id(tmp_path):
+    workdir, error, _ = _process_single(
+        tmp_path, lambda **kwargs: ({}, None), valid_channel_id=False
+    )
+
+    assert isinstance(error, Exception)
+    assert (workdir / "from_mar").is_dir()
+
+
+def test_process_single_records_the_previous_build_fields(tmp_path):
+    _, error, mar_manifest = _process_single(
+        tmp_path,
+        lambda **kwargs: ({}, None),
+        previousVersion="142.0",
+        previousBuildNumber=3,
+    )
+
+    assert error is None
+    assert mar_manifest == {
+        "update_number": 1,
+        "previousVersion": "142.0",
+        "previousBuildNumber": 3,
+    }
 
 
 if __name__ == "__main__":

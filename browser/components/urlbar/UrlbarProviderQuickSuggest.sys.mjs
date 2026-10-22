@@ -393,11 +393,11 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     result.payload.iconBlob ||= suggestion.icon_blob;
     result.payload.icon ||= suggestion.icon;
     if (result.payload.icon) {
-      result.payload.icon = UrlbarUtils.getRemoteIconUrl(
-        result.payload.icon,
-        lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
-        controller
-      );
+      result.payload.icon = UrlbarUtils.getRemoteImageUrl({
+        controller,
+        url: result.payload.icon,
+        size: lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+      });
     }
 
     switch (suggestion.source) {

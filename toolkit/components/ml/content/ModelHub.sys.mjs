@@ -1836,6 +1836,7 @@ export class ModelHub {
    * @param {string} config.modelHubRootUrl - root url of the model hub
    * @param {string} config.modelHubUrlTemplate - url template of the model hub
    * @param {?function(ProgressAndStatusCallbackParams):void} config.progressCallback A function to call to indicate progress status.
+   * @param {?AbortSignal} [config.abortSignal] - AbortSignal to cancel the download.
    * @param {string} config.featureId - The feature ID requesting the model
    * @param {string} config.sessionId - The session ID for tracking this download
    * @returns {Promise<[Blob, object]>} The file content
@@ -1849,6 +1850,7 @@ export class ModelHub {
     modelHubRootUrl,
     modelHubUrlTemplate,
     progressCallback,
+    abortSignal,
     featureId,
     sessionId,
   }) {
@@ -1861,6 +1863,7 @@ export class ModelHub {
       modelHubRootUrl,
       modelHubUrlTemplate,
       progressCallback,
+      abortSignal,
       featureId: featureId || engineId,
       sessionId: sessionId || `${engineId}-${Date.now()}`,
     });

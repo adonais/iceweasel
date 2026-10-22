@@ -22,6 +22,10 @@
 #include "aom/aomcx.h"
 #include "aom/aom_encoder.h"
 #include "config/aom_config.h"
+#if CONFIG_AV1_DECODER
+#include "aom/aom_decoder.h"
+#include "aom/aomdx.h"
+#endif
 #include "gtest/gtest.h"
 
 namespace {
@@ -274,6 +278,294 @@ TEST(EncodeForcedMaxFrameWidthHeight, SecondFrameTooBig) {
   cfg.g_h = 256;
   EXPECT_EQ(AOM_CODEC_INVALID_PARAM, aom_codec_enc_config_set(&enc, &cfg));
 
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
+}
+
+// A regression test for bug 555350218.
+TEST(EncodeForcedMaxFrameWidthHeight, ReducedStillPictureHeader) {
+  constexpr size_t kImageDataSize = 128 * 128 + 2 * 64 * 64;
+  std::unique_ptr<unsigned char[]> img_data(new unsigned char[kImageDataSize]);
+  ASSERT_NE(img_data, nullptr);
+  memset(img_data.get(), 128, kImageDataSize);
+  aom_image_t img;
+  EXPECT_EQ(&img,
+            aom_img_wrap(&img, AOM_IMG_FMT_I420, 128, 128, 1, img_data.get()));
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME));
+  cfg.g_w = 128;
+  cfg.g_h = 128;
+  cfg.g_limit = 1;
+
+  aom_codec_ctx_t enc;
+
+  cfg.g_forced_max_frame_width = 128;
+  cfg.g_forced_max_frame_height = 128;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_init(&enc, iface, &cfg, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 0, 1, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
+
+  cfg.g_forced_max_frame_width = 256;
+  cfg.g_forced_max_frame_height = 256;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_init(&enc, iface, &cfg, 0));
+  EXPECT_NE(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 0, 1, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
+}
+
+TEST(EncodeForcedMaxFrameWidthHeight, DynamicUpscaleDoesNotForceKeyframe) {
+  constexpr size_t kImageDataSize = 256 * 256 + 2 * 128 * 128;
+  std::unique_ptr<unsigned char[]> img_data(new unsigned char[kImageDataSize]);
+  ASSERT_NE(img_data, nullptr);
+  memset(img_data.get(), 128, kImageDataSize);
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME));
+  cfg.g_w = 128;
+  cfg.g_h = 128;
+  cfg.g_forced_max_frame_width = 256;
+  cfg.g_forced_max_frame_height = 256;
+  cfg.g_lag_in_frames = 0;
+  cfg.kf_mode = AOM_KF_DISABLED;
+  aom_codec_ctx_t enc;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_init(&enc, iface, &cfg, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_control(&enc, AOME_SET_CPUUSED, 7));
+
+#if CONFIG_AV1_DECODER
+  aom_codec_ctx_t dec;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0));
+#endif
+
+  // Frame 0: 128x128 keyframe.
+  aom_image_t img;
+  EXPECT_EQ(&img,
+            aom_img_wrap(&img, AOM_IMG_FMT_I420, 128, 128, 1, img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 0, 1, 0));
+
+  aom_codec_iter_t iter = nullptr;
+  const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  EXPECT_TRUE(pkt->data.frame.flags & AOM_FRAME_IS_KEY);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+  aom_codec_iter_t dec_iter = nullptr;
+  aom_image_t *dec_img = aom_codec_get_frame(&dec, &dec_iter);
+  ASSERT_NE(dec_img, nullptr);
+  EXPECT_EQ(dec_img->d_w, 128u);
+  EXPECT_EQ(dec_img->d_h, 128u);
+#endif
+
+  // Frame 1: Upscale to 256x256.
+  cfg.g_w = 256;
+  cfg.g_h = 256;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_config_set(&enc, &cfg));
+
+  EXPECT_EQ(&img,
+            aom_img_wrap(&img, AOM_IMG_FMT_I420, 256, 256, 1, img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 1, 1, 0));
+
+  iter = nullptr;
+  pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  EXPECT_FALSE(pkt->data.frame.flags & AOM_FRAME_IS_KEY);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+  dec_iter = nullptr;
+  dec_img = aom_codec_get_frame(&dec, &dec_iter);
+  ASSERT_NE(dec_img, nullptr);
+  EXPECT_EQ(dec_img->d_w, 256u);
+  EXPECT_EQ(dec_img->d_h, 256u);
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&dec));
+#endif
+
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, nullptr, 0, 0, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
+}
+
+TEST(EncodeForcedMaxFrameWidthHeight, DynamicUpscaleUpTo16x) {
+  constexpr size_t kImageDataSize = 2048 * 2048 + 2 * 1024 * 1024;
+  std::unique_ptr<unsigned char[]> img_data(new unsigned char[kImageDataSize]);
+  ASSERT_NE(img_data, nullptr);
+  memset(img_data.get(), 128, kImageDataSize);
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME));
+  cfg.g_w = 128;
+  cfg.g_h = 128;
+  cfg.g_forced_max_frame_width = 2048;
+  cfg.g_forced_max_frame_height = 2048;
+  cfg.g_lag_in_frames = 0;
+  cfg.kf_mode = AOM_KF_DISABLED;
+  aom_codec_ctx_t enc;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_init(&enc, iface, &cfg, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_control(&enc, AOME_SET_CPUUSED, 7));
+
+#if CONFIG_AV1_DECODER
+  aom_codec_ctx_t dec;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0));
+#endif
+
+  // Frame 0: 128x128 keyframe.
+  aom_image_t img;
+  EXPECT_EQ(&img,
+            aom_img_wrap(&img, AOM_IMG_FMT_I420, 128, 128, 1, img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 0, 1, 0));
+
+  aom_codec_iter_t iter = nullptr;
+  const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  EXPECT_TRUE(pkt->data.frame.flags & AOM_FRAME_IS_KEY);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+#endif
+
+  // Frame 1: Upscale 16x to 2048x2048.
+  cfg.g_w = 2048;
+  cfg.g_h = 2048;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_config_set(&enc, &cfg));
+
+  EXPECT_EQ(&img, aom_img_wrap(&img, AOM_IMG_FMT_I420, 2048, 2048, 1,
+                               img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 1, 1, 0));
+
+  iter = nullptr;
+  pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  EXPECT_FALSE(pkt->data.frame.flags & AOM_FRAME_IS_KEY);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+  aom_codec_iter_t dec_iter = nullptr;
+  aom_image_t *dec_img = aom_codec_get_frame(&dec, &dec_iter);
+  ASSERT_NE(dec_img, nullptr);
+  EXPECT_EQ(dec_img->d_w, 2048u);
+  EXPECT_EQ(dec_img->d_h, 2048u);
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&dec));
+#endif
+
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, nullptr, 0, 0, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
+}
+
+// Values of the AV1_LEVEL enum in av1/common/enums.h, which is not part of the
+// public API.
+//
+// Passing kLevelKeepStats as the target level only switches on level statistics
+// collection. Unlike a real target level it does not constrain the encoder, so
+// it does not change what the rest of the test measures.
+constexpr int kSeqLevelIdx5_0 = 12;
+constexpr int kLevelKeepStats = 32;
+constexpr int kMaxOperatingPoints = 32;
+
+TEST(EncodeForcedMaxFrameWidthHeight,
+     SequenceLevelIndexUsesForcedMaxDimensions) {
+  constexpr size_t kImageDataSize = 2560 * 1536 + 2 * 1280 * 768;
+  std::unique_ptr<unsigned char[]> img_data(new unsigned char[kImageDataSize]);
+  ASSERT_NE(img_data, nullptr);
+  memset(img_data.get(), 128, kImageDataSize);
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME));
+  cfg.g_w = 640;
+  cfg.g_h = 384;
+  cfg.g_forced_max_frame_width = 2560;
+  cfg.g_forced_max_frame_height = 1536;
+  cfg.g_lag_in_frames = 0;
+  cfg.kf_mode = AOM_KF_DISABLED;
+  aom_codec_ctx_t enc;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_init(&enc, iface, &cfg, 0));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_control(&enc, AOME_SET_CPUUSED, 7));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_control(&enc, AV1E_SET_TARGET_SEQ_LEVEL_IDX,
+                                            kLevelKeepStats));
+
+#if CONFIG_AV1_DECODER
+  aom_codec_ctx_t dec;
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0));
+#endif
+
+  // Frame 0: 640x384 keyframe.
+  aom_image_t img;
+  EXPECT_EQ(&img,
+            aom_img_wrap(&img, AOM_IMG_FMT_I420, 640, 384, 1, img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 0, 1, 0));
+
+  aom_codec_iter_t iter = nullptr;
+  const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+#endif
+
+  // Frame 1: Upscale 4x to 2560x1536.
+  cfg.g_w = 2560;
+  cfg.g_h = 1536;
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_enc_config_set(&enc, &cfg));
+
+  EXPECT_EQ(&img, aom_img_wrap(&img, AOM_IMG_FMT_I420, 2560, 1536, 1,
+                               img_data.get()));
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, &img, 1, 1, 0));
+
+  iter = nullptr;
+  pkt = aom_codec_get_cx_data(&enc, &iter);
+  ASSERT_NE(pkt, nullptr);
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  EXPECT_FALSE(pkt->data.frame.flags & AOM_FRAME_IS_KEY);
+
+#if CONFIG_AV1_DECODER
+  EXPECT_EQ(
+      AOM_CODEC_OK,
+      aom_codec_decode(&dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr));
+  aom_codec_iter_t dec_iter = nullptr;
+  aom_image_t *dec_img = aom_codec_get_frame(&dec, &dec_iter);
+  ASSERT_NE(dec_img, nullptr);
+  EXPECT_EQ(dec_img->d_w, 2560u);
+  EXPECT_EQ(dec_img->d_h, 1536u);
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&dec));
+#endif
+
+  // The level the encoder derives from the statistics it collected has to
+  // account for the upscaled frame, not just the initial 640x384 one.
+  int seq_level_idx[kMaxOperatingPoints];
+  EXPECT_EQ(AOM_CODEC_OK,
+            aom_codec_control(&enc, AV1E_GET_SEQ_LEVEL_IDX, seq_level_idx));
+  EXPECT_EQ(seq_level_idx[0], kSeqLevelIdx5_0);
+
+  EXPECT_EQ(AOM_CODEC_OK, aom_codec_encode(&enc, nullptr, 0, 0, 0));
   EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
 }
 

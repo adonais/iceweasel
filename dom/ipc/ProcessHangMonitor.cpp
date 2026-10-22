@@ -66,7 +66,7 @@ using namespace mozilla::ipc;
  *
  * When the content process detects a hang, it posts a task to its hang thread,
  * which sends an IPC message to the hang thread in the parent. The parent
- * cancels any ongoing CPOW requests and then posts a runnable to the main
+ * cancels any ongoing reply requests and then posts a runnable to the main
  * thread that notifies Firefox frontend code of the hang. The frontend code is
  * passed an nsIHangReport, which can be used to terminate the hang.
  *
@@ -1004,7 +1004,7 @@ mozilla::ipc::IPCResult HangMonitorParent::RecvHangEvidence(
   // browser minidump.
   nsAutoString crashId;
 
-  mHangMonitor->InitiateCPOWTimeout();
+  mHangMonitor->InitiateReplyTimeout();
 
   MonitorAutoLock lock(mMonitor);
 
@@ -1022,7 +1022,7 @@ mozilla::ipc::IPCResult HangMonitorParent::RecvClearHang() {
     return IPC_OK();
   }
 
-  mHangMonitor->InitiateCPOWTimeout();
+  mHangMonitor->InitiateReplyTimeout();
 
   MonitorAutoLock lock(mMonitor);
 
@@ -1198,7 +1198,7 @@ static bool InterruptCallback(JSContext* cx) {
 
 ProcessHangMonitor* ProcessHangMonitor::sInstance;
 
-ProcessHangMonitor::ProcessHangMonitor() : mCPOWTimeout(false) {
+ProcessHangMonitor::ProcessHangMonitor() : mReplyTimeout(false) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (XRE_IsContentProcess()) {
@@ -1267,19 +1267,19 @@ bool ProcessHangMonitor::IsDebuggerStartupComplete() {
   return HangMonitorChild::Get()->IsDebuggerStartupComplete();
 }
 
-bool ProcessHangMonitor::ShouldTimeOutCPOWs() {
+bool ProcessHangMonitor::ShouldTimeOutReplies() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  if (mCPOWTimeout) {
-    mCPOWTimeout = false;
+  if (mReplyTimeout) {
+    mReplyTimeout = false;
     return true;
   }
   return false;
 }
 
-void ProcessHangMonitor::InitiateCPOWTimeout() {
+void ProcessHangMonitor::InitiateReplyTimeout() {
   MOZ_RELEASE_ASSERT(IsOnThread());
-  mCPOWTimeout = true;
+  mReplyTimeout = true;
 }
 
 static already_AddRefed<PProcessHangMonitorParent> CreateHangMonitorParent(

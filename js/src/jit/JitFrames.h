@@ -349,6 +349,15 @@ struct ResumeFromException {
   uint8_t* framePointer;
   uint8_t* stackPointer;
   uint8_t* target;
+#ifdef JS_HW_SHADOW_STACK
+  // Tracks the shadow stack pointer throughout the frame iteration and
+  // unwinding process. Initialized by the JIT before entering HandleException,
+  // and on exit back to the JIT, contains the new desired shadow stack pointer
+  // before jumping to target.
+  // If the shadow stack is disabled for this thread/process at runtime, then
+  // this field is nullptr.
+  uintptr_t* shadowStackPointer = nullptr;
+#endif
   ExceptionResumeKind kind;
   wasm::Instance* instance;
 #ifdef ENABLE_WASM_JSPI
@@ -374,6 +383,12 @@ struct ResumeFromException {
   static size_t offsetOfTarget() {
     return offsetof(ResumeFromException, target);
   }
+#ifdef JS_HW_SHADOW_STACK
+  static size_t offsetOfShadowStackPointer() {
+    return offsetof(ResumeFromException, shadowStackPointer);
+  }
+#endif
+
   static size_t offsetOfKind() { return offsetof(ResumeFromException, kind); }
   static size_t offsetOfInstance() {
     return offsetof(ResumeFromException, instance);
@@ -669,6 +684,11 @@ class NativeExitFrameLayout {
   ExitFrameLayout exit_;
   uintptr_t argc_;
 
+  // The callee. Unlike the Value below, this isn't overwritten by the return
+  // value. This ensures the callee's realm is kept alive on GC.
+  // See bug 2078837.
+  JSObject* savedCallee_;
+
   // We need to split the Value into 2 fields of 32 bits, otherwise the C++
   // compiler may add some padding between the fields.
   uint32_t loCalleeResult_;
@@ -684,6 +704,7 @@ class NativeExitFrameLayout {
     return reinterpret_cast<JS::Value*>(&loCalleeResult_);
   }
   inline uintptr_t argc() const { return argc_; }
+  inline JSObject** savedCallee() { return &savedCallee_; }
 };
 
 class CallNativeExitFrameLayout : public NativeExitFrameLayout {
@@ -711,6 +732,9 @@ class IonOOLNativeExitFrameLayout {
   JitCode* stubCode_;
 
   uintptr_t argc_;
+
+  // See NativeExitFrameLayout::savedCallee_.
+  JSObject* savedCallee_;
 
   // We need to split the Value into 2 fields of 32 bits, otherwise the C++
   // compiler may add some padding between the fields.
@@ -740,6 +764,7 @@ class IonOOLNativeExitFrameLayout {
   }
   inline JS::Value* thisp() { return reinterpret_cast<JS::Value*>(&loThis_); }
   inline uintptr_t argc() const { return argc_; }
+  inline JSObject** savedCallee() { return &savedCallee_; }
 };
 
 // ProxyGetProperty(JSContext* cx, HandleObject proxy, HandleId id,

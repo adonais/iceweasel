@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-card.tagmap.d.ts" />
+
 import {
   html,
   staticHtml,
@@ -36,7 +38,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * @property {number} summaryTabIndex - (optional) tabindex for the accordion summary.
  * @slot content - The content to show inside of the card.
  */
-export default class MozCard extends MozLitElement {
+export class MozCard extends MozLitElement {
   static queries = {
     detailsEl: "#moz-card-details",
     headingEl: "#heading",

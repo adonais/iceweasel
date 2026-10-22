@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
+import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
@@ -39,6 +40,15 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
             from = "CustomTabsPage",
             to = pageName,
             steps = listOf(NavigationStep.Click(CustomTabsSelectors.SITE_INFO_BUTTON)),
+        )
+
+        // Dismiss the (root) panel back to the browser. The fragment's BackHandler dismisses the whole sheet from the
+        // root ProtectionPanel, so a single back press returns to the page underneath. Lets tests route away after
+        // interacting with the panel (e.g. toggling per-site ETP, then visiting settings).
+        builder.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps = listOf(NavigationStep.PressBack),
         )
     }
 
@@ -92,6 +102,45 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
 
     fun clickTheEnhancedTrackingProtectionOption(): UnifiedTrustPanelPage {
         mozClick(UnifiedTrustPanelSelectors.ETP_TOGGLE_LABEL)
+        return this
+    }
+
+    /** Assert the per-site ETP toggle badge shows ON (or OFF when [isOn] is false). */
+    fun verifyEnhancedTrackingProtectionToggleState(isOn: Boolean): UnifiedTrustPanelPage {
+        if (isOn) {
+            mozVerify(UnifiedTrustPanelSelectors.ETP_TOGGLE_ON)
+        } else {
+            mozVerify(UnifiedTrustPanelSelectors.ETP_TOGGLE_OFF)
+        }
+        return this
+    }
+
+    /**
+     * Open the "trackers blocked" details sub-panel by clicking the banner. The banner is clickable only when
+     * trackers > 0, but its content description is chosen by connection security first: the tracking mock asset is
+     * served over HTTP, so the banner shows the not-secure text (not "…blocked on this site", which only appears on a
+     * secure page). Click it via that content description.
+     */
+    fun openTrackersBlockedDetails(): UnifiedTrustPanelPage {
+        mozClick(UnifiedTrustPanelSelectors.ETP_BANNER_NOT_SECURE_TITLE)
+        return this
+    }
+
+    /** Assert each given category row is listed on the trackers-blocked details sub-panel. */
+    fun verifyBlockedTrackerCategories(vararg categoryRows: Selector): UnifiedTrustPanelPage {
+        categoryRows.forEach { mozVerify(it) }
+        return this
+    }
+
+    /**
+     * From the trackers-blocked details sub-panel, open a category's detail panel, assert its title and the "Blocked"
+     * list header, then press back to return to the details sub-panel (the trust panel's BackHandler pops one level).
+     */
+    fun verifyTrackerCategoryDetails(categoryRow: Selector, categoryTitle: Selector): UnifiedTrustPanelPage {
+        mozClick(categoryRow)
+        mozVerify(categoryTitle)
+        mozVerify(UnifiedTrustPanelSelectors.CATEGORY_DETAIL_BLOCKED_HEADER)
+        mozPressBack()
         return this
     }
 

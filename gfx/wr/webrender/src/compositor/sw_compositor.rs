@@ -1625,12 +1625,11 @@ impl Compositor for SwCompositor {
     fn create_surface(
         &mut self,
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     ) {
         if self.use_native_compositor {
-            self.compositor.create_surface(id, virtual_offset, tile_size, is_opaque);
+            self.compositor.create_surface(id, tile_size, is_opaque);
         }
         self.max_tile_size = DeviceIntSize::new(
             self.max_tile_size.width.max(tile_size.width),
@@ -2018,14 +2017,6 @@ impl Compositor for SwCompositor {
         self.late_surfaces.clear();
 
         self.reset_overlaps();
-    }
-
-    fn enable_native_compositor(&mut self, enable: bool) {
-        // TODO: The SwComposite thread is not properly instantiated if this is
-        // ever actually toggled.
-        assert_eq!(self.use_native_compositor, enable);
-        self.compositor.enable_native_compositor(enable);
-        self.use_native_compositor = enable;
     }
 
     fn get_capabilities(&self) -> CompositorCapabilities {

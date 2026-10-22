@@ -75,10 +75,6 @@ notes = "The dependencies on tokio-reactor and tokio-threadpools are just a hack
 audit-as-crates-io = true
 notes = "This is upstream plus a build fix from rust-windowing/gl-rs#566. Can be removed once PR is merged upstream and gleam is updated to include the fix."
 
-[policy."gleam:0.15.1@git:68ca4e5cc31135b843af07ff213a94b9ddce64cf"]
-audit-as-crates-io = true
-notes = "This is upstream plus servo/gleam#235. Can be removed once PR is merged upstream."
-
 [policy.gluesmith]
 criteria = "safe-to-run"
 notes = "Used for fuzzing."
@@ -232,6 +228,10 @@ notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
 audit-as-crates-io = false
 notes = "This lives in application-services but was pushed to crates.io a very long time ago."
 
+[policy.nss-rs]
+audit-as-crates-io = false
+notes = "Fetched from mozilla/nss-rs on GitHub. The crates.io name only holds a 0.0.0 placeholder reserved by an nss-rs maintainer."
+
 [policy.objc]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a backported fix."
@@ -280,6 +280,10 @@ notes = "This is a first-party crate which is also published to crates.io, but w
 [policy.servo_arc]
 audit-as-crates-io = true
 notes = "This is a first-party crate which is also published to crates.io, but we should publish audits for it for the benefit of the ecosystem."
+
+[policy.simdutf8]
+audit-as-crates-io = true
+notes = "Patched version of upstream"
 
 [policy.storage]
 audit-as-crates-io = false

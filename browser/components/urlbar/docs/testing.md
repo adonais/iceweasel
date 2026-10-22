@@ -1,14 +1,20 @@
 (urlbar-testing)=
 
-# Address Bar Testing
+# Testing
 
-This documentation discusses how to write a test for the address bar and the
-different test utilities that are useful when writing a test for the address
-bar.
+This documentation discusses how to write a test for the address bar, or for a
+search bar built on the address bar's architecture, such as the search bar in
+the toolbar or the one on New Tab. It also describes the different test
+utilities that are useful when writing such a test.
 
-## Common Tests
+## Test Types
 
-### Mochitests
+The address bar's tests are mostly of two types, browser chrome mochitests and
+XPCShell tests. The sections below describe each type and when to write which,
+and [Common Test Utilities](#common-test-utilities) lists the utilities
+available and the test types they work in.
+
+### Browser Chrome Mochitests
 
 Some common tests for the address bar are the **mochitests**. The purpose of
 a mochitest is to run the browser itself. Mochitests can be called
@@ -162,12 +168,75 @@ history. In addition to cleanup, `head.js` calls the
 `registerCleanupFunction` to ensure the urlbar panel is closed after each
 test.
 
-### UrlbarTestUtils
+### UrlbarTestUtils and SearchbarTestUtils
 
 {searchfox}`UrlbarTestUtils.sys.mjs <browser/components/urlbar/tests/UrlbarTestUtils.sys.mjs>` is useful for url bar testing. This
 file contains methods that can help with starting a new search in the url bar,
 waiting for a new search to complete, returning the results in
 the view, and etc.
+
+The methods live on the `UrlbarInputBaseTestUtils` class, which drives any
+input built on `UrlbarInputBase`. Its constructor takes a function that returns
+the input for a window. The module exports two instances of it:
+`UrlbarTestUtils` drives the address bar, and `SearchbarTestUtils` drives the
+search bar in the toolbar. Both take a window as their first argument or as a
+`window` option.
+
+### NewtabSearchbarTestUtils and NewtabSearchbarContentTestUtils
+
+These two modules drive the `<moz-urlbar>` on about:newtab, and a test uses
+them together. The tests in
+{searchfox}`tests/browser-newtab/ <browser/components/urlbar/tests/browser-newtab/>`
+are the ones that use them. To run them:
+
+```
+./mach mochitest browser/components/urlbar/tests/browser-newtab/
+```
+
+The search bar lives in the page, in a privileged about content process, while
+a browser-chrome test runs in the parent process. The suite therefore runs the
+`UrlbarInputBaseTestUtils` methods in the content process, and reaches them
+from the test in two layers:
+
+- {searchfox}`NewtabSearchbarContentTestUtils.sys.mjs <browser/components/urlbar/tests/NewtabSearchbarContentTestUtils.sys.mjs>`
+  subclasses `UrlbarInputBaseTestUtils` and runs in a `SpecialPowers.spawn`
+  task in the page's process. Its methods take the task's `content` where the
+  chrome methods take a window. The methods that only work in the parent
+  process throw.
+- {searchfox}`NewtabSearchbarTestUtils.sys.mjs <browser/components/urlbar/tests/NewtabSearchbarTestUtils.sys.mjs>`
+  is what a test calls. Its methods take a `browser` where `UrlbarTestUtils`
+  takes a window, and forward each call to the content side over one
+  `SpecialPowers.spawn`. Arguments and return values are structured-cloned, so
+  `getDetailsOfResultAt` rebuilds the result from its wire form and returns
+  `element` as null.
+
+{searchfox}`head.js <browser/components/urlbar/tests/browser-newtab/head.js>`
+sets up `NewtabSearchbarTestUtils` and adds `add_telemetry_task`, which opens
+about:newtab with telemetry, history and form history cleared and closes the
+tab afterwards.
+
+`forward(browser, method, args)` calls a content-side method that
+`NewtabSearchbarTestUtils` does not list, as long as its arguments and its
+result can be cloned. For several steps, one `spawn` task costs a single round
+trip, and runs with `NewtabSearchbarContentTestUtils` bound to the task's own
+`Assert` and `EventUtils`:
+
+```javascript
+await NewtabSearchbarTestUtils.spawn(browser, [], async () => {
+  let bar = NewtabSearchbarContentTestUtils.getUrlbar(content);
+  // ...
+});
+```
+
+The tests reach the element through this test-only module pair rather than
+through a hook on `UrlbarChild` or `window.UrlbarActorPort`. The port is the
+only surface the actor gives the page, and it ships in release builds, so a
+test hook there would widen what the page can reach.
+
+about:newtab is preloaded, so a test that opens the tab without
+`openNewTabPage()` can hang waiting for a load, or never see focus and blur
+events in the page. `openNewTabPage()` waits for the search bar to exist and
+for the tab to have focus.
 
 ### BrowserTestUtils
 
@@ -201,3 +270,99 @@ mouse clicks and keypresses. Some commonly used functions are
 `synthesizeMouseAtCenter` which places the mouse at the center of the DOM
 element and `synthesizeKey` which can be used to navigate the view and start
 a search by using keydown and keyenter arguments.
+
+## Testing Over the Message Path
+
+An address bar input reaches its parent controller either directly or over
+the message path, as the
+[overview](overview.md#direct-path-and-message-path) describes. The address
+and search bars in the toolbar take the direct path by default, so an ordinary
+test run says nothing about the message path. The New Tab search bar always
+takes the message path.
+
+### Running a Test Over the Message Path
+
+The `browser.urlbar.ipc.chromeMessagePassing` pref puts the address bar and the
+search bar in the toolbar on the message path. Set it for a test run:
+
+```
+./mach mochitest --setpref=browser.urlbar.ipc.chromeMessagePassing=true <test>
+```
+
+For `./mach run`, pass the same `--setpref`, or set the pref in `about:config`
+and open a new window. Each input picks its path when it is created, so the
+address bar and search bar in a window that is already open keep the path they
+started with.
+
+### The urlbar-ipc Variant
+
+CI runs browser-chrome mochitests with the pref set in the `urlbar-ipc`
+variant, defined in
+{searchfox}`variants.yml <taskcluster/test_configs/variants.yml>`. The variant
+runs only the manifests tagged `urlbar`: the browser tests in
+`browser/components/urlbar/tests/` and `browser/components/search/test/`. Its
+jobs run on opt builds on autoland and mozilla-central, and their labels end in
+`-uipc`, or `-swr-uipc` on Linux, where the suite runs under software
+WebRender.
+
+A test that cannot run over the message path skips the variant in its
+manifest:
+
+```toml
+["browser_example.js"]
+skip-if = ["urlbar_ipc"]
+```
+
+To run the variant on try, select its jobs by label:
+
+```
+./mach try fuzzy -q "'uipc"
+```
+
+To run part of the suite, add its directory. The variant already selects the
+`urlbar` tag, so it needs no `--tag`.
+
+### Waiting for the Parent
+
+On the message path, a controller notification or a provider's parent-side
+work arrives a round trip after the action that caused it, while the direct
+path delivers it synchronously. A test that asserts right after the action
+passes on one path and fails on the other. `UrlbarTestUtils` has helpers that
+wait correctly on both:
+
+- `promiseControllerNotification(win, notification)` resolves with the
+  arguments of the next controller notification of that name, such as
+  `onQueryResultRemoved` after a dismissal.
+- `promiseProviderEngagement(win)` resolves once the picked result's provider
+  has run `onEngagement` in the parent.
+
+Create either promise before the action that triggers it.
+
+`assertPickedResult()` checks the result and element in an engagement's
+details against what the view showed. On the message path the view's rows
+hold copies of the parent's results, and the parent resolves the engagement's
+result to the parent's original result object by `id`. So the result in the
+details is not the object the view has access to, and the element is `null`,
+because neither a result object nor a DOM node can cross the process boundary.
+The helper handles this by comparing results by `id`.
+
+### Forcing a Race
+
+Some orderings go wrong only on a slow machine. To reproduce a race anywhere,
+stub the parent method so it waits on a promise the test holds, act, then
+resolve the promise. Apply the stub only on the message path, so the test
+still holds on the direct path:
+
+```javascript
+let { promise, resolve } = Promise.withResolvers();
+if (UrlbarPrefs.get("ipc.chromeMessagePassing")) {
+  let proto = UrlbarParentController.prototype;
+  let initEngineStore = proto.initEngineStore;
+  sandbox.stub(proto, "initEngineStore").callsFake(async function (...args) {
+    await promise;
+    return initEngineStore.apply(this, args);
+  });
+}
+// Open a window and change the default engine, then:
+resolve();
+```

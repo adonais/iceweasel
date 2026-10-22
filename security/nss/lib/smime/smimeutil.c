@@ -153,41 +153,6 @@ smime_legacy_pref(SECOidTag algtag)
     return -1;
 }
 
-/*
- * smime_legacy_to policy - find policy algtag from a legacy input
- */
-static SECOidTag
-smime_legacy_to_policy(unsigned long which)
-{
-    int i;
-
-    for (i = 0; i < smime_legacy_map_count; i++) {
-        if (smime_legacy_map[i].cipher == which)
-            return smime_legacy_map[i].policytag;
-    }
-    return SEC_OID_UNKNOWN;
-}
-
-/* map the old legacy values to modern oids. If the value isn't a recognized
- * legacy value, assume it's a SECOidTag and continue. This allows us to use
- * the old query and set interfaces with modern oids. */
-SECOidTag
-smime_legacy_to_oid(unsigned long which)
-{
-    unsigned long mask;
-
-    /* NOTE: all the legacy values and a CIPHER_FAMILYID of 0x00010000,
-     * (CIPHER_FAMILYID_MASK is 0xffff0000). SECOidTags start at 0 and
-     * increase monotonically, so as long as there is less than 16K of
-     * tags, we can distinguish between values intended to be SMIME ciphers
-     * and values intended to be SECOidTags */
-    mask = which & CIPHER_FAMILYID_MASK;
-    if (mask == CIPHER_FAMILYID_SMIME) {
-        return smime_legacy_to_policy(which);
-    }
-    return (SECOidTag)which;
-}
-
 /* SEC_OID_RC2_CBC is actually 3 ciphers with different key lengths. All modern
  * symmetric ciphers include the key length with the oid. To handle policy for
  * the different keylengths, we include fake oids that let us map the policy based
@@ -396,28 +361,6 @@ smime_list_add(SMIMEList **list, SECOidTag algtag)
         return rv;
     }
     (*list)->tags[(*list)->array_len++] = algtag;
-    return SECSuccess;
-}
-
-static SECStatus
-smime_list_remove(SMIMEList *list, SECOidTag algtag)
-{
-    size_t c_index, i;
-    size_t cipher_count = smime_list_length(list);
-
-    if (cipher_count == 0) {
-        return SECSuccess;
-    }
-    c_index = smime_list_index_find(list, algtag);
-    if (c_index == cipher_count) {
-        /* already removed from the list */
-        return SECSuccess;
-    }
-    for (i = c_index; i < cipher_count - 1; i++) {
-        list->tags[i] = list->tags[i + 1];
-    }
-    list->array_len--;
-    list->tags[i] = 0;
     return SECSuccess;
 }
 
@@ -654,54 +597,6 @@ smime_init(void)
     return SECFailure;
 }
 
-/*
- * NSS_SMIME_EnableCipher - this function locally records the user's preference
- */
-SECStatus
-NSS_SMIMEUtil_EnableCipher(unsigned long which, PRBool on)
-{
-    SECOidTag algtag;
-
-    SECStatus rv = smime_init();
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-
-    algtag = smime_legacy_to_oid(which);
-    if (!smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME)) {
-        PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
-        return SECFailure;
-    }
-
-    smime_lock_algorithm_list();
-    if (on) {
-        rv = smime_list_add(&smime_algorithm_list, algtag);
-    } else {
-        rv = smime_list_remove(smime_algorithm_list, algtag);
-    }
-    smime_unlock_algorithm_list();
-    return rv;
-}
-
-/*
- * this function locally records the export policy
- */
-SECStatus
-NSS_SMIMEUtil_AllowCipher(unsigned long which, PRBool on)
-{
-    SECOidTag algtag = smime_legacy_to_oid(which);
-    PRUint32 set = on ? NSS_USE_ALG_IN_SMIME : 0;
-    PRUint32 clear = on ? 0 : NSS_USE_ALG_IN_SMIME;
-    /* make sure we are inited before setting, so
-     * the defaults are correct */
-    SECStatus rv = smime_init();
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-
-    return NSS_SetAlgorithmPolicy(algtag, set, clear);
-}
-
 PRBool
 NSS_SMIMEUtil_DecryptionAllowed(SECAlgorithmID *algid, PK11SymKey *key)
 {
@@ -814,63 +709,6 @@ NSS_SMIMEUtil_KeyDecodingAllowed(SECAlgorithmID *algid, SECKEYPrivateKey *key)
     }
     algtag = SECOID_GetAlgorithmTag(algid);
     return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME_KX_LEGACY);
-}
-
-/*
- * NSS_SMIME_EncryptionPossible - check if any encryption is allowed
- *
- * This tells whether or not *any* S/MIME encryption can be done,
- * according to policy.  Callers may use this to do nicer user interface
- * (say, greying out a checkbox so a user does not even try to encrypt
- * a message when they are not allowed to) or for any reason they want
- * to check whether S/MIME encryption (or decryption, for that matter)
- * may be done.
- *
- * It takes no arguments.  The return value is a simple boolean:
- *   PR_TRUE means encryption (or decryption) is *possible*
- *      (but may still fail due to other reasons, like because we cannot
- *      find all the necessary certs, etc.; PR_TRUE is *not* a guarantee)
- *   PR_FALSE means encryption (or decryption) is not permitted
- *
- * There are no errors from this routine.
- */
-PRBool
-NSS_SMIMEUtil_EncryptionPossible(void)
-{
-    SECStatus rv = smime_init();
-    size_t len;
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-    smime_lock_algorithm_list();
-    len = smime_list_length(smime_algorithm_list);
-    smime_unlock_algorithm_list();
-    return len != 0 ? PR_TRUE : PR_FALSE;
-}
-
-PRBool
-NSS_SMIMEUtil_EncryptionEnabled(int which)
-{
-    SECOidTag algtag;
-    size_t c_index, len;
-
-    SECStatus rv = smime_init();
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-
-    algtag = smime_legacy_to_oid(which);
-
-    smime_lock_algorithm_list();
-    len = smime_list_length(smime_algorithm_list);
-    c_index = smime_list_index_find(smime_algorithm_list, algtag);
-    smime_unlock_algorithm_list();
-
-    if (len >= c_index) {
-        return PR_FALSE;
-    }
-
-    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME);
 }
 
 static SECOidTag

@@ -23,6 +23,11 @@ prefs = [
   "network.xhr.block_sync_system_requests=false",
 ]
 
+["test_TextEventDispatcherBatch.xhtml"]
+support-files = [
+  "window_TextEventDispatcherBatch.xhtml",
+]
+
 ["test_bug120684.xhtml"]
 
 ["test_bug206691.xhtml"]

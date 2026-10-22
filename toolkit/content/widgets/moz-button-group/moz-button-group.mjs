@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-button-group.tagmap.d.ts" />
+
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
@@ -17,7 +19,7 @@ export const PLATFORM_WINDOWS = "win";
  * @tagname moz-button-group
  * @property {string} platform - The detected platform, set automatically.
  */
-export default class MozButtonGroup extends MozLitElement {
+export class MozButtonGroup extends MozLitElement {
   static queries = {
     defaultSlotEl: "slot:not([name])",
     primarySlotEl: "slot[name=primary]",

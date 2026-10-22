@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-select.tagmap.d.ts" />
+
 import {
   createRef,
   html,
@@ -45,7 +47,7 @@ import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
  * @property {number} selectedIndex - The index of the currently selected option.
  * @property {boolean} usePanelList - Whether or not to render a panel. Depends on options using icons.
  */
-export default class MozSelect extends MozBaseInputElement {
+export class MozSelect extends MozBaseInputElement {
   static properties = {
     size: { type: String, reflect: true },
     options: { type: Array, state: true },
@@ -134,12 +136,17 @@ export default class MozSelect extends MozBaseInputElement {
 
     for (const node of this.slotRef.value.assignedNodes()) {
       if (node.localName === "moz-option") {
+        // Read the properties, since an option that was just created has not
+        // reflected them to attributes yet (bug 2070217). The label is the
+        // exception: Fluent sets the attribute before Lit syncs it to the
+        // property, and the options MutationObserver runs in between
+        // (bug 2075787).
         options.push({
-          value: node.getAttribute("value"),
-          label: node.getAttribute("label"),
-          iconSrc: node.getAttribute("iconsrc"),
-          disabled: node.getAttribute("disabled") !== null,
-          hidden: node.getAttribute("hidden") !== null,
+          value: node.value,
+          label: node.getAttribute("label") || node.label,
+          iconSrc: node.iconSrc,
+          disabled: node.disabled,
+          hidden: node.hidden,
         });
       } else if (node.localName === "hr") {
         options.push({

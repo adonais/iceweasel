@@ -141,9 +141,6 @@ class IpcResourceUpdateQueue {
                                    layers::TextureClient* aTexture,
                                    bool aIsUpdate);
 
-  bool UpdateImageBuffer(wr::ImageKey aKey, const ImageDescriptor& aDescriptor,
-                         mozilla::Range<uint8_t> aBytes);
-
   bool UpdateBlobImage(wr::BlobImageKey aKey,
                        const ImageDescriptor& aDescriptor,
                        mozilla::Range<uint8_t> aBytes,

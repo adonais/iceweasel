@@ -6,8 +6,9 @@
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
-
 const PREF_IS_DEFAULT_WINDOW = "browser.smartwindow.isDefaultWindow";
+const PREF_RESUME_ACTIVITY_ENABLED =
+  "browser.smartwindow.resumeActivity.enabled";
 const PREF_SMARTWINDOW_ENABLED = "browser.smartwindow.enabled";
 const PREF_AGENT_ENABLED = "browser.smartwindow.agent.enabled";
 const PREF_AGENT_SUPPORTED_REGIONS =
@@ -180,5 +181,44 @@ add_task(async function test_nimbus_agent_watch_sets_and_restores_prefs() {
     Services.prefs.getCharPref(PREF_AGENT_SUPPORTED_REGIONS),
     "US,CA",
     "agent.supportedRegions is restored to its default after unenrollment"
+  );
+});
+
+/**
+ * smartWindow's resumeActivity variable reads through to its fallbackPref, and
+ * an enrollment overrides it in memory without writing the pref, so resume
+ * activity can be turned off remotely. A smartWindow recipe that leaves the
+ * variable unset still lets the pref decide, but because the variable lives on
+ * the smartWindow feature it cannot carry a recipe of its own alongside a live
+ * Smart Window rollout.
+ */
+add_task(async function test_nimbus_resume_activity_overrides_fallback_pref() {
+  is(
+    NimbusFeatures.smartWindow.getVariable("resumeActivity"),
+    true,
+    "resumeActivity falls back to the pref default before enrollment"
+  );
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "smartWindow",
+    value: { resumeActivity: false },
+  });
+
+  is(
+    NimbusFeatures.smartWindow.getVariable("resumeActivity"),
+    false,
+    "resumeActivity reflects the enrolled value"
+  );
+  ok(
+    !Services.prefs.prefHasUserValue(PREF_RESUME_ACTIVITY_ENABLED),
+    "A fallbackPref variable does not write the pref"
+  );
+
+  await cleanup();
+
+  is(
+    NimbusFeatures.smartWindow.getVariable("resumeActivity"),
+    true,
+    "resumeActivity falls back to the pref again after unenrollment"
   );
 });

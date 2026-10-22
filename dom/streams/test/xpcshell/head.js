@@ -1,7 +1,7 @@
 "use strict";
 
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-  "resource://gre/modules/jsdebugger.sys.mjs"
+  "moz-src:///devtools/platform/jsdebugger.sys.mjs"
 );
 
 const SYSTEM_PRINCIPAL = Cc["@mozilla.org/systemprincipal;1"].createInstance(

@@ -16,6 +16,9 @@ const NOVA_SHOW_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
 const NOVA_SHOW_WEATHER_PREF =
   "browser.newtabpage.activity-stream.widgets.weather.enabled";
+// Weather only gets its own row when the Widgets group is hidden.
+const WIDGETS_SYSTEM_PREF =
+  "browser.newtabpage.activity-stream.widgets.system.enabled";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -173,6 +176,7 @@ add_task(async function test_weather_widget_visibility_nova() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [NOVA_ENABLED_PREF, true],
+      [WIDGETS_SYSTEM_PREF, false],
       [NOVA_SHOW_WEATHER_SYSTEM_PREF, false],
     ],
   });
@@ -190,6 +194,7 @@ add_task(async function test_weather_widget_visibility_nova() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [NOVA_ENABLED_PREF, true],
+      [WIDGETS_SYSTEM_PREF, false],
       [NOVA_SHOW_WEATHER_SYSTEM_PREF, true],
     ],
   });
@@ -210,6 +215,7 @@ add_task(async function test_weather_toggle_functionality_nova() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [NOVA_ENABLED_PREF, true],
+      [WIDGETS_SYSTEM_PREF, false],
       [NOVA_SHOW_WEATHER_SYSTEM_PREF, true],
       [NOVA_SHOW_WEATHER_PREF, true],
     ],

@@ -8,13 +8,15 @@
 #include "gtest/gtest.h"
 #include "mozilla/gtest/ipc/TestUtilityProcess.h"
 #include "mozilla/gtest/WaitFor.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsThreadUtils.h"
 
 #include "mozilla/ipc/UtilityProcessManager.h"
+#include "nsIProcessToolsService.h"
+#include "nsServiceManagerUtils.h"
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX)
 #  include "nsIAppShellService.h"
-#  include "nsServiceManagerUtils.h"
 #endif  // defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX)
 
 #if defined(XP_WIN)
@@ -113,133 +115,102 @@ TEST_F(TestUtilityProcess, LaunchAllKinds) {
   NS_ProcessPendingEvents(nullptr);
 }
 
-// SandboxingKind::HW_INFERENCE does not exist on Android, and the test below
-// also keeps a second utility process alive alongside it, which Android cannot
-// do: it declares a single `utility` service.
+// Android declares a single `utility` service, so it cannot keep several
+// utility processes alive at once.
 #ifndef ANDROID
 
-// Checks that a request arriving in the window right after teardown launches
-// a fresh process. HWInferenceParent is bound to PHWInference, a separate
-// toplevel from PUtilityProcess, so once DestroyProcess has removed the
-// UtilityProcessManager entry the cached actor still reports CanSend() until
-// the peer dies and the channel errors, a main-thread dispatch later.
-// GetSingleton evicts it in that window so StartUtility relaunches instead of
-// taking its CanSend() fast path.
-TEST_F(TestUtilityProcess, HWInferenceRelaunchesAfterShutdown) {
+// A keep-alive whose process crashed turns inert: letting go of it must not
+// touch anything else.
+TEST_F(TestUtilityProcess, KeepAliveOutlivesCrashedProcess) {
   auto manager = UtilityProcessManager::GetSingleton();
   ASSERT_TRUE(manager);
 
-  // An unrelated kind stays up for the whole test, so the manager singleton
-  // survives shutting HWInference down: DestroyProcess drops the singleton once
-  // no utility process is left.
-  auto keepAlive =
-      WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
-  ASSERT_TRUE(keepAlive.isOk());
-
-  // StartHWInference binds HWInferenceParent and caches it in sInstance, which
-  // is what puts an actor there to go stale.
-  auto res = WaitFor(manager->StartHWInference());
-  ASSERT_TRUE(res.isOk())
-  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
-  << res.inspectErr().ErrorCode();
-
-  auto firstPid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(firstPid.isSome());
-
-  // Nothing spins the event loop between these two, so the actor's
-  // ActorDestroy cannot have run yet: this is exactly the stale window.
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
-  auto relaunch = WaitFor(manager->StartHWInference());
-  ASSERT_TRUE(relaunch.isOk())
-  << "Relaunch LaunchError: " << relaunch.inspectErr().FunctionName() << ", "
-  << relaunch.inspectErr().ErrorCode();
-
-  // A fresh process is running, with a different pid.
-  auto secondPid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(secondPid.isSome());
-  ASSERT_NE(*firstPid, *secondPid);
-
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
-  manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
-
-  // Drain the event queue.
-  NS_ProcessPendingEvents(nullptr);
-}
-
-// Consumers decide the HWInference process' lifetime: it must go away as soon
-// as the last keep-alive is released, rather than living until browser
-// shutdown.
-TEST_F(TestUtilityProcess, HWInferenceKeepAlive) {
-  auto manager = UtilityProcessManager::GetSingleton();
-  ASSERT_TRUE(manager);
-
-  // Two consumers sharing the process' single keep-alive: it must survive
-  // until *both* are gone.
-  RefPtr<UtilityProcessKeepAlive> first =
-      manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  RefPtr<UtilityProcessKeepAlive> second =
-      manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(first);
-  ASSERT_EQ(first.get(), second.get());
-
-  auto res = WaitFor(first->GetLaunchPromise());
-  ASSERT_TRUE(res.isOk())
-  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
-  << res.inspectErr().ErrorCode();
-
-  auto pid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(pid.isSome());
-
-  first = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE) == pid);
-
-  second = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE).isNothing());
-
-  // Drain the event queue.
-  NS_ProcessPendingEvents(nullptr);
-}
-
-// A keep-alive that outlives the process it was taken on must not shut down the
-// process that replaced it.
-TEST_F(TestUtilityProcess, HWInferenceKeepAliveOutlivingItsProcess) {
-  auto manager = UtilityProcessManager::GetSingleton();
-  ASSERT_TRUE(manager);
-
-  // An unrelated kind keeps the manager singleton alive across shutting
-  // HWInference down, as DestroyProcess drops it once no utility process is
-  // left.
+  // An unrelated process stays up throughout, so the crash cannot be confused
+  // with everything having gone away.
   auto other = WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
   ASSERT_TRUE(other.isOk());
 
-  auto launch = [&manager]() {
-    RefPtr<UtilityProcessKeepAlive> keepAlive =
-        manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-    if (keepAlive && WaitFor(keepAlive->GetLaunchPromise()).isErr()) {
-      keepAlive = nullptr;
-    }
-    return keepAlive;
-  };
+  RefPtr<UtilityProcessKeepAlive> keepAlive =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(keepAlive);
+  auto res = WaitFor(keepAlive->GetLaunchPromise());
+  ASSERT_TRUE(res.isOk())
+  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
+  << res.inspectErr().ErrorCode();
+  ASSERT_EQ(manager->AliveProcesses(), 2u);
 
-  RefPtr<UtilityProcessKeepAlive> stale = launch();
-  ASSERT_TRUE(stale);
+  nsCOMPtr<nsIProcessToolsService> processTools =
+      do_GetService("@mozilla.org/processtools-service;1");
+  ASSERT_TRUE(processTools);
+  ASSERT_TRUE(NS_SUCCEEDED(
+      processTools->Kill(keepAlive->GetProcessParent()->OtherPid())));
 
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
+  ASSERT_TRUE(SpinEventLoopUntil("KeepAliveOutlivesCrashedProcess"_ns,
+                                 [&]() { return !keepAlive->IsAlive(); }));
+  ASSERT_FALSE(keepAlive->GetProcessParent());
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
 
-  RefPtr<UtilityProcessKeepAlive> current = launch();
-  ASSERT_TRUE(current);
-  ASSERT_NE(stale.get(), current.get());
-
-  auto pid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(pid.isSome());
-
-  stale = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE) == pid);
-
-  current = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE).isNothing());
+  keepAlive = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY).isSome());
 
   manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
+
+  // Drain the event queue.
+  NS_ProcessPendingEvents(nullptr);
+}
+
+// Independent processes are distinct from the shared process of their kind and
+// from each other, and each one lives exactly as long as its keep-alive.
+TEST_F(TestUtilityProcess, IndependentProcesses) {
+  auto manager = UtilityProcessManager::GetSingleton();
+  ASSERT_TRUE(manager);
+
+  auto shared =
+      WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
+  ASSERT_TRUE(shared.isOk());
+  auto sharedPid = manager->ProcessPid(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(sharedPid.isSome());
+
+  RefPtr<UtilityProcessKeepAlive> first =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  RefPtr<UtilityProcessKeepAlive> second =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(first);
+  ASSERT_TRUE(second);
+  ASSERT_NE(first.get(), second.get());
+  for (const auto& keepAlive : {first, second}) {
+    auto res = WaitFor(keepAlive->GetLaunchPromise());
+    ASSERT_TRUE(res.isOk())
+    << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
+    << res.inspectErr().ErrorCode();
+  }
+
+  // Three processes of the same kind, all with distinct pids.
+  ASSERT_EQ(manager->AliveProcesses(), 3u);
+  nsTArray<base::ProcessId> pids;
+  for (const auto& parent : manager->GetAllProcessesProcessParent()) {
+    pids.AppendElement(parent->OtherPid());
+  }
+  ASSERT_EQ(pids.Length(), 3u);
+  ASSERT_TRUE(pids.Contains(*sharedPid));
+  pids.Sort();
+  ASSERT_TRUE(std::adjacent_find(pids.begin(), pids.end()) == pids.end());
+
+  // Only the process a keep-alive owns goes away with it; the shared one and
+  // the per-kind lookups are unaffected.
+  first = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 2u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY) ==
+              sharedPid);
+
+  second = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY) ==
+              sharedPid);
+
+  manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY).isNothing());
 
   // Drain the event queue.
   NS_ProcessPendingEvents(nullptr);

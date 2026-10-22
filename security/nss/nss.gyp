@@ -221,6 +221,7 @@
             'gtests/pk11_gtest/pk11_gtest.gyp:pk11_gtest',
             'gtests/smime_gtest/smime_gtest.gyp:smime_gtest',
             'gtests/softoken_gtest/softoken_gtest.gyp:softoken_gtest',
+            'gtests/softoken_static_gtest/softoken_static_gtest.gyp:softoken_static_gtest',
             'gtests/ssl_gtest/ssl_gtest.gyp:ssl_gtest',
             'gtests/util_gtest/util_gtest.gyp:util_gtest',
             'lib/ckfw/builtins/testlib/builtins-testlib.gyp:nssckbi-testlib',

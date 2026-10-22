@@ -183,6 +183,7 @@ test-info-mochitest-timings-periodic:
     index:
         product: source
         job-name: test-info-mochitest-timings
+    worker-type: b-linux-docker-amd
     worker:
         docker-image: {in-tree: debian12-amd64-build}
         max-run-time: 7200

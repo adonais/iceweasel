@@ -94,6 +94,7 @@ static const char* const sExtensionNames[] = {
     "GL_APPLE_vertex_array_object",
     "GL_ARB_ES2_compatibility",
     "GL_ARB_ES3_compatibility",
+    "GL_ARB_clip_control",
     "GL_ARB_color_buffer_float",
     "GL_ARB_compatibility",
     "GL_ARB_copy_buffer",
@@ -124,6 +125,7 @@ static const char* const sExtensionNames[] = {
     "GL_ARB_texture_compression_bptc",
     "GL_ARB_texture_compression_rgtc",
     "GL_ARB_texture_float",
+    "GL_ARB_texture_mirror_clamp_to_edge",
     "GL_ARB_texture_non_power_of_two",
     "GL_ARB_texture_rectangle",
     "GL_ARB_texture_rg",
@@ -137,6 +139,7 @@ static const char* const sExtensionNames[] = {
     "GL_CHROMIUM_color_buffer_float_rgba",
     "GL_EXT_bgra",
     "GL_EXT_blend_minmax",
+    "GL_EXT_clip_control",
     "GL_EXT_color_buffer_float",
     "GL_EXT_color_buffer_half_float",
     "GL_EXT_copy_texture",
@@ -170,6 +173,7 @@ static const char* const sExtensionNames[] = {
     "GL_EXT_texture_compression_s3tc_srgb",
     "GL_EXT_texture_filter_anisotropic",
     "GL_EXT_texture_format_BGRA8888",
+    "GL_EXT_texture_mirror_clamp_to_edge",
     "GL_EXT_texture_norm16",
     "GL_EXT_texture_sRGB",
     "GL_EXT_texture_storage",
@@ -685,6 +689,7 @@ bool GLContext::InitImpl() {
       "Gallium 0.4 on llvmpipe",
       "Microsoft Basic Render Driver",
       "Samsung Xclipse",
+      "AMD Radeon HD GFX10",
       "Unknown"};
 
   mRenderer = GLRenderer::Other;
@@ -1555,6 +1560,13 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
          {{"glPolygonOffsetClamp", "glPolygonOffsetClampEXT"}}},
         END_SYMBOLS};
     fnLoadForFeature(symbols, GLFeature::polygon_offset_clamp);
+  }
+
+  if (IsSupported(GLFeature::clip_control)) {
+    const SymLoadStruct symbols[] = {{(PRFuncPtr*)&mSymbols.fClipControl,
+                                      {{"glClipControl", "glClipControlEXT"}}},
+                                     END_SYMBOLS};
+    fnLoadForFeature(symbols, GLFeature::clip_control);
   }
 
   if (IsExtensionSupported(EXT_semaphore)) {

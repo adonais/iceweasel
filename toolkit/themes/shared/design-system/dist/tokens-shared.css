@@ -13,8 +13,6 @@
     /** background-color **/
     --background-color-box: light-dark(var(--color-white), var(--color-gray-80));
     --background-color-critical: light-dark(var(--color-red-0), var(--color-red-90));
-    --background-color-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
-    --background-color-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
     --background-color-information: light-dark(var(--color-blue-0), var(--color-blue-90));
     --background-color-overlay: var(--color-black-alpha-50);
     --background-color-success: light-dark(var(--color-green-0), var(--color-green-90));
@@ -404,20 +402,18 @@
     --info-bar-margin: 4px;
 
     /** input **/
+    --input-background-color-disabled: var(--button-background-color-disabled);
+    --input-border: var(--border-width) solid var(--input-border-color);
     --input-border-color: var(--border-color-interactive);
-    --input-folder-gap: var(--space-medium);
+    --input-border-color-disabled: var(--border-color-interactive-disabled);
+    --input-border-radius: var(--border-radius-medium);
     --input-height: var(--size-item-small);
-    --input-search-border-radius: var(--input-text-border-radius);
-    --input-search-icon-size: var(--input-text-icon-size);
-    --input-text-background-color-disabled: var(--button-background-color-disabled);
-    --input-text-border: var(--border-width) solid var(--input-text-border-color);
-    --input-text-border-color: var(--border-color);
-    --input-text-border-color-disabled: var(--border-color-interactive-disabled);
-    --input-text-border-radius: var(--border-radius-medium);
+    --input-icon-size: var(--icon-size-xsmall);
+    --input-min-height: var(--button-min-height);
+    --input-opacity-disabled: var(--button-opacity-disabled);
+    --input-search-border-radius: var(--input-border-radius);
+    --input-search-icon-size: var(--input-icon-size);
     --input-text-color-disabled: var(--input-text-color);
-    --input-text-icon-size: var(--icon-size-xsmall);
-    --input-text-min-height: var(--button-min-height);
-    --input-text-opacity-disabled: var(--button-opacity-disabled);
     --input-width: var(--size-item-small);
 
     /** link **/
@@ -435,12 +431,12 @@
 
     /** panel **/
     --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
-    --panel-background-color-dimmed: var(--background-color-dimmed);
-    --panel-background-color-dimmed-further: var(--background-color-dimmed-further);
     --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
     --panel-border-radius: var(--border-radius-medium);
     --panel-box-shadow: 0 0 var(--panel-box-shadow-margin) hsla(0, 0%, 0%, 0.2);
     --panel-box-shadow-margin: 4px;
+    --panel-footer-background-color: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
+    --panel-footer-text-color: inherit;
     --panel-menuitem-border-radius: var(--border-radius-small);
     /* Block margin must be 0 so that there's always an item highlighted and no dead space when moving the pointer across items. */
     --panel-menuitem-margin: 0 var(--panel-menuitem-margin-inline);
@@ -824,6 +820,7 @@
       --button-text-color-destructive-selected: light-dark(var(--button-text-color-destructive), var(--button-text-color-destructive-active));
       --button-text-color-ghost-hover: var(--button-text-color-ghost);
       --button-text-color-ghost-active: var(--button-text-color-ghost);
+      --button-text-color-ghost-selected: var(--button-text-color-ghost-active);
       --button-text-color-menu-hover: light-dark(var(--button-text-color-ghost-hover), var(--button-text-color-hover));
       --button-text-color-menu-active: light-dark(var(--button-text-color-ghost-active), var(--button-text-color-active));
       --button-text-color-menu-disabled: light-dark(var(--button-text-color-ghost-disabled), var(--button-text-color-disabled));
@@ -985,10 +982,10 @@
       --info-bar-margin: 0;
 
       /** input **/
+      --input-background-color: var(--background-color-box);
+      --input-background-color-disabled: var(--button-background-color-ghost-disabled);
       --input-search-border-radius: var(--border-radius-circle);
       --input-search-icon-size: var(--icon-size-small);
-      --input-text-background-color: var(--background-color-box);
-      --input-text-background-color-disabled: var(--button-background-color-ghost-disabled);
 
       /** link **/
       --link-border-radius-focus: var(--border-radius-xsmall);
@@ -1113,6 +1110,7 @@
         --button-text-color-destructive-disabled: var(--button-text-color-primary);
         --button-text-color-destructive-selected: var(--button-text-color-destructive-active);
         --button-text-color-ghost-hover: var(--button-text-color-ghost-active);
+        --button-text-color-ghost-selected: var(--button-text-color-selected);
         --button-text-color-menu-hover: -moz-menuhovertext;
         --button-text-color-menu-disabled: var(--button-text-color-disabled);
         --button-text-color-menu-selected: var(--button-text-color-primary-selected);

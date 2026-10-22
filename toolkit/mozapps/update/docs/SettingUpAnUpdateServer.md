@@ -51,7 +51,7 @@ MARs are signed by Mozilla and so you cannot really build an "official"
 MAR yourself. This is a security measure designed to prevent anyone from
 serving malicious updates. If you want to use a locally-built MAR, the
 copy of Firefox being updated will need to be built to allow un-signed
-MARs. See {ref}`Building Firefox <Firefox Contributors' Quick Reference>`
+MARs. See {doc}`Building Firefox </contributing/contribution_quickref>`
 for more information on building Firefox locally. In order to use a locally
 built MAR, you will need to put this line in the mozconfig file in root of the
 build directory (create it if it does not exist):

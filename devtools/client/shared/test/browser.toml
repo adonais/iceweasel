@@ -200,6 +200,8 @@ skip-if = [
 
 ["browser_inplace-editor_autocomplete_offset.js"]
 
+["browser_inplace-editor_autocomplete_random_function.js"]
+
 ["browser_inplace-editor_focus_closest_editor.js"]
 
 ["browser_inplace-editor_maxwidth.js"]
@@ -235,9 +237,6 @@ skip-if = [
 ["browser_tableWidget_keyboard_interaction.js"]
 
 ["browser_tableWidget_mouse_interaction.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1118592
-]
 
 ["browser_telemetry_button_responsive.js"]
 

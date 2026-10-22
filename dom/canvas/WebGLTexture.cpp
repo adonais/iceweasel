@@ -997,6 +997,15 @@ void WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname,
         case LOCAL_GL_REPEAT:
           break;
 
+        case LOCAL_GL_MIRROR_CLAMP_TO_EDGE_EXT:
+          if (mContext->IsExtensionEnabled(
+                  WebGLExtensionID::EXT_texture_mirror_clamp_to_edge)) {
+            break;
+          }
+
+          paramBadEnum = true;
+          break;
+
         default:
           paramBadEnum = true;
           break;

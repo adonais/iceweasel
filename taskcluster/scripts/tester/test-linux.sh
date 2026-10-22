@@ -40,7 +40,6 @@ fi
 : NEED_WINDOW_MANAGER           ${NEED_WINDOW_MANAGER:=false}
 : NEED_PULSEAUDIO               ${NEED_PULSEAUDIO:=false}
 : NEED_PIPEWIRE                 ${NEED_PIPEWIRE:=false}
-: NEED_COMPIZ                   ${NEED_COPMPIZ:=false}
 : START_VNC                     ${START_VNC:=false}
 : TASKCLUSTER_INTERACTIVE       ${TASKCLUSTER_INTERACTIVE:=false}
 : mozharness args               "${@}"
@@ -289,12 +288,6 @@ if $NEED_WINDOW_MANAGER; then
         fi
       done
     fi
-fi
-
-if [[ $NEED_COMPIZ == true ]]  && [[ $RELEASE == 16.04 ]]; then
-    compiz 2>&1 &
-elif [[ $NEED_COMPIZ == true ]] && [[ $RELEASE == 18.04 ]]; then
-    compiz --replace 2>&1 &
 fi
 
 # Bug 1607713 - set cursor position to 0,0 to avoid odd libx11 interaction

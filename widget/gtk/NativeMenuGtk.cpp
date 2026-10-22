@@ -25,6 +25,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsStubMutationObserver.h"
+#include "nsThreadUtils.h"
 #include "nsWindow.h"
 
 #ifdef MOZ_WAYLAND
@@ -423,20 +424,38 @@ void NativeMenuGtk::ShowMenuAtPosition(nsIFrame* aClickedFrame,
 }
 
 bool NativeMenuGtk::Close() {
-  if (!mMenuModel->IsShowing()) {
-    return false;
+  if (mMenuModel->IsShowing()) {
+    // Runs OnUnmap().
+    gtk_menu_popdown(GTK_MENU(mNativeMenu.get()));
   }
-  gtk_menu_popdown(GTK_MENU(mNativeMenu.get()));
-  return true;
+  // Close() is synchronous: fire the events now so they can't reach a menu
+  // the popup manager opens next for the same element.
+  return FinishClose();
 }
 
+// The menu is unmapped before the chosen item is activated. Postpone
+// popuphiding / popuphidden so the item's command runs first, as it does for
+// XUL menus: the hiding handlers tear down state the command needs.
 void NativeMenuGtk::OnUnmap() {
-  FireEvent(eXULPopupHiding);
-
+  // Mutations from the hiding handlers only mark the model dirty now.
   mMenuModel->DidHide();
+  mClosePending = true;
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "NativeMenuGtk::OnUnmap",
+      [self = RefPtr{this}]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY { self->FinishClose(); }));
+}
 
+bool NativeMenuGtk::FinishClose() {
+  if (!mClosePending) {
+    return false;
+  }
+  mClosePending = false;
+
+  FireEvent(eXULPopupHiding);
   FireEvent(eXULPopupHidden);
   OnClosed();
+  return true;
 }
 
 void NativeMenuGtk::ActivateItem(dom::Element* aItemElement, Modifiers,

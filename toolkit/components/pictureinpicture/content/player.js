@@ -325,13 +325,9 @@ let Player = {
       }
     });
 
-    for (let radio of document.querySelectorAll(
-      'input[type=radio][name="cc-size"]'
-    )) {
-      radio.addEventListener("change", event => {
-        this.onSubtitleChange(event.target.id);
-      });
-    }
+    this.fontSizeRadioGroup.addEventListener("change", event => {
+      this.onSubtitleChange(event.target.value);
+    });
 
     this.playbackRateSlider.addEventListener("input", event => {
       this.requestPlaybackRate(parseFloat(event.target.value));
@@ -343,11 +339,9 @@ let Player = {
       });
     }
 
-    document
-      .querySelector("#subtitles-toggle")
-      .addEventListener("change", () => {
-        this.onToggleChange();
-      });
+    this.subtitlesToggle.addEventListener("toggle", () => {
+      this.onToggleChange();
+    });
 
     // If the content process hosting the video crashes, let's
     // just close the window for now.
@@ -418,11 +412,10 @@ let Player = {
     );
 
     // fallback to medium if the pref value is not a valid option
-    if (fontSize === "small" || fontSize === "large") {
-      document.querySelector(`#${fontSize}`).checked = "true";
-    } else {
-      document.querySelector("#medium").checked = "true";
+    if (fontSize !== "small" && fontSize !== "large") {
+      fontSize = "medium";
     }
+    this.fontSizeRadioGroup.value = fontSize;
 
     // In see-through mode the PiP window is made semi-transparent on hover.
     if (Services.prefs.getBoolPref(SEETHROUGH_MODE_ENABLED_PREF, false)) {
@@ -899,16 +892,12 @@ let Player = {
     // Set the subtitles font size prefs
     Services.prefs.setBoolPref(
       CAPTIONS_TOGGLE_ENABLED_PREF,
-      document.querySelector("#subtitles-toggle").checked
+      this.subtitlesToggle.pressed
     );
-    for (let radio of document.querySelectorAll(
-      'input[type=radio][name="cc-size"]'
-    )) {
-      if (radio.checked) {
-        Services.prefs.setCharPref(TEXT_TRACK_FONT_SIZE_PREF, radio.id);
-        break;
-      }
-    }
+    Services.prefs.setCharPref(
+      TEXT_TRACK_FONT_SIZE_PREF,
+      this.fontSizeRadioGroup.value
+    );
     const { reason } = closeData;
     PictureInPicture.closeSinglePipWindow({ reason, actorRef: this.actor });
   },
@@ -986,21 +975,6 @@ let Player = {
         });
         break;
       }
-
-      case "font-size-selection-radio-small": {
-        document.getElementById("small").click();
-        break;
-      }
-
-      case "font-size-selection-radio-medium": {
-        document.getElementById("medium").click();
-        break;
-      }
-
-      case "font-size-selection-radio-large": {
-        document.getElementById("large").click();
-        break;
-      }
     }
     // If the click came from a element that is not inside the subtitles settings panel
     // then we want to hide the panel
@@ -1045,7 +1019,7 @@ let Player = {
       this.showVideoControls();
 
       if (options?.isKeyboard) {
-        document.querySelector("#subtitles-toggle").focus();
+        this.subtitlesToggle.focus();
       }
     }
   },
@@ -1113,9 +1087,7 @@ let Player = {
     // We don't want to send a keydown event if the event target was one of the
     // font sizes in the settings panel or a control in the playback speed panel
     if (
-      event.target.parentElement?.parentElement?.classList?.contains(
-        "font-size-selection"
-      ) ||
+      this.fontSizeRadioGroup.contains(event.target) ||
       this.playbackRatePanel.contains(event.target)
     ) {
       return;
@@ -1188,9 +1160,7 @@ let Player = {
     // The subtitles toggle has been click in the settings panel so we toggle
     // the overlay above the font sizes and send a message to toggle the
     // visibility of the subtitles and set the toggle pref
-    document
-      .querySelector(".font-size-selection")
-      .classList.toggle("font-size-overlay");
+    this.fontSizeRadioGroup.classList.toggle("font-size-overlay");
     this.actor.sendAsyncMessage("PictureInPicture:ToggleTextTracks");
 
     this.captionsToggleEnabled = !this.captionsToggleEnabled;
@@ -1431,7 +1401,7 @@ let Player = {
     // the UI toggle to change the toggle to unchecked. This will call
     // onToggleChange where this.captionsToggleEnabled will be updated
     if (!Services.prefs.getBoolPref(CAPTIONS_TOGGLE_ENABLED_PREF, true)) {
-      document.querySelector("#subtitles-toggle").click();
+      this.subtitlesToggle.click();
     }
   },
 
@@ -1579,6 +1549,18 @@ let Player = {
   get settingsPanel() {
     delete this.settingsPanel;
     return (this.settingsPanel = document.getElementById("settings"));
+  },
+
+  get subtitlesToggle() {
+    delete this.subtitlesToggle;
+    return (this.subtitlesToggle = document.getElementById("subtitles-toggle"));
+  },
+
+  get fontSizeRadioGroup() {
+    delete this.fontSizeRadioGroup;
+    return (this.fontSizeRadioGroup = document.querySelector(
+      ".font-size-selection"
+    ));
   },
 
   _isPlaying: false,

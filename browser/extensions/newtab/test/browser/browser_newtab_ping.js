@@ -263,7 +263,7 @@ add_task(async function test_newtab_highlights_enabled_pref() {
  * submission time because testGetValue() alone cannot tell a value that rode
  * along in the ping from one recorded too late and cleared by the submit.
  *
- * This is the only coverage of the real isSessionInForeground path, everything
+ * This is the only coverage of the real isDwellTargetInForeground path, everything
  * else stubs it out.
  */
 add_task(async function test_newtab_dwell_time_in_ping() {
@@ -280,7 +280,7 @@ add_task(async function test_newtab_dwell_time_in_ping() {
   // The feed credits dwell only up to its last "active" notification, and
   // EventStateManager's idle tick fires on a deadline no test controls.
   let fakeNow = 0;
-  sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+  let nowStub = sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
 
   // Leave the feed's idea of the user idle again, so a later test does not
   // inherit a running stopwatch.
@@ -345,5 +345,112 @@ add_task(async function test_newtab_dwell_time_in_ping() {
     5000 /* timeout to send the ping */
   );
 
+  nowStub.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Tests that active time on a page opened from the newtab is recorded under
+ * newtab.opened_page_dwell_time, labelled by what was clicked to open it, and
+ * that it stays out of the newtab ping.
+ *
+ * It drives TelemetryFeed the way PlacesFeed does, rather than clicking a
+ * real card, because the destination <browser> is what the measurement hangs
+ * off.
+ */
+add_task(async function test_opened_page_dwell_time() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.activity-stream.telemetry", true]],
+  });
+
+  Services.fog.testResetFOG();
+  sendTriggerMessageSpy.resetHistory();
+  let TelemetryFeed =
+    AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
+
+  // The train-hop variants run this file against whichever newtab the older
+  // Firefox has, which is its built-in one whenever the add-on under test did
+  // not take over. That one predates this measurement entirely.
+  if (typeof TelemetryFeed.handleDwellLinkOpened !== "function") {
+    Assert.ok(true, "Skipping: this newtab predates opened_page_dwell_time");
+    return;
+  }
+
+  TelemetryFeed.init();
+
+  let fakeNow = 0;
+  let nowStub = sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+
+  // Leave the feed's idea of the user idle again, so a later test doesn't
+  // inherit a running stopwatch.
+  registerCleanupFunction(() => {
+    Services.obs.notifyObservers(
+      null,
+      "user-interaction-inactive-non-synthesized"
+    );
+  });
+
+  await SimpleTest.promiseFocus(window);
+  Assert.equal(
+    TelemetryFeed.getActiveChromeWindow(),
+    window,
+    "The test window holds focus"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+  TelemetryFeed.handleDwellLinkOpened({
+    data: {
+      browser: tab.linkedBrowser,
+      dwell_label: "story_organic",
+    },
+  });
+
+  // The destination load is what starts the measurement.
+  let loaded = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false,
+    "https://example.com/"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    "https://example.com/"
+  );
+  await loaded;
+
+  // Fire the notifications directly rather than waiting out the real
+  // EventStateManager interval. Two of them, with the feed's clock advanced in
+  // between, because the credit runs up to the most recent one.
+  Services.obs.notifyObservers(null, "user-interaction-active-non-synthesized");
+  fakeNow += 100;
+  Services.obs.notifyObservers(null, "user-interaction-active-non-synthesized");
+
+  // Closing the tab fires no location change, so the sample is finalized by
+  // the next activity sweep.
+  BrowserTestUtils.removeTab(tab);
+  Services.obs.notifyObservers(
+    null,
+    "user-interaction-inactive-non-synthesized"
+  );
+
+  let dwell =
+    Glean.newtab.openedPageDwellTime.story_organic.testGetValue("metrics");
+  Assert.ok(dwell, "The opened page's dwell was recorded");
+  Assert.equal(dwell.count, 1, "One sample for the one page");
+  Assert.greater(dwell.sum, 0, "Some active time was measured");
+  Assert.equal(
+    Glean.newtab.openedPageDwellTime.story_sponsored.testGetValue("metrics"),
+    null,
+    "Nothing landed under the wrong label"
+  );
+  Assert.equal(
+    Glean.newtab.openedPageDwellTime.story_organic.testGetValue("newtab"),
+    null,
+    "The sample is not in newtab ping storage, so no newtab ping carries it"
+  );
+
+  nowStub.restore();
   await SpecialPowers.popPrefEnv();
 });

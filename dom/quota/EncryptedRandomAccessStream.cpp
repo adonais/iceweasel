@@ -28,7 +28,7 @@ namespace mozilla::dom::quota {
 
 NS_IMPL_QUERY_INTERFACE(EncryptedRandomAccessStreamBase, nsIRandomAccessStream,
                         nsIInputStream, nsIOutputStream, nsISeekableStream,
-                        nsITellableStream)
+                        nsITellableStream, nsIFileMetadata)
 
 NS_IMPL_ADDREF(EncryptedRandomAccessStreamBase)
 
@@ -592,6 +592,10 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
   MOZ_ASSERT_IF(grow, mTotalBlockCount == targetBlockIndex + 1);
   mTotalBlockCount = targetBlockIndex + 1;  // Necessary for the shrink case.
 
+  // TODO: Not crash safe: crashing between the block rewrite above and the
+  // truncation below leaves a file that Create() accepts but that cannot be
+  // read past the shortened block. See bug 2072949.
+
   // 3. Truncate the base stream.
   const auto newPhysicalSize = CheckedInt64(mTotalBlockCount) * sBlockSize;
   if (!newPhysicalSize.isValid()) {
@@ -607,6 +611,36 @@ NS_IMETHODIMP EncryptedRandomAccessStreamBase::SetEOF() {
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetSize(int64_t* aResult) {
+  if (mClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  // The plaintext size, not the size of the file, which is larger because of
+  // the per-block overhead.
+  //
+  // Buffered writes count towards it. |Write()| only updates |mLogicalSize|
+  // and marks the block dirty, so a write which hasn't been saved to the base
+  // stream yet is invisible there. Counting it anyway is what keeps
+  // |Write()| followed by |GetSize()| reporting the new size, the way it does
+  // for an unencrypted file stream, where |Write()| goes straight to the file
+  // descriptor that |nsFileStreamBase::GetSize()| then measures.
+  *aResult = static_cast<int64_t>(mLogicalSize);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetLastModified(int64_t*) {
+  // Currently, there is no caller.
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP EncryptedRandomAccessStreamBase::GetFileDescriptor(
+    PRFileDesc** aResult) {
+  // Currently, there is no caller.
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 bool EncryptedRandomAccessStreamBase::Deserialize(

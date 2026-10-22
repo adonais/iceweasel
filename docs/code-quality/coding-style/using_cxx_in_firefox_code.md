@@ -415,7 +415,7 @@ A list of approved standard library headers is maintained in
    * - ``nsClassHashtable``
      - ``nsClassHashtable.h``
      -
-     - Adaptation of nsTHashtable, see :ref:`XPCOM Hashtable Guide`
+     - Adaptation of nsTHashtable, see :doc:`/xpcom/hashtables`
    * - ``nsCOMArray``
      - ``nsCOMArray.h``
      -
@@ -423,11 +423,11 @@ A list of approved standard library headers is maintained in
    * - ``nsTHashMap``
      - ``nsTHashMap.h``
      - ``std::unordered_map``
-     - Adaptation of ``nsTHashtable``, see :ref:`XPCOM Hashtable Guide`
+     - Adaptation of ``nsTHashtable``, see :doc:`/xpcom/hashtables`
    * - ``nsTHashSet``
      - ``nsTHashSet.h``
      - ``std::unordered_set``
-     - Adaptation of ``nsTHashtable``, see :ref:`XPCOM Hashtable Guide`
+     - Adaptation of ``nsTHashtable``, see :doc:`/xpcom/hashtables`
    * - ``nsDeque``
      - ``nsDeque.h``
      - ``std::deque<T>``
@@ -443,7 +443,7 @@ A list of approved standard library headers is maintained in
    * - ``nsInterfaceHashtable``
      - ``nsInterfaceHashtable.h``
      - ``std::unordered_map``
-     - Adaptation of ``nsTHashtable``, see :ref:`XPCOM Hashtable Guide`
+     - Adaptation of ``nsTHashtable``, see :doc:`/xpcom/hashtables`
    * - ``mozilla::LinkedList``
      - ``mozilla/LinkedList.h``
      - ``std::list``
@@ -451,7 +451,7 @@ A list of approved standard library headers is maintained in
    * - ``nsRefPtrHashtable``
      - ``nsRefPtrHashtable.h``
      - ``std::unordered_map``
-     - Adaptation of ``nsTHashtable``, see :ref:`XPCOM Hashtable Guide`
+     - Adaptation of ``nsTHashtable``, see :doc:`/xpcom/hashtables`
    * - ``mozilla::SegmentedVector``
      - ``mozilla/SegmentedVector.h``
      - ``std::deque`` w/o O(1) pop_front
@@ -467,7 +467,7 @@ A list of approved standard library headers is maintained in
    * - ``nsTHashtable``
      - ``nsTHashtable.h``
      - ``std::unordered_{map,set}``
-     - See :ref:`XPCOM Hashtable Guide`,  you probably want a subclass
+     - See :doc:`/xpcom/hashtables`,  you probably want a subclass
    * - ``nsTObserverArray``
      - ``nsTObserverArray.h``
      -
@@ -842,7 +842,7 @@ only capturing what you expect to capture.
 
 ### Use namespaces
 
-Namespaces may be used according to the style guidelines in {ref}`C++ Coding style`.
+Namespaces may be used according to the style guidelines in {doc}`coding_style_cpp`.
 
 ### Don't mix varargs and inlines
 

@@ -301,6 +301,8 @@ class GfxConfigManager : public ::testing::Test, public gfxConfigManager {
     mFeatureGPUProcess->EnableByDefault();
 
     mWrCompositorEnabled.emplace(true);
+    // Keep the existing tests on the non-layer compositor configuration.
+    mWrLayerCompositorEnabled = false;
     mWrAngleEnabled.emplace(true);
     mWrPartialPresent = true;
     mWrShaderCache.emplace(true);
@@ -458,6 +460,30 @@ TEST_F(GfxConfigManager, WebRenderScaledResolutionNoHwStretching) {
   EXPECT_TRUE(mFeatures.mGPUProcess.IsEnabled());
   EXPECT_TRUE(mFeatures.mD3D11HwAngle.IsEnabled());
   EXPECT_TRUE(mFeatures.mGLNorm16Textures.IsEnabled());
+}
+
+TEST_F(GfxConfigManager,
+       WebRenderLayerCompositorScaledResolutionNoHwStretching) {
+  mWrLayerCompositorEnabled = true;
+  ++mHwStretchingSupport.mNone;
+  mScaledResolution = true;
+  ConfigureWebRender();
+
+  EXPECT_TRUE(mFeatures.mWr.IsEnabled());
+  EXPECT_TRUE(mFeatures.mWrCompositor.IsEnabled());
+  EXPECT_TRUE(mFeatures.mWrDComp.IsEnabled());
+}
+
+TEST_F(GfxConfigManager, WebRenderLayerCompositorNoHwStretchingDCompDisabled) {
+  mWrLayerCompositorEnabled = true;
+  ++mHwStretchingSupport.mNone;
+  mScaledResolution = true;
+  mWrDCompWinEnabled = false;
+  ConfigureWebRender();
+
+  EXPECT_TRUE(mFeatures.mWr.IsEnabled());
+  EXPECT_FALSE(mFeatures.mWrCompositor.IsEnabled());
+  EXPECT_FALSE(mFeatures.mWrDComp.IsEnabled());
 }
 
 TEST_F(GfxConfigManager, WebRenderEnabledWithDisableHwCompositingNoWr) {

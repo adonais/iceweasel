@@ -59,16 +59,4 @@ nsresult SVGLengthList::SetValueFromString(const nsAString& aValue) {
   return NS_OK;
 }
 
-bool SVGLengthList::operator==(const SVGLengthList& rhs) const {
-  if (Length() != rhs.Length()) {
-    return false;
-  }
-  for (uint32_t i = 0; i < Length(); ++i) {
-    if (!(mLengths[i] == rhs.mLengths[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
 }  // namespace mozilla

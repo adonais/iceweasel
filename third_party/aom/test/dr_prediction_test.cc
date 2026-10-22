@@ -96,6 +96,7 @@ void z3_wrapper(uint8_t *dst, ptrdiff_t stride, int bw, int bh,
   fn(dst, stride, bw, bh, above, left, upsample_left, dx, dy);
 }
 
+#if CONFIG_AV1_HIGHBITDEPTH
 using Z1_Hbd = void (*)(uint16_t *dst, ptrdiff_t stride, int bw, int bh,
                         const uint16_t *above, const uint16_t *left,
                         int upsample_above, int dx, int dy, int bd);
@@ -135,6 +136,7 @@ void z3_wrapper_hbd(uint16_t *dst, ptrdiff_t stride, int bw, int bh,
   (void)upsample_above;
   fn(dst, stride, bw, bh, above, left, upsample_left, dx, dy, bd);
 }
+#endif  // CONFIG_AV1_HIGHBITDEPTH
 
 template <typename FuncType>
 struct DrPredFunc {

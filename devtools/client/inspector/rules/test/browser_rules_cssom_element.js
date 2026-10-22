@@ -47,8 +47,8 @@ const TESTS = [
         selector: "element",
         selectorEditable: false,
         declarations: [
-          { name: "foo", value: "red", overridden: true, valid: false },
-          { name: "1", value: "2", overridden: true, valid: false },
+          { name: "foo", value: "red", overridden: false, valid: false },
+          { name: "1", value: "2", overridden: false, valid: false },
           { name: "color", value: "bar", valid: false },
         ],
       },

@@ -70,6 +70,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -298,10 +299,10 @@ int HashMgr::add_word(const std::string& in_word,
               size_t stripword = 0;
               if (utf8) {
                 while ((strippatt < ph.size()) &&
-                  ((ph.at(ph.size()-strippatt-1) & 0xc0) == 0x80))
+                  is_utf8_cont(ph.at(ph.size()-strippatt-1)))
                      ++strippatt;
                 while ((stripword < wordpart.size()) &&
-                  ((wordpart.at(wordpart.size()-stripword-1) & 0xc0) == 0x80))
+                  is_utf8_cont(wordpart.at(wordpart.size()-stripword-1)))
                      ++stripword;
               }
               ++strippatt;
@@ -507,7 +508,8 @@ int HashMgr::get_clen_and_captype(const std::string& word, int* captype) {
 int HashMgr::remove(const std::string& word) {
   struct hentry* dp = lookup(word.c_str(), word.size());
   while (dp) {
-    if (dp->alen == 0 || !TESTAFF(dp->astr, forbiddenword, dp->alen)) {
+    if ((dp->alen == 0 || !TESTAFF(dp->astr, forbiddenword, dp->alen)) &&
+        dp->alen < std::numeric_limits<short>::max()) {
       auto flags = new unsigned short[dp->alen + 1];
       for (int i = 0; i < dp->alen; i++)
         flags[i] = dp->astr[i];
@@ -627,7 +629,8 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
 
   const int nExtra = 5 + USERWORD;
 #if !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-  const int max_allowed = (std::numeric_limits<int>::max() - 1 - nExtra) / int(sizeof(struct hentry*));
+  // covers full-form uncompressed dictionaries (~7M for uk_UA expanded)
+  const int max_allowed = 10000000;
 #else
   const int max_allowed = (10000 - 1 - nExtra) / int(sizeof(struct hentry*));
 #endif
@@ -695,6 +698,7 @@ int HashMgr::load_tables(const char* tpath, const char* key) {
     while (ap_pos != std::string::npos) {
       if (ap_pos == 0) {
         ++ap_pos;
+        ap_pos = ts.find('/', ap_pos);
         continue;
       } else if (ts[ap_pos - 1] != '\\')
         break;
@@ -1439,7 +1443,7 @@ void* HashMgr::arena_alloc(size_t num_bytes, size_t alignment) const {
   // dictionaries, large enough to amortize per-chunk malloc overhead on large
   // ones. make_unique throws std::bad_alloc on OOM.
   static const size_t MIN_CHUNK_SIZE = 65536;
-  static const size_t MAX_ALIGNMENT = alignof(std::max_align_t);
+  static const size_t MAX_ALIGNMENT = alignof(max_align_t);
   // Chunk sizes are rounded up to MAX_ALIGNMENT below; with this invariant,
   // any alignment that divides MAX_ALIGNMENT keeps aligned_offset within bounds.
   assert(alignment > 0 && alignment <= MAX_ALIGNMENT);

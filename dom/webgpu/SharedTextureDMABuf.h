@@ -38,7 +38,7 @@ class SharedTextureDMABuf final : public SharedTexture {
   SharedTextureDMABuf* AsSharedTextureDMABuf() override { return this; }
 
   void onBeforeQueueSubmit(
-      const ffi::WGPUGlobal* aContext, RawId aDeviceId, RawId aQueueId,
+      const ffi::WGPUGlobal* aContext, RawId aQueueId,
       nsTArray<ffi::WGPUVkSemaphoreHandle>& aSignalSemaphores) override;
 
   void CleanForRecycling() override;

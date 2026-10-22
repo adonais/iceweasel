@@ -153,35 +153,36 @@ class AMOAddonsProvider(
         id: String,
         readTimeoutInSeconds: Long?,
         language: String?,
-    ): Addon? {
-        val langParam =
-            when (!language.isNullOrEmpty()) {
-                true -> "&lang=$language"
-                else -> ""
-            }
+    ): Addon? =
+        withContext(ioDispatcher) {
+            val langParam =
+                when (!language.isNullOrEmpty()) {
+                    true -> "&lang=$language"
+                    else -> ""
+                }
 
-        return client
-            .fetch(
-                Request(
-                    url = "$serverURL/$API_VERSION/addons/search/?guid=$id$langParam",
-                    readTimeout = Pair(readTimeoutInSeconds ?: DEFAULT_READ_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS),
+            client
+                .fetch(
+                    Request(
+                        url = "$serverURL/$API_VERSION/addons/search/?guid=$id$langParam",
+                        readTimeout = Pair(readTimeoutInSeconds ?: DEFAULT_READ_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS),
+                    )
                 )
-            )
-            .use { response ->
-                if (response.isSuccess) {
-                    val responseBody = response.body.string(Charsets.UTF_8)
-                    try {
-                        JSONObject(responseBody).getAddonsFromSearchResults(language).firstOrNull()
-                    } catch (e: JSONException) {
-                        logger.error("Failed to get addon by uuid [$id]", e)
+                .use { response ->
+                    if (response.isSuccess) {
+                        val responseBody = response.body.string(Charsets.UTF_8)
+                        try {
+                            JSONObject(responseBody).getAddonsFromSearchResults(language).firstOrNull()
+                        } catch (e: JSONException) {
+                            logger.error("Failed to get addon by uuid [$id]", e)
+                            null
+                        }
+                    } else {
+                        logger.error("Failed to get addon by uuid [$id]. Status code: ${response.status}")
                         null
                     }
-                } else {
-                    logger.error("Failed to get addon by uuid [$id]. Status code: ${response.status}")
-                    null
                 }
-            }
-    }
+        }
 
     @Suppress("CognitiveComplexMethod")
     private suspend fun fetchFeaturedAddons(

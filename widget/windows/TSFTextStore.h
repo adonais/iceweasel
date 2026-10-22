@@ -977,6 +977,9 @@ class TSFTextStore final : public TSFTextStoreBase,
   // calculated yet, these methods return TS_E_NOLAYOUT.  At that time,
   // mHasReturnedNoLayoutError is set to true.
   bool mHasReturnedNoLayoutError = false;
+  // Set to true if a layout change occurred during a document lock. Then, when
+  // we notifying TSF of the layout change, this is set to false.
+  bool mNeedsToNotifyTSFOfLayoutChange = false;
   // When we need to create native caret with the latest selection, but we're
   // initializing selection, this is set to true.
   bool mPendingToCreateNativeCaret = false;

@@ -112,9 +112,6 @@ support-files = [
   "redirect_twice.sjs",
   "userpass.html",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1889180
-]
 
 ["browser_visituri_nohistory.js"]
 support-files = [
@@ -132,15 +129,9 @@ support-files = [
 ]
 
 ["browser_visituri_restriction.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1891145
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1891145
-]
 
 ["browser_visituri_restriction_origin.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1891145
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1891145
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && verify-standalone",
 ]

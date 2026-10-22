@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { showBookmarksSidebar } = SidebarTestUtils.bookmarks;
+
 const FIRST_URL = "https://example.com/";
 const SECOND_URL = "https://example.org/";
 
@@ -23,7 +25,7 @@ add_task(async function test_auxclick_bookmark_opens_in_new_tab() {
     title: "Example Page",
   });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const innerList = await expandToolbarFolder(component.bookmarkList);
 
   await BrowserTestUtils.waitForMutationCondition(
@@ -69,7 +71,7 @@ add_task(async function test_auxclick_folder_opens_all_children_in_new_tabs() {
     title: "Second Page",
   });
 
-  const { component, contentWindow } = await showBookmarksSidebar();
+  const { component, contentWindow } = await showBookmarksSidebar(window);
   const innerList = await expandToolbarFolder(component.bookmarkList);
 
   await BrowserTestUtils.waitForMutationCondition(

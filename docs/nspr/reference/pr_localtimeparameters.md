@@ -1,7 +1,7 @@
 # PR_LocalTimeParameters
 
 Returns the time zone offset information that maps the specified
-{ref}`PRExplodedTime` to local time.
+{doc}`prexplodedtime` to local time.
 
 ## Syntax
 

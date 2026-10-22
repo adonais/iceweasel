@@ -393,8 +393,8 @@ describe("<TopSiteForm>", () => {
           source: "TOP_SITES",
           event: "TOP_SITES_EDIT",
           action_position: 7,
-          hasTitleChanged: false,
-          hasURLChanged: false,
+          has_title_changed: false,
+          has_url_changed: false,
         })
       );
     });

@@ -333,4 +333,14 @@ interface nsIFOG : nsISupports
                           in Array<ACString> aReasonCodes,
                           in boolean aFollowsCollectionEnabled,
                           in Array<ACString> aUploaderCapabilities);
+
+  void setStoreSubmittedPingsEnabled(in boolean aEnabled);
+
+  [implicit_jscontext]
+  jsval getAllStoredSubmittedPings();
+
+  [implicit_jscontext]
+  jsval getStoredSubmittedPingsByName(in ACString aPing);
+
+  void clearStoredSubmittedPings();
 };

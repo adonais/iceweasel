@@ -110,16 +110,14 @@ already_AddRefed<SharedFTFace> FT2FontEntry::GetFTFace(bool aCommit) {
       NS_ASSERTION(bufSize == item->RealSize(), "error reading bundled font");
       // fontData takes ownership of fontDataBuf
       auto fontData = MakeRefPtr<FontData>(std::move(fontDataBuf), bufSize);
-      auto ufd = MakeRefPtr<FTUserFontData>(fontData);
-      face = ufd->CloneFace(mFTFontIndex);
+      face = Factory::NewSharedFTFaceFromData(fontData, mFTFontIndex);
       if (!face) {
         NS_WARNING("failed to create freetype face");
         return nullptr;
       }
     }
   } else {
-    RefPtr<FTUserFontData> fd = new FTUserFontData(mFilename.get());
-    face = fd->CloneFace(mFTFontIndex);
+    face = Factory::NewSharedFTFace(mFilename.get(), mFTFontIndex);
     if (!face) {
       NS_WARNING("failed to create freetype face");
       return nullptr;
@@ -145,9 +143,9 @@ already_AddRefed<SharedFTFace> FT2FontEntry::GetFTFace(bool aCommit) {
   return face.forget();
 }
 
-FTUserFontData* FT2FontEntry::GetUserFontData() {
+FontData* FT2FontEntry::GetUserFontData() {
   if (SharedFTFace* face = mFTFace) {
-    return static_cast<FTUserFontData*>(face->GetData());
+    return face->GetFontData();
   }
   return nullptr;
 }
@@ -207,10 +205,9 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
       // variation settings to it.
       RefPtr<SharedFTFace> varFace;
       if (!mFilename.IsEmpty() && mFilename[0] == '/') {
-        varFace =
-            Factory::NewSharedFTFace(nullptr, mFilename.get(), mFTFontIndex);
+        varFace = Factory::NewSharedFTFace(mFilename.get(), mFTFontIndex);
       } else {
-        varFace = face->GetData()->CloneFace(mFTFontIndex);
+        varFace = face->CloneFace();
       }
       if (varFace) {
         gfxFT2FontBase::SetupVarCoords(GetMMVar(), settings,
@@ -254,8 +251,7 @@ already_AddRefed<FT2FontEntry> FT2FontEntry::CreateFontEntry(
   // Ownership of aFontData is passed in here; the fontEntry must
   // retain it as long as the FT_Face needs it, and ensure it is
   // eventually deleted.
-  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData);
-  RefPtr<SharedFTFace> face = ufd->CloneFace();
+  RefPtr<SharedFTFace> face = Factory::NewSharedFTFaceFromData(aFontData, 0);
   if (!face) {
     return nullptr;
   }
@@ -576,12 +572,10 @@ nsresult FT2FontEntry::CopyFontTable(uint32_t aTableTag,
 }
 
 hb_blob_t* FT2FontEntry::GetFontTableInternal(uint32_t aTableTag) {
-  if (FTUserFontData* userFontData = GetUserFontData()) {
+  if (auto* ufd = GetUserFontData()) {
     // If there's a cairo font face, we may be able to return a blob
     // that just wraps a range of the attached user font data
-    if (const auto* data = userFontData->GetData()) {
-      return gfxFontUtils::GetTableFromFontData(data, aTableTag);
-    }
+    return gfxFontUtils::GetTableFromFontData(ufd->Data(), aTableTag);
   }
 
   // Try to read table directly via harfbuzz API, unless CreateHBFace will be

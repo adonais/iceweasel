@@ -716,6 +716,90 @@ prefs = [
             f"No line resembling a stack frame was found in\n{pprint.pformat(log_lines)}",
         )
 
+    @unittest.skipIf(
+        mozinfo.isWin or not mozinfo.info.get("debug"),
+        "We don't have a stack fixer on hand for windows.",
+    )
+    def testAssertionFailureAction(self):
+        """
+        An assertion and the stack printed after it are reported as a single
+        assertion_failure structured log action.
+        """
+        records = []
+        self.x.log.add_handler(records.append)
+        self.writeFile(
+            "test_assert.js",
+            """
+          add_test(function test_asserts_immediately() {
+            Components.classes["@mozilla.org/xpcom/debug;1"]
+                      .getService(Components.interfaces.nsIDebug2)
+                      .assertion("foo", "assertion failed", "test.js", 1)
+            run_next_test();
+          });
+        """,
+        )
+
+        self.writeManifest(["test_assert.js"])
+        self.assertTestResult(False)
+
+        failures = [r for r in records if r["action"] == "assertion_failure"]
+        self.assertEqual(len(failures), 1, pprint.pformat(records))
+        failure = failures[0]
+        self.assertEqual(failure["kind"], "NS_ASSERTION")
+        # XPCOM_DEBUG_BREAK=stack-and-abort: the assertion aborts the process.
+        self.assertTrue(failure["fatal"])
+        self.assertEqual(failure["message"], "foo: 'assertion failed'")
+        self.assertEqual(failure["file"], "test.js")
+        self.assertEqual(failure["lineno"], 1)
+        self.assertTrue(failure["test"].endswith("test_assert.js"))
+        self.assertTrue(
+            any("NS_DebugBreak" in f.get("function", "") for f in failure["stack"]),
+            pprint.pformat(failure["stack"]),
+        )
+
+    def testUBSanErrorAction(self):
+        """
+        An UndefinedBehaviorSanitizer report printed by the test process is
+        reported as a single ubsan_error structured log action.
+
+        The report lines are synthetic, so unlike testAssertionFailureAction
+        this needs no stack fixer and runs on every build type.
+        """
+        records = []
+        self.x.log.add_handler(records.append)
+        self.writeFile(
+            "test_ubsan.js",
+            """
+          function run_test() {
+            dump("/src/ggml-c.c:7106:33: runtime error: applying non-zero offset 96 to null pointer\\n");
+            dump("    #0 0x7b417858d37c in incr_ptr_aligned /src/ggml-c.c:7106:33\\n");
+            dump("    #1 0x7f42401b0a33 in clone misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:100\\n");
+            dump("SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior /src/ggml-c.c:7106:33\\n");
+            Assert.ok(true);
+          }
+        """,
+        )
+
+        self.writeManifest(["test_ubsan.js"])
+        self.assertTestResult(True, verbose=True)
+
+        errors = [r for r in records if r["action"] == "ubsan_error"]
+        self.assertEqual(len(errors), 1, pprint.pformat(records))
+        error = errors[0]
+        self.assertEqual(error["kind"], "undefined-behavior")
+        self.assertEqual(
+            error["message"], "applying non-zero offset 96 to null pointer"
+        )
+        self.assertEqual(error["file"], "/src/ggml-c.c")
+        self.assertEqual(error["lineno"], 7106)
+        self.assertEqual(error["column"], 33)
+        self.assertTrue(error["test"].endswith("test_ubsan.js"))
+        self.assertEqual(
+            [f["function"] for f in error["stack"]], ["incr_ptr_aligned", "clone"]
+        )
+        self.assertEqual(error["stack"][1]["line"], 100)
+        self.assertNotIn("column", error["stack"][1])
+
     def testChildPass(self):
         """
         Check that a simple test running in a child process passes.

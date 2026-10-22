@@ -14,6 +14,8 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+const ENABLE_STORED_SUBMITTED_PINGS_PREF =
+  "telemetry.fog.enable_store_submitted_pings";
 const METRIC_DATA = {};
 let MAPPED_METRIC_DATA = [];
 let FILTERED_METRIC_DATA = [];
@@ -21,6 +23,10 @@ let LIMITED_METRIC_DATA = [];
 let LIMIT_OFFSET = 0;
 let LIMIT_COUNT = 200;
 let METRIC_DATA_INITIALIZED = false;
+let STORE_SUBMITTED_PINGS_ENABLED = false;
+let SUBMITTED_PING = undefined;
+const CAMEL_CASE_REGEX = /_(\w)/g;
+const INITIAL_CASE_REGEX = /\b\w/g;
 const INVALID_VALUE_REASONS = {
   DUAL_LABELED_METRIC: 0,
   UNKNOWN_METRIC: 1,
@@ -84,6 +90,10 @@ function updatePrefsAndDefines() {
     uploadL10nId = "about-glean-upload-enabled-local";
   }
   document.l10n.setAttributes(uploadMessageEl, uploadL10nId);
+
+  STORE_SUBMITTED_PINGS_ENABLED = Services.prefs.getBoolPref(
+    ENABLE_STORED_SUBMITTED_PINGS_PREF
+  );
 }
 
 function camelToKebab(str) {
@@ -296,6 +306,7 @@ function onLoad() {
     setTimeout(() => {
       feedbackToast.style.visibility = "hidden";
     }, 3000);
+    loadStoredSubmittedPings();
   });
 
   handleRedesign();
@@ -318,6 +329,176 @@ function onLoad() {
   document.getElementById("export-data").addEventListener("click", () => {
     exportData();
   });
+
+  // Initialize storing of submitted pings
+  const storeSubmittedPingsEl = document.querySelector(
+    `[data-form-control='storeSubmittedPings']`
+  );
+  storeSubmittedPingsEl.pressed = STORE_SUBMITTED_PINGS_ENABLED;
+  storeSubmittedPingsEl.addEventListener("toggle", e => {
+    const enabled = e.target.pressed;
+    Services.prefs.setBoolPref(ENABLE_STORED_SUBMITTED_PINGS_PREF, enabled);
+    Services.fog.setStoreSubmittedPingsEnabled(enabled);
+    if (!enabled) {
+      Services.fog.clearStoredSubmittedPings();
+      document
+        .querySelectorAll("#submitted-pings-select>optgroup")
+        .forEach(el => el.remove());
+    }
+  });
+
+  loadStoredSubmittedPings();
+}
+
+/**
+ * Loads and parses stored submitted pings
+ */
+function loadStoredSubmittedPings() {
+  if (STORE_SUBMITTED_PINGS_ENABLED) {
+    const selectEl = document.getElementById("submitted-pings-select");
+    selectEl.querySelectorAll("optgroup").forEach(og => og.remove());
+
+    const allPings = Services.fog.getAllStoredSubmittedPings().map(ping => {
+      ping.submittedDate = new Date(ping.submittedDate).toISOString();
+      return ping;
+    });
+    const pingsObj = allPings.reduce((acc, curr) => {
+      if (!acc[curr.ping]) {
+        acc[curr.ping] = [];
+      }
+      acc[curr.ping].push(curr);
+      return acc;
+    }, {});
+    Object.keys(pingsObj).forEach(ping => {
+      pingsObj[ping].toSorted((a, b) => {
+        d3.descending(a.submittedDate, b.submittedDate);
+      });
+    });
+    for (let ping of Object.keys(pingsObj).toSorted((a, b) =>
+      d3.ascending(a, b)
+    )) {
+      const optgroupEl = document.createElement("optgroup");
+      optgroupEl.label = ping;
+
+      for (let p of pingsObj[ping]) {
+        const el = document.createElement("option");
+        el.innerText = `${p.ping} (${p.submittedDate})`;
+        el.value = p.documentId;
+        optgroupEl.appendChild(el);
+      }
+      selectEl.appendChild(optgroupEl);
+    }
+
+    selectEl.addEventListener("input", e => {
+      if (e.target.value !== "") {
+        SUBMITTED_PING = allPings.find(
+          ping => ping.documentId === e.target.value
+        );
+        if (SUBMITTED_PING !== undefined) {
+          const allMetrics = Object.values(
+            SUBMITTED_PING.payload.metrics ?? {}
+          ).reduce((acc, curr) => {
+            return {
+              ...acc,
+              ...Object.keys(curr).reduce((acc, key) => {
+                let split = key.split(".");
+                const metric = split
+                  .at(-1)
+                  .replace(CAMEL_CASE_REGEX, (_, char) => char.toUpperCase());
+                split = split.slice(0, -1);
+                const category = split
+                  .map((v, i) =>
+                    i === 0
+                      ? v.replace(CAMEL_CASE_REGEX, (_, char) =>
+                          char.toUpperCase()
+                        )
+                      : v
+                          .replace(INITIAL_CASE_REGEX, char =>
+                            char.toUpperCase()
+                          )
+                          .replace(CAMEL_CASE_REGEX, (_, char) =>
+                            char.toUpperCase()
+                          )
+                  )
+                  .join("");
+                acc[`${category}.${metric}`] = curr[key];
+
+                const datum = MAPPED_METRIC_DATA.find(
+                  d => d.category === category && d.name === metric
+                );
+                if (datum) {
+                  datum.storedValue = curr[key];
+                  datum.loaded = true;
+                } else {
+                  console.warn(`Unable to find metric ${category}.${metric}`);
+                }
+
+                return acc;
+              }, {}),
+            };
+          }, {});
+
+          const allEvents = (SUBMITTED_PING.payload.events ?? []).reduce(
+            (acc, curr) => {
+              let split = curr.category.split(".");
+              const metric = curr.name.replace(CAMEL_CASE_REGEX, (_, char) =>
+                char.toUpperCase()
+              );
+              const category = split
+                .map((v, i) =>
+                  i === 0
+                    ? v.replace(CAMEL_CASE_REGEX, (_, char) =>
+                        char.toUpperCase()
+                      )
+                    : v
+                        .replace(INITIAL_CASE_REGEX, char => char.toUpperCase())
+                        .replace(CAMEL_CASE_REGEX, (_, char) =>
+                          char.toUpperCase()
+                        )
+                )
+                .join("");
+              if (acc[`${category}.${metric}`]) {
+                acc[`${category}.${metric}`].push(curr);
+              } else {
+                acc[`${category}.${metric}`] = [curr];
+              }
+              return acc;
+            },
+            {}
+          );
+          Object.entries(allEvents).forEach(([key, value]) => {
+            const [category, metric] = key.split(".");
+            const datum = MAPPED_METRIC_DATA.find(
+              d => d.category === category && d.name === metric
+            );
+            if (datum) {
+              datum.storedValue = value;
+              datum.loaded = true;
+            } else {
+              console.warn(`Unable to find metric ${category}.${metric}`);
+            }
+          });
+          SUBMITTED_PING.payload.allMetrics = {
+            ...allMetrics,
+            ...allEvents,
+          };
+        } else {
+          SUBMITTED_PING = undefined;
+          MAPPED_METRIC_DATA.forEach(datum => {
+            datum.storedValue = undefined;
+          });
+        }
+      } else {
+        SUBMITTED_PING = undefined;
+        MAPPED_METRIC_DATA.forEach(datum => {
+          datum.storedValue = undefined;
+        });
+      }
+      updateFilteredMetricData(
+        document.getElementById("filter-metrics").value.toLowerCase()
+      );
+    });
+  }
 }
 
 /**
@@ -346,6 +527,7 @@ function initializeMetricData() {
       METRIC_DATA[category][metricName] = {
         type: constructorName,
         value: undefined,
+        storedValue: undefined,
         metric,
       };
     }
@@ -360,15 +542,15 @@ function updateButtonsSelection(selection) {
 }
 
 function createOrUpdateLabeledHistogram(selection, datum) {
-  const keysAndValues = Object.entries(datum.value || {}).map(
-    ([key, value]) => [
-      key,
-      {
-        fullName: datum.fullName + `.${key}`,
-        value,
-      },
-    ]
-  );
+  const keysAndValues = Object.entries(
+    (datum.storedValue ?? datum.value) || {}
+  ).map(([key, value]) => [
+    key,
+    {
+      fullName: datum.fullName + `.${key}`,
+      value,
+    },
+  ]);
 
   selection.selectAll("*").remove();
   if (keysAndValues.length === 0) {
@@ -392,10 +574,9 @@ function createOrUpdateLabeledHistogram(selection, datum) {
 }
 
 function createOrUpdateHistogram(selection, datum) {
-  const values = Object.entries(datum.value?.values || {}).map((d, i) => [
-    ...d,
-    i,
-  ]);
+  const values = Object.entries(
+    (datum.storedValue ?? datum.value)?.values || {}
+  ).map((d, i) => [...d, i]);
 
   if (!values || values.length === 0) {
     selection.select("p")?.remove();
@@ -490,7 +671,7 @@ function createOrUpdateHistogram(selection, datum) {
 }
 
 function createOrUpdateEventChart(selection, datum) {
-  const values = (datum.value || []).map((d, i) => ({
+  const values = ((datum.storedValue ?? datum.value) || []).map((d, i) => ({
     ...d,
     index: i,
     fullName: datum.fullName,
@@ -834,7 +1015,7 @@ function updateValueSelection(selection) {
             if (codeSelection.empty()) {
               codeSelection = d3.select(this).append("pre").append("code");
             }
-            codeSelection.text(prettyPrint(datum.value));
+            codeSelection.text(prettyPrint(datum.storedValue ?? datum.value));
         }
       }
     });
@@ -1024,7 +1205,7 @@ function updateTable() {
  * @param {*} searchString the string by which the metric data will be filtered
  */
 function updateFilteredMetricData(searchString) {
-  if (!searchString) {
+  if (!searchString && !SUBMITTED_PING) {
     FILTERED_METRIC_DATA = MAPPED_METRIC_DATA;
   } else {
     const simpleTypeValueSearch = datum => {
@@ -1034,21 +1215,28 @@ function updateFilteredMetricData(searchString) {
       switch (datum.type) {
         case SIMPLE_TYPES.Boolean:
           if (searchString == "true") {
-            return datum.value === true;
+            return (datum.storedValue ?? datum.value) === true;
           } else if (searchString == "false") {
-            return datum.value === false;
+            return (datum.storedValue ?? datum.value) === false;
           }
           return false;
         default:
           return false;
       }
     };
+
+    const submittedPingIncludesMetric = datum =>
+      Object.keys(SUBMITTED_PING.payload.allMetrics).find(
+        metric => metric === `${datum.category}.${datum.name}`
+      ) !== undefined;
+
     FILTERED_METRIC_DATA = MAPPED_METRIC_DATA.filter(
       datum =>
-        datum.category.toLowerCase().includes(searchString) ||
-        datum.name.toLowerCase().includes(searchString) ||
-        datum.type.toLowerCase().includes(searchString) ||
-        simpleTypeValueSearch(datum)
+        (datum.category.toLowerCase().includes(searchString) ||
+          datum.name.toLowerCase().includes(searchString) ||
+          datum.type.toLowerCase().includes(searchString) ||
+          simpleTypeValueSearch(datum)) &&
+        (SUBMITTED_PING === undefined || submittedPingIncludesMetric(datum))
     );
   }
 
@@ -1074,7 +1262,10 @@ function updateFilteredMetricData(searchString) {
                   LIMIT_OFFSET + LIMIT_COUNT + 100 >
                   FILTERED_METRIC_DATA.length
                 ) {
-                  LIMIT_OFFSET = FILTERED_METRIC_DATA.length - LIMIT_COUNT;
+                  LIMIT_OFFSET = Math.max(
+                    0,
+                    FILTERED_METRIC_DATA.length - LIMIT_COUNT
+                  );
                 } else if (
                   LIMIT_OFFSET + LIMIT_COUNT <
                   FILTERED_METRIC_DATA.length - 100
@@ -1113,7 +1304,7 @@ function exportData() {
       {
         name: `${datum.fullName}`,
         docs: getDocsURL(datum),
-        value: datum.value,
+        value: datum.storedValue ?? datum.value,
       },
     ],
     []

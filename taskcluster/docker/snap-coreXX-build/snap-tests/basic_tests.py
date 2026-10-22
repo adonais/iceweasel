@@ -472,7 +472,7 @@ class SnapTests(SnapTestsBase):
         )
         self._wait.until(lambda d: len(source_link.text) > 0)
         self._logger.info(f"about:buildconfig source: {source_link.text}")
-        assert source_link.text.startswith(exp["source_repo"]), (
+        assert source_link.text.startswith(tuple(exp["source_repo"])), (
             "source repo should exists and match"
         )
 

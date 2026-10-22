@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-input-color.tagmap.d.ts" />
+
 import { html, ifDefined } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
@@ -11,7 +13,7 @@ import { MozLitElement } from "../lit-utils.mjs";
  * @property {string} [name] - Any name that will be associated with the component's nested `input` element. Useful when used in `form`s.
  * @property {string} label - The text of the label.
  */
-export default class MozInputColor extends MozLitElement {
+export class MozInputColor extends MozLitElement {
   static properties = {
     value: { type: String },
     name: { type: String },

@@ -668,6 +668,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void LinkProgram(WebGLProgram& prog);
   void PolygonOffset(GLfloat factor, GLfloat units);
   void PolygonOffsetClampEXT(GLfloat factor, GLfloat units, GLfloat clamp);
+  void ClipControlEXT(GLenum origin, GLenum depth);
   void ProvokingVertex(webgl::ProvokingVertex) const;
 
   ////

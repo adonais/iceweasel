@@ -163,6 +163,7 @@ pub struct Backend {
     certs: Vec<CryptokiCert>,
     keys: Vec<Key>,
     trusts: Vec<CryptokiTrust>,
+    found_objects: bool,
 }
 
 const TOKEN_MODEL_BYTES: &[u8; 16] = b"Test Model      ";
@@ -223,6 +224,7 @@ impl Backend {
             certs,
             keys,
             trusts,
+            found_objects: false,
         }
     }
 }
@@ -241,8 +243,19 @@ fn pem_to_base64(pem: &str) -> String {
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
-        Ok((self.certs.clone(), self.keys.clone(), self.trusts.clone()))
+    fn find_objects(
+        &mut self,
+        _slot_id: CK_SLOT_ID,
+    ) -> Result<Option<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>)>, Error> {
+        if self.found_objects {
+            return Ok(None);
+        }
+        self.found_objects = true;
+        Ok(Some((
+            self.certs.clone(),
+            self.keys.clone(),
+            self.trusts.clone(),
+        )))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {

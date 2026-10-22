@@ -854,6 +854,20 @@ static inline void mode_estimation(AV1_COMP *cpi, TplTxfmStats *tpl_txfm_stats,
           cpi, x, src_mb_buffer, ref_mb, src_stride, ref_stride, src_width,
           ref_width, bsize, center_mvs[idx].mv.as_mv, &this_mv);
 
+#if CONFIG_AV1_HIGHBITDEPTH
+      if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+        // Bias towards (0,0) / short motion vectors in stationary background.
+        // Require a noticeable SAD improvement before replacing (0,0) with a
+        // non-zero MV.
+        if (bestsme != UINT32_MAX && best_rfidx_mv.as_int == 0 &&
+            this_mv.as_int != 0) {
+          if (thissme + (thissme >> 4) >= bestsme) {
+            continue;
+          }
+        }
+      }
+#endif
+
       if (thissme < bestsme) {
         bestsme = thissme;
         best_rfidx_mv = this_mv;
@@ -981,7 +995,8 @@ static inline void mode_estimation(AV1_COMP *cpi, TplTxfmStats *tpl_txfm_stats,
     int rate_mv;
     av1_joint_motion_search(cpi, x, bsize, tmp_mv, NULL, 0, &rate_mv,
                             !cpi->sf.mv_sf.disable_second_mv,
-                            NUM_JOINT_ME_REFINE_ITER);
+                            NUM_JOINT_ME_REFINE_ITER,
+                            /*use_subpel_mv_cost_none=*/true);
 
     for (int ref = 0; ref < 2; ++ref) {
       struct buf_2d ref_buf = { NULL, ref_frame_ptr[ref]->y_buffer,
@@ -1653,12 +1668,16 @@ static void mc_flow_synthesizer(TplParams *tpl_data, int frame_idx, int mi_rows,
   }
 }
 
+#define MIN_TPL_Q_INDEX 120
+#define MAX_TPL_Q_INDEX 220
+
 static inline int init_gop_frames_for_tpl(
     AV1_COMP *cpi, const EncodeFrameParams *const init_frame_params,
     GF_GROUP *gf_group, int *tpl_group_frames, int *pframe_qindex) {
   AV1_COMMON *cm = &cpi->common;
   assert(cpi->gf_frame_index == 0);
   *pframe_qindex = 0;
+  int leaf_frame_qindex = *pframe_qindex;
 
   RefFrameMapPair ref_frame_map_pairs[REF_FRAMES];
   init_ref_map_pair(cpi, ref_frame_map_pairs);
@@ -1716,8 +1735,20 @@ static inline int init_gop_frames_for_tpl(
         frame_update_type == OVERLAY_UPDATE;
     frame_params.frame_type = gf_group->frame_type[gf_index];
 
-    if (frame_update_type == LF_UPDATE)
+    if (frame_update_type == LF_UPDATE) {
       *pframe_qindex = gf_group->q_val[gf_index];
+      leaf_frame_qindex = *pframe_qindex;
+      if (cpi->oxcf.rc_cfg.mode == AOM_VBR || cpi->oxcf.rc_cfg.mode == AOM_Q) {
+        const int bit_depth = cm->seq_params->bit_depth;
+        const double q_val = av1_convert_qindex_to_q(*pframe_qindex, bit_depth);
+        const double qindex_ratio = (double)(*pframe_qindex) / MAXQ;
+        const double qstep_ratio = 1.0 - (qindex_ratio * qindex_ratio * 0.5);
+        const int delta_qindex =
+            av1_compute_qdelta(&cpi->rc, q_val, q_val * qstep_ratio, bit_depth);
+        *pframe_qindex = CLIP(*pframe_qindex + delta_qindex, MIN_TPL_Q_INDEX,
+                              MAX_TPL_Q_INDEX);
+      }
+    }
 
     const struct lookahead_entry *buf = av1_lookahead_peek(
         cpi->ppi->lookahead, lookahead_index, cpi->compressor_stage);
@@ -1834,7 +1865,9 @@ static inline int init_gop_frames_for_tpl(
       }
     }
 #endif  // CONFIG_BITRATE_ACCURACY && CONFIG_THREE_PASS
-    gf_group->q_val[gf_index] = *pframe_qindex;
+    // Store the unclipped qindex in gf_group->q_val[] which is used when
+    // ducky_encode is on.
+    gf_group->q_val[gf_index] = leaf_frame_qindex;
     const int true_disp = (int)(tpl_frame->frame_display_index);
     av1_get_ref_frames(ref_frame_map_pairs, true_disp, cpi, gf_index, 0,
                        remapped_ref_idx);

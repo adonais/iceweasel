@@ -28,7 +28,6 @@
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/FontPaletteCache.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
@@ -2479,10 +2478,10 @@ class gfxFont {
 // are dependent on the specific font, so they are set per GlyphRun.
 
 struct MOZ_STACK_CLASS TextRunDrawParams {
-  explicit TextRunDrawParams(mozilla::gfx::PaletteCache& aPaletteCache)
-      : paletteCache(aPaletteCache) {}
+  explicit TextRunDrawParams(
+      mozilla::gfx::FontPaletteValueSet* aPaletteValueSet)
+      : paletteValueSet(aPaletteValueSet) {}
 
-  mozilla::gfx::PaletteCache& paletteCache;
   RefPtr<mozilla::gfx::DrawTarget> dt;
   gfxContext* context = nullptr;
   gfxFont::Spacing* spacing = nullptr;
@@ -2498,6 +2497,7 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   const mozilla::gfx::StrokeOptions* strokeOpts = nullptr;
   const mozilla::gfx::DrawOptions* drawOpts = nullptr;
   nsAtom* fontPalette = nullptr;
+  mozilla::gfx::FontPaletteValueSet* paletteValueSet = nullptr;
   DrawMode drawMode = DrawMode::GLYPH_FILL;
   bool isVerticalRun = false;
   bool isRTL = false;
@@ -2525,10 +2525,10 @@ struct MOZ_STACK_CLASS FontDrawParams {
 
 struct MOZ_STACK_CLASS EmphasisMarkDrawParams {
   EmphasisMarkDrawParams(gfxContext* aContext,
-                         mozilla::gfx::PaletteCache& aPaletteCache)
-      : context(aContext), paletteCache(aPaletteCache) {}
+                         mozilla::gfx::FontPaletteValueSet* aPaletteValueSet)
+      : context(aContext), paletteValueSet(aPaletteValueSet) {}
   gfxContext* context;
-  mozilla::gfx::PaletteCache& paletteCache;
+  mozilla::gfx::FontPaletteValueSet* paletteValueSet;
   gfxFont::Spacing* spacing;
   gfxTextRun* mark;
   gfxFloat advance;

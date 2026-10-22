@@ -76,6 +76,9 @@ add_setup(async function test_setup() {
         "extensions.abuseReport.amoFormURL",
         "https://example.org/%LOCALE%/firefox/feedback/addon/%addonID%/",
       ],
+      // Right-clicking text selects the word under the cursor on macOS, which
+      // adds a selection to the context menu this test checks.
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 });

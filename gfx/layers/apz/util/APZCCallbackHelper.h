@@ -100,6 +100,11 @@ class APZCCallbackHelper {
      The nsIFrame needs to be a popup menu frame. */
   static void InitializeRootDisplayport(nsIFrame* aFrame);
 
+  /* Refresh the displayport base of the given popup menu frame if the popup's
+     geometry has changed since it was last set when the popup element is
+     reused. */
+  static void EnsureDisplayportSizeOnPopupRoot(nsIFrame* aFrame);
+
   /* Get the pres context associated with the document enclosing |aContent|. */
   static nsPresContext* GetPresContextForContent(nsIContent* aContent);
 

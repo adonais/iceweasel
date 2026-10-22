@@ -23,6 +23,7 @@ class ReviewPromptMiddlewareTest {
 
     private val eventStore = FakeNimbusEventStore()
 
+    private var continuousOnboardingInProgress = false
     private var shouldShowCustomPrompt = true
     private lateinit var mainCriteria: Sequence<Boolean>
     private lateinit var subCriteria: Sequence<Boolean>
@@ -32,6 +33,7 @@ class ReviewPromptMiddlewareTest {
             middlewares =
                 listOf(
                     ReviewPromptMiddleware(
+                        continuousOnboardingInProgress = { continuousOnboardingInProgress },
                         shouldShowCustomPrompt = { shouldShowCustomPrompt },
                         disableCustomPrompt = { shouldShowCustomPrompt = false },
                         createJexlHelper = {
@@ -173,6 +175,44 @@ class ReviewPromptMiddlewareTest {
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
 
         assertEquals(expectedState, store.state)
+    }
+
+    @Test
+    fun `GIVEN continuous onboarding in progress WHEN check requested THEN sets not eligible without checking criteria`() {
+        continuousOnboardingInProgress = true
+        var criteriaChecked = false
+        mainCriteria = sequence {
+            criteriaChecked = true
+            yield(true)
+        }
+        subCriteria = sequence {
+            criteriaChecked = true
+            yield(true)
+        }
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
+
+        assertFalse(criteriaChecked)
+        assertEquals(
+            AppState(reviewPrompt = ReviewPromptState.NotEligible),
+            store.state,
+        )
+    }
+
+    @Test
+    fun `GIVEN check ran while continuous onboarding in progress WHEN onboarding completes AND check requested again THEN stays not eligible`() {
+        continuousOnboardingInProgress = true
+        mainCriteria = sequenceOf(true)
+        subCriteria = sequenceOf(true)
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
+
+        continuousOnboardingInProgress = false
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
+
+        assertEquals(
+            AppState(reviewPrompt = ReviewPromptState.NotEligible),
+            store.state,
+        )
     }
 
     @Test

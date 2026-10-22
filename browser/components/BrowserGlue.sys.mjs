@@ -30,7 +30,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/DefaultBrowserCheck.sys.mjs",
   DesktopActorRegistry:
     "moz-src:///browser/components/DesktopActorRegistry.sys.mjs",
-  DistributionManagement: "resource:///modules/distribution.sys.mjs",
+  DistributionManagement: "moz-src:///browser/components/distribution.sys.mjs",
   DownloadsViewableInternally:
     "moz-src:///browser/components/downloads/DownloadsViewableInternally.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
@@ -40,7 +40,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginBreaches:
     "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
@@ -1568,7 +1569,10 @@ BrowserGlue.prototype = {
     try {
       const win = browser.documentGlobal;
       const shellService = win.getShellService();
-      const isNowDefault = shellService.isDefaultBrowser(false, false);
+      const isNowDefault = await shellService.isDefaultBrowserAsync(
+        false,
+        false
+      );
       const resultEnum =
         (isNowDefault ? 0 : 1) * 2 +
         (shellService.shouldCheckDefaultBrowser ? 1 : 0);

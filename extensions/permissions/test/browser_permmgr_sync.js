@@ -6,6 +6,9 @@ function addPerm(aOrigin, aName) {
     aName,
     Services.perms.ALLOW_ACTION
   );
+  registerCleanupFunction(() =>
+    Services.perms.removeFromPrincipal(principal, aName)
+  );
 }
 
 add_task(async function () {

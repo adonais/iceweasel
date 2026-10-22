@@ -171,13 +171,37 @@ nsresult ConnectionAllowlists::ParseHeaders(const nsACString& aHeader,
   return NS_OK;
 }
 
-void ConnectionAllowlists::SetResponseURI(nsIURI* aURI) { mResponseURI = aURI; }
+void ConnectionAllowlists::SetResponseURI(nsIURI* aURI) {
+  MOZ_ASSERT(!mFrozen);
+  mResponseURI = aURI;
+}
 
 bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
                                       nsILoadInfo* aLoadInfo) const {
   // TODO: We probably need to exempt some content like in SubjectToCSP.
   // TODO(Bug 2072261): WebRTC.
   // TODO: Requests vs URL.
+
+  switch (aLoadInfo->GetExternalContentPolicyType()) {
+    case ExtContentPolicyType::TYPE_DOCUMENT:
+    case ExtContentPolicyType::TYPE_SUBDOCUMENT:
+      // Per
+      // https://html.spec.whatwg.org/multipage/browsing-the-web.html#navigate-to-a-javascript:-url,
+      // documents loaded via javascript: URL don't trigger a real request, so
+      // they also shouldn't be blockable by the Connection Allowlists.
+      if (aURI->SchemeIs("javascript")) {
+        return true;
+      }
+      break;
+
+    case ExtContentPolicyType::TYPE_INVALID:
+      MOZ_ASSERT_UNREACHABLE("TYPE_INVALID");
+      break;
+
+    default:
+      break;
+  }
+
   return !ShouldBlockURL(aURI, aLoadInfo);
 }
 

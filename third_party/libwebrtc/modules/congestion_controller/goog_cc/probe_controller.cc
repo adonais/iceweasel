@@ -11,9 +11,11 @@
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 
 #include <algorithm>
+#include <array>
 #include <initializer_list>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "api/field_trials_view.h"
@@ -208,7 +210,7 @@ std::vector<ProbeClusterConfig> ProbeController::SetBitrates(
       // estimate then initiate probing.
       if (!estimated_bitrate_.IsZero() && old_max_bitrate < max_bitrate_ &&
           estimated_bitrate_ < max_bitrate_) {
-        return InitiateProbing(at_time, {max_bitrate_}, false);
+        return InitiateProbing(at_time, std::array{max_bitrate_}, false);
       }
       break;
   }
@@ -358,7 +360,8 @@ std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
     if (bitrate > min_bitrate_to_probe_further_ &&
         bitrate <= network_state_estimate_probe_further_limit) {
       return InitiateProbing(
-          at_time, {config_.further_exponential_probe_scale * bitrate}, true);
+          at_time,
+          std::array{config_.further_exponential_probe_scale * bitrate}, true);
     }
   }
   return {};
@@ -408,7 +411,7 @@ std::vector<ProbeClusterConfig> ProbeController::RequestProbe(
             "WebRTC.BWE.BweDropProbingIntervalInS",
             (at_time - last_bwe_drop_probing_time_).seconds());
         last_bwe_drop_probing_time_ = at_time;
-        return InitiateProbing(at_time, {suggested_probe}, false);
+        return InitiateProbing(at_time, std::array{suggested_probe}, false);
       }
     }
   }
@@ -502,12 +505,14 @@ std::vector<ProbeClusterConfig> ProbeController::Process(Timestamp at_time) {
   }
   if (TimeForNextRepeatedInitialProbe(at_time)) {
     return InitiateProbing(
-        at_time, {estimated_bitrate_ * config_.first_exponential_probe_scale},
+        at_time,
+        std::array{estimated_bitrate_ * config_.first_exponential_probe_scale},
         true);
   }
   if (TimeForAlrProbe(at_time) || TimeForNetworkStateProbe(at_time)) {
     return InitiateProbing(
-        at_time, {estimated_bitrate_ * config_.alr_probe_scale}, true);
+        at_time, std::array{estimated_bitrate_ * config_.alr_probe_scale},
+        true);
   }
   return std::vector<ProbeClusterConfig>();
 }
@@ -539,7 +544,7 @@ ProbeClusterConfig ProbeController::CreateProbeClusterConfig(Timestamp at_time,
 
 std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
     Timestamp now,
-    std::vector<DataRate> bitrates_to_probe,
+    std::span<const DataRate> bitrates_to_probe,
     bool probe_further) {
   if (config_.skip_if_estimate_larger_than_fraction_of_max > 0) {
     DataRate network_estimate = network_estimate_

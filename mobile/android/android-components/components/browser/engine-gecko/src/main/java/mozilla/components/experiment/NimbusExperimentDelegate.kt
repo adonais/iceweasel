@@ -16,7 +16,7 @@ import org.mozilla.geckoview.GeckoResult
 /** Default Nimbus [ExperimentDelegate] implementation to communicate with mobile Gecko and GeckoView. */
 class NimbusExperimentDelegate : ExperimentDelegate {
 
-    private val logger = Logger(NimbusExperimentDelegate::javaClass.name)
+    private val logger = Logger("NimbusExperimentDelegate")
 
     /**
      * Retrieves experiment information on the feature for use in GeckoView.

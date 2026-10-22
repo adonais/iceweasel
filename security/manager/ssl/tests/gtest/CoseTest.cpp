@@ -655,7 +655,7 @@ bool verify_callback(const uint8_t* payload, size_t payload_len,
                      const size_t* certs_len, const uint8_t* ee_cert,
                      size_t ee_cert_len, const uint8_t* signature,
                      size_t signature_len, uint8_t signature_algorithm,
-                     void* ctx) {
+                     void* /*ctx*/) {
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot) {
     return false;

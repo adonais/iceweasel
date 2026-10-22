@@ -106,7 +106,7 @@ function monkeyPatchRemoteSettingsClients({ experiments = [] }) {
   // Settings server, which will cause test failures. Additionally, return
   // `experiments` from both Nimbus collections. These collections each only
   // support a subset of features -- the secureExperiments collection, e.g.,
-  // only supports recipes that have at least one of `newtabTrainhopAddon`,
+  // only supports recipes that have at least one of
   // `newtabTrainhopAddonDeployment` and `prefFlips`, but the
   // `RemoteSettingsExperimentLoader` will filter out the recipes from each
   // collection based on their supported features.

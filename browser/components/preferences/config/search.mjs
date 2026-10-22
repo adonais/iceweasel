@@ -43,6 +43,11 @@ Preferences.addAll([
   { id: "browser.urlbar.recentsearches.featureGate", type: "bool" },
   { id: "browser.urlbar.suggest.recentsearches", type: "bool" },
   { id: "browser.urlbar.scotchBonnet.enableOverride", type: "bool" },
+  {
+    id: "browser.urlbar.resultMenu.keyboardAccessible",
+    type: "bool",
+    inverted: true,
+  },
 
   // Suggest Section.
   { id: "browser.urlbar.suggest.bookmark", type: "bool" },
@@ -187,6 +192,11 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "showSearchTermsFeatureGate",
   pref: "browser.urlbar.showSearchTerms.featureGate",
+});
+
+Preferences.addSetting({
+  id: "skipResultMenuOnTab",
+  pref: "browser.urlbar.resultMenu.keyboardAccessible",
 });
 
 Preferences.addSetting({
@@ -1144,6 +1154,18 @@ SettingGroupManager.registerGroups({
         controlAttrs: {
           type: "reorderable-list",
         },
+      },
+    ],
+  },
+  addressBarNavigation: {
+    inProgress: true,
+    l10nId: "addressbar-navigation-group",
+    subcategory: "addressBarNavigation",
+    headingLevel: 2,
+    items: [
+      {
+        id: "skipResultMenuOnTab",
+        l10nId: "addressbar-skip-result-menu-on-tab",
       },
     ],
   },

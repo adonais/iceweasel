@@ -827,9 +827,12 @@ nsresult PermissionManager::Init() {
     // sent permissions as we need them by our parent process.
     mState = eReady;
 
-    // We use ClearOnShutdown on the content process only because on the parent
+    // We use RunOnShutdown in the content process only because in the parent
     // process we need to block the shutdown for the final closeDB() call.
-    ClearOnShutdown(&sInstanceHolder);
+    RunOnShutdown([] {
+      StaticMutexAutoLock lock(sCreationMutex);
+      sInstanceHolder = nullptr;
+    });
     return NS_OK;
   }
 

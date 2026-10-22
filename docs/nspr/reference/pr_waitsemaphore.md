@@ -17,15 +17,15 @@ The function has the following parameter:
 `sem`
 
 : A pointer to a `PRSem` structure returned from a call to
-  {ref}`PR_OpenSemaphore`.
+  {doc}`pr_opensemaphore`.
 
 ### Returns
 
-{ref}`PRStatus`
+{doc}`prstatus`
 
 ## Description
 
-{ref}`PR_WaitSemaphore` tests the value of the semaphore. If the value of
+{doc}`pr_waitsemaphore` tests the value of the semaphore. If the value of
 the semaphore is > 0, the value of the semaphore is decremented and the
 function returns. If the value of the semaphore is 0, the function
 blocks until the value becomes > 0, then the semaphore is decremented

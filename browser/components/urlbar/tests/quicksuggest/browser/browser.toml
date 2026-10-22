@@ -12,7 +12,6 @@ support-files = [
 ]
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
-  "layout.css.attr.enabled=true",
 ]
 
 ["browser_pickedSearchSuggestion.js"]
@@ -71,8 +70,5 @@ tags = "search-telemetry"
 
 ["browser_telemetry_suggestMetrics.js"]
 tags = "search-telemetry"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1971091
-]
 
 ["browser_weather.js"]

@@ -164,6 +164,24 @@ describe("Auto Tab Grouping toolbar button", () => {
         3,
         "One row per tab, listing each copy that would close"
       );
+      const accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+        Ci.nsIAccessibilityService
+      );
+      await TestUtils.waitForCondition(
+        () =>
+          accService.getAccessibleFor(
+            panel._flyoutPanel.querySelector(".swgt-flyout-list")
+          )?.role === Ci.nsIAccessibleRole.ROLE_MENUPOPUP,
+        "The preview is exposed as a menu"
+      );
+      Assert.ok(
+        tabRows.every(
+          tabRow =>
+            accService.getAccessibleFor(tabRow).role ===
+            Ci.nsIAccessibleRole.ROLE_MENUITEM
+        ),
+        "Each tab in it is a menu item"
+      );
       Assert.equal(
         row.getAttribute("aria-expanded"),
         "true",
@@ -326,6 +344,62 @@ describe("Auto Tab Grouping toolbar button", () => {
       );
     });
 
+    it("exposes open and saved groups as menu items", async () => {
+      win = await openGroupingWindowWithTabs();
+      await addWebTabs(win, ["open", "saved"]);
+      const [openTab, savedTab] = win.gBrowser.tabs.slice(-2);
+      win.gBrowser.addTabGroup([openTab], { label: "Open group" });
+      await TabGroupTestUtils.saveAndCloseTabGroup(
+        win.gBrowser.addTabGroup([savedTab], { label: "Saved group" })
+      );
+
+      const panel = await openPanel(win);
+      const row = await TestUtils.waitForCondition(
+        () => panel.querySelector(".swgt-view-tab-groups"),
+        "The row appears for the open and the saved group"
+      );
+      Assert.equal(
+        row.getAttribute("aria-haspopup"),
+        "menu",
+        "The row says activating it opens a menu"
+      );
+
+      row.click();
+      const [openRow, savedRow] = await TestUtils.waitForCondition(() => {
+        const rows = panel._flyoutPanel?.querySelectorAll(".tab-group-row");
+        return rows?.length === 2 ? [...rows] : null;
+      }, "The list shows both groups");
+
+      const accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+        Ci.nsIAccessibilityService
+      );
+      const list = panel._flyoutPanel.querySelector(".swgt-flyout-list");
+      await TestUtils.waitForCondition(
+        () =>
+          accService.getAccessibleFor(list)?.role ===
+          Ci.nsIAccessibleRole.ROLE_MENUPOPUP,
+        "The list is exposed as a menu"
+      );
+      for (const [groupRow, name] of [
+        [openRow, "Open group"],
+        [savedRow, "Saved group"],
+      ]) {
+        // The row's label text can reach the accessibility tree after the row
+        // itself, so wait for the name instead of reading it right away.
+        await TestUtils.waitForCondition(
+          () => accService.getAccessibleFor(groupRow)?.name === name,
+          `${name} gets its accessible name`
+        );
+        const acc = accService.getAccessibleFor(groupRow);
+        Assert.equal(
+          acc.role,
+          Ci.nsIAccessibleRole.ROLE_MENUITEM,
+          `${name} is exposed as a menu item`
+        );
+        Assert.equal(acc.name, name, `${name} is named after the group`);
+      }
+    });
+
     it("takes focus when the list replaces an open suggestion flyout", async () => {
       win = await openGroupingWindowWithTabs();
       const panel = await openPanelWithSuggestions(win);
@@ -478,6 +552,9 @@ describe("Auto Tab Grouping toolbar button", () => {
       Assert.ok(
         win.document.getElementById("smartwindow-group-tabs-panel"),
         "Clicking in the menu the row raised is not a click outside the panel"
+      );
+      contextMenu.dispatchEvent(
+        new win.MouseEvent("mouseup", { bubbles: true })
       );
 
       contextMenu.activateItem(

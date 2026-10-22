@@ -9,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.AppAndSystemHelper.isDefaultPinnedShortcutsOnHomepage
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
@@ -48,8 +49,10 @@ class HomeScreenTest {
         homeScreen(composeTestRule) {
             verifyHomeWordmark()
             verifyHomePrivateBrowsingButton()
-            verifyExistingTopSitesTabs("Wikipedia")
-            verifyExistingTopSitesTabs("Google")
+            if (isDefaultPinnedShortcutsOnHomepage()) {
+                verifyExistingTopSitesTabs("Wikipedia")
+                verifyExistingTopSitesTabs("Google")
+            }
             // Bug 2072025: the stories section was removed from the homepage and replaced by the
             // "All stories" button in the header, so this assertion no longer applies.
             // verifyThoughtProvokingStories(true)

@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-09-23T09:10:54.393862+00:00'
+updated_at: '2026-09-30T03:51:55.689170+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -1517,7 +1517,7 @@ modules:
         - Mitchell Hentges
         - *andi
       group: dev-builds
-      url: '{ref}`Build System`'
+      url: '{doc}`/build/buildsystem/index`'
       components:
         - Core::Build Config
       review_group: firefox-build-system-reviewers
@@ -1535,9 +1535,13 @@ modules:
           group: dev-builds
           components:
             - Core::Build Config
+          owners_emeritus:
+            - *nalexander
         owners:
+          - *ahochheiden
+        peers:
           - *nalexander
-        peers: []
+          - *tcampbell
         machine_name: core_build_config_fennec
 
       - name: 'Core: Build Config - Taskgraph'
@@ -1682,7 +1686,7 @@ modules:
         - Aria Beingessner
         - Kris Wright
       group: dev-platform
-      url: '{ref}`Crash Reporter`'
+      url: '{doc}`/toolkit/crashreporter/crashreporter/index`'
       components:
         - Toolkit::Crash Reporting
     owners:
@@ -1894,7 +1898,7 @@ modules:
       owners_emeritus:
         - Ehsan Akhgari
       group: dev-platform
-      url: '{ref}`Editor`'
+      url: '{doc}`/editor/index`'
       components:
         - 'Core::DOM: Editor'
     owners:
@@ -2113,7 +2117,7 @@ modules:
         - Jungshik Shin
         - Simon Montagu
       group: dev-i18n
-      url: '{ref}`Internationalization`'
+      url: '{doc}`/intl/index`'
       components:
         - Core::Internationalization
       review_group: platform-i18n-reviewers
@@ -2642,7 +2646,7 @@ modules:
         - Jason Duell
         - Junior Hsu
       group: dev-tech-network
-      url: '{ref}`Networking`'
+      url: '{doc}`/networking/index`'
       components:
         - Core::Networking
         - 'Core::Networking: Cache'
@@ -2703,10 +2707,11 @@ modules:
       components:
         - 'Core::DOM: Notifications'
         - Toolkit::Alerts Service
+      peers_emeritus:
+        - *nalexander
     owners:
       - *saschanaz
     peers:
-      - *nalexander
       - *nrishel
     machine_name: core_notifications
 
@@ -2718,7 +2723,7 @@ modules:
       owners_emeritus:
         - Wan-Teh Chang
       group: dev-tech-nspr
-      url: '{ref}`NSPR`'
+      url: '{doc}`/nspr/index`'
       components:
         - NSPR
     owners:
@@ -2961,7 +2966,7 @@ modules:
         - Franziskus Kiefer
         - Kevin Jacobs
       group: dev-tech-crypto
-      url: '{ref}`Network Security Services (NSS)`'
+      url: '{doc}`/security/nss/index`'
       components:
         - NSS
         - JSS
@@ -3217,7 +3222,7 @@ modules:
       # TODO: "the display list and layer related methods on nsIFrame and its subclasses"
     meta:
       group: dev-platform
-      url: '{ref}`Style system (CSS) & Layout`'
+      url: '{doc}`/layout/index`'
       components:
         - 'Core::Layout: Web Painting'
       owners_emeritus:
@@ -3575,7 +3580,7 @@ modules:
         - Simon Giesecke
         - *KrisWright
       group: dev-platform
-      url: '{ref}`XPCOM`'
+      url: '{doc}`/xpcom/index`'
       components:
         - Core::XPCOM
         - Toolkit::IOUtils and PathUtils
@@ -3617,7 +3622,6 @@ modules:
       runtime type description files from .idl interface description files.
     includes:
       - xpcom/idl-parser/**/*
-      - xpcom/xpidl/**/*
     meta:
       owners_emeritus:
         - Kyle Huey
@@ -3625,7 +3629,7 @@ modules:
         - Mike Shaver
         - Josh 'timeless' Soref
       group: dev-tech-xpcom
-      url: '{ref}`XPIDL`'
+      url: '{doc}`/xpcom/xpidl`'
       review_group: xpcom-reviewers
     owners:
       - *nika
@@ -4253,11 +4257,12 @@ modules:
           review_group: browser-installer-reviewers
           owners_emeritus:
             - Molly Howell
+          peers_emeritus:
+            - *agashlin
+            - *nalexander
         owners:
           - *cdupuis
-        peers:
-          - *agashlin
-          - *nalexander
+        peers: []
         machine_name: windows_installer
     machine_name: desktop_firefox
 
@@ -4423,6 +4428,29 @@ modules:
         - Tom Prince
       components:
         - 'Release Engineering :: Applications: MozharnessCore'
+
+  - machine_name: platform_geolocation
+    name: 'Core: Platform Geolocation'
+    description: Platform-specific geolocation layer
+    includes:
+      - dom/system/*ocationProvider*
+      - dom/system/windows/location/**/*
+      - dom/system/windows/*WindowsUtils*
+      - dom/system/mac/*LocationProvider*
+      - dom/system/linux/*LocationProvider*
+      - toolkit/components/geolocation/*
+    excludes: []
+    owners:
+      - *handyman
+    peers:
+      - *thinker
+      - *spohl
+      - *saschanaz
+      - *jjaschke
+    meta:
+      components:
+        - 'Toolkit :: Geolocation Provider'
+      review_group: geoprovider-reviewers
 
   - machine_name: python_usage
     name: Python usage, tools, and style
@@ -4727,7 +4755,7 @@ modules:
         - 'Testing :: Performance'
         - 'Testing :: mozperftest'
         - 'Testing :: Condprofile'
-      url: '{ref}`Performance Testing`'
+      url: '{doc}`/testing/perfdocs/index`'
       review_group: perftest-reviewers
   - machine_name: testing_reftest
     name: Reftest (+ jsreftest + crashtest)
@@ -4835,7 +4863,7 @@ modules:
           owners_emeritus:
             - Georg Fritzsche
           group: fx-data-dev
-          url: '{ref}`Telemetry`'
+          url: '{doc}`/toolkit/components/telemetry/index`'
           peers_emeritus:
             - *perrymcmanis
           review_group: toolkit-telemetry-reviewers-rotation
@@ -4980,5 +5008,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 709aa84b20ef7a977fdce2b23542c4cfc8276ca1
-  export: 7fbc7acbdeaabfcdccbe43fd58c82ccabfbe8df3
+  config: c6c8a7e944ae57eed39b210e9d3136a74b2e677c
+  export: 90aa36cae66b6598fb72581f2c4b0f018e621e82

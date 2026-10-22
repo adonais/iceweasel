@@ -104,8 +104,7 @@ void Queue::Submit(
     externalTextureSourceIds.AppendElement(externalTexture->Source()->GetId());
   }
 
-  GetChild()->QueueSubmit(GetId(), mParent->GetId(), list,
-                          externalTextureSourceIds);
+  GetChild()->QueueSubmit(GetId(), list, externalTextureSourceIds);
 
   if (!externalTextures.IsEmpty()) {
     for (const auto& externalTexture : externalTextures) {

@@ -22,9 +22,7 @@ var gTabsPanel = {
     hiddenTabsViewTabs: "allTabsMenu-hiddenTabsView-tabs",
     hiddenAudioTabs: "allTabsMenu-allTabsView-hiddenAudio-tabs",
     groupsView: "allTabsMenu-groupsView",
-    groupsSeparator: "allTabsMenu-groupsSeparator",
     groupsSubView: "allTabsMenu-groupsSubView",
-    currentWindowHeader: "allTabsMenu-currentWindowHeader",
   },
   _initialized: false,
   _initializedElements: false,
@@ -81,17 +79,6 @@ var gTabsPanel = {
 
     this.allTabsView.addEventListener("ViewShowing", () => {
       PanelUI._ensureShortcutsShown(this.allTabsView);
-
-      // The tab groups list will disappear from the TOM once the alternate UX surfaces
-      // (toolbar and app menu) are released. These are currently gated behind the
-      // `alternateMenu` flag.
-      // See bug2021095
-      let tabGroupsAlternateMenu = Services.prefs.getBoolPref(
-        "browser.tabs.groups.alternateMenu",
-        false
-      );
-      this.groupsSeparator.hidden = tabGroupsAlternateMenu;
-      this.currentWindowHeader.hidden = tabGroupsAlternateMenu;
 
       let containersEnabled =
         Services.prefs.getBoolPref("privacy.userContext.enabled") &&

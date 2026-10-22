@@ -42,7 +42,7 @@ abstract class ExceptionsAdapter<T : Any>(
     abstract fun wrapAdapterItem(item: T): AdapterItem.Item<T>
 
     final override fun getItemViewType(position: Int) =
-        when (getItem(position)) {
+        when (getItem(position) as AdapterItem) {
             AdapterItem.DeleteButton -> deleteButtonLayoutId
             AdapterItem.Header -> ExceptionsHeaderViewHolder.LAYOUT_ID
             is AdapterItem.Item<*> -> ExceptionsListItemViewHolder.LAYOUT_ID

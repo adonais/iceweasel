@@ -28,20 +28,20 @@ namespace xsimd
         using namespace types;
 
         // abs
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> abs(batch<T, A> const& self, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_abs_epi8(self);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_abs_epi16(self);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_abs_epi32(self);
                 }
@@ -54,22 +54,22 @@ namespace xsimd
         }
 
         // add
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> add(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return _mm256_add_epi8(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_add_epi16(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_add_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_add_epi64(self, other);
             }
@@ -80,14 +80,14 @@ namespace xsimd
         }
 
         // avgr
-        template <class A, class T, class = std::enable_if_t<std::is_unsigned<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_unsigned_v<T>>>
         XSIMD_INLINE batch<T, A> avgr(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return _mm256_avg_epu8(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_avg_epu16(self, other);
             }
@@ -98,15 +98,15 @@ namespace xsimd
         }
 
         // avg
-        template <class A, class T, class = std::enable_if_t<std::is_unsigned<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_unsigned_v<T>>>
         XSIMD_INLINE batch<T, A> avg(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 auto adj = ((self ^ other) << 7) >> 7;
                 return avgr(self, other, A {}) - adj;
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 auto adj = ((self ^ other) << 15) >> 15;
                 return avgr(self, other, A {}) - adj;
@@ -124,7 +124,7 @@ namespace xsimd
             template <class T>
             XSIMD_INLINE __m256i maskload(T const* mem, __m256i mask) noexcept
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                if constexpr (sizeof(T) == 4)
                 {
                     static_assert(sizeof(int) == 4, "_mm256_maskload_epi32 requires a 4-byte int");
                     return _mm256_maskload_epi32(reinterpret_cast<int const*>(mem), mask);
@@ -139,7 +139,7 @@ namespace xsimd
             template <class T>
             XSIMD_INLINE void maskstore(T* mem, __m256i mask, __m256i src) noexcept
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                if constexpr (sizeof(T) == 4)
                 {
                     static_assert(sizeof(int) == 4, "_mm256_maskstore_epi32 requires a 4-byte int");
                     _mm256_maskstore_epi32(reinterpret_cast<int*>(mem), mask, src);
@@ -154,35 +154,35 @@ namespace xsimd
 
         // Constant masks: prefix/suffix shapes lower to plain moves.
         template <class A, class T, bool... Values, class Mode>
-        XSIMD_INLINE std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
+        XSIMD_INLINE std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
         load_masked(T const* mem, batch_bool_constant<T, A, Values...> mask, convert<T>, Mode, requires_arch<avx2>) noexcept
         {
             return detail::plain_move_load<avx>(mem, mask, convert<T> {}, Mode {});
         }
 
         template <class A, class T, class Mode>
-        XSIMD_INLINE std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
+        XSIMD_INLINE std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8), batch<T, A>>
         load_masked(T const* mem, batch_bool<T, A> mask, convert<T>, Mode, requires_arch<avx2>) noexcept
         {
             return detail::maskload(mem, __m256i(mask));
         }
 
         template <class A, class T, bool... Values, class Mode,
-                  typename = std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8)>>
+                  typename = std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8)>>
         XSIMD_INLINE void store_masked(T* mem, batch<T, A> const& src, batch_bool_constant<T, A, Values...> mask, Mode, requires_arch<avx2>) noexcept
         {
             detail::plain_move_store<avx>(mem, src, mask, Mode {});
         }
 
         template <class A, class T, class Mode>
-        XSIMD_INLINE std::enable_if_t<std::is_integral<T>::value && (sizeof(T) == 4 || sizeof(T) == 8), void>
+        XSIMD_INLINE std::enable_if_t<std::is_integral_v<T> && (sizeof(T) == 4 || sizeof(T) == 8), void>
         store_masked(T* mem, batch<T, A> const& src, batch_bool<T, A> mask, Mode, requires_arch<avx2>) noexcept
         {
             detail::maskstore(mem, __m256i(mask), __m256i(src));
         }
 
         // load_stream
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value, void>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>, void>>
         XSIMD_INLINE batch<T, A> load_stream(T const* mem, convert<T>, requires_arch<avx2>) noexcept
         {
             return _mm256_stream_load_si256((__m256i const*)mem);
@@ -199,54 +199,54 @@ namespace xsimd
         }
 
         // bitwise_and
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_and(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_and_si256(self, other);
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> bitwise_and(batch_bool<T, A> const& self, batch_bool<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_and_si256(self, other);
         }
 
         // bitwise_andnot
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_andnot(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_andnot_si256(other, self);
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> bitwise_andnot(batch_bool<T, A> const& self, batch_bool<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_andnot_si256(other, self);
         }
 
         // bitwise_not
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_not(batch<T, A> const& self, requires_arch<avx2>) noexcept
         {
             return _mm256_xor_si256(self, _mm256_set1_epi32(-1));
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> bitwise_not(batch_bool<T, A> const& self, requires_arch<avx2>) noexcept
         {
             return _mm256_xor_si256(self, _mm256_set1_epi32(-1));
         }
 
         // bitwise_lshift
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_lshift(batch<T, A> const& self, int32_t other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            if constexpr (sizeof(T) == 2)
             {
                 return _mm256_slli_epi16(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_slli_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_slli_epi64(self, other);
             }
@@ -256,42 +256,42 @@ namespace xsimd
             }
         }
 
-        template <size_t shift, class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <size_t shift, class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_lshift(batch<T, A> const& self, requires_arch<avx2>) noexcept
         {
             constexpr auto bits = std::numeric_limits<T>::digits + std::numeric_limits<T>::is_signed;
             static_assert(shift < bits, "Shift must be less than the number of bits in T");
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 // 8-bit left shift via 16-bit shift + mask
                 __m256i shifted = _mm256_slli_epi16(self, shift);
-                // TODO(C++17): without `if constexpr` we must ensure the compile-time shift does not overflow
+                // TODO(C++17): without `if constexpr ` we must ensure the compile-time shift does not overflow
                 constexpr uint8_t mask8 = static_cast<uint8_t>(sizeof(T) == 1 ? (~0u << shift) : 0);
                 const __m256i mask = _mm256_set1_epi8(mask8);
                 return _mm256_and_si256(shifted, mask);
             }
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            if constexpr (sizeof(T) == 2)
             {
                 return _mm256_slli_epi16(self, shift);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_slli_epi32(self, shift);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_slli_epi64(self, shift);
             }
         }
 
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_lshift(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
                 return _mm256_sllv_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_sllv_epi64(self, other);
             }
@@ -306,7 +306,7 @@ namespace xsimd
         // The 1 byte constant implementation calls the 2 bytes constant version, the 2 bytes
         // constant version calls into the 4 bytes version which resolves to the dynamic one above.
         template <class A, class T, T... Vs,
-                  std::enable_if_t<std::is_integral<T>::value && (sizeof(T) <= 2), int> = 0>
+                  std::enable_if_t<std::is_integral_v<T> && (sizeof(T) <= 2), int> = 0>
         XSIMD_INLINE batch<T, A> bitwise_lshift(
             batch<T, A> const& self, batch_constant<T, A, Vs...> shifts, requires_arch<avx2> req) noexcept
         {
@@ -314,7 +314,7 @@ namespace xsimd
 
             // AVX2 only supports 16-bit shifts with a uniform bitshift value,
             // otherwise emulate using 32-bit shifts.
-            XSIMD_IF_CONSTEXPR(utils::all_equals(shifts))
+            if constexpr (utils::all_equals(shifts))
             {
                 return bitwise_lshift<shifts.get(0), A>(self, req);
             }
@@ -325,24 +325,24 @@ namespace xsimd
         }
 
         // bitwise_or
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_or(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_or_si256(self, other);
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> bitwise_or(batch_bool<T, A> const& self, batch_bool<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_or_si256(self, other);
         }
 
         // bitwise_rshift
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_rshift(batch<T, A> const& self, int32_t other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     __m256i sign_mask = _mm256_set1_epi16((0xFF00 >> other) & 0x00FF);
                     __m256i cmp_is_negative = _mm256_cmpgt_epi8(_mm256_setzero_si256(), self);
@@ -353,11 +353,11 @@ namespace xsimd
                                            sign_mask, cmp_is_negative),
                         _mm256_andnot_si256(sign_mask, res));
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_srai_epi16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srai_epi32(self, other);
                 }
@@ -368,15 +368,15 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_srli_epi16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srli_epi32(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+                else if constexpr (sizeof(T) == 8)
                 {
                     return _mm256_srli_epi64(self, other);
                 }
@@ -387,14 +387,14 @@ namespace xsimd
             }
         }
 
-        template <size_t shift, class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <size_t shift, class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_rshift(batch<T, A> const& self, requires_arch<avx2>) noexcept
         {
             constexpr auto bits = std::numeric_limits<T>::digits + std::numeric_limits<T>::is_signed;
             static_assert(shift < bits, "Shift amount must be less than the number of bits in T");
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     __m256i sign_mask = _mm256_set1_epi16((0xFF00 >> shift) & 0x00FF);
                     __m256i cmp_is_negative = _mm256_cmpgt_epi8(_mm256_setzero_si256(), self);
@@ -405,11 +405,11 @@ namespace xsimd
                                            sign_mask, cmp_is_negative),
                         _mm256_andnot_si256(sign_mask, res));
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_srai_epi16(self, shift);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srai_epi32(self, shift);
                 }
@@ -420,36 +420,36 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     // 8-bit left shift via 16-bit shift + mask
                     const __m256i shifted = _mm256_srli_epi16(self, shift);
-                    // TODO(C++17): without `if constexpr` we must ensure the compile-time shift does not overflow
+                    // TODO(C++17): without `if constexpr ` we must ensure the compile-time shift does not overflow
                     constexpr uint8_t mask8 = static_cast<uint8_t>(sizeof(T) == 1 ? ((1u << shift) - 1u) : 0);
                     const __m256i mask = _mm256_set1_epi8(mask8);
                     return _mm256_and_si256(shifted, mask);
                 }
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_srli_epi16(self, shift);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srli_epi32(self, shift);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+                else if constexpr (sizeof(T) == 8)
                 {
                     return _mm256_srli_epi64(self, shift);
                 }
             }
         }
 
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_rshift(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srav_epi32(self, other);
                 }
@@ -460,11 +460,11 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_srlv_epi32(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+                else if constexpr (sizeof(T) == 8)
                 {
                     return _mm256_srlv_epi64(self, other);
                 }
@@ -476,12 +476,12 @@ namespace xsimd
         }
 
         // bitwise_xor
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_xor(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_xor_si256(self, other);
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> bitwise_xor(batch_bool<T, A> const& self, batch_bool<T, A> const& other, requires_arch<avx2>) noexcept
         {
             return _mm256_xor_si256(self, other);
@@ -542,22 +542,22 @@ namespace xsimd
         }
 
         // eq
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> eq(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return _mm256_cmpeq_epi8(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_cmpeq_epi16(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_cmpeq_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_cmpeq_epi64(self, other);
             }
@@ -625,24 +625,24 @@ namespace xsimd
         }
 
         // lt
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> lt(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_cmpgt_epi8(other, self);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_cmpgt_epi16(other, self);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_cmpgt_epi32(other, self);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+                else if constexpr (sizeof(T) == 8)
                 {
                     return _mm256_cmpgt_epi64(other, self);
                 }
@@ -683,21 +683,21 @@ namespace xsimd
 
         // load_unaligned<batch_bool>
 
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> load_unaligned(bool const* mem, batch_bool<T, A>, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return { _mm256_sub_epi8(_mm256_set1_epi8(0), _mm256_loadu_si256((__m256i const*)mem)) };
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 auto bpack = _mm_loadu_si128((__m128i const*)mem);
                 return { _mm256_sub_epi16(_mm256_set1_epi8(0), _mm256_cvtepu8_epi16(bpack)) };
             }
             // GCC <12 have missing or buggy unaligned load intrinsics; use memcpy to work around this.
             // GCC/Clang/MSVC will turn it into the correct load.
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
 #if defined(__x86_64__)
                 uint64_t tmp;
@@ -709,7 +709,7 @@ namespace xsimd
 #endif
                 return { _mm256_sub_epi32(_mm256_set1_epi8(0), _mm256_cvtepu8_epi32(val)) };
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 uint32_t tmp;
                 memcpy(&tmp, mem, sizeof(tmp));
@@ -735,14 +735,14 @@ namespace xsimd
         }
 
         // mask
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE uint64_t mask(batch_bool<T, A> const& self, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return 0xFFFFFFFF & (uint64_t)_mm256_movemask_epi8(self);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 uint64_t mask8 = 0xFFFFFFFF & (uint64_t)_mm256_movemask_epi8(self);
                 return detail::mask_lut(mask8) | (detail::mask_lut(mask8 >> 8) << 4) | (detail::mask_lut(mask8 >> 16) << 8) | (detail::mask_lut(mask8 >> 24) << 12);
@@ -754,20 +754,20 @@ namespace xsimd
         }
 
         // max
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> max(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_max_epi8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_max_epi16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_max_epi32(self, other);
                 }
@@ -778,15 +778,15 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_max_epu8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_max_epu16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_max_epu32(self, other);
                 }
@@ -798,20 +798,20 @@ namespace xsimd
         }
 
         // min
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> min(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_min_epi8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_min_epi16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_min_epi32(self, other);
                 }
@@ -822,15 +822,15 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_min_epu8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_min_epu16(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     return _mm256_min_epu32(self, other);
                 }
@@ -842,10 +842,10 @@ namespace xsimd
         }
 
         // mul
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> mul(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 __m256i mask_hi = _mm256_set1_epi32(0xFF00FF00);
                 __m256i res_lo = _mm256_mullo_epi16(self, other);
@@ -855,15 +855,15 @@ namespace xsimd
                 __m256i res = _mm256_blendv_epi8(res_lo, res_hi, mask_hi);
                 return res;
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_mullo_epi16(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_mullo_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_add_epi64(
                     _mm256_mul_epu32(self, other),
@@ -963,10 +963,10 @@ namespace xsimd
         }
 
         // reduce_add
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE T reduce_add(batch<T, A> const& self, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
                 __m256i tmp1 = _mm256_hadd_epi32(self, self);
                 __m256i tmp2 = _mm256_hadd_epi32(tmp1, tmp1);
@@ -974,7 +974,7 @@ namespace xsimd
                 __m128i tmp4 = _mm_add_epi32(_mm256_castsi256_si128(tmp2), tmp3);
                 return _mm_cvtsi128_si32(tmp4);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 __m256i tmp1 = _mm256_shuffle_epi32(self, 0x0E);
                 __m256i tmp2 = _mm256_add_epi64(self, tmp1);
@@ -1035,16 +1035,16 @@ namespace xsimd
         }
 
         // sadd
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> sadd(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_adds_epi8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_adds_epi16(self, other);
                 }
@@ -1055,11 +1055,11 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_adds_epu8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_adds_epu16(self, other);
                 }
@@ -1071,22 +1071,22 @@ namespace xsimd
         }
 
         // select
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> select(batch_bool<T, A> const& cond, batch<T, A> const& true_br, batch<T, A> const& false_br, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return _mm256_blendv_epi8(false_br, true_br, cond);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_blendv_epi8(false_br, true_br, cond);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_blendv_epi8(false_br, true_br, cond);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_blendv_epi8(false_br, true_br, cond);
             }
@@ -1095,18 +1095,18 @@ namespace xsimd
                 return select(cond, true_br, false_br, avx {});
             }
         }
-        template <class A, class T, bool... Values, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, bool... Values, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> select(batch_bool_constant<T, A, Values...> const&, batch<T, A> const& true_br, batch<T, A> const& false_br, requires_arch<avx2>) noexcept
         {
             // FIXME: for some reason mask here is not considered as an immediate,
             // but it's okay for _mm256_blend_epi32
             // case 2: return _mm256_blend_epi16(false_br, true_br, mask);
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
                 constexpr int mask = batch_bool_constant<T, A, Values...>::mask();
                 return _mm256_blend_epi32(false_br, true_br, mask);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 constexpr int mask = batch_bool_constant<T, A, Values...>::mask();
                 constexpr int imask = detail::interleave(mask);
@@ -1188,7 +1188,7 @@ namespace xsimd
             {
                 // GCC <12 have missing or buggy unaligned store intrinsics; use memcpy to work around this.
                 // GCC/Clang/MSVC will turn it into the correct store.
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     // negate mask to convert to 0 or 1
                     auto val = _mm256_sub_epi8(_mm256_set1_epi8(0), b);
@@ -1198,12 +1198,12 @@ namespace xsimd
 
                 auto b_hi = _mm256_extractf128_si256(b, 1);
                 auto b_lo = _mm256_castsi256_si128(b);
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                if constexpr (sizeof(T) == 2)
                 {
                     auto val = _mm_sub_epi8(_mm_set1_epi8(0), _mm_packs_epi16(b_lo, b_hi));
                     memcpy(mem, &val, sizeof(val));
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+                else if constexpr (sizeof(T) == 4)
                 {
                     auto pack_16 = _mm_packs_epi32(b_lo, b_hi);
                     auto val = _mm_sub_epi8(_mm_set1_epi8(0), _mm_packs_epi16(pack_16, pack_16));
@@ -1214,7 +1214,7 @@ namespace xsimd
                     memcpy(mem, &val, sizeof(uint64_t));
 #endif
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+                else if constexpr (sizeof(T) == 8)
                 {
                     uint32_t mask = _mm256_movemask_epi8(_mm256_srli_epi64(b, 56));
                     memcpy(mem, &mask, sizeof(mask));
@@ -1237,16 +1237,16 @@ namespace xsimd
         }
 
         // ssub
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> ssub(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            if (std::is_signed<T>::value)
+            if (std::is_signed_v<T>)
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_subs_epi8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_subs_epi16(self, other);
                 }
@@ -1257,11 +1257,11 @@ namespace xsimd
             }
             else
             {
-                XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+                if constexpr (sizeof(T) == 1)
                 {
                     return _mm256_subs_epu8(self, other);
                 }
-                else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+                else if constexpr (sizeof(T) == 2)
                 {
                     return _mm256_subs_epu16(self, other);
                 }
@@ -1273,22 +1273,22 @@ namespace xsimd
         }
 
         // sub
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> sub(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 return _mm256_sub_epi8(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 return _mm256_sub_epi16(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 return _mm256_sub_epi32(self, other);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 return _mm256_sub_epi64(self, other);
             }
@@ -1378,23 +1378,23 @@ namespace xsimd
         {
             static_assert(sizeof...(Vals) == 32, "Must contain as many uint8_t as can fit in avx register");
 
-            XSIMD_IF_CONSTEXPR(detail::is_identity(mask))
+            if constexpr (detail::is_identity(mask))
             {
                 return self;
             }
 
             constexpr auto lane_mask = mask % std::integral_constant<uint8_t, (mask.size / 2)>();
 
-            XSIMD_IF_CONSTEXPR(!detail::is_cross_lane(mask))
+            if constexpr (!detail::is_cross_lane(mask))
             {
                 return _mm256_shuffle_epi8(self, lane_mask.as_batch());
             }
-            XSIMD_IF_CONSTEXPR(detail::is_only_from_lo(mask))
+            if constexpr (detail::is_only_from_lo(mask))
             {
                 __m256i broadcast = _mm256_permute2x128_si256(self, self, 0x00); // [low | low]
                 return _mm256_shuffle_epi8(broadcast, lane_mask.as_batch());
             }
-            XSIMD_IF_CONSTEXPR(detail::is_only_from_hi(mask))
+            if constexpr (detail::is_only_from_hi(mask))
             {
                 __m256i broadcast = _mm256_permute2x128_si256(self, self, 0x11); // [high | high]
                 return _mm256_shuffle_epi8(broadcast, lane_mask.as_batch());
@@ -1454,11 +1454,11 @@ namespace xsimd
         template <class A, uint32_t V0, uint32_t V1, uint32_t V2, uint32_t V3, uint32_t V4, uint32_t V5, uint32_t V6, uint32_t V7>
         XSIMD_INLINE batch<uint32_t, A> swizzle(batch<uint32_t, A> const& self, batch_constant<uint32_t, A, V0, V1, V2, V3, V4, V5, V6, V7> mask, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(detail::is_identity(mask))
+            if constexpr (detail::is_identity(mask))
             {
                 return self;
             }
-            XSIMD_IF_CONSTEXPR(!detail::is_cross_lane(mask))
+            if constexpr (!detail::is_cross_lane(mask))
             {
                 constexpr auto lane_mask = mask % std::integral_constant<uint32_t, (mask.size / 2)>();
                 // Cheaper intrinsics when not crossing lanes
@@ -1479,11 +1479,11 @@ namespace xsimd
         template <class A, uint64_t V0, uint64_t V1, uint64_t V2, uint64_t V3>
         XSIMD_INLINE batch<uint64_t, A> swizzle(batch<uint64_t, A> const& self, batch_constant<uint64_t, A, V0, V1, V2, V3> mask, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(detail::is_identity(mask))
+            if constexpr (detail::is_identity(mask))
             {
                 return self;
             }
-            XSIMD_IF_CONSTEXPR(!detail::is_cross_lane(mask))
+            if constexpr (!detail::is_cross_lane(mask))
             {
                 constexpr uint8_t lane_mask = (V0 % 2) | ((V1 % 2) << 1) | ((V2 % 2) << 2) | ((V3 % 2) << 3);
                 // Cheaper intrinsics when not crossing lanes
@@ -1501,28 +1501,28 @@ namespace xsimd
         }
 
         // zip_hi
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> zip_hi(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 auto lo = _mm256_unpacklo_epi8(self, other);
                 auto hi = _mm256_unpackhi_epi8(self, other);
                 return _mm256_permute2f128_si256(lo, hi, 0x31);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 auto lo = _mm256_unpacklo_epi16(self, other);
                 auto hi = _mm256_unpackhi_epi16(self, other);
                 return _mm256_permute2f128_si256(lo, hi, 0x31);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 auto lo = _mm256_unpacklo_epi32(self, other);
                 auto hi = _mm256_unpackhi_epi32(self, other);
                 return _mm256_permute2f128_si256(lo, hi, 0x31);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 auto lo = _mm256_unpacklo_epi64(self, other);
                 auto hi = _mm256_unpackhi_epi64(self, other);
@@ -1536,28 +1536,28 @@ namespace xsimd
         }
 
         // zip_lo
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> zip_lo(batch<T, A> const& self, batch<T, A> const& other, requires_arch<avx2>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            if constexpr (sizeof(T) == 1)
             {
                 auto lo = _mm256_unpacklo_epi8(self, other);
                 auto hi = _mm256_unpackhi_epi8(self, other);
                 return _mm256_inserti128_si256(lo, _mm256_castsi256_si128(hi), 1);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
                 auto lo = _mm256_unpacklo_epi16(self, other);
                 auto hi = _mm256_unpackhi_epi16(self, other);
                 return _mm256_inserti128_si256(lo, _mm256_castsi256_si128(hi), 1);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            else if constexpr (sizeof(T) == 4)
             {
                 auto lo = _mm256_unpacklo_epi32(self, other);
                 auto hi = _mm256_unpackhi_epi32(self, other);
                 return _mm256_inserti128_si256(lo, _mm256_castsi256_si128(hi), 1);
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            else if constexpr (sizeof(T) == 8)
             {
                 auto lo = _mm256_unpacklo_epi64(self, other);
                 auto hi = _mm256_unpackhi_epi64(self, other);
@@ -1571,15 +1571,15 @@ namespace xsimd
         }
 
         // widen
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE std::array<batch<widen_t<T>, A>, 2> widen(batch<T, A> const& x, requires_arch<avx2>) noexcept
         {
             __m128i x_lo = detail::lower_half(x);
             __m128i x_hi = detail::upper_half(x);
             __m256i lo, hi;
-            XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            if constexpr (sizeof(T) == 4)
             {
-                XSIMD_IF_CONSTEXPR(std::is_signed<T>::value)
+                if constexpr (std::is_signed_v<T>)
                 {
                     lo = _mm256_cvtepi32_epi64(x_lo);
                     hi = _mm256_cvtepi32_epi64(x_hi);
@@ -1590,9 +1590,9 @@ namespace xsimd
                     hi = _mm256_cvtepu32_epi64(x_hi);
                 }
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            else if constexpr (sizeof(T) == 2)
             {
-                XSIMD_IF_CONSTEXPR(std::is_signed<T>::value)
+                if constexpr (std::is_signed_v<T>)
                 {
                     lo = _mm256_cvtepi16_epi32(x_lo);
                     hi = _mm256_cvtepi16_epi32(x_hi);
@@ -1603,9 +1603,9 @@ namespace xsimd
                     hi = _mm256_cvtepu16_epi32(x_hi);
                 }
             }
-            else XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            else if constexpr (sizeof(T) == 1)
             {
-                XSIMD_IF_CONSTEXPR(std::is_signed<T>::value)
+                if constexpr (std::is_signed_v<T>)
                 {
                     lo = _mm256_cvtepi8_epi16(x_lo);
                     hi = _mm256_cvtepi8_epi16(x_hi);

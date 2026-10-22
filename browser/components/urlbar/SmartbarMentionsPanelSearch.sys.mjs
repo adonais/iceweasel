@@ -2,11 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
+  tabManagementService:
+    "moz-src:///browser/components/aiwindow/ui/modules/TabManagementService.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
@@ -59,9 +65,18 @@ function isExcludedMentionUrl(browserWindow, url) {
  * intended for standalone use within the Smartbar mentions feature.
  */
 export class SmartbarMentionsPanelSearch {
-  #tabs = null;
+  /** @type {TabResult[]} */
+  #tabs;
 
+  /** @type {Window} */
+  #browserWindow;
+
+  /**
+   * @param {Window} browserWindow - Browser window to read tabs and tab groups
+   *   from
+   */
   constructor(browserWindow) {
+    this.#browserWindow = browserWindow;
     this.#tabs = this.#getOpenAndClosedTabs(browserWindow);
   }
 
@@ -75,6 +90,19 @@ export class SmartbarMentionsPanelSearch {
     return this.#filterTabs(searchString).sort(
       (a, b) => b.timestamp - a.timestamp
     );
+  }
+
+  /**
+   * Return the open tab groups in the window, read-only. Grouped tabs are
+   * filtered by TabManagementService using the same rules as the tab list, and
+   * groups left with no visible tabs are omitted.
+   *
+   * @returns {Array<{id: string, label: string, color: TabGroupColor}>}
+   */
+  getTabGroups() {
+    return lazy.tabManagementService.getTabGroups({
+      window: this.#browserWindow,
+    });
   }
 
   #filterTabs(searchString) {

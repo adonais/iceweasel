@@ -41,7 +41,7 @@ add_task(async function () {
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
   await waitForHeaders;
   await waitForRequestData(store, ["requestHeaders"]);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);

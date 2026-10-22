@@ -144,5 +144,37 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
               kConvergenceSpeedTestsLevelTolerance);
 }
 
+// Checks that the estimator detects background speakers and does not adapt the
+// level estimate down.
+TEST(GainController2SpeechLevelEstimatorExperimental,
+     DetectsBackgroundSpeaker) {
+  TestLevelEstimator level_estimator(/*adjacent_speech_frames_threshold=*/1);
+  // Reach confidence with the initial speaker level.
+  RunOnConstantLevel(kFramesPerUpdate, level_estimator.level_rms_dbfs,
+                     kMaxSpeechProbability, *level_estimator.estimator);
+  ASSERT_TRUE(level_estimator.estimator->IsConfident());
+  EXPECT_FALSE(level_estimator.estimator->IsBackgroundSpeaker());
+  const float confident_level_dbfs = level_estimator.estimator->GetLevelDbfs();
+
+  // Present a background speaker who is > 10 dB quieter.
+  constexpr float kBackgroundSpeakerLevelDropDbfs = 15.0f;
+  const float background_speaker_level_dbfs =
+      confident_level_dbfs - kBackgroundSpeakerLevelDropDbfs;
+  RunOnConstantLevel(kFramesPerUpdate, background_speaker_level_dbfs,
+                     kMaxSpeechProbability, *level_estimator.estimator);
+
+  // The background speaker should be detected and estimated level retained.
+  EXPECT_TRUE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FLOAT_EQ(level_estimator.estimator->GetLevelDbfs(),
+                  confident_level_dbfs);
+
+  // When the primary speaker speaks again, background speaker flag is cleared.
+  RunOnConstantLevel(kFramesPerUpdate, level_estimator.level_rms_dbfs,
+                     kMaxSpeechProbability, *level_estimator.estimator);
+  EXPECT_FALSE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FLOAT_EQ(level_estimator.estimator->GetLevelDbfs(),
+                  confident_level_dbfs);
+}
+
 }  // namespace
 }  // namespace webrtc

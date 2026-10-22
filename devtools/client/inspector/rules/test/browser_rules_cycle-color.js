@@ -209,7 +209,6 @@ async function checkSwatchShiftClick(view, valueSpan, expectedValue, comment) {
   EventUtils.synthesizeMouseAtCenter(
     swatchNode,
     {
-      type: "mousedown",
       shiftKey: true,
     },
     view.styleWindow
@@ -237,7 +236,6 @@ function checkNoTextSelection(view) {
   EventUtils.synthesizeMouseAtCenter(
     swatchNode,
     {
-      type: "mousedown",
       clickCount: 2,
       shiftKey: true,
     },

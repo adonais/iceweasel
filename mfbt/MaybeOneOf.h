@@ -145,7 +145,6 @@ class MOZ_NON_PARAM MaybeOneOf {
     return std::forward<Func>(aFunc)(as<T2>());
   }
 
- private:
   MaybeOneOf(const MaybeOneOf& aOther) = delete;
   const MaybeOneOf& operator=(const MaybeOneOf& aOther) = delete;
 };

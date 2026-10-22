@@ -2396,6 +2396,93 @@ struct GtestBaseMarkerTypeGraphs
       {"plain", MS::GraphType::FilledLine}};
 };
 
+// User-defined marker type with different properties, and fake schema.
+struct GtestMarker : public mozilla::BaseMarkerType<GtestMarker> {
+  static constexpr const char* Name = "markers-gtest";
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,      MS::Location::MarkerTable,
+      MS::Location::TimelineOverview, MS::Location::TimelineMemory,
+      MS::Location::TimelineIPC,      MS::Location::TimelineFileIO,
+      MS::Location::StackChart};
+  static constexpr const char* ChartLabel = "chart label";
+  static constexpr const char* TooltipLabel = "tooltip label";
+  static constexpr const char* TableLabel = "table label";
+  static constexpr const char* ColorField = "color";
+  static constexpr const char* Description = "static value";
+  // Note: This is a test schema that is not intended to actually match the
+  // StreamJSONMarkerData data below! Instead we only test that it outputs the
+  // expected JSON at the end.
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"key with url", MS::InputType::CString, nullptr, MS::Format::Url},
+      {"key with label filePath", MS::InputType::CString, "label filePath",
+       MS::Format::FilePath},
+      {"key with string", MS::InputType::CString, nullptr, MS::Format::String},
+      {"key with label duration", MS::InputType::TimeDuration, "label duration",
+       MS::Format::Duration},
+      {"key with time", MS::InputType::TimeStamp, nullptr, MS::Format::Time},
+      {"key with seconds", MS::InputType::Uint64, nullptr, MS::Format::Seconds},
+      {"key with milliseconds", MS::InputType::Uint64, nullptr,
+       MS::Format::Milliseconds},
+      {"key with microseconds", MS::InputType::Uint64, nullptr,
+       MS::Format::Microseconds},
+      {"key with nanoseconds", MS::InputType::Uint64, nullptr,
+       MS::Format::Nanoseconds},
+      {"key with bytes", MS::InputType::Uint64, nullptr, MS::Format::Bytes},
+      {"key with percentage", MS::InputType::Double, nullptr,
+       MS::Format::Percentage},
+      {"key with integer", MS::InputType::Uint64, nullptr, MS::Format::Integer},
+      {"key with decimal", MS::InputType::Double, nullptr, MS::Format::Decimal},
+      {"key with hexadecimal", MS::InputType::Uint64, nullptr,
+       MS::Format::Hexadecimal},
+      {"key with unique string", MS::InputType::CString, nullptr,
+       MS::Format::UniqueString},
+      {"key with sanitized string", MS::InputType::CString, nullptr,
+       MS::Format::SanitizedString},
+      {"key with label hidden", MS::InputType::CString, "label",
+       MS::Format::String, MS::PayloadFlags::Hidden},
+      {"key hidden", MS::InputType::CString, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden},
+      {"color", MS::InputType::CString, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden}};
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int aInt,
+      double aDouble, const mozilla::ProfilerString8View& aText,
+      const mozilla::ProfilerString8View& aUniqueText,
+      const mozilla::TimeStamp& aTime) {
+    aWriter.NullProperty("null");
+    aWriter.BoolProperty("bool-false", false);
+    aWriter.BoolProperty("bool-true", true);
+    aWriter.IntProperty("int", aInt);
+    aWriter.DoubleProperty("double", aDouble);
+    aWriter.StringProperty("text", aText);
+    aWriter.UniqueStringProperty("unique text", aUniqueText);
+    aWriter.UniqueStringProperty("unique text again", aUniqueText);
+    aWriter.TimeProperty("time", aTime);
+    aWriter.StringProperty("color", "green");
+  }
+  // The fake schema cannot be filled from the arguments, so nothing is output
+  // to ETW.
+  static void TranslateMarkerInputToSchema(
+      void* aContext, int aInt, double aDouble,
+      const mozilla::ProfilerString8View& aText,
+      const mozilla::ProfilerString8View& aUniqueText,
+      const mozilla::TimeStamp& aTime) {}
+};
+
+// User-defined marker type with no data, special frontend schema.
+struct GtestSpecialMarker : public mozilla::BaseMarkerType<GtestSpecialMarker> {
+  static constexpr const char* Name = "markers-gtest-special";
+  static constexpr bool UseSpecialFrontendLocation = true;
+};
+
+// User-defined marker type that is never used, so it shouldn't appear in the
+// output.
+struct GtestUnusedMarker : public mozilla::BaseMarkerType<GtestUnusedMarker> {
+  static constexpr const char* Name = "markers-gtest-unused";
+  static constexpr bool UseSpecialFrontendLocation = true;
+};
+
 TEST(GeckoProfiler, Markers)
 {
   uint32_t features = ProfilerFeature::StackWalk;
@@ -2496,107 +2583,14 @@ TEST(GeckoProfiler, Markers)
       MarkerTiming::Interval(ts1, ts2), geckoprofiler::markers::TextMarker{},
       "First Marker"));
 
-  // User-defined marker type with different properties, and fake schema.
-  struct GtestMarker {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("markers-gtest");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter, int aInt,
-        double aDouble, const mozilla::ProfilerString8View& aText,
-        const mozilla::ProfilerString8View& aUniqueText,
-        const mozilla::TimeStamp& aTime) {
-      aWriter.NullProperty("null");
-      aWriter.BoolProperty("bool-false", false);
-      aWriter.BoolProperty("bool-true", true);
-      aWriter.IntProperty("int", aInt);
-      aWriter.DoubleProperty("double", aDouble);
-      aWriter.StringProperty("text", aText);
-      aWriter.UniqueStringProperty("unique text", aUniqueText);
-      aWriter.UniqueStringProperty("unique text again", aUniqueText);
-      aWriter.TimeProperty("time", aTime);
-      aWriter.StringProperty("color", "green");
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      // Note: This is an test function that is not intended to actually output
-      // that correctly matches StreamJSONMarkerData data above! Instead we only
-      // test that it outputs the expected JSON at the end.
-      using MS = mozilla::MarkerSchema;
-      MS schema{MS::Location::MarkerChart,      MS::Location::MarkerTable,
-                MS::Location::TimelineOverview, MS::Location::TimelineMemory,
-                MS::Location::TimelineIPC,      MS::Location::TimelineFileIO,
-                MS::Location::StackChart};
-      // All label functions.
-      schema.SetChartLabel("chart label");
-      schema.SetTooltipLabel("tooltip label");
-      schema.SetTableLabel("table label");
-      schema.SetColorField("color");
-      // All data functions, all formats.
-      schema.AddKeyFormat("key with url", MS::Format::Url);
-      schema.AddKeyLabelFormat("key with label filePath", "label filePath",
-                               MS::Format::FilePath);
-      schema.AddKeyFormat("key with string", MS::Format::String);
-      schema.AddKeyLabelFormat("key with label duration", "label duration",
-                               MS::Format::Duration);
-      schema.AddKeyFormat("key with time", MS::Format::Time);
-      schema.AddKeyFormat("key with seconds", MS::Format::Seconds);
-      schema.AddKeyFormat("key with milliseconds", MS::Format::Milliseconds);
-      schema.AddKeyFormat("key with microseconds", MS::Format::Microseconds);
-      schema.AddKeyFormat("key with nanoseconds", MS::Format::Nanoseconds);
-      schema.AddKeyFormat("key with bytes", MS::Format::Bytes);
-      schema.AddKeyFormat("key with percentage", MS::Format::Percentage);
-      schema.AddKeyFormat("key with integer", MS::Format::Integer);
-      schema.AddKeyFormat("key with decimal", MS::Format::Decimal);
-      schema.AddKeyFormat("key with hexadecimal", MS::Format::Hexadecimal);
-      schema.AddStaticLabelValue("static label", "static value");
-      schema.AddKeyFormat("key with unique string", MS::Format::UniqueString);
-      schema.AddKeyFormat("key with sanitized string",
-                          MS::Format::SanitizedString);
-      schema.AddKeyLabelFormat("key with label hidden", "label",
-                               MS::Format::String, MS::PayloadFlags::Hidden);
-      schema.AddKeyFormat("key hidden", MS::Format::String,
-                          MS::PayloadFlags::Hidden);
-      schema.AddKeyFormat("color", MS::Format::String,
-                          MS::PayloadFlags::Hidden);
-
-      return schema;
-    }
-  };
   EXPECT_TRUE(profiler_add_marker_impl(
       "Gtest custom marker", geckoprofiler::category::OTHER,
       MarkerTiming::Interval(ts1, ts2), GtestMarker{}, 42, 43.0, "gtest text",
       "gtest unique text", ts1));
 
-  // User-defined marker type with no data, special frontend schema.
-  struct GtestSpecialMarker {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("markers-gtest-special");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter) {}
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
   EXPECT_TRUE(profiler_add_marker_impl("Gtest special marker",
                                        geckoprofiler::category::OTHER, {},
                                        GtestSpecialMarker{}));
-
-  // User-defined marker type that is never used, so it shouldn't appear in the
-  // output.
-  struct GtestUnusedMarker {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("markers-gtest-unused");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter) {}
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
-
-  // Make sure the compiler doesn't complain about this unused struct.
-  (void)GtestUnusedMarker{};
 
   EXPECT_TRUE(profiler_add_marker_impl(
       "Gtest base marker type unique string", geckoprofiler::category::OTHER,
@@ -3875,37 +3869,37 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(data[13u]["format"], String, "hexadecimal");
 
             ASSERT_TRUE(data[14u].isObject());
-            EXPECT_EQ_JSON(data[14u]["label"], String, "static label");
-            EXPECT_EQ_JSON(data[14u]["value"], String, "static value");
+            EXPECT_EQ_JSON(data[14u]["key"], String, "key with unique string");
+            EXPECT_TRUE(data[14u]["label"].isNull());
+            EXPECT_EQ_JSON(data[14u]["format"], String, "unique-string");
 
             ASSERT_TRUE(data[15u].isObject());
-            EXPECT_EQ_JSON(data[15u]["key"], String, "key with unique string");
+            EXPECT_EQ_JSON(data[15u]["key"], String,
+                           "key with sanitized string");
             EXPECT_TRUE(data[15u]["label"].isNull());
-            EXPECT_EQ_JSON(data[15u]["format"], String, "unique-string");
+            EXPECT_EQ_JSON(data[15u]["format"], String, "sanitized-string");
 
             ASSERT_TRUE(data[16u].isObject());
-            EXPECT_EQ_JSON(data[16u]["key"], String,
-                           "key with sanitized string");
-            EXPECT_TRUE(data[16u]["label"].isNull());
-            EXPECT_EQ_JSON(data[16u]["format"], String, "sanitized-string");
+            EXPECT_EQ_JSON(data[16u]["key"], String, "key with label hidden");
+            EXPECT_EQ_JSON(data[16u]["label"], String, "label");
+            EXPECT_EQ_JSON(data[16u]["format"], String, "string");
+            EXPECT_EQ_JSON(data[16u]["hidden"], Bool, true);
 
             ASSERT_TRUE(data[17u].isObject());
-            EXPECT_EQ_JSON(data[17u]["key"], String, "key with label hidden");
-            EXPECT_EQ_JSON(data[17u]["label"], String, "label");
+            EXPECT_EQ_JSON(data[17u]["key"], String, "key hidden");
+            EXPECT_TRUE(data[17u]["label"].isNull());
             EXPECT_EQ_JSON(data[17u]["format"], String, "string");
             EXPECT_EQ_JSON(data[17u]["hidden"], Bool, true);
 
             ASSERT_TRUE(data[18u].isObject());
-            EXPECT_EQ_JSON(data[18u]["key"], String, "key hidden");
+            EXPECT_EQ_JSON(data[18u]["key"], String, "color");
             EXPECT_TRUE(data[18u]["label"].isNull());
             EXPECT_EQ_JSON(data[18u]["format"], String, "string");
             EXPECT_EQ_JSON(data[18u]["hidden"], Bool, true);
 
             ASSERT_TRUE(data[19u].isObject());
-            EXPECT_EQ_JSON(data[19u]["key"], String, "color");
-            EXPECT_TRUE(data[19u]["label"].isNull());
-            EXPECT_EQ_JSON(data[19u]["format"], String, "string");
-            EXPECT_EQ_JSON(data[19u]["hidden"], Bool, true);
+            EXPECT_EQ_JSON(data[19u]["label"], String, "Description");
+            EXPECT_EQ_JSON(data[19u]["value"], String, "static value");
 
           } else if (nameString == "markers-gtest-base-unique-string") {
             EXPECT_EQ(display.size(), 2u);
@@ -5361,6 +5355,16 @@ TEST(GeckoProfiler, AllThreads)
   }
 }
 
+// User-defined marker type that generates a failure when streaming JSON.
+struct GtestFailingMarker : public mozilla::BaseMarkerType<GtestFailingMarker> {
+  static constexpr const char* Name = "markers-gtest-failing";
+  static constexpr bool UseSpecialFrontendLocation = true;
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter) {
+    aWriter.SetFailure("boom!");
+  }
+};
+
 TEST(GeckoProfiler, FailureHandling)
 {
   profiler_init_main_thread_id();
@@ -5374,19 +5378,6 @@ TEST(GeckoProfiler, FailureHandling)
 
   ASSERT_EQ(WaitForSamplingState(), SamplingState::SamplingCompleted);
 
-  // User-defined marker type that generates a failure when streaming JSON.
-  struct GtestFailingMarker {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("markers-gtest-failing");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter) {
-      aWriter.SetFailure("boom!");
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
   EXPECT_TRUE(profiler_add_marker_impl("Gtest failing marker",
                                        geckoprofiler::category::OTHER, {},
                                        GtestFailingMarker{}));

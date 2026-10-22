@@ -17,6 +17,7 @@
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
@@ -107,9 +108,9 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
       const net::CookieStruct& aCookie, bool aCookieDeleted,
       RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
 
-  nsresult SendPushEvent(const nsAString& aMessageId,
-                         const Maybe<nsTArray<uint8_t>>& aData,
-                         RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
+  RefPtr<PushHandledPromise> SendPushEvent(
+      const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
+      RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
 
   nsresult SendPushSubscriptionChangeEvent(
       const RefPtr<nsIPushSubscription>& aOldSubscription);
@@ -245,7 +246,7 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ServiceWorkerCookieChangeEventOpArgs&& aArgs);
 
-  nsresult SendPushEventInternal(
+  RefPtr<PushHandledPromise> SendPushEventInternal(
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ServiceWorkerPushEventOpArgs&& aArgs);
 
@@ -304,10 +305,16 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
                      RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
                      ServiceWorkerPushEventOpArgs&& aArgs);
 
+    // Rejects the promise if the event is dropped without being sent
+    ~PendingPushEvent();
+
     nsresult Send() override;
+
+    RefPtr<PushHandledPromise> Promise();
 
    private:
     ServiceWorkerPushEventOpArgs mArgs;
+    MozPromiseHolder<PushHandledPromise> mPromiseHolder;
   };
 
   class PendingFetchEvent final : public PendingFunctionalEvent {

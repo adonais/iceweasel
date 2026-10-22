@@ -9,7 +9,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.Middleware
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,17 +58,6 @@ class ShortcutsStoreTest {
         store.dispatch(ShortcutsAction.UpdatePopularSites(popularSites))
 
         assertEquals(popularSites, store.state.popularSites)
-    }
-
-    @Test
-    fun `WHEN UpdateShowAddShortcut action is dispatched THEN showAddShortcut is updated`() = runTest {
-        val store = ShortcutsStore(initialState = ShortcutsState.INITIAL)
-
-        assertFalse(store.state.showAddShortcut)
-
-        store.dispatch(ShortcutsAction.UpdateShowAddShortcut(showAddShortcut = true))
-
-        assertTrue(store.state.showAddShortcut)
     }
 
     @Test

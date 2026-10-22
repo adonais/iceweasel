@@ -583,7 +583,7 @@ async function checkSaveAllAsHARWithContextMenu(
     "devtools/client/netmonitor/src/har/har-menu-utils"
   );
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, resourceMatch);
+  clickInView(resourceMatch);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, resourceMatch);
 
   info("Trigger Copy All As HAR from the context menu");

@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.mozilla.gecko.Clipboard;
@@ -534,7 +535,16 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     final GeckoProcessManager pm = GeckoProcessManager.getInstance();
-    pm.setIsolatedProcessEnabled(settings.getIsolatedProcessEnabled());
+    // Process-selection related environment variables must be applied before GeckoThread starts and
+    // XPCOMEventTarget.launcherThread() blocks are run.
+    final ArrayList<String> env = GeckoThread.getEnvFromExtras(extras);
+    if (env.contains("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS=1")) {
+      Log.i(LOGTAG, "Enabling isolated process mode for content service processes at force");
+      pm.setIsolatedProcessEnabled(true);
+    } else {
+      pm.setIsolatedProcessEnabled(settings.getIsolatedProcessEnabled());
+    }
+    // TODO(m_kato): We have to check environment variables for Zygote process support.
     pm.setAppZygoteEnabled(settings.getAppZygoteProcessEnabled());
 
     final int[] fds = startCrashHelper();

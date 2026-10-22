@@ -8,7 +8,8 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
-  TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
+  TaskbarTabsUtils:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {

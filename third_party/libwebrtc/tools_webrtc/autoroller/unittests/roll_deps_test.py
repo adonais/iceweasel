@@ -368,6 +368,12 @@ class TestReadUrlContent(unittest.TestCase):
 
     def setUp(self):
         self.url = 'http://localhost+?format=TEXT'
+        patcher = mock.patch('roll_deps.time.sleep')
+        self.mock_sleep = patcher.start()
+        self.addCleanup(patcher.stop)
+        logging_patcher = mock.patch('roll_deps.logging')
+        self.mock_logging = logging_patcher.start()
+        self.addCleanup(logging_patcher.stop)
 
     def testReadUrlContent(self):
         url_mock = mock.Mock()
@@ -382,9 +388,56 @@ class TestReadUrlContent(unittest.TestCase):
         ]
         self.assertEqual(url_mock.mock_calls, calls)
 
-    def testReadUrlContentError(self):
-        roll_deps.logging = mock.Mock()
+    def testReadUrlContent_RetryOn404ThenSuccess(self):
+        success_mock = mock.Mock()
+        success_mock.readlines = mock.Mock(return_value=['success'])
+        http_error = roll_deps.urllib.error.HTTPError(self.url, 404,
+                                                      'Not Found', {}, None)
 
+        url_mock = mock.Mock(side_effect=[http_error, success_mock])
+        roll_deps.urllib.request.urlopen = url_mock
+
+        result = roll_deps.ReadUrlContent(self.url)
+        self.assertEqual(result, ['success'])
+        self.mock_sleep.assert_called_once_with(5)
+        success_mock.close.assert_called_once()
+        self.assertEqual(self.mock_logging.warning.call_count, 1)
+
+    def testReadUrlContent_RetryOn500ThenSuccess(self):
+        success_mock = mock.Mock()
+        success_mock.readlines = mock.Mock(return_value=['success'])
+        http_error = roll_deps.urllib.error.HTTPError(self.url, 500,
+                                                      'Internal Server Error',
+                                                      {}, None)
+
+        url_mock = mock.Mock(side_effect=[http_error, success_mock])
+        roll_deps.urllib.request.urlopen = url_mock
+
+        result = roll_deps.ReadUrlContent(self.url)
+        self.assertEqual(result, ['success'])
+        self.mock_sleep.assert_called_once_with(5)
+        success_mock.close.assert_called_once()
+        self.assertEqual(self.mock_logging.warning.call_count, 1)
+
+    def testReadUrlContent_MaxRetriesExceeded(self):
+        http_error = roll_deps.urllib.error.HTTPError(self.url, 404,
+                                                      'Not Found', {}, None)
+
+        url_mock = mock.Mock(side_effect=http_error)
+        roll_deps.urllib.request.urlopen = url_mock
+
+        with self.assertRaises(roll_deps.RollError):
+            roll_deps.ReadUrlContent(self.url,
+                                     retry_limit=3,
+                                     retry_delay_seconds=1)
+        self.assertEqual(self.mock_sleep.call_count, 3)
+        self.assertEqual(
+            self.mock_sleep.call_args_list,
+            [mock.call(1), mock.call(1),
+             mock.call(1)])
+        self.assertEqual(self.mock_logging.warning.call_count, 3)
+
+    def testReadUrlContentError(self):
         readlines_mock = mock.Mock()
         readlines_mock.readlines = mock.Mock(
             side_effect=IOError('Connection error'))
@@ -393,10 +446,10 @@ class TestReadUrlContent(unittest.TestCase):
         url_mock = mock.Mock(return_value=readlines_mock)
         roll_deps.urllib.request.urlopen = url_mock
 
-        try:
+        with self.assertRaises(roll_deps.RollError):
             roll_deps.ReadUrlContent(self.url)
-        except OSError:
-            self.assertTrue(roll_deps.logging.exception.called)
+        self.assertEqual(self.mock_sleep.call_count, 3)
+        self.assertEqual(self.mock_logging.warning.call_count, 3)
 
 
 def _SetupGitLsRemoteCall(cmd_fake, url, revision):

@@ -1,5 +1,11 @@
 [DEFAULT]
-prefs = ["browser.ml.modelHubRootUrl='chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data'"]
+prefs = [
+  "browser.ml.modelHubRootUrl='chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data'",
+  # Retire the serving process with its last generator, without an idle wait.
+  "browser.ml.hwinference.browser_idle_shutdown_grace_ms=0",
+  # The pref defaults on; tests opt into the HWInference path.
+  "browser.ml.llama.hwInference=false",
+]
 support-files = [
   "head.js",
   "shared-head.js",
@@ -8,6 +14,7 @@ support-files = [
 
 # Asserts best-onnx resolves to onnx-native; gated to platforms that bundle
 # the native onnxruntime (matches browser_ml_native.js skip-if).
+
 ["browser_ml_best_onnx.js"]
 skip-if = [
   "asan",
@@ -46,6 +53,8 @@ support-files = ["ml_engine_e2e_cancel_stub.worker.mjs"]
 
 ["browser_ml_engine_rs_hub.js"]
 
+["browser_ml_hwinference_process.js"]
+
 ["browser_ml_inference_session_error.js"]
 skip-if = [
   "asan", # global onnxruntime env leaks its thread pool; trips leakcheck
@@ -56,6 +65,8 @@ skip-if = [
 support-files = [
   "ml_inference_session_error_stub.worker.mjs",
 ]
+
+["browser_ml_llama_cancel.js"]
 
 ["browser_ml_mock_llm_engine.js"]
 
@@ -73,7 +84,6 @@ skip-if = [
   "asan",
   "debug",
   "os == 'android'",
-  "tsan",
   "verify",
 ]
 
@@ -106,6 +116,16 @@ support-files = [
   "ml_telemetry_stub.worker.mjs",
 ]
 
+["browser_ml_textgeneration_concurrency.js"]
+
+["browser_ml_textgeneration_engine.js"]
+
+["browser_ml_textgeneration_markers.js"]
+
+["browser_ml_textgeneration_telemetry.js"]
+
+["browser_ml_textgenerator.js"]
+
 ["browser_ml_thompson_sample.js"]
 
 ["browser_ml_utf8_codepoint.js"]
@@ -113,7 +133,6 @@ skip-if = [
   "asan",
   "debug",
   "os == 'android'",
-  "tsan",
   "verify",
 ]
 

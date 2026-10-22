@@ -1429,6 +1429,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   // to restore mouse position after unlocking.
   static LayoutDeviceIntPoint sPreLockScreenPoint;
 
+  // Screen point of the last event that wasn't synthesized for tests, if any.
+  // Only this is used to restore the pointer after unlocking, so that
+  // synthesized events don't move the real cursor somewhere it never was.
+  static Maybe<CSSIntPoint> sLastRealScreenPoint;
+  static bool sRestorePointerAfterUnlock;
+
   // Stores the mRefPoint of the last synthetic mouse move we dispatched
   // to re-center the mouse when we were pointer locked. If this is (-1,-1) it
   // means we've not recently dispatched a centering event. We use this to

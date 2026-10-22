@@ -36,12 +36,17 @@ const MESSAGES = () => [
             tiles: {
               type: "single-select",
               selected: "vertical-tabs",
+              pill_nav_label: { raw: "Feature highlights" },
               data: [
                 {
                   id: "split-view",
                   inert: true,
                   targeting: "firefoxVersion >= 150",
                   type: "carousel-card",
+                  pill: {
+                    label: { raw: "Split View" },
+                    icon: "chrome://browser/skin/split-view-left-16.svg",
+                  },
                   icon: {
                     background:
                       "url('chrome://activity-stream/content/data/content/assets/mr-kit-smart-window.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
@@ -71,6 +76,10 @@ const MESSAGES = () => [
                   inert: true,
                   type: "carousel-card",
                   targeting: "firefoxVersion <= 140",
+                  pill: {
+                    label: { raw: "Vertical Tabs" },
+                    icon: "chrome://browser/skin/tabs.svg",
+                  },
                   icon: {
                     background:
                       "url('chrome://activity-stream/content/data/content/assets/nuo-taborientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
@@ -84,6 +93,10 @@ const MESSAGES = () => [
                   id: "tab-groups",
                   inert: true,
                   type: "carousel-card",
+                  pill: {
+                    label: { raw: "Tab Groups" },
+                    icon: "chrome://browser/skin/tabbrowser/tab-groups.svg",
+                  },
                   icon: {
                     background:
                       "url('chrome://activity-stream/content/data/content/assets/euo-tab-orientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
@@ -2906,7 +2919,7 @@ const MESSAGES = () => [
     content: {
       messageType: "ASRouterMultistageMessage",
       id: "TEST_HNT_CARD_STACK",
-      transitions: false,
+      transitions: true,
       backdrop: "transparent",
       screens: [
         {
@@ -2945,11 +2958,28 @@ const MESSAGES = () => [
             },
             primary_button: {
               label: { raw: "Primary action" },
-              action: { dismiss: true },
+              action: { navigate: true },
             },
             secondary_button: {
               label: { raw: "Dismiss" },
               action: { dismiss: true },
+            },
+          },
+        },
+        // The unique "last card" layout (bug 2069997).
+        {
+          id: "CARD_STACK_SCREEN_3",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            layout: "last-card",
+            title: { raw: "Tracking protection is on." },
+            subtitle: { raw: "Say hello to a better web." },
+            center_image: {
+              imageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260923193621--fox-peeking--a7cb53ba-228f-4b81-a92f-6ad34474872b.svg",
+              alt: "",
+              marginBlock: "40px 0",
             },
           },
         },
@@ -3417,6 +3447,115 @@ const MESSAGES = () => [
             },
             primary_button: {
               label: { raw: "Done" },
+              disabled: "hasPinnedSite",
+              action: { dismiss: true },
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      lifetime: 100,
+    },
+    targeting: "true",
+  },
+  {
+    id: "PERSONALIZED_TASKBAR_TABS_SPOTLIGHT",
+    groups: ["panel-test-provider"],
+    template: "spotlight",
+    content: {
+      id: "PERSONALIZED_TASKBAR_TABS_SPOTLIGHT",
+      template: "multistage",
+      modal: "tab",
+      transitions: false,
+      screens: [
+        {
+          id: "SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "split",
+            main_content_style: {
+              paddingBlockStart: "40px",
+            },
+            main_content_style_narrow: {
+              paddingInline: "40px",
+            },
+            background:
+              "center 80% / 70% no-repeat url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg'), linear-gradient(0deg, light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%, light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%, light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%)",
+            hero_text: {
+              title: {
+                raw: "Open your favorite sites like an app",
+                fontWeight: "600",
+                marginBlockEnd: "10px",
+              },
+              subtitle: {
+                raw: "One click launches your most used sites in a streamlined window with all of Firefox’s protections.",
+                textAlign: "initial",
+                marginInline: "40px",
+                fontSize: "13px",
+              },
+            },
+            tiles: {
+              type: "pinnable_sites",
+              source: "topFrecentSites",
+              slots: 5,
+              backfill: true,
+              title: {
+                raw: "Select to add to your taskbar",
+                fontSize: "15px",
+              },
+              pinButtonLabel: { raw: "Add" },
+              alwaysShowPinButton: true,
+              data: [
+                {
+                  id: "gmail",
+                  name: "Gmail",
+                  description: "mail.google.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260619150452--gmail-icon--cf899b8b-e43a-4ace-a096-498c05399267.png",
+                  url: "https://mail.google.com",
+                },
+                {
+                  id: "youtube",
+                  name: "YouTube",
+                  description: "youtube.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260619150358--youtube-icon--229fd481-16ab-40d7-8508-cd8f66999687.png",
+                  url: "https://www.youtube.com/",
+                },
+                {
+                  id: "whatsapp",
+                  name: "WhatsApp Web",
+                  description: "web.whatsapp.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260619150420--whatsapp-icon--9269d113-1124-4168-b08a-540cf36c2778.png",
+                  url: "https://web.whatsapp.com/",
+                },
+                {
+                  id: "google-calendar",
+                  name: "Google Calendar",
+                  description: "calendar.google.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260619150331--calendar-icon--356c3951-23d0-4a45-8f2a-03cb55b33972.png",
+                  url: "https://calendar.google.com",
+                },
+                {
+                  id: "spotify",
+                  name: "Spotify",
+                  description: "spotify.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260619150511--spotify-icon--70d1131d-26c6-463f-876b-85e476430e14.png",
+                  url: "https://open.spotify.com/",
+                },
+              ],
+            },
+            primary_button: {
+              label: { raw: "I'm done" },
               disabled: "hasPinnedSite",
               action: { dismiss: true },
             },

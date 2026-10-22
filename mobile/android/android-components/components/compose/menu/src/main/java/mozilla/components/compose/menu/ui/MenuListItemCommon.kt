@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
@@ -76,6 +77,7 @@ internal fun RowScope.MenuListItemText(
             style = AcornTheme.typography.subtitle1.copy(hyphens = Hyphens.Auto),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start,
+            overflow = TextOverflow.Ellipsis,
             maxLines = 2,
             softWrap = true,
             color = state.contentColor,
@@ -84,9 +86,9 @@ internal fun RowScope.MenuListItemText(
         if (summary != null) {
             Text(
                 text = summary.text.value,
-                style = AcornTheme.typography.caption,
+                style = AcornTheme.typography.body2,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = summary.maxLines,
                 color = summary.state.secondaryContentColor,
             )
         }
@@ -106,7 +108,10 @@ internal fun MenuListItemIcon(
             size = BADGE_SIZE_SMALL,
             contentDescription = null,
             containerColor = MaterialTheme.colorScheme.information,
-            tint = state.secondaryContentColor,
+            tint =
+                if (icon is MenuItemIconRes) {
+                    state.secondaryContentColor
+                } else Color.Unspecified,
         )
     } else {
         Spacer(Modifier.size(AcornTheme.layout.size.static300))

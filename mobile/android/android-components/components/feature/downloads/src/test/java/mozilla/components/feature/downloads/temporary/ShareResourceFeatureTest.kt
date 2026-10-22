@@ -153,7 +153,28 @@ class ShareResourceFeatureTest {
         }
 
     @Test
-    fun `startSharing() will directly share the local PDF`() =
+    fun `startSharing() will persist and share a direct resource without downloading`() =
+        runTest(testDispatcher) {
+            val shareFeature = spy(createFeature())
+            val response = mock<Response>()
+            val shareState =
+                ShareResourceState.DirectResource(url = "testUrl", contentType = "contentType", response = response)
+            val downloadedFile = File("filePath")
+            doReturn(downloadedFile).`when`(shareFeature).downloadDirectResource(any())
+            doReturn(true).`when`(shareFeature).shareInternetResource(any(), any(), any(), any())
+
+            shareFeature.scope = this
+
+            shareFeature.startSharing(shareState)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(shareFeature).downloadDirectResource(response)
+            verify(shareFeature).shareInternetResource(downloadedFile.canonicalPath, "contentType", null, null)
+            verify(shareFeature, never()).shareLocalPdf(any(), any())
+        }
+
+    @Test
+    fun `startSharing() will share the local PDF without downloading`() =
         runTest(testDispatcher) {
             val shareFeature = spy(createFeature())
             val shareState = ShareResourceState.LocalResource(url = "content://pdf.pdf", contentType = "contentType")

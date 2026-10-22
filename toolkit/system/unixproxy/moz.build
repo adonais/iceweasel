@@ -4,6 +4,7 @@
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Networking")
+    SCHEDULES.exclusive = ["linux"]
 
 if CONFIG["MOZ_ENABLE_LIBPROXY"]:
     CXXFLAGS += CONFIG["MOZ_LIBPROXY_CFLAGS"]

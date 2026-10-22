@@ -24,10 +24,7 @@ add_task(async function () {
   const wait = waitUntil(
     () => document.querySelectorAll(".tabpanel-summary-label")[0]
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   const requestPriorityHeaderExists = Array.from(

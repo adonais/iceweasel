@@ -88,14 +88,6 @@ class TextureSourceOGL {
   virtual void BindTexture(GLenum aTextureUnit,
                            gfx::SamplingFilter aSamplingFilter) = 0;
 
-  // To be overridden in textures that need this. This method will be called
-  // when the compositor has used the texture to draw. This allows us to set
-  // a fence with glFenceSync which we can wait on later to ensure the GPU
-  // is done with the draw calls using that texture. We would like to be able
-  // to simply use glFinishObjectAPPLE, but this returns earlier than
-  // expected with nvidia drivers.
-  virtual void MaybeFenceTexture() {}
-
   virtual gfx::IntSize GetSize() const = 0;
 
   virtual GLenum GetTextureTarget() const { return LOCAL_GL_TEXTURE_2D; }
@@ -269,39 +261,6 @@ class GLTextureSource : public DataTextureSource, public TextureSourceOGL {
   GLenum mTextureTarget;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
-};
-
-// This texture source try to wrap "aSurface" in ctor for compositor direct
-// access. Since we can't know the timing for gpu buffer access, the surface
-// should be alive until the ~ClientStorageTextureSource(). And if we try to
-// update the surface we mapped before, we need to call Sync() to make sure
-// the surface is not used by compositor.
-class DirectMapTextureSource : public GLTextureSource {
- public:
-  DirectMapTextureSource(gl::GLContext* aContext,
-                         gfx::DataSourceSurface* aSurface);
-  DirectMapTextureSource(TextureSourceProvider* aProvider,
-                         gfx::DataSourceSurface* aSurface);
-  ~DirectMapTextureSource();
-
-  bool Update(gfx::DataSourceSurface* aSurface,
-              nsIntRegion* aDestRegion = nullptr,
-              gfx::IntPoint* aSrcOffset = nullptr,
-              gfx::IntPoint* aDstOffset = nullptr) override;
-
-  // If aBlocking is false, check if this texture is no longer being used
-  // by the GPU - if aBlocking is true, this will block until the GPU is
-  // done with it.
-  bool Sync(bool aBlocking) override;
-
-  void MaybeFenceTexture() override;
-
- private:
-  bool UpdateInternal(gfx::DataSourceSurface* aSurface,
-                      nsIntRegion* aDestRegion, gfx::IntPoint* aSrcOffset,
-                      bool aInit);
-
-  GLsync mSync;
 };
 
 class GLTextureHost : public TextureHost {

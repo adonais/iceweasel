@@ -23,10 +23,6 @@
 
 [DEFAULT]
 subsuite = "media"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1476870: common fatal error (shutdown hang) on asan/debug
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1476870: common fatal error (shutdown hang) on asan/debug
-]
 support-files = [
   "16bit_wave_extrametadata.wav",
   "16bit_wave_extrametadata.wav^headers^",

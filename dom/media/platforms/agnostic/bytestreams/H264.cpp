@@ -724,6 +724,64 @@ bool H264::DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest) {
   return true;
 }
 
+// MaxDpbMbs by level_idc from Table A-1 (Annex A.3). Returns 0 for unknown
+// levels.
+static uint32_t MaxDpbMbs(uint8_t aLevelIdc) {
+  switch (aLevelIdc) {
+    case 9:   // 1b
+    case 10:  // 1
+      return 396;
+    case 11:  // 1.1
+      return 900;
+    case 12:  // 1.2
+    case 13:  // 1.3
+    case 20:  // 2
+      return 2376;
+    case 21:  // 2.1
+      return 4752;
+    case 22:  // 2.2
+    case 30:  // 3
+      return 8100;
+    case 31:  // 3.1
+      return 18000;
+    case 32:  // 3.2
+      return 20480;
+    case 40:  // 4
+    case 41:  // 4.1
+      return 32768;
+    case 42:  // 4.2
+      return 34816;
+    case 50:  // 5
+      return 110400;
+    case 51:  // 5.1
+    case 52:  // 5.2
+      return 184320;
+    case 60:  // 6
+    case 61:  // 6.1
+    case 62:  // 6.2
+      return 696320;
+    default:
+      return 0;
+  }
+}
+
+// In ITU-H264-202606, A.3.1, "MaxDpbFrames is equal to
+// Min(MaxDpbMbs / (PicWidthInMbs * FrameHeightInMbs), 16), where
+// MaxDpbMbs is given in Table A-1." Returns 0 when the level is unknown.
+static uint32_t MaxDpbFrames(const SPSData& aSPS) {
+  uint32_t maxDpbMbs = MaxDpbMbs(aSPS.level_idc);
+  // FrameHeightInMbs is calculated from `frame_mbs_only_flag` in (7-18).
+  CheckedInt64 frameHeightInMbs =
+      CheckedInt64(2 - aSPS.frame_mbs_only_flag) * aSPS.pic_height_in_map_units;
+  CheckedInt64 picSizeInMbs =
+      CheckedInt64(aSPS.pic_width_in_mbs) * frameHeightInMbs;
+  if (!maxDpbMbs || !picSizeInMbs.isValid() || picSizeInMbs.value() == 0) {
+    return 0;
+  }
+  uint64_t frames = maxDpbMbs / uint64_t(picSizeInMbs.value());
+  return frames > 16 ? 16 : uint32_t(frames);
+}
+
 /* static */
 bool H264::vui_parameters(BitReader& aBr, SPSData& aDest) {
   aDest.aspect_ratio_info_present_flag = aBr.ReadBit();
@@ -899,6 +957,86 @@ bool H264::vui_parameters(BitReader& aBr, SPSData& aDest) {
     aBr.ReadBits(32);  // time_scale
     aBr.ReadBit();     // fixed_frame_rate_flag
   }
+
+  bool nal_hrd_parameters_present_flag = aBr.ReadBit();
+  if (nal_hrd_parameters_present_flag) {
+    if (!hrd_parameters(aBr)) {
+      LOG("nal hrd_parameters failed");
+      return false;
+    }
+  }
+  bool vcl_hrd_parameters_present_flag = aBr.ReadBit();
+  if (vcl_hrd_parameters_present_flag) {
+    if (!hrd_parameters(aBr)) {
+      LOG("vcl hrd_parameters failed");
+      return false;
+    }
+  }
+  if (nal_hrd_parameters_present_flag || vcl_hrd_parameters_present_flag) {
+    aBr.ReadBit();  // low_delay_hrd_flag
+  }
+  aBr.ReadBit();  // pic_struct_present_flag
+  bool bitstream_restriction_flag = aBr.ReadBit();
+  if (bitstream_restriction_flag) {
+    aBr.ReadBit();  // motion_vectors_over_pic_boundaries_flag
+    aBr.ReadUE();   // max_bytes_per_pic_denom
+    aBr.ReadUE();   // max_bits_per_mb_denom
+    aBr.ReadUE();   // log2_max_mv_length_horizontal
+    aBr.ReadUE();   // log2_max_mv_length_vertical
+    aDest.max_num_reorder_frames = aBr.ReadUE();
+    aDest.max_dec_frame_buffering = aBr.ReadUE();
+    // Annex E.1.2: max_num_reorder_frames is in the range of 0 to
+    // max_dec_frame_buffering, inclusive; reject instead of clamping.
+    if (aDest.max_num_reorder_frames > aDest.max_dec_frame_buffering) {
+      LOG("max_num_reorder_frames out of range");
+      return false;
+    }
+  } else {
+    // When the max_num_reorder_frames syntax element is not present, its value
+    // shall be inferred as follows:
+    // - If profile_idc is equal to 44, 86, 100, 110, 122, or 244 and
+    //   constraint_set3_flag is equal to 1, max_num_reorder_frames shall be
+    //   inferred to be equal to 0.
+    // - Otherwise (profile_idc is not equal to 44, 86, 100, 110, 122, or 244,
+    //   or constraint_set3_flag is equal to 0), max_num_reorder_frames shall be
+    //   inferred to be equal to MaxDpbFrames.
+    static const uint8_t kIntraOnlyProfiles[] = {44, 86, 100, 110, 122, 244};
+    bool intraOnlyProfile = false;
+    for (uint8_t profile : kIntraOnlyProfiles) {
+      if (aDest.profile_idc == profile) {
+        intraOnlyProfile = true;
+        break;
+      }
+    }
+    if (intraOnlyProfile && aDest.constraint_set3_flag) {
+      aDest.max_num_reorder_frames = 0;
+    } else {
+      aDest.max_num_reorder_frames = MaxDpbFrames(aDest);
+    }
+  }
+  return true;
+}
+
+/* static */
+bool H264::hrd_parameters(BitReader& aBr) {
+  uint32_t cpb_cnt_minus1 = aBr.ReadUE();
+  // Annex E: cpb_cnt_minus1 is in the range of 0 to 31. Reject the
+  // bitstream instead of clamping.
+  if (cpb_cnt_minus1 > 31) {
+    LOG("cpb_cnt_minus1 out of range");
+    return false;
+  }
+  aBr.ReadBits(4);  // bit_rate_scale
+  aBr.ReadBits(4);  // cpb_size_scale
+  for (uint32_t i = 0; i <= cpb_cnt_minus1; i++) {
+    aBr.ReadUE();   // bit_rate_value_minus1[i]
+    aBr.ReadUE();   // cpb_size_value_minus1[i]
+    aBr.ReadBit();  // cbr_flag[i]
+  }
+  aBr.ReadBits(5);  // initial_cpb_removal_delay_length_minus1
+  aBr.ReadBits(5);  // cpb_removal_delay_length_minus1
+  aBr.ReadBits(5);  // dpb_output_delay_length_minus1
+  aBr.ReadBits(5);  // time_offset_length
   return true;
 }
 
@@ -947,6 +1085,16 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
         std::min(std::max(maxRefFrames, spsdata.max_num_ref_frames + 1), 16u);
   }
   return maxRefFrames;
+}
+
+/* static */
+uint32_t H264::ComputeMaxNumReorderFrames(
+    const mozilla::MediaByteBuffer* aExtraData) {
+  SPSData spsdata;
+  if (!DecodeSPSFromExtraData(aExtraData, spsdata)) {
+    return 0;
+  }
+  return spsdata.max_num_reorder_frames;
 }
 
 /* static */ H264::FrameType H264::GetFrameType(

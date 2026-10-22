@@ -1609,12 +1609,6 @@ CERT_GetOrgUnitName(const CERTName* name)
 }
 
 char*
-CERT_GetDnQualifier(const CERTName* name)
-{
-    return (CERT_GetNameElement(NULL, name, SEC_OID_AVA_DN_QUALIFIER));
-}
-
-char*
 CERT_GetCertUid(const CERTName* name)
 {
     return (CERT_GetNameElement(NULL, name, SEC_OID_RFC1274_UID));

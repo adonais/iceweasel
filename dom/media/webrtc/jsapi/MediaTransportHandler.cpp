@@ -36,10 +36,13 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
 #include "mozilla/ReverseIterator.h"
+#include "mozilla/StopGapEventTarget.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
 #include "nsFmtString.h"
 #include "nsISocketTransportService.h"
+#include "nsSocketTransportService2.h"
 #include "nss.h"  // For NSS_NoDB_Init
 #include "sdp/SdpAttribute.h"
 #include "transport/runnable_utils.h"
@@ -62,20 +65,100 @@ static const char* mthLogTag = "MediaTransportHandler";
 // missing keyframe self-heals via PLI/FIR.
 static constexpr uint32_t kOldFlowGraceMs = 2000;
 
-class MediaTransportHandlerSTS : public MediaTransportHandler,
-                                 public sigslot::has_slots<> {
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+using IceLogPromise = MediaTransportHandler::IceLogPromise;
+
+// An underlying implementation wrapped by MediaTransportHandlerLocal. Unlike
+// MediaTransportHandler, this is not required to be threadsafe or refcounted.
+// Everything except Init must be run on the event target Init returns.
+class MediaTransportImpl {
  public:
-  explicit MediaTransportHandlerSTS();
+  // MediaTransportEvents is how this will communicate with the wrapping
+  // MediaTransportHandlerLocal; this decouples the lifecycles of wrapper/impl.
+  explicit MediaTransportImpl(RefPtr<MediaTransportEvents> aEvents)
+      : mEvents(aEvents) {}
+  virtual ~MediaTransportImpl() = default;
+
+  // Called once, on any thread. Returns the event target every other call must
+  // be dispatched to, including our destruction (eg; a no-op runnable carrying
+  // a UniquePtr to us). The contract on this event target is as follows:
+  // 1 The event target either runs or destroys runnables in the order they
+  //   were dispatched. If Dispatch returns an error, this counts as
+  //   destruction of the runnable; all previously dispatched runnables must
+  //   have already been run, destroyed, or leaked. This is all part of the
+  //   contract of nsISerialEventTarget, but it bears repeating here.
+  //   This is what makes it safe to carry bareptrs (MediaTransportImpl*) in
+  //   these runnables, because the last runnable is the one that destroys us.
+  // 2 If this class must be destroyed on the event target, the event target
+  //   must be accepting and running runnables. In other words, if the event
+  //   target will stop accepting runnables (eg; STS shutdown), the impl must
+  //   make itself safe to destroy on any thread *before* that happens.
+  // 3 The event target will accept runnables right away, even if it needs to
+  //   perform async init before it begins actually running them.
+  virtual already_AddRefed<nsISerialEventTarget> Init() = 0;
+
+  virtual void CreateIceCtx(const std::string& aName) = 0;
+
+  virtual RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) = 0;
+  virtual void ClearIceLog() = 0;
+  virtual void EnterPrivateMode() = 0;
+  virtual void ExitPrivateMode() = 0;
+
+  virtual void SetIceConfig(nsTArray<ParsedIceServer>&& aIceServers,
+                            dom::RTCIceTransportPolicy aIcePolicy) = 0;
+  virtual void SetProxyConfig(NrSocketProxyConfig&& aProxyConfig) = 0;
+  virtual void EnsureProvisionalTransport(const std::string& aTransportId,
+                                          const std::string& aUfrag,
+                                          const std::string& aPwd,
+                                          int aComponentCount) = 0;
+  virtual void SetTargetForDefaultLocalAddressLookup(
+      const std::string& aTargetIp, uint16_t aTargetPort) = 0;
+  virtual void StartIceGathering(bool aDefaultRouteOnly,
+                                 bool aObfuscateHostAddresses,
+                                 const nsTArray<NrIceStunAddr>& aStunAddrs) = 0;
+  virtual void ActivateTransport(
+      const std::string& aTransportId, const std::string& aLocalUfrag,
+      const std::string& aLocalPwd, size_t aComponentCount,
+      const std::string& aUfrag, const std::string& aPassword,
+      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+      bool aPrivacyRequested) = 0;
+  virtual void RemoveTransportsExcept(
+      const std::set<std::string>& aTransportIds) = 0;
+  virtual void StartIceChecks(bool aIsControlling,
+                              const std::vector<std::string>& aIceOptions) = 0;
+  virtual void AddIceCandidate(const std::string& aTransportId,
+                               const std::string& aCandidate,
+                               const std::string& aUfrag,
+                               const std::string& aResolvedAddress) = 0;
+  virtual void UpdateNetworkState(bool aOnline) = 0;
+  virtual void SendPacket(const std::string& aTransportId,
+                          MediaPacket&& aPacket) = 0;
+  virtual RefPtr<dom::RTCStatsPromise> GetIceStats(
+      const std::string& aTransportId, DOMHighResTimeStamp aNow) = 0;
+
+ protected:
+  const RefPtr<MediaTransportEvents> mEvents;
+};
+
+class STSShutdownHandler;
+
+class MediaTransportImplNicer final : public MediaTransportImpl,
+                                      public sigslot::has_slots<> {
+ public:
+  explicit MediaTransportImplNicer(RefPtr<MediaTransportEvents> aEvents);
+  ~MediaTransportImplNicer();
+
+  already_AddRefed<nsISerialEventTarget> Init() override;
+  void CreateIceCtx(const std::string& aName) override;
 
   RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) override;
   void ClearIceLog() override;
   void EnterPrivateMode() override;
   void ExitPrivateMode() override;
 
-  void CreateIceCtx(const std::string& aName) override;
-
-  nsresult SetIceConfig(const nsTArray<dom::RTCIceServer>& aIceServers,
-                        dom::RTCIceTransportPolicy aIcePolicy) override;
+  void SetIceConfig(nsTArray<ParsedIceServer>&& aIceServers,
+                    dom::RTCIceTransportPolicy aIcePolicy) override;
 
   // We will probably be able to move the proxy lookup stuff into
   // this class once we move mtransport to its own process.
@@ -125,12 +208,16 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   RefPtr<dom::RTCStatsPromise> GetIceStats(const std::string& aTransportId,
                                            DOMHighResTimeStamp aNow) override;
 
-  void Shutdown();
+  // Releases everything that must be released on STS. Afterwards, this may be
+  // destroyed on any thread. Called by STSShutdownHandler, and on destruction.
+  // This is how we satisfy item 2 in the contract on Init().
+  void DeinitSts();
 
  private:
-  void Destroy() override;
-  void DestroyFinal();
-  void Shutdown_s();
+  void InitMain(const RefPtr<StopGapEventTarget>& aTarget);
+  void InitSts(const RefPtr<STSShutdownHandler>& aHandler,
+               const NrIceCtx::GlobalConfig& aConfig,
+               const RefPtr<StopGapEventTarget>& aTarget);
   RefPtr<TransportFlow> CreateTransportFlow(
       const std::string& aTransportId, bool aIsRtcp,
       const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
@@ -144,6 +231,12 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     Transport() = default;
     Transport(const Transport&) = delete;
     Transport& operator=(const Transport&) = delete;
+    // The close timer's callback holds a plain pointer to us.
+    ~Transport() {
+      if (mCloseTimer) {
+        mCloseTimer->Cancel();
+      }
+    }
 
     RefPtr<TransportFlow> GetCurrent(bool aIsRtcp) const {
       return (aIsRtcp && mRtcpFlow) ? mRtcpFlow : mFlow;
@@ -185,7 +278,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     // These are set during DTLS restart to avoid interrupting media flow.
     RefPtr<TransportFlow> mOldFlow;
     RefPtr<TransportFlow> mOldRtcpFlow;
-    // Used by MediaTransportHandlerSTS to schedule closure of old flows.
+    // Used by MediaTransportImplNicer to schedule closure of old flows.
     // This class is not very suitable for scheduling these timers itself,
     // because it is not refcounted.
     nsCOMPtr<nsITimer> mCloseTimer;
@@ -222,16 +315,6 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     std::string mReportedAlpn;
   };
 
-  using MediaTransportHandler::OnAlpnNegotiated;
-  using MediaTransportHandler::OnCandidate;
-  using MediaTransportHandler::OnCandidateError;
-  using MediaTransportHandler::OnConnectionStateChange;
-  using MediaTransportHandler::OnEncryptedSending;
-  using MediaTransportHandler::OnGatheringStateChange;
-  using MediaTransportHandler::OnPacketReceived;
-  using MediaTransportHandler::OnRtcpStateChange;
-  using MediaTransportHandler::OnStateChange;
-
   void OnGatheringStateChange(const std::string& aTransportId,
                               NrIceMediaStream::GatheringState aState);
   void OnConnectionStateChange(NrIceMediaStream* aIceStream,
@@ -265,11 +348,16 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
                    dom::RTCStatsCollection* aStats,
                    dom::RTCTransportStats& aTransport) const;
 
-  virtual ~MediaTransportHandlerSTS() = default;
   nsCOMPtr<nsISerialEventTarget> mStsThread;
+  // Only set if we registered with it, only touched on STS.
+  RefPtr<STSShutdownHandler> mShutdownHandler;
   RefPtr<NrIceCtx> mIceCtx;
   RefPtr<NrIceResolver> mDNSResolver;
   std::map<std::string, Transport> mTransports;
+  // We should not need this if STS is keeping its end of the contract around
+  // shutdown, but we're going to double-check just in case. If STS has
+  // messed up, we'll convert the bug into a safe crash.
+  std::atomic<bool> mSTSOnly{false};
   bool mHideLocalPrflx = false;
   bool mTurnDisabled = false;
   uint32_t mMinDtlsVersion = 0;
@@ -280,10 +368,173 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   Maybe<NrIceCtx::NatSimulatorConfig> mNatConfig;
 
   std::set<std::string> mSignaledAddresses;
+};
 
-  // Init can only be done on main, but we want this to be usable on any thread
-  using InitPromise = MozPromise<bool, std::string, false>;
-  RefPtr<InitPromise> mInitPromise;
+// Refcounted front for a MediaTransportImpl, usable on any thread. Every call
+// is dispatched to the implementation's event target, and so is the
+// implementation's destruction, which therefore happens after every call that
+// could still act on it.
+class MediaTransportHandlerLocal final : public MediaTransportHandler {
+ public:
+  MediaTransportHandlerLocal()
+      : mImpl(MakeUnique<MediaTransportImplNicer>(mEvents)),
+        mTarget(mImpl->Init()) {}
+
+  RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) override {
+    return InvokeAsync(mTarget, __func__, [impl = mImpl.get(), aPattern] {
+      return impl->GetIceLog(aPattern);
+    });
+  }
+
+  void ClearIceLog() override {
+    Post(__func__, [](MediaTransportImpl& aImpl) { aImpl.ClearIceLog(); });
+  }
+
+  void EnterPrivateMode() override {
+    Post(__func__, [](MediaTransportImpl& aImpl) { aImpl.EnterPrivateMode(); });
+  }
+
+  void ExitPrivateMode() override {
+    Post(__func__, [](MediaTransportImpl& aImpl) { aImpl.ExitPrivateMode(); });
+  }
+
+  void CreateIceCtx(const std::string& aName) override {
+    Post(__func__,
+         [aName](MediaTransportImpl& aImpl) { aImpl.CreateIceCtx(aName); });
+  }
+
+  nsresult SetIceConfig(const nsTArray<dom::RTCIceServer>& aIceServers,
+                        dom::RTCIceTransportPolicy aIcePolicy) override {
+    auto result = IceServerParser::Parse(aIceServers);
+    if (result.isErr()) {
+      // Discard the detailed ErrorResult; callers at this level use nsresult.
+      result.unwrapErr().SuppressException();
+      return NS_ERROR_FAILURE;
+    }
+    Post(__func__, [entries = result.unwrap(),
+                    aIcePolicy](MediaTransportImpl& aImpl) mutable {
+      aImpl.SetIceConfig(std::move(entries), aIcePolicy);
+    });
+    return NS_OK;
+  }
+
+  void SetProxyConfig(NrSocketProxyConfig&& aProxyConfig) override {
+    Post(__func__, [aProxyConfig = std::move(aProxyConfig)](
+                       MediaTransportImpl& aImpl) mutable {
+      aImpl.SetProxyConfig(std::move(aProxyConfig));
+    });
+  }
+
+  void EnsureProvisionalTransport(const std::string& aTransportId,
+                                  const std::string& aUfrag,
+                                  const std::string& aPwd,
+                                  int aComponentCount) override {
+    Post(__func__, [=](MediaTransportImpl& aImpl) {
+      aImpl.EnsureProvisionalTransport(aTransportId, aUfrag, aPwd,
+                                       aComponentCount);
+    });
+  }
+
+  void SetTargetForDefaultLocalAddressLookup(const std::string& aTargetIp,
+                                             uint16_t aTargetPort) override {
+    Post(__func__, [=](MediaTransportImpl& aImpl) {
+      aImpl.SetTargetForDefaultLocalAddressLookup(aTargetIp, aTargetPort);
+    });
+  }
+
+  void StartIceGathering(bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
+                         const nsTArray<NrIceStunAddr>& aStunAddrs) override {
+    Post(__func__,
+         [=, stunAddrs = aStunAddrs.Clone()](MediaTransportImpl& aImpl) {
+           aImpl.StartIceGathering(aDefaultRouteOnly, aObfuscateHostAddresses,
+                                   stunAddrs);
+         });
+  }
+
+  void ActivateTransport(
+      const std::string& aTransportId, const std::string& aLocalUfrag,
+      const std::string& aLocalPwd, size_t aComponentCount,
+      const std::string& aUfrag, const std::string& aPassword,
+      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+      bool aPrivacyRequested) override {
+    Post(__func__, [=, keyDer = aKeyDer.Clone(),
+                    certDer = aCertDer.Clone()](MediaTransportImpl& aImpl) {
+      aImpl.ActivateTransport(aTransportId, aLocalUfrag, aLocalPwd,
+                              aComponentCount, aUfrag, aPassword, keyDer,
+                              certDer, aAuthType, aDtlsClient, aDigests,
+                              aPrivacyRequested);
+    });
+  }
+
+  void RemoveTransportsExcept(
+      const std::set<std::string>& aTransportIds) override {
+    Post(__func__, [=](MediaTransportImpl& aImpl) {
+      aImpl.RemoveTransportsExcept(aTransportIds);
+    });
+  }
+
+  void StartIceChecks(bool aIsControlling,
+                      const std::vector<std::string>& aIceOptions) override {
+    Post(__func__, [=](MediaTransportImpl& aImpl) {
+      aImpl.StartIceChecks(aIsControlling, aIceOptions);
+    });
+  }
+
+  void AddIceCandidate(const std::string& aTransportId,
+                       const std::string& aCandidate, const std::string& aUfrag,
+                       const std::string& aResolvedAddress) override {
+    Post(__func__, [=](MediaTransportImpl& aImpl) {
+      aImpl.AddIceCandidate(aTransportId, aCandidate, aUfrag, aResolvedAddress);
+    });
+  }
+
+  void UpdateNetworkState(bool aOnline) override {
+    Post(__func__,
+         [=](MediaTransportImpl& aImpl) { aImpl.UpdateNetworkState(aOnline); });
+  }
+
+  void SendPacket(const std::string& aTransportId,
+                  MediaPacket&& aPacket) override {
+    Post(__func__, [aTransportId, aPacket = std::move(aPacket)](
+                       MediaTransportImpl& aImpl) mutable {
+      aImpl.SendPacket(aTransportId, std::move(aPacket));
+    });
+  }
+
+  RefPtr<dom::RTCStatsPromise> GetIceStats(const std::string& aTransportId,
+                                           DOMHighResTimeStamp aNow) override {
+    return InvokeAsync(mTarget, __func__,
+                       [impl = mImpl.get(), aTransportId, aNow] {
+                         return impl->GetIceStats(aTransportId, aNow);
+                       });
+  }
+
+ private:
+  ~MediaTransportHandlerLocal() {
+    // If Dispatch fails, the runnable is synchronously destroyed, taking the
+    // impl with it. This is why we need item 2 in the contract on
+    // MediaTransportImpl::Init; the impl must become safe to destroy on any
+    // thread if the event target will stop accepting runnables.
+    (void)mTarget->Dispatch(
+        NS_NewRunnableFunction(
+            __func__, [impl = std::move(mImpl)]() mutable {}),
+        NS_DISPATCH_FALLIBLE);
+  }
+
+  template <typename Function>
+  void Post(const char* aName, Function&& aFunction) {
+    (void)mTarget->Dispatch(
+        NS_NewRunnableFunction(aName,
+                               [impl = mImpl.get(),
+                                function = std::forward<Function>(
+                                    aFunction)]() mutable { function(*impl); }),
+        NS_DISPATCH_FALLIBLE);
+  }
+
+  // Only released on destruction.
+  UniquePtr<MediaTransportImpl> mImpl;
+  const nsCOMPtr<nsISerialEventTarget> mTarget;
 };
 
 /* static */
@@ -294,87 +545,120 @@ already_AddRefed<MediaTransportHandler> MediaTransportHandler::Create() {
       StaticPrefs::network_process_enabled()) {
     result = MakeRefPtr<MediaTransportHandlerIPC>();
   } else {
-    result = MakeRefPtr<MediaTransportHandlerSTS>();
+    result = MakeRefPtr<MediaTransportHandlerLocal>();
   }
   result->Initialize();
   return result.forget();
 }
 
-class STSShutdownHandler : public nsISTSShutdownObserver {
+// Tells every live MediaTransportImplNicer to release what it holds on STS
+// when STS shuts down. Observe() is called on main just before the STS thread
+// is joined, so the work has to be queued there right away.
+class STSShutdownHandler final : public nsISTSShutdownObserver {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
 
-  // Lazy singleton
-  static RefPtr<STSShutdownHandler>& Instance() {
+  // Lazy instance for the current STS lifetime. Null if STS is shutting down
+  // (or shut down); a handler created in such a state would never get a
+  // shutdown callback before STS stops working. If STS is restarted (eg; after
+  // a profile-change network teardown), we will be able to create a new
+  // instance.
+  static RefPtr<STSShutdownHandler> GetOrCreate() {
     MOZ_ASSERT(NS_IsMainThread());
-    static RefPtr<STSShutdownHandler> sHandler =
-        MakeRefPtr<STSShutdownHandler>();
-    return sHandler;
-  }
-
-  void Shutdown() {
-    MOZ_ASSERT(NS_IsMainThread());
-    for (const auto& handler : mHandlers) {
-      handler->Shutdown();
+    RefPtr<STSShutdownHandler>& instance = Instance();
+    if (!instance) {
+      // Make sure STS exists and has been brought up.
+      nsCOMPtr<nsISocketTransportService> sts =
+          do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
+      if (sts && net::gSocketTransportService &&
+          !net::gSocketTransportService->IsShuttingDownOrShutDown()) {
+        instance = MakeRefPtr<STSShutdownHandler>(sts.forget());
+      }
     }
-    mHandlers.clear();
+    return instance;
   }
 
-  STSShutdownHandler() {
+  explicit STSShutdownHandler(nsCOMPtr<nsISocketTransportService> aSts) : mSts(aSts) {
     CSFLogDebug(LOGTAG, "%s", __func__);
-    nsresult res;
-    nsCOMPtr<nsISocketTransportService> sts =
-        do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &res);
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(res));
-    MOZ_RELEASE_ASSERT(sts);
-    sts->AddShutdownObserver(this);
+    aSts->AddShutdownObserver(this);
+    mStsThread = do_QueryInterface(aSts);
+    MOZ_RELEASE_ASSERT(mStsThread);
   }
 
   NS_IMETHOD Observe() override {
     CSFLogDebug(LOGTAG, "%s", __func__);
-    Shutdown();
-    nsresult res;
-    nsCOMPtr<nsISocketTransportService> sts =
-        do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &res);
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(res));
-    MOZ_RELEASE_ASSERT(sts);
-    sts->RemoveShutdownObserver(this);
+    MOZ_ASSERT(NS_IsMainThread());
+    // Make all of the impls safe to destroy on any thread before STS stops
+    // accepting runnables.
+    mStsThread->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr<STSShutdownHandler>(this)] { self->Shutdown(); }));
+    mSts->RemoveShutdownObserver(this);
     Instance() = nullptr;
     return NS_OK;
   }
 
-  void Register(MediaTransportHandlerSTS* aHandler) {
+ private:
+  static RefPtr<STSShutdownHandler>& Instance() {
     MOZ_ASSERT(NS_IsMainThread());
-    mHandlers.insert(aHandler);
+    static RefPtr<STSShutdownHandler> sHandler;
+    return sHandler;
   }
 
-  void Deregister(MediaTransportHandlerSTS* aHandler) {
-    MOZ_ASSERT(NS_IsMainThread());
-    mHandlers.erase(aHandler);
+ public:
+  void Register(MediaTransportImplNicer* aImpl) {
+    MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+    mImpls.insert(aImpl);
   }
+
+  void Deregister(MediaTransportImplNicer* aImpl) {
+    MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+    mImpls.erase(aImpl);
+  }
+
+  nsCOMPtr<nsISerialEventTarget> GetStsThread() const { return mStsThread; }
 
  private:
   virtual ~STSShutdownHandler() = default;
 
-  // Raw ptrs, registered on init, deregistered on destruction, all on main
-  std::set<MediaTransportHandlerSTS*> mHandlers;
+  void Shutdown() {
+    MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+    std::set<MediaTransportImplNicer*> impls = std::move(mImpls);
+    mImpls.clear();
+    // Each of these deregisters, which needs mStsThread.
+    for (auto* impl : impls) {
+      impl->DeinitSts();
+    }
+    mStsThread = nullptr;
+  }
+
+  nsCOMPtr<nsISerialEventTarget> mStsThread;
+  nsCOMPtr<nsISocketTransportService> mSts;
+  // STS only. Raw ptrs; each deregisters itself when it releases its STS
+  // resources.
+  std::set<MediaTransportImplNicer*> mImpls;
 };
 
 NS_IMPL_ISUPPORTS(STSShutdownHandler, nsISTSShutdownObserver);
 
-MediaTransportHandlerSTS::MediaTransportHandlerSTS() {
-  nsresult rv;
-  mStsThread = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
-  if (!mStsThread) {
-    MOZ_CRASH();
-  }
-
-  RLogConnector::CreateInstance();
-
+MediaTransportImplNicer::MediaTransportImplNicer(
+    RefPtr<MediaTransportEvents> aEvents)
+    : MediaTransportImpl(std::move(aEvents)) {
+  // We do not do substantive init in here, because we could be on any thread
+  // (eg; PBackground). That happens in InitMain/InitSts.
   CSFLogDebug(LOGTAG, "%s done %p", __func__, this);
+}
 
-  // We do not set up mDNSService here, because we are not running on main (we
-  // use PBackground), and the DNS service asserts.
+MediaTransportImplNicer::~MediaTransportImplNicer() {
+  // mStsThread is not set if InitMain never got that far.
+  if (mStsThread && mStsThread->IsOnCurrentThread()) {
+    DeinitSts();
+  } else {
+    // We have either shut down already, or never initted.
+    MOZ_RELEASE_ASSERT(
+        !mSTSOnly,
+        "Destructor running on non-STS, but we still have STS-only state!");
+  }
 }
 
 static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
@@ -462,155 +746,186 @@ static Maybe<NrIceCtx::NatSimulatorConfig> GetNatConfig() {
   return Nothing();
 }
 
-void MediaTransportHandlerSTS::CreateIceCtx(const std::string& aName) {
-  mInitPromise = InvokeAsync(
-      GetMainThreadSerialEventTarget(), __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        CSFLogDebug(LOGTAG, "%s starting", __func__);
-        if (!NSS_IsInitialized()) {
-          if (NSS_NoDB_Init(nullptr) != SECSuccess) {
-            MOZ_CRASH();
-            return InitPromise::CreateAndReject("NSS_NoDB_Init failed",
-                                                __func__);
-          }
-
-          if (NS_FAILED(mozilla::psm::InitializeCipherSuite())) {
-            MOZ_CRASH();
-            return InitPromise::CreateAndReject("InitializeCipherSuite failed",
-                                                __func__);
-          }
-
-          mozilla::psm::DisableMD5();
-        }
-
-        static bool globalInitDone = false;
-        if (!globalInitDone) {
-          // Ensure the DNS service is initted for the first time on main
-          DebugOnly<RefPtr<nsIDNSService>> dnsService =
-              RefPtr<nsIDNSService>(nsDNSService::GetXPCOMSingleton());
-          MOZ_ASSERT(dnsService.value);
-          mStsThread->Dispatch(
-              WrapRunnableNM(&NrIceCtx::InitializeGlobals, GetGlobalConfig()),
-              NS_DISPATCH_NORMAL);
-          globalInitDone = true;
-        }
-
-        // Give us a way to globally turn off TURN support
-        mTurnDisabled =
-            Preferences::GetBool("media.peerconnection.turn.disable", false);
-        // We are reading these here, because when we setup the DTLS transport
-        // we are on the wrong thread to read prefs
-        mMinDtlsVersion =
-            Preferences::GetUint("media.peerconnection.dtls.version.min");
-        mMaxDtlsVersion =
-            Preferences::GetUint("media.peerconnection.dtls.version.max");
-        mForceNoHost =
-            Preferences::GetBool("media.peerconnection.ice.no_host", false);
-        mNatConfig = GetNatConfig();
-        mAllowLoopback =
-            Preferences::GetBool("media.peerconnection.ice.loopback", false);
-        mAllowLinkLocal =
-            Preferences::GetBool("media.peerconnection.ice.link_local", false);
-
-        MOZ_RELEASE_ASSERT(STSShutdownHandler::Instance());
-        STSShutdownHandler::Instance()->Register(this);
-
-        return InvokeAsync(
-            mStsThread, __func__,
-            [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-              mIceCtx = NrIceCtx::Create(aName);
-              if (!mIceCtx) {
-                return InitPromise::CreateAndReject("NrIceCtx::Create failed",
-                                                    __func__);
-              }
-
-              mIceCtx->SignalConnectionStateChange.connect(
-                  this, &MediaTransportHandlerSTS::OnConnectionStateChange);
-
-              mDNSResolver = MakeRefPtr<NrIceResolver>();
-              nsresult rv;
-              if (NS_FAILED(rv = mDNSResolver->Init())) {
-                CSFLogError(LOGTAG, "%s: Failed to initialize dns resolver",
-                            __FUNCTION__);
-                return InitPromise::CreateAndReject(
-                    "Failed to initialize dns resolver", __func__);
-              }
-              if (NS_FAILED(rv = mIceCtx->SetResolver(
-                                mDNSResolver->AllocateResolver()))) {
-                CSFLogError(LOGTAG, "%s: Failed to get dns resolver",
-                            __FUNCTION__);
-                return InitPromise::CreateAndReject(
-                    "Failed to get dns resolver", __func__);
-              }
-
-              CSFLogDebug(LOGTAG, "%s done", __func__);
-              return InitPromise::CreateAndResolve(true, __func__);
-            });
-      });
+already_AddRefed<nsISerialEventTarget> MediaTransportImplNicer::Init() {
+  // The StopGapEventTarget accepts runnables right away (item 3 in the
+  // contract), and holds them until InitSts succeeds. We do not keep a ref
+  // because that would create a reference cycle, but we do hold a ref until we
+  // have finished init. If init does not complete, any queued runnables
+  // (including our destruction) are dropped along with the StopGapEventTarget
+  // when our wrapper goes away; this is fine on any thread because we do not
+  // have any STS-only state in that case (item 2 in the contract).
+  RefPtr<StopGapEventTarget> target = MakeRefPtr<StopGapEventTarget>();
+  GetMainThreadSerialEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__, [this, target] { InitMain(target); }));
+  return target.forget();
 }
 
-using ParsedIceServer = IceServerParser::ParsedIceServer;
+void MediaTransportImplNicer::InitMain(
+    const RefPtr<StopGapEventTarget>& aTarget) {
+  MOZ_ASSERT(NS_IsMainThread());
+  CSFLogDebug(LOGTAG, "%s starting", __func__);
 
-nsresult MediaTransportHandlerSTS::SetIceConfig(
-    const nsTArray<dom::RTCIceServer>& aIceServers,
-    dom::RTCIceTransportPolicy aIcePolicy) {
-  auto result = IceServerParser::Parse(aIceServers);
-  if (result.isErr()) {
-    // Discard the detailed ErrorResult; callers at this level use nsresult.
-    result.unwrapErr().SuppressException();
-    return NS_ERROR_FAILURE;
+  // Null if STS is shutting/shut down; there is not a usable event target for
+  // STS, don't bother continuing init.
+  RefPtr<STSShutdownHandler> shutdownHandler =
+      STSShutdownHandler::GetOrCreate();
+  if (!shutdownHandler) {
+    return;
   }
 
-  nsTArray<ParsedIceServer> entries = result.unwrap();
+  mStsThread = shutdownHandler->GetStsThread();
+  if (!mStsThread) {
+    MOZ_CRASH();
+    return;
+  }
 
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!NSS_IsInitialized()) {
+    if (NSS_NoDB_Init(nullptr) != SECSuccess) {
+      MOZ_CRASH();
+      return;
+    }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [this, aIcePolicy, entries = std::move(entries),
-       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          CSFLogError(LOGTAG, "%s: mIceCtx is null", __FUNCTION__);
-          return;
-        }
-        NrIceCtx::Config config;
-        config.mPolicy = toNrIcePolicy(aIcePolicy);
-        if (config.mPolicy == NrIceCtx::ICE_POLICY_ALL && mForceNoHost) {
-          config.mPolicy = NrIceCtx::ICE_POLICY_NO_HOST;
-        }
+    if (NS_FAILED(mozilla::psm::InitializeCipherSuite())) {
+      MOZ_CRASH();
+      return;
+    }
 
-        config.mAllowLoopback = mAllowLoopback;
-        config.mAllowLinkLocal = mAllowLinkLocal;
-        config.mNatSimulatorConfig = mNatConfig;
+    mozilla::psm::DisableMD5();
+  }
 
-        nsresult rv;
+  static bool globalInitDone = false;
+  if (!globalInitDone) {
+    // Ensure the DNS service is initted for the first time on main
+    DebugOnly<RefPtr<nsIDNSService>> dnsService =
+        RefPtr<nsIDNSService>(nsDNSService::GetXPCOMSingleton());
+    MOZ_ASSERT(dnsService.value);
+    globalInitDone = true;
+  }
 
-        if (NS_FAILED(rv = mIceCtx->SetIceServers(entries, mTurnDisabled))) {
-          CSFLogError(LOGTAG, "%s: Failed to set ICE servers", __FUNCTION__);
-          return;
-        }
-        if (NS_FAILED(rv = mIceCtx->SetIceConfig(config))) {
-          CSFLogError(LOGTAG, "%s: Failed to set config", __FUNCTION__);
-        }
-      });
+  // Give us a way to globally turn off TURN support
+  mTurnDisabled =
+      Preferences::GetBool("media.peerconnection.turn.disable", false);
+  // We are reading these here, because when we setup the DTLS transport
+  // we are on the wrong thread to read prefs
+  mMinDtlsVersion =
+      Preferences::GetUint("media.peerconnection.dtls.version.min");
+  mMaxDtlsVersion =
+      Preferences::GetUint("media.peerconnection.dtls.version.max");
+  mForceNoHost =
+      Preferences::GetBool("media.peerconnection.ice.no_host", false);
+  mNatConfig = GetNatConfig();
+  mAllowLoopback =
+      Preferences::GetBool("media.peerconnection.ice.loopback", false);
+  mAllowLinkLocal =
+      Preferences::GetBool("media.peerconnection.ice.link_local", false);
 
-  return NS_OK;
+  // This goes straight to STS. The StopGapEventTarget might already have
+  // runnables in it, and they must wait until InitSts has succeeded.
+  mStsThread->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, shutdownHandler = std::move(shutdownHandler),
+                 config = GetGlobalConfig(), target = aTarget] {
+        InitSts(shutdownHandler, config, target);
+      }));
 }
 
-void MediaTransportHandlerSTS::Shutdown() {
-  CSFLogDebug(LOGTAG, "%s", __func__);
-  MOZ_ASSERT(NS_IsMainThread());
-  mStsThread->Dispatch(NewNonOwningRunnableMethod(
-      __func__, this, &MediaTransportHandlerSTS::Shutdown_s));
+void MediaTransportImplNicer::InitSts(
+    const RefPtr<STSShutdownHandler>& aHandler,
+    const NrIceCtx::GlobalConfig& aConfig,
+    const RefPtr<StopGapEventTarget>& aTarget) {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  // It is possible that STS shutdown has started, but if so the DeinitSts
+  // runnable is already queued. There is no harm in initting/registering in
+  // that case, we'll just deinit when DeinitSts runs.
+  aHandler->Register(this);
+  // This is the first point where we have state that is STS only. We've
+  // already checked that STS is not shutting down, and we have registered with
+  // the STSShutdownHandler to ensure we get a chance to clean up if STS begins
+  // shutdown (item 2 in the contract for our event target).
+  mSTSOnly = true;
+  NrIceCtx::InitializeGlobals(aConfig);
+  mShutdownHandler = aHandler;
+  // Everything queued for us goes to STS now.
+  aTarget->SetRealEventTarget(mStsThread);
 }
 
-void MediaTransportHandlerSTS::Shutdown_s() {
-  CSFLogDebug(LOGTAG, "%s", __func__);
+void MediaTransportImplNicer::CreateIceCtx(const std::string& aName) {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  if (!mShutdownHandler) {
+    // STS is shutting down, or already told us to shut down.
+    return;
+  }
+
+  if (NS_WARN_IF(mIceCtx)) {
+    CSFLogError(LOGTAG, "%s: ICE context already created", __func__);
+    return;
+  }
+
+  mIceCtx = NrIceCtx::Create(aName);
+  if (!mIceCtx) {
+    CSFLogError(LOGTAG, "%s: NrIceCtx::Create failed", __func__);
+    return;
+  }
+
+  mIceCtx->SignalConnectionStateChange.connect(
+      this, &MediaTransportImplNicer::OnConnectionStateChange);
+
+  mDNSResolver = MakeRefPtr<NrIceResolver>();
+  nsresult rv;
+  if (NS_FAILED(rv = mDNSResolver->Init())) {
+    CSFLogError(LOGTAG, "%s: Failed to initialize dns resolver", __FUNCTION__);
+    DeinitSts();
+    return;
+  }
+  if (NS_FAILED(rv = mIceCtx->SetResolver(mDNSResolver->AllocateResolver()))) {
+    CSFLogError(LOGTAG, "%s: Failed to get dns resolver", __FUNCTION__);
+    DeinitSts();
+    return;
+  }
+
+  CSFLogDebug(LOGTAG, "%s done", __func__);
+}
+
+void MediaTransportImplNicer::SetIceConfig(
+    nsTArray<ParsedIceServer>&& aIceServers,
+    dom::RTCIceTransportPolicy aIcePolicy) {
+  if (!mIceCtx) {
+    CSFLogError(LOGTAG, "%s: mIceCtx is null", __FUNCTION__);
+    return;
+  }
+  NrIceCtx::Config config;
+  config.mPolicy = toNrIcePolicy(aIcePolicy);
+  if (config.mPolicy == NrIceCtx::ICE_POLICY_ALL && mForceNoHost) {
+    config.mPolicy = NrIceCtx::ICE_POLICY_NO_HOST;
+  }
+
+  config.mAllowLoopback = mAllowLoopback;
+  config.mAllowLinkLocal = mAllowLinkLocal;
+  config.mNatSimulatorConfig = mNatConfig;
+
+  nsresult rv;
+
+  if (NS_FAILED(rv = mIceCtx->SetIceServers(aIceServers, mTurnDisabled))) {
+    CSFLogError(LOGTAG, "%s: Failed to set ICE servers", __FUNCTION__);
+    return;
+  }
+  if (NS_FAILED(rv = mIceCtx->SetIceConfig(config))) {
+    CSFLogError(LOGTAG, "%s: Failed to set config", __FUNCTION__);
+  }
+}
+
+void MediaTransportImplNicer::DeinitSts() {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+
+  if (mShutdownHandler) {
+    mShutdownHandler->Deregister(this);
+    mShutdownHandler = nullptr;
+  }
   // Clear the transports before destroying the ice ctx so that
   // the close_notify alerts have a chance to be sent as the
   // TransportFlow destructors execute.
   mTransports.clear();
   if (mIceCtx) {
+    CSFLogDebug(LOGTAG, "%s", __func__);
     NrIceStats stats = mIceCtx->Destroy();
     CSFLogDebug(LOGTAG,
                 "Ice Telemetry: stun (retransmits: %d)"
@@ -620,301 +935,223 @@ void MediaTransportHandlerSTS::Shutdown_s() {
   }
   mIceCtx = nullptr;
   mDNSResolver = nullptr;
+  // We are now safe to destroy on any thread.
+  mSTSOnly = false;
 }
 
-void MediaTransportHandlerSTS::Destroy() {
-  CSFLogDebug(LOGTAG, "%s %p", __func__, this);
-  // Our "destruction tour" starts on main, because we need to deregister.
-  if (!NS_IsMainThread()) {
-    GetMainThreadSerialEventTarget()->Dispatch(
-        NewNonOwningRunnableMethod("MediaTransportHandlerSTS::Destroy", this,
-                                   &MediaTransportHandlerSTS::Destroy));
-    return;
-  }
-
-  MOZ_ASSERT(NS_IsMainThread());
-  if (STSShutdownHandler::Instance()) {
-    STSShutdownHandler::Instance()->Deregister(this);
-    Shutdown();
-  }
-
-  // mIceCtx still has a reference to us via sigslot! We must dispach to STS,
-  // and clean up there.
-  nsresult rv = mStsThread->Dispatch(
-      NewNonOwningRunnableMethod("MediaTransportHandlerSTS::DestroyFinal", this,
-                                 &MediaTransportHandlerSTS::DestroyFinal));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    CSFLogError(LOGTAG,
-                "Unable to dispatch to STS: why has the XPCOM shutdown handler "
-                "not been invoked?");
-    delete this;
-  }
-}
-
-void MediaTransportHandlerSTS::DestroyFinal() { delete this; }
-
-void MediaTransportHandlerSTS::SetProxyConfig(
+void MediaTransportImplNicer::SetProxyConfig(
     NrSocketProxyConfig&& aProxyConfig) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [this, self = RefPtr<MediaTransportHandlerSTS>(this),
-       aProxyConfig = std::move(aProxyConfig)]() mutable {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
-
-        mIceCtx->SetProxyConfig(std::move(aProxyConfig));
-      },
-      [](const std::string& aError) {});
+  mIceCtx->SetProxyConfig(std::move(aProxyConfig));
 }
 
-void MediaTransportHandlerSTS::EnsureProvisionalTransport(
+void MediaTransportImplNicer::EnsureProvisionalTransport(
     const std::string& aTransportId, const std::string& aUfrag,
     const std::string& aPwd, int aComponentCount) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
+  if (!stream) {
+    CSFLogDebug(LOGTAG, "%s: Creating ICE media stream=%s components=%d",
+                mIceCtx->name().c_str(), aTransportId.c_str(), aComponentCount);
 
-        RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
-        if (!stream) {
-          CSFLogDebug(LOGTAG, "%s: Creating ICE media stream=%s components=%d",
-                      mIceCtx->name().c_str(), aTransportId.c_str(),
-                      aComponentCount);
+    std::ostringstream os;
+    os << mIceCtx->name() << " transport-id=" << aTransportId;
+    stream = mIceCtx->CreateStream(aTransportId, os.str(), aComponentCount);
 
-          std::ostringstream os;
-          os << mIceCtx->name() << " transport-id=" << aTransportId;
-          stream =
-              mIceCtx->CreateStream(aTransportId, os.str(), aComponentCount);
+    if (!stream) {
+      CSFLogError(LOGTAG, "Failed to create ICE stream.");
+      return;
+    }
 
-          if (!stream) {
-            CSFLogError(LOGTAG, "Failed to create ICE stream.");
-            return;
-          }
+    stream->SignalCandidate.connect(this,
+                                    &MediaTransportImplNicer::OnCandidateFound);
+    stream->SignalCandidateError.connect(
+        this, &MediaTransportImplNicer::OnCandidateError);
+    stream->SignalGatheringStateChange.connect(
+        this, &MediaTransportImplNicer::OnGatheringStateChange);
+  }
 
-          stream->SignalCandidate.connect(
-              this, &MediaTransportHandlerSTS::OnCandidateFound);
-          stream->SignalCandidateError.connect(
-              this, &MediaTransportHandlerSTS::OnCandidateError);
-          stream->SignalGatheringStateChange.connect(
-              this, &MediaTransportHandlerSTS::OnGatheringStateChange);
-        }
+  // Begins an ICE restart if this stream has a different ufrag/pwd
+  stream->SetIceCredentials(aUfrag, aPwd);
 
-        // Begins an ICE restart if this stream has a different ufrag/pwd
-        stream->SetIceCredentials(aUfrag, aPwd);
-
-        // Make sure there's an entry in mTransports
-        mTransports[aTransportId];
-      },
-      [](const std::string& aError) {});
+  // Make sure there's an entry in mTransports
+  mTransports[aTransportId];
 }
 
-void MediaTransportHandlerSTS::ActivateTransport(
+void MediaTransportImplNicer::ActivateTransport(
     const std::string& aTransportId, const std::string& aLocalUfrag,
     const std::string& aLocalPwd, size_t aComponentCount,
     const std::string& aUfrag, const std::string& aPassword,
     const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
     SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
     bool aPrivacyRequested) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
-       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  MOZ_ASSERT(aComponentCount);
+  RefPtr<DtlsIdentity> dtlsIdentity(
+      DtlsIdentity::Deserialize(aKeyDer, aCertDer, aAuthType));
+  if (!dtlsIdentity) {
+    MOZ_ASSERT(false);
+    return;
+  }
 
-        MOZ_ASSERT(aComponentCount);
-        RefPtr<DtlsIdentity> dtlsIdentity(
-            DtlsIdentity::Deserialize(keyDer, certDer, aAuthType));
-        if (!dtlsIdentity) {
-          MOZ_ASSERT(false);
-          return;
-        }
+  RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
+  if (!stream) {
+    MOZ_ASSERT(false);
+    return;
+  }
 
-        RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
-        if (!stream) {
-          MOZ_ASSERT(false);
-          return;
-        }
+  CSFLogDebug(LOGTAG, "%s: Activating ICE media stream=%s components=%u",
+              mIceCtx->name().c_str(), aTransportId.c_str(),
+              static_cast<unsigned>(aComponentCount));
 
-        CSFLogDebug(LOGTAG, "%s: Activating ICE media stream=%s components=%u",
-                    mIceCtx->name().c_str(), aTransportId.c_str(),
-                    static_cast<unsigned>(aComponentCount));
+  std::vector<std::string> attrs;
+  attrs.reserve(2 /* ufrag + pwd */);
+  attrs.push_back("ice-ufrag:" + aUfrag);
+  attrs.push_back("ice-pwd:" + aPassword);
 
-        std::vector<std::string> attrs;
-        attrs.reserve(2 /* ufrag + pwd */);
-        attrs.push_back("ice-ufrag:" + aUfrag);
-        attrs.push_back("ice-pwd:" + aPassword);
+  // If we started an ICE restart in EnsureProvisionalTransport, this is
+  // where we decide whether to commit or rollback.
+  nsresult rv = stream->ConnectToPeer(aLocalUfrag, aLocalPwd, attrs);
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "Couldn't parse ICE attributes, rv=%u",
+                static_cast<unsigned>(rv));
+    MOZ_ASSERT(false);
+    return;
+  }
 
-        // If we started an ICE restart in EnsureProvisionalTransport, this is
-        // where we decide whether to commit or rollback.
-        nsresult rv = stream->ConnectToPeer(aLocalUfrag, aLocalPwd, attrs);
-        if (NS_FAILED(rv)) {
-          CSFLogError(LOGTAG, "Couldn't parse ICE attributes, rv=%u",
-                      static_cast<unsigned>(rv));
-          MOZ_ASSERT(false);
-          return;
-        }
+  Transport& transport = mTransports[aTransportId];
 
-        Transport& transport = mTransports[aTransportId];
+  if (transport.mFlow) {
+    // Pre-existing transport
+    if (transport.mUfrag != aUfrag) {
+      // An ICE restart. nICEr keeps at most two ICE streams, so the one
+      // a lingering old flow was bound to has just been closed.
+      transport.CloseOldFlows();
+      if (transport.mDigests != aDigests) {
+        // Stand up a new, parallel DTLS association over the new ICE
+        // credentials and let the old flow linger to catch stragglers.
+        stream->AdvanceDtlsId();
+        transport.DeprecateCurrentFlows();
+      }
+    } else if (transport.mDigests != aDigests) {
+      // Content process checks this, but we check here too in case the
+      // content process has gone off the rails.
+      CSFLogError(LOGTAG,
+                  "%s: Ignoring remote DTLS fingerprint change without "
+                  "an ICE restart on transport %s",
+                  mIceCtx->name().c_str(), aTransportId.c_str());
+    }
+  }
+  transport.mUfrag = aUfrag;
 
-        if (transport.mFlow) {
-          // Pre-existing transport
-          if (transport.mUfrag != aUfrag) {
-            // An ICE restart. nICEr keeps at most two ICE streams, so the one
-            // a lingering old flow was bound to has just been closed.
-            transport.CloseOldFlows();
-            if (transport.mDigests != aDigests) {
-              // Stand up a new, parallel DTLS association over the new ICE
-              // credentials and let the old flow linger to catch stragglers.
-              stream->AdvanceDtlsId();
-              transport.DeprecateCurrentFlows();
-            }
-          } else if (transport.mDigests != aDigests) {
-            // Content process checks this, but we check here too in case the
-            // content process has gone off the rails.
-            CSFLogError(LOGTAG,
-                        "%s: Ignoring remote DTLS fingerprint change without "
-                        "an ICE restart on transport %s",
-                        mIceCtx->name().c_str(), aTransportId.c_str());
-          }
-        }
-        transport.mUfrag = aUfrag;
+  if (!transport.mFlow) {
+    transport.mFlow =
+        CreateTransportFlow(aTransportId, false, dtlsIdentity, aDtlsClient,
+                            aDigests, aPrivacyRequested);
+    if (!transport.mFlow) {
+      return;
+    }
+    transport.mDigests = aDigests;
+    TransportLayer* dtls = transport.mFlow->GetLayer(TransportLayerDtls::ID());
+    dtls->SignalStateChange.connect(this,
+                                    &MediaTransportImplNicer::OnStateChange);
+    if (aComponentCount < 2) {
+      dtls->SignalStateChange.connect(
+          this, &MediaTransportImplNicer::OnRtcpStateChange);
+    }
+  }
 
-        if (!transport.mFlow) {
-          transport.mFlow =
-              CreateTransportFlow(aTransportId, false, dtlsIdentity,
-                                  aDtlsClient, aDigests, aPrivacyRequested);
-          if (!transport.mFlow) {
-            return;
-          }
-          transport.mDigests = aDigests;
-          TransportLayer* dtls =
-              transport.mFlow->GetLayer(TransportLayerDtls::ID());
-          dtls->SignalStateChange.connect(
-              this, &MediaTransportHandlerSTS::OnStateChange);
-          if (aComponentCount < 2) {
-            dtls->SignalStateChange.connect(
-                this, &MediaTransportHandlerSTS::OnRtcpStateChange);
-          }
-        }
+  if (aComponentCount == 2) {
+    if (!transport.mRtcpFlow) {
+      transport.mRtcpFlow =
+          CreateTransportFlow(aTransportId, true, dtlsIdentity, aDtlsClient,
+                              aDigests, aPrivacyRequested);
+      if (!transport.mRtcpFlow) {
+        return;
+      }
+      TransportLayer* dtls =
+          transport.mRtcpFlow->GetLayer(TransportLayerDtls::ID());
+      dtls->SignalStateChange.connect(
+          this, &MediaTransportImplNicer::OnRtcpStateChange);
+    }
+  } else {
+    transport.mRtcpFlow = nullptr;
+    // components are 1-indexed
+    stream->DisableComponent(2);
+  }
 
-        if (aComponentCount == 2) {
-          if (!transport.mRtcpFlow) {
-            transport.mRtcpFlow =
-                CreateTransportFlow(aTransportId, true, dtlsIdentity,
-                                    aDtlsClient, aDigests, aPrivacyRequested);
-            if (!transport.mRtcpFlow) {
-              return;
-            }
-            TransportLayer* dtls =
-                transport.mRtcpFlow->GetLayer(TransportLayerDtls::ID());
-            dtls->SignalStateChange.connect(
-                this, &MediaTransportHandlerSTS::OnRtcpStateChange);
-          }
-        } else {
-          transport.mRtcpFlow = nullptr;
-          // components are 1-indexed
-          stream->DisableComponent(2);
-        }
-
-        UpdateReportedState(aTransportId, /* aIsRtcp = */ false);
-        UpdateReportedState(aTransportId, /* aIsRtcp = */ true);
-      },
-      [](const std::string& aError) {});
+  UpdateReportedState(aTransportId, /* aIsRtcp = */ false);
+  UpdateReportedState(aTransportId, /* aIsRtcp = */ true);
 }
 
-void MediaTransportHandlerSTS::SetTargetForDefaultLocalAddressLookup(
+void MediaTransportImplNicer::SetTargetForDefaultLocalAddressLookup(
     const std::string& aTargetIp, uint16_t aTargetPort) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
-
-        mIceCtx->SetTargetForDefaultLocalAddressLookup(aTargetIp, aTargetPort);
-      },
-      [](const std::string& aError) {});
+  mIceCtx->SetTargetForDefaultLocalAddressLookup(aTargetIp, aTargetPort);
 }
 
-void MediaTransportHandlerSTS::StartIceGathering(
+void MediaTransportImplNicer::StartIceGathering(
     bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
     const nsTArray<NrIceStunAddr>& aStunAddrs) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, stunAddrs = aStunAddrs.Clone(),
-       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  mHideLocalPrflx = aObfuscateHostAddresses;
 
-        mHideLocalPrflx = aObfuscateHostAddresses;
+  // Belt and suspenders - in e10s mode, the call below to SetStunAddrs
+  // needs to have the proper flags set on ice ctx.  For non-e10s,
+  // setting those flags happens in StartGathering.  We could probably
+  // just set them here, and only do it here.
+  mIceCtx->SetCtxFlags(aDefaultRouteOnly);
 
-        // Belt and suspenders - in e10s mode, the call below to SetStunAddrs
-        // needs to have the proper flags set on ice ctx.  For non-e10s,
-        // setting those flags happens in StartGathering.  We could probably
-        // just set them here, and only do it here.
-        mIceCtx->SetCtxFlags(aDefaultRouteOnly);
+  if (aStunAddrs.Length()) {
+    mIceCtx->SetStunAddrs(aStunAddrs);
+  }
 
-        if (stunAddrs.Length()) {
-          mIceCtx->SetStunAddrs(stunAddrs);
-        }
-
-        // Start gathering, but only if there are streams
-        if (!mIceCtx->GetStreams().empty()) {
-          mIceCtx->StartGathering(aDefaultRouteOnly, aObfuscateHostAddresses);
-        }
-      },
-      [](const std::string& aError) {});
+  // Start gathering, but only if there are streams
+  if (!mIceCtx->GetStreams().empty()) {
+    mIceCtx->StartGathering(aDefaultRouteOnly, aObfuscateHostAddresses);
+  }
 }
 
-void MediaTransportHandlerSTS::StartIceChecks(
+void MediaTransportImplNicer::StartIceChecks(
     bool aIsControlling, const std::vector<std::string>& aIceOptions) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  nsresult rv = mIceCtx->ParseGlobalAttributes(aIceOptions);
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "%s: couldn't parse global parameters", __FUNCTION__);
+    return;
+  }
 
-        nsresult rv = mIceCtx->ParseGlobalAttributes(aIceOptions);
-        if (NS_FAILED(rv)) {
-          CSFLogError(LOGTAG, "%s: couldn't parse global parameters",
-                      __FUNCTION__);
-          return;
-        }
+  rv = mIceCtx->SetControlling(aIsControlling ? NrIceCtx::ICE_CONTROLLING
+                                              : NrIceCtx::ICE_CONTROLLED);
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "%s: couldn't set controlling to %d", __FUNCTION__,
+                aIsControlling);
+    return;
+  }
 
-        rv = mIceCtx->SetControlling(aIsControlling ? NrIceCtx::ICE_CONTROLLING
-                                                    : NrIceCtx::ICE_CONTROLLED);
-        if (NS_FAILED(rv)) {
-          CSFLogError(LOGTAG, "%s: couldn't set controlling to %d",
-                      __FUNCTION__, aIsControlling);
-          return;
-        }
-
-        rv = mIceCtx->StartChecks();
-        if (NS_FAILED(rv)) {
-          CSFLogError(LOGTAG, "%s: couldn't start checks", __FUNCTION__);
-          return;
-        }
-      },
-      [](const std::string& aError) {});
+  rv = mIceCtx->StartChecks();
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "%s: couldn't start checks", __FUNCTION__);
+    return;
+  }
 }
 
 void TokenizeCandidate(const std::string& aCandidate,
@@ -928,158 +1165,127 @@ void TokenizeCandidate(const std::string& aCandidate,
   }
 }
 
-void MediaTransportHandlerSTS::AddIceCandidate(
+void MediaTransportImplNicer::AddIceCandidate(
     const std::string& aTransportId, const std::string& aCandidate,
     const std::string& aUfrag, const std::string& aResolvedAddress) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
+  if (!stream) {
+    CSFLogError(LOGTAG, "No ICE stream for candidate with transport id %s: %s",
+                aTransportId.c_str(), aCandidate.c_str());
+    return;
+  }
 
-        RefPtr<NrIceMediaStream> stream(mIceCtx->GetStream(aTransportId));
-        if (!stream) {
-          CSFLogError(LOGTAG,
-                      "No ICE stream for candidate with transport id %s: %s",
-                      aTransportId.c_str(), aCandidate.c_str());
-          return;
-        }
+  // Re-parsing this is kinda silly. We probably want to have
+  // ParseTrickleCandidate actually give us a parsed representation.
+  std::vector<std::string> tokens;
+  TokenizeCandidate(aCandidate, tokens);
+  if (tokens.size() > 4) {
+    mSignaledAddresses.insert(tokens[4]);
+  }
 
-        // Re-parsing this is kinda silly. We probably want to have
-        // ParseTrickleCandidate actually give us a parsed representation.
-        std::vector<std::string> tokens;
-        TokenizeCandidate(aCandidate, tokens);
-        if (tokens.size() > 4) {
-          mSignaledAddresses.insert(tokens[4]);
-        }
-
-        nsresult rv =
-            stream->ParseTrickleCandidate(aCandidate, aUfrag, aResolvedAddress);
-        if (!NS_SUCCEEDED(rv)) {
-          CSFLogError(LOGTAG,
-                      "Couldn't process ICE candidate with transport id %s: "
-                      "%s",
-                      aTransportId.c_str(), aCandidate.c_str());
-        }
-      },
-      [](const std::string& aError) {});
+  nsresult rv =
+      stream->ParseTrickleCandidate(aCandidate, aUfrag, aResolvedAddress);
+  if (!NS_SUCCEEDED(rv)) {
+    CSFLogError(LOGTAG,
+                "Couldn't process ICE candidate with transport id %s: "
+                "%s",
+                aTransportId.c_str(), aCandidate.c_str());
+  }
 }
 
-void MediaTransportHandlerSTS::UpdateNetworkState(bool aOnline) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+void MediaTransportImplNicer::UpdateNetworkState(bool aOnline) {
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
-
-        mIceCtx->UpdateNetworkState(aOnline);
-      },
-      [](const std::string& aError) {});
+  mIceCtx->UpdateNetworkState(aOnline);
 }
 
-void MediaTransportHandlerSTS::RemoveTransportsExcept(
+void MediaTransportImplNicer::RemoveTransportsExcept(
     const std::set<std::string>& aTransportIds) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
-
-        for (auto it = mTransports.begin(); it != mTransports.end();) {
-          const std::string transportId(it->first);
-          if (!aTransportIds.count(transportId)) {
-            OnStateChange(transportId, TransportLayer::TS_CLOSED, {});
-            OnRtcpStateChange(transportId, TransportLayer::TS_CLOSED);
-            // Erase the transport before destroying the ice stream so that
-            // the close_notify alerts have a chance to be sent as the
-            // TransportFlow destructors execute.
-            it = mTransports.erase(it);
-            // We're already on the STS thread, but the TransportFlow
-            // destructor executed when mTransports.erase(it) is called
-            // above dispatches the call to DestroyFinal to the STS thread. If
-            // we don't also dispatch the call to destroy the NrIceMediaStream
-            // to the STS thread, it will tear down the NrIceMediaStream
-            // before the TransportFlow is destroyed.  Without a valid
-            // NrIceMediaStream the close_notify alert cannot be sent.
-            mStsThread->Dispatch(NS_NewRunnableFunction(
-                __func__, [iceCtx = RefPtr<NrIceCtx>(mIceCtx), transportId] {
-                  iceCtx->DestroyStream(transportId);
-                }));
-          } else {
-            MOZ_ASSERT(it->second.mFlow);
-            ++it;
-          }
-        }
-      },
-      [](const std::string& aError) {});
+  for (auto it = mTransports.begin(); it != mTransports.end();) {
+    const std::string transportId(it->first);
+    if (!aTransportIds.count(transportId)) {
+      mEvents->OnStateChange(transportId, TransportLayer::TS_CLOSED, {});
+      mEvents->OnRtcpStateChange(transportId, TransportLayer::TS_CLOSED);
+      // Erase the transport before destroying the ice stream so that
+      // the close_notify alerts have a chance to be sent as the
+      // TransportFlow destructors execute.
+      it = mTransports.erase(it);
+      // We're already on the STS thread, but the TransportFlow
+      // destructor executed when mTransports.erase(it) is called
+      // above dispatches the call to DestroyFinal to the STS thread. If
+      // we don't also dispatch the call to destroy the NrIceMediaStream
+      // to the STS thread, it will tear down the NrIceMediaStream
+      // before the TransportFlow is destroyed.  Without a valid
+      // NrIceMediaStream the close_notify alert cannot be sent.
+      mStsThread->Dispatch(NS_NewRunnableFunction(
+          __func__, [iceCtx = RefPtr<NrIceCtx>(mIceCtx), transportId] {
+            iceCtx->DestroyStream(transportId);
+          }));
+    } else {
+      MOZ_ASSERT(it->second.mFlow);
+      ++it;
+    }
+  }
 }
 
-void MediaTransportHandlerSTS::SendPacket(const std::string& aTransportId,
-                                          MediaPacket&& aPacket) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
+void MediaTransportImplNicer::SendPacket(const std::string& aTransportId,
+                                         MediaPacket&& aPacket) {
+  if (!mIceCtx) {
+    return;  // Probably due to XPCOM shutdown
+  }
 
-  mInitPromise->Then(
-      mStsThread, __func__,
-      [this, self = RefPtr<MediaTransportHandlerSTS>(this), aTransportId,
-       aPacket = std::move(aPacket)]() mutable {
-        if (!mIceCtx) {
-          return;  // Probably due to XPCOM shutdown
-        }
+  MOZ_ASSERT(aPacket.type() != MediaPacket::UNCLASSIFIED);
+  RefPtr<TransportFlow> flow =
+      GetTransportFlow(aTransportId, aPacket.type() == MediaPacket::RTCP);
 
-        MOZ_ASSERT(aPacket.type() != MediaPacket::UNCLASSIFIED);
-        RefPtr<TransportFlow> flow =
-            GetTransportFlow(aTransportId, aPacket.type() == MediaPacket::RTCP);
+  if (!flow) {
+    CSFLogError(LOGTAG, "%s: No such transport flow (%s) for outgoing packet",
+                mIceCtx->name().c_str(), aTransportId.c_str());
+    return;
+  }
 
-        if (!flow) {
-          CSFLogError(LOGTAG,
-                      "%s: No such transport flow (%s) for outgoing packet",
-                      mIceCtx->name().c_str(), aTransportId.c_str());
-          return;
-        }
+  TransportLayer* layer = nullptr;
+  switch (aPacket.type()) {
+    case MediaPacket::SCTP:
+      layer = flow->GetLayer(TransportLayerDtls::ID());
+      break;
+    case MediaPacket::RTP:
+    case MediaPacket::RTCP:
+      layer = flow->GetLayer(TransportLayerSrtp::ID());
+      break;
+    default:
+      // Maybe it would be useful to allow the injection of other packet
+      // types for testing?
+      MOZ_ASSERT(false);
+      return;
+  }
 
-        TransportLayer* layer = nullptr;
-        switch (aPacket.type()) {
-          case MediaPacket::SCTP:
-            layer = flow->GetLayer(TransportLayerDtls::ID());
-            break;
-          case MediaPacket::RTP:
-          case MediaPacket::RTCP:
-            layer = flow->GetLayer(TransportLayerSrtp::ID());
-            break;
-          default:
-            // Maybe it would be useful to allow the injection of other packet
-            // types for testing?
-            MOZ_ASSERT(false);
-            return;
-        }
+  MOZ_ASSERT(layer);
 
-        MOZ_ASSERT(layer);
-
-        if (int error = layer->SendPacket(aPacket); error < 0) {
-          CSFLogError(LOGTAG,
-                      "%s: Transport flow (%s) failed to send packet. error=%d",
-                      mIceCtx->name().c_str(), aTransportId.c_str(), error);
-        } else if (auto it = mTransports.find(aTransportId);
-                   it != mTransports.end()) {
-          // On success the layer returns the number of (unencrypted) payload
-          // bytes it was handed.
-          it->second.mBytesSent += error;
-          it->second.mPacketsSent += 1;
-        }
-      },
-      [](const std::string& aError) {});
+  if (int error = layer->SendPacket(aPacket); error < 0) {
+    CSFLogError(LOGTAG,
+                "%s: Transport flow (%s) failed to send packet. error=%d",
+                mIceCtx->name().c_str(), aTransportId.c_str(), error);
+  } else if (auto it = mTransports.find(aTransportId);
+             it != mTransports.end()) {
+    // On success the layer returns the number of (unencrypted) payload
+    // bytes it was handed.
+    it->second.mBytesSent += error;
+    it->second.mPacketsSent += 1;
+  }
 }
 
-TransportLayer::State MediaTransportHandler::GetState(
+TransportLayer::State MediaTransportEvents::GetState(
     const std::string& aTransportId, bool aRtcp) const {
   MutexAutoLock lock(mStateCacheMutex);
   const std::map<std::string, TransportLayer::State>* cache = nullptr;
@@ -1096,34 +1302,34 @@ TransportLayer::State MediaTransportHandler::GetState(
   return TransportLayer::TS_NONE;
 }
 
-void MediaTransportHandler::OnCandidate(const std::string& aTransportId,
-                                        CandidateInfo&& aCandidateInfo) {
+void MediaTransportEvents::OnCandidate(const std::string& aTransportId,
+                                       CandidateInfo&& aCandidateInfo) {
   mCandidateGathered.Notify(aTransportId, std::move(aCandidateInfo));
 }
 
-void MediaTransportHandler::OnCandidateError(
+void MediaTransportEvents::OnCandidateError(
     IceCandidateErrorInfo&& aErrorInfo) {
   mCandidateError.Notify(std::move(aErrorInfo));
 }
 
-void MediaTransportHandler::OnAlpnNegotiated(const std::string& aAlpn) {
+void MediaTransportEvents::OnAlpnNegotiated(const std::string& aAlpn) {
   const bool privacyRequested = aAlpn == "c-webrtc";
   mAlpnNegotiated.Notify(aAlpn, privacyRequested);
 }
 
-void MediaTransportHandler::OnGatheringStateChange(
+void MediaTransportEvents::OnGatheringStateChange(
     const std::string& aTransportId, dom::RTCIceGathererState aState) {
   mGatheringStateChange.Notify(aTransportId, aState);
 }
 
-void MediaTransportHandler::OnConnectionStateChange(
+void MediaTransportEvents::OnConnectionStateChange(
     const std::string& aTransportId, dom::RTCIceTransportState aState,
     const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
   mConnectionStateChange.Notify(aTransportId, aState, aSelectedPair);
 }
 
-void MediaTransportHandler::OnPacketReceived(std::string&& aTransportId,
-                                             MediaPacket&& aPacket) {
+void MediaTransportEvents::OnPacketReceived(std::string&& aTransportId,
+                                            MediaPacket&& aPacket) {
   switch (aPacket.type()) {
     case MediaPacket::UNCLASSIFIED:
     case MediaPacket::DTLS:
@@ -1143,12 +1349,12 @@ void MediaTransportHandler::OnPacketReceived(std::string&& aTransportId,
   }
 }
 
-void MediaTransportHandler::OnEncryptedSending(const std::string& aTransportId,
-                                               MediaPacket&& aPacket) {
+void MediaTransportEvents::OnEncryptedSending(const std::string& aTransportId,
+                                              MediaPacket&& aPacket) {
   mEncryptedSending.Notify(aTransportId, std::move(aPacket));
 }
 
-void MediaTransportHandler::OnStateChange(
+void MediaTransportEvents::OnStateChange(
     const std::string& aTransportId, TransportLayer::State aState,
     nsTArray<nsTArray<uint8_t>>&& aRemoteCerts,
     Maybe<dom::RTCErrorParams> aError) {
@@ -1159,7 +1365,7 @@ void MediaTransportHandler::OnStateChange(
   mStateChange.Notify(aTransportId, aState, std::move(aRemoteCerts), aError);
 }
 
-void MediaTransportHandler::OnRtcpStateChange(
+void MediaTransportEvents::OnRtcpStateChange(
     const std::string& aTransportId, TransportLayer::State aState,
     Maybe<dom::RTCErrorParams> aError) {
   {
@@ -1233,225 +1439,193 @@ static nsString BuildCertificateStats(const nsTArray<uint8_t>& aDerCert,
   return id;
 }
 
-RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
+RefPtr<dom::RTCStatsPromise> MediaTransportImplNicer::GetIceStats(
     const std::string& aTransportId, DOMHighResTimeStamp aNow) {
-  MOZ_RELEASE_ASSERT(mInitPromise);
-
-  return mInitPromise->Then(
-      mStsThread, __func__, [=, this, self = RefPtr(this)]() {
-        auto stats = MakeUnique<dom::RTCStatsCollection>();
-        if (mIceCtx) {
-          dom::RTCIceRole iceRole =
-              mIceCtx->GetControlling() == NrIceCtx::ICE_CONTROLLING
-                  ? dom::RTCIceRole::Controlling
-                  : dom::RTCIceRole::Controlled;
-          for (const auto& stream : mIceCtx->GetStreams()) {
-            if (aTransportId.empty() || aTransportId == stream->GetId()) {
-              dom::RTCTransportStats transport;
-              transport.mId.Construct(
-                  NS_ConvertASCIItoUTF16(stream->GetId().c_str()));
-              transport.mTimestamp.Construct(aNow);
-              transport.mType.Construct(dom::RTCStatsType::Transport);
-              transport.mIceRole.Construct(iceRole);
-              std::string ufrag = stream->GetUfrag();
-              if (!ufrag.empty()) {
-                transport.mIceLocalUsernameFragment.Construct(
-                    NS_ConvertASCIItoUTF16(ufrag.c_str()));
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  auto stats = MakeUnique<dom::RTCStatsCollection>();
+  if (mIceCtx) {
+    dom::RTCIceRole iceRole =
+        mIceCtx->GetControlling() == NrIceCtx::ICE_CONTROLLING
+            ? dom::RTCIceRole::Controlling
+            : dom::RTCIceRole::Controlled;
+    for (const auto& stream : mIceCtx->GetStreams()) {
+      if (aTransportId.empty() || aTransportId == stream->GetId()) {
+        dom::RTCTransportStats transport;
+        transport.mId.Construct(
+            NS_ConvertASCIItoUTF16(stream->GetId().c_str()));
+        transport.mTimestamp.Construct(aNow);
+        transport.mType.Construct(dom::RTCStatsType::Transport);
+        transport.mIceRole.Construct(iceRole);
+        std::string ufrag = stream->GetUfrag();
+        if (!ufrag.empty()) {
+          transport.mIceLocalUsernameFragment.Construct(
+              NS_ConvertASCIItoUTF16(ufrag.c_str()));
+        }
+        auto transportIt = mTransports.find(stream->GetId());
+        // Report the ICE transport state captured from connection-state
+        // changes, which distinguishes "new" (no connectivity checks yet)
+        // from "checking"; NrIceMediaStream::state() has no "new" state.
+        // This also keeps the stat consistent with RTCIceTransport.state.
+        transport.mIceState.Construct(transportIt != mTransports.end()
+                                          ? transportIt->second.mIceState
+                                          : dom::RTCIceTransportState::New);
+        // XXX(Bug 1225723) Determine if dtlsState should be `required`.
+        transport.mDtlsState = dom::RTCDtlsTransportState::New;
+        // The DTLS role is not known until it has been negotiated (via
+        // a=setup) and a DTLS transport exists. Until then, report
+        // "unknown" rather than leaving the member unset. This is
+        // overridden below once the DTLS transport is available.
+        transport.mDtlsRole.Construct(dom::RTCDtlsRole::Unknown);
+        if (transportIt != mTransports.end() && transportIt->second.mFlow) {
+          if (auto* dtlsLayer = static_cast<TransportLayerDtls*>(
+                  transportIt->second.mFlow->GetLayer(
+                      TransportLayerDtls::ID()))) {
+            transport.mDtlsRole.Reset();
+            transport.mDtlsRole.Construct(dtlsLayer->role() ==
+                                                  TransportLayerDtls::CLIENT
+                                              ? dom::RTCDtlsRole::Client
+                                              : dom::RTCDtlsRole::Server);
+            switch (dtlsLayer->state()) {
+              case TransportLayer::TS_NONE:
+              case TransportLayer::TS_INIT:
+                transport.mDtlsState = dom::RTCDtlsTransportState::New;
+                break;
+              case TransportLayer::TS_CONNECTING:
+                transport.mDtlsState = dom::RTCDtlsTransportState::Connecting;
+                break;
+              case TransportLayer::TS_OPEN:
+                transport.mDtlsState = dom::RTCDtlsTransportState::Connected;
+                break;
+              case TransportLayer::TS_CLOSED:
+                transport.mDtlsState = dom::RTCDtlsTransportState::Closed;
+                break;
+              case TransportLayer::TS_ERROR:
+                transport.mDtlsState = dom::RTCDtlsTransportState::Failed;
+                break;
+            }
+            uint16_t srtpCipher = 0;
+            if (NS_SUCCEEDED(dtlsLayer->GetSrtpCipher(&srtpCipher))) {
+              const char* name =
+                  TransportLayerDtls::GetSrtpCipherName(srtpCipher);
+              if (name) {
+                transport.mSrtpCipher.Construct(NS_ConvertASCIItoUTF16(name));
               }
-              auto transportIt = mTransports.find(stream->GetId());
-              // Report the ICE transport state captured from connection-state
-              // changes, which distinguishes "new" (no connectivity checks yet)
-              // from "checking"; NrIceMediaStream::state() has no "new" state.
-              // This also keeps the stat consistent with RTCIceTransport.state.
-              transport.mIceState.Construct(
-                  transportIt != mTransports.end()
-                      ? transportIt->second.mIceState
-                      : dom::RTCIceTransportState::New);
-              // XXX(Bug 1225723) Determine if dtlsState should be `required`.
-              transport.mDtlsState = dom::RTCDtlsTransportState::New;
-              // The DTLS role is not known until it has been negotiated (via
-              // a=setup) and a DTLS transport exists. Until then, report
-              // "unknown" rather than leaving the member unset. This is
-              // overridden below once the DTLS transport is available.
-              transport.mDtlsRole.Construct(dom::RTCDtlsRole::Unknown);
-              if (transportIt != mTransports.end() &&
-                  transportIt->second.mFlow) {
-                if (auto* dtlsLayer = static_cast<TransportLayerDtls*>(
-                        transportIt->second.mFlow->GetLayer(
-                            TransportLayerDtls::ID()))) {
-                  transport.mDtlsRole.Reset();
-                  transport.mDtlsRole.Construct(
-                      dtlsLayer->role() == TransportLayerDtls::CLIENT
-                          ? dom::RTCDtlsRole::Client
-                          : dom::RTCDtlsRole::Server);
-                  switch (dtlsLayer->state()) {
-                    case TransportLayer::TS_NONE:
-                    case TransportLayer::TS_INIT:
-                      transport.mDtlsState = dom::RTCDtlsTransportState::New;
-                      break;
-                    case TransportLayer::TS_CONNECTING:
-                      transport.mDtlsState =
-                          dom::RTCDtlsTransportState::Connecting;
-                      break;
-                    case TransportLayer::TS_OPEN:
-                      transport.mDtlsState =
-                          dom::RTCDtlsTransportState::Connected;
-                      break;
-                    case TransportLayer::TS_CLOSED:
-                      transport.mDtlsState = dom::RTCDtlsTransportState::Closed;
-                      break;
-                    case TransportLayer::TS_ERROR:
-                      transport.mDtlsState = dom::RTCDtlsTransportState::Failed;
-                      break;
-                  }
-                  uint16_t srtpCipher = 0;
-                  if (NS_SUCCEEDED(dtlsLayer->GetSrtpCipher(&srtpCipher))) {
-                    const char* name =
-                        TransportLayerDtls::GetSrtpCipherName(srtpCipher);
-                    if (name) {
-                      transport.mSrtpCipher.Construct(
-                          NS_ConvertASCIItoUTF16(name));
-                    }
-                  }
-                  SSLChannelInfo channelInfo;
-                  if (NS_SUCCEEDED(dtlsLayer->GetChannelInfo(&channelInfo))) {
-                    if (uint16_t v =
-                            ToDtlsWireVersion(channelInfo.protocolVersion)) {
-                      transport.mTlsVersion.Construct(
-                          nsFmtString(u"{:04X}", v));
-                    }
-                    SSLCipherSuiteInfo info;
-                    if (SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &info,
-                                               sizeof(info)) == SECSuccess &&
-                        info.cipherSuiteName) {
-                      transport.mDtlsCipher.Construct(
-                          NS_ConvertASCIItoUTF16(info.cipherSuiteName));
-                    }
-                  }
+            }
+            SSLChannelInfo channelInfo;
+            if (NS_SUCCEEDED(dtlsLayer->GetChannelInfo(&channelInfo))) {
+              if (uint16_t v = ToDtlsWireVersion(channelInfo.protocolVersion)) {
+                transport.mTlsVersion.Construct(nsFmtString(u"{:04X}", v));
+              }
+              SSLCipherSuiteInfo info;
+              if (SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &info,
+                                         sizeof(info)) == SECSuccess &&
+                  info.cipherSuiteName) {
+                transport.mDtlsCipher.Construct(
+                    NS_ConvertASCIItoUTF16(info.cipherSuiteName));
+              }
+            }
 
-                  if (dtlsLayer->state() == TransportLayer::TS_OPEN) {
-                    {
-                      nsString localId =
-                          BuildCertificateStats(dtlsLayer->GetLocalCertDer(),
-                                                u""_ns, aNow, stats.get());
-                      if (!localId.IsEmpty()) {
-                        transport.mLocalCertificateId.Construct(localId);
-                      }
-                    }
-
-                    {
-                      nsTArray<nsTArray<uint8_t>> remoteChain =
-                          dtlsLayer->GetPeerCertChainDer();
-                      nsString issuerId;
-                      // The chain is leaf-first. Here we start with the root;
-                      // for the root the issuerId is empty. In WebRTC the chain
-                      // often consists of a single certificate, i.e. it is
-                      // self-signed:
-                      // https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
-                      // "If the current certificate is at the end of the chain
-                      // (i.e. a self-signed certificate), this will not be
-                      // set."
-                      for (const auto& der : Reversed(remoteChain)) {
-                        issuerId = BuildCertificateStats(der, issuerId, aNow,
-                                                         stats.get());
-                      }
-                      // Having walked the chain root-first, issuerId now holds
-                      // the leaf certificate's id.
-                      if (!issuerId.IsEmpty()) {
-                        transport.mRemoteCertificateId.Construct(issuerId);
-                      }
-                    }
-                  }
+            if (dtlsLayer->state() == TransportLayer::TS_OPEN) {
+              {
+                nsString localId = BuildCertificateStats(
+                    dtlsLayer->GetLocalCertDer(), u""_ns, aNow, stats.get());
+                if (!localId.IsEmpty()) {
+                  transport.mLocalCertificateId.Construct(localId);
                 }
-                transport.mBytesSent.Construct(transportIt->second.mBytesSent);
-                transport.mBytesReceived.Construct(
-                    transportIt->second.mBytesReceived);
-                transport.mPacketsSent.Construct(
-                    transportIt->second.mPacketsSent);
-                transport.mPacketsReceived.Construct(
-                    transportIt->second.mPacketsReceived);
               }
-              transport.mSelectedCandidatePairChanges.Construct(
-                  transportIt != mTransports.end()
-                      ? transportIt->second.mSelectedCandidatePairChanges
-                      : 0);
-              // XXX(Bug 2037532) Fill missing fields on the transport.
-              GetIceStats(*stream, aNow, stats.get(), transport);
 
-              // XXX(Bug 1632090) Instead of extending the array 1-by-1 (which
-              // might involve multiple reallocations) and potentially crashing
-              // here, SetCapacity could be called outside the loop once.
-              if (!stats->mTransportStats.AppendElement(transport, fallible)) {
-                mozalloc_handle_oom(0);
+              {
+                nsTArray<nsTArray<uint8_t>> remoteChain =
+                    dtlsLayer->GetPeerCertChainDer();
+                nsString issuerId;
+                // The chain is leaf-first. Here we start with the root;
+                // for the root the issuerId is empty. In WebRTC the chain
+                // often consists of a single certificate, i.e. it is
+                // self-signed:
+                // https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
+                // "If the current certificate is at the end of the chain
+                // (i.e. a self-signed certificate), this will not be
+                // set."
+                for (const auto& der : Reversed(remoteChain)) {
+                  issuerId =
+                      BuildCertificateStats(der, issuerId, aNow, stats.get());
+                }
+                // Having walked the chain root-first, issuerId now holds
+                // the leaf certificate's id.
+                if (!issuerId.IsEmpty()) {
+                  transport.mRemoteCertificateId.Construct(issuerId);
+                }
               }
             }
           }
+          transport.mBytesSent.Construct(transportIt->second.mBytesSent);
+          transport.mBytesReceived.Construct(
+              transportIt->second.mBytesReceived);
+          transport.mPacketsSent.Construct(transportIt->second.mPacketsSent);
+          transport.mPacketsReceived.Construct(
+              transportIt->second.mPacketsReceived);
         }
-        return dom::RTCStatsPromise::CreateAndResolve(std::move(stats),
-                                                      __func__);
-      });
-}
+        transport.mSelectedCandidatePairChanges.Construct(
+            transportIt != mTransports.end()
+                ? transportIt->second.mSelectedCandidatePairChanges
+                : 0);
+        // XXX(Bug 2037532) Fill missing fields on the transport.
+        GetIceStats(*stream, aNow, stats.get(), transport);
 
-RefPtr<MediaTransportHandler::IceLogPromise>
-MediaTransportHandlerSTS::GetIceLog(const nsCString& aPattern) {
-  return InvokeAsync(
-      mStsThread, __func__, [=, self = RefPtr<MediaTransportHandlerSTS>(this)] {
-        dom::Sequence<nsString> converted;
-        RLogConnector* logs = RLogConnector::GetInstance();
-        std::deque<std::string> result;
-        // Might not exist yet.
-        if (logs) {
-          logs->Filter(aPattern.get(), 0, &result);
+        // XXX(Bug 1632090) Instead of extending the array 1-by-1 (which
+        // might involve multiple reallocations) and potentially crashing
+        // here, SetCapacity could be called outside the loop once.
+        if (!stats->mTransportStats.AppendElement(transport, fallible)) {
+          mozalloc_handle_oom(0);
         }
-        /// XXX(Bug 1631386) Check if we should reject the promise instead of
-        /// crashing in an OOM situation.
-        if (!converted.SetCapacity(result.size(), fallible)) {
-          mozalloc_handle_oom(sizeof(nsString) * result.size());
-        }
-        for (auto& line : result) {
-          // Cannot fail, SetCapacity was called before.
-          (void)converted.AppendElement(NS_ConvertUTF8toUTF16(line.c_str()),
-                                        fallible);
-        }
-        return IceLogPromise::CreateAndResolve(std::move(converted), __func__);
-      });
-}
-
-void MediaTransportHandlerSTS::ClearIceLog() {
-  if (!mStsThread->IsOnCurrentThread()) {
-    mStsThread->Dispatch(WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
-                                      &MediaTransportHandlerSTS::ClearIceLog),
-                         NS_DISPATCH_NORMAL);
-    return;
+      }
+    }
   }
+  return dom::RTCStatsPromise::CreateAndResolve(std::move(stats), __func__);
+}
 
+RefPtr<IceLogPromise> MediaTransportImplNicer::GetIceLog(
+    const nsCString& aPattern) {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  dom::Sequence<nsString> converted;
+  RLogConnector* logs = RLogConnector::GetInstance();
+  std::deque<std::string> result;
+  // Might not exist yet.
+  if (logs) {
+    logs->Filter(aPattern.get(), 0, &result);
+  }
+  /// XXX(Bug 1631386) Check if we should reject the promise instead of
+  /// crashing in an OOM situation.
+  if (!converted.SetCapacity(result.size(), fallible)) {
+    mozalloc_handle_oom(sizeof(nsString) * result.size());
+  }
+  for (auto& line : result) {
+    // Cannot fail, SetCapacity was called before.
+    (void)converted.AppendElement(NS_ConvertUTF8toUTF16(line.c_str()),
+                                  fallible);
+  }
+  return IceLogPromise::CreateAndResolve(std::move(converted), __func__);
+}
+
+void MediaTransportImplNicer::ClearIceLog() {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
   RLogConnector* logs = RLogConnector::GetInstance();
   if (logs) {
     logs->Clear();
   }
 }
 
-void MediaTransportHandlerSTS::EnterPrivateMode() {
-  if (!mStsThread->IsOnCurrentThread()) {
-    mStsThread->Dispatch(
-        WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
-                     &MediaTransportHandlerSTS::EnterPrivateMode),
-        NS_DISPATCH_NORMAL);
-    return;
+void MediaTransportImplNicer::EnterPrivateMode() {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  auto* log = RLogConnector::GetInstance();
+  MOZ_ASSERT(log);
+  if (log) {
+    log->EnterPrivateMode();
   }
-
-  RLogConnector::GetInstance()->EnterPrivateMode();
 }
 
-void MediaTransportHandlerSTS::ExitPrivateMode() {
-  if (!mStsThread->IsOnCurrentThread()) {
-    mStsThread->Dispatch(
-        WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
-                     &MediaTransportHandlerSTS::ExitPrivateMode),
-        NS_DISPATCH_NORMAL);
-    return;
-  }
-
+void MediaTransportImplNicer::ExitPrivateMode() {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
   auto* log = RLogConnector::GetInstance();
   MOZ_ASSERT(log);
   if (log) {
@@ -1546,7 +1720,7 @@ static void ToRTCIceCandidateStats(
   }
 }
 
-void MediaTransportHandlerSTS::GetIceStats(
+void MediaTransportImplNicer::GetIceStats(
     const NrIceMediaStream& aStream, DOMHighResTimeStamp aNow,
     dom::RTCStatsCollection* aStats, dom::RTCTransportStats& aTransport) const {
   MOZ_ASSERT(mStsThread->IsOnCurrentThread());
@@ -1651,7 +1825,7 @@ static TransportLayer::State GetDtlsState(const RefPtr<TransportFlow>& aFlow) {
   return dtls ? dtls->state() : TransportLayer::TS_NONE;
 }
 
-RefPtr<TransportFlow> MediaTransportHandlerSTS::Transport::GetSendFlow(
+RefPtr<TransportFlow> MediaTransportImplNicer::Transport::GetSendFlow(
     bool aIsRtcp) const {
   RefPtr<TransportFlow> current = GetCurrent(aIsRtcp);
   RefPtr<TransportFlow> old = GetOld(aIsRtcp);
@@ -1664,17 +1838,17 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::Transport::GetSendFlow(
   return current ? current : old;
 }
 
-TransportLayer::State MediaTransportHandlerSTS::Transport::CurrentDtlsState(
+TransportLayer::State MediaTransportImplNicer::Transport::CurrentDtlsState(
     bool aIsRtcp) const {
   return GetDtlsState(GetCurrent(aIsRtcp));
 }
 
-void MediaTransportHandlerSTS::Transport::DeprecateCurrentFlows() {
+void MediaTransportImplNicer::Transport::DeprecateCurrentFlows() {
   mOldFlow = std::move(mFlow);
   mOldRtcpFlow = std::move(mRtcpFlow);
 }
 
-void MediaTransportHandlerSTS::Transport::CloseOldFlows() {
+void MediaTransportImplNicer::Transport::CloseOldFlows() {
   if (mCloseTimer) {
     mCloseTimer->Cancel();
     mCloseTimer = nullptr;
@@ -1683,8 +1857,8 @@ void MediaTransportHandlerSTS::Transport::CloseOldFlows() {
   mOldRtcpFlow = nullptr;
 }
 
-MediaTransportHandlerSTS::Transport::DtlsState
-MediaTransportHandlerSTS::Transport::ComputeDtlsState(bool aIsRtcp) const {
+MediaTransportImplNicer::Transport::DtlsState
+MediaTransportImplNicer::Transport::ComputeDtlsState(bool aIsRtcp) const {
   DtlsState result;
   result.mState = CurrentDtlsState(aIsRtcp);
   const bool currentOpen = result.mState == TransportLayer::TS_OPEN;
@@ -1712,8 +1886,8 @@ MediaTransportHandlerSTS::Transport::ComputeDtlsState(bool aIsRtcp) const {
   return result;
 }
 
-Maybe<MediaTransportHandlerSTS::Transport::DtlsState>
-MediaTransportHandlerSTS::Transport::UpdateDtlsState(bool aIsRtcp) {
+Maybe<MediaTransportImplNicer::Transport::DtlsState>
+MediaTransportImplNicer::Transport::UpdateDtlsState(bool aIsRtcp) {
   DtlsState newState = ComputeDtlsState(aIsRtcp);
   DtlsState& currentState = aIsRtcp ? mReportedRtcpState : mReportedDtlsState;
   if (newState == currentState) {
@@ -1723,7 +1897,7 @@ MediaTransportHandlerSTS::Transport::UpdateDtlsState(bool aIsRtcp) {
   return Some(std::move(newState));
 }
 
-MediaTransportHandlerSTS::Transport::DtlsState::DtlsState(
+MediaTransportImplNicer::Transport::DtlsState::DtlsState(
     const DtlsState& aOther)
     : mState(aOther.mState) {
   // Not only does nsTArray not have copy/assignment, Clone() doesn't work on
@@ -1733,14 +1907,14 @@ MediaTransportHandlerSTS::Transport::DtlsState::DtlsState(
   }
 }
 
-MediaTransportHandlerSTS::Transport::DtlsState&
-MediaTransportHandlerSTS::Transport::DtlsState::operator=(
+MediaTransportImplNicer::Transport::DtlsState&
+MediaTransportImplNicer::Transport::DtlsState::operator=(
     const DtlsState& aOther) {
   DtlsState copy(aOther);
   return *this = std::move(copy);
 }
 
-Maybe<std::string> MediaTransportHandlerSTS::Transport::UpdateAlpn() {
+Maybe<std::string> MediaTransportImplNicer::Transport::UpdateAlpn() {
   TransportLayerDtls* connected = GetDtlsLayer(GetSendFlow(false));
   if (!connected || connected->state() != TransportLayer::TS_OPEN) {
     return Nothing();
@@ -1753,7 +1927,7 @@ Maybe<std::string> MediaTransportHandlerSTS::Transport::UpdateAlpn() {
   return Some(std::move(alpn));
 }
 
-RefPtr<TransportFlow> MediaTransportHandlerSTS::GetTransportFlow(
+RefPtr<TransportFlow> MediaTransportImplNicer::GetTransportFlow(
     const std::string& aTransportId, bool aIsRtcp) const {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end()) {
@@ -1762,7 +1936,7 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::GetTransportFlow(
   return it->second.GetSendFlow(aIsRtcp);
 }
 
-RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
+RefPtr<TransportFlow> MediaTransportImplNicer::CreateTransportFlow(
     const std::string& aTransportId, bool aIsRtcp,
     const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
     const DtlsDigestList& aDigests, bool aPrivacyRequested) {
@@ -1822,11 +1996,11 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
   srtp->Chain(ice.get());
 
   dtls->SignalPacketReceived.connect(this,
-                                     &MediaTransportHandlerSTS::PacketReceived);
+                                     &MediaTransportImplNicer::PacketReceived);
   srtp->SignalPacketReceived.connect(this,
-                                     &MediaTransportHandlerSTS::PacketReceived);
+                                     &MediaTransportImplNicer::PacketReceived);
   ice->SignalPacketSending.connect(
-      this, &MediaTransportHandlerSTS::EncryptedPacketSending);
+      this, &MediaTransportImplNicer::EncryptedPacketSending);
   flow->PushLayer(ice.release());
   flow->PushLayer(dtls.release());
   flow->PushLayer(srtp.release());
@@ -1846,9 +2020,9 @@ static mozilla::dom::RTCIceGathererState toDomIceGathererState(
   MOZ_CRASH();
 }
 
-void MediaTransportHandlerSTS::OnGatheringStateChange(
+void MediaTransportImplNicer::OnGatheringStateChange(
     const std::string& aTransportId, NrIceMediaStream::GatheringState aState) {
-  OnGatheringStateChange(aTransportId, toDomIceGathererState(aState));
+  mEvents->OnGatheringStateChange(aTransportId, toDomIceGathererState(aState));
 }
 
 static mozilla::dom::RTCIceTransportState toDomIceTransportState(
@@ -1872,7 +2046,7 @@ static mozilla::dom::RTCIceTransportState toDomIceTransportState(
   MOZ_CRASH();
 }
 
-void MediaTransportHandlerSTS::OnConnectionStateChange(
+void MediaTransportImplNicer::OnConnectionStateChange(
     NrIceMediaStream* aIceStream, NrIceCtx::ConnectionState aState) {
   // Capture the currently-selected pair (if any) at the same time the state
   // change is observed, so the spec's unified "change the selected candidate
@@ -1897,15 +2071,15 @@ void MediaTransportHandlerSTS::OnConnectionStateChange(
       it->second.mLastSelectedCandidatePair = std::move(newPair);
     }
   }
-  OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState),
-                          selectedPair);
+  mEvents->OnConnectionStateChange(
+      aIceStream->GetId(), toDomIceTransportState(aState), selectedPair);
 }
 
-// The stuff below here will eventually go into the MediaTransportChild class
-void MediaTransportHandlerSTS::OnCandidateFound(
-    NrIceMediaStream* aStream, const std::string& aCandidate,
-    const std::string& aUfrag, const std::string& aMDNSAddr,
-    const std::string& aActualAddr) {
+void MediaTransportImplNicer::OnCandidateFound(NrIceMediaStream* aStream,
+                                               const std::string& aCandidate,
+                                               const std::string& aUfrag,
+                                               const std::string& aMDNSAddr,
+                                               const std::string& aActualAddr) {
   CandidateInfo info;
   info.mCandidate = aCandidate;
   MOZ_ASSERT(!aUfrag.empty());
@@ -1943,22 +2117,22 @@ void MediaTransportHandlerSTS::OnCandidateFound(
   info.mMDNSAddress = aMDNSAddr;
   info.mActualAddress = aActualAddr;
 
-  OnCandidate(aStream->GetId(), std::move(info));
+  mEvents->OnCandidate(aStream->GetId(), std::move(info));
 }
 
-void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
-                                                const std::string& aAddress,
-                                                uint16_t aPort,
-                                                const std::string& aUrl,
-                                                uint16_t aErrorCode,
-                                                const std::string& aErrorText) {
+void MediaTransportImplNicer::OnCandidateError(NrIceMediaStream* aStream,
+                                               const std::string& aAddress,
+                                               uint16_t aPort,
+                                               const std::string& aUrl,
+                                               uint16_t aErrorCode,
+                                               const std::string& aErrorText) {
   IceCandidateErrorInfo info;
   info.mAddress = aAddress;
   info.mPort = aPort;
   info.mUrl = aUrl;
   info.mErrorCode = aErrorCode;
   info.mErrorText = aErrorText;
-  OnCandidateError(std::move(info));
+  mEvents->OnCandidateError(std::move(info));
 }
 
 // Returns Nothing unless the error originated in DTLS itself; an error in the
@@ -1984,19 +2158,19 @@ Maybe<dom::RTCErrorParams> GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
   return Some(dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()});
 }
 
-void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
-                                             TransportLayer::State) {
+void MediaTransportImplNicer::OnStateChange(TransportLayer* aLayer,
+                                            TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
   UpdateReportedState(aLayer->flow_id(), /* aIsRtcp = */ false);
 }
 
-void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
-                                                 TransportLayer::State) {
+void MediaTransportImplNicer::OnRtcpStateChange(TransportLayer* aLayer,
+                                                TransportLayer::State) {
   MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
   UpdateReportedState(aLayer->flow_id(), /* aIsRtcp = */ true);
 }
 
-void MediaTransportHandlerSTS::UpdateReportedState(
+void MediaTransportImplNicer::UpdateReportedState(
     const std::string& aTransportId, bool aIsRtcp) {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end()) {
@@ -2029,7 +2203,7 @@ void MediaTransportHandlerSTS::UpdateReportedState(
 
   if (!aIsRtcp) {
     if (Maybe<std::string> alpn = transport.UpdateAlpn()) {
-      OnAlpnNegotiated(*alpn);
+      mEvents->OnAlpnNegotiated(*alpn);
     }
   }
 
@@ -2050,16 +2224,15 @@ void MediaTransportHandlerSTS::UpdateReportedState(
   }
 
   if (aIsRtcp) {
-    MediaTransportHandler::OnRtcpStateChange(aTransportId, newState->mState,
-                                             std::move(error));
+    mEvents->OnRtcpStateChange(aTransportId, newState->mState,
+                               std::move(error));
   } else {
-    MediaTransportHandler::OnStateChange(aTransportId, newState->mState,
-                                         std::move(newState->mRemoteCerts),
-                                         std::move(error));
+    mEvents->OnStateChange(aTransportId, newState->mState,
+                           std::move(newState->mRemoteCerts), std::move(error));
   }
 }
 
-void MediaTransportHandlerSTS::ScheduleOldFlowClose(
+void MediaTransportImplNicer::ScheduleOldFlowClose(
     const std::string& aTransportId, uint32_t aDelayMs) {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end() || !it->second.mOldFlow) {
@@ -2077,13 +2250,13 @@ void MediaTransportHandlerSTS::ScheduleOldFlowClose(
   }
   NS_NewTimerWithCallback(
       getter_AddRefs(transport.mCloseTimer),
-      [this, self = RefPtr<MediaTransportHandlerSTS>(this),
-       aTransportId](nsITimer*) { CloseOldFlows(aTransportId); },
+      // Transport cancels this on destruction.
+      [this, aTransportId](nsITimer*) { CloseOldFlows(aTransportId); },
       aDelayMs, nsITimer::TYPE_ONE_SHOT,
-      "MediaTransportHandlerSTS::CloseOldFlows"_ns, mStsThread);
+      "MediaTransportImplNicer::CloseOldFlows"_ns, mStsThread);
 }
 
-void MediaTransportHandlerSTS::CloseOldFlows(const std::string& aTransportId) {
+void MediaTransportImplNicer::CloseOldFlows(const std::string& aTransportId) {
   auto it = mTransports.find(aTransportId);
   if (it == mTransports.end() || !it->second.mOldFlow) {
     return;
@@ -2100,8 +2273,8 @@ void MediaTransportHandlerSTS::CloseOldFlows(const std::string& aTransportId) {
   UpdateReportedState(aTransportId, /* aIsRtcp = */ true);
 }
 
-void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
-                                              MediaPacket& aPacket) {
+void MediaTransportImplNicer::PacketReceived(TransportLayer* aLayer,
+                                             MediaPacket& aPacket) {
   MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket);
   if (auto it = mTransports.find(aLayer->flow_id()); it != mTransports.end()) {
     Transport& transport = it->second;
@@ -2113,12 +2286,12 @@ void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
       ScheduleOldFlowClose(std::string(aLayer->flow_id()), 0);
     }
   }
-  OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
+  mEvents->OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
 }
 
-void MediaTransportHandlerSTS::EncryptedPacketSending(TransportLayer* aLayer,
-                                                      MediaPacket& aPacket) {
-  OnEncryptedSending(aLayer->flow_id(), std::move(aPacket));
+void MediaTransportImplNicer::EncryptedPacketSending(TransportLayer* aLayer,
+                                                     MediaPacket& aPacket) {
+  mEvents->OnEncryptedSending(aLayer->flow_id(), std::move(aPacket));
 }
 
 }  // namespace mozilla

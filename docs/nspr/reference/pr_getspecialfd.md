@@ -23,9 +23,9 @@ The function has the following parameter:
 
 ### Returns
 
-If the `id` parameter is valid, {ref}`PR_GetSpecialFD` returns a file
+If the `id` parameter is valid, {doc}`pr_getspecialfd` returns a file
 descriptor that represents the corresponding standard I/O stream.
-Otherwise, {ref}`PR_GetSpecialFD` returns `NULL` and sets the error to
+Otherwise, {doc}`pr_getspecialfd` returns `NULL` and sets the error to
 `PR_INVALID_ARGUMENT_ERROR`.
 
 ## Description
@@ -44,5 +44,5 @@ typedef enum PRSpecialFD{
 `#define PR_STDOUT PR_GetSpecialFD(PR_StandardOutput)`
 `#define PR_STDERR PR_GetSpecialFD(PR_StandardError)`
 
-File descriptors returned by {ref}`PR_GetSpecialFD` are owned by the
+File descriptors returned by {doc}`pr_getspecialfd` are owned by the
 runtime and should not be closed by the caller.

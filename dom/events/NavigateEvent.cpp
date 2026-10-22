@@ -476,8 +476,7 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 
 // https://html.spec.whatwg.org/#restore-scroll-position-data
 static void RestoreScrollPositionData(Document* aDocument,
-                                      const uint32_t& aLastScrollGeneration,
-                                      SessionHistoryInfo* aHistoryEntry) {
+                                      const uint32_t& aLastScrollGeneration) {
   // 1. Let document be entry's document.
   // 2. If document's has been scrolled by the user is true, then the user agent
   // should return.
@@ -494,7 +493,8 @@ static void RestoreScrollPositionData(Document* aDocument,
   // restore the scroll positions of entry's document's restorable scrollable
   // regions. The user agent may continue to attempt to do so periodically,
   // until document's has been scrolled by the user becomes true.
-  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(aHistoryEntry);
+  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(
+      docShell->GetActiveSessionHistoryInfo());
 }
 
 // https://html.spec.whatwg.org/#process-scroll-behavior
@@ -506,20 +506,9 @@ void NavigateEvent::ProcessScrollBehavior() {
   mInterceptionState = InterceptionState::Scrolled;
 
   // Step 3
-  if (mNavigationType == NavigationType::Traverse ||
-      mNavigationType == NavigationType::Reload) {
+  if (mNavigationType == NavigationType::Traverse) {
     RefPtr<Document> document = GetAssociatedDocument();
-    // SHIP changes the active entry in
-    // `nsDocShell::HandleSameDocumentNavigation`, which breaks with Navigation
-    // API spec steps as it's too late, and at this point, the actual "active
-    // session history entry" will become the target session history entry
-    // provided here, which is why we're using this instead of
-    // nsDocShell::mActiveEntry
-    RestoreScrollPositionData(
-        document, mLastScrollGeneration,
-        mDestination->GetEntry()
-            ? mDestination->GetEntry()->SessionHistoryInfo()
-            : nullptr);
+    RestoreScrollPositionData(document, mLastScrollGeneration);
     return;
   }
 

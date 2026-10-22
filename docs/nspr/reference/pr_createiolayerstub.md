@@ -22,7 +22,7 @@ The function has the following parameters:
 
 `methods`
 
-: A pointer to the {ref}`PRIOMethods` structure specifying the functions
+: A pointer to the {doc}`priomethods` structure specifying the functions
   for the new layer.
 
 ### Returns
@@ -31,7 +31,7 @@ A new file descriptor for the specified layer.
 
 ## Description
 
-A new layer may be allocated by calling {ref}`PR_CreateIOLayerStub`. The
+A new layer may be allocated by calling {doc}`pr_createiolayerstub`. The
 file descriptor returned contains the pointer to the I/O methods table
 provided. The runtime neither modifies the table nor tests its
 correctness.

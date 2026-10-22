@@ -95,22 +95,17 @@ skip-if = [
 
 ["test_bug304188.xhtml"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1957808
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1957808
 ]
 
 ["test_bug331215.xhtml"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1582327
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1339326 #Bug 1582327
 ]
 
 ["test_bug360220.xhtml"]
 
 ["test_bug360437.xhtml"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1784826
-]
 
 ["test_bug365773.xhtml"]
 

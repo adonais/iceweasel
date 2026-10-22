@@ -160,13 +160,9 @@ class HashMgr {
   // Only internal consumers are allowed to arena-allocate.
   int decode_flags(unsigned short** result, const std::string& flags, FileMgr* af, bool use_arena) const;
 
-  // Our Mozilla fork uses a simple arena allocator for strings and hentry structs
-  // which persist for the lifetime of the HashMgr, to avoid heap fragmentation.
-  // It's a bump-allocator. arena_free does not release memory (the arena
-  // vector frees everything in bulk at HashMgr destruction); it only updates
-  // a counter and aborts on underflow as a memory-safety check.
-  // Declared const (with arena members mutable) because decode_flags is
-  // part of the public const API and calls this internally.
+  // Bump-pointer arena for load-time hentry/flag/aliasm allocations. Freed in
+  // bulk at destruction. arena_free is a no-op that tracks outstanding allocs
+  // and aborts on underflow. Mutable so const decode_flags can arena-allocate.
   void* arena_alloc(size_t num_bytes, size_t alignment) const;
   void arena_free(void* ptr) const;
 

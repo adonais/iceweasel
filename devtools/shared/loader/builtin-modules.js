@@ -124,7 +124,7 @@ defineLazyGetter(exports.modules, "Debugger", () => {
     return global.Debugger;
   }
   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-    "resource://gre/modules/jsdebugger.sys.mjs",
+    "moz-src:///devtools/platform/jsdebugger.sys.mjs",
     { global: "contextual" }
   );
   addDebuggerToGlobal(global);
@@ -141,7 +141,7 @@ defineLazyGetter(exports.modules, "ChromeDebugger", () => {
   });
 
   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-    "resource://gre/modules/jsdebugger.sys.mjs",
+    "moz-src:///devtools/platform/jsdebugger.sys.mjs",
     { global: "contextual" }
   );
   addDebuggerToGlobal(debuggerSandbox);

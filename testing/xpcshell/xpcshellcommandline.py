@@ -439,6 +439,14 @@ def add_remote_arguments(parser):
         help="Remote directory to use as test root (eg. /data/local/tmp/test_root).",
     )
 
+    parser.add_argument(
+        "--enable-isolated-process",
+        action="store_true",
+        dest="isolated_process",
+        default=False,
+        help="Enable the content service isolated process.",
+    )
+
 
 def parser_desktop():
     parser = argparse.ArgumentParser()

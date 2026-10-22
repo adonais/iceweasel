@@ -23,7 +23,7 @@ xpcom = { path = "../../../../xpcom/rust/xpcom", optional = true }
 
 [dependencies.nss-rs]
 git = "https://github.com/mozilla/nss-rs"
-version = "0.14"
+version = "0.16"
 default-features = false
 features = ["gecko"]
 

@@ -73,7 +73,6 @@ def generate_scenarios(config, tasks):
                 "index": deepcopy(index),
                 "run": {
                     "using": "run-task",
-                    "clone-with": task["run"]["clone-with"],
                     "cwd": task["run"]["cwd"],
                     "checkout": task["run"]["checkout"],
                     "tooltool-downloads": deepcopy(task["run"]["tooltool-downloads"]),
@@ -86,6 +85,9 @@ def generate_scenarios(config, tasks):
                 "dependencies": deepcopy(task["dependencies"]),
                 "fetches": deepcopy(task["fetches"]),
             }
+
+            if "clone-with" in task["run"]:
+                taskdesc["run"]["clone-with"] = task["run"]["clone-with"]
 
             use_taskcluster_python = task.get("use-python", "system")
             if use_taskcluster_python != "system":

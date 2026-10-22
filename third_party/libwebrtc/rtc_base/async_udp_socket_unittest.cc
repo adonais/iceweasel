@@ -189,4 +189,50 @@ TEST(AsyncUDPSocketTest, ArrivalTimeStampCanNotBeAfterCurrentTime) {
   socket_ptr->NotifyReadEvent(socket_ptr);
 }
 
+TEST(AsyncUDPSocketTest, RecoversFromBackwardClockStep) {
+  SimulatedClock webrtc_clock(Timestamp::Seconds(456));
+  Environment env = CreateTestEnvironment(
+      {.field_trials = "WebRTC-ClockAligner/Enabled/", .time = &webrtc_clock});
+  std::unique_ptr<MockSocket> socket = std::make_unique<MockSocket>();
+  MockSocket* socket_ptr = socket.get();
+  AsyncUDPSocket async_socket(env, std::move(socket));
+  testing::MockFunction<void(AsyncPacketSocket*, const ReceivedIpPacket&)>
+      received_packet_callback;
+  async_socket.RegisterReceivedPacketCallback(
+      received_packet_callback.AsStdFunction());
+
+  const Timestamp kSocketEpoch = Timestamp::Seconds(123);
+
+  // First packet: establishes initial offset.
+  EXPECT_CALL(*socket_ptr, RecvFrom(_))
+      .WillOnce([&](Socket::ReceiveBuffer& buffer) {
+        buffer.payload = "hello";
+        buffer.arrival_time = kSocketEpoch;
+        return buffer.payload.size();
+      });
+  EXPECT_CALL(received_packet_callback, Call)
+      .WillOnce([&](AsyncPacketSocket*, const ReceivedIpPacket& packet) {
+        EXPECT_EQ(packet.arrival_time(), webrtc_clock.CurrentTime());
+      });
+  socket_ptr->NotifyReadEvent(socket_ptr);
+
+  // Advance time by 20 ms.
+  webrtc_clock.AdvanceTime(TimeDelta::Millis(20));
+
+  // Second packet: simulated backward clock step.
+  EXPECT_CALL(*socket_ptr, RecvFrom(_))
+      .WillOnce([&](Socket::ReceiveBuffer& buffer) {
+        buffer.payload = "hello";
+        buffer.arrival_time =
+            kSocketEpoch + TimeDelta::Millis(20) - TimeDelta::Millis(450);
+        return buffer.payload.size();
+      });
+  EXPECT_CALL(received_packet_callback, Call)
+      .WillOnce([&](AsyncPacketSocket*, const ReceivedIpPacket& packet) {
+        // Immediately re-anchors to current time.
+        EXPECT_EQ(packet.arrival_time(), webrtc_clock.CurrentTime());
+      });
+  socket_ptr->NotifyReadEvent(socket_ptr);
+}
+
 }  // namespace webrtc

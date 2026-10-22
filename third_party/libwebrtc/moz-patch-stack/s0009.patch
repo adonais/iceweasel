@@ -55,7 +55,7 @@ index bf44c450e6..d5696aa6ae 100644
  #include <endian.h>
  #else
 diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
-index f79edd3bea..0c6a76fcad 100644
+index fa17252c7f..29f02cdb92 100644
 --- a/rtc_base/cpu_info.cc
 +++ b/rtc_base/cpu_info.cc
 @@ -54,7 +54,7 @@ uint32_t DetectNumberOfCoresHelper() {

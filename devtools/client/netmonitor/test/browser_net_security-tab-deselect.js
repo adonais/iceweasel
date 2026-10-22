@@ -42,23 +42,14 @@ add_task(async function () {
   wait = waitForDOM(document, "#security-tab");
 
   info("Selecting secure request.");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   await wait;
 
   info("Selecting security tab.");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelector("#security-tab")
-  );
+  clickInView(document.querySelector("#security-tab"));
 
   info("Selecting insecure request.");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
 
   ok(
     document.querySelector("#headers-tab[aria-selected=true]"),

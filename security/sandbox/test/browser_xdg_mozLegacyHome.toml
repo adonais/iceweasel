@@ -1,10 +1,10 @@
 # Any copyright is dedicated to the Public Domain.
 # http://creativecommons.org/publicdomain/zero/1.0/
 [DEFAULT]
-skip-if = [
-  "ccov",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # bug 1784517
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # bug 1784517
+# security/sandbox is not built on Linux asan/tsan, nor in ccov builds, so there
+# is no sandbox for these tests to exercise there. See bug 1784517.
+run-if = [
+  "os == 'linux' && !asan && !tsan && !ccov",
 ]
 tags = "contentsandbox"
 support-files = [
@@ -24,6 +24,3 @@ environment = [
 profile-path = "/tmp/.xdg_mozLegacyHome_test/.mozilla/firefox/xdg_mozLegacyHome_profile"
 
 ["browser_content_sandbox_fs_xdg_mozLegacyHome.js"]
-run-if = [
- "os == 'linux'"
-]

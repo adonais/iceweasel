@@ -14,7 +14,15 @@ session_restore:
   backup_can_be_loaded_session_file:
     type: event
     description: >
-      Recorded when a file is able to be successfully read on startup
+      Recorded once for each session file we attempt to load at startup, whether or not the attempt succeeded, including files that don't exist.
+      Session Restore tries a series of candidate files in priority order and stops at the first that loads. A startup usually records one event per file tried.
+      If none of the compressed files load, it tries the whole list again using legacy uncompressed extensions, so a startup that loads nothing
+      records two events per candidate file.
+
+      Use can_load to tell success from failure, and loadfail_reason to tell a missing file from an unreadable or incompatible one.
+      Before Firefox 157, every file that existed recorded a secondary event with loadfail_reason "N/A".
+      See https://bugzilla.mozilla.org/show_bug.cgi?id=2071466#c2 for details about recovering pre-157 data.
+
       This event was generated to correspond to the Legacy Telemetry event
       session_restore.backup_can_be_loaded#session_file.
     bugs:
@@ -27,7 +35,8 @@ session_restore:
     extra_keys:
       can_load:
         description: >
-          Whether or not the startup file can be read/loaded
+          Whether or not the startup file can be read/loaded. Missing files and files with an incompatible format
+          version are also recorded as "false"
         type: string
       path_key:
         description: >
@@ -35,14 +44,169 @@ session_restore:
         type: string
       loadfail_reason:
         description: >
-          Reason why the file cannot be loaded, N/A if can be loaded
+          Why the file could not be loaded, or "N/A" when it loaded. This is free-form rather than a closed set - values interpolate exception names and format-version values, so expect high cardinality.
         type: string
     telemetry_mirror: Session_restore_BackupCanBeLoaded_SessionFile
+
+  startup_session_availability:
+    type: event
+    description: >
+      Recorded once per startup when the session file read completes, including
+      when nothing could be restored. Reports what we saw of each candidate
+      session file while looking for one to load, and whether the user wanted a
+      session restored, so that a session lost to missing files can be told
+      apart from a user who starts fresh by choice.
+      The per-file keys describe the search, not the profile directory: the
+      load order stops at the first file that loads, so files later in the
+      order are reported as "not_examined". They are only complete when nothing
+      could be loaded, which is the case this event exists to measure, and must
+      not be used to estimate how often an individual backup file exists.
+      "present" means the read did not report the file as missing, so an
+      unusual I/O error counts as present.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=780014
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=780014
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      origin:
+        description: >
+          Which file the session was loaded from, one of "clean", "recovery",
+          "recoveryBackup", "cleanBackup" or "upgradeBackup", or "empty" if no
+          session could be loaded
+        type: string
+      format:
+        description: >
+          The format the session was loaded from, "jsonlz4" or the legacy "js",
+          or "none" if no session could be loaded
+        type: string
+      clean:
+        description: >
+          What we saw of the clean session file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      recovery:
+        description: >
+          What we saw of the recovery file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      recovery_backup:
+        description: >
+          What we saw of the recovery backup file, one of "present", "absent"
+          or "not_examined"
+        type: string
+      clean_backup:
+        description: >
+          What we saw of the clean backup file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      upgrade_backup:
+        description: >
+          What we saw of the upgrade backup file, one of "present", "absent",
+          "not_examined", or "not_configured" if no upgrade backup was ever
+          taken
+        type: string
+      startup_page_is_resume:
+        description: >
+          Whether browser.startup.page is set to resume the previous session
+        type: boolean
+      resume_session_once:
+        description: >
+          Whether a one-off session resume was pending, as set for restarts due
+          to application update, as it was found at startup
+        type: boolean
+      resume_from_crash:
+        description: >
+          Whether browser.sessionstore.resume_from_crash allows a crash to lead
+          to a restore
+        type: boolean
+      restarted_by_os:
+        description: >
+          Whether the OS started the browser, rather than the user
+        type: boolean
+      resuming_after_os_restart:
+        description: >
+          Whether a session resume was armed for an OS-initiated restart, as it
+          was found at startup
+        type: boolean
+
+  startup_session_decision:
+    type: event
+    description: >
+      Recorded once per startup, when Session Restore has decided what to do
+      with the session it found. Reports the decision and the reasoning behind
+      it, so that a session the user never asked for can be told apart from one
+      we chose not to restore.
+      This describes the decision only, not whether the restore that followed
+      succeeded. No event is recorded if the browser exits before the first
+      browser window has finished its delayed startup.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      session_type:
+        description: >
+          What Session Restore decided to do, one of "no_session", "recover"
+          (restore after a crash), "resume" (restore because it was asked for)
+          or "defer" (keep the session for the user to restore by hand)
+        type: string
+      resume_reason:
+        description: >
+          Why a session was resumed, set when session_type is "resume". One of
+          "os_restart" (armed before the OS restarted us), "resume_session_once"
+          (a one-off resume, as set for restarts due to application update) or
+          "startup_page" (the user asks for their session every time). Where
+          more than one applies, the most specific is reported.
+        type: string
+      previous_session_crashed:
+        description: >
+          Whether the previous session ended in a crash. Unset when we never
+          got as far as checking, which is the case when no session was found
+          and in permanent private browsing.
+        type: boolean
+      action:
+        description: >
+          What we did with the session state as a result, one of "restore",
+          "interstitial" (replaced it with about:sessionrestore), "welcomeback"
+          (replaced about:welcomeback with about:sessionrestore), "pinned_only"
+          (a deferred session whose pinned tabs were opened), "deferred_only"
+          (a deferred session with no pinned tabs, so nothing was opened, but
+          its tabs are available in recently-closed and its groups in saved
+          groups) or "nothing"
+        type: string
+      interstitial_reason:
+        description: >
+          Why about:sessionrestore was shown rather than restoring, set when
+          action is "interstitial". One of "old_session", "many_crashes",
+          "many_crashes_old_session" or "safe_mode".
+        type: string
+      init_error:
+        description: >
+          The name of the error thrown while preparing the session, if one was.
+          The session is left in whatever state it had reached.
+        type: string
+      permanent_private:
+        description: >
+          Whether this is an auto-started permanent private browsing session,
+          in which no session is ever restored
+        type: boolean
 
   shutdown_success_session_startup:
     type: event
     description: >
-      Report shutdown success
+      Recorded once at startup, reporting whether the previous session shut down cleanly.
+      Note that the shutdown_ok extra is inverted relative to its name; see its description.
+      Not recorded at all when no valid session was found at startup, so this event's population
+      excludes profiles with missing or corrupt session files.
+
+      Profiles in permanent private browsing are not represented in this metric.
+
       This event was generated to correspond to the Legacy Telemetry event
       session_restore.shutdown_success#session_startup.
     bugs:
@@ -55,18 +219,39 @@ session_restore:
     extra_keys:
       shutdown_ok:
         description: >
-          Whether or not the shutdown happened successfully, unsuccessful if previous session crashed
+          Despite the name, this is "true" when the previous session did NOT shut down cleanly - it
+          is set from the internal crash flag. The polarity has been inverted since the event was
+          introduced and is documented rather than corrected so existing data stays comparable.
+          session_restore.shutdown_ok carries the same signal with the expected polarity.
         type: string
       shutdown_reason:
         description: >
-          Reason why shutdown didn't happen successfully, N/A if previous session didn't crashed
+          Why we concluded the previous session did not shut down cleanly.
+
+          "final-state-write-incomplete" means the CrashMonitor checkpoints showed we never
+          finished writing the final state.
+
+          "session-state-missing-or-running-at-last-write" means we fell back to the session.state
+          flag in the session file, which was either absent or still "running".
+
+          "N/A" means we concluded the shutdown was clean, either from the CrashMonitor
+          checkpoints, or - if there were no checkpoints - from the session.state flag being
+          present and not "running".
         type: string
     telemetry_mirror: Session_restore_ShutdownSuccess_SessionStartup
 
   shutdown_flush_all_outcomes:
     type: labeled_counter
     description: >
-      The count of time-outs, abnormal shutdown and frameloader crashes observed during an async shutdown
+      Counts occurrences of each condition that can end the wait for session data
+      to be flushed during an async shutdown.
+
+      These are occurrence counts, not a partition of shutdowns: "complete" is incremented
+      when the flush finishes regardless of whether it won the race, and the crash observers
+      fire once per content process, so a single shutdown can contribute to more than one
+      label and "abnormal_content_shutdown" can exceed the number of shutdowns.
+
+      Use session_restore.shutdown_type's "async" label as the denominator for per-shutdown rates.
     labels:
       - "timed_out"
       - "abnormal_content_shutdown"
@@ -217,7 +402,11 @@ session_restore:
   file_size_bytes:
     type: memory_distribution
     description: >
-      Session restore: The size of file sessionstore.js (bytes)
+      Session restore: The size in bytes of the session file we just
+      wrote - recovery.jsonlz4 for writes during the session,
+      sessionstore.jsonlz4 for the final write at shutdown.
+
+      Only recorded when the write succeeds, so failed writes are absent rather than counted.
 
       This metric was generated to correspond to the Legacy Telemetry
       exponential histogram FX_SESSION_RESTORE_FILE_SIZE_BYTES.
@@ -234,21 +423,24 @@ session_restore:
   corrupt_file:
     type: labeled_counter
     description: >
-      Session restore: Counts session files that existed at startup,
-      labelled by whether the file failed to load because it was
-      unreadable, corrupt or an incompatible version. Recorded once
-      per candidate file in the load order, so one startup can
+      Session restore: counts session files that existed at startup,
+      labelled by whether the file was recognised as corrupt.
+      Recorded once per candidate file in the load order, so one startup can
       contribute several samples.
 
-      "true" means the file existed but failed to load because of a read
-      error, invalid JSON, an incompatible format version or an error
-      Session Restore does not specifically handle. "false" means the
-      file existed and was not recognised as corrupt.
+      "false" means the file existed and was not recognised as corrupt, which
+      also includes files rejected for an incompatible format version and files
+      that failed to read for reasons we do not specifically handle - it is not
+      a count of successful loads.
 
-      Before Firefox 157 a successful load incremented "false" twice.
+      Before Firefox 157 a successful load incremented "false" twice, so corruption
+      rates computed across that boundary show a step of roughly 2x - this is a correction,
+      not a regression.
       Before Firefox 158 errors that Session Restore does not
       specifically handle, and files with an incompatible format
       version, incremented "false" rather than "true".
+
+      Profiles in permanent private browsing are not represented in this metric.
 
       This metric was generated to correspond to the Legacy Telemetry boolean
       histogram FX_SESSION_RESTORE_CORRUPT_FILE.
@@ -271,8 +463,17 @@ session_restore:
   all_files_corrupt:
     type: labeled_counter
     description: >
-      Session restore: Whether none of the backup files contained parse-able
-      JSON
+      Session restore: Whether at least one candidate session file existed
+      at startup but none of them could be loaded, across both the
+      lz4-compressed files and the legacy uncompressed .js/.bak files.
+      Recorded once per startup. "false" also covers profiles with no
+      session files at all.
+
+      Before Firefox 159 only the lz4-compressed files counted as existing,
+      so a profile whose only files were unloadable legacy ones recorded
+      "false".
+
+      Profiles in permanent private browsing are not represented in this metric.
 
       This metric was generated to correspond to the Legacy Telemetry boolean
       histogram FX_SESSION_RESTORE_ALL_FILES_CORRUPT.
@@ -417,6 +618,12 @@ session_restore:
     description: >
       Did the browser start after a successful shutdown
 
+      Not recorded when no valid session was found at startup, so this
+      metric's population excludes profiles with missing or corrupt session
+      files.
+
+      Profiles in permanent private browsing are not represented in this metric.
+
       This metric was generated to correspond to the Legacy Telemetry boolean
       histogram SHUTDOWN_OK.
     labels:
@@ -471,9 +678,15 @@ session_restore:
   startup_session_auto_restored:
     type: event
     description: >
-      Recorded each time "Open previous windows and tabs" triggers session
-      restore at startup. The new_tab_action extra indicates what happened
-      with the new-tab-on-restore feature.
+      Recorded when an automatic session restore reaches the point
+      where the new-tab-on-restore feature is evaluated,
+      with new_tab_action describing what happened there.
+
+      This is a new-tab-on-restore metric rather than a general
+      session-restore signal: it is not recorded for crash recovery,
+      for restores triggered by browser.sessionstore.resume_session_once
+      or when no browser window is available at that point. It should not
+      be used as a denominator for automatic restores.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2023459
     data_reviews:
@@ -554,11 +767,16 @@ browser.engagement:
       'shown_many_crashes_old_session' all indicate we did show the
       interstitial because of a crash, and the text after 'shown'
       indicates what secondary reason there was to show this page (as we
-      don't show it for 'just' one crash).
+      don't show it for 'just' one crash). 'shown_safe_mode' also follows a
+      crash, but the interstitial is shown because we never automatically
+      restore in Safe Mode, whatever the crash count or session age. That
+      case was not recorded at all before Firefox 159, so the other 'shown'
+      keys undercount by however often it happened.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.sessionrestore_interstitial.
     bugs:
       - https://bugzil.la/1671271
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
     data_reviews:
       - https://bugzil.la/1671271
     notification_emails:

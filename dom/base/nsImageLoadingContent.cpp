@@ -1383,6 +1383,12 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
 CSSIntSize nsImageLoadingContent::NaturalSize(
     DoDensityCorrection aDensityCorrection) {
+  // This function implements the image.naturalWidth and image.naturalHeight
+  // APIs, specced here:
+  // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-naturalwidth-dev
+
+  // Trivial case from the spec: "return [...] 0 if the image is not available"
+  // (our early-return statements here return a zero-filled CSSIntSize).
   if (!mCurrentRequest) {
     return {};
   }
@@ -1399,30 +1405,51 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     return {};
   }
 
+  // If we get here, we have enough information about the image to return its
+  // "density-corrected natural width and height", which is specced here:
+  // https://html.spec.whatwg.org/multipage/images.html#density-corrected-intrinsic-width-and-height
+  //
+  // At a high level, here's what happens:
+  // * If the image has an intrinsic size in both axes, we density-correct it
+  //   and return it.
+  // * Otherwise: use the (non-density-corrected) fallback size to fill in
+  //   whichever component is missing -- though if we can transfer the size
+  //   through the aspect ratio, we do that instead (and density-correct it).
+
+  // * If we *only* have an intrinsic aspect ratio, then we use the fallback
+  //   width, and we transfer it through the aspect ratio to produce a suitable
+  //   fallback height. (And neither component gets density-corrected since
+  //   they're both fallbacks.)
   CSSIntSize size;  // defaults to 0,0
-  if (!StaticPrefs::image_natural_size_fallback_enabled()) {
-    size.width = intrinsicSize.mWidth.valueOr(0);
-    size.height = intrinsicSize.mHeight.valueOr(0);
-  } else {
-    // Fallback case, for web-compatibility!
-    // See https://github.com/whatwg/html/issues/11287 and bug 1935269.
-    // If we lack an intrinsic size in either axis, then use the fallback size,
-    // unless we can transfer the size through the aspect ratio.
-    // (And if we *only* have an intrinsic aspect ratio, use the fallback width
-    // and transfer that through the aspect ratio to produce a height.)
-    size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
-    size.height =
-        intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
-    AspectRatio ratio = image->GetIntrinsicRatio();
-    if (ratio) {
-      if (!intrinsicSize.mHeight) {
-        // Compute the height from the width & ratio.  (Note that the width we
-        // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
-        size.height = ratio.Inverted().ApplyTo(size.width);
-      } else if (!intrinsicSize.mWidth) {
-        // Compute the width from the height & ratio.
-        size.width = ratio.ApplyTo(size.height);
-      }
+
+  // Use intrinsicSize.mWidth, if it exists; otherwise, use fallback width.
+  bool isUsingFallbackWidth = !intrinsicSize.mWidth;
+  size.width = isUsingFallbackWidth ? kFallbackIntrinsicWidthInPixels
+                                    : CSSIntCoord(*intrinsicSize.mWidth);
+
+  // Use intrinsicSize.mHeight, if it exists; otherwise, use fallback height.
+  bool isUsingFallbackHeight = !intrinsicSize.mHeight;
+  size.height = isUsingFallbackHeight ? kFallbackIntrinsicHeightInPixels
+                                      : CSSIntCoord(*intrinsicSize.mHeight);
+
+  AspectRatio ratio = image->GetIntrinsicRatio();
+  if (ratio) {
+    if (isUsingFallbackHeight) {
+      // If we're using the fallback height and we have an aspect ratio, we
+      // instead compute our height from the width & ratio.  (Note that the
+      // width we use here might be the fallback width, and that's fine. If
+      // so, we just keep treating the resulting height as a fallback, i.e.
+      // we won't density-correct it.)
+      size.height = ratio.Inverted().ApplyTo(size.width);
+      isUsingFallbackHeight = isUsingFallbackWidth;
+    } else if (isUsingFallbackWidth) {
+      // We're tentatively using the fallback width, but we have an
+      // aspect-ratio and a (non-fallback) height.  So we don't use the
+      // fallback width after all; instead, we compute a width from the height
+      // & ratio.  (And we don't treat the result as fallback, because it's
+      // computed from a non-fallback height.)
+      size.width = ratio.ApplyTo(size.height);
+      isUsingFallbackWidth = false;
     }
   }
 
@@ -1440,53 +1467,47 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     }
   }
 
-  resolution.ApplyTo(size.width, size.height);
+  if (!isUsingFallbackWidth) {
+    resolution.ApplyXTo(size.width);
+  }
+  if (!isUsingFallbackHeight) {
+    resolution.ApplyYTo(size.height);
+  }
   return size;
 }
 
 CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
+  // Determine the value for .width and .height getters. The spec text for this
+  // lives here:
+  // https://html.spec.whatwg.org/multipage/embedded-content.html#img-dimensions
+  // It mostly defers to a "determine the dimensions" algorithm which lives
+  // here:
+  // https://html.spec.whatwg.org/multipage/embedded-content-other.html#determine-dimensions
+  //
+  // Quotes below are from that "determine the dimensions" spec text.
+
+  // "If element is being rendered, then return the width and height of
+  // element's content box, in CSS pixels."
   Element* element = AsContent()->AsElement();
   if (nsIFrame* frame = element->GetPrimaryFrame(FlushType::Layout)) {
     return CSSIntSize::FromAppUnitsRounded(frame->GetContentRect().Size());
   }
 
-  CSSIntSize size;
-  nsCOMPtr<imgIContainer> image;
-  if (StaticPrefs::image_natural_size_fallback_enabled()) {
-    // Our image is not rendered (we don't have any frame); so we should should
-    // return the natural size, per:
-    // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-width
-    //
-    // Note that the spec says to use the "density-corrected natural width and
-    // height of the image", but we don't do that -- we specifically request
-    // the NaturalSize *without* density-correction here.  This handles a case
-    // where browsers deviate from the spec in an interoperable way, which
-    // hopefully we'll address in the spec soon. See case (2) in this comment
-    // for more:
-    // https://github.com/whatwg/html/issues/11287#issuecomment-2923467541
-    size = NaturalSize(DoDensityCorrection::No);
-  } else if (mCurrentRequest) {
-    mCurrentRequest->GetImage(getter_AddRefs(image));
-  }
+  // "...set width to naturalDimensions's width and height to
+  // naturalDimensions's height" [in the tentative return value]
+  CSSIntSize size = NaturalSize(DoDensityCorrection::Yes);
 
-  // If we have width or height attrs, we'll let those stomp on whatever
-  // NaturalSize we may have gotten above. This handles a case where browsers
-  // deviate from the spec in an interoperable way, which hopefully we'll
-  // address in the spec soon. See case (1) in this comment for more:
-  // https://github.com/whatwg/html/issues/11287#issuecomment-2923467541
+  // "If element has a width attribute: [attempt to parse and use that value]"
   const nsAttrValue* value;
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.width = value->GetIntegerValue();
-  } else if (image) {
-    image->GetWidth(&size.width);
   }
 
+  // "If element has a height attribute: [attempt to parse and use that value]"
   if ((value = element->GetParsedAttr(nsGkAtoms::height)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.height = value->GetIntegerValue();
-  } else if (image) {
-    image->GetHeight(&size.height);
   }
 
   NS_ASSERTION(size.width >= 0, "negative width");
@@ -1947,10 +1968,9 @@ Element* nsImageLoadingContent::FindImageMap() {
 
   nsAutoString mapName(Substring(start, end));
 
-  const bool kFlush = false;
-  const uint32_t n = imageMapList->Length(kFlush);
+  const uint32_t n = imageMapList->Length();
   for (uint32_t i = 0; i < n; ++i) {
-    nsIContent* map = imageMapList->Item(i, kFlush);
+    nsIContent* map = imageMapList->Item(i);
     if (map->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id, mapName,
                                       eCaseMatters) ||
         map->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,

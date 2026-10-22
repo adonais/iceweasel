@@ -56,6 +56,9 @@ class Decoder {
     uintptr_t address = reinterpret_cast<uintptr_t>(instruction) + offset;
     return converter_.nameOfAddress(reinterpret_cast<const uint8_t*>(address));
   }
+  const char* vpu(uint32_t reg) const {
+    return converter_.nameOfVectorRegister(reg);
+  }
 
   bool formatRdRjRk(const char* mnemonic, uint32_t word) const;
   bool formatRdRkRj(const char* mnemonic, uint32_t word) const;
@@ -98,6 +101,23 @@ class Decoder {
                       uint32_t word) const;
   bool formatRdRjBranch16(const char* mnemonic, uint32_t word) const;
   bool formatFCompare(bool isDouble, uint32_t word) const;
+  bool formatSimdVdVj(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdRj(const char* mnemonic, uint32_t word) const;
+  bool formatSimdCdVj(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdVjVk(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdRjRk(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdVjVkFa(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdImm13(const char* mnemonic, uint32_t word) const;
+  bool formatSimdVdRjImm(const char* mnemonic, uint32_t word, uint32_t bits,
+                         bool sign) const;
+  bool formatSimdVdVjImm(const char* mnemonic, uint32_t word, uint32_t bits,
+                         bool sign) const;
+  bool formatSimdRdVjImm(const char* mnemonic, uint32_t word, uint32_t bits,
+                         bool sign) const;
+  bool formatSimdVdRjImm8Idx(const char* mnemonic, uint32_t word,
+                             uint32_t lane_bits) const;
+  bool formatSimdCmpCond(const char* mnemonic, uint32_t word,
+                         bool isDouble) const;
 
   bool decodeOp6(const Instruction* instruction) const;
   bool decodeOp7(const Instruction* instruction) const;
@@ -105,10 +125,15 @@ class Decoder {
   bool decodeOp10(const Instruction* instruction) const;
   bool decodeOp11(const Instruction* instruction) const;
   bool decodeOp12(const Instruction* instruction) const;
+  bool decodeOp13(const Instruction* instruction) const;
   bool decodeOp14(const Instruction* instruction) const;
   bool decodeOp15(const Instruction* instruction) const;
   bool decodeOp16(const Instruction* instruction) const;
   bool decodeOp17(const Instruction* instruction) const;
+  bool decodeOp18(const Instruction* instruction) const;
+  bool decodeOp19(const Instruction* instruction) const;
+  bool decodeOp20(const Instruction* instruction) const;
+  bool decodeOp21(const Instruction* instruction) const;
   bool decodeOp22(const Instruction* instruction) const;
   bool decodeOp24(const Instruction* instruction) const;
 
@@ -435,6 +460,130 @@ bool Decoder::formatFCompare(bool isDouble, uint32_t word) const {
   }
 }
 
+bool Decoder::formatSimdVdVj(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s %s, %s", mnemonic,
+           vpu(Extract(word, FDShift, FDBits)),
+           vpu(Extract(word, FJShift, FJBits)));
+  return true;
+}
+
+bool Decoder::formatSimdVdRj(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s %s, %s", mnemonic,
+           vpu(Extract(word, FDShift, FDBits)),
+           cpu(Extract(word, RJShift, RJBits)));
+  return true;
+}
+
+bool Decoder::formatSimdCdVj(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s $fcc%" PRIu32 ", %s", mnemonic,
+           Extract(word, CDShift, CDBits), vpu(Extract(word, FJShift, FJBits)));
+  return true;
+}
+
+bool Decoder::formatSimdVdVjVk(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s %s, %s, %s", mnemonic,
+           vpu(Extract(word, FDShift, FDBits)),
+           vpu(Extract(word, FJShift, FJBits)),
+           vpu(Extract(word, FKShift, FKBits)));
+  return true;
+}
+
+bool Decoder::formatSimdVdRjRk(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s %s, %s, %s", mnemonic,
+           vpu(Extract(word, FDShift, FDBits)),
+           cpu(Extract(word, RJShift, RJBits)),
+           cpu(Extract(word, RKShift, RKBits)));
+  return true;
+}
+
+bool Decoder::formatSimdVdVjVkFa(const char* mnemonic, uint32_t word) const {
+  FormatTo(
+      output_, "%-12s %s, %s, %s, %s", mnemonic,
+      vpu(Extract(word, FDShift, FDBits)), vpu(Extract(word, FJShift, FJBits)),
+      vpu(Extract(word, FKShift, FKBits)), vpu(Extract(word, FAShift, FABits)));
+  return true;
+}
+
+bool Decoder::formatSimdVdImm13(const char* mnemonic, uint32_t word) const {
+  FormatTo(output_, "%-12s %s, 0x%" PRIx32, mnemonic,
+           vpu(Extract(word, FDShift, FDBits)), Extract(word, 5, 13));
+  return true;
+}
+
+bool Decoder::formatSimdVdRjImm(const char* mnemonic, uint32_t word,
+                                uint32_t bits, bool sign) const {
+  if (sign) {
+    FormatTo(output_, "%-12s %s, %s, %" PRId32, mnemonic,
+             vpu(Extract(word, FDShift, FDBits)),
+             cpu(Extract(word, RJShift, RJBits)),
+             SignExtend(Extract(word, 10, bits), bits));
+  } else {
+    FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32, mnemonic,
+             vpu(Extract(word, FDShift, FDBits)),
+             cpu(Extract(word, RJShift, RJBits)), Extract(word, 10, bits));
+  }
+  return true;
+}
+
+bool Decoder::formatSimdVdVjImm(const char* mnemonic, uint32_t word,
+                                uint32_t bits, bool sign) const {
+  if (sign) {
+    FormatTo(output_, "%-12s %s, %s, %" PRId32, mnemonic,
+             vpu(Extract(word, FDShift, FDBits)),
+             vpu(Extract(word, FJShift, FJBits)),
+             SignExtend(Extract(word, 10, bits), bits));
+  } else {
+    FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32, mnemonic,
+             vpu(Extract(word, FDShift, FDBits)),
+             vpu(Extract(word, FJShift, FJBits)), Extract(word, 10, bits));
+  }
+  return true;
+}
+
+bool Decoder::formatSimdRdVjImm(const char* mnemonic, uint32_t word,
+                                uint32_t bits, bool sign) const {
+  if (sign) {
+    FormatTo(output_, "%-12s %s, %s, %" PRId32, mnemonic,
+             cpu(Extract(word, RDShift, RDBits)),
+             vpu(Extract(word, FJShift, FJBits)),
+             SignExtend(Extract(word, 10, bits), bits));
+  } else {
+    FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32, mnemonic,
+             cpu(Extract(word, RDShift, RDBits)),
+             vpu(Extract(word, FJShift, FJBits)), Extract(word, 10, bits));
+  }
+  return true;
+}
+
+bool Decoder::formatSimdVdRjImm8Idx(const char* mnemonic, uint32_t word,
+                                    uint32_t lane_bits) const {
+  FormatTo(output_, "%-12s %s, %s, 0x%" PRIx32 ", 0x%" PRIx32, mnemonic,
+           vpu(Extract(word, FDShift, FDBits)),
+           cpu(Extract(word, RJShift, RJBits)), Extract(word, 10, 8),
+           Extract(word, 18, lane_bits));
+  return true;
+}
+
+bool Decoder::formatSimdCmpCond(const char* mnemonic, uint32_t word,
+                                bool isDouble) const {
+  static const char* const names[32] = {
+      "caf",  "saf",  "clt",   "slt",   "ceq",   "seq",   "cle",   "sle",
+      "cun",  "sun",  "cult",  "sult",  "cueq",  "sueq",  "cule",  "sule",
+      "cne",  "sne",  nullptr, nullptr, "cor",   "sor",   nullptr, nullptr,
+      "cune", "sune", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+  };
+  uint32_t cond = Extract(word, CONDShift, CONDBits);
+  if (!names[cond]) {
+    return false;
+  }
+  char buf[32];
+  SprintfLiteral(buf, "vfcmp.%s.%c", names[cond], isDouble ? 'd' : 's');
+  FormatTo(
+      output_, "%-12s %s, %s, %s", buf, vpu(Extract(word, FDShift, FDBits)),
+      vpu(Extract(word, FJShift, FJBits)), vpu(Extract(word, FKShift, FKBits)));
+  return true;
+}
+
 bool Decoder::decodeOp6(const Instruction* instruction) const {
   uint32_t word = instruction->encode();
   switch (word & OpcodeMask(6)) {
@@ -475,6 +624,10 @@ bool Decoder::decodeOp11(const Instruction* instruction) const {
     case op_bstr_w:
       return formatRdRjMsbWLsbW(
           Extract(word, 15, 1) ? "bstrpick.w" : "bstrins.w", word);
+    case op_vldrepl_h:
+      return formatSimdVdRjImm("vldrepl.h", word, 11, false);
+    case op_vstelm_h:
+      return formatSimdVdRjImm8Idx("vstelm.h", word, 3);
     default:
       return false;
   }
@@ -503,6 +656,38 @@ bool Decoder::decodeOp12(const Instruction* instruction) const {
       return formatFCompare(false, word);
     case op_fcmp_cond_d:
       return formatFCompare(true, word);
+    case op_vfmadd_s:
+      return formatSimdVdVjVkFa("vfmadd.s", word);
+    case op_vfmadd_d:
+      return formatSimdVdVjVkFa("vfmadd.d", word);
+    case op_vfnmsub_s:
+      return formatSimdVdVjVkFa("vfnmsub.s", word);
+    case op_vfnmsub_d:
+      return formatSimdVdVjVkFa("vfnmsub.d", word);
+    case op_vfcmp_cond_s:
+      return formatSimdCmpCond("vfcmp.cond.s", word, false);
+    case op_vfcmp_cond_d:
+      return formatSimdCmpCond("vfcmp.cond.d", word, true);
+    case op_vbitsel_v:
+      return formatSimdVdVjVkFa("vbitsel.v", word);
+    case op_vshuf_b:
+      return formatSimdVdVjVkFa("vshuf.b", word);
+    case op_vldrepl_w:
+      return formatSimdVdRjImm("vldrepl.w", word, 10, false);
+    case op_vstelm_w:
+      return formatSimdVdRjImm8Idx("vstelm.w", word, 2);
+    default:
+      return false;
+  }
+}
+
+bool Decoder::decodeOp13(const Instruction* instruction) const {
+  uint32_t word = instruction->encode();
+  switch (word & OpcodeMask(13)) {
+    case op_vldrepl_d:
+      return formatSimdVdRjImm("vldrepl.d", word, 9, false);
+    case op_vstelm_d:
+      return formatSimdVdRjImm8Idx("vstelm.d", word, 1);
     default:
       return false;
   }
@@ -607,6 +792,14 @@ bool Decoder::decodeOp10(const Instruction* instruction) const {
       return formatRdRjSigned12("st.w", word);
     case op_xori:
       return formatRdRjUnsigned12("xori", word);
+    case op_vld:
+      return formatSimdVdRjImm("vld", word, 12, true);
+    case op_vst:
+      return formatSimdVdRjImm("vst", word, 12, true);
+    case op_vldrepl_b:
+      return formatSimdVdRjImm("vldrepl.b", word, 12, false);
+    case op_vstelm_b:
+      return formatSimdVdRjImm8Idx("vstelm.b", word, 4);
     default:
       return false;
   }
@@ -619,6 +812,26 @@ bool Decoder::decodeOp14(const Instruction* instruction) const {
       return formatRdRjRkSa3("bytepick.d", word);
     case op_fsel:
       return formatFdFjFkCa("fsel", word);
+    case op_vextrins_d:
+      return formatSimdVdVjImm("vextrins.d", word, 8, false);
+    case op_vextrins_w:
+      return formatSimdVdVjImm("vextrins.w", word, 8, false);
+    case op_vextrins_h:
+      return formatSimdVdVjImm("vextrins.h", word, 8, false);
+    case op_vextrins_b:
+      return formatSimdVdVjImm("vextrins.b", word, 8, false);
+    case op_vshuf4i_b:
+      return formatSimdVdVjImm("vshuf4i.b", word, 8, false);
+    case op_vshuf4i_h:
+      return formatSimdVdVjImm("vshuf4i.h", word, 8, false);
+    case op_vshuf4i_w:
+      return formatSimdVdVjImm("vshuf4i.w", word, 8, false);
+    case op_vshuf4i_d:
+      return formatSimdVdVjImm("vshuf4i.d", word, 8, false);
+    case op_vori_b:
+      return formatSimdVdVjImm("vori.b", word, 8, false);
+    case op_vldi:
+      return formatSimdVdImm13("vldi", word);
     default:
       return false;
   }
@@ -651,6 +864,20 @@ bool Decoder::decodeOp16(const Instruction* instruction) const {
       return formatRdRjUnsigned6("srai.d", word);
     case op_srli_d:
       return formatRdRjUnsigned6("srli.d", word);
+    case op_vbitclri_d:
+      return formatSimdVdVjImm("vbitclri.d", word, 6, false);
+    case op_vbitrevi_d:
+      return formatSimdVdVjImm("vbitrevi.d", word, 6, false);
+    case op_vsat_d:
+      return formatSimdVdVjImm("vsat.d", word, 6, false);
+    case op_vsat_du:
+      return formatSimdVdVjImm("vsat.du", word, 6, false);
+    case op_vslli_d:
+      return formatSimdVdVjImm("vslli.d", word, 6, false);
+    case op_vsrli_d:
+      return formatSimdVdVjImm("vsrli.d", word, 6, false);
+    case op_vsrai_d:
+      return formatSimdVdVjImm("vsrai.d", word, 6, false);
     default:
       return false;
   }
@@ -921,6 +1148,346 @@ bool Decoder::decodeOp17(const Instruction* instruction) const {
       return formatRdRjRk("sub.w", word);
     case op_xor:
       return formatRdRjRk("xor", word);
+    case op_vldx:
+      return formatSimdVdRjRk("vldx", word);
+    case op_vstx:
+      return formatSimdVdRjRk("vstx", word);
+    case op_vseq_b:
+      return formatSimdVdVjVk("vseq.b", word);
+    case op_vseq_h:
+      return formatSimdVdVjVk("vseq.h", word);
+    case op_vseq_w:
+      return formatSimdVdVjVk("vseq.w", word);
+    case op_vseq_d:
+      return formatSimdVdVjVk("vseq.d", word);
+    case op_vsle_b:
+      return formatSimdVdVjVk("vsle.b", word);
+    case op_vsle_h:
+      return formatSimdVdVjVk("vsle.h", word);
+    case op_vsle_w:
+      return formatSimdVdVjVk("vsle.w", word);
+    case op_vsle_d:
+      return formatSimdVdVjVk("vsle.d", word);
+    case op_vsle_bu:
+      return formatSimdVdVjVk("vsle.bu", word);
+    case op_vsle_hu:
+      return formatSimdVdVjVk("vsle.hu", word);
+    case op_vsle_wu:
+      return formatSimdVdVjVk("vsle.wu", word);
+    case op_vslt_b:
+      return formatSimdVdVjVk("vslt.b", word);
+    case op_vslt_h:
+      return formatSimdVdVjVk("vslt.h", word);
+    case op_vslt_w:
+      return formatSimdVdVjVk("vslt.w", word);
+    case op_vslt_d:
+      return formatSimdVdVjVk("vslt.d", word);
+    case op_vslt_bu:
+      return formatSimdVdVjVk("vslt.bu", word);
+    case op_vslt_hu:
+      return formatSimdVdVjVk("vslt.hu", word);
+    case op_vslt_wu:
+      return formatSimdVdVjVk("vslt.wu", word);
+    case op_vadd_b:
+      return formatSimdVdVjVk("vadd.b", word);
+    case op_vadd_h:
+      return formatSimdVdVjVk("vadd.h", word);
+    case op_vadd_w:
+      return formatSimdVdVjVk("vadd.w", word);
+    case op_vadd_d:
+      return formatSimdVdVjVk("vadd.d", word);
+    case op_vsub_b:
+      return formatSimdVdVjVk("vsub.b", word);
+    case op_vsub_h:
+      return formatSimdVdVjVk("vsub.h", word);
+    case op_vsub_w:
+      return formatSimdVdVjVk("vsub.w", word);
+    case op_vsub_d:
+      return formatSimdVdVjVk("vsub.d", word);
+    case op_vsadd_b:
+      return formatSimdVdVjVk("vsadd.b", word);
+    case op_vsadd_h:
+      return formatSimdVdVjVk("vsadd.h", word);
+    case op_vssub_b:
+      return formatSimdVdVjVk("vssub.b", word);
+    case op_vssub_h:
+      return formatSimdVdVjVk("vssub.h", word);
+    case op_vsadd_bu:
+      return formatSimdVdVjVk("vsadd.bu", word);
+    case op_vsadd_hu:
+      return formatSimdVdVjVk("vsadd.hu", word);
+    case op_vssub_bu:
+      return formatSimdVdVjVk("vssub.bu", word);
+    case op_vssub_hu:
+      return formatSimdVdVjVk("vssub.hu", word);
+    case op_vhaddw_h_b:
+      return formatSimdVdVjVk("vhaddw.h.b", word);
+    case op_vhaddw_w_h:
+      return formatSimdVdVjVk("vhaddw.w.h", word);
+    case op_vhaddw_hu_bu:
+      return formatSimdVdVjVk("vhaddw.hu.bu", word);
+    case op_vhaddw_wu_hu:
+      return formatSimdVdVjVk("vhaddw.wu.hu", word);
+    case op_vadda_b:
+      return formatSimdVdVjVk("vadda.b", word);
+    case op_vadda_h:
+      return formatSimdVdVjVk("vadda.h", word);
+    case op_vadda_w:
+      return formatSimdVdVjVk("vadda.w", word);
+    case op_vadda_d:
+      return formatSimdVdVjVk("vadda.d", word);
+    case op_vavgr_bu:
+      return formatSimdVdVjVk("vavgr.bu", word);
+    case op_vavgr_hu:
+      return formatSimdVdVjVk("vavgr.hu", word);
+    case op_vmax_b:
+      return formatSimdVdVjVk("vmax.b", word);
+    case op_vmax_h:
+      return formatSimdVdVjVk("vmax.h", word);
+    case op_vmax_w:
+      return formatSimdVdVjVk("vmax.w", word);
+    case op_vmin_b:
+      return formatSimdVdVjVk("vmin.b", word);
+    case op_vmin_h:
+      return formatSimdVdVjVk("vmin.h", word);
+    case op_vmin_w:
+      return formatSimdVdVjVk("vmin.w", word);
+    case op_vmax_bu:
+      return formatSimdVdVjVk("vmax.bu", word);
+    case op_vmax_hu:
+      return formatSimdVdVjVk("vmax.hu", word);
+    case op_vmax_wu:
+      return formatSimdVdVjVk("vmax.wu", word);
+    case op_vmin_bu:
+      return formatSimdVdVjVk("vmin.bu", word);
+    case op_vmin_hu:
+      return formatSimdVdVjVk("vmin.hu", word);
+    case op_vmin_wu:
+      return formatSimdVdVjVk("vmin.wu", word);
+    case op_vmul_h:
+      return formatSimdVdVjVk("vmul.h", word);
+    case op_vmul_w:
+      return formatSimdVdVjVk("vmul.w", word);
+    case op_vmul_d:
+      return formatSimdVdVjVk("vmul.d", word);
+    case op_vmulwev_h_b:
+      return formatSimdVdVjVk("vmulwev.h.b", word);
+    case op_vmulwev_w_h:
+      return formatSimdVdVjVk("vmulwev.w.h", word);
+    case op_vmulwev_d_w:
+      return formatSimdVdVjVk("vmulwev.d.w", word);
+    case op_vmulwod_h_b:
+      return formatSimdVdVjVk("vmulwod.h.b", word);
+    case op_vmulwod_w_h:
+      return formatSimdVdVjVk("vmulwod.w.h", word);
+    case op_vmulwod_d_w:
+      return formatSimdVdVjVk("vmulwod.d.w", word);
+    case op_vmulwev_h_bu:
+      return formatSimdVdVjVk("vmulwev.h.bu", word);
+    case op_vmulwev_w_hu:
+      return formatSimdVdVjVk("vmulwev.w.hu", word);
+    case op_vmulwev_d_wu:
+      return formatSimdVdVjVk("vmulwev.d.wu", word);
+    case op_vmulwod_h_bu:
+      return formatSimdVdVjVk("vmulwod.h.bu", word);
+    case op_vmulwod_w_hu:
+      return formatSimdVdVjVk("vmulwod.w.hu", word);
+    case op_vmulwod_d_wu:
+      return formatSimdVdVjVk("vmulwod.d.wu", word);
+    case op_vmaddwev_w_h:
+      return formatSimdVdVjVk("vmaddwev.w.h", word);
+    case op_vmaddwod_w_h:
+      return formatSimdVdVjVk("vmaddwod.w.h", word);
+    case op_vsll_b:
+      return formatSimdVdVjVk("vsll.b", word);
+    case op_vsll_h:
+      return formatSimdVdVjVk("vsll.h", word);
+    case op_vsll_w:
+      return formatSimdVdVjVk("vsll.w", word);
+    case op_vsll_d:
+      return formatSimdVdVjVk("vsll.d", word);
+    case op_vsrl_b:
+      return formatSimdVdVjVk("vsrl.b", word);
+    case op_vsrl_h:
+      return formatSimdVdVjVk("vsrl.h", word);
+    case op_vsrl_w:
+      return formatSimdVdVjVk("vsrl.w", word);
+    case op_vsrl_d:
+      return formatSimdVdVjVk("vsrl.d", word);
+    case op_vsra_b:
+      return formatSimdVdVjVk("vsra.b", word);
+    case op_vsra_h:
+      return formatSimdVdVjVk("vsra.h", word);
+    case op_vsra_w:
+      return formatSimdVdVjVk("vsra.w", word);
+    case op_vsra_d:
+      return formatSimdVdVjVk("vsra.d", word);
+    case op_vpackev_b:
+      return formatSimdVdVjVk("vpackev.b", word);
+    case op_vpackev_h:
+      return formatSimdVdVjVk("vpackev.h", word);
+    case op_vpackev_w:
+      return formatSimdVdVjVk("vpackev.w", word);
+    case op_vpackod_b:
+      return formatSimdVdVjVk("vpackod.b", word);
+    case op_vpackod_h:
+      return formatSimdVdVjVk("vpackod.h", word);
+    case op_vpackod_w:
+      return formatSimdVdVjVk("vpackod.w", word);
+    case op_vilvl_b:
+      return formatSimdVdVjVk("vilvl.b", word);
+    case op_vilvl_h:
+      return formatSimdVdVjVk("vilvl.h", word);
+    case op_vilvl_w:
+      return formatSimdVdVjVk("vilvl.w", word);
+    case op_vilvl_d:
+      return formatSimdVdVjVk("vilvl.d", word);
+    case op_vilvh_b:
+      return formatSimdVdVjVk("vilvh.b", word);
+    case op_vilvh_h:
+      return formatSimdVdVjVk("vilvh.h", word);
+    case op_vilvh_w:
+      return formatSimdVdVjVk("vilvh.w", word);
+    case op_vilvh_d:
+      return formatSimdVdVjVk("vilvh.d", word);
+    case op_vpickev_b:
+      return formatSimdVdVjVk("vpickev.b", word);
+    case op_vpickev_h:
+      return formatSimdVdVjVk("vpickev.h", word);
+    case op_vpickev_w:
+      return formatSimdVdVjVk("vpickev.w", word);
+    case op_vpickod_b:
+      return formatSimdVdVjVk("vpickod.b", word);
+    case op_vpickod_h:
+      return formatSimdVdVjVk("vpickod.h", word);
+    case op_vpickod_w:
+      return formatSimdVdVjVk("vpickod.w", word);
+    case op_vand_v:
+      return formatSimdVdVjVk("vand.v", word);
+    case op_vor_v:
+      return formatSimdVdVjVk("vor.v", word);
+    case op_vxor_v:
+      return formatSimdVdVjVk("vxor.v", word);
+    case op_vnor_v:
+      return formatSimdVdVjVk("vnor.v", word);
+    case op_vandn_v:
+      return formatSimdVdVjVk("vandn.v", word);
+    case op_vorn_v:
+      return formatSimdVdVjVk("vorn.v", word);
+    case op_vsigncov_b:
+      return formatSimdVdVjVk("vsigncov.b", word);
+    case op_vsigncov_h:
+      return formatSimdVdVjVk("vsigncov.h", word);
+    case op_vsigncov_w:
+      return formatSimdVdVjVk("vsigncov.w", word);
+    case op_vsigncov_d:
+      return formatSimdVdVjVk("vsigncov.d", word);
+    case op_vfadd_s:
+      return formatSimdVdVjVk("vfadd.s", word);
+    case op_vfadd_d:
+      return formatSimdVdVjVk("vfadd.d", word);
+    case op_vfsub_s:
+      return formatSimdVdVjVk("vfsub.s", word);
+    case op_vfsub_d:
+      return formatSimdVdVjVk("vfsub.d", word);
+    case op_vfmul_s:
+      return formatSimdVdVjVk("vfmul.s", word);
+    case op_vfmul_d:
+      return formatSimdVdVjVk("vfmul.d", word);
+    case op_vfdiv_s:
+      return formatSimdVdVjVk("vfdiv.s", word);
+    case op_vfdiv_d:
+      return formatSimdVdVjVk("vfdiv.d", word);
+    case op_vfmax_s:
+      return formatSimdVdVjVk("vfmax.s", word);
+    case op_vfmax_d:
+      return formatSimdVdVjVk("vfmax.d", word);
+    case op_vfmin_s:
+      return formatSimdVdVjVk("vfmin.s", word);
+    case op_vfmin_d:
+      return formatSimdVdVjVk("vfmin.d", word);
+    case op_vfcvt_s_d:
+      return formatSimdVdVjVk("vfcvt.s.d", word);
+    case op_vftintrz_w_d:
+      return formatSimdVdVjVk("vftintrz.w.d", word);
+    case op_vshuf_w:
+      return formatSimdVdVjVk("vshuf.w", word);
+    case op_vslei_bu:
+      return formatSimdVdVjImm("vslei.bu", word, 5, false);
+    case op_vslei_hu:
+      return formatSimdVdVjImm("vslei.hu", word, 5, false);
+    case op_vslei_wu:
+      return formatSimdVdVjImm("vslei.wu", word, 5, false);
+    case op_vslei_du:
+      return formatSimdVdVjImm("vslei.du", word, 5, false);
+    case op_vseqi_b:
+      return formatSimdVdVjImm("vseqi.b", word, 5, true);
+    case op_vseqi_h:
+      return formatSimdVdVjImm("vseqi.h", word, 5, true);
+    case op_vseqi_w:
+      return formatSimdVdVjImm("vseqi.w", word, 5, true);
+    case op_vseqi_d:
+      return formatSimdVdVjImm("vseqi.d", word, 5, true);
+    case op_vslei_b:
+      return formatSimdVdVjImm("vslei.b", word, 5, true);
+    case op_vslei_h:
+      return formatSimdVdVjImm("vslei.h", word, 5, true);
+    case op_vslei_w:
+      return formatSimdVdVjImm("vslei.w", word, 5, true);
+    case op_vslei_d:
+      return formatSimdVdVjImm("vslei.d", word, 5, true);
+    case op_vslti_b:
+      return formatSimdVdVjImm("vslti.b", word, 5, true);
+    case op_vslti_h:
+      return formatSimdVdVjImm("vslti.h", word, 5, true);
+    case op_vslti_w:
+      return formatSimdVdVjImm("vslti.w", word, 5, true);
+    case op_vslti_d:
+      return formatSimdVdVjImm("vslti.d", word, 5, true);
+    case op_vslti_bu:
+      return formatSimdVdVjImm("vslti.bu", word, 5, false);
+    case op_vslti_hu:
+      return formatSimdVdVjImm("vslti.hu", word, 5, false);
+    case op_vslti_wu:
+      return formatSimdVdVjImm("vslti.wu", word, 5, false);
+    case op_vslti_du:
+      return formatSimdVdVjImm("vslti.du", word, 5, false);
+    case op_vaddi_bu:
+      return formatSimdVdVjImm("vaddi.bu", word, 5, false);
+    case op_vaddi_hu:
+      return formatSimdVdVjImm("vaddi.hu", word, 5, false);
+    case op_vaddi_wu:
+      return formatSimdVdVjImm("vaddi.wu", word, 5, false);
+    case op_vaddi_du:
+      return formatSimdVdVjImm("vaddi.du", word, 5, false);
+    case op_vbsll_v:
+      return formatSimdVdVjImm("vbsll.v", word, 5, false);
+    case op_vbsrl_v:
+      return formatSimdVdVjImm("vbsrl.v", word, 5, false);
+    case op_vsllwil_d_w:
+      return formatSimdVdVjImm("vsllwil.d.w", word, 5, false);
+    case op_vsllwil_du_wu:
+      return formatSimdVdVjImm("vsllwil.du.wu", word, 5, false);
+    case op_vbitclri_w:
+      return formatSimdVdVjImm("vbitclri.w", word, 5, false);
+    case op_vbitseti_w:
+      return formatSimdVdVjImm("vbitseti.w", word, 5, false);
+    case op_vbitrevi_w:
+      return formatSimdVdVjImm("vbitrevi.w", word, 5, false);
+    case op_vsat_w:
+      return formatSimdVdVjImm("vsat.w", word, 5, false);
+    case op_vsat_wu:
+      return formatSimdVdVjImm("vsat.wu", word, 5, false);
+    case op_vslli_w:
+      return formatSimdVdVjImm("vslli.w", word, 5, false);
+    case op_vsrli_w:
+      return formatSimdVdVjImm("vsrli.w", word, 5, false);
+    case op_vsrai_w:
+      return formatSimdVdVjImm("vsrai.w", word, 5, false);
+    case op_vssrani_h_w:
+      return formatSimdVdVjImm("vssrani.h.w", word, 5, false);
+    case op_vssrani_hu_w:
+      return formatSimdVdVjImm("vssrani.hu.w", word, 5, false);
     default:
       return false;
   }
@@ -1061,6 +1628,188 @@ bool Decoder::decodeOp22(const Instruction* instruction) const {
       return formatRdRj("revh.2w", word);
     case op_revh_d:
       return formatRdRj("revh.d", word);
+    case op_vpcnt_b:
+      return formatSimdVdVj("vpcnt.b", word);
+    case op_vpcnt_h:
+      return formatSimdVdVj("vpcnt.h", word);
+    case op_vpcnt_w:
+      return formatSimdVdVj("vpcnt.w", word);
+    case op_vpcnt_d:
+      return formatSimdVdVj("vpcnt.d", word);
+    case op_vneg_b:
+      return formatSimdVdVj("vneg.b", word);
+    case op_vneg_h:
+      return formatSimdVdVj("vneg.h", word);
+    case op_vneg_w:
+      return formatSimdVdVj("vneg.w", word);
+    case op_vneg_d:
+      return formatSimdVdVj("vneg.d", word);
+    case op_vmskltz_b:
+      return formatSimdVdVj("vmskltz.b", word);
+    case op_vmskltz_h:
+      return formatSimdVdVj("vmskltz.h", word);
+    case op_vmskltz_w:
+      return formatSimdVdVj("vmskltz.w", word);
+    case op_vmskltz_d:
+      return formatSimdVdVj("vmskltz.d", word);
+    case op_vmskgez_b:
+      return formatSimdVdVj("vmskgez.b", word);
+    case op_vmsknz_b:
+      return formatSimdVdVj("vmsknz.b", word);
+    case op_vfsqrt_s:
+      return formatSimdVdVj("vfsqrt.s", word);
+    case op_vfsqrt_d:
+      return formatSimdVdVj("vfsqrt.d", word);
+    case op_vfrecip_s:
+      return formatSimdVdVj("vfrecip.s", word);
+    case op_vfrsqrt_s:
+      return formatSimdVdVj("vfrsqrt.s", word);
+    case op_vfrintrm_s:
+      return formatSimdVdVj("vfrintrm.s", word);
+    case op_vfrintrm_d:
+      return formatSimdVdVj("vfrintrm.d", word);
+    case op_vfrintrp_s:
+      return formatSimdVdVj("vfrintrp.s", word);
+    case op_vfrintrp_d:
+      return formatSimdVdVj("vfrintrp.d", word);
+    case op_vfrintrz_s:
+      return formatSimdVdVj("vfrintrz.s", word);
+    case op_vfrintrz_d:
+      return formatSimdVdVj("vfrintrz.d", word);
+    case op_vfrintrne_s:
+      return formatSimdVdVj("vfrintrne.s", word);
+    case op_vfrintrne_d:
+      return formatSimdVdVj("vfrintrne.d", word);
+    case op_vfcvtl_d_s:
+      return formatSimdVdVj("vfcvtl.d.s", word);
+    case op_vffint_s_w:
+      return formatSimdVdVj("vffint.s.w", word);
+    case op_vffint_s_wu:
+      return formatSimdVdVj("vffint.s.wu", word);
+    case op_vffint_d_l:
+      return formatSimdVdVj("vffint.d.l", word);
+    case op_vffint_d_lu:
+      return formatSimdVdVj("vffint.d.lu", word);
+    case op_vffintl_d_w:
+      return formatSimdVdVj("vffintl.d.w", word);
+    case op_vftintrz_w_s:
+      return formatSimdVdVj("vftintrz.w.s", word);
+    case op_vftintrz_l_d:
+      return formatSimdVdVj("vftintrz.l.d", word);
+    case op_vftintrz_wu_s:
+      return formatSimdVdVj("vftintrz.wu.s", word);
+    case op_vftintrz_lu_d:
+      return formatSimdVdVj("vftintrz.lu.d", word);
+    case op_vexth_h_b:
+      return formatSimdVdVj("vexth.h.b", word);
+    case op_vexth_w_h:
+      return formatSimdVdVj("vexth.w.h", word);
+    case op_vexth_d_w:
+      return formatSimdVdVj("vexth.d.w", word);
+    case op_vexth_hu_bu:
+      return formatSimdVdVj("vexth.hu.bu", word);
+    case op_vexth_wu_hu:
+      return formatSimdVdVj("vexth.wu.hu", word);
+    case op_vexth_du_wu:
+      return formatSimdVdVj("vexth.du.wu", word);
+    case op_vreplgr2vr_b:
+      return formatSimdVdRj("vreplgr2vr.b", word);
+    case op_vreplgr2vr_h:
+      return formatSimdVdRj("vreplgr2vr.h", word);
+    case op_vreplgr2vr_w:
+      return formatSimdVdRj("vreplgr2vr.w", word);
+    case op_vreplgr2vr_d:
+      return formatSimdVdRj("vreplgr2vr.d", word);
+    default:
+      return false;
+  }
+}
+
+bool Decoder::decodeOp20(const Instruction* instruction) const {
+  uint32_t word = instruction->encode();
+  switch (word & OpcodeMask(20)) {
+    case op_vinsgr2vr_w:
+      return formatSimdVdRjImm("vinsgr2vr.w", word, 2, false);
+    case op_vpickve2gr_w:
+      return formatSimdRdVjImm("vpickve2gr.w", word, 2, false);
+    case op_vpickve2gr_wu:
+      return formatSimdRdVjImm("vpickve2gr.wu", word, 2, false);
+    case op_vreplvei_w:
+      return formatSimdVdVjImm("vreplvei.w", word, 2, false);
+    default:
+      return false;
+  }
+}
+
+bool Decoder::decodeOp21(const Instruction* instruction) const {
+  uint32_t word = instruction->encode();
+  switch (word & OpcodeMask(21)) {
+    case op_vinsgr2vr_d:
+      return formatSimdVdRjImm("vinsgr2vr.d", word, 1, false);
+    case op_vpickve2gr_d:
+      return formatSimdRdVjImm("vpickve2gr.d", word, 1, false);
+    case op_vreplvei_d:
+      return formatSimdVdVjImm("vreplvei.d", word, 1, false);
+    default:
+      return false;
+  }
+}
+
+bool Decoder::decodeOp19(const Instruction* instruction) const {
+  uint32_t word = instruction->encode();
+  switch (word & OpcodeMask(19)) {
+    case op_vinsgr2vr_h:
+      return formatSimdVdRjImm("vinsgr2vr.h", word, 3, false);
+    case op_vpickve2gr_h:
+      return formatSimdRdVjImm("vpickve2gr.h", word, 3, false);
+    case op_vpickve2gr_hu:
+      return formatSimdRdVjImm("vpickve2gr.hu", word, 3, false);
+    case op_vreplvei_h:
+      return formatSimdVdVjImm("vreplvei.h", word, 3, false);
+    case op_vsllwil_h_b:
+      return formatSimdVdVjImm("vsllwil.h.b", word, 3, false);
+    case op_vsllwil_hu_bu:
+      return formatSimdVdVjImm("vsllwil.hu.bu", word, 3, false);
+    case op_vslli_b:
+      return formatSimdVdVjImm("vslli.b", word, 3, false);
+    case op_vsrli_b:
+      return formatSimdVdVjImm("vsrli.b", word, 3, false);
+    case op_vsrai_b:
+      return formatSimdVdVjImm("vsrai.b", word, 3, false);
+    default:
+      return false;
+  }
+}
+
+bool Decoder::decodeOp18(const Instruction* instruction) const {
+  uint32_t word = instruction->encode();
+  switch (word & OpcodeMask(18)) {
+    case op_vinsgr2vr_b:
+      return formatSimdVdRjImm("vinsgr2vr.b", word, 4, false);
+    case op_vpickve2gr_b:
+      return formatSimdRdVjImm("vpickve2gr.b", word, 4, false);
+    case op_vpickve2gr_bu:
+      return formatSimdRdVjImm("vpickve2gr.bu", word, 4, false);
+    case op_vreplvei_b:
+      return formatSimdVdVjImm("vreplvei.b", word, 4, false);
+    case op_vsllwil_w_h:
+      return formatSimdVdVjImm("vsllwil.w.h", word, 4, false);
+    case op_vsllwil_wu_hu:
+      return formatSimdVdVjImm("vsllwil.wu.hu", word, 4, false);
+    case op_vsat_h:
+      return formatSimdVdVjImm("vsat.h", word, 4, false);
+    case op_vsat_hu:
+      return formatSimdVdVjImm("vsat.hu", word, 4, false);
+    case op_vslli_h:
+      return formatSimdVdVjImm("vslli.h", word, 4, false);
+    case op_vsrli_h:
+      return formatSimdVdVjImm("vsrli.h", word, 4, false);
+    case op_vsrai_h:
+      return formatSimdVdVjImm("vsrai.h", word, 4, false);
+    case op_vssrani_b_h:
+      return formatSimdVdVjImm("vssrani.b.h", word, 4, false);
+    case op_vssrani_bu_h:
+      return formatSimdVdVjImm("vssrani.bu.h", word, 4, false);
     default:
       return false;
   }
@@ -1082,9 +1831,12 @@ int Decoder::disassemble(const Instruction* instruction) const {
   if (!(decodeOp6(instruction) || decodeOp7(instruction) ||
         decodeOp8(instruction) || decodeOp10(instruction) ||
         decodeOp11(instruction) || decodeOp12(instruction) ||
-        decodeOp14(instruction) || decodeOp15(instruction) ||
-        decodeOp16(instruction) || decodeOp17(instruction) ||
-        decodeOp22(instruction) || decodeOp24(instruction))) {
+        decodeOp13(instruction) || decodeOp14(instruction) ||
+        decodeOp15(instruction) || decodeOp16(instruction) ||
+        decodeOp17(instruction) || decodeOp18(instruction) ||
+        decodeOp19(instruction) || decodeOp20(instruction) ||
+        decodeOp21(instruction) || decodeOp22(instruction) ||
+        decodeOp24(instruction))) {
     FormatTo(output_, ".word 0x%08" PRIx32, instruction->encode());
   }
   return sizeof(uint32_t);
@@ -1098,6 +1850,14 @@ const char* NameConverter::nameOfCPURegister(uint32_t reg) const {
 
 const char* NameConverter::nameOfFPURegister(uint32_t reg) const {
   return FloatRegisters::GetName(reg);
+}
+
+const char* NameConverter::nameOfVectorRegister(uint32_t reg) const {
+#if defined(ENABLE_JIT_SIMD)
+  return FloatRegisters::GetName(FloatRegisters::ShiftSimd128 + reg);
+#else
+  return "?";
+#endif
 }
 
 const char* NameConverter::nameOfAddress(const uint8_t* address) const {

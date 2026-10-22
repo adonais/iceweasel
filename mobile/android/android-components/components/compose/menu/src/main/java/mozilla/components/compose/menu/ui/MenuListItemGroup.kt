@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.menu.data.BannerMenuItem
 import mozilla.components.compose.menu.data.ExpandableMenuItem
 import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.StandardMenuItem
@@ -45,39 +46,50 @@ internal fun ListMenuItemsGroup(
         verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static25),
     ) {
         items.forEachIndexed { index, it ->
-            if (it is StandardMenuItem) {
-                MenuListItem(
-                    title = it.title,
-                    contentDescription = it.contentDescription,
-                    modifier = Modifier,
-                    index = index,
-                    role = it.role,
-                    summary = it.summary,
-                    icon = it.icon,
-                    showNewIndicator = it.showNewIndicator,
-                    badge = it.badge,
-                    actionButton = it.actionButton,
-                    state = it.state,
-                    onClickEvent = it.onClickEvent,
-                    onInteraction = onClick,
-                )
-            } else if (it is ExpandableMenuItem) {
-                ExpandableHeaderItem(
-                    title = it.title,
-                    contentDescription = it.contentDescription,
-                    subMenuItems = it.subMenuItems,
-                    modifier = Modifier,
-                    hideOnExpand = it.hideOnExpand,
-                    onClickEvent = it.onClickEvent,
-                    onInteraction = onClick,
-                    role = it.role,
-                    summary = it.summary,
-                    icon = it.icon,
-                    showNewIndicator = it.showNewIndicator,
-                    badge = it.badge,
-                    actionButtonText = it.actionButtonText,
-                    state = it.state,
-                )
+            when (it) {
+                is StandardMenuItem ->
+                    MenuListItem(
+                        title = it.title,
+                        contentDescription = it.contentDescription,
+                        modifier = Modifier,
+                        index = index,
+                        role = it.role,
+                        summary = it.summary,
+                        icon = it.icon,
+                        showNewIndicator = it.showNewIndicator,
+                        badge = it.badge,
+                        actionButton = it.actionButton,
+                        state = it.state,
+                        onClickEvent = it.onClickEvent,
+                        onInteraction = onClick,
+                    )
+
+                is ExpandableMenuItem ->
+                    ExpandableHeaderItem(
+                        title = it.title,
+                        contentDescription = it.contentDescription,
+                        subMenuItems = it.subMenuItems,
+                        modifier = Modifier,
+                        hideOnExpand = it.hideOnExpand,
+                        onClickEvent = it.onClickEvent,
+                        onInteraction = onClick,
+                        role = it.role,
+                        summary = it.summary,
+                        icon = it.icon,
+                        showNewIndicator = it.showNewIndicator,
+                        badge = it.badge,
+                        actionButtonText = it.actionButtonText,
+                        state = it.state,
+                    )
+
+                is BannerMenuItem ->
+                    MenuBanner(
+                        title = it.title,
+                        summary = it.summary,
+                        icon = it.icon,
+                        onDismiss = { onClick(it.onDismissEvent) },
+                        onClick = { onClick(it.onClickEvent) },
+                    )
             }
         }
     }

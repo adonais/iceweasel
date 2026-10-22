@@ -40,6 +40,7 @@
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -12390,11 +12391,11 @@ bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
 }
 
 static bool ElementCanHaveNoopener(nsIContent* aContent) {
-  // Make sure we are dealing with either an <A>, <AREA>, or <FORM> element in
-  // the HTML, XHTML, or SVG namespace.
   return aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
                                        nsGkAtoms::form) ||
-         aContent->IsSVGElement(nsGkAtoms::a);
+         aContent->IsSVGElement(nsGkAtoms::a) ||
+         (aContent->IsMathMLElement(nsGkAtoms::a) &&
+          StaticPrefs::mathml_a_element_enabled());
 }
 
 nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
@@ -12458,7 +12459,6 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
   bool triggeringPrincipalIsSystemPrincipal =
       aLoadState->TriggeringPrincipal()->IsSystemPrincipal();
   if (elementCanHaveNoopener) {
-    MOZ_ASSERT(aContent->IsHTMLElement() || aContent->IsSVGElement());
     nsAutoString relString;
     aContent->AsElement()->GetAttr(nsGkAtoms::rel, relString);
     nsWhitespaceTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(

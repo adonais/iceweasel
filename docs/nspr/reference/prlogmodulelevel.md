@@ -1,6 +1,6 @@
 # PRLogModuleLevel
 
-The enumerated type {ref}`PRLogModuleLevel` defines levels of logging
+The enumerated type {doc}`prlogmodulelevel` defines levels of logging
 available to application programs.
 
 ## Syntax

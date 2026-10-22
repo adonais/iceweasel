@@ -101,9 +101,8 @@ def main(args):
             print(
                 dedent(
                     """
-            See https://firefox-source-docs.mozilla.org/setup/macos_build.html
-            for guidance on how to prepare your system to build Firefox. Perhaps
-            you need to update Xcode, or install Python using brew?
+            See https://firefox-source-docs.mozilla.org/setup/macos_build.html#install-python-macos
+            for guidance on how to install a compatible Python on your system.
             """
                 ).strip()
             )

@@ -64,6 +64,12 @@ class nsFilePicker final : public nsBaseFilePicker {
   void PresentFolderPanel(nsIFilePickerShownCallback* aCallback);
   void PresentSavePanel(nsIFilePickerShownCallback* aCallback);
 
+  // Called when an open or folder panel is dismissed. Invokes aCallback on a
+  // later main-thread turn, first filtering mFiles through Content Analysis
+  // when that applies to this picker.
+  void FinishOpenOrFolderPanel(nsIFilePickerShownCallback* aCallback,
+                               ResultCode aResult);
+
   // Presents aPanel asynchronously using the best available AppKit API: as a
   // sheet attached to the parent widget's NSWindow when one exists, otherwise
   // as a modeless window. aHandler is invoked on the main thread once the user

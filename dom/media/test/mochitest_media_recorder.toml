@@ -702,9 +702,6 @@ prefs = ["media.recorder.video.frame_drops=false"]
 ["test_mediacapabilities_resistfingerprinting.html"]
 
 ["test_mediarecorder_avoid_recursion.html"]
-skip-if = [
-  "os == 'win' && opt",
-]
 scheme = "https"
 
 ["test_mediarecorder_bitrate.html"]
@@ -742,9 +739,6 @@ skip-if = [
 ]
 
 ["test_mediarecorder_record_4ch_audiocontext.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1598101
-]
 
 ["test_mediarecorder_record_addtracked_stream.html"]
 skip-if = [
@@ -766,9 +760,6 @@ skip-if = [
 ["test_mediarecorder_record_changing_video_resolution.html"]
 skip-if = [
   "os == 'android'", # Bug 1232305
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1770504 (high intermittent failure on Linux tsan)
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1770504 (high intermittent failure on Linux tsan)
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1770504 (high intermittent failure on Linux tsan)
 ]
 
 ["test_mediarecorder_record_downsize_resolution.html"]

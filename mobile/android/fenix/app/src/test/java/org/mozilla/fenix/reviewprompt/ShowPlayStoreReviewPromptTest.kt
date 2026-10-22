@@ -5,7 +5,6 @@
 package org.mozilla.fenix.reviewprompt
 
 import android.app.Activity
-import androidx.navigation.NavDirections
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -15,10 +14,10 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.PlayStoreReviewPromptController
 import org.mozilla.fenix.components.appstate.AppAction
@@ -31,7 +30,7 @@ import org.mozilla.fenix.reviewprompt.ReviewPromptState.NotEligible
 class ShowPlayStoreReviewPromptTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    var navDirection: NavDirections? = null
+    private var customPromptShown = false
     lateinit var promptController: PlayStoreReviewPromptController
     lateinit var mockActivity: Activity
     lateinit var activityRef: WeakReference<Activity>
@@ -41,7 +40,7 @@ class ShowPlayStoreReviewPromptTest {
         promptController = mockk(relaxed = true)
         mockActivity = mockk(relaxed = true)
         activityRef = WeakReference(mockActivity)
-        navDirection = null
+        customPromptShown = false
     }
 
     @Test
@@ -58,7 +57,7 @@ class ShowPlayStoreReviewPromptTest {
                     promptController,
                     activityRef,
                     uiScope = this,
-                    { navDirection = it },
+                    { customPromptShown = true },
                     mainDispatcher = testDispatcher,
                 )
 
@@ -70,10 +69,7 @@ class ShowPlayStoreReviewPromptTest {
             }
 
             // We show the custom prompt..
-            assertEquals(
-                NavGraphDirections.actionGlobalCustomReviewPromptDialogFragment(),
-                navDirection,
-            )
+            assertTrue(customPromptShown)
             // ..then we cleared out the eligible state.
             assertEquals(NotEligible, appStore.state.reviewPrompt)
         }
@@ -93,7 +89,7 @@ class ShowPlayStoreReviewPromptTest {
                     promptController,
                     activityRef,
                     uiScope = this,
-                    { navDirection = it },
+                    { customPromptShown = true },
                     mainDispatcher = testDispatcher,
                 )
 
@@ -122,7 +118,7 @@ class ShowPlayStoreReviewPromptTest {
                     promptController,
                     activityRef,
                     uiScope = this,
-                    { navDirection = it },
+                    { customPromptShown = true },
                     mainDispatcher = testDispatcher,
                 )
 
@@ -151,7 +147,7 @@ class ShowPlayStoreReviewPromptTest {
                     promptController,
                     activityRef,
                     uiScope = this,
-                    { navDirection = it },
+                    { customPromptShown = true },
                     mainDispatcher = testDispatcher,
                 )
 

@@ -29,6 +29,7 @@
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsICloneableInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsISeekableStream.h"
@@ -37,6 +38,7 @@
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
+#include "nsStringStream.h"
 #include "nsTArray.h"
 #include "nscore.h"
 #include "nss.h"
@@ -649,6 +651,56 @@ TEST_P(ParametrizedCryptTest, DummyCipherStrategy_IncompleteBlock) {
   EXPECT_EQ(NS_ERROR_CORRUPTED_CONTENT,
             inStream->Read(reinterpret_cast<char*>(readData.Elements()),
                            readData.Length(), &read));
+}
+
+TEST(DOM_Quota_EncryptedStream, DummyCipherStrategy_SerializeAfterClose)
+{
+  using CipherStrategy = DummyCipherStrategy;
+
+  nsCOMPtr<nsIInputStream> baseStream;
+  ASSERT_EQ(NS_OK,
+            NS_NewCStringInputStream(getter_AddRefs(baseStream), "data"_ns));
+
+  const auto inStream = MakeSafeRefPtr<DecryptingInputStream<CipherStrategy>>(
+      WrapNotNull(std::move(baseStream)), 4096, CipherStrategy::KeyType{});
+
+  nsCOMPtr<nsIIPCSerializableInputStream> serializable = do_QueryInterface(
+      static_cast<nsIInputStream*>(inStream.unsafeGetRawPtr()));
+  ASSERT_TRUE(serializable);
+
+  EXPECT_EQ(NS_OK, inStream->Close());
+
+  uint32_t sizeUsed = 0, pipes = 0, transferables = 0;
+  serializable->SerializedComplexity(UINT32_MAX, &sizeUsed, &pipes,
+                                     &transferables);
+  EXPECT_EQ(0u, sizeUsed);
+  EXPECT_EQ(0u, pipes);
+  EXPECT_EQ(0u, transferables);
+
+  mozilla::ipc::InputStreamParams params;
+  serializable->Serialize(params, UINT32_MAX, &sizeUsed);
+  ASSERT_EQ(mozilla::ipc::InputStreamParams::TEncryptedFileInputStreamParams,
+            params.type());
+  EXPECT_TRUE(params.get_EncryptedFileInputStreamParams()
+                  .inputStreamParams()
+                  .isNothing());
+  EXPECT_EQ(0u, sizeUsed);
+
+  nsCOMPtr<nsIInputStream> deserialized =
+      mozilla::ipc::InputStreamHelper::DeserializeInputStream(params);
+  ASSERT_TRUE(deserialized);
+
+  uint64_t available;
+  EXPECT_EQ(NS_BASE_STREAM_CLOSED, deserialized->Available(&available));
+
+  mozilla::ipc::InputStreamParams roundTripParams;
+  mozilla::ipc::InputStreamHelper::SerializeInputStream(
+      deserialized, roundTripParams, UINT32_MAX, &sizeUsed);
+  ASSERT_EQ(mozilla::ipc::InputStreamParams::TEncryptedFileInputStreamParams,
+            roundTripParams.type());
+  EXPECT_TRUE(roundTripParams.get_EncryptedFileInputStreamParams()
+                  .inputStreamParams()
+                  .isNothing());
 }
 
 TEST_P(ParametrizedCryptTest, zeroInitializedEncryptedBlock) {

@@ -41,7 +41,8 @@
     cursor: pointer;
 
     &:hover:not(:disabled) {
-      background-color: var(--background-color-dimmed-further);
+      background-color: var(--button-background-color-ghost-hover);
+      color: var(--button-text-color-ghost-hover);
     }
 
     &:disabled {
@@ -90,7 +91,8 @@
 
     &:hover,
     &:focus-within {
-      background: var(--background-color-dimmed-further);
+      background: var(--background-color-list-item-hover);
+      color: var(--text-color-list-item-hover);
     }
   }
 

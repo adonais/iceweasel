@@ -92,10 +92,7 @@ add_task(async function () {
   info("Testing second request");
 
   wait = waitForDOM(document, "#response-panel .data-header");
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[1]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
 
   await wait;
 

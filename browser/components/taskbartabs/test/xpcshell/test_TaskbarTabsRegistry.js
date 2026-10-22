@@ -6,7 +6,7 @@
 
 const { TaskbarTabsRegistry, TaskbarTabsRegistryStorage } =
   ChromeUtils.importESModule(
-    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs"
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsRegistry.sys.mjs"
   );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"

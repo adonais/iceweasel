@@ -16,6 +16,7 @@ support-files = [
   "doc_negative_playback_rate.html",
   "doc_overflowed_delay_end_delay.html",
   "doc_pseudo.html",
+  "doc_scroll_animation.html",
   "doc_short_duration.html",
   "doc_simple_animation.html",
   "doc_special_colors.html",
@@ -196,22 +197,12 @@ fail-if = [
 ["browser_animation_logic_mutations_add_remove_immediately.js"]
 
 ["browser_animation_logic_mutations_fast.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980142
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1567800
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1980142
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1980142
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1980142
-]
 
 ["browser_animation_logic_mutations_properties.js"]
 
 ["browser_animation_logic_overflowed_delay_end-delay.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1480027
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1480027
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1480027
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1480027
 ]
 
 ["browser_animation_logic_scroll-amount.js"]
@@ -244,6 +235,8 @@ fail-if = [
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]
+
+["browser_animation_scroll-animation.js"]
 
 ["browser_animation_short-duration.js"]
 

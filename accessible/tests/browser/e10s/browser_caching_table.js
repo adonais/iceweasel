@@ -687,3 +687,17 @@ addAccessibleTask(
     is(inner.columnCount, 1, "inner columnCount correct");
   }
 );
+
+/**
+ * Test that <td role="table"> is treated as a table, not a cell.
+ */
+addAccessibleTask(
+  `<table id="outer"><tr><td role="table">a</td></tr></table>`,
+  async function testTdTable(browser, docAcc) {
+    const outer = findAccessibleChildByID(docAcc, "outer", [
+      nsIAccessibleTable,
+    ]);
+    is(outer.rowCount, 1, "outer rowCount correct");
+    is(outer.columnCount, 0, "outer columnCount correct");
+  }
+);

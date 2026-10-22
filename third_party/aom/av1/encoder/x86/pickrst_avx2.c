@@ -2116,27 +2116,14 @@ int64_t av1_lowbd_pixel_proj_error_avx2(
       sum64 = _mm256_add_epi64(sum64_0, sum64_1);
     } else {
       // General fallback
-      __m256i sum32 = _mm256_setzero_si256();
       for (i = 0; i < height; ++i) {
-        for (j = 0; j <= width - 16; j += 16) {
-          const __m256i d0 = _mm256_cvtepu8_epi16(xx_loadu_128(dat + j));
-          const __m256i s0 = _mm256_cvtepu8_epi16(xx_loadu_128(src + j));
-          const __m256i diff0 = _mm256_sub_epi16(d0, s0);
-          const __m256i err0 = _mm256_madd_epi16(diff0, diff0);
-          sum32 = _mm256_add_epi32(sum32, err0);
-        }
-        for (k = j; k < width; ++k) {
+        for (k = 0; k < width; ++k) {
           const int32_t e = (int32_t)(dat[k]) - src[k];
           err += ((int64_t)e * e);
         }
         dat += dat_stride;
         src += src_stride;
       }
-      const __m256i sum64_0 =
-          _mm256_cvtepi32_epi64(_mm256_castsi256_si128(sum32));
-      const __m256i sum64_1 =
-          _mm256_cvtepi32_epi64(_mm256_extracti128_si256(sum32, 1));
-      sum64 = _mm256_add_epi64(sum64_0, sum64_1);
     }
   }
   int64_t sum[4];

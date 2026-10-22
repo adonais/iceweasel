@@ -1654,22 +1654,7 @@ var snapshotFormatters = {
       return;
     }
 
-    const {
-      prefStudies,
-      addonStudies,
-      prefRollouts,
-      nimbusExperiments,
-      nimbusRollouts,
-    } = data;
-    $.append(
-      $("remote-features-tbody"),
-      prefRollouts.map(({ slug, state }) =>
-        $.new("tr", [
-          $.new("td", [document.createTextNode(slug)]),
-          $.new("td", [document.createTextNode(state)]),
-        ])
-      )
-    );
+    const { nimbusExperiments, nimbusRollouts } = data;
 
     $.append(
       $("remote-features-tbody"),
@@ -1682,14 +1667,12 @@ var snapshotFormatters = {
     );
     $.append(
       $("remote-experiments-tbody"),
-      [addonStudies, prefStudies, nimbusExperiments]
-        .flat()
-        .map(({ userFacingName, branch }) =>
-          $.new("tr", [
-            $.new("td", [document.createTextNode(userFacingName)]),
-            $.new("td", [document.createTextNode(branch?.slug || branch)]),
-          ])
-        )
+      nimbusExperiments.map(({ userFacingName, branch }) =>
+        $.new("tr", [
+          $.new("td", [document.createTextNode(userFacingName)]),
+          $.new("td", [document.createTextNode(branch?.slug || branch)]),
+        ])
+      )
     );
   },
 };

@@ -18,7 +18,7 @@ The function has the following parameters:
 
 `dir`
 
-: A pointer to a {ref}`PRDir` object that designates an open directory.
+: A pointer to a {doc}`prdir` object that designates an open directory.
 
 `flags`
 
@@ -40,11 +40,11 @@ The function has the following parameters:
 
 - A pointer to the next entry in the directory.
 - If the end of the directory is reached or an error occurs, `NULL`.
-  The reason can be retrieved via {ref}`PR_GetError`.
+  The reason can be retrieved via {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_ReadDir` returns a pointer to a directory entry structure:
+{doc}`pr_readdir` returns a pointer to a directory entry structure:
 
 ```{code}
 struct PRDirEntry {
@@ -74,13 +74,13 @@ typedef enum PRDirFlags {
 
 The memory associated with the returned PRDirEntry structure is managed
 by NSPR. The caller must not free the `PRDirEntry` structure.
-Moreover, the `PRDirEntry` structure returned by each {ref}`PR_ReadDir`
-call is valid only until the next {ref}`PR_ReadDir` or {ref}`PR_CloseDir` call
-on the same {ref}`PRDir` object.
+Moreover, the `PRDirEntry` structure returned by each {doc}`pr_readdir`
+call is valid only until the next {doc}`pr_readdir` or {doc}`pr_closedir` call
+on the same {doc}`prdir` object.
 
-If the end of the directory is reached, {ref}`PR_ReadDir` returns `NULL`,
-and {ref}`PR_GetError` returns `PR_NO_MORE_FILES_ERROR`.
+If the end of the directory is reached, {doc}`pr_readdir` returns `NULL`,
+and {doc}`pr_geterror` returns `PR_NO_MORE_FILES_ERROR`.
 
 ## See Also
 
-{ref}`PR_OpenDir`
+{doc}`pr_opendir`

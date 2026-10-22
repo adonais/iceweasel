@@ -51,6 +51,11 @@ class OffscreenCanvasDisplayHelper final {
 
   void FlushForDisplay();
 
+  // While presentation is disabled, the frames the canvas draws are kept in
+  // the context's own buffers instead of being handed to the compositor. The
+  // latest one is presented when presentation is enabled again.
+  void SetPresentationEnabled(bool aEnabled);
+
   bool CommitFrameToCompositor(nsICanvasRenderingContextInternal* aContext,
                                const Maybe<OffscreenCanvasDisplayData>& aData);
 
@@ -84,6 +89,7 @@ class OffscreenCanvasDisplayHelper final {
  private:
   ~OffscreenCanvasDisplayHelper();
   void MaybeQueueInvalidateElement() MOZ_REQUIRES(mMutex);
+  already_AddRefed<OffscreenCanvas> GetCanvasForWorker(WorkerPrivate* aWorker);
   void InvalidateElement();
 
   already_AddRefed<gfx::SourceSurface> TransformSurface(
@@ -106,8 +112,12 @@ class OffscreenCanvasDisplayHelper final {
   mozilla::layers::ImageContainer::FrameID mLastFrameID MOZ_GUARDED_BY(mMutex) =
       0;
   bool mPendingInvalidate MOZ_GUARDED_BY(mMutex) = false;
+  bool mPresentationEnabled MOZ_GUARDED_BY(mMutex) = true;
+  bool mPendingPresent MOZ_GUARDED_BY(mMutex) = false;
   bool mIsWriteOnly MOZ_GUARDED_BY(mMutex) = false;
   RefPtr<nsIPrincipal> mExpandedReader MOZ_GUARDED_BY(mMutex);
+  bool mCreatedOnMainThread MOZ_GUARDED_BY(mMutex) = false;
+  bool mCreatedOnWorker MOZ_GUARDED_BY(mMutex) = false;
 };
 
 }  // namespace mozilla::dom

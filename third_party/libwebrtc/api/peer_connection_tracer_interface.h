@@ -11,11 +11,18 @@
 #ifndef API_PEER_CONNECTION_TRACER_INTERFACE_H_
 #define API_PEER_CONNECTION_TRACER_INTERFACE_H_
 
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "absl/strings/string_view.h"
 #include "api/data_channel_interface.h"
 #include "api/jsep.h"
+#include "api/media_stream_interface.h"
+#include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtp_transceiver_interface.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -51,6 +58,13 @@ class RTC_EXPORT PeerConnectionTracerInterface {
  public:
   virtual ~PeerConnectionTracerInterface() = default;
 
+  // The PeerConnection was constructed, with `configuration` as the
+  // application supplied it. Fired from the constructor, so it is the first
+  // event a tracer sees; OnClose() is its counterpart. Note that the
+  // embedder has not necessarily finished setting itself up at this point.
+  virtual void OnCreate(
+      const PeerConnectionInterface::RTCConfiguration& configuration) = 0;
+
   // CreateOffer was called by the application; OnCreateOfferSuccess /
   // OnCreateOfferFailure fires when the operation resolves. The SDP type
   // is recoverable via description->GetType() (returns webrtc::SdpType).
@@ -83,10 +97,12 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   virtual void OnSetRemoteDescriptionSuccess() = 0;
   virtual void OnSetRemoteDescriptionFailure(const RTCError& error) = 0;
 
-  // SetConfiguration was called. Fired only after configuration has been
-  // validated and applied successfully.
+  // SetConfiguration was called and succeeded.
   virtual void OnSetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration) = 0;
+
+  // RestartIce was called by the application.
+  virtual void OnRestartIce() = 0;
 
   // PeerConnection::Close was called.
   virtual void OnClose() = 0;
@@ -96,11 +112,10 @@ class RTC_EXPORT PeerConnectionTracerInterface {
   // callback).
   virtual void OnIceCandidate(const IceCandidate& candidate) = 0;
 
-  // The application called PeerConnection::AddIceCandidate with a
-  // candidate received from the remote peer over signaling. `succeeded`
-  // indicates whether the candidate was accepted.
-  virtual void OnAddIceCandidate(const IceCandidate& candidate,
-                                 bool succeeded) = 0;
+  // AddIceCandidate was called by the application.
+  virtual void OnAddIceCandidate(const IceCandidate& candidate) = 0;
+  virtual void OnAddIceCandidateSuccess() = 0;
+  virtual void OnAddIceCandidateFailure(const RTCError& error) = 0;
 
   // Local ICE candidate gathering produced an error.
   virtual void OnIceCandidateError(absl::string_view address,
@@ -110,16 +125,39 @@ class RTC_EXPORT PeerConnectionTracerInterface {
                                    absl::string_view error_text) = 0;
 
   // A data channel was created locally via PeerConnection::CreateDataChannel.
-  virtual void OnCreateDataChannel(const DataChannelInterface& channel) = 0;
+  // `id` is the stream id the application preassigned, if any. It is passed
+  // separately because DataChannelInterface::id() is network-thread bound and
+  // would block the signaling thread.
+  virtual void OnCreateDataChannel(const DataChannelInterface& channel,
+                                   std::optional<int> id) = 0;
 
   // A peer-initiated data channel was surfaced via the OnDataChannel observer
-  // callback.
-  virtual void OnDataChannel(const DataChannelInterface& channel) = 0;
+  // callback. `id` is the stream id its OPEN message arrived on.
+  virtual void OnDataChannel(const DataChannelInterface& channel,
+                             std::optional<int> id) = 0;
+
+  // The application called PeerConnection::AddTransceiver successfully.
+  // `track` is null for the media-type overloads, `init` is passed on before
+  // the encodings are normalized. The transceivers the legacy offerToReceive
+  // option creates internally are not traced.
+  virtual void OnAddTransceiver(MediaType media_type,
+                                const MediaStreamTrackInterface* track,
+                                const RtpTransceiverInit& init) = 0;
+
+  // The application called PeerConnection::AddTrack successfully.
+  virtual void OnAddTrack(const MediaStreamTrackInterface& track,
+                          const std::vector<std::string>& stream_ids) = 0;
+
+  // A remote track was surfaced to the application (mirrors the
+  // PeerConnectionObserver::OnTrack callback).
+  virtual void OnTrack(const RtpTransceiverInterface& transceiver) = 0;
 
   // State-change events. These are fired in addition to (not in place of)
   // the equivalent PeerConnectionObserver callbacks.
   virtual void OnSignalingStateChanged(
       PeerConnectionInterface::SignalingState state) = 0;
+  // Note: this is OnStandardizedIceConnectionChange(), i.e. the state the
+  // specification exposes not the legacy OnIceConnectionChange() one.
   virtual void OnIceConnectionStateChanged(
       PeerConnectionInterface::IceConnectionState state) = 0;
   virtual void OnConnectionStateChanged(
@@ -128,7 +166,7 @@ class RTC_EXPORT PeerConnectionTracerInterface {
       PeerConnectionInterface::IceGatheringState state) = 0;
 
   // Gated by ShouldFireNegotiationNeededEvent().
-  virtual void OnNegotiationNeededEvent() = 0;
+  virtual void OnNegotiationNeeded() = 0;
 };
 
 }  // namespace webrtc

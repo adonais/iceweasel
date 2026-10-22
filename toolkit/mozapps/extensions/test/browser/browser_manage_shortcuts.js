@@ -111,7 +111,7 @@ add_task(async function testUpdatingCommands() {
 
   let doc = win.document;
 
-  let card = doc.querySelector(`.card[addon-id="${extension.id}"]`);
+  let card = doc.querySelector(`moz-card[addon-id="${extension.id}"]`);
   ok(card, `There is a card for the extension`);
 
   let inputs = card.querySelectorAll(".shortcut-input");
@@ -266,7 +266,7 @@ add_task(async function testExpanding() {
   let win = await loadShortcutsView();
   let doc = win.document;
 
-  let card = doc.querySelector(`.card[addon-id="${extension.id}"]`);
+  let card = doc.querySelector(`moz-card[addon-id="${extension.id}"]`);
   ok(!card.hasAttribute("expanded"), "The card is not expanded");
 
   let shortcutRows = card.querySelectorAll(".shortcut-row");
@@ -340,7 +340,7 @@ add_task(async function testOneExtraCommandIsNotCollapsed() {
   let doc = win.document;
 
   // The card is not expanded, since it doesn't collapse.
-  let card = doc.querySelector(`.card[addon-id="${extension.id}"]`);
+  let card = doc.querySelector(`moz-card[addon-id="${extension.id}"]`);
   ok(!card.hasAttribute("expanded"), "The card is not expanded");
 
   // Each shortcut has a row.

@@ -520,7 +520,8 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
   aPipeline->mDLBuilder.End(dl);
 
   aSceneBuilderTxn.SetDisplayList(aEpoch, mIdNamespace, aPipelineId, dl.dl_desc,
-                                  dl.dl_items, dl.dl_spatial_tree);
+                                  dl.dl_items, dl.dl_spatial_tree,
+                                  dl.dl_interner_delta);
 }
 
 void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
@@ -615,7 +616,7 @@ void AsyncImagePipelineManager::SetEmptyDisplayList(
   wr::BuiltDisplayList dl;
   builder.End(dl);
   txn.SetDisplayList(epoch, mIdNamespace, aPipelineId, dl.dl_desc, dl.dl_items,
-                     dl.dl_spatial_tree);
+                     dl.dl_spatial_tree, dl.dl_interner_delta);
 }
 
 void AsyncImagePipelineManager::HoldExternalImage(

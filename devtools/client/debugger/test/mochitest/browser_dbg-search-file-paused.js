@@ -37,8 +37,8 @@ add_task(async function () {
   is(getSearchSelection(dbg).line, 1);
 
   info("Switching files via frame click");
-  const frames = findAllElements(dbg, "frames");
-  pressMouseDown(dbg, frames[1]);
+  await clickElement(dbg, "frame", 2);
+  await waitForSelectedSource(dbg, "simple1.js");
 
   // Ensure that the debug line is in view, and not the first "bar" instance,
   // which the user would have to scroll down for
@@ -50,12 +50,15 @@ add_task(async function () {
   el.value = "";
   type(dbg, "func");
   await waitForSearchState(dbg);
-  pressMouseDown(dbg, frames[0]);
+  await clickElement(dbg, "frame", 1);
+  await waitForSelectedSource(dbg, "simple2.js");
   await waitFor(() => {
     return getSearchQuery(dbg).includes("func");
   });
   is(getSearchSelection(dbg).line, 0);
   // Ensure there is a match for the new term and correct item is selected
+  info("Focus the search field again, as clicking the frame focused the frame");
+  pressKey(dbg, "fileSearch");
   pressKey(dbg, "Enter");
   await waitFor(() => getSearchSelection(dbg).line === 1);
   pressKey(dbg, "Enter");
@@ -66,8 +69,4 @@ add_task(async function () {
 function getFocusedEl(dbg) {
   const doc = dbg.win.document;
   return doc.activeElement;
-}
-
-function pressMouseDown(dbg, node) {
-  EventUtils.sendMouseEvent({ type: "mousedown" }, node, dbg.win);
 }

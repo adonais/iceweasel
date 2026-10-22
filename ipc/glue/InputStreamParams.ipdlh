@@ -72,7 +72,8 @@ union InputStreamParams
 
 struct EncryptedFileInputStreamParams
 {
-  InputStreamParams inputStreamParams;
+  // Nothing if the stream was closed when it was serialized.
+  InputStreamParams? inputStreamParams;
   uint8_t[] key;
   uint32_t blockSize;
 };

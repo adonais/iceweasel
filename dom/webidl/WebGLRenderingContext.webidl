@@ -820,6 +820,22 @@ WebGLRenderingContext includes WebGLRenderingContextBase;
 ////////////////////////////////////////
 // specific extension interfaces
 
+// https://registry.khronos.org/webgl/extensions/EXT_clip_control/
+[LegacyNoInterfaceObject,
+ Exposed=(Window,Worker)]
+interface EXT_clip_control {
+    const GLenum LOWER_LEFT_EXT = 0x8CA1;
+    const GLenum UPPER_LEFT_EXT = 0x8CA2;
+
+    const GLenum NEGATIVE_ONE_TO_ONE_EXT = 0x935E;
+    const GLenum ZERO_TO_ONE_EXT         = 0x935F;
+
+    const GLenum CLIP_ORIGIN_EXT     = 0x935C;
+    const GLenum CLIP_DEPTH_MODE_EXT = 0x935D;
+
+    undefined clipControlEXT(GLenum origin, GLenum depth);
+};
+
 // https://registry.khronos.org/webgl/extensions/EXT_polygon_offset_clamp/
 [LegacyNoInterfaceObject,
  Exposed=(Window,Worker)]
@@ -845,6 +861,13 @@ interface EXT_texture_compression_rgtc {
     const GLenum COMPRESSED_SIGNED_RED_RGTC1_EXT = 0x8DBC;
     const GLenum COMPRESSED_RED_GREEN_RGTC2_EXT = 0x8DBD;
     const GLenum COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT = 0x8DBE;
+};
+
+// https://registry.khronos.org/webgl/extensions/EXT_texture_mirror_clamp_to_edge/
+[LegacyNoInterfaceObject,
+ Exposed=(Window,Worker)]
+interface EXT_texture_mirror_clamp_to_edge {
+    const GLenum MIRROR_CLAMP_TO_EDGE_EXT = 0x8743;
 };
 
 // https://www.khronos.org/registry/webgl/extensions/EXT_texture_norm16/

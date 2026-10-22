@@ -60,7 +60,6 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
-#include "api/uma_metrics.h"
 #include "api/video_codecs/video_decoder_factory_template.h"
 #include "api/video_codecs/video_decoder_factory_template_dav1d_adapter.h"
 #include "api/video_codecs/video_decoder_factory_template_libvpx_vp8_adapter.h"
@@ -162,10 +161,8 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
   explicit PeerConnectionIceBaseTest(SdpSemantics sdp_semantics)
       : env_(CreateTestEnvironment()),
         network_thread_(new Thread(&vss_)),
-        worker_thread_(Thread::Create()),
         sdp_semantics_(sdp_semantics) {
     RTC_CHECK(network_thread_->Start());
-    RTC_CHECK(worker_thread_->Start());
 #ifdef WEBRTC_ANDROID
     InitializeAndroidObjects();
 #endif
@@ -187,7 +184,6 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
                                   absl::string_view field_trials) {
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.network_thread = network_thread_.get();
-    pcf_deps.worker_thread = worker_thread_.get();
     pcf_deps.signaling_thread = Thread::Current();
     pcf_deps.socket_factory = &vss_;
     auto network_manager =
@@ -352,7 +348,6 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
   test::RunLoop main_;
   VirtualSocketServer vss_;
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   const SdpSemantics sdp_semantics_;
 };
 
@@ -538,9 +533,6 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   caller->SetLocalDescription(std::move(offer));
 
   EXPECT_FALSE(caller->pc()->AddIceCandidate(jsep_candidate.get()));
-  EXPECT_METRIC_THAT(
-      metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
-      ElementsAre(Pair(kAddIceCandidateFailNoRemoteDescription, 2)));
 }
 
 TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenPeerConnectionClosed) {
@@ -882,6 +874,36 @@ TEST_P(PeerConnectionIceTest,
   // As soon as it does, AddIceCandidate() will execute without delay, so it
   // must also have completed.
   EXPECT_TRUE(operation_completed);
+}
+
+TEST_P(PeerConnectionIceTest, AsyncAddIceCandidateCompletesInOrder) {
+  auto candidate = CreateLocalUdpCandidate(SocketAddress("1.1.1.1", 1111));
+
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  // Chain an operation that will block both AddIceCandidate() calls, so that
+  // they are queued behind it rather than executing immediately.
+  auto answer_observer = make_ref_counted<MockCreateSessionDescriptionObserver>(
+      main_.QuitClosure());
+  callee->pc()->CreateAnswer(answer_observer.get(), RTCOfferAnswerOptions());
+
+  std::vector<int> completion_order;
+  for (int i = 0; i < 2; ++i) {
+    callee->pc()->AddIceCandidate(
+        callee->CreateJsepCandidateForFirstTransport(&candidate),
+        [&completion_order, i](RTCError result) {
+          completion_order.push_back(i);
+        });
+  }
+  ASSERT_THAT(completion_order, IsEmpty());
+
+  main_.Run();
+  // The operations chain runs them in order, so they must also complete in
+  // order.
+  EXPECT_THAT(completion_order, ElementsAre(0, 1));
 }
 
 TEST_P(PeerConnectionIceTest,
@@ -1482,17 +1504,15 @@ INSTANTIATE_TEST_SUITE_P(PeerConnectionIceTest,
 class PeerConnectionIceConfigTest : public ::testing::Test {
  public:
   PeerConnectionIceConfigTest()
-      : worker_thread_(Thread::Create()),
-        socket_server_(CreateDefaultSocketServer()),
+      : socket_server_(CreateDefaultSocketServer()),
         network_thread_(new Thread(socket_server_.get())) {
     RTC_CHECK(network_thread_->Start());
-    RTC_CHECK(worker_thread_->Start());
   }
 
  protected:
   void SetUp() override {
     pc_factory_ = CreatePeerConnectionFactory(
-        network_thread_.get(), worker_thread_.get(), Thread::Current(),
+        network_thread_.get(), network_thread_.get(), Thread::Current(),
         FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
         CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<

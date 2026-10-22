@@ -109,7 +109,6 @@ trainhop-release:
                 - --install-extension=newtab.xpi
                 # Setting these to "any" allows us to install the newtab.xpi
                 # regardless of what version it is.
-                - --setpref=browser.newtabpage.trainhopAddon.version=any
                 - --setpref=browser.newtabpage.trainhopAddonDeployment.version=any
         dependencies:
             newtab-xpi-job: build-extensions-browser
@@ -148,7 +147,6 @@ trainhop-beta:
                 - --install-extension=newtab.xpi
                 # Setting these to "any" allows us to install the newtab.xpi
                 # regardless of what version it is.
-                - --setpref=browser.newtabpage.trainhopAddon.version=any
                 - --setpref=browser.newtabpage.trainhopAddonDeployment.version=any
         dependencies:
             newtab-xpi-job: build-extensions-browser
@@ -220,6 +218,32 @@ geckoview-fission-isolate-high-value:
         mozharness:
             extra-options:
                 - "--setpref=fission.webContentIsolationStrategy=2"
+
+geckoview-isolated-process:
+    description: "{description} with content service isolated process"
+    component: "GeckoView::General"
+    expiration: "2027-03-01"
+    when:
+        <<: *gv_e10s_filter
+    suffix: "isolated"
+    mozinfo: "isolated_process"
+    merge:
+        mozharness:
+            extra-options:
+                - "--enable-isolated-process"
+                # The Java MediaCodec decoders are unavailable in an isolated process,
+                # so decode and encode with the MediaCodec NDK via ffmpeg in RDD.
+                - "--setpref=media.android-media-codec.enabled=false"
+                - "--setpref=media.android-media-codec.preferred=false"
+                - "--setpref=media.ffmpeg.encoder.enabled=true"
+                - "--setpref=media.ffvpx-hw.enabled=true"
+                - "--setpref=media.rdd-ffvpx.enabled=true"
+                - "--setpref=media.rdd-opus.enabled=true"
+                - "--setpref=media.rdd-process.enabled=true"
+                - "--setpref=media.rdd-vorbis.enabled=true"
+                - "--setpref=media.rdd-vpx.enabled=true"
+                - "--setpref=media.rdd-wav.enabled=true"
+                - "--setpref=media.use-remote-encoder.video.platform=true"
 
 no-fission:
     description: "{description} without fission enabled"
@@ -411,7 +435,6 @@ wmf-media-engine:
                 - "--setpref=media.wmf.media-engine.bypass-gfx-blocklist=true"
                 - "--setpref=media.eme.mfcdm.origin-filter.enabled=0"
 
-# For EME wpts, where we need non-local connection to the license server
 eme-wmf:
     description: "{description} with Windows Media Foundation based CDM enabled for EME wpt"
     component: "Core::Audio/Video: Playback"
@@ -421,17 +444,21 @@ eme-wmf:
     suffix: "emewmf"
     mozinfo: "emewmf"
     merge:
-        worker:
-            env:
-                MOZ_DISABLE_NONLOCAL_CONNECTIONS:
-                    '0'
         virtualization: virtual-with-gpu
-        mozharness:
-            extra-options:
-                - "--setpref=media.eme.playready.enabled=true"
-                - "--setpref=media.wmf.media-engine.enabled=2"
-                - "--setpref=media.wmf.media-engine.bypass-gfx-blocklist=true"
-                - "--setpref=media.eme.mfcdm.origin-filter.enabled=0"
+
+# For EME wpts which need the Widevine CDM to verify the host, i.e. a signed
+# build. Suites using this variant should set mozharness.requires-signed-builds
+# for it. Tests disabled due to the signing issue can be enabled with the
+# vmpSigned run info property, which is set when the build has Widevine VMP
+# signatures.
+eme-signed:
+    description: "{description} with a signed build for EME wpt"
+    component: "Core::Audio/Video: Playback"
+    expiration: "never"
+    when:
+        $eval: '"shippable" in task["test-platform"] && ("windows1" in task["test-platform"] || "macosx1500-aarch64" in task["test-platform"])'
+    suffix: "emesigned"
+    mozinfo: "emesigned"
 
 # Use OpenH264 plugin built in CI and make it preferred over other codecs.
 openh264:
@@ -513,7 +540,6 @@ media-gpu:
                         "android" in task["test-platform"]
                         && "hw" in task["test-platform"]
                     )
-                    || "linux1804" in task["test-platform"]
                 '
     merge:
         worker:
@@ -730,7 +756,7 @@ no-nova:
 urlbar-ipc:
     description: "{description} with the urlbar actor message-passing path forced on"
     component: "Firefox::Address Bar"
-    expiration: "2027-06-01"
+    expiration: "never"
     suffix: "uipc"
     mozinfo: "urlbar_ipc"
     merge:

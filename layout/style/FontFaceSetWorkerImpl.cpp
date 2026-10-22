@@ -102,12 +102,10 @@ void FontFaceSetWorkerImpl::InitializeOnMainThread() {
   // that of that docshell. This matches the behaviour from
   // WorkerScriptLoader::LoadScript.
   if (topWorkerPrivate->IsDedicatedWorker()) {
-    nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow();
-    if (window) {
-      nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
-      if (docShell) {
-        docShell->GetDefaultLoadFlags(&loadFlags);
-        docShell->GetLoadType(&loadType);
+    if (nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow()) {
+      if (nsCOMPtr<nsIDocShell> docShell = window->GetDocShell()) {
+        loadFlags = docShell->GetDefaultLoadFlags();
+        loadType = docShell->GetLoadType();
       }
     }
   }

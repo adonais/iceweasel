@@ -466,6 +466,7 @@ class Assembler : public vixl::Assembler {
                         vixl::LoadLiteralOp op, const LiteralDoc& doc);
   BufferOffset fImmPool64(ARMFPRegister dest, double value);
   BufferOffset fImmPool32(ARMFPRegister dest, float value);
+  BufferOffset fImmPool128(ARMFPRegister dest, const uint8_t* value);
 
   uint32_t currentOffset() const { return nextOffset().getOffset(); }
 

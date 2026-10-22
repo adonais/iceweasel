@@ -159,13 +159,21 @@
   min-width: 0;
 }
 
+.desc-message-box {
+  align-items: center;
+  gap: var(--space-medium);
+  padding: var(--space-medium) var(--space-large);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-large);
+}
+
 .cc-icon {
   height: var(--icon-size-small);
-  margin-inline-end: var(--space-small);
 }
 
 .payments-doorhanger-description {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-xsmall);
 

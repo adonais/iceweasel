@@ -12,6 +12,7 @@ transforms:
     - gecko_taskgraph.transforms.build:transforms
     - gecko_taskgraph.transforms.build_attrs:transforms
     - gecko_taskgraph.transforms.build_lints:transforms
+    - gecko_taskgraph.transforms.mozconfig:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
@@ -50,6 +51,8 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "linux64-opt"
+        mozconfig:
+            variant: opt-searchfox-clang
         run:
             config:
                 - builds/releng_base_firefox.py
@@ -81,6 +84,8 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "linux64"
+        mozconfig:
+            variant: debug-searchfox-clang
         run:
             config:
                 - builds/releng_base_firefox.py
@@ -111,6 +116,8 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "macosx64"
+        mozconfig:
+            variant: debug-searchfox
         run:
             config:
                 - builds/releng_base_firefox.py
@@ -143,13 +150,12 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "macosx64-aarch64-opt"
+        mozconfig:
+            variant: opt-searchfox
         run:
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
-            extra-config:
-                extra_mozconfig_content:
-                    - ac_add_options --target=aarch64-apple-darwin
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-opt-searchfox
             keep-artifacts: false
@@ -179,13 +185,12 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "macosx64-aarch64"
+        mozconfig:
+            variant: debug-searchfox
         run:
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
-            extra-config:
-                extra_mozconfig_content:
-                    - ac_add_options --target=aarch64-apple-darwin
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-debug-searchfox
             keep-artifacts: false
@@ -214,17 +219,18 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "ios"
+        mozconfig:
+            variant: debug-searchfox
+            platform: ios
+            app: mobile/ios
         run:
             config:
                 - builds/releng_base_firefox.py
             script: "mozharness/scripts/fx_desktop_build.py"
             keep-artifacts: false
             extra-config:
-                app_name: mobile/ios
-                mozconfig_platform: ios
                 disable_package_metrics: true
                 upload_env: {"UPLOAD_PATH": "/builds/worker/artifacts"}
-            mozconfig-variant: debug-searchfox
         fetches:
             toolchain:
                 - linux64-clang
@@ -250,6 +256,8 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "win64-opt"
+        mozconfig:
+            variant: opt-searchfox
         run:
             options: [append-env-variables-from-configs]
             script: mozharness/scripts/fx_desktop_build.py
@@ -257,8 +265,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
                 - builds/taskcluster_sub_win64/searchfox_opt.py
-            extra-config:
-                mozconfig_platform: win64
         fetches:
             toolchain:
                 - linux64-7zz
@@ -293,6 +299,8 @@ tasks:
             max-run-time: 10800
             env:
                 MOZSEARCH_PLATFORM: "win64"
+        mozconfig:
+            variant: debug-searchfox
         run:
             options: [append-env-variables-from-configs]
             script: mozharness/scripts/fx_desktop_build.py
@@ -300,8 +308,6 @@ tasks:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
                 - builds/taskcluster_sub_win64/searchfox_debug.py
-            extra-config:
-                mozconfig_platform: win64
         fetches:
             toolchain:
                 - linux64-7zz
@@ -338,6 +344,8 @@ tasks:
                 MOZSEARCH_PLATFORM: "android-aarch64"
                 GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
                 TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+        mozconfig:
+            variant: debug-searchfox
         run:
             config:
                 - builds/releng_base_android_64_builds.py

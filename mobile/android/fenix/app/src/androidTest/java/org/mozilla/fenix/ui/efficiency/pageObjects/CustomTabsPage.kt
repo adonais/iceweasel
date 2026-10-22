@@ -109,8 +109,19 @@ class CustomTabsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         return this
     }
 
+    // The custom-tab toolbar renders the page's host, not the full URL (as the legacy verifyCustomTabUrl
+    // asserted), so match on the host extracted from the URL.
     fun verifyUrl(url: String): CustomTabsPage {
-        mozVerify(CustomTabsSelectors.TOOLBAR_URL(url))
+        val host = url.toUri().host ?: url
+        mozVerify(CustomTabsSelectors.TOOLBAR_URL(host))
+        return this
+    }
+
+    // Long-press the toolbar URL box to raise its contextual menu, then tap "Copy" to put the URL on the
+    // clipboard. Ports CustomTabRobot.longClickAndCopyToolbarUrl.
+    fun longClickAndCopyToolbarUrl(): CustomTabsPage {
+        mozLongClick(CustomTabsSelectors.TOOLBAR_URL_BOX)
+        mozClick(CustomTabsSelectors.LONG_PRESS_COPY)
         return this
     }
 

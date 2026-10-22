@@ -217,6 +217,12 @@ void nsWindowWayland::WaylandDragWorkaround(GdkEventButton* aEvent) {
   NS_WARNING(
       "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
       "compositor?");
+
+  // Nothing was dropped anywhere, so report the drag as cancelled. Without
+  // this the dragend event carries the session defaults (dropEffect "none",
+  // not cancelled, end point 0,0), which the tab strip reads as "dropped
+  // outside the window" and detaches the tab (bug 2001075).
+  currentDragSession->UserCancelled();
   currentDragSession->EndDragSession(true, 0);
 }
 

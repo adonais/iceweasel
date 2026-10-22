@@ -25,7 +25,7 @@ namespace webrtc {
 
 class AudioDecoderOpusImpl final : public AudioDecoder {
  public:
-  explicit AudioDecoderOpusImpl(const FieldTrialsView& field_trails,
+  explicit AudioDecoderOpusImpl(const FieldTrialsView& field_trials,
                                 size_t num_channels,
                                 int sample_rate_hz);
 

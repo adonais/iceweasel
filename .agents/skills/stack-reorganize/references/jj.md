@@ -41,9 +41,11 @@ skill and its `references/jj.md`.
 
 `jj abandon <change>` drops a commit and rebases its descendants automatically, recording any conflicts in them rather than halting. That makes drop-at-source cheap here; `drop-superseded.md` says when it is the right call, and "Drops" below gives the commands by its step.
 
-Churn measurement is git's: `git.md`, "Measuring the churn", runs `scripts/git-churn.sh` over a `<base>..<tip>` of commit ids. In a colocated checkout, `jj log --no-graph -T commit_id -r <change>` prints the commit id for a change id.
-
 `jj op log` plus `jj op restore <op-id>` lets you undo cleanly after mutating commits; `jj --at-operation <op>` peeks at (or even mutates) prior states without disturbing current work.
+
+## Measuring the churn
+
+Churn measurement is git's: `git.md`, "Measuring the churn", runs `scripts/git-churn.sh` over a `<base>..<tip>` of commit ids. In a colocated checkout, `jj log --no-graph -T commit_id -r <change>` prints the commit id for a change id.
 
 ## Drops
 
@@ -74,8 +76,9 @@ The commands for `drop-superseded.md`, by its step.
 4. **Finish coupled changes at their source.** `jj new <that-commit>`, edit,
    `jj squash`.
 5. **Validate.** `jj diff --from <tip-commit-id> --to <new-tip>` must be empty
-   for a net-zero drop; `jj op restore <op-id>` returns to the input where it
-   is not.
+   for a net-zero drop, and `jj log -r '<base>..<new-tip>'` two changes
+   shorter than the input once the empty reverser is abandoned; `jj op restore
+   <op-id>` returns to the input where either fails.
 
 ## Fold-resplit
 

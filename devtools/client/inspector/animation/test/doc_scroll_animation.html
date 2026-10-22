@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    .scroller {
+      height: 200px;
+      overflow: scroll;
+      display: flex;
+      border: 5px solid hotpink;
+    }
+
+    .target {
+      width: 80px;
+      height: 100vh;
+      background-color: gold;
+
+      &.scroll-animated {
+        animation: 1s linear simple-animation;
+        animation-timeline: scroll();
+      }
+    }
+
+
+    @keyframes simple-animation {
+      100% {
+        background-color: tomato;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <section class="scroller">
+    <div class="target scroll-animated">A</div>
+    <div class="target">B</div>
+  </section>
+</body>
+</html>

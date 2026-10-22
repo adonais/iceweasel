@@ -52,9 +52,6 @@ async function setupTest(aCookieBehavior) {
 
   // Enables us to test localStorage in xpcshell.
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
-
-  // Needed for BounceTrackingProtection.
-  do_get_profile(true);
 }
 
 /**
@@ -729,4 +726,50 @@ add_task(async function () {
     await testNotPurgingFromHTTP();
     await testNotPurgingFromDifferentScheme();
   }
+});
+
+/**
+ * Test that purging trackers does not clear Bounce Tracking Protection state
+ * for the purged sites.
+ */
+add_task(async function testNotPurgingBounceTrackingProtectionState() {
+  await UrlClassifierTestUtils.addTestTrackers();
+  await setupTest(Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN);
+
+  Services.prefs.setIntPref(
+    "privacy.bounceTrackingProtection.mode",
+    Ci.nsIBounceTrackingProtection.MODE_ENABLED
+  );
+  let btp = Cc["@mozilla.org/bounce-tracking-protection;1"].getService(
+    Ci.nsIBounceTrackingProtection
+  );
+  btp.clearAll();
+
+  const ACTIVATION_TRACKER = "https://tracking.example.org";
+  const CANDIDATE_TRACKER = "https://itisatracker.org";
+  let now = Date.now() * 1000;
+  btp.testAddUserActivation({}, "example.org", now);
+  btp.testAddBounceTrackerCandidate({}, "itisatracker.org", now);
+  SiteDataTestUtils.addToCookies({ origin: ACTIVATION_TRACKER });
+  SiteDataTestUtils.addToCookies({ origin: CANDIDATE_TRACKER });
+
+  await PurgeTrackerService.purgeTrackingCookieJars();
+
+  ok(!SiteDataTestUtils.hasCookies(ACTIVATION_TRACKER), "cookie cleared.");
+  ok(!SiteDataTestUtils.hasCookies(CANDIDATE_TRACKER), "cookie cleared.");
+  Assert.deepEqual(
+    btp.testGetUserActivationHosts({}).map(entry => entry.siteHost),
+    ["example.org"],
+    "BTP user activation for the purged site is retained."
+  );
+  Assert.deepEqual(
+    btp.testGetBounceTrackerCandidateHosts({}).map(entry => entry.siteHost),
+    ["itisatracker.org"],
+    "BTP bounce tracker candidate for the purged site is retained."
+  );
+
+  btp.clearAll();
+  await SiteDataTestUtils.clear();
+  UrlClassifierTestUtils.cleanupTestTrackers();
+  Services.prefs.clearUserPref("privacy.bounceTrackingProtection.mode");
 });

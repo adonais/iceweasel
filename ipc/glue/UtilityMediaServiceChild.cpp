@@ -155,13 +155,18 @@ void UtilityMediaServiceChild::OnCompositorUnexpectedShutdown() {
   mHasCreatedVideoBridge = State::None;
 
   if (auto* gpm = gfx::GPUProcessManager::Get()) {
-    if (auto utilpm = UtilityProcessManager::GetSingleton())
-      if (auto parent = utilpm->GetProcessParent(mSandbox)) {
+    if (auto utilpm = UtilityProcessManager::GetSingleton()) {
+      if (auto keepAlive = utilpm->GetSharedKeepAlive(mSandbox)) {
+        RefPtr parent = keepAlive->GetProcessParent();
+        if (!parent) {
+          return;
+        }
         if (NS_SUCCEEDED(gpm->CreateUtilityMFCDMVideoBridge(
                 this, parent->OtherEndpointProcInfo()))) {
           mHasCreatedVideoBridge = State::Creating;
         }
       }
+    }
   }
 }
 

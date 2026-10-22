@@ -1,5 +1,6 @@
 [DEFAULT]
 prefs = [
+  # Bug 2077709
   "dom.navigation.navigationRateLimit.count=0",
   "gfx.omta.background-color=true",
   "gfx.font_loader.delay=0",
@@ -11,7 +12,6 @@ prefs = [
   "layout.css.webkit-fill-available.all-size-properties.enabled=true",
   "layout.css.basic-shape-shape.enabled=true",
   "layout.css.field-sizing.enabled=true",
-  "layout.css.attr.enabled=true",
   "layout.css.scroll-state.enabled=true",
   "layout.css.style-queries.enabled=true",
   "layout.css.text-box.enabled=true",
@@ -436,22 +436,17 @@ support-files = ["flexbox_layout_testcases.js"]
 
 ["test_flexbox_order.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && xorigin", # Bug 1784708
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug && xorigin", # Bug 1932914
 ]
 
 ["test_flexbox_order_abspos.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && xorigin", # Bug 1784708
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug && xorigin", # Bug 1932914
 ]
 
 ["test_flexbox_order_table.html"]
 
 ["test_flexbox_reflow_counts.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && xorigin", # Bug 1802475
-]
 
 ["test_flushing_frame.html"]
 
@@ -517,6 +512,8 @@ skip-if = [
 
 ["test_initial_storage.html"]
 
+["test_inline_style_cc.html"]
+
 ["test_invalidation_basic.html"]
 
 ["test_keyframes_rules.html"]
@@ -557,7 +554,6 @@ skip-if = [
 support-files = ["mq_changes_child.html"]
 skip-if = [
   "headless",
-  "os == 'win'",
 ]
 
 ["test_mq_hover_and_pointer.html"]
@@ -565,13 +561,11 @@ skip-if = [
 ["test_mq_prefers_contrast_dynamic.html"]
 skip-if = [
   "headless",
-  "os == 'win'",
 ]
 
 ["test_mq_prefers_reduced_motion_dynamic.html"]
 skip-if = [
   "headless",
-  "os == 'win'",
 ]
 
 ["test_mql_event_listener_leaks.html"]
@@ -732,8 +726,6 @@ fail-if = [
 ["test_transitions_replacement_on_busy_frame_omta.html"]
 skip-if = [
   "os == 'android' && arch == 'x86_64' && debug", # Bug 1905949
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1905949
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1905949
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1905949
 ]
 
@@ -773,14 +765,9 @@ skip-if = [
 # See bug 775227 for android
 skip-if = [
   "os == 'android'",
-  "tsan",
 ]
 
 ["test_value_computation.html"]
-# This test requires too much memory on TSan (bug 1612707)
-skip-if = [
-  "tsan",
-]
 
 ["test_value_storage.html"]
 

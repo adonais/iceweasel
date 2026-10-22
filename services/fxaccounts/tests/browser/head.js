@@ -61,7 +61,7 @@ function setupMockAlertsService(expectedObj) {
     },
   };
   const { AccountsGlue } = ChromeUtils.importESModule(
-    "resource:///modules/AccountsGlue.sys.mjs"
+    "moz-src:///browser/components/AccountsGlue.sys.mjs"
   );
   const wrappedService = { wrappedJSObject: alertsService };
   AccountsGlue.observe(

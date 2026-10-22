@@ -16,7 +16,7 @@ add_task(async () => {
     profiles: [
       {
         name: "Profile1",
-        path: "../data/test",
+        path: `../${gDataHome.leafName}/test`,
       },
       {
         name: "Profile2",

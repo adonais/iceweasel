@@ -404,6 +404,11 @@
     "dark": "{Theme$button/text/color/ghost}",
     "forcedColors": "{Theme$button/text/color/ghost/active}"
   },
+  "button/text/color/ghost/selected": {
+    "light": "{Theme$button/text/color/ghost/active}",
+    "dark": "{Theme$button/text/color/ghost/active}",
+    "forcedColors": "{Theme$button/text/color/selected}"
+  },
   "button/text/color/menu/active": {
     "light": "{Theme$button/text/color/ghost/active}",
     "dark": "{Theme$button/text/color/active}",
@@ -454,12 +459,12 @@
     "dark": "{Colors$color/gray/60}",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
-  "input/text/background/color": {
+  "input/background/color": {
     "light": "{Theme$background/color/box}",
     "dark": "{Theme$background/color/box}",
     "forcedColors": "{Theme$background/color/box}"
   },
-  "input/text/background/color/disabled": {
+  "input/background/color/disabled": {
     "light": "{Theme$button/background/color/ghost/disabled}",
     "dark": "{Theme$button/background/color/ghost/disabled}",
     "forcedColors": "{Theme$button/background/color/ghost/disabled}"
@@ -680,9 +685,9 @@
     "forcedColors": "{Theme$button/background/color/active}"
   },
   "page-nav/button/background/color/selected": {
-    "light": "{Theme$color/accent/primary}",
-    "dark": "{Theme$color/accent/primary}",
-    "forcedColors": "{Theme$color/accent/primary}"
+    "light": "{Theme$button/background/color/primary}",
+    "dark": "{Theme$button/background/color/primary}",
+    "forcedColors": "{Theme$button/background/color/selected}"
   },
   "page-nav/button/border/color": {
     "light": "{Theme$border/color/transparent}",
@@ -692,7 +697,7 @@
   "page-nav/button/text/color/selected": {
     "light": "{Theme$button/text/color/primary}",
     "dark": "{Theme$button/text/color/primary}",
-    "forcedColors": "{Theme$button/text/color/primary}"
+    "forcedColors": "{Theme$button/text/color/selected}"
   },
   "page-nav/hr/background/color": {
     "light": "{Theme$border/color/deemphasized}",
@@ -960,49 +965,44 @@
     "forcedColors": "{Theme$urlbar/box/background/color}"
   },
   "urlbar/box/background/color": {
-    "light": "{Theme$urlbarview/background/color/hover}",
-    "dark": "{Theme$urlbarview/background/color/hover}",
-    "forcedColors": "{Theme$urlbarview/background/color/hover}"
+    "light": "color-mix(in srgb, currentColor 17%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 20%, transparent)",
+    "forcedColors": "{Theme$button/background/color/ghost}"
   },
   "urlbar/box/background/color/hover": {
     "light": "{Theme$urlbarview/background/color/selected}",
     "dark": "{Theme$urlbarview/background/color/selected}",
-    "forcedColors": "{Theme$urlbarview/background/color/selected}"
+    "forcedColors": "{Theme$button/background/color/ghost/hover}"
   },
   "urlbar/box/background/color/active": {
     "light": "rgba(117, 102, 159, 0.6)",
     "dark": "rgba(176, 163, 210, 0.6)",
-    "forcedColors": "transparent"
+    "forcedColors": "{Theme$button/background/color/ghost/active}"
+  },
+  "urlbar/box/text/color": {
+    "light": "inherit",
+    "dark": "inherit",
+    "forcedColors": "{Theme$button/text/color/ghost}"
+  },
+  "urlbar/box/text/color/hover": {
+    "light": "{Theme$urlbar/box/text/color}",
+    "dark": "{Theme$urlbar/box/text/color}",
+    "forcedColors": "{Theme$button/text/color/ghost/hover}"
+  },
+  "urlbar/box/text/color/active": {
+    "light": "{Theme$urlbar/box/text/color}",
+    "dark": "{Theme$urlbar/box/text/color}",
+    "forcedColors": "{Theme$button/text/color/ghost/active}"
   },
   "urlbar/icon/fill/opacity": {
     "light": 0.7,
     "dark": 0.95,
     "forcedColors": 1
   },
-  "urlbarview/background/color/hover": {
-    "light": "{Theme$toolbarbutton/background/color/hover}",
-    "dark": "{Theme$toolbarbutton/background/color/hover}",
-    "forcedColors": "{Theme$toolbarbutton/background/color/hover}"
-  },
-  "urlbarview/background/color/selected": {
-    "light": "{Theme$toolbarbutton/background/color/active}",
-    "dark": "{Theme$toolbarbutton/background/color/active}",
-    "forcedColors": "{Theme$toolbarbutton/background/color/active}"
-  },
   "urlbarview/separator/color": {
     "light": "{Colors$color/gray/20}",
     "dark": "{Colors$color/gray/60}",
     "forcedColors": "#ffffff"
-  },
-  "urlbarview/action/button/background/color": {
-    "light": "{Theme$urlbar/box/background/color}",
-    "dark": "{Theme$urlbar/box/background/color}",
-    "forcedColors": "{Theme$urlbar/box/background/color}"
-  },
-  "urlbarview/action/button/background/color/hover": {
-    "light": "{Theme$urlbar/box/background/color/hover}",
-    "dark": "{Theme$urlbar/box/background/color/hover}",
-    "forcedColors": "{Theme$urlbar/box/background/color/hover}"
   },
   "urlbarview/text/color/action": {
     "light": "{Theme$toolbar/field/text/color/focus}",
@@ -1014,9 +1014,29 @@
     "dark": "#e7e1f8",
     "forcedColors": "#ffffff"
   },
+  "urlbarview/background/color/hover": {
+    "light": "color-mix(in srgb, currentColor 17%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 20%, transparent)",
+    "forcedColors": "transparent"
+  },
+  "urlbarview/background/color/selected": {
+    "light": "color-mix(in srgb, currentColor 27%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 32%, transparent)",
+    "forcedColors": "transparent"
+  },
+  "urlbarview/action/button/background/color": {
+    "light": "{Theme$urlbar/box/background/color}",
+    "dark": "{Theme$urlbar/box/background/color}",
+    "forcedColors": "{Theme$urlbar/box/background/color}"
+  },
+  "urlbarview/action/button/background/color/hover": {
+    "light": "{Theme$urlbar/box/background/color/hover}",
+    "dark": "{Theme$urlbar/box/background/color/hover}",
+    "forcedColors": "{Theme$urlbar/box/background/color/hover}"
+  },
   "urlbarview/text/color/selected": {
-    "light": "{Theme$toolbar/field/text/color/focus}",
-    "dark": "{Theme$toolbar/field/text/color/focus}",
-    "forcedColors": "{Theme$toolbar/field/text/color/focus}"
+    "light": "currentColor",
+    "dark": "currentColor",
+    "forcedColors": "currentColor"
   }
 }

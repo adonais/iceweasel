@@ -99,8 +99,8 @@ nsresult nsGNOMEShellService::Init() {
   return appPath->GetNativePath(mAppPath);
 }
 
-NS_IMPL_ISUPPORTS(nsGNOMEShellService, nsIGNOMEShellService, nsIShellService,
-                  nsIToolkitShellService)
+NS_IMPL_ISUPPORTS_INHERITED(nsGNOMEShellService, nsShellService,
+                            nsIGNOMEShellService, nsIShellService)
 
 bool nsGNOMEShellService::GetAppPathFromLauncher() {
   gchar* tmp;
@@ -215,6 +215,13 @@ nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
   *aIsDefaultBrowser = true;
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsGNOMEShellService::IsDefaultBrowserAsync(bool aForAllTypes,
+                                           JSContext* aContext,
+                                           mozilla::dom::Promise** _retval) {
+  return nsShellService::IsDefaultBrowserAsync(aForAllTypes, aContext, _retval);
 }
 
 bool nsGNOMEShellService::IsDefaultForSchemeHelper(

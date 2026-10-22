@@ -4,6 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nssrenam.h" /* for CERT_DecodeDERCertificate */
 #include "nss.h"
 #include "pk11func.h"
 #include "secder.h"
@@ -346,18 +347,18 @@ loser:
 
 /* Verifies the DC signature. */
 static SECStatus
-tls13_VerifyCredentialSignature(sslSocket *ss, sslDelegatedCredential *dc)
+tls13_VerifyCredentialSignature(sslSocket *ss, CERTCertificate *cert,
+                                sslDelegatedCredential *dc)
 {
     SECStatus rv = SECSuccess;
     sslBuffer dcBuf = SSL_BUFFER_EMPTY;
-    CERTCertificate *cert = ss->sec.peerCert;
     SECKEYPublicKey *pubKey = NULL;
     void *pwArg = ss->pkcs11PinArg;
 
     /* Serialize the DC parameters. */
     rv = tls13_AppendCredentialParams(&dcBuf, dc);
     if (rv != SECSuccess) {
-        goto loser; /* Error set by caller. */
+        goto loser; /* Error set by tls13_AppendCredentialParams. */
     }
 
     pubKey = SECKEY_ExtractPublicKey(&cert->subjectPublicKeyInfo);
@@ -393,13 +394,12 @@ loser:
 
 /* Checks that the peer's end-entity certificate has the correct key usage. */
 static SECStatus
-tls13_CheckCertDelegationUsage(sslSocket *ss)
+tls13_CheckCertDelegationUsage(sslSocket *ss, const CERTCertificate *cert)
 {
     int i;
     PRBool found;
     CERTCertExtension *ext;
     SECItem delegUsageOid = { siBuffer, NULL, 0 };
-    const CERTCertificate *cert = ss->sec.peerCert;
 
     /* 1.3.6.1.4.1.44363.44, as defined in draft-ietf-tls-subcerts. */
     static unsigned char kDelegationUsageOid[] = {
@@ -443,10 +443,10 @@ tls13_CheckCertDelegationUsage(sslSocket *ss)
 }
 
 static SECStatus
-tls13_CheckCredentialExpiration(sslSocket *ss, sslDelegatedCredential *dc)
+tls13_CheckCredentialExpiration(sslSocket *ss, const CERTCertificate *cert,
+                                sslDelegatedCredential *dc)
 {
     SECStatus rv;
-    CERTCertificate *cert = ss->sec.peerCert;
     /* 7 days in microseconds */
     static const PRTime kMaxDcValidity = ((PRTime)7 * 24 * 60 * 60 * PR_USEC_PER_SEC);
     PRTime start, now, end; /* microseconds */
@@ -489,12 +489,27 @@ tls13_VerifyDelegatedCredential(sslSocket *ss,
     SECStatus rv;
     PRTime start;
     PRExplodedTime end;
-    CERTCertificate *cert = ss->sec.peerCert;
+    CERTCertificate *cert;
     char endStr[256];
+
+    /* The handshake keeps the peer's end-entity certificate as DER.  Decode it
+     * for the duration of this check: the delegated credential rules are
+     * expressed in terms of the certificate's validity period, extensions, and
+     * key usage.  Nothing is added to any certificate database. */
+    if (!ss->sec.peerCertDER.data) {
+        FATAL_ERROR(ss, SSL_ERROR_NO_CERTIFICATE, internal_error);
+        return SECFailure;
+    }
+    cert = CERT_DecodeDERCertificate(&ss->sec.peerCertDER, PR_FALSE, NULL);
+    if (!cert) {
+        FATAL_ERROR(ss, PORT_GetError(), internal_error);
+        return SECFailure;
+    }
 
     rv = DER_DecodeTimeChoice(&start, &cert->validity.notBefore);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, PORT_GetError(), internal_error);
+        CERT_DestroyCertificate(cert);
         return SECFailure;
     }
 
@@ -509,9 +524,10 @@ tls13_VerifyDelegatedCredential(sslSocket *ss,
     }
 
     rv = SECSuccess;
-    rv |= tls13_VerifyCredentialSignature(ss, dc);
-    rv |= tls13_CheckCertDelegationUsage(ss);
-    rv |= tls13_CheckCredentialExpiration(ss, dc);
+    rv |= tls13_VerifyCredentialSignature(ss, cert, dc);
+    rv |= tls13_CheckCertDelegationUsage(ss, cert);
+    rv |= tls13_CheckCredentialExpiration(ss, cert, dc);
+    CERT_DestroyCertificate(cert);
     return rv;
 }
 

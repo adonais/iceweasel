@@ -780,9 +780,9 @@ class GCRuntime {
   static void* refillFreeList(JS::Zone* zone, AllocKind thingKind);
   void attemptLastDitchGC();
 
-  // Return the mark color for |sym| in the atom reference state for uncollected
-  // zones, or MarkColor::White if it's not referenced.
-  CellColor isAtomReferencedByUncollectedZone(TenuredCell* atom);
+  // Return whether |sym| is present in the atom reference state for uncollected
+  // zones.
+  bool isAtomReferencedByUncollectedZone(TenuredCell* atom);
   template <typename T>
   void maybeMarkWeaklyHeldAtom(T* atom);
 
@@ -924,6 +924,8 @@ class GCRuntime {
   void traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session);
   void traceRuntimeAtoms(JSTracer* trc);
   void traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrMark);
+  void traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc,
+                                                   EdgeSelector whichEdges);
   void traceEmbeddingBlackRoots(JSTracer* trc);
   void traceEmbeddingGrayRoots(JSTracer* trc);
   IncrementalProgress traceEmbeddingGrayRoots(JSTracer* trc,

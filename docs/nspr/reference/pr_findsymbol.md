@@ -21,7 +21,7 @@ The function has these parameters:
 `lib`
 
 : A valid reference to a loaded library, as returned by
-  {ref}`PR_LoadLibrary`, or `NULL`.
+  {doc}`pr_loadlibrary`, or `NULL`.
 
 `name`
 
@@ -42,5 +42,5 @@ Use this function to look up functions or data symbols in a shared
 library. Getting a pointer to a symbol in a library does indicate that
 the library is available when the search was made. The runtime does
 nothing to ensure the continued validity of the symbol. If the library
-is unloaded, for instance, the results of any {ref}`PR_FindSymbol` calls
+is unloaded, for instance, the results of any {doc}`pr_findsymbol` calls
 become invalid as well.

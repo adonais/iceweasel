@@ -104,6 +104,8 @@ bool BytecodeAnalysis::init() {
       continue;
     }
 
+    lastReachablePC_ = it.toRawBytecode();
+
     uint32_t stackDepth = infos_[offset].stackDepth;
 
     if (infos_[offset].jumpTarget) {

@@ -276,6 +276,15 @@ var gSitePermissionsManager = {
       return;
     }
 
+    if (data === "cleared") {
+      this._permissionGroups.clear();
+      this._permissionsToChange.clear();
+      this._permissionsToDelete.clear();
+      this._loadPermissions();
+      this.buildPermissionsList();
+      return;
+    }
+
     let permission = subject.QueryInterface(Ci.nsIPermission);
     let [type] = permission.type.split(SitePermissions.PERM_KEY_DELIMITER);
 

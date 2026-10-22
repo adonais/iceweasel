@@ -17,7 +17,7 @@ fn main() {
 fn set_generated_files() {
     let full_path = Path::new(env!("CARGO_MANIFEST_DIR"));
     let relative_path = full_path
-        .strip_prefix(mozbuild::TOPSRCDIR)
+        .strip_prefix(&*mozbuild::TOPSRCDIR)
         .expect("CARGO_MANIFEST_DIR not a child of TOPSRCDIR");
 
     for (file, env) in [

@@ -547,6 +547,7 @@
             secondary = {
               type: secondaryAction.type,
               label: secondaryAction.label,
+              tooltip: secondaryAction.tooltip,
             };
             // Route each secondary action back to its provider through the
             // parent actor, identifying a menu action by its index (a single

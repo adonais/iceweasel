@@ -29,6 +29,9 @@
 #include "aom/aom_image.h"
 #include "aom_mem/aom_mem.h"
 
+#include "av1/common/blockd.h"
+#include "av1/common/reconintra.h"
+#include "av1/encoder/allintra_vis.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/util.h"
@@ -251,6 +254,60 @@ TEST(EncodeAPI, InvalidSvcParams) {
 
   EXPECT_EQ(aom_codec_encode(&enc, &img, 0, 1, 0), AOM_CODEC_OK);
   EXPECT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+  EXPECT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Bug: 538651949.
+TEST(EncodeAPI, SvcFixBypass) {
+  aom_codec_ctx_t enc;
+  aom_codec_enc_cfg_t cfg;
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_svc_layer_id_t layer_id = { 3, 0 };
+  aom_svc_params_t svc_params = {};
+
+  EXPECT_EQ(aom_codec_enc_config_default(iface, &cfg, kUsage), AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_threads = 1;
+  cfg.g_lag_in_frames = 0;
+
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+
+  // Set number of spatial layers to 4 via control SET_NUMBER_SPATIAL_LAYERS.
+  EXPECT_EQ(aom_codec_control(&enc, AOME_SET_NUMBER_SPATIAL_LAYERS, 4),
+            AOM_CODEC_OK);
+
+  // Set the active spatial layer id to 3. This is expected to fail since
+  // cpi->svc.number_spatial_layers is still 1 (default).
+  EXPECT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_LAYER_ID, &layer_id),
+            AOM_CODEC_INVALID_PARAM);
+
+  // Set SVC params to 2x2 layer config, via AV1E_SET_SVC_PARAMS. This sets
+  // all svc layer parameters, allocates for the layer context, and sets use_svc
+  // = 1.
+  svc_params.number_spatial_layers = 2;
+  svc_params.number_temporal_layers = 2;
+  for (int i = 0; i < AOM_MAX_LAYERS; i++) {
+    svc_params.max_quantizers[i] = 52;
+    svc_params.min_quantizers[i] = 10;
+    svc_params.layer_target_bitrate[i] = 100;
+  }
+  svc_params.scaling_factor_num[0] = 1;
+  svc_params.scaling_factor_den[0] = 2;
+  svc_params.scaling_factor_num[1] = 1;
+  svc_params.scaling_factor_den[1] = 1;
+  svc_params.framerate_factor[0] = 2;
+  svc_params.framerate_factor[1] = 1;
+
+  EXPECT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_PARAMS, &svc_params),
+            AOM_CODEC_OK);
+
+  // Now try setting number of spatial layers to 3 using the control
+  // SET_NUMBER_SPATIAL_LAYERS. This is expected to fail because SVC was
+  // configured via AV1E_SET_SVC_PARAMS, so use_svc = 1.
+  EXPECT_EQ(aom_codec_control(&enc, AOME_SET_NUMBER_SPATIAL_LAYERS, 3),
+            AOM_CODEC_INVALID_PARAM);
+
   EXPECT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
 }
 
@@ -717,6 +774,86 @@ TEST(EncodeAPI, Buganizer310548198) {
 
   ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
 }
+
+#if !CONFIG_REALTIME_ONLY
+// Test for OSS-Fuzz Issue 559019046. The bug triggers when we increase the
+// number of tiles after encoding a non-intra frame and then encode a key frame.
+// Based on Yuan Tong's example in
+// https://github.com/AOMediaCodec/libavif/pull/1069#discussion_r4090282167:
+//   magick -size 128x1024 xc:gray -alpha set -channel A -evaluate set 60%
+//       +channel flat.png
+//   avifenc -s 6 -j 8 -k 2 flat.png flat.png --tilerowslog2:u 2 flat.png
+//       -o flat.avif
+TEST(EncodeAPI, Issue559019046) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  const unsigned int usage = AOM_USAGE_GOOD_QUALITY;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, usage), AOM_CODEC_OK);
+  cfg.g_threads = 8;
+  cfg.g_w = 128;
+  cfg.g_h = 1024;
+  cfg.g_lag_in_frames = 0;
+  cfg.kf_max_dist = 2;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+
+  const int speed = 6;
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, speed), AOM_CODEC_OK);
+
+  const aom_enc_frame_flags_t flags = 0;
+  int frame_index = 0;
+
+  // Encode a key frame.
+  aom_image_t *image = CreateGrayImage(AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h);
+  ASSERT_NE(image, nullptr);
+  ASSERT_EQ(aom_codec_encode(&enc, image, frame_index, 1, flags), AOM_CODEC_OK);
+  frame_index++;
+  const aom_codec_cx_pkt_t *pkt;
+  aom_codec_iter_t iter = nullptr;
+  while ((pkt = aom_codec_get_cx_data(&enc, &iter)) != nullptr) {
+    ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+    ASSERT_EQ(pkt->data.frame.flags & AOM_FRAME_IS_KEY, AOM_FRAME_IS_KEY);
+  }
+
+  // Encode a non-intra frame.
+  ASSERT_EQ(aom_codec_encode(&enc, image, frame_index, 1, flags), AOM_CODEC_OK);
+  frame_index++;
+  iter = nullptr;
+  while ((pkt = aom_codec_get_cx_data(&enc, &iter)) != nullptr) {
+    ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+    ASSERT_EQ(
+        pkt->data.frame.flags & (AOM_FRAME_IS_KEY | AOM_FRAME_IS_INTRAONLY), 0);
+  }
+
+  // Increase the number of tiles.
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TILE_ROWS, 2), AOM_CODEC_OK);
+
+  // Encode a key frame.
+  ASSERT_EQ(aom_codec_encode(&enc, image, frame_index, 1, flags), AOM_CODEC_OK);
+  frame_index++;
+  iter = nullptr;
+  while ((pkt = aom_codec_get_cx_data(&enc, &iter)) != nullptr) {
+    ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+    ASSERT_EQ(pkt->data.frame.flags & AOM_FRAME_IS_KEY, AOM_FRAME_IS_KEY);
+  }
+  aom_img_free(image);
+
+  // Flush the encoder.
+  bool got_data;
+  do {
+    ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+    got_data = false;
+    iter = nullptr;
+    while ((pkt = aom_codec_get_cx_data(&enc, &iter)) != nullptr) {
+      ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+      got_data = true;
+    }
+  } while (got_data);
+
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+#endif  // !CONFIG_REALTIME_ONLY
 
 // Emulates the WebCodecs VideoEncoder interface.
 class AV1Encoder {
@@ -1370,6 +1507,115 @@ INSTANTIATE_TEST_SUITE_P(All, EncodeAPIParameterized,
                              /*usage=*/testing::ValuesIn(kUsages),
                              /*speed=*/testing::Values(6, 7, 10),
                              /*aq_mode=*/testing::Values(0, 1, 2, 3)));
+
+// Triggers the IntraBC motion search by using screen content tools to encode a
+// key frame.
+// Note: The speed must be low enough to run the IntraBC pixel search.
+void IntraBCFrameSizeIncreaseTest(unsigned int usage, int speed) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, usage), AOM_CODEC_OK);
+  cfg.g_w = 64;
+  cfg.g_h = 16;
+  cfg.g_forced_max_frame_width = 64;
+  cfg.g_forced_max_frame_height = 64;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, speed), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN),
+            AOM_CODEC_OK);
+
+  aom_image_t *img_small = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 64, 16, 1);
+  ASSERT_NE(img_small, nullptr);
+  FillImageRandom(img_small);
+  aom_image_t *img_large = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 64, 64, 1);
+  ASSERT_NE(img_large, nullptr);
+  FillImageRandom(img_large);
+
+  EncodeOne(&enc, img_small, 0);
+
+  // Only the height grows, so the reconstructed frame keeps its stride while
+  // the source buffer gets a new one.
+  cfg.g_h = 64;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img_large, 1, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+  bool got_key_frame = false;
+  aom_codec_iter_t iter = nullptr;
+  while (const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter)) {
+    if (pkt->kind == AOM_CODEC_CX_FRAME_PKT &&
+        (pkt->data.frame.flags & AOM_FRAME_IS_KEY)) {
+      got_key_frame = true;
+    }
+  }
+  EXPECT_TRUE(got_key_frame);
+
+  aom_img_free(img_small);
+  aom_img_free(img_large);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+#if !CONFIG_REALTIME_ONLY
+TEST(EncodeAPI, IntraBCFrameSizeIncreaseGoodQuality) {
+  IntraBCFrameSizeIncreaseTest(AOM_USAGE_GOOD_QUALITY, 2);
+}
+
+TEST(EncodeAPI, IntraBCFrameSizeIncreaseAllIntra) {
+  IntraBCFrameSizeIncreaseTest(AOM_USAGE_ALL_INTRA, 5);
+}
+#endif  // !CONFIG_REALTIME_ONLY
+
+TEST(EncodeAPI, IntraBCFrameSizeIncreaseRealtime) {
+  IntraBCFrameSizeIncreaseTest(AOM_USAGE_REALTIME, 7);
+}
+
+// Encodes a narrow key frame after a wide one with screen content tools in
+// realtime mode. The source buffer of the narrow frame has a smaller stride
+// than the buffer of the wide frame, so the IntraBC motion search must not use
+// search sites built for the wider stride. The assertion in
+// av1_full_pixel_search() checks that the strides match.
+TEST(EncodeAPI, IntraBCFrameSizeDecreaseRealtime) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 1024;
+  cfg.g_h = 512;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 7), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN),
+            AOM_CODEC_OK);
+
+  aom_image_t *img_wide =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 1024, 512, 1);
+  ASSERT_NE(img_wide, nullptr);
+  FillImageRandom(img_wide);
+  aom_image_t *img_narrow =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 32, 512, 1);
+  ASSERT_NE(img_narrow, nullptr);
+  FillImageRandom(img_narrow);
+
+  EncodeOne(&enc, img_wide, 0);
+
+  cfg.g_w = 32;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img_narrow, 1, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+  aom_codec_iter_t iter = nullptr;
+  while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+  }
+
+  aom_img_free(img_wide);
+  aom_img_free(img_narrow);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
 
 #if !CONFIG_REALTIME_ONLY
 TEST(EncodeAPI, AllIntraMode) {
@@ -2629,5 +2875,496 @@ TEST(EncodeAPI, Buganizer503810640V2) {
   aom_img_free(raw);
   ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
 }
+
+#if !CONFIG_REALTIME_ONLY
+TEST(EncodeAPI, Buganizer558434716) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_GOOD_QUALITY),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 128;
+  cfg.g_h = 96;
+  cfg.g_forced_max_frame_width = 1920;
+  cfg.g_forced_max_frame_height = 1080;
+  cfg.g_pass = AOM_RC_ONE_PASS;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+
+  aom_image_t *img_small = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 128, 96, 1);
+  ASSERT_NE(img_small, nullptr);
+  FillImage(img_small, 128);
+
+  aom_image_t *img_large =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 320, 240, 1);
+  ASSERT_NE(img_large, nullptr);
+  FillImage(img_large, 128);
+
+  // Frame 0 at 128x96
+  ASSERT_EQ(aom_codec_encode(&enc, img_small, 0, 1, 0), AOM_CODEC_OK);
+
+  // Switch to larger resolution
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+
+  // Frame 1 at 320x240
+  ASSERT_EQ(aom_codec_encode(&enc, img_large, 1, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+
+  // Switch back to smaller resolution
+  cfg.g_w = 128;
+  cfg.g_h = 96;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+
+  // Frame 2 at 128x96 (keyframe)
+  ASSERT_EQ(aom_codec_encode(&enc, img_small, 2, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+
+  // Frames 3+ at 128x96 (interframes referencing frame 2)
+  for (int i = 3; i < 8; ++i) {
+    ASSERT_EQ(aom_codec_encode(&enc, img_small, i, 1, 0), AOM_CODEC_OK);
+  }
+
+  aom_img_free(img_small);
+  aom_img_free(img_large);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, PerceptualAIDynamicResolutionChange) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_ALL_INTRA),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 17;
+  cfg.g_h = 1;
+  cfg.g_forced_max_frame_width = 320;
+  cfg.g_forced_max_frame_height = 240;
+  cfg.g_pass = AOM_RC_ONE_PASS;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_DELTAQ_MODE, 3), AOM_CODEC_OK);
+
+  aom_image_t *img_small = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 17, 1, 1);
+  ASSERT_NE(img_small, nullptr);
+  FillImage(img_small, 128);
+
+  aom_image_t *img_large =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 320, 240, 1);
+  ASSERT_NE(img_large, nullptr);
+  FillImage(img_large, 128);
+
+  // Frame 0 at 17x1
+  ASSERT_EQ(aom_codec_encode(&enc, img_small, 0, 1, 0), AOM_CODEC_OK);
+
+  // Switch to larger resolution
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+
+  // Frame 1 at 320x240
+  ASSERT_EQ(aom_codec_encode(&enc, img_large, 1, 1, 0), AOM_CODEC_OK);
+
+  // Switch back to 17x1
+  cfg.g_w = 17;
+  cfg.g_h = 1;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+
+  // Frame 2 at 17x1
+  ASSERT_EQ(aom_codec_encode(&enc, img_small, 2, 1, 0), AOM_CODEC_OK);
+
+  aom_img_free(img_small);
+  aom_img_free(img_large);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Test for OSS-Fuzz Issue 559079132: Integer-overflow in
+// av1_caq_select_segment. When COMPLEXITY_AQ (aq_mode 2) is enabled with a high
+// target bitrate, sb64_target_rate is large, causing signed integer overflow
+// when multiplying sb64_target_rate * xmis * ymis in 32-bit arithmetic and when
+// casting target_rate to int.
+TEST(EncodeAPI, Issue559079132) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_ctx_t enc;
+  aom_codec_enc_cfg_t cfg;
+
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_GOOD_QUALITY),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 64;
+  cfg.g_h = 64;
+  cfg.g_timebase.num = 1;
+  cfg.g_timebase.den = 1;
+  cfg.rc_target_bitrate = 2000000;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.g_lag_in_frames = 0;
+
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_AQ_MODE, 2), AOM_CODEC_OK);
+
+  aom_image_t *img = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 64, 64, 1);
+  ASSERT_NE(img, nullptr);
+  FillImageRandom(img);
+
+  EncodeOne(&enc, img, 0);
+
+  // Flush encoder.
+  ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+  aom_codec_iter_t iter = nullptr;
+  while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+#endif  // !CONFIG_REALTIME_ONLY
+
+// Tests for OSS-Fuzz Issues 558463888, 559075253, 559225640:
+// When dynamically reducing threads with multiple tiles and row_mt=0, the
+// primary worker pool size (mt_info->num_workers) remains at the higher
+// capacity allocated previously while the module workers for the encode stage
+// (mt_info->num_mod_workers[MOD_ENC]) is reduced. If encode_frame_internal()
+// uses mt_info->num_workers instead of mt_info->num_mod_workers[MOD_ENC], it
+// can erroneously call av1_encode_tiles_mt() or stride with the wrong worker
+// count, causing tiles to be skipped and leading to a crash in bitstream
+// packing.
+void TestDynamicThreadReductionWithTiles(int tile_rows, int tile_columns,
+                                         int init_threads, int max_threads) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_ctx_t enc;
+  aom_codec_enc_cfg_t cfg;
+
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 256;
+  cfg.g_h = 256;
+  // Allow dynamic resolution changes up to 512x512.
+  cfg.g_forced_max_frame_width = 512;
+  cfg.g_forced_max_frame_height = 512;
+  cfg.g_threads = init_threads;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_error_resilient = 1;
+
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+
+  // Disable row-mt and configure tiling.
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ROW_MT, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 7), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TILE_ROWS, tile_rows),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TILE_COLUMNS, tile_columns),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_ENABLEAUTOALTREF, 0),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_AQ_MODE, 3), AOM_CODEC_OK);
+
+  aom_image_t *img_256 = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 256, 256, 1);
+  ASSERT_NE(img_256, nullptr);
+  FillImageRandom(img_256);
+
+  aom_image_t *img_512 = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 512, 512, 1);
+  ASSERT_NE(img_512, nullptr);
+  FillImageRandom(img_512);
+
+  // Frame 0: Encode at 256x256 with init_threads.
+  EncodeOne(&enc, img_256, 0);
+
+  // Frame 1: Switch to 512x512 with max_threads. This allocates max_threads
+  // workers in the primary worker pool (mt_info->num_workers = max_threads).
+  cfg.g_w = 512;
+  cfg.g_h = 512;
+  cfg.g_threads = max_threads;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+  EncodeOne(&enc, img_512, 1);
+
+  // Frame 2: Switch back to 256x256 with init_threads. The worker pool retains
+  // mt_info->num_workers = max_threads, but mt_info->num_mod_workers[MOD_ENC]
+  // is init_threads. This verifies that tile encoding properly handles the
+  // reduced worker count without skipping tiles.
+  cfg.g_w = 256;
+  cfg.g_h = 256;
+  cfg.g_threads = init_threads;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+  EncodeOne(&enc, img_256, 2);
+
+  // Flush encoder.
+  ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+  aom_codec_iter_t iter = nullptr;
+  while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+  }
+
+  aom_img_free(img_256);
+  aom_img_free(img_512);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, Issue558463888) {
+  TestDynamicThreadReductionWithTiles(/*tile_rows=*/1, /*tile_columns=*/0,
+                                      /*init_threads=*/1, /*max_threads=*/2);
+}
+
+TEST(EncodeAPI, Issue559075253) {
+  TestDynamicThreadReductionWithTiles(/*tile_rows=*/1, /*tile_columns=*/1,
+                                      /*init_threads=*/2, /*max_threads=*/4);
+}
+
+TEST(EncodeAPI, Issue559225640) {
+  TestDynamicThreadReductionWithTiles(/*tile_rows=*/0, /*tile_columns=*/1,
+                                      /*init_threads=*/1, /*max_threads=*/4);
+}
+
+#if !CONFIG_REALTIME_ONLY
+TEST(EncodeAPI, Buganizer558446054) {
+#if !CONFIG_SHARED
+  av1_init_intra_predictors();
+
+  MACROBLOCKD xd = {};
+  YV12_BUFFER_CONFIG cur_buf = {};
+  xd.cur_buf = &cur_buf;
+  MB_MODE_INFO mbmi = {};
+  mbmi.bsize = BLOCK_8X8;
+  mbmi.partition = PARTITION_NONE;
+  mbmi.mode = D45_PRED;
+  MB_MODE_INFO *mbmi_ptr = &mbmi;
+  xd.mi = &mbmi_ptr;
+  xd.bd = 8;
+  xd.left_available = 1;
+  xd.up_available = 1;
+  xd.tile.mi_row_end = 100;
+  xd.tile.mi_col_end = 100;
+  // Set mb_to_bottom_edge and mb_to_right_edge such that
+  // yd + txhpx < 0 and xr < 0:
+  // yd + txhpx = (mb_to_bottom_edge >> 3) + hpx - y = -16 + 8 - 0 = -8 < 0
+  // xr = (mb_to_right_edge >> 3) + wpx - x - txwpx = -5 + 8 - 0 - 4 = -1 < 0
+  // xr + txwpx = 3 > 0 (so n_top_px = 3).
+  xd.mb_to_bottom_edge = -16 * 8;
+  xd.mb_to_right_edge = -5 * 8;
+
+  uint8_t ref_buf[64 * 64];
+  memset(ref_buf, 200, sizeof(ref_buf));
+  uint8_t dst_buf[64 * 64] = { 0 };
+  av1_predict_intra_block(&xd, BLOCK_64X64, /*enable_intra_edge_filter=*/0,
+                          /*wpx=*/8, /*hpx=*/8, TX_4X4, D45_PRED,
+                          /*angle_delta=*/0, /*use_palette=*/0,
+                          FILTER_INTRA_MODES, ref_buf + 64 * 8 + 8, 64, dst_buf,
+                          64, /*col_off=*/0, /*row_off=*/0, /*plane=*/0);
+  // In Debug builds (-UNDEBUG), reverting clamp() triggers:
+  //   Assertion `n_left_px >= 0' failed.
+  // In Release builds (-DNDEBUG), reverting clamp() causes n_topright_px < 0
+  // (-4 < 0), skipping top-right extension of above_row[3]=200 into
+  // above_row[4..7] and leaving dst_buf[3] == 127 instead of 200.
+  ASSERT_EQ(dst_buf[3], 200);
+#endif  // !CONFIG_SHARED
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_ALL_INTRA),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 65;
+  cfg.g_h = 33;
+  cfg.g_threads = 0;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_pass = AOM_RC_ONE_PASS;
+  cfg.rc_end_usage = AOM_Q;
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AOME_SET_CPUUSED, 1), AOM_CODEC_OK);
+
+  aom_image_t raw;
+  ASSERT_NE(aom_img_alloc(&raw, AOM_IMG_FMT_I420, 65, 33, 1), nullptr);
+  FillImageRandom(&raw);
+
+  ASSERT_EQ(aom_codec_encode(&codec, &raw, 0, 1, 0), AOM_CODEC_OK);
+
+  aom_img_free(&raw);
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
+}
+#endif  // !CONFIG_REALTIME_ONLY
+
+#if !CONFIG_REALTIME_ONLY
+TEST(EncodeAPI, Buganizer558463892_558589747) {
+#if !CONFIG_SHARED
+  std::unique_ptr<AV1_COMP> cpi_test(new AV1_COMP());
+  struct aom_internal_error_info error = {};
+  if (setjmp(error.jmp)) FAIL();
+  error.setjmp = 1;
+  cpi_test->common.error = &error;
+  cpi_test->frame_info.mi_rows = 16;
+  cpi_test->frame_info.mi_cols = 16;
+  av1_init_mb_wiener_var_buffer(cpi_test.get());
+  ASSERT_NE(cpi_test->mb_weber_stats, nullptr);
+  cpi_test->mb_weber_stats[0].satd = 12345;
+
+  // Increase dimensions to 64x64 MI units: mb_weber_stats must be reallocated.
+  cpi_test->frame_info.mi_rows = 64;
+  cpi_test->frame_info.mi_cols = 64;
+  av1_init_mb_wiener_var_buffer(cpi_test.get());
+  EXPECT_EQ(cpi_test->mb_weber_stats[0].satd, 0);
+  aom_free(cpi_test->mb_weber_stats);
+#endif  // !CONFIG_SHARED
+
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_ALL_INTRA),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 64;
+  cfg.g_h = 64;
+  cfg.g_forced_max_frame_width = 1024;
+  cfg.g_forced_max_frame_height = 1024;
+  cfg.g_threads = 0;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_pass = AOM_RC_ONE_PASS;
+  cfg.rc_end_usage = AOM_Q;
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_DELTAQ_MODE, 3), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AOME_SET_CPUUSED, 0), AOM_CODEC_OK);
+
+  // Encode frame 0 at 64x64
+  aom_image_t raw;
+  ASSERT_NE(aom_img_alloc(&raw, AOM_IMG_FMT_I420, 64, 64, 1), nullptr);
+  FillImageRandom(&raw);
+  ASSERT_EQ(aom_codec_encode(&codec, &raw, 0, 1, 0), AOM_CODEC_OK);
+  aom_img_free(&raw);
+
+  // Change resolution to 256x256 mid-stream
+  cfg.g_w = 256;
+  cfg.g_h = 256;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+
+  // Encode frame 1 at 256x256
+  ASSERT_NE(aom_img_alloc(&raw, AOM_IMG_FMT_I420, 256, 256, 1), nullptr);
+  FillImageRandom(&raw);
+  ASSERT_EQ(aom_codec_encode(&codec, &raw, 1, 1, 0), AOM_CODEC_OK);
+  aom_img_free(&raw);
+
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
+}
+#endif  // !CONFIG_REALTIME_ONLY
+
+#if !CONFIG_REALTIME_ONLY
+TEST(EncodeAPI, Buganizer558417547) {
+#if !CONFIG_SHARED
+  std::unique_ptr<AV1_COMP> cpi_test(new AV1_COMP());
+  SequenceHeader seq_params = {};
+  seq_params.bit_depth = AOM_BITS_8;
+  seq_params.sb_size = BLOCK_64X64;
+  cpi_test->common.seq_params = &seq_params;
+  cpi_test->common.mi_params.mi_rows = 16;
+  cpi_test->common.mi_params.mi_cols = 16;
+  cpi_test->common.quant_params.base_qindex = 128;
+  cpi_test->common.delta_q_info.delta_q_res = 4;
+  cpi_test->frame_info.mi_rows = 16;
+  cpi_test->frame_info.mi_cols = 16;
+  cpi_test->norm_wiener_variance = 100;
+  struct aom_internal_error_info error = {};
+  if (setjmp(error.jmp)) FAIL();
+  error.setjmp = 1;
+  cpi_test->common.error = &error;
+  av1_init_mb_wiener_var_buffer(cpi_test.get());
+  ASSERT_NE(cpi_test->mb_weber_stats, nullptr);
+
+  // Set large SATD and distortion values exceeding INT32_MAX.
+  for (int i = 0; i < 16 * 16; ++i) {
+    cpi_test->mb_weber_stats[i].satd = 3000000000LL;
+    cpi_test->mb_weber_stats[i].distortion = 3000000000LL;
+    cpi_test->mb_weber_stats[i].rec_pix_max = 255;
+  }
+
+  // Test out-of-bounds / negative mi_row and mi_col without crashing or SIGFPE.
+  int q_neg = av1_get_sbq_perceptual_ai(cpi_test.get(), BLOCK_64X64, -16, -16);
+  EXPECT_GE(q_neg, 0);
+  int q_oob = av1_get_sbq_perceptual_ai(cpi_test.get(), BLOCK_64X64, 100, 100);
+  EXPECT_GE(q_oob, 0);
+
+  aom_free(cpi_test->mb_weber_stats);
+#endif  // !CONFIG_SHARED
+}
+
+// Regression test for b/565488030: Heap-buffer-overflow in
+// save_deblock_boundary_lines when Frame 0 is coded losslessly (q = 0, setting
+// cm->features.all_lossless = 1) or with large_scale_tile = 1 at a small
+// resolution and Frame 1 increases the resolution via
+// aom_codec_enc_config_set() with large_scale_tile = 0 and lossy coding (q > 0,
+// cm->features.all_lossless = 0) with loop restoration enabled.
+TEST(EncodeAPI, Buganizer565488030) {
+  for (unsigned int threads : { 1u, 4u }) {
+    for (unsigned int large_scale_tile : { 0u, 1u }) {
+      aom_codec_iface_t *const iface = aom_codec_av1_cx();
+      aom_codec_enc_cfg_t cfg;
+      ASSERT_EQ(
+          aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_GOOD_QUALITY),
+          AOM_CODEC_OK);
+
+      cfg.g_w = 4;
+      cfg.g_h = 4;
+      cfg.g_forced_max_frame_width = 256;
+      cfg.g_forced_max_frame_height = 256;
+      cfg.g_threads = threads;
+      cfg.g_lag_in_frames = 0;
+      cfg.large_scale_tile = large_scale_tile;
+      cfg.rc_end_usage = AOM_CBR;
+      cfg.rc_target_bitrate = 3999;
+      cfg.rc_min_quantizer = 0;
+      cfg.rc_max_quantizer = 63;
+
+      aom_codec_ctx_t enc;
+      ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+      ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 4), AOM_CODEC_OK);
+      // large_scale_tile = 1 implicitly disables global motion, so switching
+      // it to 0 below would turn global motion on mid-stream. The reference
+      // frames coded before that have no image pyramid, which trips
+      // assert(buf->buf.y_pyramid) in av1_encode_frame(). That is a separate
+      // issue, so keep global motion off to focus on loop restoration.
+      ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ENABLE_GLOBAL_MOTION, 0),
+                AOM_CODEC_OK);
+
+      aom_image_t *img_small =
+          aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 4, 4, 16);
+      ASSERT_NE(img_small, nullptr);
+      FillImage(img_small, 128);
+
+      // Frame 0: 4x4 at high CBR bitrate picks q = 0 (all_lossless = 1).
+      EncodeOne(&enc, img_small, 0);
+      aom_img_free(img_small);
+
+      // Frame 1: Reconfigure to 256x256 with large_scale_tile = 0 (picks q > 0,
+      // all_lossless = 0).
+      cfg.g_w = 256;
+      cfg.g_h = 256;
+      cfg.large_scale_tile = 0;
+      ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+
+      aom_image_t *img_large =
+          aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 256, 256, 16);
+      ASSERT_NE(img_large, nullptr);
+      FillImage(img_large, 128);
+
+      EncodeOne(&enc, img_large, 1);
+      aom_img_free(img_large);
+
+      // Flush encoder.
+      ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+      aom_codec_iter_t iter = nullptr;
+      while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+      }
+
+      ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+    }
+  }
+}
+#endif  // !CONFIG_REALTIME_ONLY
 
 }  // namespace

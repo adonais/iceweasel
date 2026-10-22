@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HWInferenceChild.h"
+#include "mozilla/hwinference/TextGenerationChild.h"
 #include "mozilla/Logging.h"
 #include "mozilla/hwinference/SpeechRecognitionParent.h"
 
@@ -14,8 +15,6 @@ LazyLogModule gHWInferenceLog("HWInference");
   MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Debug, fmt, ##__VA_ARGS__)
 #define LOGE(fmt, ...) \
   MOZ_LOG_FMT(gHWInferenceLog, LogLevel::Error, fmt, ##__VA_ARGS__)
-
-void HWInferenceChild::Shutdown() { PHWInferenceChild::Close(); }
 
 ipc::IPCResult HWInferenceChild::RecvNewContentSpeechRecognition(
     Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint,
@@ -33,6 +32,21 @@ ipc::IPCResult HWInferenceChild::RecvNewContentSpeechRecognition(
 
   LOGD("[{} - {}] Created SpeechRecognitionParent for content {}",
        fmt::ptr(this), __func__, static_cast<uint64_t>(aContentId));
+  return IPC_OK();
+}
+
+ipc::IPCResult HWInferenceChild::RecvNewTextGeneration(
+    Endpoint<hwinference::PTextGenerationChild>&& aEndpoint,
+    const ipc::FileDescriptor& aModel, const TextGenerationOptions& aOptions) {
+  LOGD("[{} - {}]", fmt::ptr(this), __func__);
+
+  RefPtr<TextGenerationChild> actor = new TextGenerationChild(aModel, aOptions);
+  if (!aEndpoint.Bind(actor)) {
+    LOGE("[{} - {}] Failed to bind TextGenerationChild", fmt::ptr(this),
+         __func__);
+    return IPC_FAIL(this, "Failed to bind TextGenerationChild");
+  }
+  actor->Initialize();
   return IPC_OK();
 }
 

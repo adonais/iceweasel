@@ -185,6 +185,11 @@ class EndianUtils {
 
 template <std::endian ThisEndian>
 class Endian : private EndianUtils {
+ public:
+  Endian() = delete;
+  Endian(const Endian& aTther) = delete;
+  void operator=(const Endian& aOther) = delete;
+
  protected:
   /** Read a uint16_t in ThisEndian endianness from |aPtr| and return it. */
   [[nodiscard]] static uint16_t readUint16(const void* aPtr) {
@@ -434,10 +439,6 @@ class Endian : private EndianUtils {
     T tmp = maybeSwap<std::endian::native, ThisEndian>(aValue);
     memcpy(aPtr, &tmp, sizeof(T));
   }
-
-  Endian() = delete;
-  Endian(const Endian& aTther) = delete;
-  void operator=(const Endian& aOther) = delete;
 };
 
 template <std::endian ThisEndian>

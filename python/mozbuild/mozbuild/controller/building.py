@@ -1442,7 +1442,9 @@ class BuildDriver(MozbuildObject):
 
             if "Make" not in active_backend:
                 backend_cls = get_backend_class(active_backend)(config)
-                status = backend_cls.build(self, output, jobs, verbose, what)
+                status = backend_cls.build(
+                    self, output, jobs, verbose, what, append_env=append_env
+                )
 
                 if status and clobber_requested:
                     for line in CLOBBER_REQUESTED_MESSAGE.splitlines():

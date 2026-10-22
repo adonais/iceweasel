@@ -433,7 +433,7 @@ BasicIceController::GetBestConnectionByNetwork() const {
 std::vector<const Connection*>
 BasicIceController::GetBestWritableConnectionPerNetwork() const {
   std::vector<const Connection*> connections;
-  for (auto kv : GetBestConnectionByNetwork()) {
+  for (const auto& kv : GetBestConnectionByNetwork()) {
     const Connection* conn = kv.second;
     if (conn->writable() && conn->connected()) {
       connections.push_back(conn);

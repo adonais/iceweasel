@@ -2496,7 +2496,6 @@ STATIC_ATOMS = [
     Atom("layout_css_android_pip_enabled", "layout.css.android-pip.enabled"),
     Atom("layout_css_appearance_base_enabled", "layout.css.appearance-base.enabled"),
     Atom("layout_css_cached_scrollbar_styles_enabled", "layout.css.cached-scrollbar-styles.enabled"),
-    Atom("layout_forms_button_input_align_content_block_enabled", "layout.forms.button-input-align-content-block.enabled"),
     Atom("layout_testing_scrollbars_always_hidden", "layout.testing.scrollbars.always-hidden"),
     Atom("dom_headingoffset_enabled", "dom.headingoffset.enabled"),
     # Contextual Identity / Containers

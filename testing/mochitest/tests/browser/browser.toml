@@ -11,6 +11,10 @@ skip-if = [
   "opt", # Bug 1993222
 ]
 
+["browser_EventUtils_drag_and_drop.js"]
+
+["browser_EventUtils_drag_suppressed.js"]
+
 ["browser_SpecialPowersForProcessSpawn.js"]
 support-files = ["../Harness_sanity/file_xorigin_frames.html"]
 
@@ -60,6 +64,11 @@ fail-if = [
   "true",
 ]
 
+["browser_fail_mouse_left_down.js"]
+fail-if = ["true"]
+
+["browser_fail_mouse_left_down_next.js"]
+
 ["browser_fail_throw.js"]
 fail-if = [
   "true",
@@ -86,7 +95,6 @@ fail-if = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && swgl && verify-standalone",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
 ]

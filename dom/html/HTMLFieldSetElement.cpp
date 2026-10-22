@@ -11,6 +11,7 @@
 #include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/HTMLFieldSetElementBinding.h"
+#include "nsContentUtils.h"
 #include "nsQueryObject.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(FieldSet)
@@ -280,7 +281,8 @@ void HTMLFieldSetElement::NotifyElementsForFirstLegendChange(bool aNotify) {
         new ContentList(this, MatchListedElements, nullptr, nullptr, true);
   }
 
-  uint32_t length = mElements->Length(true);
+  nsAutoScriptBlocker scriptBlocker;
+  uint32_t length = mElements->Length();
   for (uint32_t i = 0; i < length; ++i) {
     static_cast<nsGenericHTMLFormElement*>(mElements->Item(i))
         ->FieldSetFirstLegendChanged(aNotify);

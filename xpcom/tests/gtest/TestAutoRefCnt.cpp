@@ -91,6 +91,49 @@ TEST(AutoRefCnt, ThreadSafeAutoRefCntBalance)
             nsThreadSafeAutoRefCntRunner::sDecToZero);
 }
 
+struct ExternallyReclaimedObject {
+  ThreadSafeAutoRefCnt mRefCnt{1};
+};
+
+class nsThreadSafeAutoRefCntFinalReleaseRunner final : public Runnable {
+ public:
+  explicit nsThreadSafeAutoRefCntFinalReleaseRunner(
+      ExternallyReclaimedObject* aObject)
+      : Runnable("nsThreadSafeAutoRefCntFinalReleaseRunner"),
+        mObject(aObject) {}
+
+  NS_IMETHOD Run() final {
+    --mObject->mRefCnt;
+    return NS_OK;
+  }
+
+ private:
+  ~nsThreadSafeAutoRefCntFinalReleaseRunner() = default;
+
+  ExternallyReclaimedObject* mObject;
+};
+
+// Like nsDynamicAtom, the object is freed by another thread as soon as it sees
+// the count drop to zero, not by the thread releasing the last reference.
+// TSan decides races by happens-before rather than by timing: the main
+// thread's load of zero synchronizes only with the decrement itself, so any
+// access to the count after the decrement is reported on every run, as a data
+// race if it happens before the delete or as a use-after-free otherwise.
+TEST(AutoRefCnt, ThreadSafeAutoRefCntReclaimedByOtherThread)
+{
+  auto* object = new ExternallyReclaimedObject();
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv =
+      NS_NewNamedThread("AutoRefCnt Test", getter_AddRefs(thread),
+                        new nsThreadSafeAutoRefCntFinalReleaseRunner(object));
+  ASSERT_NS_SUCCEEDED(rv);
+  while (object->mRefCnt != 0) {
+    cpu_pause();
+  }
+  delete object;
+  thread->Shutdown();
+}
+
 // Spawns kThreadCount threads each attempting kDecrementsPerThread
 // decrements, then verifies the final refcount is 1 and that exactly
 // aExpectedLimitHits threads hit the limit.

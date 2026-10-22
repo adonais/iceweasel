@@ -564,6 +564,10 @@ static void RealBreak() {
       "BKPT #0");
 #elif defined(__aarch64__)
   asm("brk #0");
+#elif defined(__riscv)
+  asm("ebreak");
+#elif defined(__loongarch__)
+  asm("break 0");
 #elif defined(SOLARIS)
 #  if defined(__i386__) || defined(__i386) || defined(__x86_64__)
   asm("int $3");
@@ -643,6 +647,10 @@ static void Break(const char* aMsg) {
     (defined(__i386__) || defined(__i386) || defined(__x86_64__))
   RealBreak();
 #elif defined(__arm__) || defined(__aarch64__)
+  RealBreak();
+#elif defined(__riscv)
+  RealBreak();
+#elif defined(__loongarch__)
   RealBreak();
 #elif defined(SOLARIS)
   RealBreak();

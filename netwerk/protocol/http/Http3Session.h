@@ -201,7 +201,7 @@ class Http3Session final : public Http3SessionBase,
   };
 
   Http3Session();
-  nsresult Init(const nsHttpConnectionInfo* aConnInfo, nsINetAddr* selfAddr,
+  nsresult Init(nsHttpConnectionInfo* aConnInfo, nsINetAddr* selfAddr,
                 nsINetAddr* peerAddr, HttpConnectionUDP* udpConn,
                 uint32_t aProviderFlags, nsIInterfaceRequestor* callbacks,
                 nsIUDPSocket* socket, bool aIsTunnel = false);

@@ -18,16 +18,11 @@ aarch64-unknown-linux-gnu)
     CC="clang --target=$TARGET --sysroot=$MOZ_FETCHES_DIR/sysroot-aarch64-linux-gnu"
     EXE=
     ;;
-x86_64-apple-darwin)
-    export MACOSX_DEPLOYMENT_TARGET=10.15
+*-apple-darwin)
     TARGET=$1
-    CC="clang --target=$TARGET -isysroot $MOZ_FETCHES_DIR/MacOSX26.5.sdk"
-    EXE=
-    ;;
-aarch64-apple-darwin)
-    export MACOSX_DEPLOYMENT_TARGET=11.0
-    TARGET=$1
-    CC="clang --target=$TARGET -isysroot $MOZ_FETCHES_DIR/MacOSX26.5.sdk"
+    MACOS_TARGET=$TARGET
+    . $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
+    CC="$MACOS_CC $MACOS_CFLAGS"
     EXE=
     ;;
 x86_64-pc-windows-gnu)

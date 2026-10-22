@@ -1,20 +1,4 @@
 {
-  "background": {
-    "color": {
-      "hover": {
-        "value": {
-          "nativeTheme": "{background.color.dimmed.@base}",
-          "default": "{toolbarbutton.background.color.hover}"
-        }
-      },
-      "selected": {
-        "value": {
-          "nativeTheme": "SelectedItem",
-          "default": "{toolbarbutton.background.color.active}"
-        }
-      }
-    }
-  },
   "border": {
     "radius": {
       "value": "{urlbar.border.radius}"
@@ -27,20 +11,6 @@
         "light": "{color.gray.20}",
         "dark": "{color.gray.60}",
         "forcedColors": "#ffffff"
-      }
-    }
-  },
-  "action": {
-    "button": {
-      "background": {
-        "color": {
-          "@base": {
-            "value": "{urlbar.box.background.color.@base}"
-          },
-          "hover": {
-            "value": "{urlbar.box.background.color.hover}"
-          }
-        }
       }
     }
   },
@@ -58,12 +28,6 @@
           "light": "#3e315f",
           "dark": "#e7e1f8",
           "forcedColors": "#ffffff"
-        }
-      },
-      "selected": {
-        "value": {
-          "nativeTheme": "SelectedItemText",
-          "default": "{toolbar.field.text.color.focus}"
         }
       }
     }

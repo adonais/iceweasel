@@ -5370,6 +5370,11 @@ void av1_decode_tg_tiles_and_wrapup(AV1Decoder *pbi, const uint8_t *data,
 
   xd->error_info = cm->error;
   if (initialize_flag) setup_frame_info(pbi);
+  if (pbi->dec_tile_row < -1 || pbi->dec_tile_row >= tiles->rows ||
+      pbi->dec_tile_col < -1 || pbi->dec_tile_col >= tiles->cols) {
+    aom_internal_error(&pbi->error, AOM_CODEC_INVALID_PARAM,
+                       "Invalid tile row or column");
+  }
   const int num_planes = av1_num_planes(cm);
 
 #if CONFIG_COLLECT_COMPONENT_TIMING

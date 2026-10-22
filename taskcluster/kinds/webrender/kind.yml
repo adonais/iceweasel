@@ -16,6 +16,11 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
+    priority:
+        by-project:
+            autoland: high
+            mozilla-central: medium
+            default: null
     run-on-projects: ['integration', 'release']
     treeherder:
         tier: 1
@@ -115,6 +120,7 @@ tasks:
         when:
             files-changed:
                 - 'gfx/wr/**'
+                - 'taskcluster/scripts/misc/macos-setup.sh'
                 - 'taskcluster/scripts/misc/wr-macos-cross-build-setup.sh'
                 - 'taskcluster/scripts/misc/wrench-macos-build.sh'
 
@@ -173,6 +179,7 @@ tasks:
         when:
             files-changed:
                 - 'gfx/wr/**'
+                - 'taskcluster/scripts/misc/macos-setup.sh'
                 - 'taskcluster/scripts/misc/wr-cargotest-macos-build.sh'
                 - 'taskcluster/scripts/misc/wr-macos-cross-build-setup.sh'
 
@@ -227,6 +234,8 @@ tasks:
         when:
             files-changed:
                 - 'gfx/wr/**'
+                - 'taskcluster/scripts/misc/vs-cleanup.sh'
+                - 'taskcluster/scripts/misc/vs-setup.sh'
                 - 'taskcluster/scripts/misc/wrench-windows-tests.sh'
 
     wrench-android-debug:

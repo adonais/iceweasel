@@ -322,19 +322,20 @@ newtab-custom-widget-timer-toggle =
   .label = Timer
 newtab-custom-widget-clock-toggle =
   .label = Clock
-newtab-custom-widget-sports-toggle2 =
-  .label = Sports
 newtab-custom-widget-privacy-toggle =
   .label = Privacy
 # Crossword is a widget on New Tab that shows a daily crossword puzzle.
 newtab-custom-widget-crossword-toggle =
   .label = Crossword
-newtab-custom-widget-stocks-toggle =
-  .label = Stocks
+# Finance is a widget on New Tab that shows stock ticker prices.
+newtab-custom-widget-stocks-toggle2 =
+  .label = Finance
 newtab-custom-widget-picture-toggle =
   .label = Picture of the day
 newtab-custom-widget-search-toggle =
   .label = Search
+newtab-custom-widget-horoscopes-toggle =
+  .label = Horoscopes
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -564,6 +565,11 @@ newtab-weather-see-forecast-description =
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-sponsored = { $provider } ∙ Sponsored
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-weather-widget-open-menu-button =
+    .title = Open weather menu
+    .aria-label = Open weather menu
 newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
@@ -897,9 +903,12 @@ newtab-widget-lists-input-menu-edit2 =
 newtab-widget-lists-edit-clear =
     .aria-label = Cancel
     .title = Cancel
-# Lists is a noun, as in "options for the lists"
-newtab-widget-lists-menu-button =
-    .aria-label = Lists options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+# Lists is a noun, as in "the menu for your lists".
+newtab-widget-lists-open-menu-button =
+    .title = Open lists menu
+    .aria-label = Open lists menu
 
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
@@ -925,292 +934,28 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Turn off notifications
 newtab-widget-timer-menu-notifications-on = Turn on notifications
 newtab-widget-timer-menu-learn-more = Learn more
-newtab-widget-timer-menu-button =
-    .aria-label = Timer options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-widget-timer-open-menu-button =
+    .title = Open timer menu
+    .aria-label = Open timer menu
 
-## Sports widget
+## Crossword widget
 
-newtab-sports-widget-menu-follow-teams = Follow teams
-newtab-sports-widget-menu-view-schedule = View schedule
-newtab-sports-widget-menu-view-upcoming = View upcoming
-newtab-sports-widget-menu-view-results = View results
-# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
-newtab-sports-widget-menu-key-dates = Key dates
-newtab-sports-widget-menu-learn-more = Learn more
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-crossword-widget-open-menu-button =
+    .title = Open crossword menu
+    .aria-label = Open crossword menu
 
-# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
-newtab-sports-widget-keep-tabs = Keep tabs on the World Cup
-newtab-sports-widget-get-updates = Get live match updates and more.
-newtab-sports-widget-view-matches =
-    .label = View matches
-newtab-sports-widget-follow-teams =
-    .label = Follow teams
-
-# Variables:
-#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
-newtab-sports-widget-follow-teams-title =
-    { $number ->
-        *[other] Follow up to { $number } teams
-    }
-newtab-sports-widget-choose-wallpaper =
-    .label = Choose a wallpaper
-newtab-sports-widget-skip = Skip
-newtab-sports-widget-search-country =
-    .placeholder = Search country
-    .aria-label = Search country
-newtab-sports-widget-cancel = Cancel
-newtab-sports-widget-back-button =
-    .aria-label = Back
-newtab-sports-widget-done-button =
-    .label = Done
-# Shown in the follow-teams list for a team that has been knocked out of the tournament.
-# Variables:
-#   $teamName (string) - the localized team name (e.g. "Canada").
-newtab-sports-widget-team-name-eliminated = { $teamName } (eliminated)
-newtab-sports-widget-view-all =
-    .label = View all
-newtab-sports-widget-show-less =
-    .label = Show less
-# Toggle that filters the list of teams the user follows
-newtab-sports-widget-followed-only-toggle =
-    .label = Only followed teams
-# Status shown when more matches are being fetched.
-newtab-sports-widget-loading-more = Loading more matches…
-
-## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
-
-# arrow button that goes to the previous page of live matches.
-newtab-sports-widget-pagination-previous =
-    .aria-label = Previous
-    .title = Previous
-# arrow button that goes to the next page of live matches.
-newtab-sports-widget-pagination-next =
-    .aria-label = Next
-    .title = Next
-# Dot indicator that jumps directly to a given live match.
-# $index (number) - 1-based position of this dot in the list.
-# $total (number) - Total number of live matches.
-newtab-sports-widget-pagination-dot =
-    .aria-label = Live match { $index } of { $total }
-    .title = Live match { $index } of { $total }
-
-## Watch live stream dialog
-## Shown when the user clicks the “Watch live” button on a live match.
-## Lists available streaming services where the match can be watched.
-
-# Watch is a verb (as in watch matches online).
-newtab-sports-widget-watch =
-    .label = Watch
-    .title = Watch live
-
-# Watch is a verb (as in watch matches online).
-newtab-sports-widget-watch-icon =
-    .aria-label = Watch live
-    .title = Watch live
-
-newtab-sports-widget-watch-dialog-close =
-    .aria-label = Close
-    .title = Close
-
-# Tag: user can watch without paying (sign-in may still be required).
-newtab-sports-widget-watch-stream-free = Free
-
-# Tag: user can start watching via a trial; continued access may require payment after it ends.
-newtab-sports-widget-watch-stream-free-trial = Free trial
-
-# Tag: provider offers both a no-cost or trial path and a paid path.
-newtab-sports-widget-watch-stream-free-paid = Free and paid
-
-# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
-newtab-sports-widget-watch-stream-paid = Paid
-
-# Note: provider only streams some matches, not the full tournament.
-newtab-sports-widget-watch-stream-select-games-only = Select games only
-
-# Heading for the list of streaming services available in the user’s country/region.
-newtab-sports-widget-watch-available-region = Available in your region
-
-# Heading for the list of streaming services available outside the user’s country/region.
-newtab-sports-widget-watch-available-other-regions = Other regions
-
-# Button that opens the provider’s stream page in a new tab.
-newtab-sports-widget-watch-play =
-    .aria-label = Open stream
-    .title = Open stream
-
-##
-
-# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
-newtab-sports-widget-live = LIVE
-newtab-custom-widget-live-refresh =
-    .title = Refresh scores
-    .aria-label = Refresh scores
-# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
-newtab-sports-widget-key-dates = Key dates
-newtab-sports-widget-upcoming = Upcoming
-# Used for a match currently ongoing
-newtab-sports-widget-now = Now
-newtab-sports-widget-results = Results
-newtab-sports-widget-round-32 = Round of 32
-newtab-sports-widget-round-16 = Round of 16
-newtab-sports-widget-quarter-finals = Quarter-finals
-newtab-sports-widget-semi-finals = Semi-finals
-newtab-sports-widget-bronze-finals = Bronze Final
-# Final is the final match for 1st place.
-newtab-sports-widget-final = Final
-
-## Labels for the 12 World Cup group-stage groups (Group A through Group L).
-## Each team is assigned to one of these groups during the World Cup tournament group stage.
-
-newtab-sports-widget-group-stage = Group Stage
-newtab-sports-widget-group-a = Group A
-newtab-sports-widget-group-b = Group B
-newtab-sports-widget-group-c = Group C
-newtab-sports-widget-group-d = Group D
-newtab-sports-widget-group-e = Group E
-newtab-sports-widget-group-f = Group F
-newtab-sports-widget-group-g = Group G
-newtab-sports-widget-group-h = Group H
-newtab-sports-widget-group-i = Group I
-newtab-sports-widget-group-j = Group J
-newtab-sports-widget-group-k = Group K
-newtab-sports-widget-group-l = Group L
-
-##
-
-# Variables:
-#   $start (Date) - Start date of a tournament stage
-#   $end (Date) - End date of a tournament stage
-newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
-
-# Variables:
-#   $date (Date) - Date of a single tournament event
-newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
-
-newtab-sports-widget-delayed = Delayed
-newtab-sports-widget-postponed = Postponed
-newtab-sports-widget-suspended = Suspended
-newtab-sports-widget-cancelled = Cancelled
-
-newtab-sports-widget-information = Information about the match
-newtab-sports-widget-no-live-data = Live match data isn’t updating right now
-newtab-sports-widget-view-results-link = View results
-
-newtab-sports-widget-third-place = Third place
-# Runner-up is the team in 2nd place.
-newtab-sports-widget-runner-up = Runner-up
-newtab-sports-widget-champions = Champions
-newtab-sports-widget-world-cup-champions = 2026 World Cup Champions
-# Compact champions label for the medium-size widget result card; the larger
-# card uses newtab-sports-widget-world-cup-champions.
-newtab-sports-widget-world-cup-champions-short = 2026 Champions
-
-# Variables:
-#   $date (Date) - The match start time
-newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
-newtab-sports-widget-match-full-time = Full time
-newtab-sports-widget-match-halftime = Halftime
-newtab-sports-widget-match-extra-time = Extra time
-newtab-sports-widget-match-penalties = Penalties
-# Separator shown between two teams in a placeholder match row when no upcoming
-# match details are available yet.
-newtab-sports-widget-match-vs = vs
-# Note shown in the Upcoming tab when no match details are available yet.
-newtab-sports-widget-no-upcoming-matches = Stay tuned for upcoming match details
-
-## Accessible labels for match rows in the sports widget. These are read by
-## screen readers to announce the match details and status.
-## Variables shared by all messages in this group:
-##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
-##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
-
-# A finished match row (regular full-time result).
-# Variables:
-#   $homeScore (number) - The home team's regular-time score
-#   $awayScore (number) - The away team's regular-time score
-newtab-sports-widget-match-aria-label-results =
-    .aria-label = { $homeTeam }, { $homeScore } versus { $awayTeam }, { $awayScore }
-
-# A finished match row that went to a penalty shootout.
-# Parenthesized values are the shootout score.
-# Variables:
-#   $homeScore (number) - The home team's regular-time score
-#   $awayScore (number) - The away team's regular-time score
-#   $homePenalty (number) - The home team's penalty shootout score
-#   $awayPenalty (number) - The away team's penalty shootout score
-newtab-sports-widget-match-aria-label-results-penalties =
-    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) versus { $awayTeam }, { $awayScore } ({ $awayPenalty })
-
-# A match that is currently in progress.
-# Variables:
-#   $homeScore (number) - The home team's current score
-#   $awayScore (number) - The away team's current score
-newtab-sports-widget-match-aria-label-now =
-    .aria-label = Live: { $homeTeam }, { $homeScore } versus { $awayTeam }, { $awayScore }
-
-# An upcoming scheduled match row. Announces kickoff time and date.
-# Variables:
-#   $date (Date) - The scheduled kickoff date/time
-newtab-sports-widget-match-aria-label-upcoming =
-    .aria-label = { $homeTeam } vs. { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
-
-# An upcoming match row whose status is "delayed".
-newtab-sports-widget-match-aria-label-upcoming-delayed =
-    .aria-label = { $homeTeam } vs. { $awayTeam }, delayed
-
-# An upcoming match row whose status is "postponed".
-newtab-sports-widget-match-aria-label-upcoming-postponed =
-    .aria-label = { $homeTeam } vs. { $awayTeam }, postponed
-
-# An upcoming match row whose status is "suspended".
-newtab-sports-widget-match-aria-label-upcoming-suspended =
-    .aria-label = { $homeTeam } vs. { $awayTeam }, suspended
-
-# An upcoming match row whose status is "cancelled".
-newtab-sports-widget-match-aria-label-upcoming-cancelled =
-    .aria-label = { $homeTeam } vs. { $awayTeam }, cancelled
-
-## Sports widget — team names (FIFA country codes)
-## Only includes names not adequately covered by standard country-code
-## internationalization tooling.
-
-newtab-sports-widget-team-name-label-bih =
-    .label = Bosnia and Herzegovina
-newtab-sports-widget-team-name-label-civ =
-    .label = Ivory Coast
-newtab-sports-widget-team-name-label-cod =
-    .label = DR Congo
-newtab-sports-widget-team-name-label-eng =
-    .label = England
-newtab-sports-widget-team-name-label-sco =
-    .label = Scotland
-
-# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
-newtab-sports-widget-team-tbd = To be determined
-
-## Sports widget OMC messages
-## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+## World Cup wallpaper OMC messages
+## Shown as on-screen messages promoting the World Cup wallpapers.
 
 newtab-sports-widget-message-wallpapers-title = Kick off the World Cup with new wallpapers
 newtab-sports-widget-message-wallpapers-body = Bring some match-day energy to your browser for the tournament.
 newtab-sports-widget-message-wallpapers-cta = Choose wallpaper
 newtab-sports-widget-message-wallpapers-semifinals-title = Get a new wallpaper for the semi-finals
 newtab-sports-widget-message-wallpapers-semifinals-body = Set the stage for the World Cup’s biggest matches.
-newtab-sports-widget-message-add-widgets-cta =
-    .label = Add widgets
-newtab-sports-widget-message-day-in-play-title = Keep your day in play with { -brand-product-name } widgets
-newtab-sports-widget-message-day-in-play-body = Follow the World Cup, stay on task, track time around the globe, and more.
-newtab-sports-widget-message-explore-widgets-cta =
-    .label = Explore widgets
-
-## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
-
-newtab-sports-widget-message-survey-title = Help us make widgets better
-newtab-sports-widget-message-survey-body = That’s a wrap on the World Cup. Share your feedback on the experience.
-newtab-sports-widget-message-survey-widget-title = How was the World Cup widget?
-newtab-sports-widget-message-survey-widget-body = Share your feedback to help us improve future widgets. Then, try the new one in your lineup.
-newtab-sports-widget-message-survey-cta =
-    .label = Take survey
 
 ## Strings introduced by the Nova redesign of the Timer widget
 
@@ -1385,12 +1130,11 @@ newtab-clock-widget-custom-zone-results =
 newtab-clock-widget-custom-zone-no-results = No matching time zones
 # Returns from the custom clock form back to the city search.
 newtab-clock-widget-custom-back = Back
-# "Clock options" is an icon-only button in the widget toolbar — the
-# attributes are consumed as tooltip/screen-reader label only. The button
-# never renders visible text.
-newtab-clock-widget-menu-button2 =
-    .title = Clock options
-    .aria-label = Clock options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-clock-widget-open-menu-button =
+    .title = Open clock menu
+    .aria-label = Open clock menu
 # $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
 newtab-clock-widget-label-nickname-with-value = Nickname: { $nickname }
 
@@ -1526,10 +1270,6 @@ home-prefs-lists-header =
 home-prefs-timer-header =
     .label = Timer
 
-# Sports is a widget on New Tab showing sports scores and schedules.
-home-prefs-sports-widget-header =
-    .label = Sports
-
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Clock
@@ -1542,9 +1282,9 @@ home-prefs-privacy-header =
 home-prefs-crossword-widget-header =
     .label = Crossword
 
-# Stocks is a widget on New Tab that shows stock ticker prices.
-home-prefs-stocks-header =
-    .label = Stocks
+# Finance is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header2 =
+    .label = Finance
 
 # Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
 home-prefs-picture-header =
@@ -1554,6 +1294,10 @@ home-prefs-picture-header =
 # searches.
 home-prefs-search-widget-header =
     .label = Search
+
+# Horoscopes is a widget on New Tab that shows daily horoscopes.
+home-prefs-horoscopes-header =
+    .label = Horoscopes
 
 home-prefs-mission-message2 =
     .message = Our sponsors support our mission to build a better web.
@@ -1627,12 +1371,11 @@ newtab-privacy-widget-label =
 # Context menu item linking to more information about the Privacy widget.
 newtab-privacy-menu-learn-more = Learn more
 
-# "Privacy options" is an icon-only button in the widget toolbar — the
-# attributes are consumed as tooltip/screen-reader label only. The button
-# never renders visible text.
-newtab-privacy-widget-menu-button =
-    .title = Privacy options
-    .aria-label = Privacy options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-privacy-widget-open-menu-button =
+    .title = Open privacy menu
+    .aria-label = Open privacy menu
 
 ## Privacy widget — count readout
 
@@ -1793,11 +1536,11 @@ newtab-privacy-message-streak-cta = View protections
 newtab-privacy-message-first-protection = Keep browsing, { -brand-short-name } will keep blocking.
 newtab-privacy-message-first-protection-cta = View protections
 
-## Strings for the Stocks widget
+## Strings for the Finance widget
 
-# Accessible name for the Stocks widget; hidden because the list dropdown is
-# shown in place of the title.
-newtab-stocks-widget-title = Stocks
+# Accessible name for the Finance widget. It is usually not shown, since the
+# list dropdown or the chosen ticker symbol takes the title's place.
+newtab-stocks-widget-title2 = Finance
 
 # "Markets" is the default list of market ETFs. The value is shown in the menu,
 # and .label is shown on the button that opens it.
@@ -1811,18 +1554,17 @@ newtab-stocks-list-watchlist = Watchlist
 # Context menu item that opens the stock search (by company name or ticker symbol).
 newtab-stocks-menu-search-stocks = Search by name or symbol
 
-# Context menu item linking to more information about the Stocks widget.
+# Context menu item linking to more information about the Finance widget.
 newtab-stocks-menu-learn-more = Learn more
 
-# Shown in the Stocks widget when its data could not be loaded.
+# Shown in the Finance widget when its data could not be loaded.
 newtab-stocks-error-not-available = Stock data is not available.
 
-# "Stocks widget options" is an icon-only button in the widget toolbar — the
-# attributes are consumed as tooltip/screen-reader label only. The button
-# never renders visible text.
-newtab-stocks-widget-menu-button =
-    .title = Stocks widget options
-    .aria-label = Stocks widget options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-stocks-widget-open-menu-button2 =
+    .title = Open finance menu
+    .aria-label = Open finance menu
 
 # Toolbar button that opens the stock search. It shows only the icon until it is
 # hovered or focused, then the .label as well; "Search" is a verb. .title and
@@ -1859,7 +1601,7 @@ newtab-stocks-ticker-status-down = { $name }, down { $change }, { $price }
 # Stock didn't change during the day
 newtab-stocks-ticker-status-flat = { $name }, no change, { $change }, { $price }
 
-## Stocks widget watchlist add and remove controls
+## Finance widget watchlist add and remove controls
 
 # Tooltip and screen-reader label for the button that adds a stock to the watchlist.
 # The button shows only an icon and never renders visible text.
@@ -1893,7 +1635,7 @@ newtab-stocks-added-to-watchlist = Added { $name } to watchlist
 #   $name (String) - the fund/ETF name.
 newtab-stocks-removed-from-watchlist = Removed { $name } from watchlist
 
-## Stocks widget ticker search
+## Finance widget ticker search
 
 # Placeholder and screen-reader label for the ticker search input.
 newtab-stocks-search-input =
@@ -1961,11 +1703,11 @@ newtab-picture-attribution-source-link = Wikimedia Commons
 newtab-picture-attribution-license =
     .aria-label = View the { $license } license
 
-# Tooltip and screen-reader label for the icon-only button that opens the
-# widget's context menu. The button never renders visible text.
-newtab-picture-widget-menu-button =
-    .title = Picture of the day options
-    .aria-label = Picture of the day options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-picture-widget-open-menu-button =
+    .title = Open picture of the day menu
+    .aria-label = Open picture of the day menu
 
 # Button that sets the current picture as the New Tab background wallpaper. The
 # button collapses to an icon when not hovered/focused, so .title is its tooltip.
@@ -2004,9 +1746,11 @@ newtab-picture-image-alt = Wikimedia Commons picture of the day
 # Widget heading; also the widget's accessible name.
 newtab-search-widget-title = Search
 
-# Screen reader label for the widget's icon-only menu button.
-newtab-search-widget-menu-button =
-    .aria-label = Search options
+# Tooltip and screen reader label for the icon-only button that opens the
+# widget's menu.
+newtab-search-widget-open-menu-button =
+    .title = Open search menu
+    .aria-label = Open search menu
 
 # Context menu item linking to more information about the widget.
 newtab-recent-searches-menu-learn-more = Learn more
@@ -2038,6 +1782,18 @@ newtab-recent-searches-empty-recent = Recent searches will show here so you can 
 
 # Shown in place of the list when there are no trending search results.
 newtab-recent-searches-empty-trending = Trending searches are not available right now.
+
+## Strings for the Horoscopes widget
+
+# Widget heading; also the widget's accessible name.
+newtab-horoscopes-widget-title = Horoscopes
+
+# Screen reader label for the widget's icon-only menu button.
+newtab-horoscopes-widget-menu-button =
+    .aria-label = Horoscopes options
+
+# Context menu item linking to more information about the widget.
+newtab-horoscopes-menu-learn-more = Learn more
 
 ## Strings for the navigable panels that new tab content area can be
 ## split into.

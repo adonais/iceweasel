@@ -389,7 +389,7 @@ RtpTransmissionManager::GetAudioTransceiver() const {
   // This method only works with Plan B SDP, where there is a single
   // audio/video transceiver.
   RTC_DCHECK(!IsUnifiedPlan());
-  for (auto transceiver : transceivers_.List()) {
+  for (const auto& transceiver : transceivers_.List()) {
     if (transceiver->media_type() == MediaType::AUDIO) {
       return transceiver;
     }
@@ -404,7 +404,7 @@ RtpTransmissionManager::GetVideoTransceiver() const {
   // This method only works with Plan B SDP, where there is a single
   // audio/video transceiver.
   RTC_DCHECK(!IsUnifiedPlan());
-  for (auto transceiver : transceivers_.List()) {
+  for (const auto& transceiver : transceivers_.List()) {
     if (transceiver->media_type() == MediaType::VIDEO) {
       return transceiver;
     }
@@ -482,7 +482,7 @@ PLAN_B_ONLY void RtpTransmissionManager::CreateAudioReceiverPlanB(
   // the constructor taking stream IDs instead.
   auto audio_receiver = make_ref_counted<AudioRtpReceiver>(
       worker_thread(), remote_sender_info.sender_id, streams, false,
-      voice_media_receive_channel());
+      voice_media_receive_channel(), &env_.clock());
   auto task = (remote_sender_info.sender_id == kDefaultAudioSenderId)
                   ? audio_receiver->GetSetupForUnsignaledMediaChannel()
                   : audio_receiver->GetSetupForMediaChannel(
@@ -508,7 +508,8 @@ PLAN_B_ONLY void RtpTransmissionManager::CreateVideoReceiverPlanB(
   // the constructor taking stream IDs instead.
   auto video_receiver = make_ref_counted<VideoRtpReceiver>(
       worker_thread(), remote_sender_info.sender_id, streams,
-      /*enable_sframe_at_owner=*/nullptr);
+      /*enable_sframe_at_owner=*/nullptr,
+      /*media_channel=*/nullptr, &env_.clock());
 
   auto task = video_receiver->GetSetupForMediaChannel(
       remote_sender_info.sender_id == kDefaultVideoSenderId
@@ -670,7 +671,7 @@ RtpTransmissionManager::FindSenderForTrack(
   RTC_DCHECK_RUN_ON(signaling_thread());
   for (const auto& transceiver : transceivers_.List()) {
     RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
-    for (auto sender : transceiver->internal()->senders()) {
+    for (const auto& sender : transceiver->internal()->senders()) {
       if (sender->track() == track) {
         return sender;
       }
@@ -689,7 +690,7 @@ RtpTransmissionManager::FindSenderById(absl::string_view sender_id) const {
     // and one can use sender() not senders().
     // Since this function is used both in Plan B and Unified, this is
     // left as-is for now.
-    for (auto sender : transceiver->internal()->senders()) {
+    for (const auto& sender : transceiver->internal()->senders()) {
       if (sender->id() == sender_id) {
         return sender;
       }
@@ -703,7 +704,7 @@ PLAN_B_ONLY scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
 RtpTransmissionManager::FindReceiverById(absl::string_view receiver_id) const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   for (const auto& transceiver : transceivers_.List()) {
-    for (auto receiver : transceiver->internal()->receivers()) {
+    for (const auto& receiver : transceiver->internal()->receivers()) {
       if (receiver->id() == receiver_id) {
         return receiver;
       }

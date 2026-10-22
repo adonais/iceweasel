@@ -37,8 +37,7 @@ const lazy = XPCOMUtils.declareLazy({
 let previousAssistantModel = "No model";
 
 Preferences.addAll([
-  // browser.ai.control.* prefs defined in main.js
-  { id: "browser.ml.chat.provider", type: "string" },
+  // browser.ai.control.* and browser.ml.chat.provider prefs defined in main.js
   { id: "browser.ml.chat.shortcuts.smartwindow", type: "bool" },
   { id: "browser.smartwindow.apiKey", type: "string" },
   { id: "browser.smartwindow.enabled", type: "bool" },
@@ -605,10 +604,6 @@ makeAiControlSetting({
 
 // sidebar chatbot
 Preferences.addSetting({ id: "chatbotProviderItem" });
-Preferences.addSetting({
-  id: "chatbotProvider",
-  pref: "browser.ml.chat.provider",
-});
 Preferences.addSetting(
   /** @type {{ feature: OnDeviceModelFeaturesEnum } & SettingConfig } */ ({
     id: "aiControlSidebarChatbotSelect",

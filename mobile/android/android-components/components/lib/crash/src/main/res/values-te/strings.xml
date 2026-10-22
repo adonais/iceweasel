@@ -17,10 +17,14 @@
   <string name="mozac_lib_crash_dialog_button_restart">%1$s‌ను పునఃప్రారంభించు</string>
   <!-- Name of the "notification channel" used for displaying a notification when the app crashed and we can't show a prompt. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_lib_crash_channel">క్రాషులు</string>
+  <!-- Title of the crash reporter notification for background process crashes. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_lib_crash_background_process_notification_title">క్షమించండి. %1$sలో ఏదో సమస్య ఏర్పడింది.</string>
   <!-- Label of a notification action/button that will send the crash report to Mozilla. -->
   <string name="mozac_lib_crash_notification_action_report">నివేదించు</string>
   <!-- Label of notification showing that the crash report service is running. %1$s is the name of the organization (for example "Mozilla"). -->
   <string name="mozac_lib_send_crash_report_in_progress">క్రాష్ నివేదికను %1$s‌ కి పంపిస్తోంది</string>
+  <!-- Label of notification showing that the crash handling service is gathering the crash data. -->
+  <string name="mozac_lib_gathering_crash_data_in_progress">క్రాష్ సమాచారాన్ని సేకరిస్తోంది</string>
   <!-- Title of the activity that shows the list of past crashes (similar to about:crashes) -->
   <string name="mozac_lib_crash_activity_title">క్రాష్ నివేదికలు</string>
   <!-- Text shown instead of crash list if no crashes have been submitted yet -->

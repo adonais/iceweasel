@@ -1,6 +1,6 @@
 # PR_GetInheritedFileMap
 
-Imports a {ref}`PRFileMap` previously exported by my parent process via
+Imports a {doc}`prfilemap` previously exported by my parent process via
 `PR_CreateProcess`.
 
 ## Syntax
@@ -20,15 +20,15 @@ The function has the following parameter:
 
 `shmname`
 
-: The name provided to {ref}`PR_ProcessAttrSetInheritableFileMap`.
+: The name provided to {doc}`pr_processattrsetinheritablefilemap`.
 
 ### Returns
 
-Pointer to {ref}`PRFileMap` or `NULL` on error.
+Pointer to {doc}`prfilemap` or `NULL` on error.
 
 ## Description
 
-{ref}`PR_GetInheritedFileMap` retrieves a PRFileMap object exported from
+{doc}`pr_getinheritedfilemap` retrieves a PRFileMap object exported from
 its parent process via `PR_CreateProcess`.
 
 :::{note}

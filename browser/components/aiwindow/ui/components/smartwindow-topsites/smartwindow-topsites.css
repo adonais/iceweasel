@@ -9,7 +9,7 @@
   flex-wrap: wrap;
   gap: var(--space-small);
   padding-block-start: var(--space-xxlarge);
-  padding-block-end: var(--space-large);
+  padding-block-end: var(--space-xlarge);
 }
 
 .sw-topsite {

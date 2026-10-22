@@ -41,8 +41,8 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.RemoveShortcut,
         is MenuAction.DeleteBrowsingDataAndQuit,
         is MenuAction.FindInPage,
-        is MenuAction.MenuBanner,
-        is MenuAction.DismissMenuBanner,
+        is MenuAction.DefaultBrowserMenuBannerClicked,
+        is MenuAction.DefaultBrowserMenuBannerDismissed,
         is MenuAction.OpenInApp,
         is MenuAction.OpenInFirefox,
         is MenuAction.InstallAddon,
@@ -53,7 +53,9 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.MoveToNonPrivateTab,
         is MenuAction.IPProtectionToggle,
         is MenuAction.SaveAsPdfRequested,
-        is MenuAction.PrintRequested -> state
+        is MenuAction.PrintRequested,
+        is MenuAction.OnExtensionsMenuClicked,
+        is MenuAction.WebExtensionActionClicked -> state
 
         is MenuAction.OnMoreMenuClicked -> state.copy(isMoreMenuExpanded = !state.isMoreMenuExpanded)
         is MenuAction.RequestDesktopSite -> state.copy(isDesktopMode = true)

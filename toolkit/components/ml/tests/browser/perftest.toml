@@ -7,6 +7,9 @@ prefs = [
     # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
     # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348).
     "gfx.webgpu.ignore-blocklist=true",
+  # The pref defaults on; the CI tasks that want the HWInference
+  # process opt in through MOZ_ML_LLAMA_HWINFERENCE instead (see head.js).
+  "browser.ml.llama.hwInference=false",
 ]
 
 ["browser_ml_autofill_perf.js"]

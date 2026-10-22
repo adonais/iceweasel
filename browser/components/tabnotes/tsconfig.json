@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.mjs", "types/*.ts"],
+  "include": ["**/*.mjs", "types/*.ts", "../tabbrowser/types/elements.ts"],
   "exclude": [],
   "extends": "../../../tools/@types/tsconfig.json",
 

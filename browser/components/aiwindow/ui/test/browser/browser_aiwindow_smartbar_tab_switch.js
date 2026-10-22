@@ -4,11 +4,10 @@
 /**
  * Regression test for the AI Window smartbar's TAB_SWITCH chiclet.
  *
- * The smartbar lives in the AI Window's content document, so UrlbarView's
- * `this.window` resolves to a content view with no `gBrowser`. Typing a query
- * that matches an open tab must still render the switch-to-tab chiclet, which
- * means UrlbarView has to read `gBrowser` off the chrome window via
- * `this.input.window`.
+ * The smartbar lives in the AI Window's content document, whose window has no
+ * `gBrowser`. Typing a query that matches an open tab must still render the
+ * switch-to-tab chiclet, which means UrlbarView has to read `gBrowser` off the
+ * chrome window via `this.input.window`.
  */
 
 "use strict";

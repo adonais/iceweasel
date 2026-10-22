@@ -95,7 +95,7 @@ add_task(async function test_getPageContent_exact_url_match() {
       makeConversation()
     );
 
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(result, "Result should have text property");
     Assert.ok(result.includes("Example Page"), "Should include page title");
@@ -132,11 +132,11 @@ add_task(async function test_getPageContent_multiple_urls() {
 
     Assert.equal(result_array.length, 2, "Should return results for both URLs");
     Assert.ok(
-      result_array[0].includes("Page One"),
+      result_array[0].content.includes("Page One"),
       "First result should contain first tab title"
     );
     Assert.ok(
-      result_array[1].includes("Page Two"),
+      result_array[1].content.includes("Page Two"),
       "Second result should contain second tab title"
     );
   } finally {
@@ -161,7 +161,7 @@ add_task(async function test_getPageContent_tab_not_found_with_allowed_url() {
       makeConversation()
     );
 
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     // Headless extraction doesn't work in xpcshell environment so it falls
     // back to the catch handler.
@@ -200,7 +200,7 @@ add_task(
         conversation
       );
 
-      const result = result_array[0];
+      const result = result_array[0].content;
 
       Assert.ok(
         result.includes("Access is not allowed"),
@@ -226,7 +226,7 @@ add_task(async function test_getPageContent_no_browsing_context() {
       { url_list: [targetUrl] },
       makeConversation()
     );
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(
       result.includes("Cannot access content"),
@@ -269,7 +269,7 @@ add_task(async function test_getPageContent_successful_extraction() {
       makeConversation()
     );
 
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(result.includes("Content from"), "Should indicate content mode");
     Assert.ok(result.includes("Article"), "Should include tab title");
@@ -303,7 +303,7 @@ add_task(async function test_getPageContent_content_format() {
       { url_list: [targetUrl] },
       makeConversation()
     );
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(
       result.includes("Content from"),
@@ -334,7 +334,7 @@ add_task(async function test_getPageContent_empty_content() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result_array = await GetPageContent.getPageContentResults(
+    const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
       makeConversation()
     );
@@ -378,7 +378,7 @@ add_task(async function test_getPageContent_extraction_error() {
       makeConversation()
     );
 
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(
       result.includes("Could not retrieve the content for the page"),
@@ -413,7 +413,7 @@ add_task(async function test_getPageContent_reader_mode_content() {
       makeConversation()
     );
 
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(result.includes("Content from"), "Should return content result");
     Assert.ok(
@@ -438,7 +438,7 @@ add_task(async function test_getPageContent_invalid_url_format() {
       { url_list: [targetUrl] },
       makeConversation()
     );
-    const result = result_array[0];
+    const result = result_array[0].content;
 
     Assert.ok(
       result.includes("This URL is not allowed"),
@@ -460,7 +460,7 @@ add_task(async function test_getPageContent_refuses_both_security_flags() {
   );
   Assert.equal(result.length, 1, "Should return one message");
   Assert.ok(
-    result[0].includes("Access is not allowed"),
+    result[0].content.includes("Access is not allowed"),
     "Should return refusal message when both security flags are set"
   );
 });
@@ -479,7 +479,7 @@ add_task(async function test_getPageContent_allows_untrusted_input_only() {
     );
     Assert.equal(result.length, 1, "Should return one result");
     Assert.ok(
-      result[0].includes("Example Page"),
+      result[0].content.includes("Example Page"),
       "Should return real content, not a refusal"
     );
   } finally {
@@ -488,14 +488,20 @@ add_task(async function test_getPageContent_allows_untrusted_input_only() {
 });
 
 add_task(
-  async function test_getPageContent_returns_error_string_for_non_array_url_list() {
-    const result = await GetPageContent.getPageContent(
+  async function test_getPageContent_reports_a_non_array_url_list_as_a_result() {
+    const result_array = await GetPageContent.getPageContent(
       { url_list: "not-an-array" },
       makeConversation()
     );
-    Assert.equal(typeof result, "string", "Should return a string");
+    // A bare string here used to reach callers that index into the array;
+    // Chat's Glean length sum called reduce() on it and threw.
+    Assert.ok(Array.isArray(result_array), "Should still return results");
+    Assert.equal(result_array.length, 1, "One result describing the problem");
+
+    const result = result_array[0];
+    Assert.equal(result.ok, false, "Marked as a failed read");
     Assert.ok(
-      result.startsWith("Error:"),
+      result.content.startsWith("Error:"),
       "Should return an error string so the model can self-correct"
     );
   }
@@ -537,7 +543,7 @@ add_task(async function test_getPageContent_ledger_url_uses_stripped_fetch() {
 
     Assert.equal(result.length, 1, "Should return one result");
     Assert.equal(
-      result[0],
+      result[0].content,
       "Content from https://search-result.example.com/article:\n\nStripped page content",
       "Should return the content extracted by the headless extractor"
     );
@@ -593,11 +599,11 @@ add_task(async function test_getPageContent_aborts_hung_extraction() {
 
     Assert.equal(result_array.length, 1, "Should return one result");
     Assert.ok(
-      result_array[0].includes("canceled after a timeout"),
+      result_array[0].content.includes("canceled after a timeout"),
       "A hung read that is aborted resolves with the cancellation message"
     );
     Assert.ok(
-      result_array[0].includes(targetUrl),
+      result_array[0].content.includes(targetUrl),
       "Cancellation message should reference the URL"
     );
   } finally {

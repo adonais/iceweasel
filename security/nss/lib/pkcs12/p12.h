@@ -111,13 +111,6 @@ struct SEC_PKCS12DecoderItemStr {
 
 SEC_BEGIN_PROTOS
 
-SEC_PKCS12SafeInfo *
-SEC_PKCS12CreatePubKeyEncryptedSafe(SEC_PKCS12ExportContext *p12ctxt,
-                                    CERTCertDBHandle *certDb,
-                                    CERTCertificate *signer,
-                                    CERTCertificate **recipients,
-                                    SECOidTag algorithm, int keysize);
-
 extern SEC_PKCS12SafeInfo *
 SEC_PKCS12CreatePasswordPrivSafe(SEC_PKCS12ExportContext *p12ctxt,
                                  SECItem *pwitem, SECOidTag privAlg);
@@ -128,10 +121,6 @@ SEC_PKCS12CreateUnencryptedSafe(SEC_PKCS12ExportContext *p12ctxt);
 extern SECStatus
 SEC_PKCS12AddPasswordIntegrity(SEC_PKCS12ExportContext *p12ctxt,
                                SECItem *pwitem, SECOidTag integAlg);
-extern SECStatus
-SEC_PKCS12AddPublicKeyIntegrity(SEC_PKCS12ExportContext *p12ctxt,
-                                CERTCertificate *cert, CERTCertDBHandle *certDb,
-                                SECOidTag algorithm, int keySize);
 
 extern SEC_PKCS12ExportContext *
 SEC_PKCS12CreateExportContext(SECKEYGetPasswordKey pwfn, void *pwfnarg,
@@ -164,10 +153,6 @@ SEC_PKCS12AddCertAndKey(SEC_PKCS12ExportContext *p12ctxt,
                         CERTCertificate *cert, CERTCertDBHandle *certDb,
                         void *keySafe, void *keyNestedDest,
                         PRBool shroudKey, SECItem *pwitem, SECOidTag algorithm);
-
-extern void *
-SEC_PKCS12CreateNestedSafeContents(SEC_PKCS12ExportContext *p12ctxt,
-                                   void *baseSafe, void *nestedDest);
 
 extern SECStatus
 SEC_PKCS12Encode(SEC_PKCS12ExportContext *p12exp,

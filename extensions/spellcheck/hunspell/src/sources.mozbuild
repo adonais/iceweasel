@@ -9,6 +9,7 @@ hunspell_sources = [
     'csutil.cxx',
     'hashmgr.cxx',
     'hunspell.cxx',
+    'hunspelltrace.cxx',
     'phonet.cxx',
     'replist.cxx',
     'suggestmgr.cxx',

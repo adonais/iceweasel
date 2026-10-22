@@ -26,10 +26,16 @@ function MessageWrapper({
   );
   const [hasRun, setHasRun] = useState();
 
+  // The observer only fires once per element, so record the intersection even
+  // while the tab is hidden and let the effects below wait for the tab to be
+  // shown.
   const handleIntersection = useCallback(() => {
     setIsIntersecting(true);
+  }, []);
+
+  useEffect(() => {
     // only send impression if messageId is defined and tab is visible
-    if (tabIsVisible && message.messageData.id && !hasRun) {
+    if (isIntersecting && tabIsVisible && message.messageData.id && !hasRun) {
       setHasRun(true);
       dispatch(
         ac.AlsoToMain({
@@ -38,11 +44,12 @@ function MessageWrapper({
         })
       );
     }
-  }, [dispatch, message, tabIsVisible, hasRun]);
+  }, [dispatch, message, tabIsVisible, isIntersecting, hasRun]);
 
   useEffect(() => {
-    // we dont want to dispatch this action unless the current tab is open and visible
-    if (message.isVisible && tabIsVisible) {
+    // we dont want to dispatch this action unless the current tab is open and
+    // visible, and the message has been scrolled into view
+    if (message.isVisible && tabIsVisible && isIntersecting) {
       dispatch(
         ac.AlsoToMain({
           type: at.MESSAGE_NOTIFY_VISIBILITY,
@@ -50,7 +57,7 @@ function MessageWrapper({
         })
       );
     }
-  }, [message, dispatch, tabIsVisible]);
+  }, [message, dispatch, tabIsVisible, isIntersecting]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {

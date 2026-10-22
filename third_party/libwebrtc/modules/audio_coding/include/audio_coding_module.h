@@ -14,7 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
+#include <vector>
 
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/function_view.h"
@@ -34,6 +36,18 @@ class AudioPacketizationCallback {
  public:
   virtual ~AudioPacketizationCallback() {}
 
+  virtual int32_t SendData(
+      AudioFrameType frame_type,
+      uint8_t payload_type,
+      uint32_t timestamp,
+      const uint8_t* payload_data,
+      size_t payload_len_bytes,
+      int64_t absolute_capture_timestamp_ms,
+      std::optional<uint8_t> audio_level_dbov_override,
+      std::optional<std::vector<uint32_t>> csrcs_override) {
+    return SendData(frame_type, payload_type, timestamp, payload_data,
+                    payload_len_bytes, absolute_capture_timestamp_ms);
+  }
   virtual int32_t SendData(AudioFrameType frame_type,
                            uint8_t payload_type,
                            uint32_t timestamp,

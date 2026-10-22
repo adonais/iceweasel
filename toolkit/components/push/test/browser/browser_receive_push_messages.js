@@ -264,8 +264,12 @@ add_task(async function test_push_service_broken() {
   );
 });
 
+function countObservers(topic) {
+  return [...Services.obs.enumerateObservers(topic)].length;
+}
+
 function countPushTopicObservers() {
-  return [...Services.obs.enumerateObservers(PUSH_SERVICE.pushTopic)].length;
+  return countObservers(PUSH_SERVICE.pushTopic);
 }
 
 add_task(async function test_push_messages_not_observed_without_push_service() {
@@ -302,8 +306,11 @@ add_task(async function test_push_messages_observed_with_push_service() {
     ],
   });
 
+  const handledTopic = PUSH_SERVICE.pushMessageHandledTopic;
+
   try {
     is(countPushTopicObservers(), 0, "No observer before receiving");
+    is(countObservers(handledTopic), 0, "No handled observer before receiving");
 
     let receiving = CommandLineHandler.prototype.receivePushMessages();
 
@@ -314,22 +321,25 @@ add_task(async function test_push_messages_observed_with_push_service() {
       10
     );
 
+    is(countObservers(handledTopic), 1, "One handled observer while receiving");
+
     await receiving;
 
     is(countPushTopicObservers(), 0, "No observer after receiving");
+    is(countObservers(handledTopic), 0, "No handled observer after receiving");
   } finally {
     pushService.restore();
     await SpecialPowers.popPrefEnv();
   }
 });
 
-function sendPushMessage() {
+function sendPushMessage(messageId = "") {
   Cc["@mozilla.org/push/Notifier;1"]
     .getService(Ci.nsIPushNotifier)
     .notifyPush(
       "chrome://push-receive-push-messages",
       Services.scriptSecurityManager.getSystemPrincipal(),
-      ""
+      messageId
     );
 }
 
@@ -476,5 +486,376 @@ add_task(async function test_argument_not_handled_in_child_process() {
     cmdLine.findFlag("receive-push-messages", false),
     0,
     "The argument is left unhandled"
+  );
+});
+
+function backgroundHelperWakes(commandLineState) {
+  Services.fog.testResetFOG();
+
+  let receivePushMessages = sinon
+    .stub(CommandLineHandler.prototype, "receivePushMessages")
+    .resolves();
+
+  try {
+    Cc[RECEIVE_PUSH_MESSAGES_CONTRACT_ID].getService(
+      Ci.nsICommandLineHandler
+    ).handle(
+      Cu.createCommandLine(["--receive-push-messages"], null, commandLineState)
+    );
+  } finally {
+    receivePushMessages.restore();
+  }
+
+  return Glean.backgroundNotificationHelper.wake.testGetValue() ?? 0;
+}
+
+add_task(async function test_wake_recorded_without_firefox_running() {
+  is(
+    backgroundHelperWakes(Ci.nsICommandLine.STATE_INITIAL_LAUNCH),
+    1,
+    "The wake is recorded"
+  );
+});
+
+// Firefox was already awake, so the helper handing the argument to the running
+// instance is not a wake.
+add_task(async function test_wake_not_recorded_with_firefox_running() {
+  is(
+    backgroundHelperWakes(Ci.nsICommandLine.STATE_REMOTE_AUTO),
+    0,
+    "No wake is recorded"
+  );
+});
+
+// The samples a distribution recorded, one entry per wake, so that a wake
+// recording zero is distinguishable from no wake recording anything.
+function samples(distribution) {
+  let { values = {} } = distribution.testGetValue() ?? {};
+
+  return Object.entries(values)
+    .filter(([, count]) => count > 0)
+    .flatMap(([bucket, count]) => Array(count).fill(Number(bucket)))
+    .sort((a, b) => a - b);
+}
+
+function messagesSampled() {
+  return samples(Glean.backgroundNotificationHelper.wakeMessages);
+}
+
+add_task(async function test_messages_are_counted() {
+  Services.fog.testResetFOG();
+
+  await receivePushMessagesDurationMs({
+    perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+    totalTimeoutMs: TOTAL_TIMEOUT_MS,
+    messagesToSend: MESSAGES_TO_SEND,
+  });
+
+  Assert.deepEqual(
+    messagesSampled(),
+    [MESSAGES_TO_SEND],
+    "The wake records every message that arrived"
+  );
+});
+
+// A wake that delivers nothing is the case the metric exists to expose, so it
+// has to be distinguishable rather than simply absent.
+add_task(async function test_no_messages_counted_when_none_arrive() {
+  Services.fog.testResetFOG();
+
+  await receivePushMessagesDurationMs({
+    perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+    totalTimeoutMs: TOTAL_TIMEOUT_MS,
+    messagesToSend: 0,
+  });
+
+  Assert.deepEqual(
+    messagesSampled(),
+    [0],
+    "A wake that received nothing records zero messages"
+  );
+});
+
+// Each wake is its own sample, rather than one total spanning both.
+add_task(async function test_each_wake_is_counted_separately() {
+  Services.fog.testResetFOG();
+
+  for (let messagesToSend of [0, MESSAGES_TO_SEND]) {
+    await receivePushMessagesDurationMs({
+      perMessageTimeoutMs: PER_MESSAGE_TIMEOUT_MS,
+      totalTimeoutMs: TOTAL_TIMEOUT_MS,
+      messagesToSend,
+    });
+  }
+
+  Assert.deepEqual(
+    messagesSampled(),
+    [0, MESSAGES_TO_SEND],
+    "Every wake records its own messages"
+  );
+});
+
+function showNotification() {
+  Services.obs.notifyObservers(null, "web-notification-shown");
+}
+
+function notificationsSampled() {
+  return samples(Glean.backgroundNotificationHelper.wakeNotifications);
+}
+
+add_task(async function test_notifications_shown_are_counted() {
+  let pushService = sinon
+    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
+    .resolves(true);
+
+  await using _pref = await SpecialPowers.prefEnv({
+    set: [
+      [
+        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
+        PER_MESSAGE_TIMEOUT_MS,
+      ],
+      [
+        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
+        TOTAL_TIMEOUT_MS,
+      ],
+    ],
+  });
+
+  Services.fog.testResetFOG();
+
+  try {
+    let receiving = CommandLineHandler.prototype.receivePushMessages();
+
+    // The observers are added after the Push Service check resolves
+    await TestUtils.waitForCondition(
+      () => countPushTopicObservers() == 1,
+      "Receiving has started",
+      10
+    );
+
+    showNotification();
+    showNotification();
+
+    await receiving;
+
+    Assert.deepEqual(
+      notificationsSampled(),
+      [2],
+      "The wake records the notifications shown while receiving"
+    );
+
+    // Receiving has stopped, so this one belongs to no wake.
+    showNotification();
+
+    Assert.deepEqual(
+      notificationsSampled(),
+      [2],
+      "Notifications shown afterwards are not recorded"
+    );
+  } finally {
+    pushService.restore();
+  }
+});
+
+add_task(async function test_push_message_handled_notification() {
+  is(
+    PUSH_SERVICE.pushMessageHandledTopic,
+    "push-message-handled",
+    "The handled topic is exposed on the Push Service"
+  );
+
+  let handled = TestUtils.topicObserved(
+    PUSH_SERVICE.pushMessageHandledTopic,
+    (subject, data) => data == "test-message-id"
+  );
+
+  sendPushMessage("test-message-id");
+
+  await handled;
+  ok(true, "The push message is reported as handled");
+});
+
+// Stops the total timer from reaching the real Push Service
+const ignoreNewMessages = sinon.stub(
+  PUSH_SERVICE.wrappedJSObject,
+  "ignoreNewMessages"
+);
+registerCleanupFunction(() => ignoreNewMessages.restore());
+
+async function receivePushEventsDurationMs({
+  events,
+  perMessageTimeoutMs = PER_MESSAGE_TIMEOUT_MS,
+  totalTimeoutMs = TOTAL_TIMEOUT_MS,
+}) {
+  let pushService = sinon
+    .stub(CommandLineHandler.prototype, "ensurePushServiceReady")
+    .resolves(true);
+  ignoreNewMessages.resetHistory();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "app.backgroundNotifications.receivePushMessages.perMessageTimeoutMs",
+        perMessageTimeoutMs,
+      ],
+      [
+        "app.backgroundNotifications.receivePushMessages.totalTimeoutMs",
+        totalTimeoutMs,
+      ],
+    ],
+  });
+
+  let timers = [];
+
+  try {
+    let receiving = CommandLineHandler.prototype.receivePushMessages();
+
+    // The observers are added after the Push Service check resolves
+    await TestUtils.waitForCondition(
+      () => countPushTopicObservers() == 1,
+      "One observer while receiving",
+      10
+    );
+
+    let startedAt = ChromeUtils.now();
+
+    // Simulates push messages and their handling, without going through the
+    // real Push Notifier
+    for (let { atMs, topic, data } of events) {
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      let timer = setTimeout(
+        () => Services.obs.notifyObservers(null, topic, data),
+        atMs
+      );
+      timers.push(timer);
+    }
+
+    await receiving;
+
+    return ChromeUtils.now() - startedAt;
+  } finally {
+    timers.forEach(clearTimeout);
+    pushService.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+const pushMessage = (atMs, data = "scope") => ({
+  atMs,
+  topic: PUSH_SERVICE.pushTopic,
+  data,
+});
+const pushMessageHandled = (atMs, data = "message-id") => ({
+  atMs,
+  topic: PUSH_SERVICE.pushMessageHandledTopic,
+  data,
+});
+
+// Timers can fire late on slow machines but never early, so these tests only
+// use one-sided bounds: an exact lower bound with a small slack for timer
+// resolution, and a total timeout too far away to be reached by lateness
+const HANDLED_DELAY_MS = 300;
+const LONG_TOTAL_TIMEOUT_MS = 5000;
+const TIMER_SLACK_MS = 20;
+
+add_task(async function test_receive_push_messages_until_message_handled() {
+  let durationMs = await receivePushEventsDurationMs({
+    events: [pushMessage(0), pushMessageHandled(HANDLED_DELAY_MS)],
+    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
+  });
+
+  Assert.greaterOrEqual(
+    durationMs,
+    HANDLED_DELAY_MS - TIMER_SLACK_MS,
+    "Receiving continues past the per message timeout until the message is handled"
+  );
+  Assert.less(
+    durationMs,
+    LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
+    "Receiving stops before the total timeout"
+  );
+  ok(!ignoreNewMessages.called, "New messages are still accepted");
+});
+
+add_task(async function test_receive_push_messages_handled_immediately() {
+  let durationMs = await receivePushEventsDurationMs({
+    events: [pushMessage(0), pushMessageHandled(0)],
+    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
+  });
+
+  Assert.greaterOrEqual(
+    durationMs,
+    PER_MESSAGE_TIMEOUT_MS - TIMER_SLACK_MS,
+    "A handled message doesn't stop receiving before the per message timeout"
+  );
+  Assert.less(
+    durationMs,
+    LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
+    "Receiving stops before the total timeout"
+  );
+});
+
+add_task(
+  async function test_receive_push_messages_handled_after_total_timeout() {
+    const handledAtMs = TOTAL_TIMEOUT_MS + HANDLED_DELAY_MS;
+    let durationMs = await receivePushEventsDurationMs({
+      events: [pushMessage(0), pushMessageHandled(handledAtMs)],
+    });
+
+    Assert.greaterOrEqual(
+      durationMs,
+      handledAtMs - TIMER_SLACK_MS,
+      "A pending message keeps receiving past the total timeout until it is handled"
+    );
+    ok(
+      ignoreNewMessages.calledOnce,
+      "New messages are ignored after the total timeout"
+    );
+  }
+);
+
+add_task(
+  async function test_receive_push_messages_ignored_after_total_timeout() {
+    // With a long per message timeout, a message arriving after the total
+    // timeout would keep receiving for a long time if it restarted that timer
+    const lateMessageAtMs = TOTAL_TIMEOUT_MS + 100;
+    const handledAtMs = TOTAL_TIMEOUT_MS + 200;
+    let durationMs = await receivePushEventsDurationMs({
+      events: [
+        pushMessage(0),
+        pushMessage(lateMessageAtMs),
+        pushMessageHandled(handledAtMs),
+        pushMessageHandled(handledAtMs),
+      ],
+      perMessageTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
+    });
+
+    Assert.greaterOrEqual(
+      durationMs,
+      handledAtMs - TIMER_SLACK_MS,
+      "A message arriving after the total timeout is still waited for"
+    );
+    Assert.less(
+      durationMs,
+      LONG_TOTAL_TIMEOUT_MS - TOLERANCE_MS,
+      "A message arriving after the total timeout doesn't restart the per message timer"
+    );
+  }
+);
+
+add_task(async function test_stray_handled_notification_is_ignored() {
+  let durationMs = await receivePushEventsDurationMs({
+    events: [
+      pushMessageHandled(0, "stray-message-id"),
+      pushMessage(0),
+      pushMessageHandled(HANDLED_DELAY_MS),
+    ],
+    totalTimeoutMs: LONG_TOTAL_TIMEOUT_MS,
+  });
+
+  Assert.greaterOrEqual(
+    durationMs,
+    HANDLED_DELAY_MS - TIMER_SLACK_MS,
+    "A stray handled notification doesn't end the wait for a pending message"
   );
 });

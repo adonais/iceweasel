@@ -91,6 +91,23 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   /////////////////////////////////////////////////////////////////
   // X64 helpers.
   /////////////////////////////////////////////////////////////////
+
+  // Used to read the current thread's shadow stack pointer.
+  //
+  // The dest Register is cleared before reading the shadow stack pointer.
+  // Since rdsspq is a NOP when CET Shadow Stack is disabled, a cleared result
+  // can be used as a runtime check to determine if shadow stack is enabled.
+  void moveShadowStackPtrTo(Register dest) {
+    xorq(dest, dest);
+    rdsspq(dest);
+  }
+
+  void addToShadowStackPtr(Imm32 imm, Register scratch);
+
+  // Pop entries off the current shadow stack until the shadow stack pointer
+  // is the provided value in newShstkPtr.
+  void unwindToShadowStackPtr(Register newShstkPtr, Register scratch);
+
   void writeDataRelocation(const Value& val) {
     MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
 
@@ -276,8 +293,8 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   }
   Condition testPrimitive(Condition cond, Register tag) {
     MOZ_ASSERT(cond == Equal || cond == NotEqual);
-    cmp32(tag, ImmTag(JS::detail::ValueUpperExclPrimitiveTag));
-    return cond == Equal ? Below : AboveOrEqual;
+    cmp32(tag, ImmTag(JSVAL_TAG_OBJECT));
+    return cond == Equal ? NotEqual : Equal;
   }
 
   Condition testUndefined(Condition cond, const ValueOperand& src) {

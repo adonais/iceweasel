@@ -1418,6 +1418,11 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
           GetPointerCapturingElement(touchEvent->mTouches[0]->Identifier()));
     }
     RefPtr<PresShell> shell(aShell);
+    // PreHandlePointerEventsPreventDefault() and
+    // PostHandlePointerEventsPreventDefault() can change touchEvent->mFlags
+    // when they handle the pointer event of the primary touch. The pointer
+    // events of the other touches must not get those flags.
+    const BaseEventFlags touchEventFlags = touchEvent->mFlags;
     for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
       Touch* touch = touchEvent->mTouches[i];
       if (!TouchManager::ShouldConvertTouchToPointer(touch, touchEvent)) {
@@ -1428,6 +1433,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
                                touchEvent->mWidget);
 
       InitPointerEventFromTouch(event, *touchEvent, *touch);
+      event.mFlags = touchEventFlags;
       event.convertToPointer = touch->convertToPointer = false;
       event.mCoalescedWidgetEvents = touch->mCoalescedWidgetEvents;
       if (aMouseOrTouchEvent->mMessage == eTouchStart) {

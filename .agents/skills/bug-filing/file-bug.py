@@ -27,6 +27,8 @@ back to the URL when no browser can be found. ``webbrowser`` is cross-platform,
 so this works on Linux, macOS, and Windows.
 """
 
+import os
+import subprocess
 import sys
 import urllib.parse
 import webbrowser
@@ -44,11 +46,32 @@ def build_url(pairs):
     return BASE + "?" + urllib.parse.urlencode(fields, quote_via=urllib.parse.quote)
 
 
+def open_via_wsl_interop(url):
+    """Open the URL via PowerShell so WSL hands off to the Windows browser.
+
+    The URL is passed as a single-quoted literal, so an embedded ``&``
+    can't be parsed as a command separator.
+    """
+    if "WSL_DISTRO_NAME" not in os.environ:
+        return False
+    try:
+        quoted = url.replace("'", "''")
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", f"Start-Process '{quoted}'"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return False
+
+
 def main(argv):
     if not argv:
         sys.exit(f"usage: {sys.argv[0]} field=value [field=value ...]")
     url = build_url(argv)
-    if webbrowser.open(url):
+    if open_via_wsl_interop(url) or webbrowser.open(url):
         print(f"Opened a prefilled form ({len(url)} chars).")
         return
     print("No browser to open; falling back to the URL:", file=sys.stderr)

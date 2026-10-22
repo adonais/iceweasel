@@ -31,8 +31,14 @@ sealed interface ListenAction : Action {
          * The article was extracted from the page.
          *
          * @property languageTag language of the article.
+         * @property title The article title, or `null` when the page has none.
+         * @property site The site the article is from, or `null` when its URL names none.
          */
-        data class ContentReady(val languageTag: String) : Content
+        data class ContentReady(
+            val languageTag: String,
+            val title: String? = null,
+            val site: String? = null,
+        ) : Content
 
         /** The page gave back no usable text. */
         data object ContentUnavailable : Content
@@ -52,6 +58,31 @@ sealed interface ListenAction : Action {
 
         /** The engine has no installed, network-free voice for the article language. */
         data object NoOfflineVoicesAvailable : Voices
+    }
+
+    /**
+     * Actions reporting what the user did with the player controls. Closing the player is [Session.StopRequested]
+     * rather than a control of its own.
+     */
+    sealed interface Controls : ListenAction {
+        /** The user asked to start or pause playback. */
+        data object PlayPauseClicked : Controls
+
+        /** The user asked to skip back. */
+        data object RewindClicked : Controls
+
+        /** The user asked to skip forward. */
+        data object ForwardClicked : Controls
+
+        /** The user asked for the voices to pick from. */
+        data object VoicesClicked : Controls
+
+        /**
+         * The user picked a playback speed.
+         *
+         * @property playbackSpeed The speed to read the article out at.
+         */
+        data class PlaybackSpeedSelected(val playbackSpeed: PlaybackSpeed) : Controls
     }
 
     /** Actions reporting what the player is doing. */
@@ -107,6 +138,13 @@ sealed interface ListenAction : Action {
         /** The engine could not turn the article into audio. */
         data object SynthesisFailed : Synthesis
     }
+
+    /**
+     * The player was expanded or collapsed.
+     *
+     * @property mode What the player shows.
+     */
+    data class ModeChanged(val mode: PlayerMode) : ListenAction
 
     /** The error that needs to be cleared it is shown. */
     data object ErrorDismissed : ListenAction

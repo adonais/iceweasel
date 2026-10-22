@@ -7,9 +7,8 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
+#include "nsScreen.h"
 #include "nsWrapperCache.h"
-
-class nsScreen;
 
 namespace mozilla::dom {
 

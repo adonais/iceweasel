@@ -137,3 +137,87 @@ add_task(async function test_dismissal() {
 
   sandbox.restore();
 });
+
+function queryActiveNewtabMessage(messaging, selectedBrowser) {
+  let subject = {
+    wrappedJSObject: {
+      browser: { selectedBrowser },
+      activeNewtabMessage: false,
+    },
+  };
+  messaging.observe(subject, "newtab-message-query", null);
+  return subject.wrappedJSObject.activeNewtabMessage;
+}
+
+/**
+ * Tests that NEW_TAB_UNLOAD stops the unloaded browser from reporting an
+ * active newtab message, without affecting other browsers.
+ */
+add_task(async function test_unload_forgets_browser() {
+  let sandbox = sinon.createSandbox();
+  await getTestNewTabMessaging(sandbox, async messaging => {
+    let browserA = {};
+    let browserB = {};
+    for (let browser of [browserA, browserB]) {
+      messaging.onAction({
+        type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+        data: true,
+        _target: { browser },
+      });
+    }
+
+    Assert.ok(
+      queryActiveNewtabMessage(messaging, browserA),
+      "Browser A should report an active newtab message"
+    );
+    Assert.ok(
+      queryActiveNewtabMessage(messaging, browserB),
+      "Browser B should report an active newtab message"
+    );
+
+    messaging.onAction({
+      type: actionTypes.NEW_TAB_UNLOAD,
+      _target: { browser: browserA },
+    });
+
+    Assert.ok(
+      !queryActiveNewtabMessage(messaging, browserA),
+      "Browser A should no longer report an active newtab message"
+    );
+    Assert.ok(
+      queryActiveNewtabMessage(messaging, browserB),
+      "Browser B should still report an active newtab message"
+    );
+  });
+
+  sandbox.restore();
+});
+
+/**
+ * Tests that NEW_TAB_UNLOAD for an unknown browser, or without a target, is
+ * harmless.
+ */
+add_task(async function test_unload_unknown_browser() {
+  let sandbox = sinon.createSandbox();
+  await getTestNewTabMessaging(sandbox, async messaging => {
+    let browser = {};
+    messaging.onAction({
+      type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+      data: true,
+      _target: { browser },
+    });
+
+    messaging.onAction({
+      type: actionTypes.NEW_TAB_UNLOAD,
+      _target: { browser: {} },
+    });
+    messaging.onAction({ type: actionTypes.NEW_TAB_UNLOAD });
+
+    Assert.ok(
+      queryActiveNewtabMessage(messaging, browser),
+      "The shown browser should still report an active newtab message"
+    );
+  });
+
+  sandbox.restore();
+});

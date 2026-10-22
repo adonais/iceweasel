@@ -370,11 +370,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "runtimeobject",
     ]
 
-    # `std` uses `raw-dylib` to link this dll, but that doesn't work properly on x86 MinGW, so we explicitly
-    # have to link it.
-    if CONFIG["CC_TYPE"] != "clang-cl":
-        OS_LIBS += ["bcryptprimitives"]
-
     if CONFIG["ACCESSIBILITY"]:
         OS_LIBS += [
             "oleacc",

@@ -598,7 +598,10 @@ add_task(async function test_get_page_content_telemetry() {
     Services.fog.testResetFOG();
     const getPageContentStub = sb
       .stub(GetPageContent, "getPageContent")
-      .resolves(["abc", "defg"]);
+      .resolves([
+        { url: "https://example.com/", ok: true, content: "abc" },
+        { url: "https://example.com/", ok: true, content: "defg" },
+      ]);
 
     await withServer(
       {

@@ -116,7 +116,7 @@ Some other cases where you should consider implementing something as a
 
 ## How do I use 3rd-party Python packages in my `mach` command?
 
-See {ref}`Using third-party Python packages`.
+See {doc}`/python/index`.
 
 ## How does `mach` fit into the modules system?
 

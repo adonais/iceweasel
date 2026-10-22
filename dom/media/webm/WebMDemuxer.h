@@ -245,6 +245,13 @@ class WebMDemuxer : public MediaDataDemuxer,
   int64_t mAudioDefaultDuration = -1;
   int64_t mVideoDefaultDuration = -1;
 
+  // Whether video packets arrive in presentation order. False when the
+  // stream reorders (e.g. HEVC with B-frames): Matroska blocks carry
+  // presentation timestamps in decode order, so a peeked packet's timestamp
+  // must not be used as the current frame's end time. Defaults to true;
+  // only HEVC updates it from the SPS.
+  bool mVideoDecodeOrderIsPresentationOrder = true;
+
   // Booleans to indicate if we have audio and/or video data
   bool mHasVideo;
   bool mHasAudio;

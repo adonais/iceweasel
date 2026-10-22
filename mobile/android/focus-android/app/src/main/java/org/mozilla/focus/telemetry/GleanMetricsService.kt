@@ -138,13 +138,11 @@ class GleanMetricsService(
         if (telemetryEnabled) {
             serviceScope.launch {
                 val providerList =
-                    withContext(ioDispatcher) {
-                        SerpTelemetryRepository(
-                                collectionName = COLLECTION_NAME,
-                                remoteSettingsService = context.components.remoteSettingsService,
-                            )
-                            .updateProviderList()
-                    }
+                    SerpTelemetryRepository(
+                            collectionName = COLLECTION_NAME,
+                            remoteSettingsService = context.components.remoteSettingsService,
+                        )
+                        .updateProviderList()
                 installSearchTelemetryExtensions(components, providerList)
             }
         }

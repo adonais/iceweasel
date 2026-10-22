@@ -209,6 +209,12 @@ fips_140()
   html_msg $? 0 "List the FIPS module keys (certutil -K)" "."
 
 
+  # we set some diagnostics in softoken when we run in debug mode
+  # that detects unexpected NSS behavior. This behavior is valid
+  # and pk11mode uses them, so turn off that diagnostic for
+  # pk11mode.
+  SAVE_STRICT_SHUTDOWN=${NSS_STRICT_SHUTDOWN-notset}
+  unset NSS_STRICT_SHUTDOWN
   echo "$SCRIPTNAME: Run PK11MODE in FIPSMODE  -----------------"
   echo "pk11mode -d ${P_R_FIPSDIR} -p fips- -f ${R_FIPSPWFILE}"
   ${BINDIR}/pk11mode -d ${P_R_FIPSDIR} -p fips- -f ${R_FIPSPWFILE}  2>&1
@@ -218,6 +224,9 @@ fips_140()
   echo "pk11mode -d ${P_R_FIPSDIR} -p nonfips- -f ${R_FIPSPWFILE} -n"
   ${BINDIR}/pk11mode -d ${P_R_FIPSDIR} -p nonfips- -f ${R_FIPSPWFILE} -n 2>&1
   html_msg $? 0 "Run PK11MODE in Non FIPS mode (pk11mode -n)" "."
+  if [[ "$SAVE_STRICT_SHUTDOWN" != "notset" ]]; then
+      export NSS_STRICT_SHUTDOWN=$SAVE_STRICT_SHUTDOWN
+  fi
 
   LIBDIR="${DIST}/${OBJDIR}/lib"
   MANGLEDIR="${FIPSDIR}/mangle"

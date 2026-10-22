@@ -29,7 +29,7 @@ created under their own account with a chance to review and adjust.
    - `task` — change a configuration, update a parameter, or refactor existing code;
      engineering changes with no user-facing behavior change (tooling, tests, docs, build).
 
-3. **Draft the summary and description and show them to the user.**
+3. **Draft the summary and description.**
    - **Shape the summary to the bug type chosen above.** In all three cases the
      mechanism, the file list, and any counts belong in the description, not the
      summary.
@@ -54,12 +54,17 @@ created under their own account with a chance to review and adjust.
    - For a test-failure bug, include a link to the test's dashboard:
      `https://tests.firefox.dev/test.html?test=<path>`.
 
-4. **Confirm with the user before filing.** Ask for approval using the
-   `AskUserQuestion` tool, with "Looks good, file the bug" as the first (recommended)
-   option so the user can accept it with a single keypress; the automatic "Other"
-   choice lets them request edits instead. Do not run the script until they approve.
+4. **Open the prefilled form.** Don't print the draft or ask for approval first: the
+   user reviews it in the form, and nothing is filed until they submit it. Printing
+   it as well would put a second copy of the draft in your context, re-sent with
+   every later request in the session. If the user asked only for a summary and
+   description, print those instead and stop.
 
-5. **Open the prefilled form.** Run the helper script with each Bugzilla
+   A request to file a bug, in any wording, means opening this form. Never create
+   the bug yourself, even with a Bugzilla API key at hand: the form is the user's
+   only chance to review the text before it goes public under their name.
+
+   Run the helper script with each Bugzilla
    `enter_bug.cgi` field as a `field=value` argument; it URL-encodes the values and
    opens the form in the browser (cross-platform, so Linux, macOS, and Windows all work):
    ```
@@ -81,7 +86,9 @@ created under their own account with a chance to review and adjust.
    instead - and don't compress the description to shorten the URL, which nobody
    was meant to read.
 
-   The user reviews and submits the form to create the bug, then provides the bug number.
+   Tell the user they can edit the form before submitting it, or ask you for
+   changes; for changes, run the script again with the revised draft. Once they
+   submit the form, they provide the bug number.
 
 ## Notes
 

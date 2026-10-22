@@ -23,6 +23,6 @@ The function returns one of the following values:
 The calling thread must hold the lock that protects the condition, as
 well as the invariants that are tightly bound to the condition.
 
-A call to {ref}`PR_NotifyAllCondVar` causes all of the threads waiting on
+A call to {doc}`pr_notifyallcondvar` causes all of the threads waiting on
 the specified condition variable to be promoted to a ready state. If no
 threads are waiting, the operation is no-op.

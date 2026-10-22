@@ -150,8 +150,8 @@ tab already has a `linkedPanel` or the window is closing, so calling it
 defensively is fine. Otherwise, in order:
 
 1. Deletes the substituted properties, unmasking the element's own, and consumes
-   the `_browserParams` the tab has been carrying since it was created or last
-   discarded — `uriIsAboutBlank`, `remoteType` and `usingPreloadedContent`.
+   the browser parameters Tabbrowser has kept for the tab since it was created or
+   last discarded — `uriIsAboutBlank`, `remoteType` and `usingPreloadedContent`.
 2. Gives the panel a unique id and sets `tab.linkedPanel` to it.
 3. Appends the panel to `tabpanels`. That runs the browser element's
    constructors, which fire notifications that can run code inspecting
@@ -203,7 +203,7 @@ session store the latest data, and it is safe to call even if the discard is
 then refused.
 
 The discard resets the tab's sharing state and forgets its WebRTC streams,
-aborts its dialogs, records `_browserParams` for the eventual restore, has
+aborts its dialogs, records the browser parameters for the eventual restore, has
 session store take the tab back to lazy state, removes the progress listener and
 its filter, closes and removes the findbar, and clears the tab's now-stale
 `activemedia-blocked`, `busy`, `pendingicon`, `progress` and `soundplaying`

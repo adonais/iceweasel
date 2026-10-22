@@ -34,6 +34,8 @@ skip-if = [
 
 ["browser_creditCard_cvv.js"]
 
+["browser_creditCard_cvvPreference.js"]
+
 ["browser_creditCard_decryption_failure.js"]
 
 ["browser_creditCard_doorhanger_action.js"]
@@ -41,9 +43,10 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # perma-fail see Bug 1655601
 ]
 
+["browser_creditCard_doorhanger_cvv.js"]
+
 ["browser_creditCard_doorhanger_display.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1895422
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # perma-fail see Bug 1655601
 ]
 
@@ -80,7 +83,6 @@ skip-if = [
 ["browser_creditCard_fill_cancel_login.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["browser_creditCard_secondary_action.js"]

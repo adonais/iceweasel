@@ -450,8 +450,6 @@ tags = "os_integration"
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
   "os == 'android'", # Bug 2017993
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2017993
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2017993
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 2017993
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2017993
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2017993
@@ -639,9 +637,6 @@ skip-if = [
 support-files = ["window_empty_document.html"]
 
 ["test_moz_mouse_pixel_scroll_event.html"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604
-]
 
 ["test_offsetxy.html"]
 
@@ -663,7 +658,6 @@ tags = "os_integration"
 ["test_slotted_mouse_event.html"]
 skip-if = [
   "os == 'android'", # timeout
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
 ["test_slotted_text_click.html"]
@@ -695,7 +689,6 @@ run-if = [
 ["test_wheel_default_action.html"]
 skip-if = [
   "os == 'android'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_wheel_zoom_on_form_controls.html"]
@@ -704,5 +697,4 @@ run-if = [
 ]
 skip-if = [
   "verify-standalone",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604
 ]

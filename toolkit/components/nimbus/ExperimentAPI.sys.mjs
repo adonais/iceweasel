@@ -554,11 +554,21 @@ export const ExperimentAPI = new (class {
    * and doing so breaks a lot of tests due to enabling the
    * RemoteSettingsExperimentLoader et al.
    *
+   * Resolves immediately if Nimbus is disabled and initialization has not started.
+   *
    * @returns {Promise}
    *          A promise that resolves when the API has synchronized to the main
-   *          store
+   *          store, or immediately when Nimbus is disabled.
    */
   async ready() {
+    if (!this.#initializedPromise) {
+      this.#computeEnabled();
+
+      if (!this.enabled) {
+        return Promise.resolve();
+      }
+    }
+
     return this.manager.store.ready();
   }
 

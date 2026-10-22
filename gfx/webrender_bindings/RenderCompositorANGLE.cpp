@@ -158,7 +158,7 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   }
 
   // Create SwapChain when compositor is not used
-  if (!UseCompositor()) {
+  if (!UseLayerCompositor()) {
     if (!CreateSwapChain(aError)) {
       // SwapChain creation failed.
       return false;
@@ -290,7 +290,7 @@ bool RenderCompositorANGLE::CreateSwapChainForHWND() {
 }
 
 bool RenderCompositorANGLE::CreateSwapChain(nsACString& aError) {
-  MOZ_ASSERT(!UseCompositor());
+  MOZ_ASSERT(!UseLayerCompositor());
 
   mFirstPresent = true;
   CreateSwapChainForDCompIfPossible();
@@ -335,7 +335,7 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible() {
   // When compositor is enabled, CompositionSurface is used for rendering.
   // It does not support triple buffering.
   const bool useTripleBuffering =
-      gfx::gfxVars::UseWebRenderTripleBufferingWin() && !UseCompositor();
+      gfx::gfxVars::UseWebRenderTripleBufferingWin() && !UseLayerCompositor();
   RefPtr<IDXGISwapChain1> swapChain1 =
       CreateSwapChainForDComp(useTripleBuffering);
   if (swapChain1) {
@@ -422,7 +422,7 @@ bool RenderCompositorANGLE::ShouldUseAlpha() const {
 bool RenderCompositorANGLE::BeginFrame() {
   mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
 
-  if (!UseCompositor()) {
+  if (!UseLayerCompositor()) {
     if (NS_WARN_IF(!mSwapChainUsingAlpha && ShouldUseAlpha())) {
       if (NS_WARN_IF(!RecreateNonNativeCompositorSwapChain())) {
         return false;
@@ -460,7 +460,7 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     mFence->IncrementAndSignal();
   }
 
-  if (!UseCompositor()) {
+  if (!UseLayerCompositor()) {
     auto start = TimeStamp::Now();
     if (auto* fxrHandler = mWidget->AsWindows()->GetFxrOutputHandler()) {
       // There is a Firefox Reality handler for this swapchain. Update this
@@ -705,7 +705,7 @@ bool RenderCompositorANGLE::MakeCurrent() {
 }
 
 LayoutDeviceIntSize RenderCompositorANGLE::GetBufferSize() {
-  if (!UseCompositor()) {
+  if (!UseLayerCompositor()) {
     MOZ_ASSERT(mBufferSize.isSome());
     if (mBufferSize.isNothing()) {
       return LayoutDeviceIntSize();
@@ -713,7 +713,7 @@ LayoutDeviceIntSize RenderCompositorANGLE::GetBufferSize() {
     return mBufferSize.ref();
   } else {
     auto size = mWidget->GetClientSize();
-    // This size is used for WR DEBUG_OVERLAY. Its DCTile does not like 0.
+    // This size is used for WR DEBUG_OVERLAY. Its surface does not like 0.
     size.width = std::max(size.width, 1);
     size.height = std::max(size.height, 1);
     return size;
@@ -810,16 +810,12 @@ gfx::DeviceResetReason RenderCompositorANGLE::IsContextLost(bool aForce) {
   return layers::DXGIErrorToDeviceResetReason(reason);
 }
 
-bool RenderCompositorANGLE::UseCompositor() const {
-  return mDCLayerTree && mDCLayerTree->UseCompositor();
-}
-
 bool RenderCompositorANGLE::UseLayerCompositor() const {
   return mDCLayerTree && mDCLayerTree->UseLayerCompositor();
 }
 
 bool RenderCompositorANGLE::SupportAsyncScreenshot() {
-  return !UseCompositor();
+  return !UseLayerCompositor();
 }
 
 bool RenderCompositorANGLE::ShouldUseNativeCompositor() { return false; }
@@ -836,16 +832,6 @@ void RenderCompositorANGLE::CompositorEndFrame() {
   mDCLayerTree->CompositorEndFrame();
 }
 
-void RenderCompositorANGLE::Bind(wr::NativeTileId aId,
-                                 wr::DeviceIntPoint* aOffset,
-                                 uint64_t* aSurfaceHandle,
-                                 wr::DeviceIntRect aDirtyRect,
-                                 wr::DeviceIntRect aValidRect) {
-  mDCLayerTree->Bind(aId, aOffset, aSurfaceHandle, aDirtyRect, aValidRect);
-}
-
-void RenderCompositorANGLE::Unbind() { mDCLayerTree->Unbind(); }
-
 void RenderCompositorANGLE::BindSwapChain(wr::NativeSurfaceId aId,
                                           const wr::DeviceIntRect* aDirtyRects,
                                           size_t aNumDirtyRects) {
@@ -855,13 +841,6 @@ void RenderCompositorANGLE::PresentSwapChain(
     wr::NativeSurfaceId aId, const wr::DeviceIntRect* aDirtyRects,
     size_t aNumDirtyRects) {
   mDCLayerTree->PresentSwapChain(aId, aDirtyRects, aNumDirtyRects);
-}
-
-void RenderCompositorANGLE::CreateSurface(wr::NativeSurfaceId aId,
-                                          wr::DeviceIntPoint aVirtualOffset,
-                                          wr::DeviceIntSize aTileSize,
-                                          bool aIsOpaque) {
-  mDCLayerTree->CreateSurface(aId, aVirtualOffset, aTileSize, aIsOpaque);
 }
 
 void RenderCompositorANGLE::CreateSwapChainSurface(wr::NativeSurfaceId aId,
@@ -886,16 +865,6 @@ void RenderCompositorANGLE::DestroySurface(NativeSurfaceId aId) {
   mDCLayerTree->DestroySurface(aId);
 }
 
-void RenderCompositorANGLE::CreateTile(wr::NativeSurfaceId aId, int aX,
-                                       int aY) {
-  mDCLayerTree->CreateTile(aId, aX, aY);
-}
-
-void RenderCompositorANGLE::DestroyTile(wr::NativeSurfaceId aId, int aX,
-                                        int aY) {
-  mDCLayerTree->DestroyTile(aId, aX, aY);
-}
-
 void RenderCompositorANGLE::AttachExternalImage(
     wr::NativeSurfaceId aId, wr::ExternalImageId aExternalImage) {
   mDCLayerTree->AttachExternalImage(aId, aExternalImage);
@@ -907,19 +876,6 @@ void RenderCompositorANGLE::AddSurface(
     wr::DeviceIntRect aRoundedClipRect, wr::ClipRadius aClipRadius) {
   mDCLayerTree->AddSurface(aId, aTransform, aClipRect, aImageRendering,
                            aRoundedClipRect, aClipRadius);
-}
-
-void RenderCompositorANGLE::GetCompositorCapabilities(
-    CompositorCapabilities* aCaps) {
-  RenderCompositor::GetCompositorCapabilities(aCaps);
-
-  if (StaticPrefs::gfx_webrender_dcomp_use_virtual_surfaces_AtStartup()) {
-    aCaps->virtual_surface_size = VIRTUAL_SURFACE_SIZE;
-  } else {
-    aCaps->virtual_surface_size = 0;
-  }
-  // DComp video overlay does not support negative scaling. See Bug 1831820
-  aCaps->supports_external_compositor_surface_negative_scaling = false;
 }
 
 void RenderCompositorANGLE::GetWindowProperties(WindowProperties* aProperties) {
@@ -961,20 +917,14 @@ void RenderCompositorANGLE::InitializeUsePartialPresent() {
   // Even when mSwapChain1 is null, we could enable WR partial present, since
   // when mSwapChain1 is null, SwapChain is blit model swap chain with one
   // buffer.
-  mUsePartialPresent = !UseCompositor() &&
+  mUsePartialPresent = !UseLayerCompositor() &&
                        !mWidget->AsWindows()->HasFxrOutputHandler() &&
                        gfx::gfxVars::WebRenderMaxPartialPresentRects() > 0;
 }
 
 bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
 
-bool RenderCompositorANGLE::RequestFullRender() {
-  // XXX Remove when partial update is supported.
-  if (UseLayerCompositor() && mDCLayerTree->UseDCLayerDCompositionTexture()) {
-    return true;
-  }
-  return mFullRender;
-}
+bool RenderCompositorANGLE::RequestFullRender() { return mFullRender; }
 
 uint32_t RenderCompositorANGLE::GetMaxPartialPresentRects() {
   if (!mUsePartialPresent) {
@@ -988,7 +938,7 @@ bool RenderCompositorANGLE::MaybeReadback(
     const Range<uint8_t>& aReadbackBuffer, bool* aNeedsYFlip) {
   MOZ_ASSERT(aReadbackFormat == wr::ImageFormat::BGRA8);
 
-  if (!UseCompositor()) {
+  if (!UseLayerCompositor()) {
     return false;
   }
 

@@ -16,6 +16,7 @@ const mockState = {
     values: {
       ...INITIAL_STATE.Prefs.values,
       "widgets.system.enabled": true,
+      "widgets.enabled": true,
       "widgets.system.pictureOfTheDay.enabled": true,
       "widgets.pictureOfTheDay.enabled": true,
       "widgets.pictureOfTheDay.size": "medium",

@@ -31,9 +31,7 @@ async function scrolling_works(useVerticalTabs, uiDensity) {
     overflowTabFactor: 1.1,
   });
 
-  await TestUtils.waitForCondition(() => {
-    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
-  });
+  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
 
   win.gBrowser.pinTab(win.gBrowser.tabs[0]);
 
@@ -129,9 +127,7 @@ add_task(async function test_periphery_keeps_height_while_overflowing() {
     overflowTabFactor: 1.1,
   });
 
-  await TestUtils.waitForCondition(() => {
-    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
-  });
+  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
   await win.promiseDocumentFlushed(() => {});
 
   let { tabContainer } = win.gBrowser;

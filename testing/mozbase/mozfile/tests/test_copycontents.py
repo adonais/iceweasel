@@ -121,6 +121,30 @@ class MozfileCopyContentsTestCase(unittest.TestCase):
         if os.path.isdir(dstdir):
             shutil.rmtree(dstdir)
 
+    @unittest.skipIf(os.name == "nt", "the Windows copy recreates symlinks")
+    def test_copy_dangling_symlink_with_target_in_cwd(self):
+        tempdir = stubs.create_empty_stub()
+        dstdir = stubs.create_empty_stub()
+        cwd = stubs.create_empty_stub()
+        for d in [tempdir, dstdir, cwd]:
+            self.addCleanup(shutil.rmtree, d)
+
+        with open(os.path.join(tempdir, "foo.txt"), "w") as f:
+            f.write("foo.txt")
+        os.makedirs(os.path.join(tempdir, "foo"))
+        os.symlink("bar.txt", os.path.join(tempdir, "foo", "link.txt"))
+        with open(os.path.join(cwd, "bar.txt"), "w") as f:
+            f.write("bar.txt")
+
+        olddir = os.getcwd()
+        os.chdir(cwd)
+        self.addCleanup(os.chdir, olddir)
+
+        mozfile.copy_contents(tempdir, dstdir, ignore_dangling_symlinks=True)
+
+        self.assertEqual(sorted(os.listdir(dstdir)), ["foo", "foo.txt"])
+        self.assertEqual(os.listdir(os.path.join(dstdir, "foo")), [])
+
 
 if __name__ == "__main__":
     mozunit.main()

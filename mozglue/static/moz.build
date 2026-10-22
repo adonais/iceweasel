@@ -13,13 +13,25 @@ SOURCES += [
     "lz4/lz4file.c",
     "lz4/lz4frame.c",
     "lz4/lz4hc.c",
-    "lz4/xxhash.c",
+    "xxhash/xxhash.c",
 ]
 
-SOURCES["lz4/xxhash.c"].flags += ["-Wno-unused-function"]
+SOURCES["xxhash/xxhash.c"].flags += ["-Wno-unused-function"]
+
+LOCAL_INCLUDES += ["xxhash"]
 
 DEFINES["LZ4LIB_VISIBILITY"] = ""
 DEFINES["LZ4FLIB_VISIBILITY"] = ""
+
+LICENSES += ["lz4", "xxhash"]
+LICENSES["lz4"].title = "LZ4 License"
+LICENSES["lz4"].text = "lz4/LICENSE"
+LICENSES["xxhash"].title = "xxHash License"
+LICENSES["xxhash"].text = "xxhash/LICENSE"
+
+LICENSED_UNDER += ["lz4", "xxhash"]
+LICENSED_UNDER["lz4"].paths = ["lz4"]
+LICENSED_UNDER["xxhash"].paths = ["xxhash"]
 
 # By putting it in js, it ends up in libxul too.
 FINAL_LIBRARY = "js"

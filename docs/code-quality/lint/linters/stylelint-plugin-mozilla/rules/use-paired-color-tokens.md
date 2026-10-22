@@ -19,7 +19,7 @@ the author did not try.
 ## Rule Scope
 
 The rule checks the declarations that win the cascade within one declaration
-block, and reports two things.
+block, and reports the following.
 
 **A background token used without a text color.** A block that paints a
 background claims a surface, and it owes that surface a text color. The rule
@@ -30,26 +30,41 @@ counterpart is meant to combine with whatever the surface inherits, so it makes
 no claim to report.
 
 **A background and text color that are not counterparts.** Where the block sets
-both halves, the rule reports:
+both halves, the rule reports two tokens that are not each other's counterpart,
+whether they come from different components (`--sidebar-background-color` with
+`--panel-text-color`) or from different variants of one component
+(`--button-background-color-menu` with `--button-text-color`). A component with
+any text color token has one for every background variant, which the design
+system's tests enforce, so the message can always name the counterpart.
 
-- Two paired tokens that are not each other's counterpart, whether they come
-  from different components (`--sidebar-background-color` with
-  `--panel-text-color`) or from different variants of one component
-  (`--button-background-color-menu` with `--button-text-color`).
-- Two tokens of one component whose variants differ where the counterpart does
-  not exist as a token at all, e.g. `--urlbar-box-background-color-focus` with
-  `--urlbar-box-text-color-hover`. Use the component's base text color where it
-  has one, and otherwise file a bug for the missing token.
+**A state variant that inherits the wrong text color.** A block selected by a
+state that repaints the background and sets no `color` takes its text color
+from the rule it nests in. The rule walks up to the nearest enclosing `color`
+and reports it when it reads a text token that pairs with some other
+background, or another variant of the background's component.
+`--button-text-color-hover` and `--button-text-color` are separate tokens that
+can resolve to entirely different values under `forced-colors`:
+
+```scss
+.action {
+  color: var(--button-text-color);
+
+  &:hover {
+    /* Reported: the inherited text color pairs with the base background. */
+    background-color: var(--button-background-color-hover);
+  }
+}
+```
 
 Tokens without a counterpart make no pairing claim and are left alone. That
 covers most of the global `--background-color-*` and `--text-color-*` tokens,
-which are meant to combine freely, a component variant that deliberately has no
-text color of its own and so falls back to the family's base one, and any value
-that is not a design token. A global token that does have a counterpart is
+which are meant to combine freely, and any value that is not a design token. A
+component that declares a base text color has a counterpart for every
+background variant, which the design system's own tests enforce. A global token that does have a counterpart is
 paired like any other, so `--background-color-list-item-hover` still has to go
 with `--text-color-list-item-hover`.
 
-Neither check applies to a block that sets only a text color. That block is
+None of the checks applies to a block that sets only a text color. That block is
 usually a descendant of the element painting the background, which the rule
 cannot see.
 
@@ -59,19 +74,17 @@ Declarations directly inside an at-rule are checked as their own block, since a
 
 ### Exemptions of the missing-text-color check
 
-Blocks selected by a state — `:hover`, `:focus`, `[open]`, `[disabled]` and
-their kin — are exempt from the missing-text-color check, along with blocks
-nested inside one. A state variant usually restyles an element its base rule has
-already given a text color, and that base rule is generally a flat sibling the
-rule cannot reach. A negated state such as `:not(:hover)` names the base state
-itself, so a block selected that way owes the surface a text color and is
-reported. Pair checking still applies to them.
-
-Read that as a gap in the rule, not as permission. Declare both halves in a
-state variant too: `--button-text-color-hover` and `--button-text-color` are
-separate tokens that can resolve to entirely different values under
-`forced-colors`, so a state that repaints the background and inherits the base
-rule's text color is not safe there.
+A block selected by a state — `:hover`, `:focus`, `[open]`, `[disabled]` and
+their kin — usually restyles an element its base rule has already given a text
+color, so it is exempt from the missing-text-color check, along with any block
+nested inside it. Where it nests in that base rule, the inherited text color is
+checked as described above. Where the base rule is a flat sibling
+(`.action:hover {}` beside `.action {}`), or the nesting reaches no `color`,
+nothing is checked. Read that as a gap in the rule, not as permission: declare
+both halves in a state variant too.
+A negated state such as `:not(:hover)` names the base state itself, so a block
+selected that way owes the surface a text color and is reported. Pair checking
+applies to state variants like any other block.
 
 The element an at-rule paints is the one its enclosing rule matches, so for this
 check a `color` on that rule covers what the at-rule paints:

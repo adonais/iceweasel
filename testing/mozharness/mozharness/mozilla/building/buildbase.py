@@ -249,8 +249,6 @@ class BuildOptionParser:
         "x86_64-ccov": path_base + "%s_x86_64_ccov.py",
         "x86_64-lite": path_base + "%s_x86_64_lite.py",
         "x86_64-debug": path_base + "%s_x86_64_debug.py",
-        "x86_64-debug-isolated-process": path_base
-        + "%s_x86_64_debug_isolated_process.py",
         "x86_64-profile-generate": path_base + "%s_x86_64_profile_generate.py",
         "aarch64": path_base + "%s_aarch64.py",
         "aarch64-lite": path_base + "%s_aarch64_lite.py",
@@ -592,29 +590,16 @@ items from that key's value."
         """assign mozconfig."""
         dirs = self.query_abs_dirs()
 
-        try:
-            abs_mozconfig_path = get_mozconfig_path(
-                script=self, config=self.config, dirs=dirs
-            )
-        except MozconfigPathError as e:
-            self.fatal(e.msg)
+        src_mozconfig = os.environ.get("MOZCONFIG")
+        if not src_mozconfig:
+            self.fatal("MOZCONFIG is not set in the environment")
+        abs_mozconfig_path = os.path.join(dirs["abs_src_dir"], src_mozconfig)
 
         self.info(f"Use mozconfig: {abs_mozconfig_path}")
 
         # print its contents
-        content = self.read_from_file(abs_mozconfig_path, error_level=FATAL)
-
-        extra_content = self.config.get("extra_mozconfig_content")
-        if extra_content:
-            content += "\n".join(extra_content)
-
         self.info("mozconfig content:")
-        self.info(content)
-
-        # finally, copy the mozconfig to a path that 'mach build' expects it to
-        # be
-        with open(os.path.join(dirs["abs_src_dir"], ".mozconfig"), "w") as fh:
-            fh.write(content)
+        self.info(self.read_from_file(abs_mozconfig_path, error_level=FATAL))
 
     def _run_tooltool(self):
         env = self.query_build_env()

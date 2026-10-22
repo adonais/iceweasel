@@ -177,7 +177,9 @@ export class ShowHeartbeatAction extends BaseAction {
       searchEngine instanceof lazy.ConfigSearchEngine ? searchEngine.id : null;
     const args = {
       fxVersion: Services.appinfo.version,
-      isDefaultBrowser: lazy.ShellService.isDefaultBrowser() ? 1 : 0,
+      isDefaultBrowser: (await lazy.ShellService.isDefaultBrowserAsync())
+        ? 1
+        : 0,
       searchEngine: searchEngineId,
       source: "heartbeat",
       // `surveyversion` used to be the version of the heartbeat action when it

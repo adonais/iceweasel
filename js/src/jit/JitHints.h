@@ -24,13 +24,12 @@ class ICScript;
  *
  * [SMDOC] JitHintsMap
  *
- * The Jit hints map is an in process cache used to collect Baseline and Ion
- * JIT hints to try and skip as much of the warmup as possible and jump
- * straight into those tiers.  Whenever a script enters one of these tiers
- * a hint is recorded in this cache using the script's filename+sourceStart
- * value, and if we ever encounter this script again later, e.g. during a
- * navigation, then we try to eagerly compile it into baseline and ion
- * based on its previous execution history.
+ * The Jit hints map is an in process cache used to collect Baseline
+ * Interpreter, Baseline, and Ion JIT hints to try and skip as much of the
+ * warmup as possible and jump straight into those tiers. A hint is recorded
+ * using the script's filename+sourceStart value, and if we ever encounter this
+ * script again later, e.g. during a navigation, then we try to eagerly compile
+ * it based on its previous execution history.
  */
 
 class JitHintsMap {
@@ -156,6 +155,23 @@ class JitHintsMap {
   ScriptToHintMap ionHintMap_;
   IonHintPriorityQueue ionHintQueue_;
 
+  /* Baseline Interpreter Hints
+   * --------------------------------------------------------------------------
+   * The Baseline Interpreter hints use the same design as the Baseline hints,
+   * with a larger Bloom filter because more scripts enter this tier.
+   */
+  static constexpr uint32_t BaselineInterpreterCacheSize = 18;
+  static constexpr uint32_t BaselineInterpreterMaxEntries = 17124;
+  static_assert(BaselineInterpreterCacheSize == 18 &&
+                    BaselineInterpreterMaxEntries == 17124,
+                "Baseline Interpreter hint limits should be recalculated for "
+                "the given cache size.");
+  mozilla::BitBloomFilter<BaselineInterpreterCacheSize, ScriptKey>
+      baselineInterpreterHintMap_;
+  uint32_t baselineInterpreterEntryCount_ = 0;
+  void addBaselineInterpreterHint(ScriptKey key);
+  void incrementBaselineInterpreterEntryCount();
+
   /* Baseline Hints
    * --------------------------------------------------------------------------
    * This implementation uses a BitBloomFilter to track whether or not a script
@@ -194,6 +210,9 @@ class JitHintsMap {
 
   void setEagerBaselineHint(JSScript* script);
   bool mightHaveEagerBaselineHint(JSScript* script) const;
+
+  void setEagerBaselineInterpreterHint(JSScript* script);
+  bool mightHaveEagerBaselineInterpreterHint(JSScript* script) const;
 
   bool recordIonCompilation(JSScript* script);
   bool getIonThresholdHint(JSScript* script, uint32_t& thresholdOut);

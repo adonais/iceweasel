@@ -875,7 +875,7 @@ class ContentActionTest {
                 ),
             )
 
-        assertNotNull(tab.content.loadRequest) {
+        assertNotNull(tab.content.loadRequest).let {
             assertEquals(loadRequestUrl, it.url)
             assertTrue(it.triggeredByRedirect)
             assertFalse(it.triggeredByUser)

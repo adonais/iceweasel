@@ -545,6 +545,9 @@ class nsDisplayListBuilder {
    */
   void SetIncludeAllOutOfFlows() { mIncludeAllOutOfFlows = true; }
   bool GetIncludeAllOutOfFlows() const { return mIncludeAllOutOfFlows; }
+  bool IsInLineClampAbsPosTraversal() const {
+    return mInLineClampAbsPosTraversal;
+  }
   /**
    * Calling this setter makes us exclude all leaf frames that aren't
    * selected.
@@ -1094,6 +1097,23 @@ class nsDisplayListBuilder {
     bool mPrevAncestorHasApzAwareEventHandler;
     bool mPrevBuildingInvisibleItems;
     bool mPrevInInvalidSubtree;
+  };
+
+  class AutoInLineClampAbsPosTraversal {
+   public:
+    explicit AutoInLineClampAbsPosTraversal(nsDisplayListBuilder* aBuilder,
+                                            bool aInTraversal = true)
+        : mBuilder(aBuilder), mOldValue(aBuilder->mInLineClampAbsPosTraversal) {
+      aBuilder->mInLineClampAbsPosTraversal = aInTraversal;
+    }
+
+    ~AutoInLineClampAbsPosTraversal() {
+      mBuilder->mInLineClampAbsPosTraversal = mOldValue;
+    }
+
+   private:
+    nsDisplayListBuilder* mBuilder;
+    bool mOldValue;
   };
 
   /**
@@ -1936,6 +1956,8 @@ class nsDisplayListBuilder {
   // under an nsDisplayTransform
   bool mInTransform;
   bool mInEventsOnly;
+  // True while traversing clamped content to reach marked abspos frames.
+  bool mInLineClampAbsPosTraversal = false;
   bool mInFilter;
   bool mInViewTransitionCapture;
   bool mIsInChromePresContext;
@@ -2044,6 +2066,12 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
                 "Frame type should be derived from nsIFrame");
 
   const DisplayItemType type = T::ItemType();
+  // Preserve container items so ancestor effects (eg. opacity) can still be
+  // applied to abspos frames.
+  if (aBuilder->IsInLineClampAbsPosTraversal() &&
+      !(GetDisplayItemFlagsForType(type) & TYPE_IS_CONTAINER)) {
+    return nullptr;
+  }
   if (aBuilder->InEventsOnly() && !ShouldBuildItemForEvents(type)) {
     // This item is not needed for events.
     return nullptr;

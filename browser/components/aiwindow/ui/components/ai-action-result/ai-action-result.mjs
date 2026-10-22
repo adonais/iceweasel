@@ -2,7 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  keyed,
+  nothing,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
@@ -253,6 +257,9 @@ export class AIActionResult extends MozLitElement {
     );
   }
 
+  // Fluent replaces the label's children (including Lit's part markers) when
+  // it overlays a linked message, so callers key the label on whether it has
+  // a link to get a fresh element rather than patching the translated one.
   #renderLabelContent(link, l10nId, fallbackLabel) {
     if (link) {
       return html`<a
@@ -294,19 +301,22 @@ export class AIActionResult extends MozLitElement {
           aria-expanded=${this.isExpanded}
           @click=${this.#handleToggle}
         >
-          <span
-            class="action-result-label"
-            data-l10n-id=${label.labelL10nId || nothing}
-            data-l10n-args=${label.labelL10nArgs
-              ? JSON.stringify(label.labelL10nArgs)
-              : nothing}
-          >
-            ${this.#renderLabelContent(
-              label.labelLink,
-              label.labelL10nId,
-              label.label
-            )}
-          </span>
+          ${keyed(
+            !!label.labelLink,
+            html`<span
+              class="action-result-label"
+              data-l10n-id=${label.labelL10nId || nothing}
+              data-l10n-args=${label.labelL10nArgs
+                ? JSON.stringify(label.labelL10nArgs)
+                : nothing}
+            >
+              ${this.#renderLabelContent(
+                label.labelLink,
+                label.labelL10nId,
+                label.label
+              )}
+            </span>`
+          )}
         </button>
         ${this.#renderDetails()}
       </div>
@@ -323,19 +333,22 @@ export class AIActionResult extends MozLitElement {
                   <div class="action-result-expanded-row">
                     <div class="action-result-expanded-row-header">
                       <span class="action-result-dot" aria-hidden="true"></span>
-                      <span
-                        class="action-result-expanded-row-label"
-                        data-l10n-id=${row.labelL10nId || nothing}
-                        data-l10n-args=${row.labelL10nArgs
-                          ? JSON.stringify(row.labelL10nArgs)
-                          : nothing}
-                      >
-                        ${this.#renderLabelContent(
-                          row.link,
-                          row.labelL10nId,
-                          row.label
-                        )}
-                      </span>
+                      ${keyed(
+                        !!row.link,
+                        html`<span
+                          class="action-result-expanded-row-label"
+                          data-l10n-id=${row.labelL10nId || nothing}
+                          data-l10n-args=${row.labelL10nArgs
+                            ? JSON.stringify(row.labelL10nArgs)
+                            : nothing}
+                        >
+                          ${this.#renderLabelContent(
+                            row.link,
+                            row.labelL10nId,
+                            row.label
+                          )}
+                        </span>`
+                      )}
                     </div>
                     ${row.items?.length
                       ? html`

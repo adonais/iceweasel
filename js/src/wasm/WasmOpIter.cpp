@@ -365,6 +365,10 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::SimdPrefix: {
       switch (SimdOp(op.b1)) {
         case SimdOp::MozPMADDUBSW:
+        case SimdOp::MozI8x16TestBits:
+        case SimdOp::MozI16x8TestBits:
+        case SimdOp::MozI32x4TestBits:
+        case SimdOp::MozI64x2TestBits:
         case SimdOp::Limit:
           // Reject Limit and reserved codes for SimdPrefix encoding
           break;
@@ -777,6 +781,8 @@ OpKind wasm::Classify(OpBytes op) {
 #  ifdef ENABLE_WASM_JSPI
         case MozOp::GuardSuspending:
           return OpKind::GuardSuspending;
+        case MozOp::ExternToCont:
+          return OpKind::ExternToCont;
 #  endif
       }
       break;

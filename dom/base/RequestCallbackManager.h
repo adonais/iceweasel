@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "mozilla/RefPtr.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 

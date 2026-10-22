@@ -158,6 +158,16 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   // thread-safe manner.
   already_AddRefed<nsIThread> GetSocketThread() { return GetThreadSafely(); }
 
+  // Main thread only. True from the time Shutdown() is called until Init() is
+  // called again (or forever, if this was XPCOM shutdown), and before the
+  // first Init(). When shutting down, work dispatched will run on the current
+  // socket thread before it is joined. When not initted at all, Dispatch
+  // returns an error.
+  bool IsShuttingDownOrShutDown() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return !mInitialized || mShuttingDown;
+  }
+
  private:
   //-------------------------------------------------------------------------
   // initialization and shutdown (any thread)

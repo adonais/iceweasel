@@ -152,9 +152,7 @@ size_t gfxFT2FontEntryBase::ComputedSizeOfExcludingThis(
   size_t result = gfxFontEntry::ComputedSizeOfExcludingThis(aMallocSizeOf);
 
   if (const auto* ufd = GetUserFontData()) {
-    if (const auto* data = ufd->GetData()) {
-      result += aMallocSizeOf(data);
-    }
+    result += aMallocSizeOf(ufd->Data());
   }
 
   return result;

@@ -19,6 +19,8 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ShutdownPhase.h"
+#include "jsapi.h"
+#include "js/JSON.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -211,6 +213,142 @@ bool FOG::ApplyInterestingServerKnobs() {
   }
 
   return true;
+}
+
+NS_IMETHODIMP
+FOG::SetStoreSubmittedPingsEnabled(bool aEnabled) {
+#ifdef MOZ_GLEAN_ANDROID
+  return NS_OK;
+#else
+  MOZ_ASSERT(XRE_IsParentProcess());
+  glean::impl::fog_set_store_submitted_pings_enabled(aEnabled);
+  return NS_OK;
+#endif
+}
+
+NS_IMETHODIMP
+FOG::ClearStoredSubmittedPings() {
+#ifdef MOZ_GLEAN_ANDROID
+  return NS_OK;
+#else
+  MOZ_ASSERT(XRE_IsParentProcess());
+  glean::impl::fog_clear_stored_submitted_pings();
+  return NS_OK;
+#endif
+}
+
+nsresult StoredPingsToJSObject(
+    JSContext* aCx, JS::MutableHandleValue aResult,
+    nsTArray<glean::impl::SubmittedPing>& submitted_pings) {
+  JS::Rooted<JSObject*> jsResult(
+      aCx, JS::NewArrayObject(aCx, submitted_pings.Length()));
+
+  for (size_t i = 0, n = submitted_pings.Length(); i < n; i++) {
+    glean::impl::SubmittedPing const& submitted_ping = submitted_pings[i];
+
+    JS::RootedObject jsPingObj(aCx, JS_NewPlainObject(aCx));
+
+    JS::RootedValue jsDocumentId(aCx);
+    if (!dom::ToJSValue(aCx, submitted_ping.document_id, &jsDocumentId) ||
+        !JS_DefineProperty(aCx, jsPingObj, "documentId", jsDocumentId,
+                           JSPROP_ENUMERATE)) {
+      NS_WARNING("Failed to define property 'documentId' on submitted ping");
+      return NS_ERROR_FAILURE;
+    }
+
+    JS::RootedValue jsPingName(aCx);
+    if (!dom::ToJSValue(aCx, submitted_ping.ping, &jsPingName) ||
+        !JS_DefineProperty(aCx, jsPingObj, "ping", jsPingName,
+                           JSPROP_ENUMERATE)) {
+      NS_WARNING("Failed to define property 'ping' on submitted ping");
+      return NS_ERROR_FAILURE;
+    }
+
+    JS::RootedValue jsSubmittedDate(aCx);
+    if (!dom::ToJSValue(aCx, submitted_ping.submitted_date, &jsSubmittedDate) ||
+        !JS_DefineProperty(aCx, jsPingObj, "submittedDate", jsSubmittedDate,
+                           JSPROP_ENUMERATE)) {
+      NS_WARNING("Failed to define property 'submittedDate' on submitted ping");
+      return NS_ERROR_FAILURE;
+    }
+
+    JS::RootedValue jsUploadedDate(aCx);
+    if (!dom::ToJSValue(aCx, submitted_ping.uploaded_date, &jsUploadedDate) ||
+        !JS_DefineProperty(aCx, jsPingObj, "uploadedDate", jsUploadedDate,
+                           JSPROP_ENUMERATE)) {
+      NS_WARNING("Failed to define property 'uploadedDate' on submitted ping");
+      return NS_ERROR_FAILURE;
+    }
+
+    JS::RootedValue jsUploadFailed(aCx);
+    if (!dom::ToJSValue(aCx, submitted_ping.upload_failed, &jsUploadFailed) ||
+        !JS_DefineProperty(aCx, jsPingObj, "uploadFailed", jsUploadFailed,
+                           JSPROP_ENUMERATE)) {
+      NS_WARNING("Failed to define property 'uploadFailed' on submitted ping");
+      return NS_ERROR_FAILURE;
+    }
+
+    const NS_ConvertUTF8toUTF16 str(submitted_ping.payload);
+    JS::RootedValue jsPayload(aCx);
+    if (!JS_ParseJSON(aCx, str.get(), str.Length(), &jsPayload)) {
+      NS_WARNING("Failed to parse JSON payload on submitted ping");
+      return NS_ERROR_FAILURE;
+    } else {
+      if (!JS_DefineProperty(aCx, jsPingObj, "payload", jsPayload,
+                             JSPROP_ENUMERATE)) {
+        NS_WARNING("Failed to define property 'payload' on submitted ping");
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    if (!JS_SetElement(aCx, jsResult, i, jsPingObj)) {
+      NS_WARNING("Failed to append ping obj onto submitted pings array");
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  aResult.setObject(*jsResult);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+FOG::GetAllStoredSubmittedPings(JSContext* aCx,
+                                JS::MutableHandleValue aResult) {
+#ifdef MOZ_GLEAN_ANDROID
+  NS_WARNING("Android does not store submitted pings via FOG. Throwing.");
+  aResult.setUndefined();
+  return NS_ERROR_FAILURE;
+#else
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsTArray<glean::impl::SubmittedPing> submitted_pings;
+
+  glean::impl::fog_get_all_stored_submitted_pings(&submitted_pings);
+
+  StoredPingsToJSObject(aCx, aResult, submitted_pings);
+
+  return NS_OK;
+#endif
+}
+
+NS_IMETHODIMP
+FOG::GetStoredSubmittedPingsByName(const nsACString& aPing, JSContext* aCx,
+                                   JS::MutableHandleValue aResult) {
+#ifdef MOZ_GLEAN_ANDROID
+  NS_WARNING("Android does not store submitted pings via FOG. Throwing.");
+  aResult.setUndefined();
+  return NS_ERROR_FAILURE;
+#else
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsTArray<glean::impl::SubmittedPing> submitted_pings;
+
+  glean::impl::fog_get_stored_submitted_pings_by_name(&aPing, &submitted_pings);
+
+  StoredPingsToJSObject(aCx, aResult, submitted_pings);
+
+  return NS_OK;
+#endif
 }
 
 // Expose MOZ_APP_VERSION_DISPLAY to Rust

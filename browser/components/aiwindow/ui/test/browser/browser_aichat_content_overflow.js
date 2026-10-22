@@ -3,19 +3,28 @@
 
 "use strict";
 
-async function setupChatContent() {
+// Long enough that a single assistant reply overflows the scroll container on
+// any window size the harness gives us.
+const LONG_MESSAGE = "Lorem ipsum dolor sit amet ".repeat(200);
+
+async function setupChatContent(streamChunks = ["Hello from mock."]) {
   const restoreSignIn = skipSignIn();
   const { restore } = await stubEngineNetworkBoundaries({
-    serverOptions: { streamChunks: ["Hello from mock."] },
+    serverOptions: { streamChunks },
   });
   return { restoreSignIn, restore };
 }
 
 /**
- * Test that the overflowing attribute shows up when the scrollbar is visible
+ * Test that the overflowing attribute shows up when the scrollbar is visible.
+ *
+ * Bug 2067087: the attribute has to land on the *first* reply that overflows.
+ * It used to take a second turn to appear, because .chat-inner-wrapper was
+ * pinned to the scroll container's height, so the ResizeObserver driving the
+ * attribute never saw the content grow.
  */
 add_task(async function test_scrolling_and_overflowing_attribute() {
-  const { restoreSignIn, restore } = await setupChatContent();
+  const { restoreSignIn, restore } = await setupChatContent([LONG_MESSAGE]);
 
   try {
     const win = await openAIWindow();
@@ -27,38 +36,46 @@ add_task(async function test_scrolling_and_overflowing_attribute() {
       "Wait for aichat-browser"
     );
 
-    for (let i = 0; i < 3; i++) {
-      await typeInSmartbar(browser, "Message " + i);
-      await submitSmartbar(browser);
-
-      await SpecialPowers.spawn(aichatBrowser, [i], async msgIndex => {
-        const chatContent = content.document.querySelector("ai-chat-content");
-        await ContentTaskUtils.waitForMutationCondition(
-          chatContent.shadowRoot,
-          { childList: true, subtree: true },
-          () =>
-            chatContent.shadowRoot.querySelectorAll(".chat-bubble-assistant")
-              .length >=
-            msgIndex + 1
-        );
-      });
-    }
+    await typeInSmartbar(browser, "Tell me a long story");
+    await submitSmartbar(browser);
 
     await SpecialPowers.spawn(aichatBrowser, [], async () => {
       const chatContent = content.document.querySelector("ai-chat-content");
+      await ContentTaskUtils.waitForMutationCondition(
+        chatContent.shadowRoot,
+        { childList: true, subtree: true },
+        () => chatContent.shadowRoot.querySelector(".chat-bubble-assistant")
+      );
+    });
+
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+      // Let the ResizeObserver deliver the settled size before asserting.
+      await new Promise(r =>
+        content.requestAnimationFrame(() => content.requestAnimationFrame(r))
+      );
+
       const chatContentWrapper = chatContent.shadowRoot.querySelector(
         ".chat-content-wrapper"
       );
 
       Assert.ok(chatContentWrapper, "chat-content-wrapper should exist");
-      await ContentTaskUtils.waitForCondition(
-        () => chatContentWrapper.hasAttribute("overflowing"),
-        "Wait for overflowing attribute"
+
+      // Distinguishes "the attribute is wrong" from "the reply was not long
+      // enough to overflow the harness window".
+      Assert.greater(
+        chatContentWrapper.scrollHeight,
+        chatContentWrapper.clientHeight + 10,
+        "Sanity check: a single reply overflows the scroll container"
       );
 
+      await ContentTaskUtils.waitForCondition(
+        () => chatContentWrapper.hasAttribute("overflowing"),
+        "Wait for the overflowing attribute"
+      );
       Assert.ok(
         chatContentWrapper.hasAttribute("overflowing"),
-        "chat-content-wrapper should have the overflowing attribute"
+        "overflowing lands on the first reply, without a second turn"
       );
 
       // Bug 2037529: a scrollable region is inherently tab-focusable so it can
@@ -104,16 +121,29 @@ add_task(async function test_no_scrolling_and_no_overflowing_attribute() {
     await SpecialPowers.spawn(aichatBrowser, [], async () => {
       const chatContent = content.document.querySelector("ai-chat-content");
 
+      // Measuring before the reply renders would assert against a transcript
+      // that is still growing, and pass or fail on timing alone.
       await ContentTaskUtils.waitForMutationCondition(
         chatContent.shadowRoot,
-        { childList: true, subtree: true, attributes: true },
-        () => chatContent.shadowRoot.querySelector(".chat-content-wrapper")
+        { childList: true, subtree: true },
+        () => chatContent.shadowRoot.querySelector(".chat-bubble-assistant")
+      );
+      // Let the ResizeObserver deliver the settled size before asserting.
+      await new Promise(r =>
+        content.requestAnimationFrame(() => content.requestAnimationFrame(r))
       );
 
       const chatContentWrapper = chatContent.shadowRoot.querySelector(
         ".chat-content-wrapper"
       );
       Assert.ok(chatContentWrapper, "chat-content-wrapper should exist");
+
+      Assert.lessOrEqual(
+        chatContentWrapper.scrollHeight,
+        chatContentWrapper.clientHeight + 10,
+        "Sanity check: the short conversation fits without scrolling"
+      );
+
       Assert.ok(
         !chatContentWrapper.hasAttribute("overflowing"),
         "chat-content-wrapper should NOT have the overflowing attribute"

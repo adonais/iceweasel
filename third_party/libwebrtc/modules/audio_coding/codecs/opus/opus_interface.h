@@ -162,18 +162,23 @@ int16_t WebRtcOpus_SetMaxPlaybackRate(OpusEncInst* inst, int32_t frequency_hz);
 /****************************************************************************
  * WebRtcOpus_GetMaxPlaybackRate(...)
  *
- * Queries the maximum playback rate for encoding. If different single-stream
- * encoders have different maximum playback rates, this function fails.
+ * Queries the maximum band for encoding. If different single-stream
+ * encoders have different maximum bands, this function fails.
  *
  * Input:
  *      - inst               : Encoder context.
  * Output:
- *      - result_hz          : The maximum playback rate in Hz.
+ *      - result_bandwidth   : Band identifier, not a rate in Hz. One of:
+ *                             OPUS_BANDWIDTH_NARROWBAND
+ *                             OPUS_BANDWIDTH_MEDIUMBAND
+ *                             OPUS_BANDWIDTH_WIDEBAND
+ *                             OPUS_BANDWIDTH_SUPERWIDEBAND
+ *                             OPUS_BANDWIDTH_FULLBAND
  * Return value              :  0 - Success
  *                             -1 - Error
  */
 int16_t WebRtcOpus_GetMaxPlaybackRate(OpusEncInst* const inst,
-                                      int32_t* result_hz);
+                                      int32_t* result_bandwidth);
 
 /* TODO(minyue): Check whether an API to check the FEC and the packet loss rate
  * is needed. It might not be very useful since there are not many use cases and
@@ -521,22 +526,6 @@ int WebRtcOpus_FecDurationEst(const uint8_t* payload,
  */
 int WebRtcOpus_PacketHasFec(const uint8_t* payload,
                             size_t payload_length_bytes);
-
-/****************************************************************************
- * WebRtcOpus_PacketHasVoiceActivity(...)
- *
- * This function returns the SILK VAD information encoded in the opus packet.
- * For CELT-only packets that do not have VAD information, it returns -1.
- * Input:
- *        - payload              : Encoded data pointer
- *        - payload_length_bytes : Bytes of encoded data
- *
- * Return value                  : 0 - no frame had the VAD flag set.
- *                                 1 - at least one frame had the VAD flag set.
- *                                -1 - VAD status could not be determined.
- */
-int WebRtcOpus_PacketHasVoiceActivity(const uint8_t* payload,
-                                      size_t payload_length_bytes);
 
 #ifdef __cplusplus
 }  // extern "C"

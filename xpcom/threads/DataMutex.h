@@ -70,10 +70,10 @@ class DataMutexBase {
       }
     }
 
+    AutoLockBase(const AutoLockBase& aOther) = delete;
+
    private:
     friend class DataMutexBase;
-
-    AutoLockBase(const AutoLockBase& aOther) = delete;
 
     explicit AutoLockBase(DataMutexBase<T, MutexType>* aDataMutex)
         : mOwner(aDataMutex) {

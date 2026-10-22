@@ -40,6 +40,8 @@ dependencies {
     testImplementation project(':components:support-test')
     testImplementation project(':components:support-test-fakes')
 
+    testImplementation libs.androidx.compose.ui.test
+    testImplementation libs.androidx.compose.ui.test.manifest
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit4
     testImplementation libs.androidx.test.core

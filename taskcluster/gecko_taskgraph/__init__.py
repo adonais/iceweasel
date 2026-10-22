@@ -44,9 +44,13 @@ docker.RUN_TASK_FILES = {
         "fetch-content",
     ]
 }
+docker.RUN_TASK_FILES["run-task/run-task-setup.py"] = os.path.join(
+    GECKO, "taskcluster", "scripts", "run-task-setup.py"
+)
 docker.RUN_TASK_SNIPPET = [
     "COPY run-task/run-task /builds/worker/bin/run-task-git\n",
     "COPY run-task/fetch-content /builds/worker/bin/fetch-content\n",
+    "COPY run-task/run-task-setup.py /builds/worker/bin/run-task-setup.py\n",
 ]
 
 # Don't use any of the upstream morphs.

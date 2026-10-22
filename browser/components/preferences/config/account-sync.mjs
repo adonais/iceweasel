@@ -26,7 +26,7 @@ const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
 const { Referrals } = ChromeUtils.importESModule(
-  "resource:///modules/referrals/Referrals.sys.mjs"
+  "moz-src:///browser/components/referrals/Referrals.sys.mjs"
 );
 const lazy = XPCOMUtils.declareLazy({
   BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
@@ -834,6 +834,10 @@ Preferences.addSetting({
 });
 
 let accountsEnabled = Services.prefs.getBoolPref("identity.fxaccounts.enabled");
+let perDeviceSyncEnabled = Services.prefs.getBoolPref(
+  "services.sync.perDeviceEngineChoices",
+  false
+);
 
 SettingGroupManager.registerGroups({
   defaultBrowserSync: window.createDefaultBrowserConfig({
@@ -1012,7 +1016,9 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "syncNotConfigured",
-        l10nId: "prefs-syncing-off-2",
+        l10nId: perDeviceSyncEnabled
+          ? "prefs-syncing-off-3"
+          : "prefs-syncing-off-2",
         control: "moz-box-item",
         iconSrc: "chrome://global/skin/icons/warning.svg",
         items: [
@@ -1058,6 +1064,7 @@ SettingGroupManager.registerGroups({
     l10nId: "preferences-data-migration-group",
     headingLevel: 2,
     iconSrc: "chrome://browser/skin/import.svg",
+    subcategory: "importBrowserData",
     items: [
       {
         id: "data-migration",

@@ -191,6 +191,12 @@ function evalWithDebugger(string, options = {}, webConsole) {
 
   const evalOptions = {};
 
+  // Frame eval and the inner-bindings path don't support this option and
+  // throw if it's passed, so only set it for global evaluations.
+  if (!frame && !options.preferConsoleCommandsOverLocalSymbols) {
+    evalOptions.allowRedeclaringExistingLexicalBinding = true;
+  }
+
   const urlOption =
     options.url || (options.eager ? "debugger eager eval code" : null);
   if (typeof urlOption === "string") {

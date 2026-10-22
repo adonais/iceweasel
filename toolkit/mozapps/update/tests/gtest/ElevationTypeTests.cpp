@@ -5,12 +5,12 @@
 #include "gtest/gtest.h"
 #include "elevation_type.h"
 
+#ifdef XP_WIN
+#  include "mozilla/WinHeaderOnlyUtils.h"
+
 static bool mockUserHasAdminPrivileges = false;
 static bool mockUserIsLocalSystem = false;
 static bool mockError = false;
-
-#ifdef XP_WIN
-#  include "mozilla/WinHeaderOnlyUtils.h"
 
 // Mocks for testing
 namespace mozilla {
@@ -34,10 +34,12 @@ LauncherResult<bool> UserIsLocalSystem() {
 
 class ElevationTypeTest : public ::testing::Test {
   void SetUp() override {
+#ifdef XP_WIN
     // Reset mocks before every test
     mockUserHasAdminPrivileges = false;
     mockUserIsLocalSystem = false;
     mockError = false;
+#endif
   }
 
   void TearDown() override {}

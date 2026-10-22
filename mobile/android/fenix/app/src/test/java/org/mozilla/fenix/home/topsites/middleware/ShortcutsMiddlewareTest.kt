@@ -18,7 +18,6 @@ import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.service.merino.manifest.ManifestEntry
 import mozilla.components.service.merino.manifest.MerinoManifestProvider
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -33,7 +32,6 @@ import org.mozilla.fenix.home.topsites.store.ShortcutsAction
 import org.mozilla.fenix.home.topsites.store.ShortcutsState
 import org.mozilla.fenix.home.topsites.store.ShortcutsStore
 import org.mozilla.fenix.home.topsites.store.toPopularSite
-import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -42,7 +40,6 @@ class ShortcutsMiddlewareTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private lateinit var settings: Settings
     private lateinit var appStore: AppStore
     private val captureMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
     private val topSitesUseCases: TopSitesUseCases = mockk(relaxed = true)
@@ -50,16 +47,12 @@ class ShortcutsMiddlewareTest {
 
     @Before
     fun setup() {
-        settings = Settings(testContext)
-        settings.enableAddShortcutsImprovement = false
         appStore = AppStore(middlewares = listOf(captureMiddleware))
     }
 
     @Test
-    fun `WHEN InitAction action is dispatched THEN showAddShortcut, topSites and popularSites values are set with the correct values`() =
+    fun `WHEN InitAction action is dispatched THEN topSites and popularSites values are set with the correct values`() =
         runTest(testDispatcher) {
-            settings.enableAddShortcutsImprovement = true
-
             val topSites =
                 listOf(TopSite.Pinned(id = 1L, title = "Mozilla", url = "https://mozilla.org", createdAt = 0))
             val manifestEntries =
@@ -87,7 +80,6 @@ class ShortcutsMiddlewareTest {
                 )
             }
 
-            assertEquals(settings.enableAddShortcutsImprovement, store.state.showAddShortcut)
             assertEquals(topSites, store.state.topSites)
             assertEquals(manifestEntries.map { it.toPopularSite() }, store.state.popularSites)
         }
@@ -158,7 +150,6 @@ class ShortcutsMiddlewareTest {
                 appStore = appStore,
                 topSitesUseCases = topSitesUseCases,
                 merinoManifestProvider = merinoManifestProvider,
-                settings = settings,
                 scope = scope,
                 ioDispatcher = ioDispatcher,
             )

@@ -10,6 +10,11 @@
 
 namespace mozilla::psm {
 
+enum class SearchingFor : uint8_t {
+  ClientCertificates = 1,
+  CACertificates = 2,
+};
+
 // This mirrors the subset of SSLSignatureScheme from sslt.h that Firefox
 // enables. sslt.h can't be included here without polluting all IPC code.
 
@@ -37,6 +42,13 @@ struct ParamTraits<mozilla::psm::EnabledSignatureScheme>
           mozilla::psm::EnabledSignatureScheme,
           mozilla::psm::EnabledSignatureScheme(0),
           mozilla::psm::kHighestEnabledSignatureScheme> {};
+
+template <>
+struct ParamTraits<mozilla::psm::SearchingFor>
+    : ContiguousEnumSerializerInclusive<
+          mozilla::psm::SearchingFor,
+          mozilla::psm::SearchingFor::ClientCertificates,
+          mozilla::psm::SearchingFor::CACertificates> {};
 
 }  // namespace IPC
 

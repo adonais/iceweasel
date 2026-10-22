@@ -372,12 +372,12 @@ static const char outHeader[] = {
     "Content-type: text/plain\r\n"
     "\r\n"
 };
-static const char outOcspHeader[] = {
-    "HTTP/1.0 200 OK\r\n"
-    "Server: Generic OCSP Server\r\n"
-    "Content-type: application/ocsp-response\r\n"
+#define OUT_OCSP_HEADER_FMT                       \
+    "HTTP/1.0 200 OK\r\n"                         \
+    "Server: Generic OCSP Server\r\n"             \
+    "Content-type: application/ocsp-response\r\n" \
+    "Content-Length: %u\r\n"                      \
     "\r\n"
-};
 static const char outBadRequestHeader[] = {
     "HTTP/1.0 400 Bad Request\r\n"
     "Server: Generic OCSP Server\r\n"
@@ -781,8 +781,13 @@ handle_connection(
                             iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
                             numIOVs++;
                         } else {
-                            PR_Write(ssl_sock, outOcspHeader, strlen(outOcspHeader));
-                            PR_Write(ssl_sock, ocspResponse->data, ocspResponse->len);
+                            char *hdr = PR_smprintf(OUT_OCSP_HEADER_FMT,
+                                                    ocspResponse->len);
+                            if (hdr) {
+                                PR_Write(ssl_sock, hdr, PORT_Strlen(hdr));
+                                PR_Write(ssl_sock, ocspResponse->data, ocspResponse->len);
+                                PR_smprintf_free(hdr);
+                            }
                         }
                         PORT_FreeArena(arena, PR_FALSE);
                     }

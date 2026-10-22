@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {
   Utils: "resource://services-settings/Utils.sys.mjs",
 };
@@ -54,6 +56,9 @@ const CACHE_KEY = "ads_feed";
 const ADS_UPDATE_TIME = 30 * 60 * 1000; // 30 minutes
 
 export class AdsFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.enabled = false;
     this.loaded = false;
@@ -175,7 +180,7 @@ export class AdsFeed {
    * Normalize new Unified Ads API response into
    * previous Contile ads response
    *
-   * @param {Array} - Array of UAPI placement objects ("newtab_tile_1", etc.)
+   * @param {Array} data - Array of UAPI placement objects ("newtab_tile_1", etc.)
    * @returns {object} - Object containing array of formatted UAPI objects to match legacy Contile system
    */
   _normalizeTileData(data) {
@@ -229,7 +234,7 @@ export class AdsFeed {
    *
    * @param {boolean} isStartup=false - This is only used for reporting
    * and is passed to the update functions meta attribute
-   * @returns {void}
+   * @returns {Promise<void>}
    */
   async getAdsData(isStartup = false) {
     const supportedAdTypes = this.getSupportedAdTypes();
@@ -277,7 +282,7 @@ export class AdsFeed {
    * This function is designed to get whichever ads types are needed (tiles, spocs)
    *
    * @param {Array} supportedAdTypes
-   * @returns {object} Response object containing ad information from MARS
+   * @returns {Promise<object>} Response object containing ad information from MARS
    */
   async fetchData(supportedAdTypes) {
     const state = this.store.getState();
@@ -524,7 +529,7 @@ export class AdsFeed {
    * Init function that runs only from onAction at.INIT call.
    *
    * @param {boolean} isStartup=false
-   * @returns {void}
+   * @returns {Promise<void>}
    */
   async init(isStartup = false) {
     if (lazy.AdsClient.isEnabled(this.store.getState().Prefs.values)) {
@@ -540,7 +545,7 @@ export class AdsFeed {
    * Sets cached data and dispatches at.ADS_UPDATE_{DATA_TYPE} event to update store with new ads data
    *
    * @param {boolean} isStartup
-   * @returns {void}
+   * @returns {Promise<void>}
    */
   async update(isStartup) {
     // The ads-client has its own HTTP response cache, so it is the only cache

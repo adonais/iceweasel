@@ -165,6 +165,11 @@ export class ASRouterParentProcessMessageHandler {
       case msg.AW_ADD_SCREEN_IMPRESSION: {
         return ASRouterScreenUtils.addScreenImpression(data);
       }
+      case msg.AW_GET_ACTIVE_THEME_ID: {
+        return Promise.resolve(
+          Services.prefs.getStringPref("extensions.activeThemeID", "")
+        );
+      }
       default: {
         return Promise.reject(new Error(`Unknown message received: ${name}`));
       }

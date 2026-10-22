@@ -173,6 +173,8 @@ export class AboutPrivateBrowsingParent extends JSWindowActorParent {
             template: "spotlight",
           });
           if (message) {
+            // Before the call: it resolves when the dialog closes, not opens.
+            Glean.aboutprivatebrowsing.basicsModalShown.record();
             await lazy.Spotlight.showSpotlightDialog(browser, message);
           }
         })();

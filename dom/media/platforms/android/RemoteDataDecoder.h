@@ -29,6 +29,11 @@ class RemoteDataDecoder : public MediaDataDecoder,
       const CreateDecoderParams& aParams, const nsString& aDrmStubId,
       CDMProxy* aProxy);
 
+  // Returns the codec specific data buffers, in csd-N order, in the format that
+  // MediaCodec expects for the given audio codec.
+  static nsTArray<RefPtr<MediaByteBuffer>> GetAudioCodecSpecificData(
+      const AudioInfo& aConfig);
+
   RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
   RefPtr<DecodePromise> Drain() override;
   RefPtr<FlushPromise> Flush() override;

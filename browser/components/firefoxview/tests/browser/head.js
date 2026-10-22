@@ -439,7 +439,7 @@ function isElInViewport(element) {
 async function clickFirefoxViewButton(win) {
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "#firefox-view-button",
-    { type: "mousedown" },
+    {},
     win.browsingContext
   );
 }

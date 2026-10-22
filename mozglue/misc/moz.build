@@ -11,6 +11,7 @@ EXPORTS.mozilla += [
     "Futex.h",
     "IntegerPrintfMacros.h",
     "LoggingCore.h",
+    "LSX.h",
     "MmapFaultHandler.h",
     "Now.h",
     "PerfStats.h",
@@ -29,7 +30,6 @@ EXPORTS.mozilla += [
 
 EXPORTS.mozilla.glue += [
     "Debug.h",
-    "WinUtils.h",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -39,6 +39,9 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "StackWalk_windows.h",
         "StackWalkThread.h",
         "WindowsDpiAwareness.h",
+    ]
+    EXPORTS.mozilla.glue += [
+        "WinUtils.h",
     ]
 
 SOURCES += [
@@ -58,6 +61,13 @@ if CONFIG["TARGET_CPU"].startswith("x86"):
         "SSE.cpp",
     ]
     SOURCES["SIMD_avx2.cpp"].flags += ["-mavx2"]
+
+if CONFIG["TARGET_CPU"] == "loongarch64":
+    SOURCES += [
+        "LSX.cpp",
+        "SIMD_lsx.cpp",
+    ]
+    SOURCES["SIMD_lsx.cpp"].flags += CONFIG["LSX_FLAGS"]
 
 if not CONFIG["JS_STANDALONE"]:
     EXPORTS.mozilla += [

@@ -11,7 +11,7 @@ and for the nodes being added and removed from the list.
 
 # Linked List Types
 
-The {ref}`PRCList` type represents a circular linked list.
+The {doc}`prclist` type represents a circular linked list.
 
 (linked-list-macros)=
 
@@ -19,16 +19,16 @@ The {ref}`PRCList` type represents a circular linked list.
 
 Macros that create and operate on linked lists are:
 
-> - {ref}`PR_INIT_CLIST`
-> - {ref}`PR_INIT_STATIC_CLIST`
-> - {ref}`PR_APPEND_LINK`
-> - {ref}`PR_INSERT_LINK`
-> - {ref}`PR_NEXT_LINK`
-> - {ref}`PR_PREV_LINK`
-> - {ref}`PR_REMOVE_LINK`
-> - {ref}`PR_REMOVE_AND_INIT_LINK`
-> - {ref}`PR_INSERT_BEFORE`
-> - {ref}`PR_INSERT_AFTER`
-> - {ref}`PR_CLIST_IS_EMPTY`
-> - {ref}`PR_LIST_HEAD`
-> - {ref}`PR_LIST_TAIL`
+> - {doc}`pr_init_clist`
+> - {doc}`pr_init_static_clist`
+> - {doc}`pr_append_link`
+> - {doc}`pr_insert_link`
+> - {doc}`pr_next_link`
+> - {doc}`pr_prev_link`
+> - {doc}`pr_remove_link`
+> - {doc}`pr_remove_and_init_link`
+> - {doc}`pr_insert_before`
+> - {doc}`pr_insert_after`
+> - {doc}`pr_clist_is_empty`
+> - {doc}`pr_list_head`
+> - {doc}`pr_list_tail`

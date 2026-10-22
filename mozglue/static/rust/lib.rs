@@ -168,11 +168,16 @@ unsafe fn memalign(align: usize, size: usize) -> *mut c_void {
 
 pub struct GeckoAlloc;
 
+// mozjemalloc guarantees a minimum alignment of 16 for all sizes, except
+// for size classes below 16 (4 and 8).
+#[cfg(feature = "moz_memory")]
+const MEMALIGN_MIN_ALIGN: usize = 16;
+#[cfg(not(feature = "moz_memory"))]
+const MEMALIGN_MIN_ALIGN: usize = 8;
+
 #[inline(always)]
 fn need_memalign(layout: Layout) -> bool {
-    // mozjemalloc guarantees a minimum alignment of 16 for all sizes, except
-    // for size classes below 16 (4 and 8).
-    layout.align() > layout.size() || layout.align() > 16
+    layout.align() > layout.size() || layout.align() > MEMALIGN_MIN_ALIGN
 }
 
 unsafe impl GlobalAlloc for GeckoAlloc {

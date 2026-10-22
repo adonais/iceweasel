@@ -3184,6 +3184,10 @@ void ClientWebGLContext::ClearDepth(GLclampf v) { Run<RPROC(ClearDepth)>(v); }
 
 void ClientWebGLContext::ClearStencil(GLint v) { Run<RPROC(ClearStencil)>(v); }
 
+void ClientWebGLContext::ClipControlEXT(GLenum origin, GLenum depth) {
+  Run<RPROC(ClipControlEXT)>(origin, depth);
+}
+
 void ClientWebGLContext::ColorMaskI(Maybe<GLuint> i, bool r, bool g, bool b,
                                     bool a) const {
   const FuncScope funcScope(*this, "colorMask");
@@ -3494,6 +3498,21 @@ Maybe<webgl::ErrorInfo> CheckBindBufferRange(
       const auto info =
           nsPrintfCString("Unrecognized `target`: 0x%04x", target);
       return fnSome(LOCAL_GL_INVALID_ENUM, info);
+    }
+  }
+
+  // The driver rejects a range that does not fit GLintptr/GLsizeiptr and keeps
+  // its previous binding, so we must not record such a range as bound.
+  if (isBuffer) {
+    if (!CheckedInt<GLintptr>(offset).isValid()) {
+      const auto info = nsPrintfCString(
+          "`offset` (%" PRIu64 ") must fit in GLintptr.", offset);
+      return fnSome(LOCAL_GL_INVALID_VALUE, info);
+    }
+    if (!CheckedInt<GLsizeiptr>(size).isValid()) {
+      const auto info =
+          nsPrintfCString("`size` (%" PRIu64 ") must fit in GLsizeiptr.", size);
+      return fnSome(LOCAL_GL_INVALID_VALUE, info);
     }
   }
 

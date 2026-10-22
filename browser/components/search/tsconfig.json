@@ -1,5 +1,10 @@
 {
-  "include": ["*.sys.mjs", "test/**/*.mjs", "types/*.ts"],
+  "include": [
+    "*.sys.mjs",
+    "test/**/*.mjs",
+    "types/*.ts",
+    "../tabbrowser/types/elements.ts"
+  ],
   "extends": "../../../tools/@types/tsconfig.json",
 
   "compilerOptions": {

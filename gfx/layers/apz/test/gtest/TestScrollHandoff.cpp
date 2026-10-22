@@ -908,7 +908,7 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffNonscrollable) {
   WidgetMouseEvent mouseEvent =
       mouseInput.ToWidgetEvent<WidgetMouseEvent>(nullptr);
   QueueMockHitResult(START_SCROLL_ID + 1);
-  ((APZInputBridge*)manager.get())->ReceiveInputEvent(mouseEvent);
+  ((APZBridge*)manager.get())->ReceiveInputEvent(mouseEvent);
 
   // Wheel downward should scroll the subframe.
   mcc->AdvanceByMillis(100);

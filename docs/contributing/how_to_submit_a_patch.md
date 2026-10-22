@@ -6,7 +6,7 @@ Submitting a patch, getting it reviewed, and committed to the Firefox
 source tree involves several steps. This article explains how.
 
 :::{note}
-We are also providing a {ref}`Firefox Contributors Quick Reference <Firefox Contributors' Quick Reference>` for contributors.
+We are also providing a {doc}`Firefox Contributors Quick Reference <contribution_quickref>` for contributors.
 :::
 
 The process of submission is illustrated by the following diagram, and
@@ -71,7 +71,7 @@ new user interface (UI review), functions (API review), or testcases for
 the proposed change.
 
 If module ownership is not clear, ask on the newsgroups or [on
-Matrix](https://chat.mozilla.org). See {ref}`Getting reviews` for the other
+Matrix](https://chat.mozilla.org). See {doc}`reviews` for the other
 ways of identifying a suitable reviewer or review group.
 
 ## Working on a patch
@@ -107,23 +107,23 @@ further lines for more detail and/or reasoning.
 The `r=reviewers` part specifies that `reviewers` should review the patch
 and provide feedback before it is integrated into the Firefox codebase. For
 choosing reviewers, and the full reviewer syntax, please see
-{ref}`Getting reviews`.
+{doc}`reviews`.
 
 You can edit the message of the current commit at any time using
 `git commit --amend` or `git rebase -i`.
 
-Also look at our {ref}`Reviewer Checklist` for a list
+Also look at our {doc}`reviewer_checklist` for a list
 of best practices for patch content that reviewers will check for or
 require.
 
 ## Testing
 
-All changes must be tested. In most cases, {ref}`Automated Testing` is required for every
+All changes must be tested. In most cases, {doc}`/testing/automated-testing/index` is required for every
 change to the code.
 
 While we desire to have automated tests for all code, we also have a
 linter tool which runs static analysis on our JavaScript, for best
-practices and common mistakes. See {ref}`ESLint` for more information.
+practices and common mistakes. See {doc}`/code-quality/lint/linters/eslint` for more information.
 
 Ensure that your change has not caused regressions, by running the
 automated test suite locally, or using the [Mozilla try
@@ -156,7 +156,7 @@ some code.
 
 ## Getting reviews for my patch
 
-See the dedicated page {ref}`Getting reviews`
+See the dedicated page {doc}`reviews`
 
 (addressing-review-comments)=
 
@@ -227,4 +227,4 @@ A resubmitted patch, or a patch to fix the regression, should be
 accompanied by appropriate tests.
 
 After authoring a few patches, consider requesting commit access to the
-Mozilla source code. See {ref}`Levelling up`.
+Mozilla source code. See {doc}`levelling-up`.

@@ -748,7 +748,8 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
 
   if (mSpdySession) {
     nsCOMPtr<nsIInterfaceRequestor> callbacks = GetCallbacks();
-    if (!mSpdySession->AddStream(httpTransaction, priority, callbacks)) {
+    RefPtr<ASpdySession> spdySession = mSpdySession;
+    if (!spdySession->AddStream(httpTransaction, priority, callbacks)) {
       MOZ_ASSERT(false);  // this cannot happen!
       httpTransaction->Close(NS_ERROR_ABORT);
       return NS_ERROR_FAILURE;
@@ -2639,9 +2640,11 @@ void nsHttpConnection::HandshakeDoneInternal() {
 
   int16_t tlsVersion;
   tlsSocketControl->GetSSLVersionUsed(&tlsVersion);
-  mConnInfo->SetLessThanTls13(
-      (tlsVersion < nsITLSSocketControl::TLS_VERSION_1_3) &&
-      (tlsVersion != nsITLSSocketControl::SSL_VERSION_UNKNOWN));
+  mConnInfo = mConnInfo->Mutate()
+                  .SetLessThanTls13(
+                      (tlsVersion < nsITLSSocketControl::TLS_VERSION_1_3) &&
+                      (tlsVersion != nsITLSSocketControl::SSL_VERSION_UNKNOWN))
+                  .Finalize();
 #ifndef ANDROID
   mTlsHandshaker->EarlyDataTelemetry(tlsVersion, earlyDataAccepted,
                                      mContentBytesWritten0RTT);

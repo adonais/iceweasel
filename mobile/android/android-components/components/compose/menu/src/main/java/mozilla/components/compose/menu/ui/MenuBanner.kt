@@ -22,43 +22,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.LayoutDirection
-import mozilla.components.compose.base.R as composeBaseR
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.text.Text as AcornText
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.menu.R
+import mozilla.components.compose.menu.data.MenuItemSummary
 import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A full-width banner shown in the menu.
  *
  * @param title The title of the banner.
- * @param subtitle The subtitle of the banner.
- * @param illustration The illustration to show in the banner.
- * @param onDismiss Invoked when the user taps the dismiss icon (“X”).
+ * @param summary The subtitle of the banner.
+ * @param icon The illustration to show in the banner.
  * @param onClick Invoked when the user taps anywhere else on the banner.
+ * @param onDismiss Invoked when the user taps the dismiss icon (“X”).
  * @param modifier [Modifier] to be applied to the layout.
- * @param dismissContentDescription The content description for the dismiss icon.
  */
 @Composable
 fun MenuBanner(
     title: AcornText,
-    subtitle: AcornText,
-    illustration: Painter,
-    onDismiss: () -> Unit,
+    summary: MenuItemSummary,
+    icon: MenuItemIcon,
     onClick: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    dismissContentDescription: AcornText =
-        AcornText.Resource(composeBaseR.string.mozac_compose_base_close_button_content_description),
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
@@ -89,16 +86,16 @@ fun MenuBanner(
                     Spacer(modifier = Modifier.height(AcornTheme.layout.space.static50))
 
                     Text(
-                        text = subtitle.value,
+                        text = summary.text.value,
                         style = AcornTheme.typography.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 3,
+                        maxLines = summary.maxLines,
                     )
                 }
 
                 Image(
-                    painter = illustration,
+                    painter = icon.painter,
                     contentDescription = null,
                     modifier =
                         Modifier.align(Alignment.Bottom)
@@ -109,7 +106,7 @@ fun MenuBanner(
 
             IconButton(
                 onClick = onDismiss,
-                contentDescription = dismissContentDescription.value,
+                contentDescription = stringResource(R.string.mozac_menu_banner_dismiss_description),
                 modifier =
                     Modifier.align(Alignment.TopEnd).size(AcornTheme.layout.size.static600).semantics(
                         mergeDescendants = true
@@ -138,8 +135,8 @@ private fun MenuBannerPreview() {
         Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
             MenuBanner(
                 title = AcornText.String("Banner title"),
-                subtitle = AcornText.String("Banner subtitle"),
-                illustration = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
+                summary = MenuItemSummary(text = AcornText.String("Banner subtitle")),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_globe_24),
                 onDismiss = {},
                 onClick = {},
                 modifier = Modifier.padding(AcornTheme.layout.space.static200),

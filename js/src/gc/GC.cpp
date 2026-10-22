@@ -250,6 +250,7 @@
 #include "js/HeapAPI.h"  // JS::GCCellPtr
 #include "js/Printer.h"
 #include "js/SliceBudget.h"
+#include "util/Denormals.h"
 #include "util/DifferentialTesting.h"
 #include "vm/BigIntType.h"
 #include "vm/EnvironmentObject.h"
@@ -2724,6 +2725,12 @@ void GCRuntime::purgeRuntime() {
 
 bool GCRuntime::shouldRealmPreserveJitCode(Realm* realm,
                                            const TimeStamp& currentTime) {
+  // If the embedder hinted that this realm is dying, don't preserve its JIT
+  // code.
+  if (realm->isDyingHint()) {
+    return false;
+  }
+
   // The gcPreserveJitCode testing function was used.
   if (alwaysPreserveCode) {
     return true;
@@ -2955,30 +2962,35 @@ void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
     return;
   }
 
-  // We're able to preserve JIT code, so check the heuristics for each realm.
-  bool preservingAllRealms = true;
+  // If any realm in this zone should preserve its JIT code, we preserve JIT
+  // code for all non-dying realms in the zone.
+  bool preserveCode = false;
   for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
     if (shouldRealmPreserveJitCode(r, currentTime)) {
-      r->jitRealm().setPreservingCode(true);
-    } else {
-      preservingAllRealms = false;
+      preserveCode = true;
+      break;
     }
   }
-  if (preservingAllRealms) {
+
+  // Also preserve JIT code if there's a JIT activation for this zone on the
+  // stack.
+  if (!preserveCode) {
+    JSContext* cx = rt->mainContextFromOwnThread();
+    for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
+      if (iter->compartment()->zone() == zone) {
+        preserveCode = true;
+        break;
+      }
+    }
+  }
+
+  if (!preserveCode) {
     return;
   }
 
-  // Also preserve JIT code for realms that have JS JIT frames on the stack.
-  JSContext* cx = rt->mainContextFromOwnThread();
-  for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
-    if (iter->compartment()->zone() != zone) {
-      continue;
-    }
-    for (OnlyJSJitFrameIter frames(iter); !frames.done(); ++frames) {
-      const jit::JSJitFrameIter& frame = frames.frame();
-      if (frame.isScripted()) {
-        frame.script()->realm()->jitRealm().setPreservingCode(true);
-      }
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    if (!r->isDyingHint()) {
+      r->jitRealm().setPreservingCode(true);
     }
   }
 }
@@ -4251,7 +4263,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 void GCRuntime::setGrayBitsInvalid() {
   waitBackgroundSweepEnd();
   grayBitsValid = false;
-  atomReferences.unmarkAllGrayReferences(this);
 }
 
 void GCRuntime::disableIncrementalBarriers() {
@@ -5046,6 +5057,9 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
   // This reason is used internally. See below.
   MOZ_ASSERT(reason != JS::GCReason::RESET);
+
+  // We should be running with denormals enabled.
+  MOZ_ASSERT(!DenormalsDisabled());
 
   // Background finalization and decommit are finished by definition before we
   // can start a new major GC.  Background allocation may still be running, but

@@ -25,12 +25,12 @@ The function has the following parameters:
 `npds`
 
 : The number of elements in the `pds` array. If this parameter is
-  zero, {ref}`PR_Poll` is equivalent to {ref}`PR_Sleep` with a timeout.
+  zero, {doc}`pr_poll` is equivalent to {doc}`pr_sleep` with a timeout.
 
 `timeout`
 
 : Amount of time the call will block waiting for I/O to become ready.
-  If this time expires without any I/O becoming ready, {ref}`PR_Poll`
+  If this time expires without any I/O becoming ready, {doc}`pr_poll`
   returns zero.
 
 ### Returns
@@ -41,7 +41,7 @@ The function returns one of these values:
   number of `PRPollDesc` structures in `pds` that have events.
 - The value 0 indicates the function timed out.
 - The value -1 indicates the function failed. The reason for the
-  failure can be obtained by calling {ref}`PR_GetError`.
+  failure can be obtained by calling {doc}`pr_geterror`.
 
 ### Description
 
@@ -54,8 +54,8 @@ set to the I/O events (readable, writable, exception, or some
 combination) that the caller is interested in. On successful return, the
 `out_flags` field of the `PRPollDesc` data structure is set to
 indicate what kind of I/O is ready on the respective descriptor.
-{ref}`PR_Poll` uses the `out_flags` fields as scratch variables during
-the call. If {ref}`PR_Poll` returns 0 or -1, the `out_flags` fields do
+{doc}`pr_poll` uses the `out_flags` fields as scratch variables during
+the call. If {doc}`pr_poll` returns 0 or -1, the `out_flags` fields do
 not contain meaningful values and must not be used.
 
 The `PRPollDesc` structure is defined as follows:
@@ -74,15 +74,15 @@ The structure has the following fields:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a socket or a
+: A pointer to a {doc}`prfiledesc` object representing a socket or a
   pollable event. This field can be set to `NULL` to indicate to
-  {ref}`PR_Poll` that this `PRFileDesc object` should be ignored.
+  {doc}`pr_poll` that this `PRFileDesc object` should be ignored.
 
   :::{note}
   On Unix, the `fd` field can be set to a pointer to any
-  {ref}`PRFileDesc` object, including one representing a file or a
+  {doc}`prfiledesc` object, including one representing a file or a
   pipe. Cross-platform applications should only set the `fd` field
-  to a pointer to a {ref}`PRFileDesc` object representing a socket or a
+  to a pointer to a {doc}`prfiledesc` object representing a socket or a
   pollable event because on Windows the `select` function can only
   be used with sockets.
   :::
@@ -105,4 +105,4 @@ The structure has the following fields:
 
 Note that the `PR_POLL_ERR` and `PR_POLL_NVAL` flags are used only
 in `out_flags`. The `PR_POLL_ERR` and `PR_POLL_NVAL` events are
-always reported by {ref}`PR_Poll`.
+always reported by {doc}`pr_poll`.

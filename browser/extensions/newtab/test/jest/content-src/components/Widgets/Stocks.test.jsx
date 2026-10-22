@@ -18,6 +18,7 @@ const mockState = {
     values: {
       ...INITIAL_STATE.Prefs.values,
       "widgets.system.enabled": true,
+      "widgets.enabled": true,
       "widgets.system.stocks.enabled": true,
       "widgets.stocks.enabled": true,
       "widgets.stocks.size": "medium",
@@ -160,18 +161,27 @@ describe("Stocks widget", () => {
     expect(root.className).toContain("medium-widget");
   });
 
-  it("with no watchlist at small, labels the region with a visible <h2> Stocks heading and no dropdown", () => {
+  it("with no watchlist at small, labels the region with a visible <h2> Finance heading and no dropdown", () => {
     const { container } = renderStocksState({ size: "small" });
     const article = container.querySelector("article.stocks");
     expect(article.getAttribute("aria-labelledby")).toBe("stocks-widget-label");
     const label = container.querySelector("#stocks-widget-label");
     expect(label.tagName).toBe("H2");
     expect(label.getAttribute("data-l10n-id")).toBe(
-      "newtab-stocks-widget-title"
+      "newtab-stocks-widget-title2"
     );
     expect(label.classList.contains("sr-only")).toBe(false);
     expect(container.querySelector(".stocks-list-button")).toBeNull();
     expect(container.querySelector(".stocks-search-button")).toBeNull();
+  });
+
+  it("names the context menu button for screen readers", () => {
+    const { container } = renderStocksState();
+    expect(
+      container.querySelector(
+        ".stocks-context-menu-button[data-l10n-id='newtab-stocks-widget-open-menu-button2']"
+      )
+    ).toBeTruthy();
   });
 
   it.each(["medium", "large"])(

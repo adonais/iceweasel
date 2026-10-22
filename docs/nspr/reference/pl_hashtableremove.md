@@ -27,14 +27,14 @@ The function has the following parameters:
 ## Description
 
 If there is no entry in the table with the specified key,
-{ref}`PL_HashTableRemove` returns `PR_FALSE`. If the entry exists,
-{ref}`PL_HashTableRemove` removes the entry from the table, invokes
+{doc}`pl_hashtableremove` returns `PR_FALSE`. If the entry exists,
+{doc}`pl_hashtableremove` removes the entry from the table, invokes
 `freeEntry` with the `HT_FREE_ENTRY` flag to frees the entry, and
 returns `PR_TRUE`.
 
-If the table is underloaded, {ref}`PL_HashTableRemove` also shrinks the
+If the table is underloaded, {doc}`pl_hashtableremove` also shrinks the
 number of buckets by half.
 
 ## Remark
 
-This function should return {ref}`PRStatus`.
+This function should return {doc}`prstatus`.

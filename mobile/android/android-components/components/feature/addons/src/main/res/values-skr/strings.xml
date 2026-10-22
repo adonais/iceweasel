@@ -11,6 +11,31 @@
   <string name="mozac_feature_addons_permissions_one_site_description">%1$s کیتے آپݨے ڈیٹا تائیں رسائی گھنو۔</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
   <string name="mozac_feature_addons_permissions_sites_in_domain_description">%1$s ڈومین وچ آپݨی سائٹس دے ڈیٹا تے رسائی حاصل کرو</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on another site".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_2">ٻئی سائٹ تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on other sites".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_2">ٻیاں سائٹاں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on another domain.
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_2">ٻئی ڈومین تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on other domains".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">ٻیاں ڈومیناں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">%1$d ڈومین وچ سائٹاں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</item>
+    <item quantity="other">%1$d ڈومیناں وچ سائٹاں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s، %3$d وچوں %2$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -61,8 +86,16 @@
   <string name="mozac_feature_addons_permissions_tab_hide_description">براؤزر ٹیباں لکاؤ تے ݙکھاؤ</string>
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">براؤزنگ تاریخ تے اپڑو</string>
+  <!-- Description for the "trialML" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description">اپݨی ڈیوائس تے اے آئی ماڈل ڈاؤن لوڈ کرو تے چلاؤ۔</string>
+  <!-- Description for the "userScripts" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description">غیر تصدیق شدہ تریجھی فریق دے سکرپٹس کوں تہاݙے ڈیٹا تائیں رسائی ݙیو۔</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_devtools_description">کھلے ٹیب وچ آپݨے ڈیٹا تائیں رسائی کیتے ڈویلپر دے اوزار ودھاؤ</string>
+  <!-- Description for the "privacy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_privacy_description_for_update">رازداری ترتیبات پڑھو تے تبدیل کرو۔</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">ساری ویب سائٹس کیتے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
   <!-- Description for the "tabs" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_tabs_description_for_update">براؤزر ٹیبز تائیں رسائی حاصل کرو۔</string>
   <!-- Description for the "webNavigation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -73,14 +106,130 @@
   <string name="mozac_feature_addons_permissions_browser_settings_description_for_update">براؤزر ترتیباں پڑھو تے تبدیل کرو۔</string>
   <!-- Description for the "browsingData" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_browsing_data_description_for_update">حالیہ براؤزنگ تاریخ۔ کوکیاں تے متعلقہ ڈیٹا صاف کرو۔</string>
+  <!-- Description for the "clipboardRead" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_clipboard_read_description_for_update">کلپ بورڈ کنوں ڈیٹا گھنو۔</string>
+  <!-- Description for the "clipboardWrite" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_clipboard_write_description_for_update">کلپ بورڈ وچ ڈیٹا پاؤ۔</string>
+  <!-- Description for the "declarativeNetRequest" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">کہیں وی ورقے تے مواد بلاک کرو۔</string>
+  <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update">اپݨی براؤزنگ ہسٹری پڑھو۔</string>
+  <!-- Description for the "downloads" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_downloads_description_for_update">فائلاں ڈاؤن لوڈ کرو تے براؤزر دی ڈاؤن لوڈ ہسٹری پڑھو تے تبدیل کرو۔</string>
+  <!-- Description for the "downloads.open" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">اپݨی ڈیوائس تے ڈاؤن لوڈ تھیاں فائلاں کھولو۔</string>
+  <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_find_description_for_update">سارے کھلے ٹیباں دی عبارت پڑھو۔</string>
   <!-- Description for the "geolocation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_geolocation_description_for_update">آپݨے مقام تائیں اپڑو۔</string>
+  <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_history_description_for_update">براؤزنگ تاریخ تے اپاو۔</string>
+  <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_management_description_for_update">ایکسٹینشن ورتاو دی نگرانی کرو تے تھیم مینج کرو۔</string>
+  <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">ایں ایپ دے علاوہ کیہیں ٻئی ایپ نال سنیہاں دا تبادلہ کرو۔</string>
+  <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_notifications_description_for_update">تہاکوں اطلاع نامیاں دی نمائش تھیوے۔</string>
+  <!-- Description for the "pkcs11" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_pkcs11_description_for_update">کرپٹو گرافک تصدیق دیاں خدمات فراہم کرو۔</string>
+  <!-- Description for the "proxy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_proxy_description_for_update">براؤزر دیاں پراکسی ترتیباں کوں کنٹرول کرو۔</string>
+  <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_sessions_description_for_update">حالیہ بند تھیاں ٹیباں تے اپاو۔</string>
+  <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">براؤزر ٹیباں لکاو تے ݙکھاو۔</string>
+  <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_top_sites_description_for_update">براؤزنگ تاریخ تے اپاو۔</string>
+  <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">اپݨی ڈیوائس تے اے آئی ماڈل ڈاؤن لوڈ کرو تے چلاؤ۔</string>
+  <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">غیر تصدیق شدہ تریجھے فریق دے سکرپٹس کوں اپݨے ڈیٹا تائیں رسائی ڈیو۔</string>
+  <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_devtools_description_for_update">کھلے ٹیباں وچ اپݨے ڈیٹا تائیں رسائی واسطے ڈویلپر ٹولز ودھاؤ۔</string>
+  <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_one_site_description_for_update">%1$s کیتے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_sites_in_domain_description_for_update">%1$s ڈومین وچ اپݨی سائٹس دی ڈیٹا تے رسائی حاصل کرو۔</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 3 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another domain.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_for_update">ٻئی ڈومین تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 4 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other domains.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_for_update">ٻیاں ڈومیناں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 3 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another site.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_for_update">ٻئی سائٹ تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 4 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other sites.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">ٻیاں سائٹاں تے اپݨے ڈیٹا تائیں رسائی گھنو۔</string>
+  <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">غیر تصدیق شدہ سکرپٹس سلامتی تے رازداری واسطے خطرہ بݨ سڳدے ہن۔ صرف انہاں ایکسٹینشناں یا ذرائع کنوں سکرپٹس چلاؤ جنہاں تے تیکوں بھروسا اے۔</string>
+  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_required_data_collection_description_2">ڈویلپر آہدے اے جو ایں ایکسٹینشن ایہہ ڈیٹا جمع کریندے: %1$s</string>
+  <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
+  <string name="mozac_feature_addons_permissions_none_required_data_collection_description">ڈویلپر آہدے اے جو ایں ایکسٹینشن کوں ڈیٹا جمع کرݨ دی لوڑ کینی۔</string>
+  <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_data_collection_optional_description">ڈویلپر آہدے اے جو ایکسٹینشن ایہہ ڈیٹا جمع کرݨ چاہندے: %1$s</string>
+  <!-- Description for text button that expands the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_all_sites">ساریاں سائٹاں ݙکھاؤ</string>
+  <!-- Description for text button that hides the majority of the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_fewer_sites">گھٹیاں سائٹاں ݙکھاؤ</string>
+  <!-- Short description for the authenticationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_short_description">تصدیق دی معلومات</string>
   <!-- Short description for the bookmarksInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description">نشانیاں</string>
+  <!-- Short description for the browsingActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_short_description">براؤزنگ دی سرگرمی</string>
+  <!-- Short description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description">مالی تے ادائیگی دی معلومات</string>
   <!-- Short description for the healthInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_healthInfo_short_description">صحت ڄاݨکاری</string>
   <!-- Short description for the locationInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_locationInfo_short_description">مقام</string>
+  <!-- Short description for the personalCommunications data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_short_description">ذاتی رابطے</string>
+  <!-- Short description for the personallyIdentifyingInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description">ذاتی شناخت دی معلومات</string>
+  <!-- Short description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_short_description">ڳولو دیاں اصطلاحاں</string>
+  <!-- Short description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_short_description">تکنیکی تے تعاملی ڈیٹا</string>
+  <!-- Short description for the websiteActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_short_description">ویب سائٹ دی سرگرمی</string>
+  <!-- Short description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_short_description">ویب سائٹ دا مواد</string>
+  <!-- Long description for the authenticationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">تصدیق دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the bookmarksInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">بُک مارکس دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the browsingActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">براؤزنگ دی سرگرمی ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">مالی تے ادائیگی دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the healthInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">صحت دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the locationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_long_description">مقام دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the personalCommunications data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">ذاتی رابطے ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the personallyIdentifyingInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">ذاتی شناخت دی معلومات ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">ڳولو دیاں اصطلاحاں ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">تکنیکی تے تعاملی ڈیٹا ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the websiteActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">ویب سائٹ دی سرگرمی ایکسٹینشن ڈویلپر نال شیئر کرو</string>
+  <!-- Long description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_long_description">ویب سائٹ دا مواد ایکسٹینشن ڈویلپر نال شیئر کرو</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">ورشن</string>
   <!-- The author of an add-on. -->
@@ -99,6 +248,8 @@
   <string name="mozac_feature_addons_settings">ترتیباں</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">چالو</string>
+  <!-- Indicates the add-on is allowed in private browsing mode. -->
+  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">ایکسٹینشن کوں نجی براؤزنگ وچ چلݨ دی اجازت دیو</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">نجی براؤزنگ وچ چلاؤ</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
@@ -123,8 +274,22 @@
   <string name="mozac_feature_addons_remove">ہٹاؤ</string>
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">رپورٹ کرو</string>
+  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_permissions_dialog_title_2">%1$s شامل کرو</string>
+  <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s ودھیری ترتیبات منگدے</string>
+  <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">%1$s ودھیرا ڈیٹا جمع کرݨ منگدے</string>
+  <!-- Heading for the permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">لازمی اجازتاں:</string>
+  <!-- Heading for the data collection permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_data_collection">لازمی ڈیٹا جمع کرݨ:</string>
+  <!-- Heading for the optional settings section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">اختیاری ترتیبات:</string>
   <!-- Heading for the permissions section in the optional permissions request dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_optional_permissions">نویاں اجازتاں:</string>
+  <!-- Heading for the data collection permissions section in the optional permissions request dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_data_collection">نواں ڈیٹا جمع کرݨ:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">شامل کرو</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -133,6 +298,8 @@
   <string name="mozac_feature_addons_permissions_dialog_deny">انکار کرو</string>
   <!-- Text link to learn more about permission requests on the add-on permissions dialog . -->
   <string name="mozac_feature_addons_permissions_dialog_learn_more">ٻیا سکھو</string>
+  <!-- This is the text for the "technical and interaction" checkbox shown in the add-on permissions dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_technical_and_interaction_data">تکنیکی تے تعاملی ڈیٹا ایکسٹینشن ڈویلپر نال شیئر کرو</string>
   <!-- This is a button to cancel the add-on installation . -->
   <string name="mozac_feature_addons_permissions_dialog_cancel">منسوخ</string>
   <!-- Accessibility content description to install add-on button. %1$s is the add-on name. -->
@@ -155,6 +322,18 @@
   <string name="mozac_feature_extensions_manager_notification_restart_button">ایکسٹنشناں ولدا شروع کرو</string>
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">ٻیاں ایکسٹنشناں لبھو</string>
+  <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_update_button">اپ ڈیٹ</string>
+  <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
+  <string name="mozac_feature_addons_updater_notification_cancel_button">منسوخ کرو</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s دا اپ ڈیٹ آ ڳئے</string>
+  <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_short_intro">اپݨا موجودہ ورژن تے ترتیبات رکھݨ کیتے منسوخ کرو۔</string>
+  <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
+  <string name="mozac_feature_addons_updater_notification_heading_permissions">نویاں لازمی اجازتاں: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">نواں لازمی ڈیٹا جمع کرݨ: ڈویلپر آہدے اے جو ایکسٹینشن ایہہ ڈیٹا جمع کریندے: %1$s۔</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">ایکسٹنشن اپ ڈیٹاں</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -173,6 +352,8 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">ایکسٹنشناساں فی الحال تجویز تھئے ایکسٹنشناں دے موہری انتخاب کیتے سہارا بݨیندے پئے ہیں۔</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">اایکسٹنشن ڈاؤن لوڈ تے تصدیق کریندا پئے۔۔۔</string>
+  <!-- Error shown when extensions could not be loaded -->
+  <string name="mozac_feature_addons_failed_to_load_extensions">ایکسٹینشن لوڈ ناں تھی سڳن۔ بعد وچ ول کوشش کرو۔</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">%1$s زبان کیتے تے نہ ہی پہلوں مقرر زبان %2$s کیتے ترجمہ لبھے</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
@@ -191,8 +372,12 @@
   <string name="mozac_feature_addons_extension_failed_to_install_not_signed_error">ایہ ایکسٹنشن انسٹال نہیں تھی سڳی کیوں جو ایندی تصدیق نہیں تھئی۔</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was incompatible. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
   <string name="mozac_feature_addons_failed_to_install_incompatible_error">%1$s کوں انسٹال نِھیں کِیتا ون٘ڄ سڳیا کیوں جو اِیہ %2$s%3$s دے نال میل نئیں رکھین٘دا۔</string>
+  <!-- Text shown when attempting to install a (hard) blocked add-on. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_blocklisted_2" tools:ignore="BrandUsage">%1$s موزیلا دیاں پالیسیاں دی خلاف ورزی کریندے تے %2$s تے انسٹال ناں تھی سڳدے۔</string>
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s انسٹال کائنی کیتا ون٘ڄ سڳیا کیونجو ایہ صرف انٹرپرائز پالیسیاں دا استعمال کرݨ آلی کہیں تنظیم دے ذریعہ انسٹال کیتا ون٘ڄ سڳدا ہے، جہڑی ایں پلیٹ فارم تے تعاون یافتہ کائنی۔</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s محدود اے اتے اینکوں %2$s اُتے انسٹال نہیں کیتا ونڄ سڳدا۔</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">%1$s فعال کرݨ وچ ناکام تھیا</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -225,12 +410,22 @@
   <string name="mozac_feature_addons_updater_dialog_status">حیثیت:</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_installed_dialog_title_2">%1$s شامل تھی ڳیا ہا</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">توسیعی سیٹنگز</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">تساں کہیں وی ویلے %1$s وچ اپݨی اجازتیں (permissions) اتے ڈیٹا دیاں ترجیحات کوں اپ ڈیٹ کر سڳدے او۔</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">ٹھیک ہے</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_learn_more">ٻیا سِکھو</string>
   <!-- "See details" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_see_details">تفصیلاں ݙیکھو</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_status_blocklisted_1" tools:ignore="BrandUsage">ایہ توسیعی (extension) موزیلا دی پالیسیاں دی خلاف ورزی دی وجہ توں بلاک کر ڈتی ڳئی اے اتے اینکوں معطل کر ڈتا ڳیا اے۔</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">ایہ توسیعی (extension) محدود اے اتے اینکوں معطل کر ڈتا ڳیا اے۔ تساں اینکوں فعال کر سڳدے او، پر ایندے نال خطرہ تھی سڳدے۔</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">ایہ توسیعی (extension) محدود اے۔ اینکوں ورتݨ خطرناک تھی سڳدے۔</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s کوں محفوظ دے طور تے تصدیق نِھیں کِیتی ون٘ڄ سڳین٘دی اَتے اِیکوں غیر فعال کر ݙِتّا ڳِیا ہِے۔</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

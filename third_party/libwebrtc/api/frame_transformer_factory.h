@@ -51,6 +51,8 @@ CreateOutgoingAudioFrame(TransformableAudioFrameInterface::FrameType frame_type,
                          std::optional<uint16_t> sequence_number,
                          std::optional<uint8_t> audio_level_dbov);
 
+// TODO(crbug.com/524901718): Remove default parameter values when callers have
+// been updated.
 RTC_EXPORT std::unique_ptr<TransformableVideoFrameInterface>
 CreateOutgoingVideoFrame(VideoFrameType frame_type,
                          PayloadType payload_type,
@@ -59,7 +61,9 @@ CreateOutgoingVideoFrame(VideoFrameType frame_type,
                          std::optional<int64_t> absolute_capture_timestamp_ms,
                          const std::vector<uint32_t>& csrcs,
                          VideoCodecType codec_type,
-                         std::optional<Timestamp> presentation_timestamp);
+                         std::optional<Timestamp> presentation_timestamp,
+                         uint16_t width = 100,
+                         uint16_t height = 100);
 }  // namespace webrtc
 
 #endif  // API_FRAME_TRANSFORMER_FACTORY_H_

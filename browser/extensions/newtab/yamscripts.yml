@@ -23,10 +23,9 @@ scripts:
 
   testmc:
     lint: =>lint
-    jest: jest
-    unit: karma start karma.mc.config.js
-
-  tddmc: karma start karma.mc.config.js --tdd
+    jest:
+      _: jest
+      coverage: jest --coverage
 
   debugcoverage: open logs/coverage/lcov-report/index.html
 
@@ -41,8 +40,8 @@ scripts:
   # test: Run all tests once
   test: =>testmc
 
-  # tdd: Run content tests continuously
-  tdd: =>tddmc
+  # tdd: Run Jest tests continuously
+  tdd: jest --watch
 
   # script for the `source-test-node-newtab-unit-tests` task on taskcluster.
   # this is what appears as `newtab` in treeherder results after pushing to try.

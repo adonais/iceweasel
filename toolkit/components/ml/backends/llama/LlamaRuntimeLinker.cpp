@@ -6,6 +6,7 @@
 
 #include "mozilla/FileUtils.h"
 #include "mozilla/Logging.h"
+#include "mozilla/StaticMutex.h"
 #include "nsLocalFile.h"
 #include "nsXPCOMPrivate.h"
 #include "nsXULAppAPI.h"
@@ -16,6 +17,7 @@
 #endif
 
 mozilla::LazyLogModule gLlamaLinkerLog("LlamaRuntimeLinker");
+extern mozilla::LazyLogModule gLlamaBackendLog;
 
 #define LOG(level, fmt, ...) \
   MOZ_LOG(gLlamaLinkerLog, level, ("[LlamaRuntimeLinker] " fmt, ##__VA_ARGS__))
@@ -23,8 +25,35 @@ mozilla::LazyLogModule gLlamaLinkerLog("LlamaRuntimeLinker");
 namespace mozilla::llama {
 
 LlamaLibWrapper LlamaRuntimeLinker::sLlamaLib;
-LlamaRuntimeLinker::LinkStatus LlamaRuntimeLinker::sLinkStatus =
-    LinkStatus_INIT;
+Atomic<LlamaRuntimeLinker::LinkStatus> LlamaRuntimeLinker::sLinkStatus{
+    LinkStatus_INIT};
+
+// llama.cpp's log callback is process-global state, so it is installed once
+// here rather than by each backend instance from its own thread.
+static void LlamaLogCallback(ggml_log_level aLevel, const char* aText,
+                             void* /* aUserData */) {
+  switch (aLevel) {
+    case GGML_LOG_LEVEL_NONE:
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Disabled, ("%s", aText));
+      break;
+    case GGML_LOG_LEVEL_DEBUG:
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Debug, ("%s", aText));
+      break;
+    case GGML_LOG_LEVEL_INFO:
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Info, ("%s", aText));
+      break;
+    case GGML_LOG_LEVEL_WARN:
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Warning, ("%s", aText));
+      break;
+    case GGML_LOG_LEVEL_ERROR:
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Error, ("%s", aText));
+      break;
+    default:
+      // Handles GGML_LOG_LEVEL_CONT or unexpected levels
+      MOZ_LOG(gLlamaBackendLog, LogLevel::Verbose, ("%s", aText));
+      break;
+  }
+}
 
 static PRLibrary* LoadLlamaLib(nsIFile* aFile) {
   PRLibSpec lspec;
@@ -105,6 +134,8 @@ void LlamaLibWrapper::Unlink() {
 
 /* static */
 bool LlamaRuntimeLinker::Init() {
+  static StaticMutex sInitMutex MOZ_UNANNOTATED;
+  StaticMutexAutoLock lock(sInitMutex);
   // Quick return if already initialized
   if (sLinkStatus == LinkStatus_SUCCEEDED) {
     return true;
@@ -172,6 +203,8 @@ bool LlamaRuntimeLinker::Init() {
     LOG(LogLevel::Error, "Failed to link llama library: %d", (int)res);
     return false;
   }
+
+  sLlamaLib.llama_log_set(LlamaLogCallback, nullptr);
 
 #ifdef XP_MACOSX
   // Content-process inference is CPU-only. Attempting to register a metal

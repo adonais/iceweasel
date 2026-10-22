@@ -420,11 +420,6 @@
   cursor: default;
 }
 
-.ruleview-rule[uneditable="true"] .ruleview-namecontainer > .ruleview-propertyname,
-.ruleview-rule[uneditable="true"] .ruleview-propertyvaluecontainer > .ruleview-propertyvalue {
-  text-decoration: none;
-}
-
 /* Display a lock before the selector for uneditable rules */
 .ruleview-rule[uneditable="true"] .ruleview-selectors-container::before {
   content: url(images/lock.svg) / "read only";
@@ -792,9 +787,8 @@
   }
 }
 
-.ruleview-namecontainer:hover > .ruleview-propertyname,
-.ruleview-propertyvaluecontainer:hover > .ruleview-propertyvalue {
-  text-decoration: 1px underline dashed hsl(0 0% 50%);
+.ruleview-propertycontainer:hover {
+  background-color: var(--theme-selection-background-hover);
 }
 
 /* ancestor rules info element (parent at-rules, parent of nested rules, …) */
@@ -1105,12 +1099,13 @@
   );
 }
 
-[data-function-expression] .css-explainers-function-name {
+[data-function-expression] .css-explainers-function-name,
+[data-length-expression] {
   text-decoration: 1px solid underline;
   text-underline-offset: 2px;
 }
 
-[data-function-expression].tooltip-anchor {
+:is([data-function-expression], [data-length-expression]).tooltip-anchor {
   text-decoration: underline;
   text-decoration-color: var(--theme-highlight-blue);
   text-decoration-style: dotted;

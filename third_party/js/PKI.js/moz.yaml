@@ -37,6 +37,8 @@ origin:
   # optional
   license-file: LICENSE
 
+  npm-name: pkijs
+
 # Configuration for the automated vendoring system.
 # optional
 vendoring:

@@ -238,11 +238,11 @@ add_task(async function test_setWallpaper_keeps_the_picture_it_started_with() {
     "And with that picture's date"
   );
 
-  const active = calls.find(
-    c => c.args[0]?.data?.name === "widgets.pictureOfTheDay.wallpaperActive"
+  const select = calls.find(
+    c => c.args[0]?.type === actionTypes.SET_MULTIPLE_PREFS
   );
   Assert.equal(
-    active.args[0].data.value,
+    select.args[0].data.values["widgets.pictureOfTheDay.wallpaperActive"],
     "2026-07-01",
     "The widget marks the day that is actually on the page"
   );
@@ -286,20 +286,28 @@ add_task(async function test_setWallpaper_uploads_and_selects() {
     "marks the upload as the Picture of the Day so it is kept in the library"
   );
   Assert.ok(
-    !calls.some(c => c.args[0]?.data?.name === "newtabWallpapers.enabled"),
-    "does not force-enable the wallpaper feature"
+    !calls.some(c => c.args[0]?.type === actionTypes.SET_PREF),
+    "sets no pref on its own"
   );
-  Assert.ok(
-    calls.some(c => c.args[0]?.data?.name === "newtabWallpapers.wallpaper"),
-    "selects the custom wallpaper"
+  const prefCalls = calls.filter(
+    c => c.args[0]?.type === actionTypes.SET_MULTIPLE_PREFS
   );
-  Assert.ok(
-    calls.some(
-      c =>
-        c.args[0]?.data?.name === "widgets.pictureOfTheDay.wallpaperActive" &&
-        c.args[0]?.data?.value === "2026-07-01"
-    ),
-    "records the set picture's published date as the active wallpaper"
+  Assert.equal(
+    prefCalls.length,
+    1,
+    "selects the wallpaper in a single transaction, so content never renders " +
+      "the display on with the previous selection - bug 2067860"
+  );
+  Assert.deepEqual(
+    prefCalls[0].args[0].data.values,
+    {
+      "newtabWallpapers.wallpaper": "custom",
+      "newtabWallpapers.initialWallpaper": "",
+      "newtabWallpapers.user.enabled": true,
+      "widgets.pictureOfTheDay.wallpaperActive": "2026-07-01",
+    },
+    "selects the custom wallpaper, turns on the display and records the " +
+      "picture's date, without force-enabling the wallpaper feature"
   );
   sandbox.restore();
 });

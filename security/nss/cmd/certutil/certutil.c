@@ -1160,9 +1160,11 @@ PrintSyntax()
         "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
     FPS "\t%s -G [-h token-name] -k ec -q curve [-f pwfile]\n"
         "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
+    FPS "\t%s -G [-h token-name] -k ed -q curve [-f pwfile]\n"
+        "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
     FPS "\t%s -G [-h token-name] -k mldsa -q paramset [-f pwfile]\n"
         "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
-    FPS "\t%s -K [-n key-name] [-h token-name] [-k dsa|ec|rsa|mldsa|all]\n",
+    FPS "\t%s -K [-n key-name] [-h token-name] [-k dsa|ec|ed|rsa|mldsa|all]\n",
          progName);
     FPS "\t\t [-f pwfile] [-X] [-d certdir] [-P dbprefix]\n");
     FPS "\t%s --upgrade-merge --source-dir upgradeDir --upgrade-id uniqueID\n",
@@ -1396,6 +1398,9 @@ luG(enum usage_level ul, const char *command)
     FPS "%-20s c2tnb359w1, c2pnb368w1, c2tnb431r1, secp112r1, \n", "");
     FPS "%-20s secp112r2, secp128r1, secp128r2, sect113r1, sect113r2\n", "");
     FPS "%-20s sect131r1, sect131r2\n", "");
+    FPS "%-20s Edwards elliptic curve name (ed only)\n",
+        "   -q curve-name");
+    FPS "%-20s One of ed25519.\n", "");
     FPS "%-20s ML-DSA parameter set (mldsa only)\n",
         "   -q paramset");
     FPS "%-20s valid values are ml-dsa-44,  ml-dsa-65, ml-dsa-87:\n", "");
@@ -1491,6 +1496,7 @@ luK(enum usage_level ul, const char *command)
 
     FPS "%-20s Key type (\"all\" (default), \"dsa\","
                                                     " \"ec\","
+                                                    " \"ed\","
                                                     " \"mldsa\","
                                                     " \"rsa\")\n",
         "   -k key-type");
@@ -1649,6 +1655,10 @@ luR(enum usage_level ul, const char *command)
     FPS "%-20s Name of file containing PQG parameters (dsa only)\n",
         "   -q pqgfile");
     FPS "%-20s Elliptic curve name (ec only)\n",
+        "   -q curve-name");
+    FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
+        "");
+    FPS "%-20s Edwards elliptic curve name (ed only)\n",
         "   -q curve-name");
     FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
         "");
@@ -1833,6 +1843,10 @@ luS(enum usage_level ul, const char *command)
     FPS "%-20s Name of file containing PQG parameters (dsa only)\n",
         "   -q pqgfile");
     FPS "%-20s Elliptic curve name (ec only)\n",
+        "   -q curve-name");
+    FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
+        "");
+    FPS "%-20s Edwards elliptic curve name (ed only)\n",
         "   -q curve-name");
     FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
         "");
@@ -2802,6 +2816,8 @@ certutil_main(int argc, char **argv, PRBool initialize)
             keytype = dsaKey;
         } else if (PL_strcmp(arg, "ec") == 0) {
             keytype = ecKey;
+        } else if (PL_strcmp(arg, "ed") == 0) {
+            keytype = edKey;
         } else if (PL_strcmp(arg, "mldsa") == 0) {
             keytype = mldsaKey;
         } else if (PL_strcmp(arg, "all") == 0) {
@@ -2892,11 +2908,11 @@ certutil_main(int argc, char **argv, PRBool initialize)
 
     /*  -q PQG file or curve name */
     if (certutil.options[opt_PQGFile].activated) {
-        if ((keytype != dsaKey) && (keytype != ecKey) &&
+        if ((keytype != dsaKey) && (keytype != ecKey) && (keytype != edKey) &&
             (keytype != mldsaKey)) {
             PR_fprintf(PR_STDERR, "%s -q: specifies a PQG file for DSA keys"
                                   " (-k dsa)\n"
-                                  " or a named curve for EC keys (-k ec)\n"
+                                  " or a named curve for EC and ED keys (-k ec, ed)\n"
                                   " or a parameter set for ML-DSA keys (-k mldsa)\n",
                        progName);
             return 255;

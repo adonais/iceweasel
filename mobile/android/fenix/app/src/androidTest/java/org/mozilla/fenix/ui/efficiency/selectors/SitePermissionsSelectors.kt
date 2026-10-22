@@ -11,9 +11,14 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object SitePermissionsSelectors : SelectorContainer {
 
+    // UIAUTOMATOR2_BY_RES (UiObject2), not UIAUTOMATOR_WITH_RES_ID: tapping a permission-dialog button dismisses the
+    // dialog, and UiObject.click() gates on a post-click window-change acknowledgment that a self-dismissing prompt
+    // does
+    // not reliably deliver, so it returns false and reports "Failed to click UiObject" even though the tap landed.
+    // UiObject2.click() performs the tap without that sync gate.
     val PAGE_PERMISSION_DIALOG_ALLOW_BUTTON =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+            strategy = SelectorStrategy.UIAUTOMATOR2_BY_RES,
             value = "allow_button",
             description = "Permission dialog allow button",
             readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
@@ -33,9 +38,11 @@ object SitePermissionsSelectors : SelectorContainer {
             description = "Remember permission decision checkbox",
         )
 
+    // See PAGE_PERMISSION_DIALOG_ALLOW_BUTTON: UIAUTOMATOR2_BY_RES avoids the UiObject.click() self-dismiss false
+    // failure.
     val PAGE_PERMISSION_DIALOG_DENY_BUTTON =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+            strategy = SelectorStrategy.UIAUTOMATOR2_BY_RES,
             value = "deny_button",
             description = "Permission dialog deny button",
         )

@@ -805,13 +805,13 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
 CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() const {
   // Step 1. If this is a document, then return this's custom element registry.
   if (mKind == Kind::Document) {
-    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    const Document* doc = AsNode().AsDocument();
+    if (doc->HasScopedCustomElementRegistry()) {
       if (RefPtr<CustomElementRegistry> registry =
               CustomElementRegistry::GetScopedRegistry(AsNode())) {
         return registry;
       }
     }
-    const Document* doc = AsNode().AsDocument();
     nsPIDOMWindowInner* window = doc->GetInnerWindow();
     if (!window) {
       return nullptr;

@@ -21,52 +21,35 @@ using std::string;
  */
 class CurlWrapper {
  public:
-  CurlWrapper();
+  CurlWrapper() = default;
   ~CurlWrapper();
   bool Init();
   bool IsValidDestination(const string& url);
   bool Post(const string& url, const string& payload);
 
   // libcurl functions
-  CURL* (*easy_init)(void);
-  CURLcode (*easy_setopt)(CURL*, CURLoption, ...);
-  CURLcode (*easy_perform)(CURL*);
-  CURLcode (*easy_getinfo)(CURL*, CURLINFO, ...);
-  curl_slist* (*slist_append)(curl_slist*, const char*);
-  void (*slist_free_all)(curl_slist*);
-  const char* (*easy_strerror)(CURLcode);
-  void (*easy_cleanup)(CURL*);
-  void (*global_cleanup)(void);
+  CURL* (*easy_init)(void) = nullptr;
+  CURLcode (*easy_setopt)(CURL*, CURLoption, ...) = nullptr;
+  CURLcode (*easy_perform)(CURL*) = nullptr;
+  CURLcode (*easy_getinfo)(CURL*, CURLINFO, ...) = nullptr;
+  curl_slist* (*slist_append)(curl_slist*, const char*) = nullptr;
+  void (*slist_free_all)(curl_slist*) = nullptr;
+  const char* (*easy_strerror)(CURLcode) = nullptr;
+  void (*easy_cleanup)(CURL*) = nullptr;
+  void (*global_cleanup)(void) = nullptr;
 
-  CURLU* (*curl_url)();
-  CURLUcode (*curl_url_get)(CURLU*, CURLUPart, char**, unsigned int);
-  CURLUcode (*curl_url_set)(CURLU*, CURLUPart, const char*, unsigned int);
-  void (*curl_free)(char*);
-  void (*curl_url_cleanup)(CURLU*);
+  CURLU* (*curl_url)() = nullptr;
+  CURLUcode (*curl_url_get)(CURLU*, CURLUPart, char**, unsigned int) = nullptr;
+  CURLUcode (*curl_url_set)(CURLU*, CURLUPart, const char*,
+                            unsigned int) = nullptr;
+  void (*curl_free)(char*) = nullptr;
+  void (*curl_url_cleanup)(CURLU*) = nullptr;
 
  private:
-  void* mLib;
-  void* mCurl;
-  bool mCanParseUrl;
+  void* mLib = nullptr;
+  void* mCurl = nullptr;
+  bool mCanParseUrl = false;
 };
-
-CurlWrapper::CurlWrapper()
-    : easy_init(nullptr),
-      easy_setopt(nullptr),
-      easy_perform(nullptr),
-      easy_getinfo(nullptr),
-      slist_append(nullptr),
-      slist_free_all(nullptr),
-      easy_strerror(nullptr),
-      easy_cleanup(nullptr),
-      global_cleanup(nullptr),
-      curl_url(nullptr),
-      curl_url_get(nullptr),
-      curl_url_set(nullptr),
-      curl_free(nullptr),
-      curl_url_cleanup(nullptr),
-      mLib(nullptr),
-      mCurl(nullptr) {}
 
 CurlWrapper::~CurlWrapper() {
   if (mLib) {
@@ -139,10 +122,9 @@ bool CurlWrapper::Init() {
     return false;
   }
 
-  mCanParseUrl = true;
-  if (!curl_url || !curl_url_get || !curl_url_set || !curl_free ||
-      !curl_url_cleanup) {
-    mCanParseUrl = false;
+  mCanParseUrl =
+      curl_url && curl_url_get && curl_url_set && curl_free && curl_url_cleanup;
+  if (!mCanParseUrl) {
     PINGSENDER_LOG("WARNING: Do not have url parsing functions in libcurl\n");
   }
 

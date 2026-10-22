@@ -31,10 +31,8 @@ export const PinnableSitesList = ({
   const setItemState = (id, state) =>
     setItemStates(prev => ({ ...prev, [id]: state }));
 
-  const handlePin = async (event, item) => {
+  const handlePin = async (event, item, position) => {
     setItemState(item.id, PENDING);
-
-    MultiStageUtils.sendActionTelemetry(messageId, item.id, "CLICK_BUTTON");
 
     const result = await handleAction(event, {
       type: "PIN_TASKBAR_TAB",
@@ -52,6 +50,8 @@ export const PinnableSitesList = ({
     }
     MultiStageUtils.sendActionTelemetry(messageId, item.id, "PIN_SITE", {
       result: pinResultLabel,
+      position,
+      personalized: !!item.personalized,
     });
 
     // Re-enable the button only on explicit failure so the user can retry.
@@ -66,7 +66,7 @@ export const PinnableSitesList = ({
 
   return (
     <ul className={`pinnable-sites-list${alwaysShow ? " always-visible" : ""}`}>
-      {items.map(item => {
+      {items.map((item, index) => {
         const nameId = `pinnable-site-name-${item.id}`;
         const state = itemStates[item.id] ?? IDLE;
         const isPendingOrPinned = state === PENDING || state === PINNED;
@@ -89,8 +89,9 @@ export const PinnableSitesList = ({
                 successful pin. */}
             <button
               className="pinnable-sites-pin-button primary"
+              value={item.id}
               disabled={isPendingOrPinned}
-              onClick={e => handlePin(e, item)}
+              onClick={e => handlePin(e, item, index + 1)}
               aria-describedby={nameId}
             >
               {pinButtonLabel && (

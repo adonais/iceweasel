@@ -97,12 +97,7 @@ ScreenOrientation::ScreenOrientation(nsPIDOMWindowInner* aWindow,
 }
 
 ScreenOrientation::~ScreenOrientation() {
-  if (mTriedToLockDeviceOrientation) {
-    UnlockDeviceOrientation();
-  } else {
-    CleanupFullscreenListener();
-  }
-
+  ReleaseOwnLock();
   MOZ_ASSERT(!mFullscreenListener);
 }
 
@@ -670,7 +665,7 @@ RefPtr<GenericNonExclusivePromise> ScreenOrientation::LockDeviceOrientation(
     }
   }
 
-  mTriedToLockDeviceOrientation = true;
+  mLocked = true;
   return hal::LockScreenOrientation(aOrientation);
 }
 
@@ -684,6 +679,7 @@ void ScreenOrientation::Unlock(ErrorResult& aRv) {
 
 void ScreenOrientation::UnlockDeviceOrientation() {
   hal::UnlockScreenOrientation();
+  mLocked = false;
   CleanupFullscreenListener();
 }
 
@@ -701,6 +697,33 @@ void ScreenOrientation::CleanupFullscreenListener() {
   }
 
   mFullscreenListener = nullptr;
+}
+
+// static
+void ScreenOrientation::ReleaseLock(Document* aDocument) {
+  if (auto* win = nsGlobalWindowInner::Cast(aDocument->GetInnerWindow());
+      win && win->HasScreen()) {
+    win->Screen()->Orientation()->ReleaseOwnLock();
+  }
+}
+
+void ScreenOrientation::ReleaseOwnLock() {
+  CleanupFullscreenListener();
+  if (!mLocked) {
+    return;
+  }
+  mLocked = false;
+
+  Document* doc = GetResponsibleDocument();
+  BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
+  bc = bc ? bc->Top() : nullptr;
+  if (!bc || bc->GetOrientationLock() == hal::ScreenOrientation::None) {
+    return;
+  }
+  bc->SetOrientationLock(hal::ScreenOrientation::None, IgnoreErrors());
+  if (bc->IsActive()) {
+    hal::UnlockScreenOrientation();
+  }
 }
 
 OrientationType ScreenOrientation::DeviceType(CallerType aCallerType) const {
@@ -807,12 +830,12 @@ Document* ScreenOrientation::GetResponsibleDocument() const {
 }
 
 void ScreenOrientation::MaybeChanged() {
-  Document* doc = GetResponsibleDocument();
+  RefPtr<Document> doc = GetResponsibleDocument();
   if (!doc || doc->ShouldResistFingerprinting(RFPTarget::ScreenOrientation)) {
     return;
   }
 
-  BrowsingContext* bc = doc->GetBrowsingContext();
+  RefPtr<BrowsingContext> bc = doc->GetBrowsingContext();
   if (!bc) {
     return;
   }
@@ -838,6 +861,12 @@ void ScreenOrientation::MaybeChanged() {
     // Use of mozorientationchange is deprecated.
     rv = mScreen->DispatchTrustedEvent(u"mozorientationchange"_ns);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "DispatchTrustedEvent failed");
+
+    doc = GetResponsibleDocument();
+    bc = doc ? doc->GetBrowsingContext() : nullptr;
+    if (!bc) {
+      return;
+    }
   }
 
   if (doc->Hidden() && !mVisibleListener) {
@@ -1029,14 +1058,6 @@ ScreenOrientation::FullscreenEventListener::HandleEvent(Event* aEvent) {
     return NS_OK;
   }
 
-  BrowsingContext* bc = doc->GetBrowsingContext();
-  bc = bc ? bc->Top() : nullptr;
-  if (bc) {
-    bc->SetOrientationLock(hal::ScreenOrientation::None, IgnoreErrors());
-  }
-
-  hal::UnlockScreenOrientation();
-
-  target->RemoveSystemEventListener(u"fullscreenchange"_ns, this, true);
+  ScreenOrientation::ReleaseLock(doc);
   return NS_OK;
 }

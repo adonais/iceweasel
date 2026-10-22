@@ -17,7 +17,6 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include <vector>
 
 #include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
@@ -35,7 +34,6 @@
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "call/rtp_packet_sink_interface.h"
@@ -156,8 +154,6 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
       AudioFrame* audio_frame) = 0;
 
   virtual int PreferredSampleRate() const = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 
   // Sets a frame transformer between the depacketizer and the decoder, to
   // transform the received frames before decoding them.

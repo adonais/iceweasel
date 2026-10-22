@@ -24,9 +24,6 @@ skip-if = [
 ["browser_siteData3.js"]
 
 ["browser_siteData_multi_select.js"]
-skip-if = [
-  "tsan", # Bug 1683730
-]
 
 ["browser_siteData_search.js"]
 

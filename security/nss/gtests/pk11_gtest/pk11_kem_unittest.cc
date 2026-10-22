@@ -125,8 +125,7 @@ TEST_P(Pkcs11KEMTest, KemConsistencyTest) {
 
   ScopedPK11SlotInfo slot(PK11_GetBestSlot(encapsMech(), nullptr));
   ASSERT_NE(nullptr, slot);
-  std::string name = PK11_GetSlotName(slot.get());
-  ASSERT_EQ(name, "NSS Internal Cryptographic Services");
+  ASSERT_TRUE(PK11_IsInternal(slot.get()));
 
   ASSERT_NE((unsigned int)CK_INVALID_HANDLE,
             PK11_ImportPublicKey(slot.get(), pubCopy.get(), PR_FALSE));

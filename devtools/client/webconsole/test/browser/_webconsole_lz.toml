@@ -220,9 +220,6 @@ fail-if = [
 ["browser_webconsole_longstring.js"]
 
 ["browser_webconsole_longstring_getter.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bugs 1849028 and 1858041 clicked BUTTON.arrow is inconsistently not focusable
-]
 
 ["browser_webconsole_message_categories.js"]
 
@@ -329,7 +326,6 @@ skip-if = [
 
 ["browser_webconsole_sourcemap_nosource.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
   "verify",
 ]
 

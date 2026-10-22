@@ -143,7 +143,9 @@ SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
       mCORSMode(aLoadData.mSheet->GetCORSMode()),
       mOrigin(aLoadData.mSheet->GetOrigin()),
       mCompatMode(aLoadData.mCompatMode),
-      mIsLinkRelPreloadOrEarlyHint(aLoadData.IsLinkRelPreloadOrEarlyHint()) {
+      mIsLinkRelPreloadOrEarlyHint(aLoadData.IsLinkRelPreloadOrEarlyHint()),
+      mLoadedAsImage(aLoadData.mLoader->GetDocument() &&
+                     aLoadData.mLoader->GetDocument()->IsBeingUsedAsImage()) {
   MOZ_COUNT_CTOR(SheetLoadDataHashKey);
   MOZ_ASSERT(mURI);
   MOZ_ASSERT(mLoaderPrincipal);
@@ -183,6 +185,11 @@ bool SheetLoadDataHashKey::KeyEquals(const SheetLoadDataHashKey& aKey) const {
 
   if (mCompatMode != aKey.mCompatMode) {
     LOG((" > Quirks mismatch\n"));
+    return false;
+  }
+
+  if (mLoadedAsImage != aKey.mLoadedAsImage) {
+    LOG((" > Loaded as image mismatch\n"));
     return false;
   }
 
@@ -949,7 +956,8 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
                              GetFallbackEncoding(*this, aLinkingContent,
                                                  aPreloadOrParentDataEncoding),
                              aCORSMode, aOrigin, CompatMode(aPreloadKind),
-                             sriMetadata, aPreloadKind);
+                             mDocument && mDocument->IsBeingUsedAsImage(),
+                             aPreloadKind, sriMetadata);
     auto cacheResult = mSheets->Lookup(*this, key, aSyncLoad);
     if (cacheResult.mState != CachedSubResourceState::Miss) {
       SheetState sheetState = SheetState::Complete;
@@ -1701,15 +1709,15 @@ static bool BaseURIsArePathCompatible(nsIURI* aA, nsIURI* aB) {
 static bool CanReuseInlineSheet(SharedStyleSheetCache::InlineSheetEntry& aEntry,
                                 nsIURI* aNewBaseURI, bool aIsImage) {
   auto dependency = aEntry.mSheet->OriginalContentsUriDependency();
+  if (aIsImage != aEntry.mWasLoadedAsImage) {
+    // If the document was loaded as an image on one document, but wasn't on
+    // another, we can't cache the sheet. Non-local URIs should not load in
+    // those, see bug 1982344 and bug 2081280.
+    return false;
+  }
   if (dependency == StyleNonLocalUriDependency::No) {
     // If there are no non-local uris, then we can reuse.
     return true;
-  }
-  if (aIsImage != aEntry.mWasLoadedAsImage) {
-    // Even with the same base uri, if the document was loaded as an image on
-    // one document, but wasn't on another, we can't cache the sheet, since
-    // non-local URIs should not load in those, see bug 1982344.
-    return false;
   }
   if (dependency == StyleNonLocalUriDependency::Absolute) {
     // If there are only absolute uris, then we don't need to worry about the

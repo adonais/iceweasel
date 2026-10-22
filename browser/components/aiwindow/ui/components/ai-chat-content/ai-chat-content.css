@@ -40,14 +40,13 @@
     position: relative;
 
     /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-    @media -moz-pref("browser.nova.enabled") {
+    @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
       mask-image: none;
 
       &::after,
       &::before {
         backdrop-filter: blur(2px);
         content: "";
-        height: var(--size-item-xlarge);
         inset-inline: 0;
         margin-inline: auto;
         /* Also caps the backdrop-filter surface well under WebRender's
@@ -58,11 +57,14 @@
       }
 
       &::after {
+        background: linear-gradient(to bottom, var(--ai-background-color) 40%, rgb(from var(--ai-background-color) r g b / 0) 100%);
+        height: 110px;
         mask: linear-gradient(var(--color-black) 30%, var(--color-black-alpha-60) 50%, transparent 70%);
         top: 0;
       }
 
       &::before {
+        height: var(--size-item-xlarge);
         bottom: 0;
         mask: linear-gradient(transparent 30%, var(--color-black-alpha-60) 50%, var(--color-black) 70%);
         z-index: 1;
@@ -79,61 +81,18 @@
   }
 }
 
-/* Fullpage has its own top blur (.fullpage-top-blur), so drop the Nova 2px top
-   scroll-fade there; the bottom fade (::before) still applies. */
-:host([mode="fullpage"]) .chat-content-wrapper[overflowing]::after {
-  display: none;
-}
-
-/*
- * Fullpage-only top blur.
- */
-.fullpage-top-blur {
+/* sets the box-shadow in the chat fullpage - it needs to be above the blurs set via pseudo elements */
+.fullpage-top-box-shadow {
   display: none;
 
   :host([mode="fullpage"]) & {
-    @media (not (forced-colors)) {
-      display: block;
-      position: fixed;
-      inset-inline: 0;
-      /* Full-bleed, but capped just under WebRender's ~4096px device-pixel
-         limit: past this the backdrop-filter surface is too large and the blur
-         silently drops. 4000px clears every normal/4K display (edge-to-edge)
-         and only engages, centered, on 5K/ultrawide screens. */
-      max-width: 4000px;
-      margin-inline: auto;
-      height: 110px;
-      backdrop-filter: blur(5px);
-      background: linear-gradient(184deg, rgba(56, 42, 104, 0.05) 3.22%, rgba(76, 50, 148, 0.05) 127.79%);
-      /* Feather the blur out toward the bottom. */
-      mask: linear-gradient(var(--color-black) 30%, var(--color-black-alpha-60) 50%, transparent 70%);
-      pointer-events: none;
-    }
-  }
-}
-
-/*
- * Fullpage-only top scrim.
- */
-.fullpage-top-scrim {
-  display: none;
-
-  :host([mode="fullpage"]) & {
-    /* Nova only; non-nova uses button backgrounds instead of the scrim. */
     @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
-      --fullpage-scrim-bg: var(--ai-background-color, var(--background-color-canvas));
       display: block;
       position: fixed;
-      /* Paint in front of .fullpage-top-blur so the scrim sits above it */
-      z-index: 1;
-      /* Per design the scrim starts at the browser top, but the content frame
-         begins below the chrome, so shift it up by that gap; the overhang is
-         clipped. */
-      top: -55px;
-      inset-inline: 0;
-      height: 109px;
-      background: linear-gradient(to bottom, var(--fullpage-scrim-bg) 0, var(--fullpage-scrim-bg) 74%, rgb(from var(--fullpage-scrim-bg) r g b / 0) 100%);
+      inset: 0;
       pointer-events: none;
+      z-index: 1;
+      box-shadow: var(--smartwindow-main-box-shadow);
     }
   }
 }
@@ -148,6 +107,12 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  /*
+   * Without this, min-height plus the default flex-shrink pin this element to
+   * the scroll container's height, so growing content never resizes it and the
+   * ResizeObserver that drives the `overflowing` attribute never fires.
+   */
+  flex-shrink: 0;
   gap: var(--space-small);
   padding-block-start: var(--smart-window-top-spacing-chat);
   padding-inline: max(var(--space-medium), calc((100vw - var(--smartwindow-content-max-width)) / 2));
@@ -261,12 +226,6 @@
 
   .chat-bubble-inner {
     gap: var(--space-small);
-    /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-    @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
-      --chat-bubble-assistant-background-color: var(--ai-background-color);
-      /* Background color is needed in order to have the blur effect on the edges */
-      background-color: var(--chat-bubble-assistant-background-color);
-    }
   }
 }
 

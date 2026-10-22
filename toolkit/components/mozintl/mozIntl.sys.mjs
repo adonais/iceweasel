@@ -1042,19 +1042,20 @@ export class MozIntl {
   }
 
   getScriptDirection(locale) {
-    // This is a crude implementation until Bug 1693576 lands.
-    // See justification in toolkit/components/mozintl/mozIMozIntl.idl
-    const { language } = new Intl.Locale(locale);
-    if (
-      language == "ar" ||
-      language == "ckb" ||
-      language == "fa" ||
-      language == "he" ||
-      language == "ur"
-    ) {
-      return "rtl";
-    }
-    return "ltr";
+    // TODO(Bug 2079006): Consider removing getScriptDirection in Favor of getTextInfo
+    //
+    // This function used to be a custom implementation to serve Firefox's internal
+    // use cases for determining the script direction of a locale during a time when
+    // no standardized API existed for this behavior.
+    //
+    // As of Firefox 153 (July 2026), the Intl.Locale.prototype.getTextInfo() API has shipped,
+    // and this function has been rewritten to be a thin wrapper over the new standardized API.
+    //
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
+    //
+    // We should consider removing this funciton entirely in favor of replacing its call sites
+    // with direct calls to the new standardized API.
+    return new Intl.Locale(locale).getTextInfo().direction ?? "ltr";
   }
 
   stringHasRTLChars(str) {

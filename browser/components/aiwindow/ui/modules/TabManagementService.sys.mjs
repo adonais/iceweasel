@@ -4,6 +4,12 @@
 
 import { SessionStore } from "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs";
 
+import {
+  isNewPageUrl,
+  sanitizeUntrustedContent,
+} from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import { isAllowedURLProtocol } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "console", () =>
@@ -558,6 +564,108 @@ export class TabManagementService {
         error: error.message || "Failed to ungroup tabs",
       };
     }
+  }
+
+  /**
+   * @typedef {object} TabGroupInfo
+   * @property {string} id - ID of the tab group
+   * @property {string} label - Label of the tab group
+   * @property {string} color - Color code of the tab group
+   * @property {number} tabCount - Number of visible tabs
+   * @property {Array<{url: string, title: string, lastAccessed: number}>} tabs
+   *   The visible tabs, with sanitized titles
+   */
+
+  /**
+   * Returns the open tab groups in a window as read-only metadata.
+   *
+   * Grouped tabs are filtered through the same rules as getTabList(), so
+   * internal (about:, chrome:, ...) and new-page URLs and hidden tabs are never
+   * exposed and tab titles are sanitized as untrusted content. Groups left with
+   * no visible tabs after filtering are omitted, so every returned group has at
+   * least one tab and consumers never need to skip empty groups themselves.
+   *
+   * @param {object} options
+   * @param {Window} options.window - Browser window to read tab groups from
+   * @returns {TabGroupInfo[]} Open tab groups with at least one visible tab,
+   *   or an empty array when the window is invalid
+   */
+  getTabGroups({ window }) {
+    if (!window?.gBrowser) {
+      lazy.console.warn("Invalid browser window provided to getTabGroups");
+      return [];
+    }
+
+    return window.gBrowser.tabGroups
+      .map(group => this.#getTabGroupInfo(group))
+      .filter(group => group.tabCount);
+  }
+
+  /**
+   * Returns a single open tab group by ID, in the same shape as
+   * getTabGroups(). Returns null when no group with that ID is open, or when
+   * the group has no visible tabs after filtering, so a non-null result always
+   * has at least one tab (matching getTabGroups()).
+   *
+   * @param {object} options
+   * @param {string} options.groupId - ID of the tab group to read
+   * @param {Window} options.window - Browser window containing the tab group
+   * @returns {?TabGroupInfo} The matching group, or null when it does not
+   *   exist or has no visible tabs
+   */
+  getTabGroupById({ groupId, window }) {
+    if (!groupId || !window?.gBrowser) {
+      lazy.console.warn("Invalid parameters provided to getTabGroupById");
+      return null;
+    }
+
+    const group = window.gBrowser.tabGroups.find(g => g.id === groupId);
+
+    if (!group) {
+      return null;
+    }
+
+    const groupInfo = this.#getTabGroupInfo(group);
+
+    return groupInfo.tabCount ? groupInfo : null;
+  }
+
+  /**
+   * Builds the read-only shape for a single tab group, filtering its tabs
+   * through the same rules getTabList() uses so internal or untrusted URLs
+   * are never exposed and titles are sanitized.
+   *
+   * @param {MozTabbrowserTabGroup} group - Browser tab group
+   * @returns {TabGroupInfo} Read-only group metadata
+   * @private
+   */
+  #getTabGroupInfo(group) {
+    const tabs = [];
+
+    for (const tab of group.tabs) {
+      const url = tab.linkedBrowser?.currentURI?.spec;
+
+      if (
+        !tab.hidden &&
+        !tab.closing &&
+        isAllowedURLProtocol(url) &&
+        !isNewPageUrl(url)
+      ) {
+        tabs.push({
+          url,
+          title: sanitizeUntrustedContent(tab.label),
+          lastAccessed: tab.lastAccessed,
+        });
+      }
+    }
+
+    return {
+      id: group.id,
+      label: group.label,
+      color: group.color,
+      tabCount: tabs.length,
+      tabs,
+    };
   }
 
   /**

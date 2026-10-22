@@ -174,6 +174,33 @@
   .face-pupil-color {
     fill: #000;
   }
+
+  #mini-window-preview-logo {
+    width: 64px;
+    height: 64px;
+    -moz-context-properties: fill;
+    fill: #fff;
+  }
+}
+
+.preview-header {
+  margin: 0;
+  padding: var(--space-xlarge) var(--space-xlarge) 0;
+  font-size: var(--font-size-xxlarge);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+}
+
+.preview-header,
+.preview-instructions {
+  /* The scrim behind these is a fixed dark colour */
+  color: #fff;
+  text-align: center;
+
+  @media (forced-colors) {
+    color: var(--text-color);
+    background-color: var(--background-color-canvas);
+  }
 }
 
 .preview-instructions {
@@ -181,18 +208,10 @@
   align-items: center;
   justify-content: center;
   animation: pulse 125ms cubic-bezier(0.07, 0.95, 0, 1);
-  color: #fff;
   font-size: 24px;
   line-height: 32px;
-  text-align: center;
   padding: 20px;
   width: 400px;
-
-  @media (forced-colors) {
-    color: CanvasText;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-color: Canvas;
-  }
 }
 
 #hover-highlight {

@@ -13,7 +13,7 @@ merge day until said merge day.
 ## Rust
 
 The Rust update policy is documented in a
-{ref}`separate document<Rust Update Policy>`.
+{doc}`separate document </writing-rust-code/update-policy>`.
 
 ## Clang
 

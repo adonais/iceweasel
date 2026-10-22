@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.AudioManager
 import android.media.session.PlaybackState as AndroidPlaybackState
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
@@ -22,6 +23,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.MediaSessionState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.crash.CrashReporting
@@ -30,6 +32,7 @@ import mozilla.components.concept.engine.mediasession.MediaSession.Metadata
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState
 import mozilla.components.feature.media.ext.toPlaybackState
 import mozilla.components.feature.media.facts.MediaFacts
+import mozilla.components.feature.media.focus.AudioFocus
 import mozilla.components.feature.media.notification.MediaNotification
 import mozilla.components.feature.media.session.MediaSessionCallback
 import mozilla.components.support.base.Component
@@ -404,7 +407,7 @@ class MediaSessionServiceDelegateTest {
         val service: AbstractMediaSessionService = mock()
         val crashReporter: CrashReporting = mock()
         val delegate = MediaSessionServiceDelegate(testContext, service, store, crashReporter, mock())
-        val mediaSessionCallback = MediaSessionCallback(store)
+        val mediaSessionCallback = MediaSessionCallback(store, onMediaSessionPlay = { true })
         delegate.onCreate()
 
         mediaSessionCallback.onPause()
@@ -828,6 +831,374 @@ class MediaSessionServiceDelegateTest {
 
         throwable?.let { throw it }
     }
+
+    @Test
+    fun `GIVEN playing media WHEN the same tab updates again while playing THEN audio focus is requested once`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(1)).request(any(), any())
+        }
+
+    @Test
+    fun `GIVEN the service is not in foreground WHEN playing media updates after starting foreground THEN audio focus is requested once`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+
+            delegate.handleMediaPlaying(mediaTab)
+            testScheduler.advanceUntilIdle()
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(1)).request(any(), any())
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN paused and played again THEN audio focus is requested again`() = runTest {
+        val mediaTab = getMediaTab()
+        val delegate = delegateWithMockedFocus()
+
+        delegate.handleMediaPlaying(mediaTab)
+        delegate.handleMediaPaused(mediaTab.withPlaybackState(PlaybackState.PAUSED))
+        delegate.isForegroundService = true
+        delegate.handleMediaPlaying(mediaTab)
+        testScheduler.advanceUntilIdle()
+
+        verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+    }
+
+    @Test
+    fun `GIVEN playing media WHEN stopped and played again THEN audio focus is requested again`() = runTest {
+        val mediaTab = getMediaTab()
+        val delegate = delegateWithMockedFocus()
+
+        delegate.handleMediaPlaying(mediaTab)
+        delegate.handleMediaStopped(mediaTab.withPlaybackState(PlaybackState.STOPPED))
+        delegate.isForegroundService = true
+        delegate.handleMediaPlaying(mediaTab)
+        testScheduler.advanceUntilIdle()
+
+        verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+    }
+
+    @Test
+    fun `GIVEN playing media WHEN the delegate is shutdown and the tab plays again THEN audio focus is requested again`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.shutdown()
+            delegate.handleMediaPlaying(mediaTab)
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+        }
+
+    @Test
+    fun `GIVEN the service is starting foreground WHEN the delegate is shutdown before it has started THEN audio focus is not requested`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.shutdown()
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, never()).request(any(), any())
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN another tab starts playing THEN audio focus is requested for it`() = runTest {
+        val mediaTab1 = getMediaTab()
+        val mediaTab2 = getMediaTab()
+        val delegate = delegateWithMockedFocus()
+
+        delegate.handleMediaPlaying(mediaTab1)
+        delegate.handleMediaPlaying(mediaTab2)
+        testScheduler.advanceUntilIdle()
+
+        verify(delegate.audioFocus).request(eq(mediaTab1.id), any())
+        verify(delegate.audioFocus).request(eq(mediaTab2.id), any())
+    }
+
+    private suspend fun TestScope.assertTypeChangeRequestsFocus(type: MediaSession.AudioSessionType) {
+        val mediaTab = getMediaTab()
+        val delegate = delegateWithMockedFocus()
+
+        delegate.handleMediaPlaying(mediaTab)
+        delegate.handleMediaPlaying(mediaTab.withAudioSessionType(type))
+        testScheduler.advanceUntilIdle()
+
+        verify(delegate.audioFocus).request(mediaTab.id, MediaSession.AudioSessionType.AUTO)
+        verify(delegate.audioFocus).request(mediaTab.id, type)
+    }
+
+    @Test
+    fun `GIVEN playing media WHEN the type changes to playback THEN the focus request uses the playback type`() =
+        runTest {
+            assertTypeChangeRequestsFocus(MediaSession.AudioSessionType.PLAYBACK)
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the type changes to transient THEN the focus request uses the transient type`() =
+        runTest {
+            assertTypeChangeRequestsFocus(MediaSession.AudioSessionType.TRANSIENT)
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the type changes to transient-solo THEN the focus request uses the transient-solo type`() =
+        runTest {
+            assertTypeChangeRequestsFocus(MediaSession.AudioSessionType.TRANSIENT_SOLO)
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the type changes to ambient THEN the focus request uses the ambient type`() =
+        runTest {
+            assertTypeChangeRequestsFocus(MediaSession.AudioSessionType.AMBIENT)
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the type changes to play-and-record THEN the focus request uses the play-and-record type`() =
+        runTest {
+            assertTypeChangeRequestsFocus(MediaSession.AudioSessionType.PLAY_AND_RECORD)
+        }
+
+    @Test
+    fun `GIVEN the service is starting foreground WHEN media pauses before it has started THEN audio focus is not requested for the paused media`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.handleMediaPaused(mediaTab.withPlaybackState(PlaybackState.PAUSED))
+            testScheduler.advanceUntilIdle()
+            verify(delegate.audioFocus, never()).request(any(), any())
+
+            delegate.isForegroundService = true
+            delegate.handleMediaPlaying(mediaTab)
+            testScheduler.advanceUntilIdle()
+            verify(delegate.audioFocus, times(1)).request(eq(mediaTab.id), any())
+        }
+
+    @Test
+    fun `GIVEN the service is starting foreground WHEN media stops before it has started THEN audio focus is not requested`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.handleMediaStopped(mediaTab.withPlaybackState(PlaybackState.STOPPED))
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, never()).request(any(), any())
+        }
+
+    @Test
+    fun `GIVEN the service is starting foreground WHEN another tab starts playing before it has started THEN audio focus is requested only for that tab`() =
+        runTest {
+            val mediaTab1 = getMediaTab()
+            val mediaTab2 = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+
+            delegate.handleMediaPlaying(mediaTab1)
+            delegate.handleMediaPlaying(mediaTab2)
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, never()).request(eq(mediaTab1.id), any())
+            verify(delegate.audioFocus, times(1)).request(eq(mediaTab2.id), any())
+        }
+
+    @Test
+    fun `GIVEN the audio focus request was denied WHEN the tab updates again while playing THEN audio focus is requested again`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            doReturn(false).`when`(delegate.audioFocus).request(any(), any())
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+        }
+
+    @Test
+    fun `GIVEN the request made after starting foreground was denied WHEN the tab updates again while playing THEN audio focus is requested again`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus()
+            delegate.isForegroundService = false
+            doReturn(false).`when`(delegate.audioFocus).request(any(), any())
+
+            delegate.handleMediaPlaying(mediaTab)
+            testScheduler.advanceUntilIdle()
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+        }
+
+    private suspend fun TestScope.assertNoFocusRequestAfterSystemFocusLoss(focusChange: Int) {
+        val audioManager: AudioManager = mock()
+        doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED).`when`(audioManager).requestAudioFocus(any())
+        val mediaTab = getMediaTab()
+        val store = BrowserStore(BrowserState(tabs = listOf(mediaTab)))
+        val delegate = delegateWithMockedFocus(store)
+        delegate.audioFocus =
+            AudioFocus(audioManager, store, onTransientFocusLoss = { delegate.isTransientAudioFocusLoss = it })
+
+        delegate.handleMediaPlaying(mediaTab)
+        delegate.audioFocus.onAudioFocusChange(focusChange)
+        delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+        testScheduler.advanceUntilIdle()
+
+        verify(audioManager, times(1)).requestAudioFocus(any())
+    }
+
+    @Test
+    fun `GIVEN playing media WHEN the system takes audio focus transiently and the tab keeps updating THEN audio focus is not requested again`() =
+        runTest {
+            assertNoFocusRequestAfterSystemFocusLoss(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the system takes audio focus permanently and the tab keeps updating THEN audio focus is not requested again`() =
+        runTest {
+            assertNoFocusRequestAfterSystemFocusLoss(AudioManager.AUDIOFOCUS_LOSS)
+        }
+
+    @Test
+    fun `GIVEN the system took audio focus permanently WHEN the media session receives play THEN audio focus is requested again and the tab is told to play`() =
+        runTest {
+            val audioManager: AudioManager = mock()
+            doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED).`when`(audioManager).requestAudioFocus(any())
+            val mediaTab = getMediaTab()
+            val store = BrowserStore(BrowserState(tabs = listOf(mediaTab)))
+            val delegate = delegateWithMockedFocus(store)
+            delegate.audioFocus =
+                AudioFocus(audioManager, store, onTransientFocusLoss = { delegate.isTransientAudioFocusLoss = it })
+            val callbackCaptor = argumentCaptor<MediaSessionCallback>()
+            verify(delegate.mediaSession).setCallback(callbackCaptor.capture())
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.audioFocus.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            verify(audioManager, times(1)).requestAudioFocus(any())
+
+            callbackCaptor.value.onPlay()
+            testScheduler.advanceUntilIdle()
+
+            verify(audioManager, times(2)).requestAudioFocus(any())
+            verify(mediaTab.mediaSessionState!!.controller).play()
+        }
+
+    @Test
+    fun `GIVEN playing media WHEN the media session receives play THEN audio focus is requested again and the tab is told to play`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus(BrowserStore(BrowserState(tabs = listOf(mediaTab))))
+            val callbackCaptor = argumentCaptor<MediaSessionCallback>()
+            verify(delegate.mediaSession).setCallback(callbackCaptor.capture())
+
+            delegate.handleMediaPlaying(mediaTab)
+            delegate.handleMediaPlaying(mediaTab.withPosition(5.0))
+            callbackCaptor.value.onPlay()
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(2)).request(eq(mediaTab.id), any())
+            verify(mediaTab.mediaSessionState!!.controller).play()
+        }
+
+    @Test
+    fun `GIVEN audio focus is denied WHEN the media session receives play THEN the tab is not told to play`() =
+        runTest {
+            val mediaTab = getMediaTab(PlaybackState.PAUSED)
+            val delegate = delegateWithMockedFocus(BrowserStore(BrowserState(tabs = listOf(mediaTab))))
+            doReturn(false).`when`(delegate.audioFocus).request(any(), any())
+            val callbackCaptor = argumentCaptor<MediaSessionCallback>()
+            verify(delegate.mediaSession).setCallback(callbackCaptor.capture())
+
+            callbackCaptor.value.onPlay()
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus).request(eq(mediaTab.id), any())
+            verify(mediaTab.mediaSessionState!!.controller, never()).play()
+        }
+
+    @Test
+    fun `GIVEN the service is starting foreground WHEN the media session receives play before it has started THEN audio focus is requested once it has started`() =
+        runTest {
+            val mediaTab = getMediaTab()
+            val delegate = delegateWithMockedFocus(BrowserStore(BrowserState(tabs = listOf(mediaTab))))
+            delegate.isForegroundService = false
+            val callbackCaptor = argumentCaptor<MediaSessionCallback>()
+            verify(delegate.mediaSession).setCallback(callbackCaptor.capture())
+
+            delegate.handleMediaPlaying(mediaTab)
+            callbackCaptor.value.onPlay()
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, times(1)).request(eq(mediaTab.id), any())
+            verify(mediaTab.mediaSessionState!!.controller).play()
+        }
+
+    @Test
+    fun `GIVEN the service is not in foreground WHEN the media session receives play THEN audio focus is not requested yet and the tab is told to play`() =
+        runTest {
+            val mediaTab = getMediaTab(PlaybackState.PAUSED)
+            val delegate = delegateWithMockedFocus(BrowserStore(BrowserState(tabs = listOf(mediaTab))))
+            delegate.isForegroundService = false
+            val callbackCaptor = argumentCaptor<MediaSessionCallback>()
+            verify(delegate.mediaSession).setCallback(callbackCaptor.capture())
+
+            callbackCaptor.value.onPlay()
+            testScheduler.advanceUntilIdle()
+
+            verify(delegate.audioFocus, never()).request(any(), any())
+            verify(mediaTab.mediaSessionState!!.controller).play()
+        }
+
+    private suspend fun TestScope.delegateWithMockedFocus(
+        store: BrowserStore = BrowserStore()
+    ): MediaSessionServiceDelegate {
+        val notificationsDelegate: NotificationsDelegate = mock()
+        whenever(notificationsDelegate.notificationManagerCompat).thenReturn(mock())
+        val delegate = MediaSessionServiceDelegate(testContext, mock(), store, mock(), notificationsDelegate, this)
+        delegate.mediaSession = mock()
+        delegate.onCreate()
+        delegate.audioFocus = mock()
+        doReturn(true).`when`(delegate.audioFocus).request(any(), any())
+        delegate.isForegroundService = true
+        val notification: Notification = mock()
+        delegate.notificationHelper = coMock { doReturn(notification).`when`(this).create(any(), any()) }
+        return delegate
+    }
+
+    private fun TabSessionState.withPosition(position: Double) =
+        copy(
+            mediaSessionState =
+                mediaSessionState!!.copy(
+                    positionState = MediaSession.PositionState(duration = 100.0, position = position)
+                )
+        )
+
+    private fun TabSessionState.withPlaybackState(playbackState: PlaybackState) =
+        copy(mediaSessionState = mediaSessionState!!.copy(playbackState = playbackState))
+
+    private fun TabSessionState.withAudioSessionType(type: MediaSession.AudioSessionType) =
+        copy(mediaSessionState = mediaSessionState!!.copy(audioSessionType = type))
 
     private fun getMediaTab(playbackState: PlaybackState = PlaybackState.PLAYING) =
         createTab(

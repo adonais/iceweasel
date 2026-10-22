@@ -95,11 +95,6 @@ run-if = [
 ["browser_dblclickFullscreen.js"]
 
 ["browser_disableSwipeGestures.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1840716
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869710
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1840716
-]
 
 ["browser_durationChange.js"]
 
@@ -109,11 +104,6 @@ skip-if = [
 ]
 
 ["browser_fontSize_change.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan && swgl", # Bug 1775867
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1775867
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && swgl", # Bug 1775867
-]
 
 ["browser_fullscreen.js"]
 
@@ -149,6 +139,8 @@ support-files = ["test-page-with-nan-video-duration.html"]
 ["browser_noPlayerControlsOnMiddleRightClick.js"]
 
 ["browser_noToggleOnAudio.js"]
+
+["browser_occludedSelectedTab.js"]
 
 ["browser_occluded_window.js"]
 

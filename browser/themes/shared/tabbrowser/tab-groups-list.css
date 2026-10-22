@@ -66,6 +66,12 @@ tab-groups-list {
     fill: var(--tab-group-background-color);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     stroke: var(--tab-group-background-color);
+    /* This icon is intentionally sized between existing icon-size tokens. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: 22px;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: 22px;
+    content: url("chrome://browser/skin/tabbrowser/tab-group-label-22.svg");
   }
 
   &.tab-group-icon-closed {

@@ -111,6 +111,17 @@ function getChannelCauseType(channel) {
     prefix = "lazy-";
   }
 
+  if (externalContentPolicyType == Ci.nsIContentPolicy.TYPE_OTHER) {
+    // For prefetch requests we want to leverage the "Sec-Purpose" header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Purpose
+    try {
+      const value = channel.getRequestHeader("Sec-Purpose");
+      if (value === "prefetch") {
+        return value;
+      }
+    } catch (e) {}
+  }
+
   return prefix + LOAD_CAUSE_STRINGS[externalContentPolicyType] || "unknown";
 }
 

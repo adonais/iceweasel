@@ -91,6 +91,13 @@ SOURCES += [
     "ThreadDelay.cpp",
 ]
 
+if CONFIG["OS_ARCH"] == "WINNT":
+    SOURCES += ["TimerThreadMonitor_windows.cpp"]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    SOURCES += ["TimerThreadMonitor_darwin.cpp"]
+else:
+    SOURCES += ["TimerThreadMonitor_posix.cpp"]
+
 UNIFIED_SOURCES += [
     "AbstractThread.cpp",
     "BlockingResourceBase.cpp",

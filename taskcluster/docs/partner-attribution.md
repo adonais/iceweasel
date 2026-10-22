@@ -2,7 +2,7 @@
 
 (partner-attribution-1)=
 
-In contrast to {ref}`partner repacks`, attributed builds only differ from the normal Firefox
+In contrast to {doc}`partner-repacks`, attributed builds only differ from the normal Firefox
 builds by the adding a string in the dummy windows signing certificate. We support doing this for:
 
 - Windows stub installers,

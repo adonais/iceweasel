@@ -9,14 +9,22 @@
 // The subsets from the dataset required by the Compatibility panel are:
 // * css.properties: https://github.com/mdn/browser-compat-data/tree/master/css
 
-// The MDN compatibility data is available as a node package ("@mdn/browser-compat-data"),
-// which is used here to update `../dataset/css-properties.json`.
+// The MDN compatibility data is available as a node package ("@mdn/browser-compat-data").
+// This script takes the path to the data.json file of this package, and uses it to update
+// `../dataset/css-properties.json`. Use `./mach devtools-update-compat-data` to run it.
 
 /* eslint-disable mozilla/reject-relative-requires */
 
 "use strict";
 
-const compatData = require("@mdn/browser-compat-data");
+const dataPath = process.argv[2];
+if (!dataPath) {
+  console.error(
+    "Usage: node bin/update.js <path to @mdn/browser-compat-data data.json>"
+  );
+  process.exit(1);
+}
+const compatData = require(require("path").resolve(dataPath));
 const { properties } = compatData.css;
 
 const { TARGET_BROWSER_ID } = require("../constants.js");

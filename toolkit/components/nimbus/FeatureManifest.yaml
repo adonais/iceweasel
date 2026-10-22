@@ -1779,36 +1779,11 @@ newtabTrainhop:
       type: json
       description: The experiment configuration.
 
-newtabTrainhopAddon:
-  description: Enable download updated newtab resources packaged as an xpi
-  owner: mconley@mozilla.com
-  hasExposure: true
-  exposureDescription: |
-    Exposure is sent when the trainhop addon version is in use (starting from the browser startup
-    right after it has been downloaded and installed).
-  variables:
-    xpi_download_path:
-      type: string
-      description: |
-        Provide the path (relative to the base URL set in the `browser.newtabpage.trainhopAddon.xpiBaseURL`
-        about:config pref) from which the xpi should be downloaded.
-    addon_version:
-      type: string
-      description: |
-        Expected addon version (installing the xpi is cancelled if it mismatches the one set here).
-        The trainhop add-on version is also stored in an about:config pref, to be used on early
-        application startup to determine if the trainhop add-on version should be uninstalled
-        (and not be used for the newtab resources mapping to safely uninstall it later in the
-        same application session).
-      setPref:
-        branch: user
-        pref: browser.newtabpage.trainhopAddon.version
-
 newtabTrainhopAddonDeployment:
   description: |
-    Co-enrollment version of newtabTrainhopAddon used to deploy updated newtab
-    resources packaged as an xpi. Multiple overlapping enrollments are allowed and
-    the enrollment with the highest addon_version wins.
+    Co-enrollment feature used to deploy updated newtab resources packaged as an
+    xpi. Multiple overlapping enrollments are allowed and the enrollment with the
+    highest addon_version wins.
   owner: mconley@mozilla.com
   hasExposure: true
   allowCoenrollment: true
@@ -1826,10 +1801,10 @@ newtabTrainhopAddonDeployment:
       description: |
         Expected addon version (installing the xpi is cancelled if it mismatches the one set here).
         The trainhop add-on version is also stored in an about:config pref, managed manually by
-        AboutNewTabResourceMapping to reflect the highest version across all active enrollments
-        (across both this feature and newtabTrainhopAddon). It is used on early application startup
-        to determine if the trainhop add-on version should be uninstalled (and not be used for the
-        newtab resources mapping to safely uninstall it later in the same application session).
+        AboutNewTabResourceMapping to reflect the highest version across all active enrollments.
+        It is used on early application startup to determine if the trainhop add-on version should
+        be uninstalled (and not be used for the newtab resources mapping to safely uninstall it
+        later in the same application session).
 
 newtabTrainhopFirstStartup:
   description: |
@@ -1957,10 +1932,6 @@ newtabWidgets:
       type: boolean
       description: >-
         Enable Clocks widget
-    sportsWidgetEnabled:
-      type: boolean
-      description: >-
-        Enable Sports widget
     listsBadgeEnabled:
       type: boolean
       description: >-
@@ -2365,6 +2336,23 @@ autofill-ml-ignore-field-types:
         together, as in the example: the heuristics only try the rules of the
         listed types, so leaving one out can let a broader rule win over the
         more specific one it would normally lose to.
+
+autofill-suppress-unrecognized-autocomplete:
+  description: >-
+    Leave fields whose autocomplete attribute is present but cannot be parsed
+    into a known field name out of autofill entirely.
+  owner: kbaliev@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: extensions.formautofill.suppressUnrecognizedAutocomplete.enabled
+      description: >-
+        If true, a field with an unrecognized autocomplete value is left
+        unclassified: it is offered no dropdown of its own, and it is not
+        filled when autofill is triggered from another field in the same form.
 
 shellService:
   description: "Interface with OS, e.g., pinning and set default"
@@ -2971,7 +2959,10 @@ pbNewtab:
 privateWindowRedesign:
   description: "Experimental features for the private browsing window redesign"
   owner: omc-core@mozilla.com
-  hasExposure: false
+  hasExposure: true
+  exposureDescription: >-
+    Recorded when the redesigned private browsing page renders, so results can
+    be limited to users who were actually shown the treatment.
   variables:
     pbwRedesignGate:
       type: boolean
@@ -5793,18 +5784,6 @@ jpeg-xl:
         branch: user
         pref: "image.jxl.enabled"
 
-css-masonry:
-  description: "CSS Masonry Layout"
-  owner: dholbert@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      description: Whether or not to enable CSS masonry layout.
-      setPref:
-        branch: user
-        pref: "layout.css.grid-template-masonry-value.enabled"
-
 windowsUIAutomation:
   description: Support for the Windows UI Automation API
   owner: jteh@mozilla.com
@@ -6176,6 +6155,14 @@ smartWindow:
       description: >-
         Comma-separated list of screen ids that should be hidden in the Smart
         Window first run onboarding.
+    resumeActivity:
+      type: boolean
+      fallbackPref: browser.smartwindow.resumeActivity.enabled
+      description: >-
+        Enables generating and showing the Smart Window resume-activity
+        suggestions ("pick up where you left off") when true.
+        Set to false to disable them without affecting the regular
+        conversation starters.
 
 smartWindowAgentWatch:
   description: >-

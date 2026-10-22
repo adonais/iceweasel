@@ -1154,13 +1154,18 @@ JS_PUBLIC_API bool js::CheckGrayMarkingState(JSRuntime* rt) {
   return tracer.check(session);
 }
 
-static JSObject* MaybeGetDelegate(Cell* cell) {
-  if (!cell->is<JSObject>()) {
-    return nullptr;
+static Cell* MaybeGetDelegate(Cell* cell) {
+  if (cell->is<JSObject>()) {
+    JSObject* object = cell->as<JSObject>();
+    return UncheckedUnwrapWithoutExpose(object);
   }
 
-  JSObject* object = cell->as<JSObject>();
-  return js::UncheckedUnwrapWithoutExpose(object);
+  if (cell->is<JS::Symbol>()) {
+    JS::Symbol* symbol = cell->as<JS::Symbol>();
+    return UnwrapSymbol(symbol);
+  }
+
+  return nullptr;
 }
 bool js::gc::CheckWeakMapMapMarking(const WeakMapBase* map) {
   bool ok = true;
@@ -1244,7 +1249,7 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
     ok = false;
   }
 
-  JSObject* delegate = MaybeGetDelegate(key);
+  Cell* delegate = MaybeGetDelegate(key);
   if (delegate) {
     CellColor delegateColor = effectiveColor(delegate);
     if (keyColor < std::min(map->mapColor(), delegateColor)) {
@@ -1256,9 +1261,10 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
     }
   }
 
-  // References to symbol keys and values must be recorded in the atom reference
-  // bitmap for the zone. It's hard to make any claims about the what the
-  // reference color should be relative to the mark color of the symbol though:
+  // Only local symbol keys are permitted. Shared symbol values must be recorded
+  // in the atom reference bitmap for the zone. It's hard to make any claims
+  // about what the reference color should be relative to the mark color of the
+  // symbol though:
   //
   //  - The atom reference bitmap is an over-approximation that can be refined
   //    down at the end of GC, so it's possible for a symbol to be less marked
@@ -1271,25 +1277,30 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   GCRuntime* gc = &mapRuntime->gc;
   if (key->is<JS::Symbol>()) {
     auto* symbol = key->as<JS::Symbol>();
-    CellColor keyRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
-    if (keyRefColor == CellColor::White) {
-      printf_stderr(
-          "Symbol key %p in map %p is not present in the atom reference "
-          "bitmap for zone %p\n",
-          key, map, mapZone);
-      ok = false;
+    MOZ_ASSERT(symbol->code() != JS::SymbolCode::InSymbolRegistry);
+    MOZ_ASSERT(symbol->isUnique() == symbol->isLocal());
+    if (!symbol->isUnique()) {
+      if (!gc->atomReferences.hasRef(mapZone, symbol)) {
+        printf_stderr(
+            "Non-unique symbol key %p in map %p is not present in the atom "
+            "reference bitmap for zone %p\n",
+            key, map, mapZone);
+        ok = false;
+      }
     }
   }
 
   if (maybeValue && maybeValue->is<JS::Symbol>()) {
     auto* symbol = maybeValue->as<JS::Symbol>();
-    CellColor valueRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
-    if (valueRefColor == CellColor::White) {
-      printf_stderr(
-          "Symbol value %p in map %p is not present in the atom reference "
-          "bitmap for zone %p\n",
-          maybeValue, map, mapZone);
-      ok = false;
+    MOZ_ASSERT(symbol->isUnique() == symbol->isLocal());
+    if (symbol->isShared()) {
+      if (!gc->atomReferences.hasRef(mapZone, symbol)) {
+        printf_stderr(
+            "Shared symbol value %p in map %p is not present in the atom "
+            "reference bitmap for zone %p\n",
+            maybeValue, map, mapZone);
+        ok = false;
+      }
     }
   }
 

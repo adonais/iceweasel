@@ -17,6 +17,7 @@
 #include "mozilla/RWLock.h"
 #include "mozilla/TextUtils.h"
 #include "nsAtom.h"
+#include "nsCRTGlue.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
 #include "nsPrintfCString.h"

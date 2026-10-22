@@ -42,7 +42,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "enabled",
   ENABLED_PREF,
   false,
-  () => PushNotificationHelper.update()
+  (_pref, _previous, latest) =>
+    PushNotificationHelper.onEnabledPrefChanged(latest)
 );
 
 /**
@@ -55,6 +56,21 @@ export const PushNotificationHelper = {
    * browser-idle-startup category, and again whenever either pref changes.
    */
   init() {
+    this.update();
+  },
+
+  /**
+   * Records a change to the user's own switch, and then brings the helper in
+   * line with it. Only a change of value gets here: libpref leaves its
+   * observers alone for a write that lands on the value the pref already has.
+   *
+   * @param {boolean} enabled - The value the switch was turned to.
+   */
+  onEnabledPrefChanged(enabled) {
+    Glean.backgroundNotificationHelper.toggled[
+      enabled ? "enabled" : "disabled"
+    ].add(1);
+
     this.update();
   },
 

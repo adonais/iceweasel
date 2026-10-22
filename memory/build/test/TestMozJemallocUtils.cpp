@@ -30,7 +30,7 @@ std::ostream& operator<<(std::ostream& o, std::optional<T> const& s) {
   }
   return o << "std::nullopt";
 }
-std::ostream& operator<<(std::ostream& o, std::nullopt_t const& s) {
+std::ostream& operator<<(std::ostream& o, std::nullopt_t const& /*s*/) {
   return o << "std::nullopt";
 }
 }  // namespace std

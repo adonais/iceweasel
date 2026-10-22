@@ -46,9 +46,3 @@
     color: var(--button-text-color-primary);
   }
 }
-
-.aitab-status {
-  margin: var(--space-xxlarge) auto;
-  color: var(--text-color-deemphasized);
-  text-align: center;
-}

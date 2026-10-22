@@ -543,7 +543,8 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvNotifyShutdownSuccess();
 
-  PContentPermissionRequestParent* AllocPContentPermissionRequestParent(
+  already_AddRefed<PContentPermissionRequestParent>
+  AllocPContentPermissionRequestParent(
       const nsTArray<PermissionRequest>& aRequests, nsIPrincipal* aPrincipal,
       nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
       const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId,
@@ -555,9 +556,6 @@ class ContentParent final : public PContentParent,
       nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
       const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId,
       const bool& aIgnoreAllowSitePermission) override;
-
-  bool DeallocPContentPermissionRequestParent(
-      PContentPermissionRequestParent* actor);
 
   void ForkNewProcess(bool aBlocking);
 
@@ -753,8 +751,9 @@ class ContentParent final : public PContentParent,
    * removed from this list, but will still be in the sContentParents list for
    * the GetAll/GetAllEvenIfDead APIs.
    */
-  static nsClassHashtable<nsGenericHashKey<RemoteType>,
-                          nsTArray<ContentParent*>>* sBrowserContentParents;
+  static mozilla::StaticAutoPtr<
+      nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>>
+      sBrowserContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   void AddShutdownBlockers();
@@ -1276,7 +1275,7 @@ class ContentParent final : public PContentParent,
 
 #if defined(XP_WIN)
   mozilla::ipc::IPCResult RecvGetModulesTrust(
-      ModulePaths&& aModPaths, bool aRunAtNormalPriority,
+      ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority,
       GetModulesTrustResolver&& aResolver);
 #endif  // defined(XP_WIN)
 
@@ -1472,11 +1471,9 @@ class ContentParent final : public PContentParent,
  private:
   // Return an existing ContentParent if possible. Otherwise, `nullptr`.
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
-      const RemoteType& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority,
-      uint64_t aBrowserId);
+      const RemoteType& aRemoteType, bool aPreferUsed, uint64_t aBrowserId);
 
-  void AddToPool(nsTArray<ContentParent*>&);
+  void AddToPool();
   void RemoveFromPool(nsTArray<ContentParent*>&);
   void AssertNotInPool();
 

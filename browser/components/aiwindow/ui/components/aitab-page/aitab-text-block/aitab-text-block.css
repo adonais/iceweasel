@@ -1,0 +1,33 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --aitab-text-block-gap: 72px;
+  --aitab-text-block-references-gap: 6px;
+}
+
+.aitab-text-block {
+  display: grid;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-text-block-gap);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr);
+
+  @container aitab-page (max-width: 900px) {
+    grid-template-columns: 100%;
+    --aitab-text-block-gap: 36px;
+  }
+}
+
+.aitab-text-block-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.aitab-text-block-references {
+  display: flex;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--aitab-text-block-references-gap);
+  margin-block-start: var(--space-small);
+}

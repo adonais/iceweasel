@@ -14,18 +14,6 @@
 #include "secasn1.h"
 #include "certxutl.h"
 
-SECStatus
-CERT_FindCRLExtensionByOID(CERTCrl *crl, SECItem *oid, SECItem *value)
-{
-    return (cert_FindExtensionByOID(crl->extensions, oid, value));
-}
-
-SECStatus
-CERT_FindCRLExtension(CERTCrl *crl, int tag, SECItem *value)
-{
-    return (cert_FindExtension(crl->extensions, tag, value));
-}
-
 /* Callback to set extensions and adjust verison */
 static void
 SetCrlExts(void *object, CERTCertExtension **exts)
@@ -132,29 +120,5 @@ loser:
         PORT_Free(wrapperItem.data);
     }
 
-    return (rv);
-}
-
-SECStatus
-CERT_FindInvalidDateExten(CERTCrl *crl, PRTime *value)
-{
-    SECItem encodedExtenValue;
-    SECItem decodedExtenValue = { siBuffer, 0 };
-    SECStatus rv;
-
-    encodedExtenValue.data = decodedExtenValue.data = NULL;
-    encodedExtenValue.len = decodedExtenValue.len = 0;
-
-    rv = cert_FindExtension(crl->extensions, SEC_OID_X509_INVALID_DATE, &encodedExtenValue);
-    if (rv != SECSuccess)
-        return (rv);
-
-    rv = SEC_ASN1DecodeItem(NULL, &decodedExtenValue,
-                            SEC_ASN1_GET(SEC_GeneralizedTimeTemplate),
-                            &encodedExtenValue);
-    if (rv == SECSuccess)
-        rv = DER_GeneralizedTimeToTime(value, &encodedExtenValue);
-    PORT_Free(decodedExtenValue.data);
-    PORT_Free(encodedExtenValue.data);
     return (rv);
 }

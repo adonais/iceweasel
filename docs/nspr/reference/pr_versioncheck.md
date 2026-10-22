@@ -14,7 +14,7 @@ PRBool PR_VersionCheck(const char *importedVersion);
 
 ### Parameter
 
-{ref}`PR_VersionCheck` has one parameter:
+{doc}`pr_versioncheck` has one parameter:
 
 `importedVersion`
 
@@ -30,11 +30,11 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_VersionCheck` tests whether the version of the library being
+{doc}`pr_versioncheck` tests whether the version of the library being
 imported (`importedVersion`) is compatible with the running version of
 the shared library. This is a string comparison of sorts, though the
 details of the comparison will vary over time.
 
 ## See Also
 
-- [PR_VERSION](PR_VERSION)
+- [PR_VERSION](pr_version.md)

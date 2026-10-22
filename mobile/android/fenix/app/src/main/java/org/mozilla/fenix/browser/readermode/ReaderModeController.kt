@@ -21,6 +21,12 @@ interface ReaderModeController {
     fun showReaderView()
 
     fun showControls()
+
+    /**
+     * Forces reader view to be displayed with [colorScheme], leaving the user's own choice untouched. Pass `null` to go
+     * back to that choice.
+     */
+    fun setColorSchemeOverride(colorScheme: ReaderViewFeature.ColorScheme?)
 }
 
 class DefaultReaderModeController(
@@ -57,6 +63,10 @@ class DefaultReaderModeController(
     override fun showReaderView() {
         onReaderModeChanged()
         readerViewFeature.withFeature { it.showReaderView() }
+    }
+
+    override fun setColorSchemeOverride(colorScheme: ReaderViewFeature.ColorScheme?) {
+        readerViewFeature.withFeature { it.colorSchemeOverride = colorScheme }
     }
 
     override fun showControls() {

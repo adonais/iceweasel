@@ -9,7 +9,7 @@ your debugger to a local checkout at the exact source revision matching the
 binary you're debugging.
 
 The Mozilla Source Server works by embedding a SrcSrv stream into PDB files
-served by the {ref}`Mozilla Symbol Server <Using The Mozilla Symbol Server>`.
+served by the {doc}`Mozilla Symbol Server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>`.
 This stream contains instructions that tell your debugger where to fetch source
 files from Mozilla's HTTP servers. When you step into code during debugging, or
 when you click an entry of the call stack in a crash dump, your debugger
@@ -19,7 +19,7 @@ Mozilla Symbol Server (see {ref}`uploading-symbols-for-a-try-build`).
 
 Within the source tree, the script that adds the SrcSrv stream to PDB files is
 `toolkit/crashreporter/tools/symbolstore.py`, called from the `./mach
-buildsymbols` command (see {ref}`Building with Debug Symbols` for details on
+buildsymbols` command (see {doc}`/setup/building_with_debug_symbols` for details on
 this command).
 
 [SrcSrv version 1](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/language-specification-1)
@@ -36,8 +36,8 @@ feature added by SrcSrv version 2.
 
 ### Visual Studio
 
-Fetching source code should mostly work {ref}`once the symbol server is
-correctly setup <Using The Mozilla Symbol Server>`. If needed, you will find
+Fetching source code should mostly work {doc}`once the symbol server is
+correctly setup </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>`. If needed, you will find
 the options that interact with the Source Server feature under **Tools**,
 **Options**, **Debugging**, **General**:
 
@@ -48,8 +48,8 @@ the options that interact with the Source Server feature under **Tools**,
 
 ### WinDbg
 
-The first step here is also to make sure that {ref}`the symbol server is
-correctly setup <Using The Mozilla Symbol Server>`. Then, unfortunately, SrcSrv
+The first step here is also to make sure that {doc}`the symbol server is
+correctly setup </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>`. Then, unfortunately, SrcSrv
 support is broken in WinDbg starting with app version 1.2402.24001.0 (see
 {ref}`source-server-known-issues` for workaround suggestions).
 

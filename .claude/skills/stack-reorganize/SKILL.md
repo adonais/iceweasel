@@ -60,9 +60,13 @@ there even if available.
 - Jujutsu (jj): `references/jj.md`
 - git: `references/git.md`
 
-Open `references/drop-superseded.md` once Phase 2 names its shape, and
-`references/fold-resplit.md` once Phase 3 picks that intervention; the
-mechanics reference covers everything else.
+Read the mechanics reference before Phase 1's preconditions: it holds the
+recovery point, the checks that accept a rewrite, every construction and the
+per-commit verification, none of which this file repeats. Open
+`references/drop-superseded.md` once Phase 2 names a superseded commit, before
+touching it, and `references/fold-resplit.md` once Phase 2 names a
+dead-intermediate model, since Phase 3 chooses between an absorb and a
+fold-resplit by its leaf plan.
 
 # Goals
 
@@ -104,7 +108,7 @@ A change that is *not* in the original diff at all - a cleanup that only became 
 
 # Mechanics
 
-The `references/` files and `scripts/` named below sit beside this file; read
+The `references/` files and `scripts/git-churn.sh` sit beside this file; read
 and run them from the directory this file was loaded from, since a checkout can
 hold another version of this skill.
 
@@ -112,7 +116,7 @@ hold another version of this skill.
 
 ### Preconditions
 
-Before you start, ensure a clean starting state with no uncommitted changes and no conflicts in the original commit series. Also make sure you can get back to the current state if anything goes sideways; the mechanics reference for your VCS says how.
+Before you start, ensure a clean starting state: no uncommitted changes, and in jj no conflicts in the original commit series (git records none, so a clean `git status` is the whole check). Leave untracked files another occupant of the tree left, and stage by path throughout, never with `git add -A`. Then take the recovery point the mechanics reference opens with (git: "Backup, staging and finishing the branch"; jj: "Preconditions"), so you can get back to the current state if anything goes sideways.
 
 Then follow these steps:
 
@@ -143,13 +147,18 @@ mechanics reference.
 - **Superseded / move-then-unmove commit** - a commit's whole point is a
   decision that is being reversed: either a later commit already undid it, or a
   later commit obsoleted its rationale and you are choosing to undo it now.
-  Fix: drop it at source, per **`references/drop-superseded.md`**; of a
+  Fix: drop it at source. Read **`references/drop-superseded.md`** before
+  touching the commit: its condition 2 says whether the drop cascades through
+  the commits above, and its step 5 how to read the result. Of a
   move-then-unmove pair the earlier commit goes, and the reverser then comes
   out empty.
 - **Churn inside the range** - a commit rewrites or moves text that an earlier
   commit *in the same range* introduced; extending it is not this shape. Its
   content survives to the final tree, so it is not droppable. Measure and
-  attribute it per the mechanics reference. Fix: absorb it, per Phase 3, into
+  attribute it before proposing the fix: run `scripts/git-churn.sh --origins`
+  as "Measuring the churn" in the mechanics reference says, since without the
+  per-origin counts an absorb lands in the wrong commit while the net diff
+  still comes out empty. Fix: absorb it, per Phase 3, into
   the commit that introduced the text it rewrites or moves; a drop outranks an
   absorb into the dropped commit, and the edit rides the cascade to wherever
   the text lives after the drop:
@@ -163,21 +172,30 @@ mechanics reference.
     goes where most of its lines belong, provided the intermediate still
     reads; the remainder keeps only the pre-range removal.
   - A *move* has two halves: the removal goes to the commit owning the source
-    and the addition to the one creating the destination.
+    and the addition to the one creating the destination. Where the
+    destination already exists at the depth of the commit that wrote the moved
+    text, that commit writes it at the destination directly and the move
+    leaves nothing behind.
 - **Forward reference** - an earlier commit's text names a section, symbol,
   file or flag that a later commit in the range introduces. No diff check
-  catches it; search for it per the mechanics reference. Judge the reference
+  catches it; search for it per "Finding a forward reference" in the
+  mechanics reference. Judge the reference
   in its final form first: a rewrite the range makes later absorbs into the
   commit that introduced the reference (the churn rule), and a final form that
   exists at that depth is no forward reference. Fix: reorder so the
   introducing commit comes first (free inside a rebuild, where it is the order
-  you build in), or absorb the reference into it.
+  you build in), or absorb the reference into it. A comment describing
+  behavior that a later commit adds is a forward reference with no name to
+  search for, so read each doc comment a rebuilt leaf writes against that
+  leaf's own diff.
 - **Dead-intermediate model** - several commits build a mechanism (a wire
   format, a data model) that a later commit tears out and replaces, so the
   history carries both the construction and the removal. Fix: absorb the
   replacement into the commits that built what it replaces, which keeps their
   revisions; fold and resplit instead where Phase 3 allows it and the input's
-  commit boundaries would not serve as the leaves. They serve where each block
+  commit boundaries would not serve as the leaves. Read "Plan the leaves from
+  the final state" in `references/fold-resplit.md` before deciding, since it
+  says how a leaf no input commit held gets built. They serve where each block
   of the replacement lands in one existing commit whose subject already names
   its concern; a block with no such commit is a boundary to redraw.
 - **Mis-ordered / mis-attributed commit** - a commit sits at the wrong stack
@@ -185,7 +203,8 @@ mechanics reference.
   cleaner split. A message that explains text living in another commit is the
   tell: read every message against its own diff while listing the logical
   units in Phase 1, since a carried-forward message keeps the claim, and the
-  marker grep in the mechanics reference locates the text. Fix:
+  marker grep under "An empty diff is blind to misattribution" in the
+  mechanics reference locates the text. Fix:
   reorder it, move the text to the commit whose message claims it and narrow
   the other's message, or, where moving the text would create a forward
   reference or churn, move the claim into the body of the commit that carries
@@ -203,6 +222,10 @@ leaf whose concern equals an input commit's keeps that commit's message and
 trailer): reserve it for a whole model that was built-then-replaced in work
 nobody has reviewed deeply yet.
 
+**Never resolve a conflict along the way, whichever intervention you take.**
+Taking one side whole carries content into the wrong commit while every later
+check still passes; stop and rebuild by path instead.
+
 The ranking is per shape, and a commit carrying two shapes takes the one
 construction that serves both. Nor does it rank mechanics: an absorb rebuilt
 bottom-up and a fold-resplit are the same rebuild when the absorbed commit's
@@ -211,7 +234,9 @@ that span at face value: a target the absorbed commit removed little from
 keeps its patch and receives a small fixup. They differ in what each leaf keeps: an absorb
 keeps every original commit's boundary, message and trailer, and a fold-resplit
 draws the boundaries afresh, which is the review history it discards. Either
-can leave a bug with no commit; the shape's reference says what to report.
+can leave a bug with no commit: report it with the bugs the user has to file
+or close, as "Messages, trailers and bugs" in `references/fold-resplit.md`
+spells out.
 
 Find out which commits carry review history before ranking by it:
 
@@ -233,9 +258,7 @@ text it rewrites, so the series builds each line once. Check first whether its
 hunks **partition by path** across those commits (`git show --name-only
 --format= <commit>`, then map each path to its target): a partition lands each
 part on its owner with nothing to resolve. A path several targets touch absorbs
-too, by a construction the mechanics reference gives. Never resolve a conflict
-along the way: taking one side whole carries content into the wrong commit
-while every later check still passes, so stop and rebuild by path.
+too, by the bottom-up construction under "Absorbs" in the mechanics reference.
 
 **Absorb by line origin first, then judge the remainder by subject.**
 
@@ -248,29 +271,42 @@ while every later check still passes, so stop and rebuild by path.
   the line in the new order takes the edit with it.
 - The one exception to the first rule is a line the target must write in a
   provisional form because the final form would refer forward to work the
-  target precedes; that is churn the series cannot remove, so it stays. The
-  target keeps its provisional text and the commit that introduces the name
-  rewrites it, so the churn shows at that later commit with the target as its
-  origin; expect it in the measurement after the rebuild and do not chase it
-  to zero.
+  target precedes. First check whether the commit that introduces the name can
+  move below the target, which removes the provisional form. Where it cannot,
+  that is churn the series cannot remove, so it stays. The target keeps its
+  provisional text and the commit that introduces the name rewrites it, so the
+  churn shows at that later commit with the target as its origin; expect it in
+  the measurement after the rebuild and do not chase it to zero.
 - The lines that stand against pre-range text are the commit's own work. They
   stay as the narrowed commit where its subject names a concern the target's
   does not, even at the cost of a few lines touched twice, and join the target
-  only where they belong to its concern anyway.
+  only where they belong to its concern anyway. Judge that concern by what the
+  lines do, not only by the subject: a behavior-neutral move or extraction of
+  pre-range code is a concern of its own (the lumped-commit shape), so it
+  becomes a commit of its own below the first target that uses it, even where
+  the absorbed commit's subject does not name it. `git-churn.sh --origins`
+  sizes this work per commit, as the lines removed "from before" the range.
 
-Whichever you pick, verify first that the reorganized series nets to the
-original overall diff, apart from a residue commit you declared (the stale
-comments the tip grep under the churn measurement collects before the build,
-fixed on top in a commit the owner may drop) or a decision
-you are deliberately reversing because a later commit obsoleted it (the
-deliberate-reversal case of `references/drop-superseded.md`, where building and
-testing takes over from the diff check the net-zero drop keeps). Measure the
-churn again on the result: the gap should fall to the rename alignment and the
-provisional lines the intervention could not remove, which shows it did what it
-was chosen for. Then build, lint and test, whichever of the three the stack's
-content admits - every commit, not just the tip, as `# Goals` asks; a linter
-reads the worktree rather than a commit, so take the per-commit checks from the
-mechanics reference.
+Before the build, collect the stale comments the rebuild would otherwise
+reproduce, per "Stale comments at the tip" in the mechanics reference; they go
+in a residue commit on top (the FAQ above), which the owner may drop.
+
+Whichever you pick, verify the result three ways:
+
+- The reorganized series nets to the original overall diff, apart from the
+  residue commit you declared, a stale symbol fixed in the leaf that writes it
+  (end of "Finding a forward reference" in the mechanics reference), or a
+  decision you are deliberately reversing
+  because a later commit obsoleted it (the deliberate-reversal case of
+  `references/drop-superseded.md`, where building and testing takes over from
+  the diff check the net-zero drop keeps).
+- The churn, measured again on the result, falls to the rename alignment and
+  the provisional lines the intervention could not remove, which shows it did
+  what it was chosen for.
+- Every commit, not just the tip, builds, lints and passes tests, whichever of
+  the three the stack's content admits, as `# Goals` asks. A linter reads the
+  worktree rather than a commit, so take the per-commit checks from
+  "Verifying every commit, not just the tip" in the mechanics reference.
 
 Read each message against the diff it now has, and a claim about the tree's
 state (a heading present at that depth, a helper already defined) against the

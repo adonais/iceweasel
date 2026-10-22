@@ -4,7 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { expandUrlTokens } from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
+import {
+  expandUrlTokens,
+  URL_TOKEN_REGEX,
+} from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
 
 // Important! Changing or removing this value requires a security review.
 //
@@ -345,7 +348,7 @@ export function resolveMentionUrls(text) {
  * @returns {string}
  */
 function resolveUrlTokenItem(item, tokenToUrl) {
-  const matches = [...item.matchAll(/§url_token:\s*([A-Z0-9_]+_\d+)§/g)];
+  const matches = [...item.matchAll(URL_TOKEN_REGEX)];
   if (matches.length === 1) {
     const url = tokenToUrl.get(matches[0][1]);
     if (url) {

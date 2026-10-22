@@ -31,11 +31,11 @@ If you intend to distribute your build to others, you'll want to add
 
 Both the full and stub installers are built through a similar process, which is summarized here along with references to the relevant bits of code.
 
-Most of this procedure is done in {searchfox}`makensis.mk <toolkit/mozapps/installer/windows/nsis/makensis.mk>` and in the {searchfox}`mach repackage <mozilla-central/rev/2b9779c59390ecc47be7a70d99753653d8eb5afc:python/mozbuild/mozbuild/mach_commands.py#2166>` command.
+Most of this procedure is done by the `nsis_stage` and `nsis_build` actions in {searchfox}`python/mozbuild/mozbuild/action <python/mozbuild/mozbuild/action>`. The uninstaller, the maintenance service installer and the test stub are declared in {searchfox}`browser/installer/windows/moz.build <browser/installer/windows/moz.build>`, `setup.exe` in {searchfox}`browser/installer/windows/Makefile.in <browser/installer/windows/Makefile.in>`, and the rest happens in the {searchfox}`mach repackage <mozilla-central/rev/2b9779c59390ecc47be7a70d99753653d8eb5afc:python/mozbuild/mozbuild/mach_commands.py#2166>` command.
 
 0. A prerequisite is for the application to be in a packaged state, so `mach package` first creates a release-style package and puts it in `$OBJDIR/dist/firefox`.
-1. All required files are copied into the instgen directory. This includes .nsi and .nsh script files, plugin DLL files, image and icon files, and the 7-zip SFX module and its configuration files.
-2. The NSIS scripts are compiled, resulting in setup.exe and setup-stub.exe (if building the stub is enabled).
+1. `nsis_stage` copies all required files into the instgen directory. This includes .nsi and .nsh script files, plugin DLL files, image and icon files, and the 7-zip SFX module and its configuration files.
+2. `nsis_build` compiles the NSIS scripts, resulting in setup.exe and setup-stub.exe (if building the stub is enabled).
 3. The 7-zip SFX module is run through UPX.
 4. The application files and the full installer setup.exe are compressed together into one 7-zip file.
 5. The stub installer is compressed into its own 7-zip file.

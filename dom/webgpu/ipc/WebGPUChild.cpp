@@ -11,6 +11,7 @@
 #include "DeviceLostInfo.h"
 #include "PipelineLayout.h"
 #include "Sampler.h"
+#include "SupportedLimits.h"
 #include "js/Warnings.h"  // JS::WarnUTF8
 #include "mozilla/Assertions.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -84,6 +85,7 @@ void wgpu_child_resolve_request_adapter_promise(
 
 void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
                                                RawId aDeviceId, RawId aQueueId,
+                                               const WGPULimits* aLimits,
                                                const nsCString* aError) {
   auto* c = static_cast<WebGPUChild*>(aChild);
   auto pending_promise = c->DequeueRequestDevicePromise();
@@ -92,11 +94,15 @@ void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
   MOZ_RELEASE_ASSERT(pending_promise.queue_id == aQueueId);
 
   if (aError == nullptr) {
+    MOZ_RELEASE_ASSERT(aLimits);
+    // Not `pending_promise.limits`: those are the limits we requested, which
+    // wgpu-core may have adjusted.
+    RefPtr<SupportedLimits> limits =
+        new SupportedLimits(pending_promise.adapter, *aLimits);
     RefPtr<Device> device =
         new Device(pending_promise.adapter, pending_promise.device_id,
-                   pending_promise.queue_id, pending_promise.features,
-                   pending_promise.limits, pending_promise.adapter_info,
-                   pending_promise.lost_promise);
+                   pending_promise.queue_id, pending_promise.features, limits,
+                   pending_promise.adapter_info, pending_promise.lost_promise);
     device->SetLabel(pending_promise.label);
     promise::MaybeResolve(std::move(pending_promise.promise),
                           std::move(device));
@@ -675,10 +681,10 @@ void WebGPUChild::ClearActorState() {
 }
 
 void WebGPUChild::QueueSubmit(
-    RawId aSelfId, RawId aDeviceId, nsTArray<RawId>& aCommandBuffers,
+    RawId aSelfId, nsTArray<RawId>& aCommandBuffers,
     const nsTArray<RawId>& aUsedExternalTextureSources) {
   ffi::wgpu_client_queue_submit(
-      GetClient(), aDeviceId, aSelfId,
+      GetClient(), aSelfId,
       {aCommandBuffers.Elements(), aCommandBuffers.Length()},
       {mSwapChainTexturesWaitingForSubmit.Elements(),
        mSwapChainTexturesWaitingForSubmit.Length()},

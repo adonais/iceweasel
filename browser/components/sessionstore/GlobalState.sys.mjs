@@ -2,87 +2,73 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const EXPORTED_METHODS = [
-  "getState",
-  "clear",
-  "get",
-  "set",
-  "delete",
-  "setFromState",
-];
-
 /**
  * Module that contains global session data.
  */
-export function GlobalState() {
-  let internal = new GlobalStateInternal();
-  let external = {};
-  for (let method of EXPORTED_METHODS) {
-    external[method] = internal[method].bind(internal);
-  }
-  return Object.freeze(external);
-}
+export class GlobalState {
+  /**
+   * Storage for global state.
+   *
+   * @type {Record<string, string>}
+   */
+  #state = {};
 
-function GlobalStateInternal() {
-  // Storage for global state.
-  this.state = {};
-}
-
-GlobalStateInternal.prototype = {
   /**
    * Get all value from the global state.
    */
   getState() {
-    return this.state;
-  },
+    return this.#state;
+  }
 
   /**
    * Clear all currently stored global state.
    */
   clear() {
-    this.state = {};
-  },
+    this.#state = {};
+  }
 
   /**
    * Retrieve a value from the global state.
    *
-   * @param aKey
+   * @param {string} aKey
    *        A key the value is stored under.
-   * @return The value stored at aKey, or an empty string if no value is set.
+   * @returns {string}
+   *          The value stored at aKey, or an empty string if no value is set.
    */
   get(aKey) {
-    return this.state[aKey] || "";
-  },
+    return this.#state[aKey] || "";
+  }
 
   /**
    * Set a global value.
    *
-   * @param aKey
+   * @param {string} aKey
    *        A key to store the value under.
+   * @param {string} aStringValue
    */
   set(aKey, aStringValue) {
-    this.state[aKey] = aStringValue;
-  },
+    this.#state[aKey] = aStringValue;
+  }
 
   /**
    * Delete a global value.
    *
-   * @param aKey
+   * @param {string} aKey
    *        A key to delete the value for.
    */
   delete(aKey) {
-    delete this.state[aKey];
-  },
+    delete this.#state[aKey];
+  }
 
   /**
    * Set the current global state from a state object. Any previous global
    * state will be removed, even if the new state does not contain a matching
    * key.
    *
-   * @param aState
+   * @param {object} aState
    *        A state object to extract global state from to be set.
    */
   setFromState(aState) {
-    this.state = (aState && aState.global) || {};
-  },
-};
+    this.#state = (aState && aState.global) || {};
+  }
+}

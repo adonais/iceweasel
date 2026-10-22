@@ -60,8 +60,7 @@ class PeerConnectionTestWrapper : public PeerConnectionObserver,
   PeerConnectionTestWrapper(const std::string& name,
                             const Environment& env,
                             SocketServer* socket_server,
-                            Thread* network_thread,
-                            Thread* worker_thread);
+                            Thread* network_thread);
   ~PeerConnectionTestWrapper() override;
 
   bool CreatePc(const PeerConnectionInterface::RTCConfiguration& config,
@@ -202,7 +201,6 @@ class PeerConnectionTestWrapper : public PeerConnectionObserver,
   const Environment env_;
   SocketServer* const socket_server_;
   Thread* const network_thread_;
-  Thread* const worker_thread_;
   SequenceChecker pc_thread_checker_;
   scoped_refptr<PeerConnectionInterface> peer_connection_;
   scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory_;

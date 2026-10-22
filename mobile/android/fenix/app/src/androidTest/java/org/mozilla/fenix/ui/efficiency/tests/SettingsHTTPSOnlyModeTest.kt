@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
@@ -15,6 +16,23 @@ class SettingsHTTPSOnlyModeTest : BaseTest() {
     @Test
     fun verifyTheHTTPSOnlyModeSectionTest() {
         on.settingsHTTPSOnlyMode.navigateToPage()
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1724825
+    @Critical
+    @Test
+    fun httpsOnlyModeMenuItemsTest() {
+        on.settingsHTTPSOnlyMode
+            .navigateToPage()
+            .verifyHttpsOnlyModeMenuHeader()
+            .verifyHttpsOnlyModeSummary()
+            .verifyHttpsOnlyModeToggle(enabled = false)
+            .verifyHttpsOnlyModeOptionsEnabled(enabled = false)
+            .verifyNoHttpsOnlyModeOptionSelected()
+            .enableHttpsOnlyMode()
+            .verifyHttpsOnlyModeToggle(enabled = true)
+            .verifyHttpsOnlyModeOptionsEnabled(enabled = true)
+            .verifyHttpsOnlyAllTabsSelected()
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1724827
@@ -41,5 +59,25 @@ class SettingsHTTPSOnlyModeTest : BaseTest() {
 
         on.searchBar.navigateToPage()
         on.browserPage.navigateToPage("http.badssl.com").continueToHttpSite().verifyPageContent("http.badssl.com")
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2091057
+    @Critical
+    @Test
+    fun httpsOnlyModeExceptionPersistsForCurrentSessionTest() {
+        on.settingsHTTPSOnlyMode
+            .navigateToPage()
+            .enableHttpsOnlyMode()
+            .verifyHttpsOnlyModeToggle(enabled = true)
+            .verifyHttpsOnlyModeOptionsEnabled(enabled = true)
+            .verifyHttpsOnlyAllTabsSelected()
+        on.browserPage
+            .navigateToPage("http.badssl.com")
+            .verifyPageContent("Secure site not available")
+            .clickPageContent("Continue to HTTP Site")
+            .verifyPageContent("http.badssl.com")
+        on.tabDrawer.navigateToPage().closeAllTabs()
+        on.home.navigateToPage()
+        on.browserPage.navigateToPage("http.badssl.com").verifyPageContent("http.badssl.com")
     }
 }

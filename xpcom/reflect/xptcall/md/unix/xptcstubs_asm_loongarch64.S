@@ -40,13 +40,13 @@ SharedStub:
     move      $a3, $sp
     addi.d    $a4, $sp, 8*NGPRGES
 
-    bl        PrepareAndDispatch
+    call36    PrepareAndDispatch
 
     ld.d      $ra, $sp, 136
     .cfi_restore 1
     addi.d    $sp, $sp, 8*(NGPRGES+NFPREGS)+16
     .cfi_adjust_cfa_offset -8*(NGPRGES+NFPREGS)-16
-    jirl      $zero, $ra, 0
+    ret
     .cfi_endproc
 
     .size SharedStub, .-SharedStub

@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "AOMDecoder.h"
 #include "AnnexB.h"
 #include "BufferStream.h"
 #include "H264.h"
@@ -72,7 +73,7 @@ class MP4TrackDemuxer : public MediaTrackDemuxer,
   // Queued samples extracted by the demuxer, but not yet returned.
   RefPtr<MediaRawData> mQueuedSample;
   bool mNeedReIndex;
-  enum CodecType { kH264, kVP9, kAAC, kHEVC, kOther } mType = kOther;
+  enum CodecType { kH264, kVP9, kAV1, kAAC, kHEVC, kOther } mType = kOther;
 };
 
 MP4Demuxer::MP4Demuxer(MediaResource* aResource)
@@ -338,6 +339,8 @@ MP4TrackDemuxer::MP4TrackDemuxer(MediaResource* aResource,
     }
   } else if (videoInfo && VPXDecoder::IsVP9(mInfo->mMimeType)) {
     mType = kVP9;
+  } else if (videoInfo && AOMDecoder::IsAV1(mInfo->mMimeType)) {
+    mType = kAV1;
   } else if (audioInfo && MP4Decoder::IsAAC(mInfo->mMimeType)) {
     mType = kAAC;
   } else if (videoInfo && MP4Decoder::IsHEVC(mInfo->mMimeType)) {
@@ -493,6 +496,19 @@ MP4TrackDemuxer::GetNextSample() {
       bool keyframe = VPXDecoder::IsKeyframe(
           Span<const uint8_t>(sample->Data(), sample->Size()),
           VPXDecoder::Codec::VP9);
+      if (sample->mKeyframe != keyframe) {
+        NS_WARNING(nsPrintfCString(
+                       "Frame incorrectly marked as %skeyframe "
+                       "@ pts:%" PRId64 " dur:%" PRId64 " dts:%" PRId64,
+                       keyframe ? "" : "non-", sample->mTime.ToMicroseconds(),
+                       sample->mDuration.ToMicroseconds(),
+                       sample->mTimecode.ToMicroseconds())
+                       .get());
+        sample->mKeyframe = keyframe;
+      }
+    } else if (mType == kAV1 && !sample->mCrypto.IsEncrypted()) {
+      bool keyframe = AOMDecoder::IsKeyframe(
+          Span<const uint8_t>(sample->Data(), sample->Size()));
       if (sample->mKeyframe != keyframe) {
         NS_WARNING(nsPrintfCString(
                        "Frame incorrectly marked as %skeyframe "

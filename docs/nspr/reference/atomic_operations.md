@@ -18,10 +18,10 @@ operations.
 
 These functions operate on 32-bit integers:
 
-- {ref}`PR_AtomicIncrement`
-- {ref}`PR_AtomicDecrement`
-- {ref}`PR_AtomicSet`
-- {ref}`PR_AtomicAdd`
+- {doc}`pr_atomicincrement`
+- {doc}`pr_atomicdecrement`
+- {doc}`pr_atomicset`
+- {doc}`pr_atomicadd`
 
 These functions implement a simple stack data structure:
 

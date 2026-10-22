@@ -19,9 +19,6 @@ tags = "os_integration"
 ["browser_search_subdialog_tooltip_saved_addresses.js"]
 
 ["browser_search_subdialogs_within_preferences_1.js"]
-skip-if = [
-  "tsan", # Bug 1678829
-]
 
 ["browser_search_subdialogs_within_preferences_2.js"]
 
@@ -42,9 +39,6 @@ skip-if = [
 ["browser_search_subdialogs_within_preferences_site_data_xul.js"]
 
 ["browser_search_within_preferences_1.js"]
-skip-if = [
-  "os == 'win'", # Bug 1787026
-]
 
 ["browser_search_within_preferences_2.js"]
 

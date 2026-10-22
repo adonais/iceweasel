@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
 /*
  * Tests for link opening from <ai-chat-message> through AIChatContentParent.
  *
@@ -85,7 +89,11 @@ async function clickRenderedLink(browserOrBC, url, eventOptions = {}) {
 }
 
 describe("aichat container tab behavior", () => {
+  let mockEngineManager;
+
   beforeEach(async () => {
+    mockEngineManager = new MockEngineManager();
+
     await SpecialPowers.pushPrefEnv({
       set: [["privacy.userContext.enabled", true]],
     });
@@ -102,11 +110,15 @@ describe("aichat container tab behavior", () => {
   });
 
   afterEach(async () => {
+    mockEngineManager.rejectAllRequests();
     await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+    mockEngineManager.cleanupMocks();
+
     win = null;
     sidebarBrowser = null;
     containerTab = null;
-    await SpecialPowers.popPrefEnv();
+    mockEngineManager = null;
   });
 
   it("should open link in the container of the selected tab", async () => {
@@ -322,6 +334,33 @@ describe("aichat open link", () => {
       BrowserTestUtils.removeTab(newTab);
     });
 
+    // TODO (bug 2071035): Replace the text link with the UI that lets users
+    // choose whether to open the page in this tab or a new tab.
+    it("should open about:smartpage links in a new tab", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.aitab.enabled", true]],
+      });
+      const url = "about:smartpage?page=dashboard";
+
+      try {
+        const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url);
+        await SpecialPowers.spawn(chatTab.linkedBrowser, [url], targetUrl => {
+          content.document.dispatchEvent(
+            new content.CustomEvent("AIChatContent:OpenLink", {
+              bubbles: true,
+              detail: { url: targetUrl },
+            })
+          );
+        });
+
+        const newTab = await newTabPromise;
+        Assert.ok(newTab, "The smartpage opens in a new tab");
+        BrowserTestUtils.removeTab(newTab);
+      } finally {
+        await SpecialPowers.popPrefEnv();
+      }
+    });
+
     it("should switch to an existing about:preferences tab instead of opening a new one", async () => {
       const prefsTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
@@ -355,7 +394,13 @@ describe("aichat open link", () => {
       const initialTabCount = gBrowser.tabs.length;
 
       await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
-        for (const url of ["about:config", "about:blank", "about:newtab"]) {
+        for (const url of [
+          "about:config",
+          "about:blank",
+          "about:newtab",
+          "about:smartpage",
+          "about:smartpage?page=bad/path",
+        ]) {
           content.document.dispatchEvent(
             new content.CustomEvent("AIChatContent:OpenLink", {
               bubbles: true,
@@ -376,6 +421,35 @@ describe("aichat open link", () => {
   });
 
   describe("aichat about:preferences link rendering", () => {
+    it("should retain only seen about:smartpage links", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+        const url = "about:smartpage?page=dashboard";
+
+        for (const seen of [false, true]) {
+          const el = content.document.createElement("ai-chat-message");
+          content.document.body.appendChild(el);
+          el.setAttribute("data-message-role", "assistant");
+
+          const message = el.wrappedJSObject || el;
+          message.seenUrls = Cu.cloneInto(new Set(seen ? [url] : []), content);
+          message.message = `View [Dashboard](${url})`;
+
+          await ContentTaskUtils.waitForCondition(
+            () => el.shadowRoot?.querySelector(".message-assistant a"),
+            "The smartpage link renders"
+          );
+          const link = el.shadowRoot.querySelector(".message-assistant a");
+          Assert.equal(
+            link.getAttribute("href"),
+            seen ? url : null,
+            `The ${seen ? "seen" : "unseen"} smartpage link has the expected href`
+          );
+          el.remove();
+        }
+      });
+    });
+
     it("should render about:preferences links as clickable", async () => {
       await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
         await content.customElements.whenDefined("ai-chat-message");

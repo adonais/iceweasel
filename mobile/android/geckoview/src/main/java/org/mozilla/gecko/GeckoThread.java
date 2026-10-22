@@ -382,7 +382,11 @@ public class GeckoThread extends Thread {
     }
   }
 
-  private static ArrayList<String> getEnvFromExtras(final Bundle extras) {
+  /**
+   * Extract environment variable from extras. The environment variables are stored in the extras as
+   * "env0", "env1", etc.
+   */
+  public static ArrayList<String> getEnvFromExtras(final Bundle extras) {
     if (extras == null) {
       return new ArrayList<>();
     }

@@ -20,6 +20,7 @@ struct DisplayListData {
   nsTArray<WebRenderParentCommand> mCommands;
   Maybe<mozilla::ipc::ByteBuf> mDLItems;
   Maybe<mozilla::ipc::ByteBuf> mDLSpatialTree;
+  Maybe<mozilla::ipc::ByteBuf> mDLInternerDelta;
   wr::BuiltDisplayListDescriptor mDLDesc;
   nsTArray<OpUpdateResource> mResourceUpdates;
   nsTArray<RefCountedShmem> mSmallShmems;

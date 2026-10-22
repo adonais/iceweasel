@@ -34,7 +34,6 @@
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -84,7 +83,6 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
               (int sample_rate_hz, AudioFrame*),
               (override));
   MOCK_METHOD(int, PreferredSampleRate, (), (const, override));
-  MOCK_METHOD(std::vector<RtpSource>, GetSources, (), (const, override));
   MOCK_METHOD(std::optional<Syncable::PlayoutInfo>,
               GetPlayoutRtpTimestamp,
               (),

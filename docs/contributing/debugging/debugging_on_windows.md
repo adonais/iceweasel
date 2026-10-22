@@ -26,8 +26,8 @@ and ticking the box. The same extension exists for older versions of Visual
 Studio as
 [Microsoft Child Process Debugging Power Tool](https://marketplace.visualstudio.com/items?itemName=vsdbgplat.MicrosoftChildProcessDebuggingPowerTool).
 
-If you have followed the steps in {ref}`Building Firefox for
-Windows <Building Firefox On Windows>`
+If you have followed the steps in {doc}`Building Firefox for
+Windows </setup/windows_build>`
 and have a local debug build, you can **execute this command from same command line.**
 
 ```
@@ -67,13 +67,13 @@ and click "Start".
 
 ## Debugging Release and Nightly Builds
 
-Refer to the steps to {ref}`use the Mozilla symbol
-server <Using The Mozilla Symbol Server>` and {ref}`source
-server <Using The Mozilla Source Server>`
+Refer to the steps to {doc}`use the Mozilla symbol
+server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>` and {doc}`source
+server </taskcluster/using-the-mozilla-source-server>`
 
 ## Creating a Visual Studio project for Firefox
 
-Please refer to {ref}`this <Visual Studio Projects>`.
+Please refer to {doc}`this </build/buildsystem/visualstudio>`.
 
 ## Changing/setting the executable to debug
 
@@ -274,7 +274,7 @@ Also this magical command only works when you have JS on the VS stack.
 
 ## Debugging minidumps
 
-See {ref}`debugging a minidump <Debugging A Minidump>`.
+See {doc}`debugging a minidump <debugging_a_minidump>`.
 
 ## Problems post-mortem debugging on Windows 7 SP1 x64?
 

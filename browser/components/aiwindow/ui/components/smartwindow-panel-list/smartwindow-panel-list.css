@@ -128,6 +128,31 @@ panel-item::part(label) {
   white-space: nowrap;
 }
 
+/* Laid out here rather than by .panel-item-container, whose grid is Nova only. */
+.panel-tab-group-item {
+  align-items: center;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  column-gap: var(--panel-item-padding);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--panel-item-padding);
+}
+
+.panel-tab-group-icon {
+  /* The design draws the initial smaller on this surface. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  --tab-group-icon-font-size: 8.2px;
+  --tab-group-icon-notch-radius: var(--border-radius-xsmall);
+  --tab-group-icon-size: var(--panel-item-icon-size);
+}
+
+.panel-tab-group-label::part(button) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Style `ai-website-chip` to behave like a `panel-item`. */
 /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 panel-list:has(ai-website-chip) {
@@ -204,6 +229,13 @@ panel-list ai-website-chip::part(chip):focus-visible {
   panel-item::part(label) {
     font-size: var(--panel-section-header-font-size);
     font-weight: var(--font-weight-heading);
+  }
+
+  /* This row uses the container for layout; its label is a menu item, not the
+     title of a description row. */
+  &.panel-tab-group-item panel-item::part(label) {
+    font-size: inherit;
+    font-weight: inherit;
   }
 
   .panel-item-description {

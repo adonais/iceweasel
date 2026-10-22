@@ -34,6 +34,6 @@ The structure has these fields:
 
 ## Description
 
-The client is responsible for initializing the {ref}`PRCallOnceType`
+The client is responsible for initializing the {doc}`prcalloncetype`
 structure to all zeros. This initialization must be accomplished before
 any threading issues exist.

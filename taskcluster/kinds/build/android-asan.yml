@@ -36,7 +36,6 @@ task-defaults:
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
-        mozconfig-variant: null
         tooltool-downloads: internal
     fetches:
         toolchain:
@@ -65,6 +64,8 @@ android-x86_64-asan-fuzzing/opt:
     worker:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+    mozconfig:
+        variant: nightly-fuzzing-asan
     run:
         actions: [get-secrets, build]
         config: ["builds/releng_base_android_64_builds.py"]

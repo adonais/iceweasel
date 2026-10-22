@@ -7,7 +7,6 @@ import { useSelector } from "react-redux";
 import { Lists } from "./Lists/Lists";
 import { FocusTimer } from "./FocusTimer/FocusTimer";
 import { Weather as WeatherWidget } from "./Weather/Weather";
-import { SportsWidget } from "./SportsWidget/SportsWidget";
 import { Clocks } from "./Clocks/Clocks";
 import { Privacy } from "./Privacy/Privacy";
 import { Crossword } from "./Crossword/Crossword";
@@ -42,7 +41,6 @@ export const WIDGET_ROW_COMPONENTS = {
   lists: Lists,
   focusTimer: FocusTimer,
   weather: WeatherRowWidget,
-  sportsWidget: SportsWidget,
   clocks: Clocks,
   privacy: Privacy,
   crossword: Crossword,

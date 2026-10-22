@@ -19,11 +19,11 @@ The function has the following parameters:
 `address`
 
 : The address of the protected object--the same address previously
-  passed to {ref}`PR_CEnterMonitor`.
+  passed to {doc}`pr_centermonitor`.
 
 `timeout`
 
-: The amount of time (in {ref}`PRIntervalTime` units) that the thread is
+: The amount of time (in {doc}`printervaltime` units) that the thread is
   willing to wait for an explicit notification before being
   rescheduled. If you specify `PR_INTERVAL_NO_TIMEOUT`, the function
   returns if and only if the object is notified.
@@ -42,10 +42,10 @@ The function returns one of the following values:
 ## Description
 
 Using the value specified in the `address` parameter to find a monitor
-in the monitor cache, {ref}`PR_CWait` waits for a notification that the
+in the monitor cache, {doc}`pr_cwait` waits for a notification that the
 monitor's state has changed. While the thread is waiting, it exits the
-monitor (just as if it had called {ref}`PR_CExitMonitor` as many times as
-it had called {ref}`PR_CEnterMonitor`). When the wait has finished, the
+monitor (just as if it had called {doc}`pr_cexitmonitor` as many times as
+it had called {doc}`pr_centermonitor`). When the wait has finished, the
 thread regains control of the monitor's lock with the same entry count
 as before the wait began.
 

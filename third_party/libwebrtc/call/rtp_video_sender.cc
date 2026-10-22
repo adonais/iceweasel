@@ -97,8 +97,7 @@ using webrtc_internal_rtp_video_sender::RtpStreamSender;
 
 bool PayloadTypeSupportsSkippingFecPackets(absl::string_view payload_name,
                                            const FieldTrialsView& trials) {
-  const VideoCodecType codecType =
-      PayloadStringToCodecType(std::string(payload_name));
+  const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
   if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
     return true;
   }

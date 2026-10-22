@@ -303,6 +303,8 @@ if (!build_with_mozilla) {
   visibility = [ "*" ]
 
   sources = [
+    "encoded_audio_frame_injector_interface.h",
+    "encoded_video_frame_injector_interface.h",
     "rtp_sender_interface.cc",
     "rtp_sender_interface.h",
   ]
@@ -900,6 +902,7 @@ if (rtc_include_tests) {
         "../video/config:encoder_config",
         "transport:bitrate_settings",
         "transport:network_control",
+        "units:time_delta",
         "video_codecs:scalability_mode",
         "video_codecs:video_codecs_api",
       ]
@@ -1352,6 +1355,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":media_stream_interface",
+      ":rtp_packet_info",
       "../test:test_support",
     ]
   }

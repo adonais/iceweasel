@@ -258,7 +258,8 @@ export class UrlbarQueryContext {
   /**
    * Whether the query runs in a bar dedicated to search.
    *
-   * @see {UrlbarShared.isSearchbarSAP}
+   * See `UrlbarShared.isSearchbarSAP`.
+   *
    * @type {boolean}
    */
   get isSearchbarSAP() {
@@ -268,7 +269,8 @@ export class UrlbarQueryContext {
   /**
    * Whether a string that isn't a URL may be searched for.
    *
-   * @see {UrlbarShared.keywordEnabled}
+   * See `UrlbarShared.keywordEnabled`.
+   *
    * @type {boolean}
    */
   get keywordEnabled() {
@@ -278,11 +280,24 @@ export class UrlbarQueryContext {
   /**
    * Whether a string that is a URL may be navigated to.
    *
-   * @see {UrlbarShared.navigationEnabled}
+   * See `UrlbarShared.navigationEnabled`.
+   *
    * @type {boolean}
    */
   get navigationEnabled() {
     return UrlbarShared.navigationEnabled(this.sapName);
+  }
+
+  /**
+   * Whether a string that is a URL may be navigated to in an engine search
+   * mode.
+   *
+   * See `UrlbarShared.navigationInSearchModeEnabled`.
+   *
+   * @type {boolean}
+   */
+  get navigationInSearchModeEnabled() {
+    return UrlbarShared.navigationInSearchModeEnabled(this.sapName);
   }
 
   /**

@@ -152,31 +152,39 @@ public final class HardwareCodecCapabilityUtils {
     return mimeTypes.toArray(new String[0]);
   }
 
-  // Return list of all decoder-supported MIME types, each prefixed with
-  // either SW or HW indicating software or hardware support.
+  // Return list of all decoder-supported MIME types, and optionally all
+  // encoder-supported MIME types, each prefixed with SW or HW indicating
+  // software or hardware support for decoders, and SWE or HWE for encoders.
   @WrapForJNI
-  public static String[] getDecoderSupportedMimeTypesWithAccelInfo() {
+  public static String[] getSupportedMimeTypesWithAccelInfo(final boolean aIncludeEncoders) {
     final Set<String> mimeTypes = new HashSet<>();
-    final String[] hwPrefixes = getAllSupportedHWCodecPrefixes(false);
-
-    for (final MediaCodecInfo info : getDecoderInfos()) {
-      final boolean isHw = isHardwareAccelerated(info, hwPrefixes);
-      final String[] supportedTypes = info.getSupportedTypes();
-      for (final String mimeType : info.getSupportedTypes()) {
-        if (!isHw) {
-          mimeTypes.add("SW " + mimeType);
-          continue;
-        }
-        final CodecCapabilities caps = info.getCapabilitiesForType(mimeType);
-        if (getSupportsYUV420orNV12(caps) != COLOR_FORMAT_NOT_SUPPORTED) {
-          mimeTypes.add("HW " + mimeType);
-        }
-      }
+    addSupportedMimeTypesWithAccelInfo(mimeTypes, getDecoderInfos(), false);
+    if (aIncludeEncoders) {
+      addSupportedMimeTypesWithAccelInfo(mimeTypes, getEncoderInfos(), true);
     }
     for (final String typeit : mimeTypes) {
       Log.d(LOGTAG, "MIME support: " + typeit);
     }
     return mimeTypes.toArray(new String[0]);
+  }
+
+  private static void addSupportedMimeTypesWithAccelInfo(
+      final Set<String> aMimeTypes, final MediaCodecInfo[] aInfos, final boolean aIsEncoder) {
+    final String swTag = aIsEncoder ? "SWE " : "SW ";
+    final String hwTag = aIsEncoder ? "HWE " : "HW ";
+
+    for (final MediaCodecInfo info : aInfos) {
+      for (final String mimeType : info.getSupportedTypes()) {
+        if (!isHardwareAccelerated(info, getSupportedHWCodecPrefixes(mimeType, aIsEncoder))) {
+          aMimeTypes.add(swTag + mimeType);
+          continue;
+        }
+        final CodecCapabilities caps = info.getCapabilitiesForType(mimeType);
+        if (getSupportsYUV420orNV12(caps) != COLOR_FORMAT_NOT_SUPPORTED) {
+          aMimeTypes.add(hwTag + mimeType);
+        }
+      }
+    }
   }
 
   private static boolean isHardwareAccelerated(
@@ -313,18 +321,6 @@ public final class HardwareCodecCapabilityUtils {
       return aIsEncoder ? supportedVp8HwEncCodecPrefixes : supportedVp8HwDecCodecPrefixes;
     }
     return null;
-  }
-
-  // Return list of HW codec prefixes (encode or decode, VP8, VP9, and H264)
-  private static String[] getAllSupportedHWCodecPrefixes(final boolean aIsEncoder) {
-    final Set<String> prefixes = new HashSet<>();
-    final String[] mimeTypes = {
-      H264_MIME_TYPE, HEVC_MIME_TYPE, AV1_MIME_TYPE, VP8_MIME_TYPE, VP9_MIME_TYPE
-    };
-    for (final String mt : mimeTypes) {
-      prefixes.addAll(Arrays.asList(getSupportedHWCodecPrefixes(mt, aIsEncoder)));
-    }
-    return prefixes.toArray(new String[0]);
   }
 
   @WrapForJNI

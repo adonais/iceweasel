@@ -427,5 +427,5 @@ hr.rule {
 }
 
 .monitor-condition-input {
-  --input-text-min-height: 90px;
+  --input-min-height: 90px;
 }

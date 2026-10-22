@@ -10,32 +10,138 @@
 
 <script>
 add_task(async function() {
-  const test = (value, syntax, expected) =>
+  const test = ({property, value, syntax, expected}) =>
     is(
-      SpecialPowers.InspectorUtils.valueMatchesSyntax(document, value, syntax),
+      SpecialPowers.InspectorUtils.valueMatchesSyntax(document, property, value, syntax),
       expected,
-      `"${value}" ${expected ? "matches" : "does not match"} "${syntax}"`
+      `"${property}: ${value}" ${expected ? "matches" : "does not match"} "${syntax}"`
     );
 
-  test("red", "<color>", true);
-  test("10px", "<color>", false);
-  test("10px", "<color> | <length>", true);
-  test("10px 1em", "<length>+", true);
-  test("10px, 1em", "<length>+", false);
-  test("10px, 1em", "<length>#", true);
-  test("10px 1em", "<length>#", false);
-  test("calc(100% - 20px)", "<length>", false);
-  test("calc(100% - 20px)", "<length-percentage>", true);
-  test("big", "big | bigger | BIGGER", true);
-  test("bigger", "big | bigger | BIGGER", true);
-  test("BIGGER", "big | bigger | BIGGER", true);
-  test("BIG", "big | bigger | BIGGER", false);
-  test("red", "<invalid-syntax>", false);
-  test("whatever 10px, 1em red", "*", true);
+
+  test({
+    property: "color",
+    value: "red",
+    syntax: "<color>",
+    expected: true
+  });
+  test({
+    property: "color",
+    value: "10px",
+    syntax: "<color>",
+    expected: false
+  });
+  test({
+    property: "color",
+    value: "10px",
+    syntax: "<color> | <length>",
+    expected: true,
+  });
+  test({
+    property: "margin",
+    value: "10px 1em",
+    syntax: "<length>+",
+    expected: true,
+  });
+  test({
+    property: "margin",
+    value: "10px, 1em",
+    syntax: "<length>+",
+    expected: false,
+  });
+  test({
+    property: "margin",
+    value: "10px, 1em",
+    syntax: "<length>#",
+    expected: true,
+  });
+  test({
+    property: "margin",
+    value: "10px 1em",
+    syntax: "<length>#",
+    expected: false,
+  });
+  test({
+    property: "width",
+    value: "calc(100% - 20px)",
+    syntax: "<length>",
+    expected: false,
+  });
+  test({
+    property: "width",
+    value: "calc(100% - 20px)",
+    syntax: "<length-percentage>",
+    expected: true,
+  });
+  test({
+    property: "font-size",
+    value: "big",
+    syntax: "big | bigger | BIGGER",
+    expected: true,
+  });
+  test({
+    property: "font-size",
+    value: "bigger",
+    syntax: "big | bigger | BIGGER",
+    expected: true,
+  });
+  test({
+    property: "font-size",
+    value: "BIGGER",
+    syntax: "big | bigger | BIGGER",
+    expected: true,
+  });
+  test({
+    property: "font-size",
+    value: "BIG",
+    syntax: "big | bigger | BIGGER",
+    expected: false,
+  });
+  test({
+    property: "color",
+    value: "red",
+    syntax: "<invalid-syntax>",
+    expected: false,
+  });
+  test({
+    property: "--x",
+    value: "whatever 10px, 1em red",
+    syntax: "*",
+    expected: true,
+  });
+  test({
+    property: "width",
+    value: "random(10px, 20px)",
+    syntax: "<length>",
+    expected: true,
+  });
+  test({
+    property: "width",
+    value: "random(10em, 20vw)",
+    syntax: "<length>",
+    expected: true,
+  });
+  test({
+    property: "width",
+    value: "random(10%, 20%)",
+    syntax: "<length>",
+    expected: false,
+  });
+  test({
+    property: "width",
+    value: "random(10%, 20%)",
+    syntax: "<percentage>",
+    expected: true,
+  });
+  test({
+    property: "rotate",
+    value: "random(0deg, 180deg)",
+    syntax: "<angle>",
+    expected: true,
+  });
 
   info("CSS-wide keyword are considered to be matching the syntax");
   for (const keyword of SpecialPowers.InspectorUtils.getCSSWideKeywords()) {
-    test(keyword, "<color>", true);
+    test({property: "color", value: keyword, syntax: "<color>", expected: true});
   }
 });
 </script>

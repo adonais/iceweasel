@@ -12,7 +12,7 @@ function countPrefReadsInThread(pref, thread) {
     thread,
     "Preference"
   )) {
-    if (payload.prefName === pref) {
+    if (thread.stringTable[payload.prefName] === pref) {
       count++;
     }
   }

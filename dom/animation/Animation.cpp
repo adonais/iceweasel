@@ -1424,6 +1424,24 @@ TimeStamp Animation::ElapsedTimeToTimeStamp(
     const StickyTimeDuration& aElapsedTime) const {
   TimeDuration delay =
       mEffect ? mEffect->NormalizedTiming().Delay() : TimeDuration();
+  if (MOZ_UNLIKELY((delay == -TimeDuration::Forever() &&
+                    aElapsedTime == TimeDuration::Forever()) ||
+                   (delay == TimeDuration::Forever() &&
+                    aElapsedTime == -TimeDuration::Forever()))) {
+    // It's possible to have a negative infinite delay, e.g. using an extreme
+    // small value like -1e18s, or use calc() like
+    // `animation-delay: calc(-infinity * 1s)`. Also, it's possible to have a
+    // positive infinite |aElaspedTime| by specifying the infinite iteration
+    // count or the infinite duration. In these cases, we may try to calculate
+    // "inf + -inf", which results in an unexpected behavior, so here we just
+    // return the current timeline time to avoid breaking the sorting of events
+    // (this is the same as the cancel event to make sure we sort cancel first).
+    // Note: The return TimeStamp of this function is used as
+    // AnimationEventInfo::mScheduledEventTimeStamp for event sorting, and we
+    // also use GetTimelineCurrentTimeAsTimeStamp() for some events. It should
+    // be fine to use it as the fallback way.
+    return GetTimelineCurrentTimeAsTimeStamp();
+  }
   return AnimationTimeToTimeStamp(aElapsedTime + delay);
 }
 

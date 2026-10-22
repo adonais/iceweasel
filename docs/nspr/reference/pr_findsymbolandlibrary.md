@@ -45,9 +45,9 @@ the caller.
 
 The function returns `NULL` if no such function can be found. The
 order in which the known libraries are searched in not specified. This
-function is equivalent to calling first {ref}`PR_LoadLibrary`, then
-{ref}`PR_FindSymbol`.
+function is equivalent to calling first {doc}`pr_loadlibrary`, then
+{doc}`pr_findsymbol`.
 
 The identity returned from this function must be the target of a
-{ref}`PR_UnloadLibrary` in order to return the runtime to its original
+{doc}`pr_unloadlibrary` in order to return the runtime to its original
 state.

@@ -23,18 +23,18 @@ The function has the following parameters:
 
 The function returns one of the following values:
 
-- Upon successful completion, a pointer to the {ref}`PRFileDesc` object
+- Upon successful completion, a pointer to the {doc}`prfiledesc` object
   created for the newly imported native TCP socket.
 - If the import of the native TCP socket failed, `NULL`.
 
 ## Description
 
 A native TCP socket `osfd` can be imported into NSPR with
-{ref}`PR_ImportTCPSocket`. The caller gives up control of the native TCP
+{doc}`pr_importtcpsocket`. The caller gives up control of the native TCP
 socket `osfd` and should use the `PRFileDesc*` returned by
-{ref}`PR_ImportTCPSocket` instead.
+{doc}`pr_importtcpsocket` instead.
 
-Although {ref}`PR_ImportTCPSocket` is a supported function, it is declared
+Although {doc}`pr_importtcpsocket` is a supported function, it is declared
 in `"private/pprio.h"` to stress the fact that this function depends
 on the internals of the NSPR implementation. The caller needs to
 understand what NSPR will do to the native file descriptor and make sure
@@ -45,17 +45,17 @@ For example, on POSIX systems, NSPR will put the native file descriptor
 `O_NONBLOCK` file status flag on the native file descriptor, and then
 NSPR will call socket functions such as `recv`, `send`, and `poll`
 on the native file descriptor. The caller must not do anything to the
-native file descriptor before the {ref}`PR_ImportTCPSocket` call that will
+native file descriptor before the {doc}`pr_importtcpsocket` call that will
 prevent the native file descriptor from working in non-blocking mode.
 
 ## Warning
 
-In theory, code that uses {ref}`PR_ImportTCPSocket` may break when NSPR's
+In theory, code that uses {doc}`pr_importtcpsocket` may break when NSPR's
 implementation changes. In practice, this is unlikely to happen because
 NSPR's implementation has been stable for years and because of NSPR's
 strong commitment to backward compatibility. Using
-{ref}`PR_ImportTCPSocket` is much more convenient than writing an NSPR I/O
+{doc}`pr_importtcpsocket` is much more convenient than writing an NSPR I/O
 layer that wraps your native TCP sockets. Of course, it is best if you
-just use {ref}`PR_OpenTCPSocket` or {ref}`PR_NewTCPSocket`. If you are not
-sure whether {ref}`PR_ImportTCPSocket` is right for you, please ask in the
+just use {doc}`pr_opentcpsocket` or {doc}`pr_newtcpsocket`. If you are not
+sure whether {doc}`pr_importtcpsocket` is right for you, please ask in the
 mozilla.dev.tech.nspr newsgroup.

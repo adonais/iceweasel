@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.menu.store
 
+import mozilla.components.compose.menu.data.MenuAttribution
 import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.lib.state.State
 
@@ -11,5 +12,9 @@ import mozilla.components.lib.state.State
  * The state of the menu.
  *
  * @property menuGroups The list of menu groups shown in the menu.
+ * @property attribution Optional attribution to show to users. One-liner at the top or bottom of the menu.
  */
-data class MenuState(val menuGroups: List<MenuItemsGroup>) : State
+data class MenuState(
+    val menuGroups: List<MenuItemsGroup>,
+    val attribution: MenuAttribution? = null,
+) : State

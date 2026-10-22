@@ -22,14 +22,13 @@ class SettingsHomepagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
         )
 
+        // Depth-independent: this screen can be reached one level deep (home menu -> Customize homepage) or two
+        // levels deep (Settings -> Homepage), so back out until the settings toolbar is gone rather than pressing
+        // back a fixed number of times.
         builder.register(
             from = pageName,
             to = "HomePage",
-            steps =
-                listOf(
-                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-                ),
+            steps = listOf(NavigationStep.PressBackUntilGone(SettingsSelectors.NAVIGATION_TOOLBAR)),
         )
     }
 

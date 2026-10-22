@@ -12,74 +12,74 @@ navbar-tooltip-instruction =
 
 # Variables
 #   $shortcut (String) - A keyboard shortcut for the Go Back command.
-main-context-menu-back-2 =
+main-context-menu-back-3 =
     .tooltiptext = Go back one page ({ $shortcut })
     .aria-label = Back
-    .accesskey = B
 
 # This menuitem is only visible on macOS
 main-context-menu-back-mac =
     .label = Back
     .accesskey = B
 
-navbar-tooltip-back-2 =
-    .value = { main-context-menu-back-2.tooltiptext }
+# Variables
+#   $shortcut (String) - A keyboard shortcut for the Go Back command.
+navbar-tooltip-back-3 =
+    .value = Go back one page ({ $shortcut })
 
-toolbar-button-back-2 =
-    .label = { main-context-menu-back-2.aria-label }
+toolbar-button-back-3 =
+    .label = Back
 
 ## Forward
 
 # Variables
 #   $shortcut (String) - A keyboard shortcut for the Go Forward command.
-main-context-menu-forward-2 =
+main-context-menu-forward-3 =
     .tooltiptext = Go forward one page ({ $shortcut })
     .aria-label = Forward
-    .accesskey = F
 
 # This menuitem is only visible on macOS
 main-context-menu-forward-mac =
     .label = Forward
     .accesskey = F
 
-navbar-tooltip-forward-2 =
-    .value = { main-context-menu-forward-2.tooltiptext }
+# Variables
+#   $shortcut (String) - A keyboard shortcut for the Go Forward command.
+navbar-tooltip-forward-3 =
+    .value = Go forward one page ({ $shortcut })
 
-toolbar-button-forward-2 =
-    .label = { main-context-menu-forward-2.aria-label }
+toolbar-button-forward-3 =
+    .label = Forward
 
 ## Reload
 
-main-context-menu-reload =
+main-context-menu-reload-2 =
     .aria-label = Reload
-    .accesskey = R
 
 # This menuitem is only visible on macOS
 main-context-menu-reload-mac =
     .label = Reload
     .accesskey = R
 
-toolbar-button-reload =
-    .label = { main-context-menu-reload.aria-label }
+toolbar-button-reload-2 =
+    .label = Reload
 
 ## Stop
 
-main-context-menu-stop =
+main-context-menu-stop-2 =
     .aria-label = Stop
-    .accesskey = S
 
 # This menuitem is only visible on macOS
 main-context-menu-stop-mac =
     .label = Stop
     .accesskey = S
 
-toolbar-button-stop =
-    .label = { main-context-menu-stop.aria-label }
+toolbar-button-stop-2 =
+    .label = Stop
 
 ## Stop-Reload Button
 
-toolbar-button-stop-reload =
-    .title = { main-context-menu-reload.aria-label }
+toolbar-button-stop-reload-2 =
+    .title = Reload
 
 ## Account toolbar Button
 
@@ -95,9 +95,8 @@ main-context-menu-page-save =
 
 ## Simple menu items
 
-main-context-menu-bookmark-page =
+main-context-menu-bookmark-page-2 =
     .aria-label = Bookmark Page…
-    .accesskey = m
     .tooltiptext = Bookmark page
 
 # This menuitem is only visible on macOS
@@ -116,21 +115,18 @@ main-context-menu-edit-bookmark-mac =
 
 # Variables
 #   $shortcut (String) - A keyboard shortcut for the add bookmark command.
-main-context-menu-bookmark-page-with-shortcut =
+main-context-menu-bookmark-page-with-shortcut-2 =
     .aria-label = Bookmark Page…
-    .accesskey = m
     .tooltiptext = Bookmark page ({ $shortcut })
 
-main-context-menu-edit-bookmark =
+main-context-menu-edit-bookmark-2 =
     .aria-label = Edit Bookmark…
-    .accesskey = m
     .tooltiptext = Edit bookmark
 
 # Variables
 #   $shortcut (String) - A keyboard shortcut for the edit bookmark command.
-main-context-menu-edit-bookmark-with-shortcut =
+main-context-menu-edit-bookmark-with-shortcut-2 =
     .aria-label = Edit Bookmark…
-    .accesskey = m
     .tooltiptext = Edit bookmark ({ $shortcut })
 
 main-context-menu-open-link =
@@ -471,8 +467,11 @@ main-context-menu-inspect =
     .label = Inspect
     .accesskey = Q
 
-main-context-menu-inspect-a11y-properties =
+# This item only shows for DevTools users, so its access key may be the same
+# as another item's, such as "Copy Image".
+main-context-menu-inspect-a11y-properties2 =
     .label = Inspect Accessibility Properties
+    .accesskey = y
 
 main-context-menu-eme-learn-more =
     .label = Learn more about DRM…

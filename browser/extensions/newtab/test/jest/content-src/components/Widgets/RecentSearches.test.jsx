@@ -93,7 +93,7 @@ describe("RecentSearches widget", () => {
     const { container } = renderWidget();
     expect(
       container.querySelector(
-        ".recent-searches-context-menu-button[data-l10n-id='newtab-search-widget-menu-button']"
+        ".recent-searches-context-menu-button[data-l10n-id='newtab-search-widget-open-menu-button']"
       )
     ).toBeTruthy();
   });

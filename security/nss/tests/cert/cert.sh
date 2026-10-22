@@ -109,10 +109,11 @@ cert_init()
   cert_add_algorithm "ML-DSA-44" "-ml-dsa-44" "-k mldsa -q ml-dsa-44" "false" 30000
   cert_add_algorithm "ML-DSA-65" "-ml-dsa-65" "-k mldsa -q ml-dsa-65" "false" 40000
   cert_add_algorithm "ML-DSA-87" "-ml-dsa-87" "-k mldsa -q ml-dsa-87" "false" 50000
+  cert_add_algorithm "ED25519" "-ed25519" "-k ed -q ed25519" "false" 60000
   # currently rsa-pss is only enabled for a subset of tests
   # this will enable a full suite of RSA-PSS certs, and we would
   # then remove the explicit ones
-  # ulike the other tests, we would need to change ssl tests as this
+  # unlike the other tests, we would need to change ssl tests as this
   # will rename some of the RSA-PSS certificates.
   #cert_add_algorithm "RSA-PSS" "-rsa-pss" "-k rsa -pss -Z sha256" "true"
   #cert_add_algorithm "RSA-PSS-SHA1" "-rsa-pss-sha1" "-k rsa -pss -Z sha1" "true"
@@ -524,6 +525,9 @@ cert_CA()
   ECC)
       cert_ec_CA "${CUR_CADIR}" "${NICKNAME}" "${SIGNER}" "${TRUSTARG}" "${DOMAIN}" "${CERTSERIAL}" "${ALG}"
       ;;
+  ED25519)
+      cert_ed_CA "${CUR_CADIR}" "${NICKNAME}" "${SIGNER}" "${TRUSTARG}" "${DOMAIN}" "${CERTSERIAL}" "ed25519"
+      ;;
   RSA-PSS)
       cert_rsa_pss_CA "${CUR_CADIR}" "${NICKNAME}" "${SIGNER}" "${TRUSTARG}" "${DOMAIN}" "${CERTSERIAL}" "${ALG}"
       ;;
@@ -821,9 +825,6 @@ CERTSCRIPT
   cp root-rsa-pss.cert ${NICKNAME}.ca.cert
 }
 
-
-
-
 ################################ cert_ec_CA ##############################
 # local shell function to build the Temp. Certificate Authority (CA)
 # used for testing purposes, creating  a CA Certificate and a root cert
@@ -886,6 +887,70 @@ CERTSCRIPT
       Exit 7 "Fatal - failed to export ec root cert"
   fi
   cp root-ec.cert ${NICKNAME}.ca.cert
+}
+
+################################ cert_ed_CA ##############################
+# local shell function to build the Temp. Certificate Authority (CA)
+# used for testing purposes, creating  a CA Certificate and a root cert
+# This is the Edwards ECC version of cert_CA.
+##########################################################################
+cert_ed_CA()
+{
+  CUR_CADIR=$1
+  NICKNAME=$2
+  SIGNER=$3
+  TRUSTARG=$4
+  DOMAIN=$5
+  CERTSERIAL=$6
+  CURVE=$7
+
+  echo "$SCRIPTNAME: Creating an ED CA Certificate $NICKNAME =========================="
+
+  if [ ! -d "${CUR_CADIR}" ]; then
+      mkdir -p "${CUR_CADIR}"
+  fi
+  cd ${CUR_CADIR}
+  pwd
+
+  LPROFILE=.
+  if [ -n "${MULTIACCESS_DBM}" ]; then
+	LPROFILE="multiaccess:${DOMAIN}"
+  fi
+
+  ################# Creating an EC CA Cert ################################
+  #
+  CU_ACTION="Creating ED CA Cert $NICKNAME "
+  CU_SUBJECT=$ALL_CU_SUBJECT
+  certu -S -n $NICKNAME -k ed -q $CURVE -t $TRUSTARG -v 600 $SIGNER \
+    -d ${LPROFILE} -1 -2 -5 -f ${R_PWFILE} -z ${R_NOISE_FILE} \
+    -m $CERTSERIAL 2>&1 <<CERTSCRIPT
+5
+6
+9
+n
+y
+-1
+n
+5
+6
+7
+9
+n
+CERTSCRIPT
+
+  if [ "$RET" -ne 0 ]; then
+      echo "return value is $RET"
+      Exit 6 "Fatal - failed to create ED CA cert"
+  fi
+
+  ################# Exporting EC Root Cert ################################
+  #
+  CU_ACTION="Exporting ED Root Cert"
+  certu -L -n  $NICKNAME -r -d ${LPROFILE} -o root-ed.cert
+  if [ "$RET" -ne 0 ]; then
+      Exit 7 "Fatal - failed to export ed root cert"
+  fi
+  cp root-ed.cert ${NICKNAME}.ca.cert
 }
 
 ############################## cert_smime_client #############################

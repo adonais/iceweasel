@@ -347,19 +347,6 @@ extern SECStatus SEC_PKCS7AddSignedAttribute(SEC_PKCS7ContentInfo *cinfo,
                                              SECItem *value);
 
 /*
- * Add "cert" and its entire chain to the set of certs included in "cinfo".
- *
- * "certdb" is the cert database to use for finding the chain.
- * It can be NULL, meaning use the default database.
- *
- * "cinfo" should be of type signedData or signedAndEnvelopedData;
- * SECFailure will be returned if it is not.
- */
-extern SECStatus SEC_PKCS7AddCertChain(SEC_PKCS7ContentInfo *cinfo,
-                                       CERTCertificate *cert,
-                                       CERTCertDBHandle *certdb);
-
-/*
  * Add "cert" to the set of certs included in "cinfo".
  *
  * "cinfo" should be of type signedData or signedAndEnvelopedData;
@@ -578,26 +565,6 @@ void SEC_PKCS7EncoderAbort(SEC_PKCS7EncoderContext *p7dcx, int error);
 extern SECAlgorithmID *
 SEC_PKCS7GetEncryptionAlgorithm(SEC_PKCS7ContentInfo *cinfo);
 
-/* the content of an encrypted data content info is encrypted.
- * it is assumed that for encrypted data, that the data has already
- * been set and is in the "plainContent" field of the content info.
- *
- * cinfo is the content info to encrypt
- *
- * key is the key with which to perform the encryption.  if the
- *     algorithm is a password based encryption algorithm, the
- *     key is actually a password which will be processed per
- *     PKCS #5.
- *
- * in the event of an error, SECFailure is returned.  SECSuccess
- * indicates a success.
- */
-extern SECStatus
-SEC_PKCS7EncryptContents(PLArenaPool *poolp,
-                         SEC_PKCS7ContentInfo *cinfo,
-                         SECItem *key,
-                         void *wincx);
-
 /* the content of an encrypted data content info is decrypted.
  * it is assumed that for encrypted data, that the data has already
  * been set and is in the "encContent" field of the content info.
@@ -625,12 +592,6 @@ SEC_PKCS7DecryptContents(PLArenaPool *poolp,
  */
 extern SECItem **
 SEC_PKCS7GetCertificateList(SEC_PKCS7ContentInfo *cinfo);
-
-/* Returns the key length (in bits) of the algorithm used to encrypt
-   this object.  Returns 0 if it's not encrypted, or the key length is
-   irrelevant. */
-extern int
-SEC_PKCS7GetKeyLength(SEC_PKCS7ContentInfo *cinfo);
 
 /************************************************************************/
 SEC_END_PROTOS

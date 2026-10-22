@@ -54,10 +54,6 @@ run-if = [
 
 ["test_cache_orphaned_body.html"]
 scheme = "https"
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1749068
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1749068
-]
 
 ["test_cache_orphaned_cache.html"]
 
@@ -99,10 +95,6 @@ skip-if = [
 
 ["test_cache_worker_gc.html"]
 scheme = "https"
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1749068
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1749068
-]
 
 ["test_caches.html"]
 

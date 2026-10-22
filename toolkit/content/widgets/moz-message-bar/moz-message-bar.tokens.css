@@ -50,6 +50,9 @@
     --message-bar-icon-size: var(--icon-size);
     --message-bar-message-margin-inline-end: var(--space-xsmall);
     --message-bar-text-color: var(--text-color);
+    --message-bar-text-color-critical: var(--text-color);
+    --message-bar-text-color-success: var(--text-color);
+    --message-bar-text-color-warning: var(--text-color);
     --message-bar-text-container-gap: var(--space-xsmall) var(--space-small);
     --message-bar-text-container-padding-block: calc((var(--message-bar-container-min-height) - var(--message-bar-icon-size)) / 2);
     --message-bar-text-content-gap: var(--space-xsmall) var(--space-small);

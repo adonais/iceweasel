@@ -4,8 +4,8 @@
 
 import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
-import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
+import { MigratorBase } from "moz-src:///browser/components/migration/MigratorBase.sys.mjs";
 
 const lazy = {};
 

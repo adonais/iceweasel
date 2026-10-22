@@ -60,7 +60,7 @@ class MOZ_CAPABILITY("reentrant monitor") ReentrantMonitor
     NS_ASSERTION(mReentrantMonitor,
                  "improperly constructed ReentrantMonitor or double free");
     PR_DestroyMonitor(mReentrantMonitor);
-    mReentrantMonitor = 0;
+    mReentrantMonitor = nullptr;
     MOZ_COUNT_DTOR(ReentrantMonitor);
   }
 

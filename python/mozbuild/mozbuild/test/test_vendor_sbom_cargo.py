@@ -2,10 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import os
+import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
+from unittest import mock
 
 from mozunit import main
 
@@ -14,6 +18,7 @@ from mozbuild.vendor.sbom_cargo import (
     collect_dependency_kinds,
     crate_records,
     dependency_kinds,
+    is_tooling,
 )
 
 LOCK = textwrap.dedent(
@@ -130,6 +135,18 @@ class TestCrateRecords(unittest.TestCase):
         self.assertEqual(record["website"], "https://serde.rs")
         self.assertEqual(record["vcs"], "https://github.com/serde-rs/serde")
 
+    def test_legacy_slash_license_becomes_an_spdx_expression(self):
+        manifest = os.path.join(
+            self.topsrcdir, "third_party", "rust", "serde", "Cargo.toml"
+        )
+        with open(manifest, "w") as legacy:
+            legacy.write(CARGO_TOML.replace("MIT OR Apache-2.0", "MIT / Apache-2.0"))
+
+        records, _ = self.records()
+        self.assertEqual(
+            records["third_party/rust/serde"]["licenses"], ["MIT OR Apache-2.0"]
+        )
+
     def test_dependencies_become_edges(self):
         _, edges = self.records()
         self.assertEqual(edges["third_party/rust/serde"], ["cargo:log@0.4.20"])
@@ -151,6 +168,14 @@ class TestCrateRecords(unittest.TestCase):
         self.assertEqual(by_ref["third_party/rust/serde"]["kinds"], ["normal"])
         # Nothing to say about a crate cargo metadata did not report.
         self.assertEqual(by_ref["cargo:log@0.4.20"]["kinds"], [])
+
+    def test_is_tooling(self):
+        self.assertTrue(is_tooling({"kinds": ["dev"]}))
+        self.assertTrue(is_tooling({"kinds": ["dev", "tooling"]}))
+        self.assertFalse(is_tooling({"kinds": ["dev", "normal"]}))
+        self.assertFalse(is_tooling({"kinds": ["build", "tooling"]}))
+        # Without cargo metadata nothing is known to be tooling.
+        self.assertFalse(is_tooling({"kinds": []}))
 
     def test_unreadable_vendored_manifest_is_reported(self):
         manifest = os.path.join(
@@ -191,6 +216,56 @@ class TestCrateRecords(unittest.TestCase):
         self.assertEqual(
             collect_dependency_kinds(self.topsrcdir, "/nonexistent/objdir"), {}
         )
+
+    def test_cargo_metadata_utf8(self):
+        topobjdir = os.path.join(self.topsrcdir, "obj")
+        os.makedirs(os.path.join(topobjdir, ".cargo"))
+        metadata = {
+            "workspace_members": ["gkrust@0.1.0"],
+            "packages": [
+                package("gkrust", "0.1.0", source=None),
+                {**package("serde", "1.0.200"), "description": "с"},
+            ],
+            "resolve": {
+                "nodes": [
+                    node("gkrust", "0.1.0", [("serde", "1.0.200", None)]),
+                    node("serde", "1.0.200", []),
+                ]
+            },
+        }
+        output = json.dumps(metadata, ensure_ascii=False).encode("utf-8")
+        with open(
+            os.path.join(self.topsrcdir, "metadata"), "w", encoding="utf-8"
+        ) as fh:
+            fh.write(f"import sys\nsys.stdout.buffer.write({output!r})\n")
+        self.assertEqual(
+            collect_dependency_kinds(self.topsrcdir, topobjdir, sys.executable),
+            {("serde", "1.0.200"): ["normal"]},
+        )
+
+    def test_rustc_is_passed_to_cargo(self):
+        # Resolving the graph makes cargo run `rustc -vV`, which it looks for
+        # on PATH; the Linux build tasks do not have it there, so the RUSTC
+        # subst has to reach the subprocess or `cargo metadata` exits 101.
+        cargo_home = os.path.join(self.topsrcdir, ".cargo")
+        os.makedirs(cargo_home, exist_ok=True)
+        empty = {
+            "workspace_root": self.topsrcdir,
+            "workspace_members": [],
+            "packages": [],
+            "resolve": {"nodes": []},
+        }
+        completed = subprocess.CompletedProcess(
+            [], 0, stdout=json.dumps(empty), stderr=""
+        )
+        with mock.patch("subprocess.run", return_value=completed) as run:
+            collect_dependency_kinds(
+                self.topsrcdir,
+                self.topsrcdir,
+                "/path/to/cargo",
+                rustc="/path/to/rustc",
+            )
+        self.assertEqual(run.call_args.kwargs["env"]["RUSTC"], "/path/to/rustc")
 
     def test_missing_cargo_lock_is_not_an_error(self):
         os.remove(os.path.join(self.topsrcdir, "Cargo.lock"))
@@ -267,6 +342,101 @@ class TestDependencyKinds(unittest.TestCase):
 
     def test_workspace_members_are_not_reported(self):
         self.assertNotIn(("gkrust", "0.1.0"), dependency_kinds(self.metadata()))
+
+
+class TestToolingMembers(unittest.TestCase):
+    """A crate only a test server or a code generator builds does not ship."""
+
+    def member(self, name, directory):
+        return dict(
+            package(name, "0.1.0", source=None),
+            manifest_path=f"/src/{directory}/Cargo.toml",
+        )
+
+    def metadata(self):
+        return {
+            "workspace_root": "/src",
+            "workspace_members": ["gkrust@0.1.0", "server@0.1.0", "shared@0.1.0"],
+            "packages": [
+                self.member("gkrust", "toolkit/library/rust"),
+                self.member("server", "netwerk/test/server"),
+                self.member("shared", "netwerk/shared"),
+                package("serde", "1.0.200"),
+                package("hyper", "1.0.0"),
+                package("tokio", "1.0.0"),
+            ],
+            "resolve": {
+                "nodes": [
+                    node("gkrust", "0.1.0", [("shared", "0.1.0", None)]),
+                    node(
+                        "server",
+                        "0.1.0",
+                        [("shared", "0.1.0", None), ("hyper", "1.0.0", None)],
+                    ),
+                    node("shared", "0.1.0", [("serde", "1.0.200", None)]),
+                    node("serde", "1.0.200", []),
+                    node("hyper", "1.0.0", [("tokio", "1.0.0", None)]),
+                    node("tokio", "1.0.0", []),
+                ]
+            },
+        }
+
+    def test_tooling_members(self):
+        kinds = dependency_kinds(
+            self.metadata(), tooling_members=("netwerk/test/server",)
+        )
+        self.assertEqual(kinds[("hyper", "1.0.0")], ["tooling"])
+        self.assertEqual(kinds[("tokio", "1.0.0")], ["tooling"])
+        # A member the product also builds stays shipped, whoever else uses it.
+        self.assertEqual(kinds[("serde", "1.0.200")], ["normal", "tooling"])
+
+    def test_a_member_only_tooling_builds_is_tooling(self):
+        metadata = self.metadata()
+        metadata["workspace_members"].append("helper@0.1.0")
+        metadata["packages"] += [
+            self.member("helper", "testing/helper"),
+            package("warp", "0.3.0"),
+        ]
+        nodes = metadata["resolve"]["nodes"]
+        nodes[1]["deps"].append({"pkg": "helper@0.1.0", "dep_kinds": [{"kind": None}]})
+        nodes += [
+            node("helper", "0.1.0", [("warp", "0.3.0", None)]),
+            node("warp", "0.3.0", []),
+        ]
+        kinds = dependency_kinds(metadata, tooling_members=("netwerk/test/server",))
+        self.assertEqual(kinds[("warp", "0.3.0")], ["tooling"])
+
+    def test_a_node_no_package_describes_is_left_out(self):
+        # cargo metadata resolves a node the package list does not cover: it
+        # has neither a directory nor a name to report, and dropping it must
+        # not take the rest of the graph with it.
+        metadata = self.metadata()
+        metadata["resolve"]["nodes"].append(
+            node("ghost", "0.1.0", [("serde", "1.0.200", None)])
+        )
+        metadata["resolve"]["nodes"][0]["deps"].append({
+            "pkg": "ghost@0.1.0",
+            "dep_kinds": [{"kind": None}],
+        })
+        kinds = dependency_kinds(metadata, tooling_members=("netwerk/test/server",))
+        self.assertNotIn(("ghost", "0.1.0"), kinds)
+        self.assertEqual(kinds[("serde", "1.0.200")], ["normal", "tooling"])
+
+    def test_an_unlisted_member_counts_as_shipped(self):
+        kinds = dependency_kinds(self.metadata(), tooling_members=())
+        self.assertEqual(kinds[("hyper", "1.0.0")], ["normal"])
+
+    def test_stale_tooling_member_is_reported(self):
+        messages = []
+        dependency_kinds(
+            self.metadata(),
+            tooling_members=("netwerk/test/server", "netwerk/test/moved"),
+            report=messages.append,
+        )
+        self.assertEqual(
+            messages,
+            ["TOOLING_MEMBERS names netwerk/test/moved, which is no workspace member"],
+        )
 
 
 if __name__ == "__main__":

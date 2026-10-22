@@ -89,6 +89,9 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  *   Whether the tab closed along with the other selected tabs.
  * @property {TabGroupId} [closedInTabGroupId]
  *   Tab group whose closing closed this tab.
+ * @property {boolean} [removeAfterRestore]
+ *   Whether the tab was open at the end of the last session, so restoring that
+ *   session reopens it and drops it from the closed tabs.
  * @property {object} [permanentKey]
  *   Permanent key of the tab's browser, dropped once the browser's final state
  *   update has arrived.
@@ -115,7 +118,7 @@ const lazy = XPCOMUtils.declareLazy({
  */
 class _TabState {
   /**
-   * Processes a data update sent by the content script.
+   * Processes a data update collected for a browser.
    */
   update(permanentKey, { data }) {
     lazy.TabStateCache.update(permanentKey, data);

@@ -3542,8 +3542,7 @@ bool WarpBuilder::build_TableSwitch(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_Rest(BytecodeLocation loc) {
-  auto* snapshot = getOpSnapshot<WarpRest>(loc);
-  Shape* shape = snapshot ? snapshot->shape() : nullptr;
+  Shape* shape = getOpSnapshot<WarpRest>(loc)->shape();
 
   // NOTE: Keep this code in sync with |ArgumentsReplacer|.
 
@@ -3558,7 +3557,7 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
 
     // Allocate an array of the correct size.
     MInstruction* newArray;
-    if (shape && gc::CanUseFixedElementsForArray(numRest)) {
+    if (gc::CanUseFixedElementsForArray(numRest)) {
       auto* shapeConstant = MConstant::NewShape(alloc(), shape);
       current->add(shapeConstant);
       newArray = MNewArrayObject::New(alloc(), shapeConstant, numRest, heap);

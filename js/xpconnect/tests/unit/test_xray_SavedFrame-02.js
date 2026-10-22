@@ -1,7 +1,7 @@
 // Test calling SavedFrame getters across wrappers from privileged and
 // un-privileged globals.
 
-const {addDebuggerToGlobal} = ChromeUtils.importESModule("resource://gre/modules/jsdebugger.sys.mjs");
+const {addDebuggerToGlobal} = ChromeUtils.importESModule("moz-src:///devtools/platform/jsdebugger.sys.mjs");
 addDebuggerToGlobal(globalThis);
 
 const lowP = Services.scriptSecurityManager.createNullPrincipal({});

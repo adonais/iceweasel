@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
-#include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -114,10 +113,6 @@ uint32_t PackFourCC(char a, char b, char c, char d) {
   return packed_value;
 }
 
-std::string ReadFourCC(uint32_t x) {
-  return std::string(reinterpret_cast<char*>(&x), 4);
-}
-
 uint16_t MapWavFormatToHeaderField(WavFormat format) {
   switch (format) {
     case WavFormat::kWavFormatPcm:
@@ -163,13 +158,12 @@ uint16_t BlockAlign(size_t num_channels, size_t bytes_per_sample) {
 // reached.
 bool FindWaveChunk(ChunkHeader* chunk_header,
                    WavHeaderReader* readable,
-                   const std::string sought_chunk_id) {
-  RTC_DCHECK_EQ(sought_chunk_id.size(), 4);
+                   uint32_t sought_chunk_id) {
   while (true) {
     if (readable->Read(chunk_header, sizeof(*chunk_header)) !=
         sizeof(*chunk_header))
       return false;  // EOF.
-    if (ReadFourCC(chunk_header->ID) == sought_chunk_id)
+    if (chunk_header->ID == sought_chunk_id)
       return true;  // Sought chunk found.
     // Ignore current chunk by skipping its payload.
     if (!readable->SeekForward(chunk_header->Size))
@@ -380,16 +374,17 @@ bool ReadWavHeader(WavHeaderReader* readable,
   // Read RIFF chunk.
   if (readable->Read(&header.riff, sizeof(header.riff)) != sizeof(header.riff))
     return false;
-  if (ReadFourCC(header.riff.header.ID) != "RIFF")
+  if (header.riff.header.ID != PackFourCC('R', 'I', 'F', 'F'))
     return false;
-  if (ReadFourCC(header.riff.Format) != "WAVE")
+  if (header.riff.Format != PackFourCC('W', 'A', 'V', 'E'))
     return false;
 
   // Find "fmt " and "data" chunks. While the official Wave file specification
   // does not put requirements on the chunks order, it is uncommon to find the
   // "data" chunk before the "fmt " one. The code below fails if this is not the
   // case.
-  if (!FindWaveChunk(&header.fmt.header, readable, "fmt ")) {
+  if (!FindWaveChunk(&header.fmt.header, readable,
+                     PackFourCC('f', 'm', 't', ' '))) {
     RTC_LOG(LS_ERROR) << "Cannot find 'fmt ' chunk.";
     return false;
   }
@@ -397,7 +392,8 @@ bool ReadWavHeader(WavHeaderReader* readable,
     RTC_LOG(LS_ERROR) << "Cannot read 'fmt ' chunk.";
     return false;
   }
-  if (!FindWaveChunk(&header.data.header, readable, "data")) {
+  if (!FindWaveChunk(&header.data.header, readable,
+                     PackFourCC('d', 'a', 't', 'a'))) {
     RTC_LOG(LS_ERROR) << "Cannot find 'data' chunk.";
     return false;
   }

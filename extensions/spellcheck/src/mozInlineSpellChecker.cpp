@@ -338,6 +338,7 @@ nsresult mozInlineSpellStatus::FinishInitOnEvent(
     // Set anchor range to caret position - we do this now instead of when
     // creating the status in case the web app moved the selection in the
     // meantime (especially likely for EditContext).
+    mSetAnchorToCaret = SetAnchorToCaret::No;
     MOZ_ASSERT(!mAnchorRange);
     if (Document* doc = GetDocument()) {
       Selection* selection = doc->GetSelection(IgnoreErrors());

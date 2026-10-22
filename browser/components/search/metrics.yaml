@@ -316,6 +316,7 @@ serp:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2061005
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069142
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2074916
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1813162
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1824543
@@ -405,6 +406,25 @@ serp:
           we weren't able to record the value before the impression was
           recorded.
         type: boolean
+      prescan:
+        description: |
+          The outcome of the prescan, which checks the page for the presence
+          of ads before the page is categorized into components. Possible
+          values are:
+          `found` (at least one ad was found in the prescan),
+          `none_found` (no ads were found in the prescan),
+          `not_run` (the prescan never ran, e.g. the user navigated away
+          before the page finished loading).
+        type: string
+      scan:
+        description: |
+          The outcome of the scan that categorizes the components on the page.
+          Possible values are:
+          `complete` (the categorization completed normally),
+          `error` (an error was encountered during categorization),
+          `not_run` (the categorization never ran, potentially because the
+          user navigated away before the page finished loading).
+        type: string
 
   engagement:
     type: event
@@ -472,6 +492,7 @@ serp:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1816729
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1849371
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1909979
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2074916
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1816728
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1849371
@@ -494,6 +515,7 @@ serp:
           `ad_sidebar`,
           `ad_sitelink`,
           `ad_subframe`,
+          `ad_uncategorized`,
           `cookie_banner`,
           `refined_search_buttons`,
           `shopping_tab`.
@@ -502,7 +524,11 @@ serp:
           and stopped being reported in telemetry with Firefox 131 as the
           version added the ability to categorize links but not report them in
           telemetry. `ad_subframe` is used for providers where ads are served
-          in an iframe rather than as inline links.
+          in an iframe rather than as inline links. `ad_uncategorized` is
+          recorded when ads were found in the prescan but they were never
+          categorized into an ad component, because the scan never ran or
+          ended in an error. It does not report `ads_loaded`, `ads_visible`
+          or `ads_hidden`.
         type: string
       ads_loaded:
         description: |

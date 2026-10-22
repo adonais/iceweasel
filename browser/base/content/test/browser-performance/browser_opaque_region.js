@@ -8,8 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
 
-function get_content_area_corner_radius() {
-  let style = getComputedStyle(gBrowser.getBrowserContainer());
+function get_content_area_corner_radius(style) {
   return Math.max(
     ...[
       style.borderTopLeftRadius,
@@ -27,13 +26,15 @@ async function assert_opaque_region() {
   let contentRect = document
     .getElementById("tabbrowser-tabbox")
     .getBoundingClientRect();
+  let style = getComputedStyle(gBrowser.getBrowserContainer());
+  // The content area's background doesn't extend under its border.
   // Add 1 to the corner radius to account for device-pixel snapping.
-  let inset = get_content_area_corner_radius() + 1;
+  let inset = get_content_area_corner_radius(style) + 1;
   let expectedRect = {
-    left: contentRect.left + inset,
-    top: contentRect.top + inset,
-    right: contentRect.right - inset,
-    bottom: contentRect.bottom - inset,
+    left: contentRect.left + inset + parseFloat(style.borderLeftWidth),
+    top: contentRect.top + inset + parseFloat(style.borderTopWidth),
+    right: contentRect.right - inset - parseFloat(style.borderRightWidth),
+    bottom: contentRect.bottom - inset - parseFloat(style.borderBottomWidth),
   };
   let opaqueRegion = window.windowUtils.getWidgetOpaqueRegion();
 

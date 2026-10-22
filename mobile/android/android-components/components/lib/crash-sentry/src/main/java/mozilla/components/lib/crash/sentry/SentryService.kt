@@ -133,6 +133,9 @@ class SentryService(
                applied, and we can fine tune them here and be intentional about our desired configuration.
 
                https://javadoc.io/doc/io.sentry/sentry-android-core/latest/io/sentry/android/core/SentryAndroidOptions.html
+
+               See also: SentryFeatureGatesTest.kt and lib/crash-sentry/src/main/AndroidManifest.xml, which should be
+               kept in sync with these options.
             */
 
             options.isEnabled = true
@@ -142,11 +145,12 @@ class SentryService(
             // We disable automatic data capture and upload mechanisms in sentry so that lib-crash and it's callers
             // can ensure any data collection and user consent checks are done by the application. Events should only
             // be sent when we explicitly ask lib-crash to do so.
-            options.setEnableUncaughtExceptionHandler(false)
             options.isAnrEnabled = false
-            options.isEnableNdk = false
-            options.isTombstoneEnabled = false
             options.isEnableAutoSessionTracking = false
+            options.isEnableNdk = false
+            options.isMemoryLimiterEnabled = false
+            options.isTombstoneEnabled = false
+            options.setEnableUncaughtExceptionHandler(false)
 
             // Metadata enrichment for our JVM crash events
             options.isCollectAdditionalContext = true

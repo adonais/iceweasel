@@ -16,7 +16,7 @@ import {
   SettingElement,
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
-import MozInputFolder from "chrome://global/content/elements/moz-input-folder.mjs";
+import { MozInputFolder } from "chrome://global/content/elements/moz-input-folder.mjs";
 
 /** @import { LitElement, Ref, TemplateResult } from "chrome://global/content/vendor/lit.all.mjs" */
 /** @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs" */

@@ -586,6 +586,14 @@ class RemoteArgumentsParser(ReftestArgumentsParser):
             help="Skip the installation of the APK.",
         )
 
+        self.add_argument(
+            "--enable-isolated-process",
+            action="store_true",
+            dest="isolated_process",
+            default=False,
+            help="Enable the content service isolated process.",
+        )
+
     def validate_remote(self, options):
         DEFAULT_HTTP_PORT = 8888
         DEFAULT_SSL_PORT = 4443

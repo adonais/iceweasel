@@ -21,6 +21,8 @@ JSObject* JSWindowActorParent::WrapObject(JSContext* aCx,
                                           JS::Handle<JSObject*> aGivenProto) {
   return JSWindowActorParent_Binding::Wrap(aCx, this, aGivenProto);
 }
+JSWindowActorParent::JSWindowActorParent(nsISupports* aGlobal)
+    : JSActor(aGlobal) {}
 
 WindowGlobalParent* JSWindowActorParent::GetManager() const { return mManager; }
 

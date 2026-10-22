@@ -132,7 +132,6 @@ class TRRService : public TRRServiceBase,
 
   void RebuildSuffixList(nsTArray<nsCString>&& aSuffixList);
 
-  nsresult DispatchTRRRequestInternal(TRR* aTrrRequest, bool aWithLock);
   already_AddRefed<nsIThread> TRRThread_locked();
   already_AddRefed<nsIEventTarget> MainThreadOrTRRTarget(bool aWithLock = true);
 

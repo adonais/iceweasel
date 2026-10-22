@@ -15,8 +15,19 @@ internal class ChunkAudio(private val cache: AudioFileCache) {
 
     private val files = mutableMapOf<Int, File>()
 
-    /** The audio for [chunkIndex], or `null` when it has not been synthesized or has since been deleted. */
-    fun fileFor(chunkIndex: Int): File? = files[chunkIndex]
+    /**
+     * The audio for [chunkIndex], or `null` when it has not been synthesized, has been thrown away, or has been
+     * reclaimed by the system.
+     */
+    suspend fun fileFor(chunkIndex: Int): File? {
+        val file = files[chunkIndex] ?: return null
+        if (cache.exists(file)) return file
+
+        // Remove the reference so that we ensure the file still exists next time we want it
+        files.remove(chunkIndex)
+
+        return null
+    }
 
     /**
      * Records that [file] holds the audio for [chunkIndex].
@@ -26,6 +37,10 @@ internal class ChunkAudio(private val cache: AudioFileCache) {
      */
     suspend fun add(chunkIndex: Int, file: File) {
         files.put(chunkIndex, file)?.let { if (it != file) cache.delete(it) }
+    }
+
+    suspend fun discard(chunkIndex: Int) {
+        files.remove(chunkIndex)?.let { cache.delete(it) }
     }
 
     /**

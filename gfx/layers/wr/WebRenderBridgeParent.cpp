@@ -1303,7 +1303,7 @@ void WebRenderBridgeParent::SetAPZSampleTime() {
 
 bool WebRenderBridgeParent::SetDisplayList(
     const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
-    ipc::ByteBuf&& aSpatialTreeDL,
+    ipc::ByteBuf&& aSpatialTreeDL, ipc::ByteBuf&& aInternerDelta,
     const wr::BuiltDisplayListDescriptor& aDLDesc,
     const nsTArray<OpUpdateResource>& aResourceUpdates,
     const nsTArray<RefCountedShmem>& aSmallShmems,
@@ -1315,6 +1315,7 @@ bool WebRenderBridgeParent::SetDisplayList(
 
   wr::Vec<uint8_t> dlItems(std::move(aDLItems));
   wr::Vec<uint8_t> dlSpatialTreeData(std::move(aSpatialTreeDL));
+  wr::Vec<uint8_t> dlInternerDelta(std::move(aInternerDelta));
 
   if (IsRootWebRenderBridgeParent()) {
     LayoutDeviceIntSize widgetSize = mWidget->GetClientSize();
@@ -1329,7 +1330,7 @@ bool WebRenderBridgeParent::SetDisplayList(
   }
 
   aTxn.SetDisplayList(aWrEpoch, mLateInit->mIdNamespace, pipelineId, aDLDesc,
-                      dlItems, dlSpatialTreeData);
+                      dlItems, dlSpatialTreeData, dlInternerDelta);
 
   if (aRenderOffscreen) {
     aTxn.RenderOffscreen(pipelineId);
@@ -1430,10 +1431,12 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
   success =
       ProcessWebRenderParentCommands(aDisplayList.mCommands, txn) && success;
 
-  if (aDisplayList.mDLItems && aDisplayList.mDLSpatialTree) {
+  if (aDisplayList.mDLItems && aDisplayList.mDLSpatialTree &&
+      aDisplayList.mDLInternerDelta) {
     success = SetDisplayList(
                   aDisplayList.mRect, std::move(aDisplayList.mDLItems.ref()),
                   std::move(aDisplayList.mDLSpatialTree.ref()),
+                  std::move(aDisplayList.mDLInternerDelta.ref()),
                   aDisplayList.mDLDesc, aDisplayList.mResourceUpdates,
                   aDisplayList.mSmallShmems, aDisplayList.mLargeShmems,
                   aTxnStartTime, txn, aWrEpoch, aVsyncId, aRenderOffscreen) &&

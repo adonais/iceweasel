@@ -52,7 +52,11 @@
 #include "common_video/test/utilities.h"
 #include "media/engine/fake_webrtc_call.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/nack_requester.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
@@ -113,6 +117,7 @@ constexpr uint32_t kFirstRtpTimestamp = 90000;
 constexpr uint8_t kH264PayloadType = 99;
 constexpr uint8_t kH265PayloadType = 100;
 constexpr uint8_t kAv1PayloadType = 101;
+constexpr uint8_t kVp9PayloadType = 102;
 constexpr uint32_t kRemoteSsrc = 1111;
 
 class FakeVideoRenderer : public VideoSinkInterface<VideoFrame> {
@@ -276,10 +281,19 @@ class VideoReceiveStream2Test : public ::testing::TestWithParam<bool> {
       video_receive_stream_ = nullptr;
     }
     timing_ = new VCMTiming(env_, TimeDelta::Millis(config_.render_delay_ms));
+    VideoReceiveStreamInterface::Config config = config_.Copy();
+    if (config_.on_frame_delivered_callback != nullptr) {
+      config.on_frame_delivered_callback = [this](const RtpPacketInfos& infos,
+                                                  Timestamp timestamp) {
+        if (config_.on_frame_delivered_callback != nullptr) {
+          config_.on_frame_delivered_callback(infos, timestamp);
+        }
+      };
+    }
     video_receive_stream_ = std::make_unique<internal::VideoReceiveStream2>(
-        env_, &fake_call_, kDefaultNumCpuCores, &packet_router_, config_.Copy(),
-        &call_stats_, absl::WrapUnique(timing_), &nack_periodic_processor_,
-        UseMetronome() ? &decode_sync_ : nullptr);
+        env_, &fake_call_, kDefaultNumCpuCores, &packet_router_,
+        std::move(config), &call_stats_, absl::WrapUnique(timing_),
+        &nack_periodic_processor_, UseMetronome() ? &decode_sync_ : nullptr);
     video_receive_stream_->RegisterWithTransport(
         &rtp_stream_receiver_controller_);
     if (state)
@@ -327,6 +341,126 @@ TEST_P(VideoReceiveStream2Test, CreateFrameFromH264FmtpSpropAndIdr) {
   EXPECT_CALL(mock_decoder_, Release());
 
   time_controller_.AdvanceTime(TimeDelta::Zero());
+}
+
+// FrameBuffer orders frames by unwrapped Picture ID, so a later keyframe with
+// a smaller Picture ID is decoded before the earlier, higher-id one. By the
+// time the delayed frame is decoded, RTP sequence numbers have advanced by
+// more than half of the 16-bit range, and its stored uint16 sequence number
+// re-unwraps into the wrong epoch. Cleanup must not move past the newest
+// received packet, or subsequent frames are dropped.
+TEST_P(VideoReceiveStream2Test,
+       DelayedVp9FrameDecodedDoesNotBlockSwitchedStream) {
+  VideoReceiveStreamInterface::Decoder vp9_decoder;
+  vp9_decoder.payload_type = kVp9PayloadType;
+  vp9_decoder.video_format = SdpVideoFormat("VP9");
+  config_.decoders.push_back(vp9_decoder);
+  RecreateReceiveStream();
+
+  std::vector<uint32_t> decoded_timestamps;
+  EXPECT_CALL(mock_decoder_, Decode(_, _))
+      .WillRepeatedly([&](const EncodedImage& input, int64_t render_time_ms) {
+        decoded_timestamps.push_back(input.RtpTimestamp());
+        return fake_decoder_.Decode(input, render_time_ms);
+      });
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, int picture_id,
+                    bool keyframe) {
+    const uint8_t payload[] = {1, 2, 3, 4};
+    RtpPacketizer::PayloadSizeLimits limits;
+    limits.max_payload_len = 1200;
+
+    RTPVideoHeaderVP9 vp9_header;
+    vp9_header.InitRTPVideoHeaderVP9();
+    vp9_header.flexible_mode = true;
+    vp9_header.picture_id = picture_id;
+    vp9_header.temporal_idx = 0;
+    vp9_header.spatial_idx = 0;
+    vp9_header.inter_pic_predicted = !keyframe;
+    vp9_header.num_ref_pics = keyframe ? 0 : 1;
+    if (!keyframe) {
+      vp9_header.pid_diff[0] = 1;
+    }
+
+    RtpPacketizerVp9 packetizer(payload, limits, vp9_header);
+    ASSERT_THAT(packetizer.NumPackets(), Eq(1u));
+    RtpPacketToSend packet(nullptr);
+    packet.SetPayloadType(kVp9PayloadType);
+    packet.SetSequenceNumber(seq);
+    packet.SetTimestamp(rtp_timestamp);
+    packet.SetSsrc(kRemoteSsrc);
+    ASSERT_TRUE(packetizer.NextPacket(&packet));
+
+    RtpPacketReceived received_packet;
+    ASSERT_TRUE(received_packet.Parse(packet.data(), packet.size()));
+    rtp_stream_receiver_controller_.OnRtpPacket(received_packet);
+  };
+
+  auto inject_empty_packet = [&](uint16_t seq, uint32_t rtp_timestamp) {
+    RtpPacketReceived received_packet;
+    received_packet.SetPayloadType(kVp9PayloadType);
+    received_packet.SetSequenceNumber(seq);
+    received_packet.SetTimestamp(rtp_timestamp);
+    received_packet.SetSsrc(kRemoteSsrc);
+    rtp_stream_receiver_controller_.OnRtpPacket(received_packet);
+  };
+
+  auto advance_decode_time = [&] {
+    for (int i = 0; i < 40; ++i) {
+      time_controller_.AdvanceTime(TimeDelta::Millis(30));
+    }
+  };
+
+  constexpr uint32_t kOldQ2Timestamp = 740'278'071;
+  constexpr uint32_t kQ3KeyTimestamp = 740'285'921;
+  video_receive_stream_->Start();
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+
+  // Move past the initial keyframe-required state. Initial keyframes are
+  // released immediately instead of going through normal decode scheduling.
+  inject(20'351, kOldQ2Timestamp - 3'000, 99, /*keyframe=*/true);
+  time_controller_.AdvanceTime(TimeDelta::Millis(50));
+  ASSERT_THAT(decoded_timestamps, ElementsAre(kOldQ2Timestamp - 3'000));
+  decoded_timestamps.clear();
+  ASSERT_TRUE(
+      video_receive_stream_->SetMinimumPlayoutDelay(TimeDelta::Seconds(1)));
+
+  // Q2's last keyframe has a higher picture id than the independently encoded
+  // Q3 stream. Feed all frames before advancing simulated time so FrameBuffer
+  // can order the complete frames by picture id before releasing them.
+  inject(20'352, kOldQ2Timestamp, 13'600, /*keyframe=*/true);
+  inject(20'353, kQ3KeyTimestamp, 100, /*keyframe=*/true);
+  inject(20'354, kQ3KeyTimestamp + 3'000, 101, /*keyframe=*/false);
+  inject(20'355, kQ3KeyTimestamp + 6'000, 102, /*keyframe=*/false);
+  inject(20'356, kQ3KeyTimestamp + 9'000, 103, /*keyframe=*/false);
+
+  // Compress the intervening traffic while advancing the sequence unwrapper
+  // through only unambiguous forward steps.
+  inject_empty_packet(40'000, kQ3KeyTimestamp + 12'000);
+  inject_empty_packet(60'000, kQ3KeyTimestamp + 15'000);
+  inject_empty_packet(61'934, kQ3KeyTimestamp + 18'000);
+
+  advance_decode_time();
+  // The Q3 keyframe is decoded first. The timing layer then fast-forwards the
+  // queued Q3 delta frames, making the old, higher-id Q2 keyframe the next
+  // frame passed to the decoder.
+  EXPECT_THAT(decoded_timestamps,
+              ElementsAre(kQ3KeyTimestamp, kOldQ2Timestamp));
+
+  // The delayed Q2 FrameDecoded callback must not move PacketBuffer's clear
+  // boundary past the current RTP sequence epoch.
+  inject(61'935, kQ3KeyTimestamp + 21'000, 104, /*keyframe=*/true);
+  advance_decode_time();
+  EXPECT_THAT(decoded_timestamps, ElementsAre(kQ3KeyTimestamp, kOldQ2Timestamp,
+                                              kQ3KeyTimestamp + 21'000));
+
+  // Continue past the sequence-number epoch and the delayed frame's picture id
+  // to verify that neither cleanup boundary was advanced incorrectly.
+  inject(20'357, kQ3KeyTimestamp + 24'000, 13'601, /*keyframe=*/true);
+  advance_decode_time();
+  EXPECT_THAT(decoded_timestamps,
+              ElementsAre(kQ3KeyTimestamp, kOldQ2Timestamp,
+                          kQ3KeyTimestamp + 21'000, kQ3KeyTimestamp + 24'000));
 }
 
 TEST_P(VideoReceiveStream2Test, PlayoutDelay) {
@@ -906,10 +1040,17 @@ TEST_P(VideoReceiveStream2Test, PassesPacketInfos) {
               RenderedFrameWith(PacketInfos(ElementsAreArray(packet_infos))));
 }
 
-TEST_P(VideoReceiveStream2Test, RenderedFrameUpdatesGetSources) {
+TEST_P(VideoReceiveStream2Test, RenderedFrameUpdatesOnFrameDeliveredCallback) {
   constexpr uint32_t kSsrc = kRemoteSsrc;
   constexpr uint32_t kCsrc = 9001;
   constexpr uint32_t kRtpTimestamp = 12345;
+
+  SourceTracker source_tracker(&env_.clock());
+  config_.on_frame_delivered_callback =
+      [&source_tracker](const RtpPacketInfos& infos, Timestamp delivery_time) {
+        source_tracker.OnFrameDelivered(infos, delivery_time);
+      };
+  RecreateReceiveStream();
 
   // Prepare one video frame with per-packet information.
   auto test_frame = test::FakeFrameBuilder()
@@ -944,7 +1085,7 @@ TEST_P(VideoReceiveStream2Test, RenderedFrameUpdatesGetSources) {
 
   // Start receive stream.
   video_receive_stream_->Start();
-  EXPECT_THAT(video_receive_stream_->GetSources(), IsEmpty());
+  EXPECT_THAT(source_tracker.GetSources(), IsEmpty());
 
   // Render one video frame.
   Timestamp timestamp_min = env_.clock().CurrentTime();
@@ -955,7 +1096,7 @@ TEST_P(VideoReceiveStream2Test, RenderedFrameUpdatesGetSources) {
   Timestamp timestamp_max = env_.clock().CurrentTime();
 
   // Verify that the per-packet information also updates `GetSources()`.
-  std::vector<RtpSource> sources = video_receive_stream_->GetSources();
+  std::vector<RtpSource> sources = source_tracker.GetSources();
   ASSERT_THAT(sources, SizeIs(2));
   {
     auto it = std::find_if(sources.begin(), sources.end(),
@@ -983,6 +1124,10 @@ TEST_P(VideoReceiveStream2Test, RenderedFrameUpdatesGetSources) {
     EXPECT_GE(it->timestamp(), timestamp_min);
     EXPECT_LE(it->timestamp(), timestamp_max);
   }
+
+  video_receive_stream_->Stop();
+  video_receive_stream_->UnregisterFromTransport();
+  video_receive_stream_.reset();
 }
 
 std::unique_ptr<test::FakeEncodedFrame> MakeFrameWithResolution(

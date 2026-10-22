@@ -21,7 +21,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a socket.
+: A pointer to a {doc}`prfiledesc` object representing a socket.
 
 `buf`
 
@@ -37,7 +37,7 @@ The function has the following parameters:
 
 `timeout`
 
-: A value of type {ref}`PRIntervalTime` specifying the time limit for
+: A value of type {doc}`printervaltime` specifying the time limit for
   completion of the receive operation.
 
 ### Returns
@@ -48,9 +48,9 @@ The function returns one of the following values:
   the parameter fd is a blocking socket, this number must always equal
   amount.
 - The value -1 indicates a failure. The reason for the failure can be
-  obtained by calling {ref}`PR_GetError`.
+  obtained by calling {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_Send` blocks until all bytes are sent, a timeout occurs, or an
+{doc}`pr_send` blocks until all bytes are sent, a timeout occurs, or an
 error occurs.

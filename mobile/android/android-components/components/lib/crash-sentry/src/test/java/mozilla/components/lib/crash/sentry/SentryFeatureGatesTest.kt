@@ -42,6 +42,7 @@ class SentryFeatureGatesTest {
         assertFalse(options.isEnableUncaughtExceptionHandler)
         assertFalse(options.isAnrEnabled)
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isMemoryLimiterEnabled)
         assertFalse(options.isTombstoneEnabled)
         assertFalse(options.isEnableAutoSessionTracking)
         assertFalse(options.logs.isEnabled)

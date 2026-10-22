@@ -55,6 +55,7 @@ class gfxAndroidPlatform final : public gfxPlatform {
 
  protected:
   void InitAcceleration() override;
+  void InitPlatformHardwareVideoConfig() override;
 
   bool AccelerateLayersByDefault() override { return true; }
 

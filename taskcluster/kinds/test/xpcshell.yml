@@ -54,6 +54,7 @@ xpcshell:
         - conditioned_profile
         - no-fission
         - msix
+        - geckoview-isolated-process
         - inc-origin-init
         - privatebrowsing
     instance-size:
@@ -75,7 +76,6 @@ xpcshell:
                     default: []
             no-fission:
                 by-test-platform:
-                    android-em.*/debug-isolated-process: []
                     android.*: built-projects
                     linux2404-64.*: ['mozilla-central']
                     default: []
@@ -83,6 +83,10 @@ xpcshell:
                 by-test-platform:
                     windows11-64-25h2(-shippable)?/opt: built-projects
                     windows11-64-25h2/debug: built-projects
+                    default: []
+            geckoview-isolated-process:
+                by-test-platform:
+                    android-em.*/debug: built-projects
                     default: []
             inc-origin-init: []
             privatebrowsing: []
@@ -136,10 +140,10 @@ xpcshell:
                 by-test-platform:
                     linux.*: 2
                     default: default
+            geckoview-isolated-process: 2
             default:
                 by-test-platform:
                     windows.*-asan.*: 3
-                    android-em.*/debug-isolated-process: 2
                     default: default
     mozharness:
         extra-options: []

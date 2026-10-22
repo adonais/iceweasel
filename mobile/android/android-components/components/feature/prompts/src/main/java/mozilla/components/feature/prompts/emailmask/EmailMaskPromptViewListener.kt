@@ -7,7 +7,6 @@ package mozilla.components.feature.prompts.emailmask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -84,16 +83,13 @@ internal class EmailMaskPromptViewListener(
 
     override fun onEmailMaskPromptClick() {
         scope.launch {
-            // Explicitly switch to the IO thread here to avoid blocking the main thread and causing UI slowdowns.
+            val selectedTabUrl = browserStore.state.selectedTab?.content?.url
             val emailMask =
-                withContext(Dispatchers.IO) {
-                    val selectedTabUrl = browserStore.state.selectedTab?.content?.url
-                    if (selectedTabUrl == null) {
-                        logger.error("Selected tab URL was null")
-                        null
-                    } else {
-                        emailMaskDelegate.onEmailMaskClick(selectedTabUrl)
-                    }
+                if (selectedTabUrl == null) {
+                    logger.error("Selected tab URL was null")
+                    null
+                } else {
+                    emailMaskDelegate.onEmailMaskClick(selectedTabUrl)
                 } ?: return@launch
 
             val emailMaskTemplateLogin =

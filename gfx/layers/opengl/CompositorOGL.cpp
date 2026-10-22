@@ -1231,7 +1231,6 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
 
       BindAndDrawGeometryWithTextureRect(
           program, aGeometry, texturedEffect->mTextureCoords, source);
-      source->AsSourceOGL()->MaybeFenceTexture();
     } break;
     case EffectTypes::YCBCR: {
       EffectYCbCr* effectYCbCr =
@@ -1265,9 +1264,6 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
       BindAndDrawGeometryWithTextureRect(program, aGeometry,
                                          effectYCbCr->mTextureCoords,
                                          sourceYCbCr->GetSubSource(Y));
-      sourceY->MaybeFenceTexture();
-      sourceCb->MaybeFenceTexture();
-      sourceCr->MaybeFenceTexture();
     } break;
     case EffectTypes::NV12: {
       EffectNV12* effectNV12 =
@@ -1300,8 +1296,6 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
       BindAndDrawGeometryWithTextureRect(program, aGeometry,
                                          effectNV12->mTextureCoords,
                                          sourceNV12->GetSubSource(Y));
-      sourceY->MaybeFenceTexture();
-      sourceCbCr->MaybeFenceTexture();
     } break;
     default:
       MOZ_ASSERT(false, "Unhandled effect type");

@@ -1,7 +1,7 @@
 # PR_GMTParameters
 
 Returns the time zone offset information that maps the specified
-{ref}`PRExplodedTime` to GMT.
+{doc}`prexplodedtime` to GMT.
 
 :::{note}
 **Note:** Since this function requires GMT as input, its primary use
@@ -36,4 +36,4 @@ normally call it directly; instead, you pass it as a parameter to
 `PR_ExplodeTime()` or `PR_NormalizeTime()`.
 
 This is a trivial function; for any input, it returns a
-{ref}`PRTimeParameters` structure with both fields set to zero.
+{doc}`prtimeparameters` structure with both fields set to zero.

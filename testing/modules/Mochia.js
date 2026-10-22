@@ -200,25 +200,33 @@
         [name]: async () => {
           _testScope.info(name);
 
-          for (const before of ctx.beforeEach) {
-            const p = before();
-            if (p?.then) {
-              await p;
+          try {
+            for (const before of ctx.beforeEach) {
+              const p = before();
+              if (p?.then) {
+                await p;
+              }
             }
-          }
 
-          {
             const p = fn();
             if (p?.then) {
               await p;
             }
-          }
+          } finally {
+            for (let i = ctx.afterEach.length - 1; i >= 0; i--) {
+              try {
+                const after = ctx.afterEach[i];
+                const p = after();
+                if (p?.then) {
+                  await p;
+                }
+              } catch (error) {
+                _testScope.ok(false, `afterEach failed for ${name}: ${error}`);
 
-          for (let i = ctx.afterEach.length - 1; i >= 0; i--) {
-            const after = ctx.afterEach[i];
-            const p = after();
-            if (p?.then) {
-              await p;
+                if (error?.stack) {
+                  _testScope.info(error.stack);
+                }
+              }
             }
           }
         },

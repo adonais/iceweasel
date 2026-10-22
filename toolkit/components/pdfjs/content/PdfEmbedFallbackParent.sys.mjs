@@ -61,6 +61,7 @@ export class PdfEmbedFallbackParent extends JSWindowActorParent {
     // The converter keeps the PDF URI as the fallback document's URI.
     fallback.browsingContext.loadURI(fallback.documentURI, {
       triggeringPrincipal: embedder.documentPrincipal,
+      triggeringRemoteType: embedder.remoteType,
       referrerInfo: lazy.E10SUtils.deserializeReferrerInfo(data?.referrerInfo),
     });
   }

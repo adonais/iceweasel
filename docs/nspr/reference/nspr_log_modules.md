@@ -9,9 +9,8 @@ enabled.
 moduleName:level[, moduleName:level]*
 ```
 
-*moduleName* is the name specified in a
-`` :ref:`PR_NewLogModule `` \<<http://www-archive.mozilla.org/projects/nspr/reference/html/prlog.html#25372>>\`\_\_
-call or one of the handy magic names listed below.
+*moduleName* is the name specified in a {doc}`prlogmoduleinfo` call or
+one of the handy magic names listed below.
 
 *level* is a numeric value between 0 and 5, with the values having the
 following meanings:
@@ -26,14 +25,12 @@ following meanings:
 ## Description
 
 Specify a `moduleName` that is associated with the `name` argument
-in a call to
-`` :ref:`PR_NewLogModule `` \<<http://www-archive.mozilla.org/projects/nspr/reference/html/prlog.html#25372>>\`\_\_
-and a non-zero `level` value to enable logging for the named
-`moduleName`.
+in a call to {doc}`prlogmoduleinfo` and a non-zero `level` value to
+enable logging for the named `moduleName`.
 
 Special log module names are provided for controlling NSPR's log service
 at execution time. These controls should be set in the
-{ref}`NSPR_LOG_MODULES` environment variable at execution time to affect
+{doc}`nspr_log_modules` environment variable at execution time to affect
 NSPR's log service for your application.
 
 - **all** The name `all` enables all log modules. To enable all log
@@ -75,7 +72,7 @@ set NSPR_LOG_FILE=/tmp/foo.log
 
 ## Logging with Try Server
 
-- For **mochitest**, edit variable {ref}`NSPR_LOG_MODULES` in
+- For **mochitest**, edit variable {doc}`nspr_log_modules` in
   `testing/mochitest/runtests.py` before pushing to try. You would be
   able to download the log file as an artifact from the Log viewer.
 - (other tests?)

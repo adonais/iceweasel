@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -69,10 +71,6 @@ support-files = [
 ["test_2_conformance2__glsl3__invalid-invariant.html"]
 
 ["test_2_conformance2__glsl3__loops-with-side-effects.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance2__glsl3__matrix-row-major-dynamic-indexing.html"]
 fail-if = [
@@ -145,10 +143,6 @@ fail-if = [
 ["test_2_conformance2__glsl3__uniform-block-layouts.html"]
 
 ["test_2_conformance2__glsl3__uniform-location-length-limits.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && debug",
-  "os == 'win' && os_version == '11.26200' && debug",
-]
 
 ["test_2_conformance2__glsl3__uniform-struct-with-non-square-matrix.html"]
 
@@ -167,8 +161,6 @@ fail-if = [
 ]
 
 ["test_2_conformance2__glsl3__vector-dynamic-indexing.html"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
+fail-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && !nightly_build", # Bug 2076727
 ]

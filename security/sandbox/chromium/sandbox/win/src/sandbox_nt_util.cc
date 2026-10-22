@@ -54,53 +54,71 @@ inline char* AlignToBoundary(void* ptr, size_t increment) {
   return reinterpret_cast<char*>(ret_ptr);
 }
 
-// Allocate a memory block somewhere within 2GiB of a specified base address.
-// This is used for the DLL hooking code to get a valid trampoline location
-// which must be within +/- 2GiB of the base. We only consider +2GiB for now.
-void* AllocateNearTo(void* source, size_t size) {
-  // 2GiB, maximum upper bound the allocation address must be within.
-  const size_t kMaxSize = 0x80000000ULL;
-  // We don't support null as a base as this would just pick an arbitrary
-  // address when passed to NtAllocateVirtualMemory.
-  if (!source)
-    return nullptr;
-  // Ignore an allocation which is larger than the maximum.
-  if (size > kMaxSize)
-    return nullptr;
+// Walks the addresses where an allocation of `size` could be made within 2GiB
+// above `source`.
+class FreeSpaceNearTo {
+  // EAT hooking code needs a trampoline within +2GiB of the base.
+  static constexpr size_t kMaxNearToDistance = 0x80000000ULL;
 
-  // Ensure base address is aligned to the allocation granularity boundary.
-  char* base = AlignToBoundary(source, 0);
-  if (!base)
-    return nullptr;
-  // Set top address to be base + 2GiB.
-  const char* top_address = base + kMaxSize;
-
-  while (base < top_address) {
-    // Avoid memset inserted by -ftrivial-auto-var-init=pattern.
-    STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
-    NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
-        NtCurrentProcess, base, MemoryBasicInformation, &mem_info,
-        sizeof(mem_info), nullptr);
-    if (!NT_SUCCESS(status))
-      break;
-
-    if ((mem_info.State == MEM_FREE) && (mem_info.RegionSize >= size)) {
-      // We've found a valid free block, try and allocate it for use.
-      // Note that we need to both commit and reserve the block for the
-      // allocation to succeed as per Windows virtual memory requirements.
-      void* ret_base = mem_info.BaseAddress;
-      status = sandbox::GetNtExports()->AllocateVirtualMemory(
-          NtCurrentProcess, &ret_base, 0, &size, MEM_COMMIT | MEM_RESERVE,
-          PAGE_READWRITE);
-      // Shouldn't fail, but if it does we'll just continue and try next block.
-      if (NT_SUCCESS(status))
-        return ret_base;
+ public:
+  FreeSpaceNearTo(void* source, size_t size) : size_(size) {
+    // Null `source` is not supported, as NtAllocateVirtualMemory would then
+    // just pick an arbitrary address.
+    if (!source || size > kMaxNearToDistance) {
+      return;
     }
 
-    // Update base past current allocation region.
-    base = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
-    if (!base)
-      break;
+    next_ = AlignToBoundary(source, 0);
+    if (next_) {
+      top_ = next_ + kMaxNearToDistance;
+    }
+  }
+
+  // Returns the lowest usable address not yet examined, so a caller whose
+  // allocation fails can simply call again. nullptr when there are none left.
+  void* Next() {
+    while (next_ && next_ < top_) {
+      // Avoid memset inserted by -ftrivial-auto-var-init=pattern.
+      STACK_UNINITIALIZED MEMORY_BASIC_INFORMATION mem_info;
+      NTSTATUS status = sandbox::GetNtExports()->QueryVirtualMemory(
+          NtCurrentProcess, next_, MemoryBasicInformation, &mem_info,
+          sizeof(mem_info), nullptr);
+      if (!NT_SUCCESS(status)) {
+        break;
+      }
+
+      // next_ is already page aligned, so it should match the base address.
+      DCHECK_NT(mem_info.BaseAddress == next_);
+      char* candidate = next_;
+
+      // Advance before returning, so that a repeat call moves on.
+      next_ = AlignToBoundary(mem_info.BaseAddress, mem_info.RegionSize);
+      if (mem_info.State == MEM_FREE && mem_info.RegionSize >= size_) {
+        return candidate;
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  char* next_ = nullptr;
+  const char* top_ = nullptr;
+  size_t size_;
+};
+
+// Allocate a memory block somewhere within 2GiB of a specified base address.
+void* AllocateNearTo(void* source, size_t size) {
+  FreeSpaceNearTo search(source, size);
+  while (void* candidate = search.Next()) {
+    // We need to both commit and reserve the block for the allocation to
+    // succeed as per Windows virtual memory requirements.
+    NTSTATUS status = sandbox::GetNtExports()->AllocateVirtualMemory(
+        NtCurrentProcess, &candidate, 0, &size, MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
+    // Shouldn't fail, but if it does we'll just continue and try next block.
+    if (NT_SUCCESS(status)) {
+      return candidate;
+    }
   }
   return nullptr;
 }
@@ -194,6 +212,15 @@ static_assert(offsetof(PARTIAL_TEB, ProcessEnvironmentBlock) ==
 }  // namespace.
 
 namespace sandbox {
+
+bool CanAllocateNearTo(void* source, size_t size) {
+#if defined(_WIN64)
+  return FreeSpaceNearTo(source, size).Next() != nullptr;
+#else
+  // Any address is near to `source` in a 32-bit address space.
+  return true;
+#endif  // defined(_WIN64).
+}
 
 // Handle for our private heap.
 void* g_heap = nullptr;

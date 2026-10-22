@@ -57,6 +57,12 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
       webrtc::TaskQueueBase::DelayPrecision aPrecision) override;
   void HandleTimeout(TimeoutID aId);
 
+  // Returns the current time (from any epoch).
+  //
+  // Note that it's NOT ALLOWED to call into this library from within this
+  // callback.
+  webrtc::Timestamp Now() override;
+
   // Called when the library needs a random number uniformly distributed between
   // `low` (inclusive) and `high` (exclusive). The random numbers used by the
   // library are not used for cryptographic purposes. There are no requirements

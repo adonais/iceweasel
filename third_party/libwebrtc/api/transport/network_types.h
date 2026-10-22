@@ -193,6 +193,12 @@ struct RTC_EXPORT PacketResult {
   // this packet as lost, but current report marks it as received.
   bool reported_recovered_for_the_first_time = false;
 
+  // Indicates if the packet receive time is ambiguous (e.g. because the packet
+  // was retransmitted without RTX and could match multiple transmissions),
+  // meaning receive_time is a best-effort estimate and should not be used for
+  // delay or RTT calculations.
+  bool ambiguous_receive_time = false;
+
   // `rtp_packet_info` is only set if the feedback is related to a RTP packet.
   std::optional<RtpPacketInfo> rtp_packet_info;
 };

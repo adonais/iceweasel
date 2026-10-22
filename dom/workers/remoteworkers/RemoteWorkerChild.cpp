@@ -367,38 +367,28 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
       new SharedWorkerInterfaceRequestor();
   info.mInterfaceRequestor->SetOuterRequestor(requestor);
 
-  Maybe<ClientInfo> clientInfo;
-  if (aData.clientInfo().isSome()) {
-    clientInfo.emplace(ClientInfo(aData.clientInfo().ref()));
-  }
+  ClientInfo clientInfo(aData.clientInfo());
+  Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
+      clientInfo.GetPolicyContainerArgs();
 
   if (mIsServiceWorker) {
-    info.mSourceInfo = clientInfo;
-  } else {
-    if (clientInfo.isSome()) {
-      Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
-          clientInfo.ref().GetPolicyContainerArgs();
-      if (policyContainerArgs.isSome() && policyContainerArgs->csp().isSome()) {
-        info.mCSP = CSPInfoToCSP(*policyContainerArgs->csp(), nullptr);
-        mozilla::Result<UniquePtr<OffThreadCSPContext>, nsresult> ctx =
-            OffThreadCSPContext::CreateFromCSP(info.mCSP);
-        if (ctx.isErr()) {
-          return ctx.unwrapErr();
-        }
-        info.mCSPContext = ctx.unwrap();
-      }
+    info.mSourceInfo = Some(clientInfo);
+  } else if (policyContainerArgs.isSome() &&
+             policyContainerArgs->csp().isSome()) {
+    info.mCSP = CSPInfoToCSP(*policyContainerArgs->csp(), nullptr);
+    mozilla::Result<UniquePtr<OffThreadCSPContext>, nsresult> ctx =
+        OffThreadCSPContext::CreateFromCSP(info.mCSP);
+    if (ctx.isErr()) {
+      return ctx.unwrapErr();
     }
+    info.mCSPContext = ctx.unwrap();
   }
 
   // Extract IP address space from clientInfo for all worker types
   // (shared and service workers) for Local Network Access checks.
-  if (clientInfo.isSome()) {
-    Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
-        clientInfo.ref().GetPolicyContainerArgs();
-    if (policyContainerArgs.isSome()) {
-      info.mIPAddressSpace =
-          static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
-    }
+  if (policyContainerArgs.isSome()) {
+    info.mIPAddressSpace =
+        static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
   }
 
   nsresult rv = info.SetPrincipalsAndCSPOnMainThread(
@@ -426,7 +416,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     rv = ChannelFromScriptURLMainThread(
         info.mLoadingPrincipal, nullptr /* parent document */, info.mLoadGroup,
         info.mResolvedScriptURI, aData.workerOptions().mType,
-        aData.workerOptions().mCredentials, clientInfo,
+        aData.workerOptions().mCredentials, Some(clientInfo),
         nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER, info.mCookieJarSettings,
         info.mReferrerInfo, getter_AddRefs(info.mChannel));
     if (NS_WARN_IF(NS_FAILED(rv))) {

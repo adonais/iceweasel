@@ -43,13 +43,18 @@
 
   @layer tokens-forced-colors {
     @media (forced-colors) {
+      --toggle-background-color-disabled: var(--button-background-color-disabled);
+      --toggle-background-color-pressed-disabled: var(--button-background-color-primary-disabled);
       --toggle-border-color: var(--border-color-interactive);
       --toggle-border-color-hover: var(--border-color-interactive-hover);
       --toggle-border-color-active: var(--border-color-interactive-active);
+      --toggle-border-color-disabled: var(--border-color-interactive-disabled);
       --toggle-dot-background-color: var(--color-accent-primary);
       --toggle-dot-background-color-hover: var(--color-accent-primary-hover);
       --toggle-dot-background-color-active: var(--color-accent-primary-active);
+      --toggle-dot-background-color-disabled: var(--button-text-color-disabled);
       --toggle-dot-background-color-on-pressed: var(--button-background-color);
+      --toggle-dot-background-color-on-pressed-disabled: var(--button-text-color-primary-disabled);
     }
   }
 

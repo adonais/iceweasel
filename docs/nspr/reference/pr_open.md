@@ -77,14 +77,14 @@ constants listed below.
 The function returns one of the following values:
 
 - If the file is successfully opened, a pointer to a dynamically
-  allocated {ref}`PRFileDesc` for the newly opened file. The
-  {ref}`PRFileDesc` should be freed by calling {ref}`PR_Close`.
+  allocated {doc}`prfiledesc` for the newly opened file. The
+  {doc}`prfiledesc` should be freed by calling {doc}`pr_close`.
 - If the file was not opened successfully, a `NULL` pointer.
 
 ## Description
 
-{ref}`PR_Open` creates a file descriptor ({ref}`PRFileDesc`) for the file with
+{doc}`pr_open` creates a file descriptor ({doc}`prfiledesc`) for the file with
 the pathname `name` and sets the file status flags of the file
 descriptor according to the value of `flags`. If a new file is created
-as a result of the {ref}`PR_Open` call, its file mode bits are set
+as a result of the {doc}`pr_open` call, its file mode bits are set
 according to the `mode` parameter.

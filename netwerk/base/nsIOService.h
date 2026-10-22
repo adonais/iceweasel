@@ -148,6 +148,9 @@ class nsIOService final : public nsIIOService,
 
   bool ShouldSkipDomainForLNA(const nsACString& aDomain);
 
+  // Safe to call from any thread.
+  bool IsLocalPortBlocked(uint16_t aPort);
+
  private:
   // These shouldn't be called directly:
   // - construct using GetInstance
@@ -234,6 +237,7 @@ class nsIOService final : public nsIIOService,
 
   RWLock mLock{"nsIOService::mLock"};
   nsTArray<int32_t> mRestrictedPortList MOZ_GUARDED_BY(mLock);
+  nsTArray<uint16_t> mBlockedLocalPorts MOZ_GUARDED_BY(mLock);
   nsTArray<nsCString> mForceExternalSchemes MOZ_GUARDED_BY(mLock);
 
   nsTArray<nsCString> mPublicAddressSpaceOverridesList MOZ_GUARDED_BY(mLock);

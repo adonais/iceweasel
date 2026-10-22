@@ -141,8 +141,8 @@ void av1_update_layer_context_change_config(AV1_COMP *const cpi,
       lp_rc->buffer_level =
           AOMMIN(lp_rc->buffer_level, lp_rc->maximum_buffer_size);
       lc->framerate = cpi->framerate / lc->framerate_factor;
-      lrc->avg_frame_bandwidth =
-          (int)round(lc->target_bandwidth / lc->framerate);
+      lrc->avg_frame_bandwidth = saturate_cast_double_to_int(
+          round(lc->target_bandwidth / lc->framerate));
       lrc->max_frame_bandwidth = rc->max_frame_bandwidth;
       lrc->rtc_external_ratectrl = rc->rtc_external_ratectrl;
       lrc->worst_quality = av1_quantizer_to_qindex(lc->max_q);
@@ -203,11 +203,12 @@ void av1_update_temporal_layer_framerate(AV1_COMP *const cpi) {
         cpi->framerate / lcprev->framerate_factor;
     const int64_t prev_layer_target_bandwidth = lcprev->layer_target_bitrate;
     if (lc->framerate > prev_layer_framerate) {
-      lc->avg_frame_size =
-          (int)round((lc->target_bandwidth - prev_layer_target_bandwidth) /
-                     (lc->framerate - prev_layer_framerate));
+      lc->avg_frame_size = saturate_cast_double_to_int(
+          round((lc->target_bandwidth - prev_layer_target_bandwidth) /
+                (lc->framerate - prev_layer_framerate)));
     } else {
-      lc->avg_frame_size = (int)round(lc->target_bandwidth / lc->framerate);
+      lc->avg_frame_size = saturate_cast_double_to_int(
+          round(lc->target_bandwidth / lc->framerate));
     }
   }
 }

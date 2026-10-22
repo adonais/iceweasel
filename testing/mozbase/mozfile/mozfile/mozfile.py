@@ -349,11 +349,20 @@ def copy_contents(srcdir, dstdir, ignore_dangling_symlinks=False):
         if errors:
             raise Exception(errors)
     else:
+
+        def ignore_dangling(dirname, names):
+            return [
+                name
+                for name in names
+                if os.path.islink(path := os.path.join(dirname, name))
+                and not os.path.exists(path)
+            ]
+
         shutil.copytree(
             srcdir,
             dstdir,
+            ignore=ignore_dangling if ignore_dangling_symlinks else None,
             dirs_exist_ok=True,
-            ignore_dangling_symlinks=ignore_dangling_symlinks,
         )
 
 

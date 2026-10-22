@@ -1,3 +1,6 @@
+# AI window shell, chat and tab tests.
+# Smart Window UI tests belong in browser_smartwindow.toml, which runs as a
+# separate browser session so neither manifest exhausts a 32-bit address space.
 [DEFAULT]
 prefs = [
   "browser.newtab.preload=false",
@@ -7,6 +10,7 @@ prefs = [
 ]
 support-files = [
   "head.js",
+  "head_aitab.js",
   "head_aiwindow_group_tabs_button.js",
   "head_smartformfill_autocomplete.js",
   "head_history_thumbnails.js",
@@ -18,6 +22,8 @@ support-files = [
   "test_ai_action_result.mjs",
   "test_ai_action_confirmation_page.html",
   "test_ai_action_confirmation.mjs",
+  "test_aitab_table_page.html",
+  "test_aitab_table.mjs",
   "test_assistant_message_footer_page.html",
   "test_applied_memories_page.html",
   "test_chat_assistant_citations_page.html",
@@ -57,7 +63,7 @@ support-files = [
   "test_context_url_injection_page.html"
 ]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan && nova", # Bug 2057552
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && nova", # Bug 2057552
 ]
 
 ["browser_actor_user_prompt.js"]
@@ -93,6 +99,10 @@ skip-if = [
 ["browser_aitab_page.js"]
 
 ["browser_aitab_store_integration.js"]
+
+["browser_aitab_table.js"]
+
+["browser_aitab_tool_ui.js"]
 
 ["browser_aiwindow_account_auth.js"]
 
@@ -195,7 +205,7 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_context_paste.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057548
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt && nova", # Bug 2057548
 ]
 
 ["browser_aiwindow_smartbar_focus.js"]
@@ -220,13 +230,15 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_suggestions.js"]
 
+["browser_aiwindow_smartbar_tab_group_mentions.js"]
+
 ["browser_aiwindow_smartbar_tab_switch.js"]
 
 ["browser_aiwindow_smartbar_tabgroups.js"]
 
 ["browser_aiwindow_smartbar_telemetry.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
 ]
 
@@ -263,167 +275,6 @@ skip-if = [
 
 ["browser_chat_conversation_memories_context.js"]
 
-["browser_memories_icon_button.js"]
-
 ["browser_open_aiwindow.js"]
 
-["browser_run_search_back_navigation.js"]
-
-["browser_security_chat.js"]
-
-["browser_security_get_open_tabs.js"]
-
-["browser_security_get_user_memories.js"]
-
-["browser_security_run_search.js"]
-
-["browser_security_search_browsing_history.js"]
-
 ["browser_sidebar_aiwindow.js"]
-
-["browser_smartformfill_form_review_editing.js"]
-
-["browser_smartformfill_form_review_filling.js"]
-
-["browser_smartformfill_form_review_generation.js"]
-
-["browser_smartformfill_initialization.js"]
-
-["browser_smartformfill_mutations.js"]
-
-["browser_smartformfill_shadow_dom.js"]
-
-["browser_smartformfill_stored_values.js"]
-
-["browser_smartformfill_tab_selector.js"]
-
-["browser_smartwindow_abort_on_tab_close.js"]
-
-["browser_smartwindow_assistant_ui_errors.js"]
-
-["browser_smartwindow_beta_badge.js"]
-
-["browser_smartwindow_bookmarks_toolbar.js"]
-
-["browser_smartwindow_chat_browser_tabbable.js"]
-
-["browser_smartwindow_chat_markdown_parser.js"]
-
-["browser_smartwindow_chip_overflow.js"]
-
-["browser_smartwindow_classic_mode_switch.js"]
-
-["browser_smartwindow_client_error_telemetry.js"]
-
-["browser_smartwindow_content.js"]
-
-["browser_smartwindow_context_url.js"]
-
-["browser_smartwindow_conversation_state.js"]
-
-["browser_smartwindow_default_cmd_n.js"]
-
-["browser_smartwindow_default_startup.js"]
-
-["browser_smartwindow_disclaimer.js"]
-
-["browser_smartwindow_duplicate_chat_tabs.js"]
-
-["browser_smartwindow_footer.js"]
-
-["browser_smartwindow_get_page_content_timeout.js"]
-
-["browser_smartwindow_history_commands.js"]
-
-["browser_smartwindow_history_thumbnails.js"]
-
-["browser_smartwindow_history_thumbnails_telemetry.js"]
-
-["browser_smartwindow_init.js"]
-
-["browser_smartwindow_jump_to_bottom.js"]
-
-["browser_smartwindow_leak.js"]
-skip-if = [
-  "debug && standalone", # Bug 2025711
-]
-
-["browser_smartwindow_manage_tabs_tool.js"]
-
-["browser_smartwindow_manage_tabs_tool_telemetry.js"]
-
-["browser_smartwindow_metrics_telemetry.js"]
-
-["browser_smartwindow_nimbus.js"]
-
-["browser_smartwindow_panel_list.js"]
-
-["browser_smartwindow_prompts.js"]
-
-["browser_smartwindow_recentchats.js"]
-
-["browser_smartwindow_request_response_telemetry.js"]
-skip-if = [
-  "os == 'win' && debug && standalone", # Bug 2028654
-]
-
-["browser_smartwindow_resume_card.js"]
-
-["browser_smartwindow_resume_section.js"]
-
-["browser_smartwindow_retry_context.js"]
-
-["browser_smartwindow_run_search.js"]
-
-["browser_smartwindow_sanitize.js"]
-
-["browser_smartwindow_shortcut.js"]
-
-["browser_smartwindow_sidebar.js"]
-skip-if = [
-  "nova", # Bug 2057925
-]
-
-["browser_smartwindow_sidebar_auto_open_pref_prompt.js"]
-
-["browser_smartwindow_smartbar_contextmenu_autofill_dismiss.js"]
-
-["browser_smartwindow_smartbar_glow.js"]
-
-["browser_smartwindow_smartbar_mentions_filter.js"]
-
-["browser_smartwindow_smartbar_model_select.js"]
-
-["browser_smartwindow_smartbar_tab_state.js"]
-
-["browser_smartwindow_smartformfill_autocomplete.js"]
-
-["browser_smartwindow_smartformfill_metadata_lifecycle.js"]
-
-["browser_smartwindow_smartformfill_telemetry_generation.js"]
-
-["browser_smartwindow_smartformfill_telemetry_metadata.js"]
-
-["browser_smartwindow_smartformfill_telemetry_outcomes.js"]
-
-["browser_smartwindow_smartformfill_telemetry_review.js"]
-
-["browser_smartwindow_smartformfill_telemetry_tab_selection.js"]
-
-["browser_smartwindow_switcher_telemetry.js"]
-
-["browser_smartwindow_tab_move.js"]
-
-["browser_smartwindow_tab_switching.js"]
-
-["browser_smartwindow_tab_switching_memories.js"]
-
-["browser_smartwindow_tab_switching_starters.js"]
-
-["browser_smartwindow_tasks_actors.js"]
-
-["browser_smartwindow_telemetry.js"]
-
-["browser_smartwindow_topsites.js"]
-
-["browser_smartwindow_uitool_telemetry.js"]

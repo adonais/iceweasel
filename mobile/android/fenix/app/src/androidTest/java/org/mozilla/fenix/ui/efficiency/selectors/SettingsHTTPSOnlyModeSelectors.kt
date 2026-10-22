@@ -19,6 +19,13 @@ object SettingsHTTPSOnlyModeSelectors : SelectorContainer {
             description = "HTTPS-Only Mode toolbar title",
         )
 
+    val HTTPS_ONLY_MODE_TITLE =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_ID,
+            value = "https_only_title",
+            description = "HTTPS-Only Mode content title",
+        )
+
     val HTTPS_MODE_OPTION_SUMMARY =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,

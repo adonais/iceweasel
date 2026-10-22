@@ -954,7 +954,6 @@ class Shims {
       message !== "getOptions" &&
       message !== "optIn" &&
       message !== "embedClicked" &&
-      message !== "smartblockEmbedReplaced" &&
       message !== "smartblockGetFluentString" &&
       message !== "checkFacebookLoginStatus" &&
       message !== "shouldShowEmbedContentInPlaceholders"
@@ -1004,8 +1003,6 @@ class Shims {
       }
     } else if (message === "embedClicked") {
       browser.trackingProtection.openProtectionsPanel(id);
-    } else if (message === "smartblockEmbedReplaced") {
-      browser.trackingProtection.incrementSmartblockEmbedShownTelemetry();
     } else if (message === "smartblockGetFluentString") {
       return await browser.trackingProtection.getSmartBlockEmbedFluentString(
         id,
@@ -1175,7 +1172,7 @@ class Shims {
     // For sub_frame requests frameId identifies the frame being navigated,
     // not the one holding it, so shim scripts have to be injected into the
     // parent frame instead.
-    const shimFrameId = type === "sub_frame" ? details.parentFrameId : frameId;
+    let shimFrameId = type === "sub_frame" ? details.parentFrameId : frameId;
 
     // Ignore requests unrelated to tabs
     if (tabId < 0) {
@@ -1273,6 +1270,13 @@ class Shims {
 
       let needConsoleMessage = true;
 
+      // Non-navigation requests of any type can also fire from inside a
+      // nested frame instead of the one with the embed markup, so remap
+      // shimFrameId to the parent frame in that case too.
+      if (shimToApply.isSmartblockEmbedShim && frameId !== 0) {
+        shimFrameId = details.parentFrameId;
+      }
+
       if (shimToApply.isSmartblockEmbedShim) {
         try {
           await browser.tabs.executeScript(tabId, {
@@ -1299,7 +1303,7 @@ class Shims {
         try {
           await browser.tabs.executeScript(tabId, {
             file: "/lib/shim_messaging_helper.js",
-            frameId,
+            frameId: shimFrameId,
             runAt: "document_start",
           });
           const origin = new URL(originUrl).origin;

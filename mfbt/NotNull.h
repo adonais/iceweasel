@@ -74,6 +74,7 @@ struct CopyablePtr {
   T mPtr;
 
   template <typename U>
+    requires(std::is_convertible_v<U, T>)
   explicit CopyablePtr(U&& aPtr) : mPtr{std::forward<U>(aPtr)} {}
 
   template <typename U>

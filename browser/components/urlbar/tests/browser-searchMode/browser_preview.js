@@ -74,14 +74,6 @@ add_setup(async function () {
     });
   }
 
-  // A profile pins a search shortcut for whichever engine its region lists, and
-  // that pin persists in browser.newtabpage.pinned for the whole session. Once
-  // the configuration above drops that engine the shortcut is left out of the
-  // list but keeps its slot, so Baidu would never be the first Top Site.
-  // Turning the experiment off unpins the search shortcuts, leaving the tasks
-  // below to pin Baidu at the front.
-  await updateTopSites(sites => !sites.some(s => s?.searchTopSite), false);
-
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
   });

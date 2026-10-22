@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -12,7 +10,7 @@ class GitHubHost(BaseHost):
         """Generic Github API get."""
         repo = self.repo_url.path[1:].strip("/")
         github_api = f"https://api.github.com/repos/{repo}/{path}"
-        req = requests.get(github_api)
+        req = self.session.get(github_api)
         req.raise_for_status()
         return req.json()
 

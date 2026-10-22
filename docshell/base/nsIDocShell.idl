@@ -295,7 +295,7 @@ interface nsIDocShell : nsIDocShellTreeItem
    * docShell are affected, so in general, these flags should be set before
    * the docShell loads any content.
    */
-  attribute nsLoadFlags defaultLoadFlags;
+  [infallible] attribute nsLoadFlags defaultLoadFlags;
 
   /*
    * returns true if the docshell is being destroyed, false otherwise

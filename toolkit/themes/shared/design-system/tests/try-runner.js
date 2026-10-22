@@ -146,13 +146,49 @@ const tests = {
     rmSync("tests/build", { recursive: true, force: true });
     return errors.length === 0;
   },
+
+  // A component family that declares any text color (e.g. --panel-text-color
+  // or --urlbarview-text-color-selected) must declare one for every background
+  // color variant it has, so that each background has a text color to pair
+  // with.
+  async pairedTextColors() {
+    logStart("paired text colors");
+
+    let { tokensTable } = await import("../dist/semantic-categories.mjs");
+    let tokenNames = new Set(
+      Object.values(tokensTable)
+        .flat()
+        .map(token => token.name)
+    );
+
+    let familiesWithText = new Set(
+      [...tokenNames].map(name => name.match(/^--(.+?)text-color/)?.[1])
+    );
+
+    let errors = [];
+    for (let tokenName of tokenNames) {
+      let match = tokenName.match(
+        /^--(?<family>.+?)background-color(?<variant>.*)$/
+      );
+      if (!match || !familiesWithText.has(match.groups.family)) {
+        continue;
+      }
+      let counterpart = `--${match.groups.family}text-color${match.groups.variant}`;
+      if (!tokenNames.has(counterpart)) {
+        errors.push(`${tokenName} has no ${counterpart} to pair with`);
+      }
+    }
+
+    logErrors("paired text colors", errors);
+    return errors.length === 0;
+  },
 };
 
-(function runTests() {
+(async function runTests() {
   let results = [];
 
   for (let testName of Object.keys(tests)) {
-    results.push([testName, tests[testName]()]);
+    results.push([testName, await tests[testName]()]);
   }
 
   for (const [name, result] of results) {

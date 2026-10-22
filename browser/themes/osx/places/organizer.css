@@ -61,12 +61,12 @@
 
 #searchFilter {
   margin: var(--toolbar-item-margin);
-  --input-text-min-height: var(--toolbar-item-height);
+  --input-min-height: var(--toolbar-item-height);
   @media (-moz-mac-big-sur-theme) {
-    --input-text-background-color: transparent;
+    --input-background-color: transparent;
     --input-text-color: currentColor;
   }
-  --input-text-border-color: ButtonBorder;
+  --input-border-color: ButtonBorder;
 }
 
 /* Places Organizer Sidebars */

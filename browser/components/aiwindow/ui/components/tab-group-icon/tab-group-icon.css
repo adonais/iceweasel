@@ -1,0 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  align-items: center;
+  /* --tab-group-color and --tab-group-text-color are set on this element from
+     the group's color, the way ActionsProviderTabGroups sets them on a urlbar
+     row. A group whose color is unknown, such as one that has since been
+     closed, draws like a gray group. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--tab-group-color);
+  border-radius: var(--border-radius-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-start-radius: var(--tab-group-icon-notch-radius, 2px);
+  box-sizing: border-box;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--tab-group-text-color);
+  display: flex;
+  flex-shrink: 0;
+  /* --font-size-small, the smallest token, does not fit the icon box: the
+     initial meets the edge. This is the design's font/size/xsmall, kept
+     relative so it holds that ratio to the root. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: var(--tab-group-icon-font-size, 0.733rem);
+  height: var(--tab-group-icon-size, var(--icon-size));
+  justify-content: center;
+  line-height: 1;
+  padding-inline: var(--space-xsmall);
+  width: var(--tab-group-icon-size, var(--icon-size));
+
+  /* The tab group palette has no forced-colors variants. The colors arrive as
+     inline custom properties, which a rule cannot override, so override the
+     properties that read them instead. */
+  @media (forced-colors) {
+    background-color: var(--button-background-color);
+    color: var(--button-text-color);
+  }
+}

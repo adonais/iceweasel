@@ -1,6 +1,8 @@
 [DEFAULT]
 subsuite = "mozbase"
 
+["test_copycontents.py"]
+
 ["test_extract.py"]
 
 ["test_load.py"]

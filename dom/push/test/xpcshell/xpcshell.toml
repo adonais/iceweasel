@@ -33,6 +33,8 @@ run-sequentially = ["true"] # This will delete all existing push subscriptions.
 
 ["test_notification_error.js"]
 
+["test_notification_ignore.js"]
+
 ["test_notification_incomplete.js"]
 
 ["test_notification_version_string.js"]

@@ -9,6 +9,7 @@ browser.jar:
         content/browser/urlbar/SmartbarInput.mjs           (content/SmartbarInput.mjs)
         content/browser/urlbar/SmartbarInputController.mjs (content/SmartbarInputController.mjs)
         content/browser/urlbar/SmartbarInputUtils.mjs      (content/SmartbarInputUtils.mjs)
+        content/browser/urlbar/SmartbarMentionUtils.mjs    (content/SmartbarMentionUtils.mjs)
         content/browser/urlbar/UrlbarChildController.mjs   (content/UrlbarChildController.mjs)
         content/browser/urlbar/UrlbarChildTelemetry.mjs    (content/UrlbarChildTelemetry.mjs)
         content/browser/urlbar/UrlbarContentUtils.mjs      (content/UrlbarContentUtils.mjs)

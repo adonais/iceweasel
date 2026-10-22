@@ -28,6 +28,7 @@ const PREF_SYSTEM_USES_DARK_THEME = "ui.systemUsesDarkTheme";
 // affect the (chrome-only) theme preview color scheme.
 const PREF_CONTENT_COLOR_SCHEME_OVERRIDE =
   "layout.css.prefers-color-scheme.content-override";
+const PREF_LINK_PARAMETERS_ENABLED = "layout.css.link-parameters.enabled";
 
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 const LIGHT_THEME_ID = "firefox-compact-light@mozilla.org";
@@ -40,6 +41,7 @@ const DEFAULT_THEME_PREVIEW_URL =
   "chrome://mozapps/content/extensions/default-theme/preview.svg";
 const DEFAULT_THEME_PREVIEW_NOVA_URL =
   "chrome://mozapps/content/extensions/default-theme/preview-nova.svg";
+const RTL_FLIP_PARAM = "param(--rtl-flip, var(--theme-preview-rtl-flip))";
 
 let ALL_THEME_IDS;
 
@@ -81,7 +83,7 @@ async function assertNovaThemePreview(card, themeId, themesListManager) {
     DEFAULT_THEME_PREVIEW_NOVA_URL,
     `"${themeId}" card reuses the default theme Nova preview image`
   );
-  const expectedLinkParameters =
+  let expectedLinkParameters =
     themeId === DEFAULT_THEME_ID
       ? ""
       : themesListManager.getThemePreviewLinkParameters(themeId);
@@ -91,6 +93,9 @@ async function assertNovaThemePreview(card, themeId, themesListManager) {
       `"${themeId}" has link-parameters for the Nova preview image`
     );
   }
+  expectedLinkParameters = expectedLinkParameters
+    ? `${expectedLinkParameters}, ${RTL_FLIP_PARAM}`
+    : RTL_FLIP_PARAM;
   Assert.equal(
     img.style.linkParameters,
     expectedLinkParameters,
@@ -419,6 +424,130 @@ add_task(async function test_default_and_extra_themes_preview_color_scheme() {
   }
 
   await closeView(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+// Verifies that in RTL locales the Nova preview svg is asked to mirror its UI
+// elements through link-parameters (so that its tabbar background gradient
+// is not mirrored), instead of being mirrored as a whole by the page like the
+// other theme preview images.
+add_task(async function test_themes_preview_rtl() {
+  const TEST_THEME_ID = "rtl-test-theme@mochi.test";
+
+  // link-parameters is enabled in chrome on all channels, and so it applies to
+  // about:addons everywhere, but getComputedStyle only exposes properties that
+  // are enabled for all content (see nsComputedDOMStyle's Entry::IsEnabled).
+  // Enable the pref so that the computed link-parameters assertions below can
+  // also inspect the resolved param values on non-Nightly channels.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_NOVA_ENABLED, true],
+      [PREF_NOVA_THEMES_PICKER, true],
+      [PREF_LINK_PARAMETERS_ENABLED, true],
+    ],
+  });
+
+  const themesListManager = await getThemesList({
+    installSource: "about:addons",
+  });
+
+  const testTheme = ExtensionTestUtils.loadExtension({
+    manifest: {
+      name: "RTL test theme",
+      theme: { colors: {} },
+      browser_specific_settings: { gecko: { id: TEST_THEME_ID } },
+    },
+    files: { "preview.png": "" },
+    useAddonManager: "temporary",
+  });
+  await testTheme.startup();
+
+  async function assertThemesPreviews(win, { isRTL }) {
+    const picker = getThemesPicker(win.document);
+    await waitForThemesPickerReady(picker);
+
+    for (const [themeId, card] of [
+      [DEFAULT_THEME_ID, getAddonCard(win, DEFAULT_THEME_ID)],
+      [LIGHT_THEME_ID, getAddonCard(win, LIGHT_THEME_ID)],
+      [NOVA_SUN_ID, getThemeCard(picker, NOVA_SUN_ID_PREFIX)],
+    ]) {
+      const img = await getThemePreviewImage(card);
+      Assert.equal(
+        img.src,
+        DEFAULT_THEME_PREVIEW_NOVA_URL,
+        `"${themeId}" card uses the Nova preview image`
+      );
+      const themeLinkParameters =
+        themesListManager.getThemePreviewLinkParameters(themeId);
+      const expectedLinkParameters = [];
+      if (themeLinkParameters) {
+        expectedLinkParameters.push(themeLinkParameters);
+      }
+      expectedLinkParameters.push(RTL_FLIP_PARAM);
+      Assert.equal(
+        img.style.linkParameters,
+        expectedLinkParameters.join(", "),
+        `"${themeId}" preview image has the expected link-parameters`
+      );
+      const expectedRtlFlip = isRTL ? "scaleX(-1)" : "none";
+      Assert.equal(
+        win
+          .getComputedStyle(img)
+          .getPropertyValue("--theme-preview-rtl-flip")
+          .trim(),
+        expectedRtlFlip,
+        `"${themeId}" preview image inherits the expected --theme-preview-rtl-flip value (RTL: ${isRTL})`
+      );
+      Assert.ok(
+        win
+          .getComputedStyle(img)
+          .linkParameters.includes(`param(--rtl-flip, ${expectedRtlFlip})`),
+        `"${themeId}" preview image has the expected computed --rtl-flip link-parameter (RTL: ${isRTL})`
+      );
+      Assert.equal(
+        win.getComputedStyle(img).transform,
+        "none",
+        `"${themeId}" preview image is not mirrored by the page (RTL: ${isRTL})`
+      );
+    }
+
+    // The other theme preview images are still expected to be mirrored as a
+    // whole by the page in RTL locales.
+    const img = await getThemePreviewImage(getAddonCard(win, TEST_THEME_ID));
+    // Sanity check (test theme have its own preview image as expected).
+    Assert.ok(
+      img.src.endsWith("/preview.png"),
+      "test theme card uses its own preview image"
+    );
+    Assert.equal(
+      img.style.linkParameters,
+      "",
+      `test theme preview image has no link-parameters (RTL: ${isRTL})`
+    );
+    Assert.equal(
+      win.getComputedStyle(img).transform,
+      isRTL ? "matrix(-1, 0, 0, 1, 0, 0)" : "none",
+      `test theme preview image has the expected transform (RTL: ${isRTL})`
+    );
+  }
+
+  // Sanity check (the test starts in LTR).
+  Assert.ok(
+    !Services.locale.isAppLocaleRTL,
+    "Expect isAppLocaleRTL to be initially false"
+  );
+  let win = await loadInitialView("theme");
+  await assertThemesPreviews(win, { isRTL: false });
+  await closeView(win);
+
+  info("Switch to an RTL locale without reloading about:addons");
+  await SpecialPowers.pushPrefEnv({ set: [["intl.l10n.pseudo", "bidi"]] });
+  Assert.ok(Services.locale.isAppLocaleRTL, "App locale is RTL");
+  win = await loadInitialView("theme");
+  await assertThemesPreviews(win, { isRTL: true });
+  await closeView(win);
+
+  await testTheme.unload();
   await SpecialPowers.popPrefEnv();
 });
 

@@ -186,19 +186,21 @@ support-files = [
   "slow_loading_page_with_ads_on_load_event.html",
 ]
 
+["browser_search_telemetry_impression_scan.js"]
+support-files = [
+  "searchTelemetry.html",
+  "searchTelemetryAd.html",
+  "slow_loading_page_with_ads.html",
+  "slow_loading_page_with_ads.sjs",
+]
+
 ["browser_search_telemetry_post_engine.js"]
 support-files = ["searchTelemetryAd_post_result.sjs"]
 
 ["browser_search_telemetry_new_window.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_private.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html", "serp.css"]
 
 ["browser_search_telemetry_remote_settings_sync.js"]
@@ -209,9 +211,6 @@ https_first_disabled = true
 support-files = [
   "telemetrySearchSuggestions.sjs",
   "telemetrySearchSuggestions.xml",
-]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1873335
 ]
 
 

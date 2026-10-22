@@ -5,7 +5,6 @@ header-guards:
   extensions: ['h', 'hpp']
   include: ['.']
   exclude:
-    - toolkit/components/startup/StartupTimeline.h
     - build/clang-plugin/tests/NonParameterTestCases.h
     - config/external/nspr/_pl_bld.h
     - config/external/nspr/_pr_bld.h
@@ -17,29 +16,28 @@ header-guards:
     - dom/events/EventDispatcher.h
     - dom/onnx/onnxruntime_ep_c_api.h
     - editor/txmgr/nsTransactionManagerCID.h
-    - gfx/vr/service/oculus/ovr_capi_dynamic.h
     - gfx/src/X11UndefineNone.h
-    - js/src/tests/style/HeaderCycleB4-inl.h
-    - js/src/tests/style/HeaderCycleB3-inl.h
-    - js/src/tests/style/HeaderCycleB2-inl.h
-    - js/src/tests/style/HeaderCycleB1-inl.h
-    - js/src/tests/style/HeaderCycleA3.h
-    - js/src/tests/style/HeaderCycleA2.h
-    - js/src/tests/style/HeaderCycleA1.h
-    - js/src/tests/style/BadIncludesOrder-inl.h
-    - js/src/tests/style/BadIncludes2.h
-    - js/src/tests/style/BadIncludes2-inl.h
+    - gfx/vr/service/oculus/ovr_capi_dynamic.h
     - js/src/tests/style/BadIncludes.h
+    - js/src/tests/style/BadIncludes2-inl.h
+    - js/src/tests/style/BadIncludes2.h
+    - js/src/tests/style/BadIncludesOrder-inl.h
+    - js/src/tests/style/HeaderCycleA1.h
+    - js/src/tests/style/HeaderCycleA2.h
+    - js/src/tests/style/HeaderCycleA3.h
+    - js/src/tests/style/HeaderCycleB1-inl.h
+    - js/src/tests/style/HeaderCycleB2-inl.h
+    - js/src/tests/style/HeaderCycleB3-inl.h
+    - js/src/tests/style/HeaderCycleB4-inl.h
     - modules/libpref/init/StaticPrefListBegin.h
     - modules/libpref/init/StaticPrefListEnd.h
-    - parser/html/nsHtml5UTF16BufferHSupplement.h
-    - parser/html/nsHtml5UTF16BufferCppSupplement.h
-    - parser/html/nsHtml5TreeBuilderHSupplement.h
-    - parser/html/nsHtml5TreeBuilderCppSupplement.h
-    - parser/html/nsHtml5TokenizerHSupplement.h
-    - parser/html/nsHtml5TokenizerCppSupplement.h
     - parser/html/nsHtml5PortabilityHSupplement.h
-    - security/manager/ssl/StaticHPKPins.h
+    - parser/html/nsHtml5TokenizerCppSupplement.h
+    - parser/html/nsHtml5TokenizerHSupplement.h
+    - parser/html/nsHtml5TreeBuilderCppSupplement.h
+    - parser/html/nsHtml5TreeBuilderHSupplement.h
+    - parser/html/nsHtml5UTF16BufferCppSupplement.h
+    - parser/html/nsHtml5UTF16BufferHSupplement.h
     - python/mozbuild/mozbuild/test/backend/data/exports-generated/dom1.h
     - python/mozbuild/mozbuild/test/backend/data/exports-generated/foo.h
     - python/mozbuild/mozbuild/test/backend/data/exports-generated/gfx.h
@@ -71,7 +69,12 @@ header-guards:
     - python/mozbuild/mozbuild/test/frontend/data/exports/pprio.h
     - python/mozbuild/mozbuild/test/frontend/data/exports/pprthred.h
     - python/mozbuild/mozbuild/test/frontend/data/local_includes-filename/foo.h
+    - python/mozbuild/mozbuild/test/frontend/data/reader-source-headers/exported.h
+    - python/mozbuild/mozbuild/test/frontend/data/reader-source-headers/header.h
+    - python/mozbuild/mozbuild/test/frontend/data/reader-source-headers/installed.h
+    - security/manager/ssl/StaticHPKPins.h
     - toolkit/components/maintenanceservice/resource.h
+    - toolkit/components/startup/StartupTimeline.h
   type: external
   payload: header_guards:lint
   support-files: ['tools/lint/header_guards/**']

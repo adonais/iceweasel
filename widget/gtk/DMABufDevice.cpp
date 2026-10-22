@@ -31,6 +31,15 @@
 
 using namespace mozilla::gfx;
 
+// DMABufDevice.h is included only once by the unified build so redefine
+// the logging macros here, other files in the same unit use their own ones.
+#undef LOGDMABUF
+#ifdef MOZ_LOGGING
+#  define LOGDMABUF(args) MOZ_LOG(gDmabufLog, mozilla::LogLevel::Debug, args)
+#else
+#  define LOGDMABUF(args)
+#endif /* MOZ_LOGGING */
+
 namespace mozilla {
 namespace widget {
 

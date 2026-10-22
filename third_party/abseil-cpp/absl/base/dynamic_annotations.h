@@ -83,9 +83,7 @@
 
 #if defined(__clang__)
 #define ABSL_INTERNAL_ANNOTALYSIS_ENABLED 1
-#if !defined(SWIG)
 #define ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED 1
-#endif
 #else
 #define ABSL_INTERNAL_ANNOTALYSIS_ENABLED 0
 #endif
@@ -199,7 +197,6 @@
 
 // Function prototypes of annotations provided by the compiler-based sanitizer
 // implementation.
-// mozilla - externally provided; must not inherit -fvisibility=hidden.
 #pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateRWLockCreate(const char* file, int line,
@@ -297,7 +294,6 @@ ABSL_INTERNAL_END_EXTERN_C
 
 // Function prototypes of annotations provided by the compiler-based sanitizer
 // implementation.
-// mozilla - externally provided; must not inherit -fvisibility=hidden.
 #pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateIgnoreReadsBegin(const char* file, int line)
@@ -356,7 +352,6 @@ ABSL_INTERNAL_STATIC_INLINE void ABSL_INTERNAL_C_SYMBOL(
 
 // Function prototypes of annotations provided by the compiler-based sanitizer
 // implementation.
-// mozilla - externally provided; must not inherit -fvisibility=hidden.
 #pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateIgnoreWritesBegin(const char* file, int line);

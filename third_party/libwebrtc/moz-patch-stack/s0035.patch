@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d0b311007c033e838
  11 files changed, 53 insertions(+), 6 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index a92d93d35a..8cb3bb43e3 100644
+index aff523be6c..f8d5e58730 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
-@@ -61,6 +61,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
+@@ -59,6 +59,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
       << (rtcp_mode == RtcpMode::kCompound
               ? "compound"
               : (rtcp_mode == RtcpMode::kReducedSize ? "reducedSize" : "off"));
@@ -32,7 +32,7 @@ index a92d93d35a..8cb3bb43e3 100644
    ss << '}';
    return ss.Release();
  }
-@@ -94,8 +96,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
+@@ -92,8 +94,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
        config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
        config.decoder_factory, std::move(config.frame_decryptor),
        config.crypto_options, std::move(config.frame_transformer),
@@ -44,10 +44,10 @@ index a92d93d35a..8cb3bb43e3 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index dfa12da51b..fd1659632f 100644
+index 73c1a74575..1ed0d868df 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
-@@ -122,12 +122,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -120,12 +120,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      bool enable_non_sender_rtt,
      uint32_t remote_ssrc,
@@ -62,7 +62,7 @@ index dfa12da51b..fd1659632f 100644
        .rtcp_packet_type_counter_observer = rtcp_packet_type_counter_observer,
        .rtcp_mode = RtcpMode::kCompound,
        .remote_ssrc = remote_ssrc,
-@@ -160,6 +162,7 @@ class ChannelReceive : public ChannelReceiveInterface,
+@@ -158,6 +160,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                   const CryptoOptions& crypto_options,
                   scoped_refptr<FrameTransformerInterface> frame_transformer,
                   absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -70,7 +70,7 @@ index dfa12da51b..fd1659632f 100644
                   PacketRouter* absl_nonnull packet_router,
                   absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp)
                                          const> on_frame_delivered_callback);
-@@ -600,6 +603,7 @@ ChannelReceive::ChannelReceive(
+@@ -599,6 +602,7 @@ ChannelReceive::ChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -78,15 +78,15 @@ index dfa12da51b..fd1659632f 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback)
-@@ -612,6 +616,7 @@ ChannelReceive::ChannelReceive(
+@@ -611,6 +615,7 @@ ChannelReceive::ChannelReceive(
                                      this,
                                      enable_non_sender_rtt,
                                      remote_ssrc,
 +                                    rtcp_event_observer,
                                      packet_router)),
        remote_ssrc_(remote_ssrc),
-       source_tracker_(&env_.clock()),
-@@ -1237,6 +1242,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+       on_frame_delivered_callback_(std::move(on_frame_delivered_callback)),
+@@ -1230,6 +1235,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -94,7 +94,7 @@ index dfa12da51b..fd1659632f 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback) {
-@@ -1245,7 +1251,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1238,7 +1244,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
        jitter_buffer_max_packets, jitter_buffer_fast_playout,
        jitter_buffer_min_delay_ms, enable_non_sender_rtt, decoder_factory,
        std::move(frame_decryptor), crypto_options, std::move(frame_transformer),
@@ -104,10 +104,10 @@ index dfa12da51b..fd1659632f 100644
  }
  
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index e38c8293e9..069287fff0 100644
+index 52a8114595..c054da3947 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -41,6 +41,7 @@
+@@ -39,6 +39,7 @@
  #include "call/rtp_packet_sink_interface.h"
  #include "call/syncable.h"
  #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -115,7 +115,7 @@ index e38c8293e9..069287fff0 100644
  #include "system_wrappers/include/ntp_time.h"
  
  namespace webrtc {
-@@ -184,6 +185,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -180,6 +181,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      const webrtc::CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -272,7 +272,7 @@ index d2a3c72603..39172386e2 100644
  
      RtcpRttStats* rtt_stats = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index e77c0af974..63e0f09d0f 100644
+index 6e71625ead..82f1954d8a 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -131,6 +131,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
@@ -291,7 +291,7 @@ index e77c0af974..63e0f09d0f 100644
    configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
    configuration.rtcp_mode = RtcpMode::kCompound;
    configuration.remote_ssrc = remote_ssrc;
-@@ -326,6 +328,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -327,6 +329,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
            rtcp_cname_callback,
            packet_router,
            config_.rtp.rtcp_xr.receiver_reference_time_report,

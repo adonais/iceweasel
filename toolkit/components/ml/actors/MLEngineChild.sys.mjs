@@ -664,6 +664,15 @@ class EngineDispatcher {
           this.#status = "IDLE";
           break;
         }
+        case "EnginePort:Cancel": {
+          try {
+            const engine = await this.#engine;
+            await engine.cancel(data.requestId);
+          } catch (error) {
+            lazy.console.error("Failed to cancel the run", error);
+          }
+          break;
+        }
         default:
           lazy.console.error("Unknown port message to engine: ", data);
           break;
@@ -856,6 +865,17 @@ class InferenceEngine {
       );
     }
     return this.#worker.post("run", [request, requestId, engineRunOptions]);
+  }
+
+  /**
+   * @param {string} requestId - The identifier of the run to cancel.
+   * @returns {Promise<void>}
+   */
+  async cancel(requestId) {
+    if (!this.#worker) {
+      return;
+    }
+    await this.#worker.post("cancel", [requestId]);
   }
 
   async terminate() {

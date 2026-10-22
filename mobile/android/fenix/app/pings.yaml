@@ -316,3 +316,21 @@ onboarding:
     - https://phabricator.services.mozilla.com/D280983
   notification_emails:
     - android-probes@mozilla.com
+
+privacy-report-notification:
+  description: |
+    Each run of the weekly privacy report notification worker on one installation, and what the run
+    resulted in. This ping only contains data recorded by the worker itself. Scheduling of the worker
+    happens while the app is in use and is reported in the `metrics` and `events` pings instead.
+  include_client_id: true
+  send_if_empty: true
+  reasons:
+    worker_run: |
+      The worker finished a run. Runs that were cancelled before submitting
+      appear as gaps in `tracking_protection.privacy_report_notification_worker_run_count`.
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2065488
+  data_reviews:
+    - https://phabricator.services.mozilla.com/D323768
+  notification_emails:
+    - android-probes@mozilla.com

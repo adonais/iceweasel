@@ -1558,7 +1558,7 @@ main(int argc, char **argv)
     CK_TOKEN_INFO tokenInfo;
     CK_FUNCTION_LIST_PTR pFunctionList = NULL;
     CK_RV crv = CKR_OK;
-    CK_SESSION_HANDLE hRwSession;
+    CK_SESSION_HANDLE hRwSession = CK_INVALID_HANDLE;
     CK_SLOT_ID *pSlotList = NULL;
     CK_ULONG slotIndex = 0;
 
@@ -1900,6 +1900,11 @@ main(int argc, char **argv)
 
 cleanup:
     if (pFunctionList) {
+        if (hRwSession != CK_INVALID_HANDLE) {
+            /* ignore the return code since we are closing in
+             * the next call anyway */
+            (void)pFunctionList->C_CloseSession(hRwSession);
+        }
         /* C_Finalize will automatically logout, close session, */
         /* and delete the temp objects on the token */
         crv = pFunctionList->C_Finalize(NULL);

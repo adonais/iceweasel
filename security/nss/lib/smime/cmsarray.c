@@ -22,17 +22,6 @@
  */
 
 /*
- * NSS_CMSArray_Alloc - allocate an array in an arena
- *
- * This allocates space for the array of pointers
- */
-void **
-NSS_CMSArray_Alloc(PLArenaPool *poolp, int n)
-{
-    return (void **)PORT_ArenaZAlloc(poolp, n * sizeof(void *));
-}
-
-/*
  * NSS_CMSArray_Add - add an element to the end of an array
  *
  * The array of pointers is either created (if array was empty before) or grown.

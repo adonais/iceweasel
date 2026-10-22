@@ -7,7 +7,7 @@
  * on Windows.
  */
 
-import { ChromeMigrationUtils } from "resource:///modules/ChromeMigrationUtils.sys.mjs";
+import { ChromeMigrationUtils } from "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs";
 
 import { OSCrypto } from "resource://gre/modules/OSCrypto_win.sys.mjs";
 

@@ -32,10 +32,16 @@ async function ensureSectionDefined(doc) {
   script.remove();
 }
 
-async function createResumeSection(doc, cards) {
+async function createResumeSection(doc, cards, { emptyReason, loading } = {}) {
   await ensureSectionDefined(doc);
   const el = doc.createElement("smartwindow-resume-section");
   el.cards = cards;
+  if (emptyReason) {
+    el.emptyReason = emptyReason;
+  }
+  if (loading) {
+    el.loading = loading;
+  }
   doc.body.appendChild(el);
   await el.updateComplete;
   return el;
@@ -46,21 +52,131 @@ function getToggleCount(shadow) {
   return toggle ? JSON.parse(toggle.dataset.l10nArgs).count : null;
 }
 
-add_task(async function test_resume_section_no_cards() {
+// Reuse one document for isolated component tests.
+let gSharedDoc;
+
+add_setup(async function () {
   const win = await openAIWindow();
-  try {
-    const doc = win.gBrowser.selectedBrowser.contentDocument;
-    const el = await createResumeSection(doc, []);
+  gSharedDoc = win.gBrowser.selectedBrowser.contentDocument;
+
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+    // Opening an AI Window records usage timestamps at runtime.
+    for (const pref of [
+      "browser.smartwindow.lastSmartWindowUsageTime",
+      "browser.smartwindow.lastLLMTelemetryRunTime",
+    ]) {
+      Services.prefs.clearUserPref(pref);
+    }
+  });
+});
+
+add_task(async function test_resume_section_no_cards() {
+  const el = await createResumeSection(gSharedDoc, []);
+
+  Assert.equal(
+    el.shadowRoot.querySelector(".resume-section-grid"),
+    null,
+    "Nothing should render when there are no cards"
+  );
+  Assert.equal(
+    el.shadowRoot.querySelector(".resume-section-empty"),
+    null,
+    "No empty state should render without an emptyReason"
+  );
+  el.remove();
+});
+
+add_task(async function test_resume_section_empty_states() {
+  for (const [emptyReason, headingId, descriptionId] of [
+    [
+      "no-suggestions",
+      "aiwindow-resume-section-empty-no-suggestions-heading",
+      "aiwindow-resume-section-empty-no-suggestions-description",
+    ],
+    [
+      "all-dismissed",
+      "aiwindow-resume-section-empty-all-dismissed-heading",
+      "aiwindow-resume-section-empty-all-dismissed-description",
+    ],
+  ]) {
+    const el = await createResumeSection(gSharedDoc, [], { emptyReason });
+    const shadow = el.shadowRoot;
 
     Assert.equal(
-      el.shadowRoot.querySelector(".resume-section-grid"),
+      shadow.querySelector(".resume-section-grid"),
       null,
-      "Nothing should render when there are no cards"
+      `Cards grid should not render for emptyReason "${emptyReason}"`
+    );
+    Assert.equal(
+      shadow.querySelector(".resume-section-empty-heading").dataset.l10nId,
+      headingId,
+      `Heading should match emptyReason "${emptyReason}"`
+    );
+    Assert.equal(
+      shadow.querySelector(".resume-section-empty-description").dataset.l10nId,
+      descriptionId,
+      `Description should match emptyReason "${emptyReason}"`
     );
     el.remove();
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
   }
+});
+
+add_task(async function test_resume_section_empty_hide_event() {
+  const el = await createResumeSection(gSharedDoc, [], {
+    emptyReason: "all-dismissed",
+  });
+
+  const hidePromise = BrowserTestUtils.waitForEvent(
+    el,
+    "smartwindow-resume-section:hide"
+  );
+  el.shadowRoot.querySelector(".resume-section-empty-hide").click();
+  const { detail } = await hidePromise;
+
+  Assert.equal(
+    detail.reason,
+    "all-dismissed",
+    "The hide event should carry the emptyReason that triggered it"
+  );
+  el.remove();
+});
+
+add_task(async function test_resume_section_loading() {
+  const el = await createResumeSection(gSharedDoc, [], { loading: true });
+  const shadow = el.shadowRoot;
+
+  Assert.ok(
+    shadow.querySelector(".resume-section-title"),
+    "The heading should still render while loading"
+  );
+  Assert.equal(
+    shadow.querySelector(".resume-section-toggle"),
+    null,
+    "No show more/less toggle while the real count is unknown"
+  );
+  Assert.equal(
+    shadow.querySelectorAll(".resume-card-skeleton").length,
+    COLLAPSED_CARD_COUNT,
+    "Should show COLLAPSED_CARD_COUNT skeleton cards while loading"
+  );
+
+  el.cards = makeCards(1);
+  el.loading = false;
+  await el.updateComplete;
+
+  Assert.equal(
+    shadow.querySelector(".resume-card-skeleton"),
+    null,
+    "Skeleton cards should be gone once loading finishes"
+  );
+  Assert.equal(
+    shadow.querySelectorAll("smartwindow-resume-card").length,
+    1,
+    "Real cards should render once loading finishes"
+  );
+
+  el.remove();
 });
 
 add_task(async function test_resume_section_no_toggle_when_not_collapsed() {

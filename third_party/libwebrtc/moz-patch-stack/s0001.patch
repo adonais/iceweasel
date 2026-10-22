@@ -413,7 +413,7 @@ index 316e4365d9..4ff8b2d617 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 1ed224b58e..a985ef3553 100644
+index 0aa31874ce..82e6c7690a 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -1392,10 +1392,10 @@ index 849c7ce530..27f1b22422 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 276a878ffc..391fec9870 100644
+index 5a8b08cef6..2abcc11c09 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -549,6 +549,12 @@ rtc_library("logging") {
+@@ -531,6 +531,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1510,7 +1510,7 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 044438dada..71df7a7206 100644
+index 82cb3af9df..efefd6989e 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -110,7 +110,7 @@ declare_args() {

@@ -41,7 +41,7 @@ const MemoryReporter = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
 
 const global = Cu.getGlobalForObject(this);
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-  "resource://gre/modules/jsdebugger.sys.mjs",
+  "moz-src:///devtools/platform/jsdebugger.sys.mjs",
   { global: "contextual" }
 );
 addDebuggerToGlobal(global);

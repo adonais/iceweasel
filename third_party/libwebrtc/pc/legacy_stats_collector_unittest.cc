@@ -723,7 +723,7 @@ static scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
     uint32_t ssrc) {
   auto receiver = make_ref_counted<MockRtpReceiverInternal>();
   EXPECT_CALL(*receiver, track()).WillRepeatedly(Return(track));
-  EXPECT_CALL(*receiver, ssrc()).WillRepeatedly(Return(ssrc));
+  EXPECT_CALL(*receiver, ssrc_s()).WillRepeatedly(Return(ssrc));
   EXPECT_CALL(*receiver, media_type())
       .WillRepeatedly(
           Return(track->kind() == MediaStreamTrackInterface::kAudioKind

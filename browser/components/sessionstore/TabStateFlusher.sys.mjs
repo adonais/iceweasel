@@ -3,11 +3,12 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * A module that enables async flushes. Updates from frame scripts are
- * throttled to be sent only once per second. If an action wants a tab's latest
- * state without waiting for a second then it can request an async flush and
- * wait until the frame scripts reported back. At this point the parent has the
- * latest data and the action can continue.
+ * A module that enables async flushes. Content processes buffer tab state
+ * updates for up to `browser.sessionstore.interval` milliseconds before sending
+ * them. If an action wants a tab's latest state without waiting for that then
+ * it can request an async flush and wait until the content processes reported
+ * back. At this point the parent has the latest data and the action can
+ * continue.
  */
 export var TabStateFlusher = Object.freeze({
   /**
@@ -20,8 +21,8 @@ export var TabStateFlusher = Object.freeze({
   },
 
   /**
-   * Requests an async flush for all browsers of a given window. Returns a Promise
-   * that will resolve when we've heard back from all browsers.
+   * Requests an async flush for all non-lazy browsers of a given window.
+   * Returns a Promise that will resolve when we've heard back from all browsers.
    */
   flushWindow(window) {
     return TabStateFlusherInternal.flushWindow(window);
@@ -30,8 +31,8 @@ export var TabStateFlusher = Object.freeze({
   /**
    * Resolves all active flush requests for a given browser. This should be
    * used when the content process crashed or the final update message was
-   * seen. In those cases we can't guarantee to ever hear back from the frame
-   * script so we just resolve all requests instead of discarding them.
+   * seen. In those cases we can't guarantee to ever hear back from the content
+   * process so we just resolve all requests instead of discarding them.
    *
    * @param browser (<xul:browser>)
    *        The browser for which all flushes are being resolved.
@@ -112,8 +113,8 @@ var TabStateFlusherInternal = {
   /**
    * Resolves all active flush requests for a given browser. This should be
    * used when the content process crashed or the final update message was
-   * seen. In those cases we can't guarantee to ever hear back from the frame
-   * script so we just resolve all requests instead of discarding them.
+   * seen. In those cases we can't guarantee to ever hear back from the content
+   * process so we just resolve all requests instead of discarding them.
    *
    * @param browser (<xul:browser>)
    *        The browser for which all flushes are being resolved.

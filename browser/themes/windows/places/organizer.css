@@ -24,7 +24,7 @@
   --organizer-pane-field-border-color: ThreeDShadow;
 
   --input-border-color: var(--organizer-pane-field-border-color);
-  --input-text-background-color: var(--organizer-content-background);
+  --input-background-color: var(--organizer-content-background);
   --input-text-color: var(--organizer-color);
 }
 

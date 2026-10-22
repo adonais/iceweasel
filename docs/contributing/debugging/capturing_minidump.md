@@ -3,8 +3,8 @@
 
 *Minidumps* are files created by various Windows tools which record the
 complete state of a program as it's running, or as it was at the moment
-of a crash. Small minidumps are created by the Breakpad {ref}`crash
-reporting <Crash Reporter>` tool, but sometimes that's not
+of a crash. Small minidumps are created by the Breakpad {doc}`crash
+reporting </toolkit/crashreporter/crashreporter/index>` tool, but sometimes that's not
 sufficient to diagnose a problem. For example, if the application is
 hanging (not responding to input, but hasn't crashed) then Breakpad is
 not triggered, and it can be difficult to determine where the problem

@@ -400,7 +400,9 @@ static already_AddRefed<VideoData> CreateVideoDataFromWebrtcVideoFrame(
   yCbCrData.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
   RefPtr image = MakeRefPtr<RecyclingPlanarYCbCrImage>(new BufferRecycleBin());
-  image->CopyData(yCbCrData);
+  if (NS_FAILED(image->CopyData(yCbCrData))) {
+    return nullptr;
+  }
 
   // Use the input frame's microsecond timestamp ("webrtc time") as the
   // encoder's time base. This matches what libwebrtc's own encoders do, and
@@ -489,6 +491,9 @@ int32_t WebrtcMediaDataEncoder::Encode(
   RefPtr<VideoData> data = CreateVideoDataFromWebrtcVideoFrame(
       aInputFrame, (*aFrameTypes)[0] == webrtc::VideoFrameType::kVideoFrameKey,
       TimeUnit::FromSeconds(1.0 / mMaxFrameRate));
+  if (!data) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   const gfx::IntSize displaySize = data->mDisplay;
 
   // Record per-frame metadata for the encoder output to recover, keyed by

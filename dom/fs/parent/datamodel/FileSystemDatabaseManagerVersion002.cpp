@@ -823,7 +823,14 @@ nsresult FileSystemDatabaseManagerVersion002::RemoveFileId(
 
   QM_TRY(MOZ_TO_RESULT(stmt.BindEntryIdByName("fileId"_ns, aFileId.Value())));
 
-  return stmt.Execute();
+  QM_TRY(MOZ_TO_RESULT(stmt.Execute()));
+
+  if (const RefPtr<FileSystemCipherKeyManager> cipherKeyManager =
+          mDataManager->MaybeCipherKeyManager()) {
+    cipherKeyManager->Remove(aFileId.Value());
+  }
+
+  return NS_OK;
 }
 
 /**

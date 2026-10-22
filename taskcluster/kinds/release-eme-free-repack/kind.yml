@@ -38,14 +38,15 @@ task-defaults:
             in-tree: "partner-repack"
         chain-of-trust: true
         max-run-time: 7200
+        artifacts:
+            - name: releng/partner
+              path: /builds/worker/artifacts/
+              type: directory
     run:
+        using: run-task
         clone-with: hg
-        using: mozharness
-        config:
-            - partner_repacks/release_mozilla-release_desktop.py
-        script: mozharness/scripts/desktop_partner_repacks.py
-        job-script: taskcluster/scripts/builder/repackage.sh
-        tooltool-downloads: false
+        cwd: '{checkout}'
+        command: $GECKO_PATH/taskcluster/scripts/release/partner-repack.sh
     extra:
         limit-locales:
             by-release-level:

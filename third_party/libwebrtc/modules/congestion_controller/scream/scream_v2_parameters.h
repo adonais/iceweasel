@@ -18,7 +18,9 @@
 namespace webrtc {
 
 struct ScreamV2Parameters {
+  ScreamV2Parameters();
   explicit ScreamV2Parameters(const FieldTrialsView& trials);
+  explicit ScreamV2Parameters(const FieldTrialsView* trials);
   ScreamV2Parameters(const ScreamV2Parameters& params) = default;
 
   // Minimum Reference Window
@@ -95,6 +97,15 @@ struct ScreamV2Parameters {
   // Thresholds for average latency difference. Used for limiting ref_window
   // increase.
   FieldTrialParameter<TimeDelta> latency_diff_threshold;
+  // Minimum (base) window from the latest sent packet in feedback to compute
+  // min and max one-way delay.
+  FieldTrialParameter<TimeDelta> burst_window_min;
+  // Maximum window from the latest sent packet in feedback to bound burst
+  // continuation when consecutive packets are closely spaced.
+  FieldTrialParameter<TimeDelta> burst_window_max;
+  // Maximum send time gap between consecutive packets to extend the burst
+  // window beyond `burst_window_min` up to `burst_window_max`.
+  FieldTrialParameter<TimeDelta> burst_window_max_gap;
 
   // Determines the length of the base delay history when estimating one way
   // delay (owd)

@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
@@ -37,7 +38,6 @@
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -243,23 +243,31 @@ VideoReceiveStream2::VideoReceiveStream2(
       config_(std::move(config)),
       remote_ssrc_(config_.rtp.remote_ssrc),
       renderer_(config_.renderer),
+      on_frame_delivered_callback_(
+          std::move(config_.on_frame_delivered_callback)),
       decoder_factory_(config_.decoder_factory),
       require_frame_encryption_(
           config_.crypto_options.sframe.require_frame_encryption),
       num_cpu_cores_(num_cpu_cores),
       call_(call),
       call_stats_(call_stats),
-      source_tracker_(&env_.clock()),
       stats_proxy_(remote_ssrc(), &env_.clock(), call->worker_thread()),
       rtp_receive_statistics_(ReceiveStatistics::Create(&env_.clock())),
       timing_(std::move(timing)),
       video_receiver_(&env_.clock(), timing_.get(), env_.field_trials(), this),
+      max_wait_for_keyframe_(DetermineMaxWaitForFrame(
+          TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
+          true)),
+      max_wait_for_frame_(DetermineMaxWaitForFrame(
+          TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
+          false)),
       rtp_video_stream_receiver_(env_,
                                  call->worker_thread(),
                                  &transport_adapter_,
                                  call_stats->AsRtcpRttStats(),
                                  packet_router,
                                  &config_,
+                                 max_wait_for_keyframe_,
                                  rtp_receive_statistics_.get(),
                                  &stats_proxy_,
                                  &stats_proxy_,
@@ -270,12 +278,6 @@ VideoReceiveStream2::VideoReceiveStream2(
                                  std::move(config_.frame_transformer),
                                  std::move(config_.on_first_packet)),
       rtp_stream_sync_(env_, call->worker_thread(), this),
-      max_wait_for_keyframe_(DetermineMaxWaitForFrame(
-          TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
-          true)),
-      max_wait_for_frame_(DetermineMaxWaitForFrame(
-          TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
-          false)),
       decode_sync_(decode_sync),
       buffer_(CreateBuffer(env_,
                            call_,
@@ -518,6 +520,7 @@ void VideoReceiveStream2::SetNackHistory(TimeDelta history) {
   TimeDelta max_wait_for_keyframe = DetermineMaxWaitForFrame(history, true);
   TimeDelta max_wait_for_frame = DetermineMaxWaitForFrame(history, false);
 
+  rtp_video_stream_receiver_.SetMaxWaitForKeyframe(max_wait_for_keyframe);
   max_wait_for_keyframe_ = max_wait_for_keyframe;
   max_wait_for_frame_ = max_wait_for_frame;
 
@@ -823,22 +826,32 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
 }
 
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
-  renderer_->OnFrame(video_frame);
+  // Capture current time once for both source tracking and frame delay metrics
+  // to ensure coherent delivery timestamp across the delivery callback and
+  // metadata. The callback is synchronous and non-blocking, so any difference
+  // to renderer hand-off time is negligible.
+  Timestamp now = env_.clock().CurrentTime();
 
   // TODO: bugs.webrtc.org/42220804 - we should set local capture clock offset
   // for `packet_infos`.
-  RtpPacketInfos packet_infos = video_frame.packet_infos();
+  const RtpPacketInfos& packet_infos = video_frame.packet_infos();
+  // Invoke delivery callback before passing the frame to the renderer to
+  // ensure source tracker updates happen before downstream observers are
+  // notified.
+  if (on_frame_delivered_callback_ != nullptr && !packet_infos.empty()) {
+    on_frame_delivered_callback_(packet_infos, now);
+  }
+
+  renderer_->OnFrame(video_frame);
 
   // For frame delay metrics, calculated in `OnRenderedFrame`, to better reflect
   // user experience measurements must be done as close as possible to frame
-  // rendering moment. Capture current time, which is used for calculation of
-  // delay metrics in `OnRenderedFrame`, right after frame is passed to
-  // renderer. Frame may or may be not rendered by this time. This results in
-  // inaccuracy but is still the best we can do in the absence of "frame
-  // rendered" callback from the renderer.
-  VideoFrameMetaData frame_meta(video_frame, env_.clock().CurrentTime());
+  // rendering moment. Frame may or may be not rendered by this time. This
+  // results in inaccuracy but is still the best we can do in the absence of
+  // "frame rendered" callback from the renderer.
+  VideoFrameMetaData frame_meta(video_frame, now);
   call_->worker_thread()->PostTask(
-      SafeTask(task_safety_.flag(), [frame_meta, packet_infos, this]() {
+      SafeTask(task_safety_.flag(), [frame_meta, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
         int64_t video_playout_ntp_ms;
         int64_t sync_offset_ms;
@@ -850,8 +863,6 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
                                            estimated_freq_khz);
         }
         stats_proxy_.OnRenderedFrame(frame_meta);
-        source_tracker_.OnFrameDelivered(packet_infos,
-                                         frame_meta.decode_timestamp);
       }));
 
   MutexLock lock(&pending_resolution_mutex_);
@@ -1270,11 +1281,6 @@ void VideoReceiveStream2::UpdatePlayoutDelays() const {
         std::max(max_composition_delay_in_frames - buffer_->Size(), 0);
     timing_->SetMaxCompositionDelayInFrames(max_composition_delay_in_frames);
   }
-}
-
-std::vector<RtpSource> VideoReceiveStream2::GetSources() const {
-  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-  return source_tracker_.GetSources();
 }
 
 VideoReceiveStream2::RecordingState

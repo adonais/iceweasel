@@ -17,10 +17,6 @@ use windows_sys::Win32::{
     UI::WindowsAndMessaging::CharUpperBuffW,
 };
 
-// Our windows-targets doesn't link wintrust correctly.
-#[link(name = "wintrust")]
-extern "C" {}
-
 type DWORD = u32;
 
 mod strings;

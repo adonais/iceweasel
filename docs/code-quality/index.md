@@ -32,7 +32,7 @@ typescript/index
    * - Clang-Tidy
      - Yes
      - `bug 712350 <https://bugzilla.mozilla.org/show_bug.cgi?id=712350>`__
-     - :ref:`Static analysis <Static Analysis>`
+     - :doc:`Static analysis <static-analysis/index>`
      - https://clang.llvm.org/extra/clang-tidy/checks/list.html
    * - Clang analyzer
      -
@@ -47,7 +47,7 @@ typescript/index
    * - clang-format
      - Yes
      - `bug 1188202 <https://bugzilla.mozilla.org/show_bug.cgi?id=1188202>`__
-     - :ref:`Formatting C++ Code With clang-format`
+     - :doc:`coding-style/format_cpp_code_with_clang-format`
      - https://clang.llvm.org/docs/ClangFormat.html
 ```
 
@@ -64,12 +64,12 @@ typescript/index
    * - Stylelint
      - Yes
      - `bug 1762027 <https://bugzilla.mozilla.org/show_bug.cgi?id=1762027>`__
-     - :ref:`Stylelint`
+     - :doc:`lint/linters/stylelint`
      - https://stylelint.io/
    * - Mozilla Stylelint
      -
      -
-     - :ref:`Mozilla Stylelint Plugin`
+     - :doc:`lint/linters/stylelint-plugin-mozilla`
      -
 ```
 
@@ -86,22 +86,22 @@ typescript/index
    * - Eslint
      - Yes
      - `bug 1229856 <https://bugzilla.mozilla.org/show_bug.cgi?id=1229856>`__
-     - :ref:`ESLint`
+     - :doc:`lint/linters/eslint`
      - https://eslint.org/
    * - Mozilla ESLint
      -
      - `bug 1229856 <https://bugzilla.mozilla.org/show_bug.cgi?id=1229856>`__
-     - :ref:`Mozilla ESLint Plugin`
+     - :doc:`lint/linters/eslint-plugin-mozilla`
      -
    * - Prettier
      - Yes
      - `bug 1558517 <https://bugzilla.mozilla.org/show_bug.cgi?id=1558517>`__
-     - :ref:`JavaScript Coding style`
+     - :doc:`coding-style/coding_style_js`
      - https://prettier.io/
    * - pnpm-audit
      -
      - `bug 2065363 <https://bugzilla.mozilla.org/show_bug.cgi?id=2065363>`__
-     - :ref:`pnpm-audit`
+     - :doc:`lint/linters/pnpm-audit`
      - https://pnpm.io/cli/audit
 ```
 
@@ -118,12 +118,12 @@ typescript/index
    * - ruff
      - Yes
      - `bug 1811850 <https://bugzilla.mozilla.org/show_bug.cgi?id=1811850>`__
-     - :ref:`ruff`
+     - :doc:`lint/linters/ruff`
      - https://github.com/charliermarsh/ruff
    * - black
      - Yes
      - `bug 1555560 <https://bugzilla.mozilla.org/show_bug.cgi?id=1555560>`__
-     - :ref:`black`
+     - :doc:`lint/linters/black`
      - https://black.readthedocs.io/en/stable
 ```
 
@@ -140,17 +140,17 @@ typescript/index
    * - Rustfmt
      - Yes
      - `bug 1454764 <https://bugzilla.mozilla.org/show_bug.cgi?id=1454764>`__
-     - :ref:`Rustfmt`
+     - :doc:`lint/linters/rustfmt`
      - https://github.com/rust-lang/rustfmt
    * - Clippy
      - Yes
      - `bug 1361342 <https://bugzilla.mozilla.org/show_bug.cgi?id=1361342>`__
-     - :ref:`clippy`
+     - :doc:`lint/linters/clippy`
      - https://github.com/rust-lang/rust-clippy
    * - cargo-audit
      -
      - `bug 1747536 <https://bugzilla.mozilla.org/show_bug.cgi?id=1747536>`__
-     - :ref:`cargo-audit`
+     - :doc:`lint/linters/cargo-audit`
      - https://rustsec.org/
 ```
 
@@ -167,7 +167,7 @@ typescript/index
    * - Spotless
      - Yes
      - `bug 1571899 <https://bugzilla.mozilla.org/show_bug.cgi?id=1571899>`__
-     - :ref:`Spotless`
+     - :doc:`lint/linters/android-format`
      - https://github.com/diffplug/spotless
 ```
 
@@ -189,16 +189,16 @@ typescript/index
    * - Typo detection
      - Yes
      -
-     - :ref:`Codespell`
+     - :doc:`lint/linters/codespell`
      - https://github.com/codespell-project/codespell
    * - Fluent Lint
      - No
      -
-     - :ref:`Fluent Lint`
+     - :doc:`lint/linters/fluent-lint`
      -
    * - YAML linter
      - No
      -
-     - :ref:`yamllint`
+     - :doc:`lint/linters/yamllint`
      - https://github.com/adrienverge/yamllint
 ```

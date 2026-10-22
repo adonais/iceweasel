@@ -34,6 +34,7 @@
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
+#include "api/test/time_controller.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/transport/bitrate_settings.h"
@@ -47,6 +48,7 @@
 #include "call/call.h"
 #include "call/call_config.h"
 #include "call/flexfec_receive_stream.h"
+#include "call/packet_receiver.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
@@ -67,15 +69,22 @@ namespace webrtc {
 namespace test {
 
 class BaseTest;
+class SendingTransportToNetworkPacketBridge;
+class TransportToNetworkPacketBridge;
 
 class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
  public:
   explicit CallTest(FieldTrials field_trials = CreateTestFieldTrials(""));
+  explicit CallTest(TimeController* time_controller,
+                    FieldTrials field_trials = CreateTestFieldTrials(""));
+  explicit CallTest(std::unique_ptr<TimeController> time_controller,
+                    FieldTrials field_trials = CreateTestFieldTrials(""));
   ~CallTest() override;
 
   static const std::map<uint8_t, MediaType> payload_type_map_;
 
  protected:
+  TimeController* time_controller() const { return time_controller_; }
   const Environment& env() const { return env_; }
   FieldTrials& field_trials() { return field_trials_; }
 
@@ -103,6 +112,7 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   void CreateReceiverCall(CallConfig config);
   void DestroyCalls();
   Thread* network_thread() const { return network_thread_.get(); }
+  Thread* transport_thread() const { return transport_thread_.get(); }
 
   void CreateVideoSendConfig(VideoSendStream::Config* video_config,
                              size_t num_video_streams,
@@ -120,10 +130,7 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
 
   void CreateSendConfig(size_t num_video_streams,
                         size_t num_audio_streams,
-                        size_t num_flexfec_streams) {
-    CreateSendConfig(num_video_streams, num_audio_streams, num_flexfec_streams,
-                     send_transport_.get());
-  }
+                        size_t num_flexfec_streams);
   void CreateSendConfig(size_t num_video_streams,
                         size_t num_audio_streams,
                         size_t num_flexfec_streams,
@@ -191,8 +198,14 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   // packets with extensions.
   void CreateSendTransport(const BuiltInNetworkBehaviorConfig& config,
                            RtpRtcpObserver* observer);
+  void CreateSendTransport(const BuiltInNetworkBehaviorConfig& config,
+                           RtpRtcpObserver* observer,
+                           PacketReceiver* receiver);
   void CreateReceiveTransport(const BuiltInNetworkBehaviorConfig& config,
                               RtpRtcpObserver* observer);
+  void CreateReceiveTransport(const BuiltInNetworkBehaviorConfig& config,
+                              RtpRtcpObserver* observer,
+                              PacketReceiver* receiver);
 
   void ConnectVideoSourcesToStreams();
 
@@ -219,6 +232,8 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   test::RunLoop loop_;
+  std::unique_ptr<TimeController> owned_time_controller_;
+  TimeController* const time_controller_;
   FieldTrials field_trials_;
   Environment env_;
   Environment send_env_;
@@ -274,6 +289,19 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
                             std::vector<RtpExtension>* extensions) const;
 
   std::unique_ptr<Thread> network_thread_;
+  // Separate thread used to run packet transport processing independently of
+  // the network thread. In production, transport delivery and network socket
+  // operations occur outside the Call network/worker queue. Running transports
+  // on a dedicated thread mimics this boundary and avoids reentrancy and
+  // deadlock issues between media encoding/pacing and packet delivery.
+  const std::unique_ptr<Thread> transport_thread_;
+  // Bridge that is invoked on Call's send/pacing thread to forward outgoing
+  // packets to the send transport and marshal delivered packets and
+  // OnSentPacket notifications across to the network thread.
+  std::unique_ptr<SendingTransportToNetworkPacketBridge> send_transport_bridge_;
+  // Bridge that is invoked on the transport thread to marshal received packet
+  // delivery calls across to the network thread.
+  std::unique_ptr<TransportToNetworkPacketBridge> receive_transport_bridge_;
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue_;
   std::vector<RtpExtension> rtp_extensions_;
   scoped_refptr<AudioProcessing> apm_send_;
@@ -342,6 +370,14 @@ class BaseTest : public RtpRtcpObserver {
       FrameGeneratorCapturer* frame_generator_capturer);
 
   virtual void OnStreamsStopped();
+
+  TimeController* time_controller() const { return time_controller_; }
+  void SetTimeController(TimeController* time_controller) {
+    time_controller_ = time_controller;
+  }
+
+ private:
+  TimeController* time_controller_ = nullptr;
 };
 
 class SendTest : public BaseTest {

@@ -99,11 +99,6 @@ skip-if = [
 ["test_moz_select.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1997197
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1997197
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1997197
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1997197
-  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 1997197
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1997197
 ]
 
 ["test_moz_select_panel.html"]
@@ -130,11 +125,15 @@ support-files = [
 
 ["test_panel_item_mouseup_click.html"]
 
+["test_panel_item_shortcut.html"]
+
 ["test_panel_list_accessibility.html"]
 
 ["test_panel_list_accesskey_conflicts.html"]
 
 ["test_panel_list_anchoring.html"]
+
+["test_panel_list_shadow_node_anchor.html"]
 
 ["test_panel_list_contextmenu.html"]
 

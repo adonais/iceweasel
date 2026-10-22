@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -22,6 +24,7 @@ import {
   WALLPAPER_TYPES,
   buildSavedWallpaperFilename,
   getDetailsFilename,
+  getWallpaperURL,
   sanitizeSavedName,
   getThumbnailFilename,
   parseWallpaperFilename,
@@ -64,27 +67,22 @@ const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
   "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
 
 // Held by everything that writes under <profile>/wallpaper/ or moves the uuid
-// pref: upload, delete, apply, migrate, rescue, cleanup and thumbnail making.
+// pref: upload, delete, apply, migrate, rescue and cleanup.
 const WALLPAPER_FILE_LOCK = "newtab-wallpaper-file";
 
-// What content encodes a thumbnail as, so the reply can label the bytes.
-const THUMBNAIL_MIME_TYPE = "image/jpeg";
-
 export class WallpaperFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
     // Applying moves several prefs, and this feed reacts to two of them. Held
     // while they move, so the page is told once at the end instead of once per
-    // pref, each time with a directory sweep behind it.
-    this.applyingWallpaper = false;
+    // pref, each time with a directory sweep behind it. Counted, because an
+    // upload holds it across the whole write and an apply can land inside that.
+    this.applyingWallpaper = 0;
     this.wallpaperClient = null;
     this._onSync = this.onSync.bind(this);
-  }
-
-  // Constructs a moz-newtab-wallpaper:// URI for a file in the wallpaper
-  // directory.
-  getWallpaperURL(filename) {
-    return `moz-newtab-wallpaper://${filename}`;
   }
 
   get wallpaperDirectory() {
@@ -95,8 +93,8 @@ export class WallpaperFeed {
     return isWallpaperLibraryEnabled(this.store?.getState()?.Prefs?.values);
   }
 
-  // Where every saved image lives. Only the applied one is copied up to the
-  // wallpaper folder, the one path older New Tab and the startup cache read.
+  // Where every saved image lives. The page loads them from here, except on
+  // a host too old to resolve a path, which reads a copy one level up.
   get libraryDirectory() {
     return PathUtils.join(this.wallpaperDirectory, LIBRARY_DIRECTORY_NAME);
   }
@@ -362,9 +360,6 @@ export class WallpaperFeed {
       await this.writeFile(filePath, image.bytes, {
         tmpPath: `${filePath}.tmp`,
       });
-      // No thumbnail here. A retirement arrives on a Remote Settings sync with
-      // no page open, and scaling needs the content process, so the picker
-      // makes one the first time it is opened.
 
       // Send the library first: it carries the crop and the credit, so applying
       // the wallpaper before it arrives paints centered and uncredited.
@@ -404,10 +399,13 @@ export class WallpaperFeed {
 
   async updateWallpapers(isStartup = false) {
     // Send the applied wallpaper before touching the file system, so the page
-    // has it as early as it did before the library existed.
-    this.broadcastAppliedWallpaper();
+    // has it as early as it did before the library existed. Not mid-upload,
+    // where the applied URL is still the picture being replaced.
+    if (!this.applyingWallpaper) {
+      this.broadcastAppliedWallpaper();
+    }
 
-    if (await this.migrateWallpaperLibrary()) {
+    if ((await this.migrateWallpaperLibrary()) && !this.applyingWallpaper) {
       this.broadcastAppliedWallpaper();
     }
 
@@ -562,7 +560,6 @@ export class WallpaperFeed {
    *   Picture of the Day. Uploads have none and are known by their number.
    * @param {string} [info.publishedDate] - The day a Picture of the Day was
    *   published, so setting the same picture twice applies the saved copy.
-   * @param {Blob} [info.thumbnail] - A small copy scaled by the page.
    * @param {string|null} [target] - The id of the content port that asked, so
    *   the save can be reported against it.
    * @returns {Promise<string|null>} The path of the image now applied, or null
@@ -590,14 +587,34 @@ export class WallpaperFeed {
       console.error("wallpaperUpload: invalid type");
       return null;
     }
+    // The picker selects "custom" while this is still writing, but the new URL
+    // only exists at the end. Drop the old one, then hold so the pref answer
+    // below cannot put it straight back.
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.WALLPAPERS_CUSTOM_SET,
+        data: null,
+      })
+    );
+    this.applyingWallpaper++;
+
+    let savedPath = null;
     try {
-      return await locks.request(WALLPAPER_FILE_LOCK, () =>
+      savedPath = await locks.request(WALLPAPER_FILE_LOCK, () =>
         this.#writeWallpaper(file, wallpaperTheme, type, info, target)
       );
     } catch (error) {
       console.error("Could not take the wallpaper file lock:", error);
-      return null;
+    } finally {
+      this.applyingWallpaper--;
     }
+
+    // Nothing saved, so put back what is still applied. Only once the last
+    // upload is done, or that URL is one another write is about to replace.
+    if (!savedPath && !this.applyingWallpaper) {
+      this.broadcastAppliedWallpaper();
+    }
+    return savedPath;
   }
 
   /**
@@ -606,8 +623,8 @@ export class WallpaperFeed {
    * @param {Blob} file - The image.
    * @param {string} wallpaperTheme - "light" or "dark".
    * @param {string} type - One of WALLPAPER_TYPES.
-   * @param {object} info - The name, publishedDate and thumbnail described on
-   *   wallpaperUpload, any of which may be missing.
+   * @param {object} info - The name and publishedDate described on
+   *   wallpaperUpload, either of which may be missing.
    * @param {string|null} [target] - The id of the content port that asked, so
    *   the save can be reported against it.
    * @returns {Promise<string|null>} The path of the image now applied, or null
@@ -692,12 +709,6 @@ export class WallpaperFeed {
         ""
       );
 
-      // Thumbnail scaling runs in content. This stores the result it receives,
-      // and a save with no thumbnail still gets one when the picker opens.
-      if (info.thumbnail) {
-        const thumbBuffer = await info.thumbnail.arrayBuffer();
-        await this.#writeThumbnail(filename, new Uint8Array(thumbBuffer));
-      }
       if (!(await this.#copyAppliedWallpaper(filename))) {
         return null;
       }
@@ -712,7 +723,7 @@ export class WallpaperFeed {
       this.store.dispatch(
         ac.BroadcastToContent({
           type: at.WALLPAPERS_CUSTOM_SET,
-          data: this.getWallpaperURL(filename),
+          data: getWallpaperURL(filename, this.libraryEnabled),
         })
       );
 
@@ -774,52 +785,17 @@ export class WallpaperFeed {
   /**
    * @backward-compat { version 158 }
    *
-   * Stores the small copy of a saved image that the picker shows. Nothing
-   * inside wallpaper/library/ has an address, so the picker is sent bytes, and
-   * a small copy keeps that cheap. Scaling runs in content; this only stores
-   * what it is given.
-   *
-   * Once MozNewTabWallpaperProtocolHandler resolves a path and 158 is on
-   * Release, the picker can point straight at the file. Bug 2068272 deletes
-   * this method and the scaling in the picker that feeds it.
-   *
-   * @param {string} filename - The saved image the thumbnail belongs to.
-   * @param {Uint8Array} thumbnail - The scaled image bytes.
-   * @returns {Promise<boolean>} Whether the thumbnail was written.
-   */
-  async #writeThumbnail(filename, thumbnail) {
-    if (!thumbnail?.byteLength) {
-      return false;
-    }
-    try {
-      const path = PathUtils.join(
-        this.libraryDirectory,
-        getThumbnailFilename(filename)
-      );
-      await this.writeFile(path, thumbnail, { tmpPath: `${path}.tmp` });
-      return true;
-    } catch (error) {
-      console.error("Failed to save a wallpaper thumbnail:", error);
-      return false;
-    }
-  }
-
-  /**
-   * @backward-compat { version 158 }
-   *
-   * Puts the applied image where the page can load it. moz-newtab-wallpaper
-   * resolves the host only, so nothing inside wallpaper/library/ has an
-   * address of its own. The copy also keeps an older New Tab, which reads
-   * this folder, showing the right wallpaper.
-   *
-   * Once MozNewTabWallpaperProtocolHandler resolves a path and 158 is on
-   * Release, the page can point straight at the library file. Bug 2068272
-   * deletes this method and every call to it.
+   * With the library off, a host-only address is all an older handler
+   * resolves, so the applied image is copied to the top of the wallpaper
+   * folder for the page to read. Goes once 158 reaches Release.
    *
    * @param {string} filename - The library image to copy up.
-   * @returns {Promise<boolean>} Whether the copy is in place.
+   * @returns {Promise<boolean>} Whether the page can load the image.
    */
   async #copyAppliedWallpaper(filename) {
+    if (this.libraryEnabled) {
+      return true;
+    }
     try {
       await this.copyFile(
         PathUtils.join(this.libraryDirectory, filename),
@@ -858,6 +834,8 @@ export class WallpaperFeed {
       return false;
     }
 
+    // The thumbnail is from before the picker loaded images by address. A
+    // profile saved back then still has one beside every image.
     for (const name of [
       getDetailsFilename(filename),
       getThumbnailFilename(filename),
@@ -896,8 +874,9 @@ export class WallpaperFeed {
   }
 
   /**
-   * Copies the image up, points every pref at it and tells content. Callers
-   * hold the file lock.
+   * Points every pref at the image and tells content. Callers hold the file
+   * lock. With the library off it also copies the image up, which is the only
+   * place an older handler can address it.
    *
    * @param {string} filename - The library image to apply.
    * @param {string|null} [target] - The id of the content port that asked, so
@@ -938,14 +917,22 @@ export class WallpaperFeed {
       publishedDate = details?.publishedDate || "";
     }
 
-    this.applyingWallpaper = true;
+    this.applyingWallpaper++;
 
-    // In a finally: if any of these throws, leaving the flag up would stop the
+    // In a finally: if any of these throws, leaving the hold up would stop the
     // page being told about a wallpaper change for the rest of the session.
     try {
       Services.prefs.setStringPref(
         PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
         filename
+      );
+      // Before the prefs below, which reach the page as they change. Turning
+      // wallpapers back on would otherwise paint the URL it still holds.
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WALLPAPERS_CUSTOM_SET,
+          data: getWallpaperURL(filename, this.libraryEnabled),
+        })
       );
       this.store.dispatch(
         ac.SetPref("newtabWallpapers.customWallpaper.theme", parsed.theme)
@@ -964,13 +951,9 @@ export class WallpaperFeed {
         ac.SetPref("widgets.pictureOfTheDay.wallpaperActive", publishedDate)
       );
     } finally {
-      this.applyingWallpaper = false;
+      this.applyingWallpaper--;
     }
 
-    // Every pref agrees now, so this is the one picture content is told about.
-    this.broadcastAppliedWallpaper();
-
-    // The copy this one replaced is no longer applied, so the sweep takes it.
     await this.#sweepWallpaperDirectory();
 
     const saved = await this.getSavedWallpapers();
@@ -1041,22 +1024,41 @@ export class WallpaperFeed {
       );
     }
 
+    // A legacy name is still at the top of the wallpaper folder, so address it
+    // there until the migration moves it and sends the new name.
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.WALLPAPERS_CUSTOM_SET,
-        data: this.getWallpaperURL(filename),
+        data: getWallpaperURL(
+          filename,
+          this.libraryEnabled && applied.kind === "saved"
+        ),
       })
     );
   }
 
   /**
-   * Sends every open page the list of saved images.
+   * Sends the list of saved images to every open page, or to one that asked.
    *
    * @param {boolean} [isStartup] - Whether this is the broadcast made at
    *   startup.
+   * @param {string|null} [target] - The page to reply to, instead of
+   *   broadcasting.
    */
-  async broadcastWallpaperLibrary(isStartup = false) {
+  async broadcastWallpaperLibrary(isStartup = false, target = null) {
     const saved = await this.getSavedWallpapers();
+
+    // A page restored from the startup cache never receives a broadcast, only
+    // a direct reply, so it asks and is answered on its own.
+    if (target) {
+      this.store.dispatch(
+        ac.OnlyToOneContent(
+          { type: at.WALLPAPERS_CUSTOM_LIBRARY_SET, data: saved },
+          target
+        )
+      );
+      return;
+    }
 
     this.store.dispatch(
       ac.BroadcastToContent({
@@ -1136,95 +1138,6 @@ export class WallpaperFeed {
   }
 
   /**
-   * Sends one page the picker thumbnails as bytes, since the library has no
-   * URL. An image with no thumbnail yet goes full size for the page to scale.
-   *
-   * @param {string|null} [target] - The page that asked. Without one the list
-   *   and thumbnails are broadcast and full images are left out.
-   */
-  async sendLibraryThumbnails(target) {
-    let saved = [];
-    let thumbnails = [];
-
-    // The list, the thumbnails it needs and any thumbnail written on the way
-    // are one snapshot under one lock. Read outside it, an upload finishing in
-    // between would broadcast a newer library that this reply then undid.
-    try {
-      await locks.request(WALLPAPER_FILE_LOCK, async () => {
-        saved = await this.getSavedWallpapers();
-        for (const { filename } of saved) {
-          const file = await this.#readThumbnail(filename);
-          if (file) {
-            thumbnails.push({ filename, file });
-            continue;
-          }
-          // Nothing scaled yet: a migrated or rescued image arrived with no
-          // page to scale it. Full size goes only to the page that asked.
-          const full = target ? await this.#readLibraryImage(filename) : null;
-          if (full) {
-            thumbnails.push({ filename, file: full, needsThumbnail: true });
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Could not take the wallpaper file lock:", error);
-    }
-
-    // A page restored from the startup cache never receives a broadcast, only a
-    // direct reply, so its library stays at whatever the snapshot held. Send it
-    // with the thumbnails it just asked for.
-    const libraryAction = {
-      type: at.WALLPAPERS_CUSTOM_LIBRARY_SET,
-      data: saved,
-    };
-    this.store.dispatch(
-      target
-        ? ac.OnlyToOneContent(libraryAction, target)
-        : ac.BroadcastToContent(libraryAction)
-    );
-
-    const action = {
-      type: at.WALLPAPERS_CUSTOM_THUMBNAILS_SET,
-      data: thumbnails,
-    };
-
-    this.store.dispatch(
-      target
-        ? ac.OnlyToOneContent(action, target)
-        : ac.BroadcastToContent(action)
-    );
-
-    // Drop the parent's copy: the startup cache writes the parent store through
-    // JSON, which turns a Blob into {}. A bare dispatch leaves content's bytes.
-    this.store.dispatch({
-      type: at.WALLPAPERS_CUSTOM_THUMBNAILS_SET,
-      data: [],
-    });
-  }
-
-  /**
-   * @param {string} filename - The library image.
-   * @returns {Promise<Blob|null>} Its thumbnail, or null when there is none.
-   */
-  async #readThumbnail(filename) {
-    const libraryDir = this.libraryDirectory;
-    const thumbnailPath = PathUtils.join(
-      libraryDir,
-      getThumbnailFilename(filename)
-    );
-
-    try {
-      const bytes = await IOUtils.read(thumbnailPath);
-      return new Blob([bytes], { type: THUMBNAIL_MIME_TYPE });
-    } catch (error) {
-      // No thumbnail yet, which is the case for anything saved by an earlier
-      // version or rescued from a retired set.
-    }
-
-    return null;
-  }
-
-  /**
    * Reads the details file kept beside a saved image.
    *
    * @param {string} detailsFilename - The .txt file next to the image.
@@ -1263,9 +1176,8 @@ export class WallpaperFeed {
 
   /**
    * Brings a folder written by an earlier New Tab up to date: moves loose v1-
-   * images and their .txt files down into library/, adopts the single
-   * pre-library image under a v1- name, and puts the applied image's copy back
-   * in wallpaper/ when it is missing. Resolves to true if the applied image was
+   * images and their .txt files down into library/, and adopts the single
+   * pre-library image under a v1- name. Resolves to true if the applied image was
    * renamed, so the page can be told its new address.
    */
   async #migrateWallpaperLibrary() {
@@ -1292,11 +1204,9 @@ export class WallpaperFeed {
         // A saved image or its credit, left in the wallpaper folder by a version
         // that kept the library there.
         if (parsed.kind === "saved" || parsed.kind === "details") {
-          // The applied image is meant to sit up here as well as in the
-          // library, so anything the library already holds is that copy rather
-          // than a stray. Moving it would take it away from the page and
-          // overwrite the original with it on every startup. The sweep clears
-          // a flat file that is genuinely left over.
+          // A name the library already holds is the pre-158 copy of it, not a
+          // stray. Moving it would overwrite the original on every startup.
+          // The sweep clears a flat file that is genuinely left over.
           if (await IOUtils.exists(PathUtils.join(libraryDir, filename))) {
             continue;
           }
@@ -1325,10 +1235,9 @@ export class WallpaperFeed {
           }
         }
       }
-
-      // Whatever is applied needs its copy back in the wallpaper folder, since
-      // that is the only place the page can load it from. The copy is the shim
-      // described on #copyAppliedWallpaper, gone with bug 2068272.
+      // @backward-compat { version 158 } On a pre-158 host the page reads the
+      // top-level copy, so put it back when it is missing.
+      // #copyAppliedWallpaper no-ops otherwise.
       const appliedNow = Services.prefs.getStringPref(
         PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
         ""
@@ -1408,54 +1317,13 @@ export class WallpaperFeed {
   }
 
   /**
-   * @param {string} filename - The library image.
-   * @returns {Promise<Blob|null>} The image itself, for the picker to scale
-   *   when no thumbnail exists yet.
-   */
-  async #readLibraryImage(filename) {
-    try {
-      const bytes = await IOUtils.read(
-        PathUtils.join(this.libraryDirectory, filename)
-      );
-      return new Blob([bytes]);
-    } catch (error) {
-      console.error("Failed to read a saved wallpaper:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Stores a thumbnail the picker scaled. The filename comes from content, so
-   * it has to parse as one of ours before anything is written next to it.
-   *
-   * @param {string} filename - The library image the thumbnail belongs to.
-   * @param {Blob} thumbnail - The scaled image.
-   */
-  async storeThumbnail(filename, thumbnail) {
-    if (parseWallpaperFilename(filename).kind !== "saved" || !thumbnail) {
-      return;
-    }
-    try {
-      const buffer = await thumbnail.arrayBuffer();
-      await locks.request(WALLPAPER_FILE_LOCK, async () => {
-        if (
-          await IOUtils.exists(PathUtils.join(this.libraryDirectory, filename))
-        ) {
-          await this.#writeThumbnail(filename, new Uint8Array(buffer));
-        }
-      });
-    } catch (error) {
-      console.error("Failed to store a wallpaper thumbnail:", error);
-    }
-  }
-
-  /**
-   * Removes .tmp files, replaced copies and leftovers from the wallpaper
-   * folder. The library is a folder so it survives. Callers hold the file lock.
+   * Removes .tmp files, leftover copies and orphans from the wallpaper folder.
+   * The library is a folder so it survives. Callers hold the file lock.
    */
   async #sweepWallpaperDirectory() {
     try {
       const wallpaperDir = this.wallpaperDirectory;
+      const libraryDir = this.libraryDirectory;
       const children = await IOUtils.getChildren(wallpaperDir, {
         ignoreAbsent: true,
       });
@@ -1468,15 +1336,18 @@ export class WallpaperFeed {
         const filename = PathUtils.filename(path);
         const parsed = parseWallpaperFilename(filename);
 
-        if (filename === appliedFilename) {
+        // Every saved image lives in the library now, so anything recognized
+        // up here is a leftover, including the copy older versions kept. The
+        // exception is an applied image with no library counterpart, which is
+        // waiting for the migration to adopt it.
+        if (parsed.kind === "unknown") {
           continue;
         }
-
-        // Everything except the applied image belongs in the library, so
-        // anything recognized up here is a leftover copy.
-        const remove = parsed.kind !== "unknown";
-
-        if (!remove) {
+        if (
+          filename === appliedFilename &&
+          (!this.libraryEnabled ||
+            !(await IOUtils.exists(PathUtils.join(libraryDir, filename))))
+        ) {
           continue;
         }
 
@@ -1498,9 +1369,10 @@ export class WallpaperFeed {
   }
 
   /**
-   * Tidies the library. Only ever removes a .tmp or an extra file whose image
-   * is gone, never an image: a name this fails to recognize is someone's
-   * picture.
+   * Tidies the library. Only ever removes a .tmp, a thumbnail, or a details
+   * file whose image is gone, never an image: a name this fails to recognize
+   * is someone's picture. Thumbnails all go, since the picker loads the image
+   * itself now and profiles saved before that still have them.
    */
   async #sweepLibraryDirectory() {
     try {
@@ -1511,11 +1383,14 @@ export class WallpaperFeed {
 
       for (const path of children) {
         const parsed = parseWallpaperFilename(PathUtils.filename(path));
-        const isStrandedExtraFile =
-          (parsed.kind === "details" || parsed.kind === "thumbnail") &&
-          !filenames.has(parsed.imageFilename);
+        const isStrandedDetails =
+          parsed.kind === "details" && !filenames.has(parsed.imageFilename);
 
-        if (parsed.kind !== "temporary" && !isStrandedExtraFile) {
+        if (
+          parsed.kind !== "temporary" &&
+          parsed.kind !== "thumbnail" &&
+          !isStrandedDetails
+        ) {
           continue;
         }
 
@@ -1593,9 +1468,9 @@ export class WallpaperFeed {
       );
 
       if (filename === appliedNow) {
-        // Only the copy the page renders from, and the library image it came
-        // from is already gone. Failing here must not keep the selection
-        // pointing at a deleted image: the sweep clears the leftover later.
+        // Firefox before 158 cannot load library files, so the applied image
+        // is also copied to the top of the wallpaper folder. Remove that copy.
+        // If that fails, still clear the selection. The sweep takes it later.
         try {
           await this.removeFile(
             PathUtils.join(this.wallpaperDirectory, filename),
@@ -1700,7 +1575,6 @@ export class WallpaperFeed {
             {
               name: action.data.name,
               publishedDate: action.data.publishedDate,
-              thumbnail: action.data.thumbnail,
             },
             target
           );
@@ -1734,11 +1608,12 @@ export class WallpaperFeed {
           action.meta?.fromTarget
         );
         break;
-      case at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE:
-        await this.storeThumbnail(action.data.filename, action.data.thumbnail);
-        break;
-      case at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST:
-        await this.sendLibraryThumbnails(action.meta?.fromTarget);
+      case at.WALLPAPERS_CUSTOM_LIBRARY_REQUEST:
+        // Behind the file lock, so an upload in flight cannot be answered
+        // with the list from before it.
+        await locks.request(WALLPAPER_FILE_LOCK, () =>
+          this.broadcastWallpaperLibrary(false, action.meta?.fromTarget)
+        );
         break;
     }
   }

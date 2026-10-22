@@ -7,7 +7,10 @@ package org.mozilla.fenix.browser.applinks
 import android.content.Intent
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
@@ -25,9 +28,17 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.utils.Settings
 
 class OpenInAppMenuItemProviderTest {
+    private val openAppLink: AppLinksUseCases.OpenAppLinkRedirect = mockk(relaxed = true)
+    private val settings: Settings = mockk(relaxed = true)
+    private val menu = FakeMenuHost()
+
     @Test
     fun `GIVEN an app can open the current page WHEN building the menu item THEN offer opening it in that app`() =
         runTest {
@@ -107,16 +118,68 @@ class OpenInAppMenuItemProviderTest {
         )
     }
 
+    @Test
+    fun `GIVEN an app can open the current page WHEN clicking the item THEN open it there and close the menu`() =
+        runTest {
+            val provider = provider(appLinksUseCases = appLinksUseCases(hasExternalApp = true))
+
+            provider.onEvent(MenuAction.OpenInApp, menu)
+
+            verify {
+                settings.openInAppOpened = true
+                openAppLink(any<Intent>())
+            }
+            assertTrue(menu.isDismissed)
+        }
+
+    @Test
+    fun `GIVEN no app can open the current page WHEN clicking the item THEN keep the menu open`() = runTest {
+        val provider = provider(appLinksUseCases = appLinksUseCases(hasExternalApp = false))
+
+        provider.onEvent(MenuAction.OpenInApp, menu)
+
+        verify(exactly = 0) {
+            settings.openInAppOpened = true
+            openAppLink(any<Intent>())
+        }
+        assertFalse(menu.isUsed)
+    }
+
+    @Test
+    fun `GIVEN no selected tab WHEN clicking the item THEN keep the menu open`() = runTest {
+        val provider = provider(browserStore = BrowserStore(), appLinksUseCases = appLinksUseCases())
+
+        provider.onEvent(MenuAction.OpenInApp, menu)
+
+        verify(exactly = 0) { openAppLink(any<Intent>()) }
+        assertFalse(menu.isUsed)
+    }
+
+    @Test
+    fun `WHEN an app can open the page or not THEN handle all events the item can dispatch and no others`() = runTest {
+        listOf(true, false).forEach { hasExternalApp ->
+            val provider = provider(appLinksUseCases = appLinksUseCases(hasExternalApp = hasExternalApp))
+
+            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+
+            assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+            assertFalse(provider.handles(MenuAction.Navigate.Settings))
+        }
+    }
+
     // The item is kept up to date on a scope that runTest cancels at the end of each test.
     private fun TestScope.provider(
         browserStore: BrowserStore = browserStoreWithSelectedTab(),
         appStore: AppStore = appStore(isHighlighted = false),
         appLinksUseCases: AppLinksUseCases,
+        target: MenuTarget = MenuTarget.BrowserTab,
     ) =
         OpenInAppMenuItemProvider(
             browserStore = browserStore,
+            target = target,
             appStore = appStore,
             appLinksUseCases = appLinksUseCases,
+            settings = settings,
             scope = backgroundScope,
         )
 
@@ -143,6 +206,7 @@ class OpenInAppMenuItemProviderTest {
         hasExternalApp: Boolean = true,
         appName: String = APP_NAME,
     ): AppLinksUseCases = mockk {
+        every { openAppLink } returns this@OpenInAppMenuItemProviderTest.openAppLink
         every { appLinkRedirect } returns
             mockk redirect@{
                 every { this@redirect.invoke(any()) } returns

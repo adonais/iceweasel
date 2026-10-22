@@ -29,6 +29,7 @@ gcloud:
     - notPackage org.mozilla.fenix.ui.efficiency.generation.pairs.shards
     - notPackage org.mozilla.fenix.ui.efficiency.generation.interaction.shards
     - notPackage org.mozilla.fenix.ui.efficiency.generation.behavior.shards
+    - notPackage org.mozilla.fenix.ui.efficiency.core
 
   device:
     - model: MediumPhone.arm

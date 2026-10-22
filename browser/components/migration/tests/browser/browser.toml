@@ -22,35 +22,23 @@ run-if = [
 ["browser_disabled_migrator.js"]
 
 ["browser_do_migration.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_edge_bookmarks_success_strings.js"]
 
 ["browser_entrypoint_telemetry.js"]
 
 ["browser_extension_migration.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_file_migration.js"]
 support-files = ["dummy_file.csv"]
 
 ["browser_misc_telemetry.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_no_browsers_state.js"]
 
 ["browser_only_file_migrators.js"]
 
 ["browser_permissions.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_safari_passwords.js"]
 run-if = [

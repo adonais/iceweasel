@@ -122,6 +122,23 @@
   .toggle-button[aria-pressed="true"]:enabled:hover:active::after {
     border-color: var(--toggle-border-color-active);
   }
+
+  :host(:state(disabled)) .toggle-button {
+    background-color: var(--toggle-background-color-disabled);
+    border-color: var(--toggle-border-color-disabled);
+
+    &::before {
+      background-color: var(--toggle-dot-background-color-disabled);
+    }
+
+    &[aria-pressed="true"] {
+      background-color: var(--toggle-background-color-pressed-disabled);
+
+      &::before {
+        background-color: var(--toggle-dot-background-color-on-pressed-disabled);
+      }
+    }
+  }
 }
 
 :host(:state(disabled)) .toggle-button {

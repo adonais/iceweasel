@@ -62,8 +62,6 @@ CreateTestFixture(const std::string& test_case_name,
       /*video_quality_analyzer=*/nullptr);
   auto alice = std::make_unique<PeerConfigurer>(*network_links.first);
   auto bob = std::make_unique<PeerConfigurer>(*network_links.second);
-  alice->SetUseNetworkThreadAsWorkerThread();
-  bob->SetUseNetworkThreadAsWorkerThread();
   alice_configurer(alice.get());
   bob_configurer(bob.get());
   fixture->AddPeer(std::move(alice));

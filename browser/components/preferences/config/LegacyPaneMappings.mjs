@@ -46,6 +46,10 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     "general-migrate-autoclose",
     { category: "sync", subcategory: "migrate-autoclose" },
   ],
+  [
+    "general-importBrowserData",
+    { category: "sync", subcategory: "importBrowserData" },
+  ],
 
   ["general-drm", { category: "tabsBrowsing", subcategory: "drm" }],
 

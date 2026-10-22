@@ -15,6 +15,7 @@
 #include "BaseSize.h"
 #include "Coord.h"
 #include "Types.h"
+#include "fmt/ostream.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/NumericTools.h"
 
@@ -62,14 +63,14 @@ struct SizeTyped;
 
 template <class Units>
 struct MOZ_EMPTY_BASES IntPointTyped
-    : public BasePoint<int32_t, IntPointTyped<Units>, IntCoordTyped<Units> >,
+    : public BasePoint<int32_t, IntPointTyped<Units>, IntCoordTyped<Units>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
   typedef IntParam<int32_t> ToInt;
   typedef IntCoordTyped<Units> Coord;
-  typedef BasePoint<int32_t, IntPointTyped<Units>, IntCoordTyped<Units> > Super;
+  typedef BasePoint<int32_t, IntPointTyped<Units>, IntCoordTyped<Units>> Super;
 
   constexpr IntPointTyped() : Super() {
     static_assert(sizeof(IntPointTyped) == sizeof(int32_t) * 2,
@@ -135,13 +136,13 @@ typedef IntPointTyped<UnknownUnits> IntPoint;
 
 template <class Units, class F = Float>
 struct MOZ_EMPTY_BASES PointTyped
-    : public BasePoint<F, PointTyped<Units, F>, CoordTyped<Units, F> >,
+    : public BasePoint<F, PointTyped<Units, F>, CoordTyped<Units, F>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
   typedef CoordTyped<Units, F> Coord;
-  typedef BasePoint<F, PointTyped<Units, F>, CoordTyped<Units, F> > Super;
+  typedef BasePoint<F, PointTyped<Units, F>, CoordTyped<Units, F>> Super;
 
   constexpr PointTyped() : Super() {
     static_assert(sizeof(PointTyped) == sizeof(F) * 2,
@@ -187,11 +188,11 @@ IntPointTyped<Units> TruncatedToInt(const PointTyped<Units, F>& aPoint) {
 }
 
 template <class Units, class F = Float>
-struct Point3DTyped : public BasePoint3D<F, Point3DTyped<Units, F> > {
+struct Point3DTyped : public BasePoint3D<F, Point3DTyped<Units, F>> {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
-  typedef BasePoint3D<F, Point3DTyped<Units, F> > Super;
+  typedef BasePoint3D<F, Point3DTyped<Units, F>> Super;
 
   Point3DTyped() : Super() {
     static_assert(sizeof(Point3DTyped) == sizeof(F) * 3,
@@ -243,11 +244,11 @@ IntPointTyped<Units> IntPointTyped<Units>::Truncate(
 }
 
 template <class Units, class F = Float>
-struct Point4DTyped : public BasePoint4D<F, Point4DTyped<Units, F> > {
+struct Point4DTyped : public BasePoint4D<F, Point4DTyped<Units, F>> {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
 
-  typedef BasePoint4D<F, Point4DTyped<Units, F> > Super;
+  typedef BasePoint4D<F, Point4DTyped<Units, F>> Super;
 
   Point4DTyped() : Super() {
     static_assert(sizeof(Point4DTyped) == sizeof(F) * 4,
@@ -284,7 +285,7 @@ typedef Point4DTyped<UnknownUnits, double> PointDouble4D;
 
 template <class Units>
 struct MOZ_EMPTY_BASES IntSizeTyped
-    : public BaseSize<int32_t, IntSizeTyped<Units>, IntCoordTyped<Units> >,
+    : public BaseSize<int32_t, IntSizeTyped<Units>, IntCoordTyped<Units>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
@@ -352,7 +353,7 @@ typedef IntSizeTyped<UnknownUnits> IntSize;
 
 template <class Units, class F = Float>
 struct MOZ_EMPTY_BASES SizeTyped
-    : public BaseSize<F, SizeTyped<Units, F>, CoordTyped<Units, F> >,
+    : public BaseSize<F, SizeTyped<Units, F>, CoordTyped<Units, F>>,
       public Units {
   static_assert(IsPixel<Units>::value,
                 "'Units' must be a coordinate system tag");
@@ -415,5 +416,18 @@ IntSizeTyped<Units> IntSizeTyped<Units>::Truncate(
 
 }  // namespace gfx
 }  // namespace mozilla
+
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntPointTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::PointTyped<Units, F>>
+    : fmt::ostream_formatter {};
+template <class Units>
+struct fmt::formatter<mozilla::gfx::IntSizeTyped<Units>>
+    : fmt::ostream_formatter {};
+template <class Units, class F>
+struct fmt::formatter<mozilla::gfx::SizeTyped<Units, F>>
+    : fmt::ostream_formatter {};
 
 #endif /* MOZILLA_GFX_POINT_H_ */

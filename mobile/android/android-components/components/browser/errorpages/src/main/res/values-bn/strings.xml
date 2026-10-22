@@ -56,15 +56,19 @@
   <!-- The error message shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_message"><![CDATA[<ul>\n<li>আপনি যে পৃষ্ঠাটি দেখার চেষ্টা করছেন তা দেখানো যাচ্ছে না, কারণ এই ওয়েবসাইটটির জন্য একটি সুরক্ষিত সংযোগ প্রয়োজন।</li>\n<li>সমস্যাটি সম্ভবত ওয়েবসাইটটির, এবং এটি সমাধান করার জন্য আপনার কিছুই করার নেই।</li>\n<li>আপনি ওয়েবসাইটটির অ্যাডমিনকে সমস্যাটি সম্পর্কে জানাতে পারেন।</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
-  <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">অ্যাডভান্সড...</string>
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">অ্যাডভান্সড…</string>
   <!-- The advanced certificate information shown when a website uses HSTS. The %1$s will be replaced by the website URL and %2$s will be replaced by the app name. It's only shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_techInfo2"><![CDATA[<label> <b>%1$s</b>-এর HTTP কঠোর পরিবহন নিরাপত্তা (HSTS) নামে একটি নিরাপত্তা নীতি রয়েছে, যার মানে হলো <b>%2$s</b> শুধুমাত্র এটির সাথে নিরাপদে সংযুক্ত হতে পারে৷ আপনি এই সাইট দেখার জন্য এটিকে কোনো ব্যতিক্রমে যোগ করতে পারবেন না। </label>]]></string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_back">পিছনে ফিরে যাও</string>
   <!-- The document title and heading of the error page shown when the user's network connection is interrupted while connecting to a website. -->
   <string name="mozac_browser_errorpages_net_interrupt_title">সংযোগ বিঘ্নিত হয়েছে</string>
+  <!-- The error message shown when the user's network connection is interrupted while connecting to a website. -->
+  <string name="mozac_browser_errorpages_net_interrupt_message"><![CDATA[<p>ব্রাউজারটি সফলভাবে সংযুক্ত হয়েছে, কিন্তু তথ্য স্থানান্তর করার সময় সংযোগটি বিঘ্নিত হয়েছে৷ অনুগ্রহ করে আবার চেষ্টা করুন৷</p>\n<ul>\n<li>সাইটটি সাময়িকভাবে অনুপলব্ধ বা খুব ব্যস্ত হতে পারে৷ কিছুক্ষণের মধ্যে আবার চেষ্টা করুন৷</li>\n<li>যদি আপনি কোনো পৃষ্ঠা লোড করতে না পারেন, তাহলে আপনার ডিভাইসের ডেটা বা Wi-Fi সংযোগ পরীক্ষা করুন।</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website takes too long to load. -->
   <string name="mozac_browser_errorpages_net_timeout_title">সংযোগের সময়সীমা উত্তীর্ণ হয়ে গেছে</string>
+  <!-- The error message shown when a website took long to load. -->
+  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>অনুরোধকৃত সাইটটি সংযোগ স্থাপনের জন্য করা অনুরোধে সাড়া দেয়নি এবং ব্রাউজারটি রিপ্লাইয়ের জন্য অপেক্ষা করা বন্ধ করে দিয়েছে। </p><ul><li>হয়তো সার্ভারটি অতিরিক্ত ডিমান্ড অথবা সাময়িক বিভ্রাটের মাঝ দিয়ে যাচ্ছে? কিছুক্ষণ পর পুনরায় চেষ্টা করুন।</li><li>আপনি কি অন্যান্য সাইট ব্রাউজ করতে পারছেন না? ডিভাইসের নেটওয়ার্ক সংযোগ পরীক্ষা করুন।</li><li>আপনার ডিভাইস অথবা নেটওয়ার্ক কি কোনো ফায়ারওয়াল অথবা প্রক্সি দ্বারা সুরক্ষিত করা হয়েছে? ভুল সেটিংস ওয়েব ব্রাউজ করতে বাধা সৃষ্টি করতে পারে।</li><li>এখনো সমস্যা হচ্ছে? সহায়তার জন্য আপনার নেটওয়ার্ক অ্যাডমিনিস্ট্রেটর অথবা ইন্টারনেট সেবাদানকারী প্রতিষ্ঠানের সাথে যোগাযোগ করুন।</li></ul>]]></string>
   <!-- The document title and heading of the error page shown when a website could not be reached. -->
   <string name="mozac_browser_errorpages_connection_failure_title">সংযোগ স্থাপন করতে ব্যর্থ</string>
   <!-- The document title and heading of the error page shown when a website responds in an unexpected way and the browser cannot continue. -->

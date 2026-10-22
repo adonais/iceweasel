@@ -21,12 +21,14 @@ pub mod common;
 mod ffi;
 pub mod http_cache;
 mod mars;
+#[cfg(feature = "stateful")]
+pub mod request;
 pub mod shutdown;
 pub mod telemetry;
 
+use crate::shutdown::ShutdownReferences;
+pub use ffi::telemetry::MozAdsTelemetryWrapper;
 pub use ffi::*;
-
-use crate::{ffi::telemetry::MozAdsTelemetryWrapper, shutdown::ShutdownReferences};
 
 #[cfg(test)]
 mod test_utils;

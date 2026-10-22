@@ -205,6 +205,106 @@ typedef uint32_t PackedRegisterMask;
 template <typename T>
 class TypedRegisterSet;
 
+// 128-bit bitset for FloatRegisters::SetType.
+// From arm64's Bitset128.
+class Bitset128 {
+  // The order (hi, lo) looks best in the debugger.
+  uint64_t hi, lo;
+
+ public:
+  MOZ_IMPLICIT constexpr Bitset128(uint64_t initial) : hi(0), lo(initial) {}
+  MOZ_IMPLICIT constexpr Bitset128(const Bitset128& that) = default;
+
+  constexpr Bitset128(uint64_t hi, uint64_t lo) : hi(hi), lo(lo) {}
+
+  constexpr uint64_t high() const { return hi; }
+
+  constexpr uint64_t low() const { return lo; }
+
+  constexpr Bitset128 operator|(Bitset128 that) const {
+    return Bitset128(hi | that.hi, lo | that.lo);
+  }
+
+  constexpr Bitset128 operator&(Bitset128 that) const {
+    return Bitset128(hi & that.hi, lo & that.lo);
+  }
+
+  constexpr Bitset128 operator^(Bitset128 that) const {
+    return Bitset128(hi ^ that.hi, lo ^ that.lo);
+  }
+
+  constexpr Bitset128 operator~() const { return Bitset128(~hi, ~lo); }
+
+  // We must avoid shifting by the word width, which is complex.  Inlining plus
+  // shift-by-constant will remove a lot of code in the normal case.
+
+  constexpr Bitset128 operator<<(size_t shift) const {
+    if (shift == 0) {
+      return *this;
+    }
+    if (shift < 64) {
+      return Bitset128((hi << shift) | (lo >> (64 - shift)), lo << shift);
+    }
+    if (shift == 64) {
+      return Bitset128(lo, 0);
+    }
+    return Bitset128(lo << (shift - 64), 0);
+  }
+
+  constexpr Bitset128 operator>>(size_t shift) const {
+    if (shift == 0) {
+      return *this;
+    }
+    if (shift < 64) {
+      return Bitset128(hi >> shift, (lo >> shift) | (hi << (64 - shift)));
+    }
+    if (shift == 64) {
+      return Bitset128(0, hi);
+    }
+    return Bitset128(0, hi >> (shift - 64));
+  }
+
+  constexpr bool operator==(Bitset128 that) const {
+    return lo == that.lo && hi == that.hi;
+  }
+
+  constexpr bool operator!=(Bitset128 that) const {
+    return lo != that.lo || hi != that.hi;
+  }
+
+  constexpr bool operator!() const { return (hi | lo) == 0; }
+
+  Bitset128& operator|=(const Bitset128& that) {
+    hi |= that.hi;
+    lo |= that.lo;
+    return *this;
+  }
+
+  Bitset128& operator&=(const Bitset128& that) {
+    hi &= that.hi;
+    lo &= that.lo;
+    return *this;
+  }
+
+  uint32_t size() const { return std::popcount(hi) + std::popcount(lo); }
+
+  uint32_t countTrailingZeroes() const {
+    if (lo) {
+      return std::countr_zero(lo);
+    }
+    return std::countr_zero(hi) + 64;
+  }
+
+  uint32_t countLeadingZeroes() const {
+    if (hi) {
+      return std::countl_zero(hi);
+    }
+    return std::countl_zero(lo) + 64;
+  }
+
+  uint32_t bitWidth() const { return 128 - countLeadingZeroes(); }
+};
+
 class FloatRegisters {
  public:
   enum FPRegisterID {
@@ -245,24 +345,45 @@ class FloatRegisters {
   // Eight bits: (invalid << 7) | (kind << 5) | encoding
   typedef uint8_t Code;
   typedef FPRegisterID Encoding;
-  typedef uint64_t SetType;
+  typedef Bitset128 SetType;
 
+#if defined(ENABLE_JIT_SIMD)
+  enum Kind : uint8_t { Double, Single, Simd128, NumTypes };
+#else
   enum Kind : uint8_t { Double, Single, NumTypes };
+#endif
 
   static constexpr Code Invalid = 0x80;
 
   static const char* GetName(uint32_t code) {
-    static const char* const Names[] = {
+    static const char* const FPUNames[] = {
         "$f0",  "$f1",  "$f2",  "$f3",  "$f4",  "$f5",  "$f6",  "$f7",
         "$f8",  "$f9",  "$f10", "$f11", "$f12", "$f13", "$f14", "$f15",
         "$f16", "$f17", "$f18", "$f19", "$f20", "$f21", "$f22", "$f23",
         "$f24", "$f25", "$f26", "$f27", "$f28", "$f29", "$f30", "$f31"};
-    static_assert(TotalPhys == std::size(Names), "Table is the correct size");
+    static_assert(TotalPhys == std::size(FPUNames),
+                  "Table is the correct size");
+
+#if defined(ENABLE_JIT_SIMD)
+    static const char* const VectorNames[] = {
+        "$vr0",  "$vr1",  "$vr2",  "$vr3",  "$vr4",  "$vr5",  "$vr6",  "$vr7",
+        "$vr8",  "$vr9",  "$vr10", "$vr11", "$vr12", "$vr13", "$vr14", "$vr15",
+        "$vr16", "$vr17", "$vr18", "$vr19", "$vr20", "$vr21", "$vr22", "$vr23",
+        "$vr24", "$vr25", "$vr26", "$vr27", "$vr28", "$vr29", "$vr30", "$vr31"};
+    static_assert(TotalPhys == std::size(VectorNames),
+                  "Table is the correct size");
+#endif
+
     if (code >= Total) {
       return "invalid";
     }
+#if defined(ENABLE_JIT_SIMD)
+    if (kind(Code(code)) == Simd128) {
+      return VectorNames[encoding(Code(code))];
+    }
+#endif
     // Single and double fpu registers share same names on LoongArch.
-    return Names[code % TotalPhys];
+    return FPUNames[encoding(Code(code))];
   }
 
   static Code FromName(const char* name);
@@ -275,44 +396,73 @@ class FloatRegisters {
   static_assert(sizeof(SetType) * 8 >= Total,
                 "SetType should be large enough to enumerate all registers.");
 
-  // Magic values which are used to duplicate a mask of physical register for
-  // a specific type of register. A multiplication is used to copy and shift
-  // the bits of the physical register mask.
-  static const SetType SpreadSingle = SetType(1)
-                                      << (uint32_t(Single) * TotalPhys);
-  static const SetType SpreadDouble = SetType(1)
-                                      << (uint32_t(Double) * TotalPhys);
-  static const SetType Spread = SpreadSingle | SpreadDouble;
+  static constexpr unsigned ShiftDouble = uint32_t(Double) * TotalPhys;
+  static constexpr unsigned ShiftSingle = uint32_t(Single) * TotalPhys;
+#if defined(ENABLE_JIT_SIMD)
+  static constexpr unsigned ShiftSimd128 = uint32_t(Simd128) * TotalPhys;
+#endif
 
-  static const SetType AllPhysMask = ((SetType(1) << TotalPhys) - 1);
-  static const SetType AllMask = AllPhysMask * Spread;
-  static const SetType AllSingleMask = AllPhysMask * SpreadSingle;
-  static const SetType AllDoubleMask = AllPhysMask * SpreadDouble;
-  static const SetType NoneMask = SetType(0);
+  static constexpr SetType NoneMask = SetType(0);
+  static constexpr SetType AllPhysMask = ~(~SetType(0) << TotalPhys);
+  static constexpr SetType AllDoubleMask = AllPhysMask << ShiftDouble;
+  static constexpr SetType AllSingleMask = AllPhysMask << ShiftSingle;
+#if defined(ENABLE_JIT_SIMD)
+  static constexpr SetType AllSimd128Mask = AllPhysMask << ShiftSimd128;
+#endif
 
+#if defined(ENABLE_JIT_SIMD)
+  static constexpr SetType AllMask =
+      AllDoubleMask | AllSingleMask | AllSimd128Mask;
+  static constexpr SetType AliasMask = (SetType(1) << ShiftDouble) |
+                                       (SetType(1) << ShiftSingle) |
+                                       (SetType(1) << ShiftSimd128);
+#else
+  static constexpr SetType AllMask = AllDoubleMask | AllSingleMask;
+  static constexpr SetType AliasMask =
+      (SetType(1) << ShiftDouble) | (SetType(1) << ShiftSingle);
+#endif
+
+  // The 64-bit views of $f24-$f31 are preserved across calls, but the 128-bit
+  // views are not. E.g., GCC marks FP values wider than 8 bytes as partially
+  // clobbered (loongarch_hard_regno_call_part_clobbered) and LLVM's preserved
+  // sets contain no vector register.
   // TODO(loong64): Much less than ARM64 here.
-  static const SetType NonVolatileMask =
+  static constexpr SetType NonVolatileSingleMask =
       SetType((1U << FloatRegisters::f24) | (1U << FloatRegisters::f25) |
               (1U << FloatRegisters::f26) | (1U << FloatRegisters::f27) |
               (1U << FloatRegisters::f28) | (1U << FloatRegisters::f29) |
-              (1U << FloatRegisters::f30) | (1U << FloatRegisters::f31)) *
-      Spread;
+              (1U << FloatRegisters::f30) | (1U << FloatRegisters::f31));
+  static constexpr SetType NonVolatileMask =
+      (NonVolatileSingleMask << ShiftDouble) |
+      (NonVolatileSingleMask << ShiftSingle);
 
-  static const SetType VolatileMask = AllMask & ~NonVolatileMask;
+  static constexpr SetType VolatileMask = AllMask & ~NonVolatileMask;
 
-  static const SetType WrapperMask = VolatileMask;
+  static constexpr SetType WrapperMask = VolatileMask;
 
   // $f22 and $f23 are the scratch registers.
-  static const SetType NonAllocatableMask =
-      (SetType((1U << FloatRegisters::f22) | (1U << FloatRegisters::f23))) *
-      Spread;
+  static constexpr SetType NonAllocatableSingleMask =
+      SetType((1U << FloatRegisters::f22) | (1U << FloatRegisters::f23));
+#if defined(ENABLE_JIT_SIMD)
+  static constexpr SetType NonAllocatableMask =
+      (NonAllocatableSingleMask << ShiftDouble) |
+      (NonAllocatableSingleMask << ShiftSingle) |
+      (NonAllocatableSingleMask << ShiftSimd128);
+#else
+  static constexpr SetType NonAllocatableMask =
+      (NonAllocatableSingleMask << ShiftDouble) |
+      (NonAllocatableSingleMask << ShiftSingle);
+#endif
 
-  static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
+  static constexpr SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 
   // Content spilled during bailouts.
   union RegisterContent {
     float s;
     double d;
+#if defined(ENABLE_JIT_SIMD)
+    uint8_t v128[16];
+#endif
   };
 
   static constexpr Encoding encoding(Code c) {
@@ -355,24 +505,30 @@ struct FloatRegister {
 
   static uint32_t SetSize(SetType x) {
     x |= x >> FloatRegisters::TotalPhys;
+#if defined(ENABLE_JIT_SIMD)
+    // SIMD registers
+    x |= x >> FloatRegisters::TotalPhys;
+#endif
     x &= FloatRegisters::AllPhysMask;
-    return std::popcount(x);
+    return x.size();
   }
 
   static uint32_t FirstBit(SetType x) {
     MOZ_ASSERT(x);
-    return std::countr_zero(x);
+    return x.countTrailingZeroes();
   }
   static uint32_t LastBit(SetType x) {
     MOZ_ASSERT(x);
-    return std::bit_width(x) - 1;
+    return x.bitWidth() - 1;
   }
+
+  static constexpr size_t SizeOfSimd128 = 16;
 
  private:
   // These fields only hold valid values: an invalid register is always
   // represented as a valid encoding and kind with the invalid_ bit set.
   uint8_t encoding_;  // 32 encodings
-  uint8_t kind_;      // Double, Single; more later
+  uint8_t kind_;      // Double, Single, Simd128
   bool invalid_;
 
   typedef Codes::Kind Kind;
@@ -401,7 +557,11 @@ struct FloatRegister {
   }
   bool isSimd128() const {
     MOZ_ASSERT(!invalid_);
+#if defined(ENABLE_JIT_SIMD)
+    return kind_ == FloatRegisters::Simd128;
+#else
     return false;
+#endif
   }
   bool isInvalid() const { return invalid_; }
 
@@ -413,15 +573,29 @@ struct FloatRegister {
     MOZ_ASSERT(!invalid_);
     return FloatRegister(Encoding(encoding_), FloatRegisters::Double);
   }
-  FloatRegister asSimd128() const { MOZ_CRASH(); }
+  FloatRegister asSimd128() const {
+#if defined(ENABLE_JIT_SIMD)
+    MOZ_ASSERT(!invalid_);
+    return FloatRegister(Encoding(encoding_), FloatRegisters::Simd128);
+#else
+    MOZ_CRASH("ENABLE_JIT_SIMD not set");
+#endif
+  }
 
   constexpr uint32_t size() const {
     MOZ_ASSERT(!invalid_);
     if (kind_ == FloatRegisters::Double) {
       return sizeof(double);
     }
-    MOZ_ASSERT(kind_ == FloatRegisters::Single);
-    return sizeof(float);
+    if (kind_ == FloatRegisters::Single) {
+      return sizeof(float);
+    }
+#if defined(ENABLE_JIT_SIMD)
+    MOZ_ASSERT(kind_ == FloatRegisters::Simd128);
+    return SizeOfSimd128;
+#else
+    MOZ_CRASH("ENABLE_JIT_SIMD not set");
+#endif
   }
 
   constexpr Code code() const {
@@ -469,7 +643,7 @@ struct FloatRegister {
     return aliased(aliasIdx);
   }
   SetType alignedOrDominatedAliasedSet() const {
-    return Codes::Spread << encoding_;
+    return Codes::AliasMask << encoding_;
   }
 
   static constexpr RegTypeName DefaultType = RegTypeName::Float64;
@@ -503,6 +677,14 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Float64>(SetType set) {
   return set & FloatRegisters::AllDoubleMask;
 }
 
+#if defined(ENABLE_JIT_SIMD)
+template <>
+inline FloatRegister::SetType
+FloatRegister::LiveAsIndexableSet<RegTypeName::Vector128>(SetType set) {
+  return set & FloatRegisters::AllSimd128Mask;
+}
+#endif
+
 template <>
 inline FloatRegister::SetType
 FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
@@ -511,6 +693,22 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
 
 // LoongArch doesn't have double registers that alias multiple floats.
 inline bool hasMultiAlias() { return false; }
+
+// Get the canonical QNaN mandated by the LoongArch ISA.
+template <typename T>
+inline constexpr T FPUDefaultQNaN() {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  // <https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#_non_numerical_result_of_instructions>
+  if constexpr (std::is_same_v<T, float>) {
+    // > The default single-precision QNaN value is 0x7FC00000, [...]
+    return mozilla::BitwiseCast<float>(UINT32_C(0x7fc00000));
+  } else {
+    // > [...] and the default double-precision QNaN value is
+    // > 0x7FF8000000000000.
+    return mozilla::BitwiseCast<double>(UINT64_C(0x7ff8000000000000));
+  }
+}
 
 enum class LOONG64Extension : uint32_t {
   // Flag when the extensions are initialized, so they can be atomically set.
@@ -521,6 +719,9 @@ enum class LOONG64Extension : uint32_t {
 
   // Atomic operations AMCAS{,_DB}.[BHWD].
   Lamcas,
+
+  // LoongArch SIMD Extension (128-bit SIMD).
+  Lsx,
 };
 
 using LOONG64Extensions = mozilla::EnumSet<LOONG64Extension>;
@@ -553,6 +754,10 @@ class LOONG64Flags final {
 
   static bool HasLamcasExtension() {
     return extensions.contains(LOONG64Extension::Lamcas);
+  }
+
+  static bool HasLsxExtension() {
+    return extensions.contains(LOONG64Extension::Lsx);
   }
 };
 

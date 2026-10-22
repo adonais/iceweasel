@@ -88,8 +88,7 @@ if (rtc_include_tests) {
       }
     }
 
-    rtc_library("neural_feature_extractor_unittest") {
-      testonly = true
+    rtc_cc_test("neural_feature_extractor_unittest") {
       sources = [ "neural_feature_extractor_unittest.cc" ]
       deps = [
         ":neural_residual_echo_estimator_impl",
@@ -114,8 +113,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("neural_residual_echo_estimator_impl_unittest") {
-      testonly = true
+    rtc_cc_test("neural_residual_echo_estimator_impl_unittest") {
       sources = [ "neural_residual_echo_estimator_impl_unittest.cc" ]
       deps = [
         ":neural_residual_echo_estimator_impl",
@@ -144,15 +142,11 @@ if (rtc_include_tests) {
         "../..:apm_debug_dump",
         "//third_party/tflite:tflite_config_no_undef",
       ]
-    }
-
-    rtc_library("neural_residual_echo_estimator_unittest") {
-      testonly = true
-      sources = []
-      deps = [
-        ":neural_feature_extractor_unittest",
-        ":neural_residual_echo_estimator_impl_unittest",
-      ]
+      data_deps = [ "../../../../resources:audio_processing_unittests_data" ]
+      if (is_ios) {
+        deps +=
+            [ "../../../../resources:audio_processing_unittests_bundle_data" ]
+      }
     }
   }
 }

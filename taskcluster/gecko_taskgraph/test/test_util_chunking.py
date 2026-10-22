@@ -83,8 +83,10 @@ def mock_manifest_runtimes_file():
 
     with patch.object(chunking, "_load_manifest_runtimes_data", return_value=mock_data):
         chunking.get_runtimes.cache_clear()
+        chunking._included_runtimes.cache_clear()
         yield
     chunking.get_runtimes.cache_clear()
+    chunking._included_runtimes.cache_clear()
 
 
 @pytest.fixture(scope="module")
@@ -301,6 +303,7 @@ def test_get_runtimes(platform, suite, mock_manifest_runtimes_file):
     """Tests that runtime information is returned for known good configurations."""
     # Clear get_runtimes cache so each parametrized test gets fresh results
     chunking.get_runtimes.cache_clear()
+    chunking._included_runtimes.cache_clear()
 
     result = chunking.get_runtimes(platform, suite)
     assert isinstance(result, dict)
@@ -565,6 +568,36 @@ def test_get_manifests_non_testharness_keeps_subsuites(platform, mock_mozinfo):
 
     # canvas reftests belong to a subsuite but must still run in the reftest job.
     assert any(m.startswith("/html/canvas") for m in active)
+
+
+@pytest.mark.parametrize(
+    "bugbug_data,expected",
+    [
+        ({"groups": {"a.toml": 0.75, "b.toml": 0.65}}, ["a.toml"]),
+        (
+            {
+                "groups": {"a.toml": 0.75, "b.toml": 0.65, "c.toml": 0.5},
+                "confidence_thresholds": {"groups": {"low": 0.6}},
+            },
+            ["a.toml", "b.toml"],
+        ),
+    ],
+)
+def test_bugbug_loader_confidence_thresholds(bugbug_data, expected):
+    params = {"backstop": False, "project": "autoland", "head_rev": "abcdef"}
+    loader = chunking.BugbugLoader(params)
+    default_manifests = {
+        "active": ["a.toml", "b.toml", "c.toml"],
+        "skipped": [],
+        "other_dirs": {},
+    }
+    with patch.object(
+        chunking.DefaultLoader, "get_manifests", return_value=default_manifests
+    ):
+        with patch.object(chunking, "push_schedules", return_value=bugbug_data):
+            manifests = loader.get_manifests("xpcshell", frozenset())
+
+    assert sorted(manifests["active"]) == expected
 
 
 if __name__ == "__main__":

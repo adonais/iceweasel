@@ -87,7 +87,7 @@ fun HomepageHeader(
             verticalAlignment = Alignment.Top,
         ) {
             if (showStoriesButton) {
-                StoriesButton(onClick = onStoriesTapped)
+                StoriesButton(color = WallpaperTheme.onWallpaper, onClick = onStoriesTapped)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -106,9 +106,13 @@ fun HomepageHeader(
 }
 
 @Composable
-private fun StoriesButton(onClick: () -> Unit) {
+private fun StoriesButton(
+    color: Color,
+    onClick: () -> Unit,
+) {
     IconButton(onClick = onClick, contentDescription = null) {
         Icon(
+            tint = color,
             painter = painterResource(iconsR.drawable.mozac_ic_reading_list_24),
             contentDescription = stringResource(R.string.homepage_all_stories),
         )

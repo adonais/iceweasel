@@ -1,9 +1,6 @@
 [DEFAULT]
 subsuite = "media-bc"
 tags = "mediacontrol"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604 - GMP async shutdown crash
-]
 support-files = [
   "file_autoplay.html",
   "file_audio_and_inaudible_media.html",
@@ -90,23 +87,12 @@ skip-if = [
 ["browser_media_control_metadata.js"]
 
 ["browser_media_control_non_eligible_media.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1673527
-]
 
 ["browser_media_control_playback_state.js"]
 
 ["browser_media_control_position_state.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1673527
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1775892
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775892
-]
 
 ["browser_media_control_seek.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1961556
-]
 
 ["browser_media_control_stop_timer.js"]
 

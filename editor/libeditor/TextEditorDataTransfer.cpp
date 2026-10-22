@@ -212,7 +212,8 @@ nsresult TextEditor::HandlePaste(AutoEditActionDataSetter& aEditActionData,
 }
 
 nsresult TextEditor::HandlePasteTransferable(
-    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable) {
+    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable,
+    DataTransfer* aDataTransfer) {
   if (!IsModifiable()) {
     return NS_OK;
   }

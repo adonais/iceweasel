@@ -72,6 +72,13 @@ bool LoadLoadableRootsFromXul();
 bool LoadOSClientCertsModule();
 
 /**
+ * Loads the remote certs module.
+ *
+ * @return true if the module was successfully loaded, false otherwise.
+ */
+bool LoadRemoteCertsModule();
+
+/**
  * Loads the IPC client certs module.
  *
  * @param dir

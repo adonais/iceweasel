@@ -613,6 +613,12 @@ class LoginsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/593768
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.LoginsTest#doNotSaveOptionWillNotUpdateALoginTest"],
+        bug = 2075586,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1935209"])
     fun doNotSaveOptionWillNotUpdateALoginTest() {

@@ -124,18 +124,18 @@ class ComputedStyle {
   // Whether there are author-specified rules for border or background
   // properties.
   // Only returns something meaningful if the appearance property is not `none`.
-  bool HasAuthorSpecifiedBorderOrBackground() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
+  bool HasAuthorOrUserSpecifiedBorderOrBackground() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_BORDER_BACKGROUND);
   }
 
   // Whether there are author-specific rules for text `color`.
-  bool HasAuthorSpecifiedTextColor() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
+  bool HasAuthorOrUserSpecifiedTextColor() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_TEXT_COLOR);
   }
 
   // Whether there are author-specific rules for text-shadow.
-  bool HasAuthorSpecifiedTextShadow() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_SHADOW);
+  bool HasAuthorOrUserSpecifiedTextShadow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_TEXT_SHADOW);
   }
 
   // Does this ComputedStyle or any of its ancestors have text
@@ -215,8 +215,8 @@ class ComputedStyle {
     return bool(Flags() & Flag::IS_IN_OPACITY_ZERO_SUBTREE);
   }
 
-  bool HasAuthorSpecifiedGridAutoFlow() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW);
+  bool HasAuthorOrUserSpecifiedGridAutoFlow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_GRID_AUTO_FLOW);
   }
 
   bool HasAnchorPosReference() const;

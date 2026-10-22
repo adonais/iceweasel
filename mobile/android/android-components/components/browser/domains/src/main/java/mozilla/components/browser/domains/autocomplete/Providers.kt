@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.CustomDomains
 import mozilla.components.browser.domains.Domain
@@ -57,7 +56,7 @@ open class BaseDomainAutocompleteProvider(
 
     fun initialize(context: Context) {
         scope.launch {
-            domains = async { domainsLoader(context) }.await()
+            domains = domainsLoader(context)
         }
     }
 

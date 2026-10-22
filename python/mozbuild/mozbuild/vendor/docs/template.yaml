@@ -41,6 +41,11 @@ origin:
   # optional
   license-file: COPYING
 
+  # The name the package is published under on the npm registry, which gives
+  # it a pkg:npm package URL in the SBOM.
+  # optional
+  npm-name: "@scope/name"
+
   # If there are any mozilla-specific notes you want to put
   # about a library, they can be put here.
   notes: Notes about the library

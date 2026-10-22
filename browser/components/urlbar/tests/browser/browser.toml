@@ -17,7 +17,6 @@ support-files = [
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
   "browser.urlbar.trending.featureGate=false",
-  "layout.css.attr.enabled=true",
   "screenshots.browser.component.enabled=true",
   "sidebar.revamp=false",
 ]
@@ -28,9 +27,6 @@ support-files = [
 ]
 
 ["browser_aboutHomeLoading.js"]
-skip-if = [
-  "tsan", # Intermittently times out, see 1622698 (frequent on TSan).
-]
 
 ["browser_autoOpen.js"]
 
@@ -51,9 +47,6 @@ support-files = [
 ]
 
 ["browser_closePanelOnClick.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_close_other_panels.js"]
 
@@ -140,10 +133,6 @@ https_first_disabled = true
 support-files = ["slow-page.sjs"]
 
 ["browser_strip_on_share.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan && swgl", # Bug 1890664
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && swgl", # Bug 1890664
-]
 
 ["browser_strip_on_share_telemetry.js"]
 
@@ -152,9 +141,6 @@ skip-if = [
 ["browser_suppressFocusBorder.js"]
 
 ["browser_tabKeyBehavior.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1813675
-]
 
 ["browser_textruns.js"]
 

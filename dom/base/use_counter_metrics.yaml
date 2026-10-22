@@ -108,7 +108,7 @@ use.counter:
     send_in_pings:
       - use-counters
 
-# Total of 2670 use counter metrics (excludes denominators).
+# Total of 2668 use counter metrics (excludes denominators).
 # Total of 435 'page' use counters.
 use.counter.page:
   svgsvgelement_getelementbyid:
@@ -20489,7 +20489,7 @@ use.counter.deprecated_ops.doc:
     send_in_pings:
       - use-counters
 
-# Total of 736 'CSS (page)' use counters.
+# Total of 735 'CSS (page)' use counters.
 use.counter.css.page:
   css_align_items:
     type: counter
@@ -20665,40 +20665,6 @@ use.counter.css.page:
     type: counter
     description: >
       Whether a page used the CSS property clear.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_color_interpolation:
-    type: counter
-    description: >
-      Whether a page used the CSS property color-interpolation.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_color_interpolation_filters:
-    type: counter
-    description: >
-      Whether a page used the CSS property color-interpolation-filters.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -21294,23 +21260,6 @@ use.counter.css.page:
     type: counter
     description: >
       Whether a page used the CSS property mask-type.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_masonry_auto_flow:
-    type: counter
-    description: >
-      Whether a page used the CSS property masonry-auto-flow.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -22705,6 +22654,40 @@ use.counter.css.page:
     type: counter
     description: >
       Whether a page used the CSS property break-before.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_color_interpolation:
+    type: counter
+    description: >
+      Whether a page used the CSS property color-interpolation.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_color_interpolation_filters:
+    type: counter
+    description: >
+      Whether a page used the CSS property color-interpolation-filters.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -33003,7 +32986,7 @@ use.counter.css.page:
     send_in_pings:
       - use-counters
 
-# Total of 736 'CSS (document)' use counters.
+# Total of 735 'CSS (document)' use counters.
 use.counter.css.doc:
   css_align_items:
     type: counter
@@ -33179,40 +33162,6 @@ use.counter.css.doc:
     type: counter
     description: >
       Whether a document used the CSS property clear.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_color_interpolation:
-    type: counter
-    description: >
-      Whether a document used the CSS property color-interpolation.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_color_interpolation_filters:
-    type: counter
-    description: >
-      Whether a document used the CSS property color-interpolation-filters.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -33808,23 +33757,6 @@ use.counter.css.doc:
     type: counter
     description: >
       Whether a document used the CSS property mask-type.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  css_masonry_auto_flow:
-    type: counter
-    description: >
-      Whether a document used the CSS property masonry-auto-flow.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -35219,6 +35151,40 @@ use.counter.css.doc:
     type: counter
     description: >
       Whether a document used the CSS property break-before.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_color_interpolation:
+    type: counter
+    description: >
+      Whether a document used the CSS property color-interpolation.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_color_interpolation_filters:
+    type: counter
+    description: >
+      Whether a document used the CSS property color-interpolation-filters.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:

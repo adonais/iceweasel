@@ -1,0 +1,3 @@
+. "$topsrcdir/mobile/android/config/mozconfigs/android-x86_64/release"
+
+ac_add_options --enable-geckoview-lite

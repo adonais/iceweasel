@@ -34,7 +34,7 @@ add_task(async function () {
 
   ok(row, "Favicon request row should appear in the Netmonitor");
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, row);
+  clickOnRequestRow(row.closest(".request-list-item"));
 
   await waitUntil(() => document.querySelector(".network-details-bar"));
 

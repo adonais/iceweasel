@@ -3141,11 +3141,11 @@
               "Smart Light (WIP)": "{button/background/color/hover}"
             },
             "selected": {
-              "Light": "{color/accent/primary}",
-              "Dark": "{color/accent/primary}",
-              "HCM": "{color/accent/primary}",
-              "Private": "{color/accent/primary}",
-              "Smart Light (WIP)": "{color/accent/primary}"
+              "Light": "{button/background/color/primary}",
+              "Dark": "{button/background/color/primary}",
+              "HCM": "{button/background/color/selected}",
+              "Private": "{button/background/color/primary}",
+              "Smart Light (WIP)": "{button/background/color/primary}"
             }
           }
         },
@@ -3174,7 +3174,7 @@
             "selected": {
               "Light": "{button/text/color/primary}",
               "Dark": "{button/text/color/primary}",
-              "HCM": "{button/text/color/primary}",
+              "HCM": "{button/text/color/selected}",
               "Private": "{button/text/color/primary}",
               "Smart Light (WIP)": "{button/text/color/primary}"
             }

@@ -64,7 +64,7 @@ export let ProfileMetrics = {
     }
 
     let currentProfile = profileService.currentProfile;
-    if (currentProfile) {
+    if (currentProfile && currentProfile.storeID) {
       Glean.profiles.storeIdMismatch.set(
         currentStoreID != currentProfile.storeID
       );

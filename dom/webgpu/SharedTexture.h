@@ -69,7 +69,7 @@ class SharedTexture {
   }
 
   virtual void onBeforeQueueSubmit(
-      const ffi::WGPUGlobal* aContext, RawId aDeviceId, RawId aQueueId,
+      const ffi::WGPUGlobal* aContext, RawId aQueueId,
       nsTArray<ffi::WGPUVkSemaphoreHandle>& aSignalSemaphores) {}
 
   virtual void CleanForRecycling() { mSubmissionIndex = 0; }

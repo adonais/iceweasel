@@ -14,6 +14,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  isBrowsingContextCompatible:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
+  isPrivilegedContext:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
@@ -22,6 +26,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   setDownloadFolderOverrideForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/browser.sys.mjs",
   setLocaleOverrideForBrowsingContext:
+    "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
+  setMediaFeaturesOverrideForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
   setNetworkConditionsForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
@@ -60,6 +66,7 @@ const NULL = Symbol("NULL");
 const CONFIGURATIONS_TO_APPLY = [
   SessionDataCategory.DownloadBehaviorOverride,
   SessionDataCategory.LocaleOverride,
+  SessionDataCategory.MediaFeaturesOverride,
   SessionDataCategory.NetworkConditions,
   SessionDataCategory.ScreenOrientationOverride,
   SessionDataCategory.ScreenSettingsOverride,
@@ -96,11 +103,11 @@ class _ConfigurationModule extends RootBiDiModule {
         [lazy.ContextDescriptorType.UserContext]: null,
       };
 
-      // User agent override also supports a global setting.
-      // see https://www.w3.org/TR/webdriver-bidi/#command-emulation-setUserAgentOverride.
+      // Add storage for configurations which support a global override.
       if (
         configuration === SessionDataCategory.UserAgentOverride ||
-        configuration === SessionDataCategory.DownloadBehaviorOverride
+        configuration === SessionDataCategory.DownloadBehaviorOverride ||
+        configuration === SessionDataCategory.MediaFeaturesOverride
       ) {
         this.#configurationMap[configuration][lazy.ContextDescriptorType.All] =
           null;
@@ -260,6 +267,17 @@ class _ConfigurationModule extends RootBiDiModule {
       lazy.setLocaleOverrideForBrowsingContext({
         context: browsingContext,
         value: localeOverride,
+      });
+    }
+
+    const mediaFeaturesOverride = this.#findCorrectConfigurationValue(
+      configurationMap[SessionDataCategory.MediaFeaturesOverride],
+      "object"
+    );
+    if (mediaFeaturesOverride !== null) {
+      lazy.setMediaFeaturesOverrideForBrowsingContext({
+        context: browsingContext,
+        value: mediaFeaturesOverride,
       });
     }
 
@@ -455,6 +473,8 @@ class _ConfigurationModule extends RootBiDiModule {
         return this.#applyGeolocationOverride(commandArgs);
       case SessionDataCategory.LocaleOverride:
         return this.#applyLocaleOverride(commandArgs);
+      case SessionDataCategory.MediaFeaturesOverride:
+        return this.#applyMediaFeaturesOverride(commandArgs);
       case SessionDataCategory.NetworkConditions:
         return lazy.setNetworkConditionsForBrowsingContext(commandArgs);
       case SessionDataCategory.ScreenOrientationOverride:
@@ -509,6 +529,40 @@ class _ConfigurationModule extends RootBiDiModule {
         locale: value,
       },
     });
+  }
+
+  async #applyMediaFeaturesOverride(options) {
+    lazy.setMediaFeaturesOverrideForBrowsingContext(options);
+
+    // Flush ancestors first so descendants receive their embedder's color scheme.
+    for (const context of options.context.getAllBrowsingContextsInSubtree()) {
+      if (
+        context.isDiscarded ||
+        !lazy.isBrowsingContextCompatible(context) ||
+        lazy.isPrivilegedContext(context)
+      ) {
+        continue;
+      }
+
+      try {
+        await this.messageHandler.handleCommand({
+          moduleName: "emulation",
+          commandName: "_flushMediaFeatures",
+          destination: {
+            type: lazy.WindowGlobalMessageHandler.type,
+            id: context.id,
+          },
+          retryOnAbort: true,
+        });
+      } catch (e) {
+        if (
+          e.name !== "DiscardedBrowsingContextError" ||
+          !context.isDiscarded
+        ) {
+          throw e;
+        }
+      }
+    }
   }
 
   async #applyTimezoneOverride(options) {

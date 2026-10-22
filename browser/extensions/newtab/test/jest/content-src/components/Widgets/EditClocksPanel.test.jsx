@@ -49,6 +49,25 @@ describe("<EditClocksPanel>", () => {
       ).toBe("newtab-clock-widget-label-your-clocks");
     });
 
+    it("points the back arrow left in LTR and right in RTL", () => {
+      const { container } = renderPanel();
+      expect(
+        container
+          .querySelector(".clocks-edit-back-button")
+          .getAttribute("iconSrc")
+      ).toContain("shaft-arrow-left.svg");
+
+      document.dir = "rtl";
+      try {
+        const rtl = renderPanel().container;
+        expect(
+          rtl.querySelector(".clocks-edit-back-button").getAttribute("iconSrc")
+        ).toContain("shaft-arrow-right.svg");
+      } finally {
+        document.dir = "";
+      }
+    });
+
     it("renders one item per clock with the city name", () => {
       const { container } = renderPanel();
       const items = container.querySelectorAll(".clocks-edit-item");
@@ -91,14 +110,20 @@ describe("<EditClocksPanel>", () => {
 
     it("keeps the nickname subtitle out of the a11y tree (the row's aria-label covers it)", () => {
       const { container } = renderPanel();
+      const subtitle = container
+        .querySelectorAll(".clocks-edit-item")[0]
+        .querySelector(".clocks-edit-subtitle");
+      expect(subtitle.getAttribute("aria-hidden")).toBe("true");
+    });
+
+    it("omits the subtitle entirely when a clock has no nickname so the city stays vertically centered", () => {
+      const { container } = renderPanel();
       const items = container.querySelectorAll(".clocks-edit-item");
-      items.forEach(item => {
-        expect(
-          item
-            .querySelector(".clocks-edit-subtitle")
-            .getAttribute("aria-hidden")
-        ).toBe("true");
-      });
+      // Item 0 (Berlin) has a nickname, item 1 (New York) does not.
+      expect(
+        items[0].querySelector(".clocks-edit-subtitle")
+      ).toBeInTheDocument();
+      expect(items[1].querySelector(".clocks-edit-subtitle")).toBeNull();
     });
 
     it("sets an aria-label l10n id that includes the nickname when a label is set", () => {

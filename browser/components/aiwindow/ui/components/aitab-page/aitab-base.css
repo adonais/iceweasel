@@ -26,11 +26,19 @@
   --aitab-heading-5: var(--font-size-large);
   --aitab-heading-6: var(--font-size-root);
   --aitab-body: var(--font-size-large);
+  /* The pill shape shared by the hero and the rounded block cards. */
+  --aitab-hero-radius: 128px;
 
-  @container aitab-page (width >= 900px) {
+  --aitab-section-horizontal-padding: 48px;
+  --aitab-section-vertical-gap: 56px;
+
+  @container aitab-page (width > 900px) {
     --aitab-heading-1: 80px;
     --aitab-heading-2: 64px;
     --aitab-heading-3: 36px;
+
+    --aitab-section-horizontal-padding: 68px;
+    --aitab-section-vertical-gap: 73px;
   }
 }
 
@@ -118,4 +126,11 @@ p {
 
 .aitab-deemphasized {
   color: var(--aitab-text-color-deemphasized);
+}
+
+section {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-block: var(--aitab-section-vertical-gap);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline: var(--aitab-section-horizontal-padding);
 }

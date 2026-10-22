@@ -271,6 +271,8 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
 
   nsTHashtable(const nsTHashtable<EntryType>&) = delete;
   nsTHashtable& operator=(const nsTHashtable<EntryType>&) = delete;
+  nsTHashtable(nsTHashtable& aToCopy) = delete;
+  nsTHashtable& operator=(nsTHashtable<EntryType>&) = delete;
 
   /**
    * Return the generation number for the table. This increments whenever
@@ -649,9 +651,6 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
   static void s_ClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
 
  private:
-  // copy constructor, not implemented
-  nsTHashtable(nsTHashtable<EntryType>& aToCopy) = delete;
-
   static constexpr PLDHashTableOps sOps{
       .hashKey = s_HashKey,
       .matchEntry = s_MatchEntry,
@@ -669,10 +668,6 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
       // in the entry constructor (for example when a member can't be
       // default constructed).
       .initEntry = nullptr};
-
-  // assignment operator, not implemented
-  nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>& aToEqual) =
-      delete;
 };
 
 // static definitions
@@ -770,9 +765,6 @@ class nsTHashtable<nsPtrHashKey<T>>
   static_assert(sizeof(nsPtrHashKey<T>) == sizeof(::detail::VoidPtrHashKey),
                 "hash keys must be the same size");
 
-  nsTHashtable(const nsTHashtable& aOther) = delete;
-  nsTHashtable& operator=(const nsTHashtable& aOther) = delete;
-
  public:
   nsTHashtable() = default;
   explicit nsTHashtable(uint32_t aInitLength) : Base(aInitLength) {}
@@ -780,6 +772,9 @@ class nsTHashtable<nsPtrHashKey<T>>
   ~nsTHashtable() = default;
 
   nsTHashtable(nsTHashtable&&) = default;
+
+  nsTHashtable(const nsTHashtable& aOther) = delete;
+  nsTHashtable& operator=(const nsTHashtable& aOther) = delete;
 
   using Base::Clear;
   using Base::Count;

@@ -19,6 +19,9 @@ support-files = [
   "test.wav",
 ]
 
+["browser_csp_before_mixed_content.js"]
+support-files = ["file_csp_before_mixed_content.sjs"]
+
 ["browser_mixed_content_auth_download.js"]
 support-files = [
   "file_auth_download_page.html",
@@ -36,6 +39,3 @@ support-files = [
 ]
 
 ["browser_test_mixed_content_download.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1784764
-]

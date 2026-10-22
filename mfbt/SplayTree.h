@@ -48,6 +48,9 @@ class SplayTree {
  public:
   constexpr SplayTree() : mRoot(nullptr) {}
 
+  SplayTree(const SplayTree&) = delete;
+  void operator=(const SplayTree&) = delete;
+
   bool empty() const { return !mRoot; }
 
   T* find(const T& aValue) {
@@ -274,9 +277,6 @@ class SplayTree {
     }
     return aNode;
   }
-
-  SplayTree(const SplayTree&) = delete;
-  void operator=(const SplayTree&) = delete;
 };
 
 template <typename T, class Comparator>

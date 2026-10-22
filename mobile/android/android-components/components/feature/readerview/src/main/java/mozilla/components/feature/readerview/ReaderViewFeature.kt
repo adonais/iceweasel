@@ -95,6 +95,18 @@ class ReaderViewFeature(
         DARK,
     }
 
+    /**
+     * Forces reader view to be displayed with the given [ColorScheme], ignoring the one the user configured without
+     * overwriting it. Set to `null` to go back to the user's own choice.
+     *
+     * Applied right away if a reader page is currently displayed, and used for every reader page shown afterwards.
+     */
+    var colorSchemeOverride: ColorScheme?
+        get() = config.colorSchemeOverride
+        set(value) {
+            config.colorSchemeOverride = value
+        }
+
     override fun start() {
         ensureExtensionInstalled()
 

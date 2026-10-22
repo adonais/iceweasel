@@ -59,11 +59,8 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.google.android.material.R as materialR
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.action.AwesomeBarAction.EngagementFinished
 import mozilla.components.browser.state.action.EngineAction
@@ -684,23 +681,18 @@ class HistoryFragment :
     ) {
         historyStore.dispatch(HistoryFragmentAction.EnterDeletionMode)
 
-        withContext(IO) {
-            for (item in items) {
-                when (item) {
-                    is History.Regular -> {
-                        historyStorage.deleteVisitsFor(item.url)
-                    }
-                    is History.Group -> {
-                        historyProvider.deleteMetadataSearchGroup(item)
-                        withContext(Dispatchers.Main) {
-                            browserStore.dispatch(
-                                HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = item.title)
-                            )
-                        }
-                    }
-                    // We won't encounter individual metadata entries outside of groups.
-                    is History.Metadata -> Unit
+        for (item in items) {
+            when (item) {
+                is History.Regular -> {
+                    historyStorage.deleteVisitsFor(item.url)
                 }
+
+                is History.Group -> {
+                    historyProvider.deleteMetadataSearchGroup(item)
+                    browserStore.dispatch(HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = item.title))
+                }
+                // We won't encounter individual metadata entries outside of groups.
+                is History.Metadata -> Unit
             }
         }
 

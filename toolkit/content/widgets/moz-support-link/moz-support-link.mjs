@@ -18,10 +18,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozSupportLink.ftl");
  * @attribute {string} utm-content - UTM parameter for a URL, if it is an AMO URL.
  * @attribute {string} data-l10n-id - Fluent ID used to generate the text content.
  */
-export default class MozSupportLink extends StylesMixin(
-  HTMLAnchorElement,
-  styles
-) {
+export class MozSupportLink extends StylesMixin(HTMLAnchorElement, styles) {
   static SUPPORT_URL = "https://www.mozilla.org/";
   static get observedAttributes() {
     return ["support-page", "utm-content"];

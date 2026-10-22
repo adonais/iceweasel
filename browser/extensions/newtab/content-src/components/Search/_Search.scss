@@ -221,6 +221,10 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     @include at-outer-grid-cols(10) {
       width: calc(10 * var(--col-width) + 9 * var(--space-medium));
     }
+
+    &:has(> moz-urlbar) {
+      width: $search-width-ratio * 100%;
+    }
   }
 
   // Sentinel observed by IntersectionObserver in Base.jsx — when it

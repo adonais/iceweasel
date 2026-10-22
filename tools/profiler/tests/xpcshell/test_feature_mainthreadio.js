@@ -25,6 +25,10 @@ add_task(async () => {
     checkSchema(schema, {
       name: "FileIO",
       display: ["marker-chart", "marker-table", "timeline-fileio"],
+      tableLabel:
+        "{marker.data.source ? '(' : ''}{marker.data.source}" +
+        "{marker.data.source ? ') ' : ''}{marker.data.operation}" +
+        "{marker.data.filename ? ' — ' : ''}{marker.data.filename}",
       data: [
         {
           key: "operation",

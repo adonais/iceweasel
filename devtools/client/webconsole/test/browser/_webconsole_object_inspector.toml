@@ -32,7 +32,6 @@ tags = "object-snapshots"
 https_first_disabled = true # JS HttpServer doesn't support https
 skip-if = [
   "http3", # JS HttpServer doesn't support http3
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1965340
 ]
 
 ["browser_webconsole_object_inspector_getters.js"]

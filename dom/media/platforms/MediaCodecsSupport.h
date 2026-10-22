@@ -62,14 +62,36 @@ enum class MediaCodecsSupport : int {
 #undef X
       SENTINEL
 };
+
+// Enumset containing per-codec SW/HW support
+using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
+
+// Whether the platform supports a DRM scheme. Unknown until it is queried.
+enum class DrmSchemeSupport : uint8_t { Unknown, Unsupported, Supported };
+
+// All decode related entries, including the lack of HW extension entries.
+inline constexpr MediaCodecsSupported kMediaCodecsDecodeMask = {
+#define X(name)                                                             \
+  MediaCodecsSupport::SW_DECODE(name), MediaCodecsSupport::HW_DECODE(name), \
+      MediaCodecsSupport::LACK_HW_EXTENSION(name),
+    CODEC_LIST
+#undef X
+};
+
+// All encode related entries.
+inline constexpr MediaCodecsSupported kMediaCodecsEncodeMask = {
+#define X(name) \
+  MediaCodecsSupport::SW_ENCODE(name), MediaCodecsSupport::HW_ENCODE(name),
+    CODEC_LIST
+#undef X
+};
+
 #undef SW_DECODE
 #undef HW_DECODE
 #undef SW_ENCODE
 #undef HW_ENCODE
+#undef LACK_HW_EXTENSION
 #undef CODEC_LIST  // end of macros!
-
-// Enumset containing per-codec SW/HW support
-using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 
 // Codec-agnostic SW/HW decode support information.
 enum class DecodeSupport : int {
@@ -206,6 +228,16 @@ class MCSInfo final {
       const MediaCodec& aCodec, const DecodeSupport& aSupport);
   static MediaCodecsSupport GetMediaCodecsSupportEnum(
       const MediaCodec& aCodec, const EncodeSupport& aSupport);
+
+  // Returns only the decode or encode entries present in the args.
+  static MediaCodecsSupported GetDecodeSupported(
+      const MediaCodecsSupported& aSupportedCodecs) {
+    return aSupportedCodecs & kMediaCodecsDecodeMask;
+  }
+  static MediaCodecsSupported GetEncodeSupported(
+      const MediaCodecsSupported& aSupportedCodecs) {
+    return aSupportedCodecs & kMediaCodecsEncodeMask;
+  }
 
   // Returns true if SW/HW decode enum for a given codec is present in the args.
   static bool SupportsSoftwareDecode(

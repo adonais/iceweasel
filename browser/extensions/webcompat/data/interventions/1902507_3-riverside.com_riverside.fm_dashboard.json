@@ -12,7 +12,7 @@
   },
   "interventions": [
     {
-      "platforms": ["all"],
+      "platforms": [],
       "only_channels": ["nightly"],
       "ua_string": ["Chrome"]
     }

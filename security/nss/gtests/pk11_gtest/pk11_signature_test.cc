@@ -40,6 +40,42 @@ ScopedSECKEYPrivateKey Pk11SignatureTest::ImportPrivateKey(
   return ScopedSECKEYPrivateKey(key);
 }
 
+ScopedSECKEYPrivateKey Pk11SignatureTest::ImportEncryptedPrivateKey(
+    const DataBuffer& pkcs8) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  if (!slot) {
+    ADD_FAILURE() << "No slot";
+    return nullptr;
+  }
+
+  // encrypt they pkcs8 buffer, then unwrap it as a key. This tests
+  // the softoken pkcs8 parsing
+  unsigned char iv_data[] = {
+      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+      0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  };
+  SECItem iv = {siBuffer, iv_data, sizeof(iv_data)};
+  unsigned int len = 0;
+  ScopedPK11SymKey wrappingKey(
+      PK11_KeyGen(slot.get(), CKM_AES_CBC_PAD, nullptr, 24, nullptr));
+  EXPECT_NE(wrappingKey, nullptr);
+  SECStatus rv =
+      PK11_Encrypt(wrappingKey.get(), CKM_AES_CBC_PAD, &iv, nullptr, &len, len,
+                   pkcs8.data(), (unsigned int)pkcs8.len());
+  EXPECT_EQ(SECSuccess, rv) << PORT_ErrorToName(PORT_GetError());
+  ScopedSECItem encryptedKey(SECITEM_AllocItem(nullptr, nullptr, len));
+  rv = PK11_Encrypt(wrappingKey.get(), CKM_AES_CBC_PAD, &iv, encryptedKey->data,
+                    &len, len, pkcs8.data(), (unsigned int)pkcs8.len());
+  EXPECT_EQ(SECSuccess, rv) << PORT_ErrorToName(PORT_GetError());
+  encryptedKey->len = len;
+  CK_ATTRIBUTE_TYPE usages[] = {CKA_SIGN};
+  int usageCount = 1;
+  return ScopedSECKEYPrivateKey(PK11_UnwrapPrivKey(
+      slot.get(), wrappingKey.get(), CKM_AES_CBC_PAD, &iv, encryptedKey.get(),
+      nullptr, nullptr, PR_FALSE, PR_TRUE, PK11_GetKeyType(mechanism(), 0),
+      usages, usageCount, nullptr));
+}
+
 ScopedSECKEYPublicKey Pk11SignatureTest::ImportPublicKey(
     const DataBuffer& spki) {
   SECItem spkiItem = {siBuffer, toUcharPtr(spki.data()),

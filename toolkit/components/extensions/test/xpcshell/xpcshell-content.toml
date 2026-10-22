@@ -32,7 +32,6 @@ skip-if = [
 ["test_ext_contentscript_triggeringPrincipal.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1854843
-  "tsan", # Bug 1612707
 ]
 
 ["test_ext_contentscript_xrays.js"]
@@ -50,3 +49,5 @@ skip-if = [
 ["test_ext_web_accessible_resources.js"]
 
 ["test_ext_web_accessible_resources_matches.js"]
+
+["test_ext_web_accessible_workers.js"]

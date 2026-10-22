@@ -60,6 +60,22 @@
           >Two</panel-item
         >
       </panel-list>
+      <panel-list id="translated">
+        <panel-item accesskey="c">Close</panel-item>
+        <panel-item
+          id="translated-item"
+          data-l10n-attrs="accesskey"
+        ></panel-item>
+      </panel-list>
+      <panel-list id="auto">
+        <panel-item accesskey="c">Copy</panel-item>
+        <panel-item auto-accesskey="">correct</panel-item>
+        <panel-item auto-accesskey="">🦊 Fox</panel-item>
+      </panel-list>
+      <panel-list id="auto-others-unkeyed">
+        <panel-item>Manage</panel-item>
+        <panel-item auto-accesskey="">Move</panel-item>
+      </panel-list>
     </div>
     <script class="testbody" type="application/javascript">
       const { BrowserTestUtils } = ChromeUtils.importESModule(
@@ -72,7 +88,12 @@
         ok(!err, err ? err.message : message)
       );
 
-      async function openAndCollectErrors(id) {
+      const { checkAccessKeys } = ChromeUtils.importESModule(
+        "chrome://global/content/elements/accesskey-check.mjs",
+        { global: "current" }
+      );
+
+      async function openAndCollectErrors(id, whileOpen) {
         let errors = [];
         let sentinel = new Promise(resolve => {
           SpecialPowers.registerConsoleListener(msg => {
@@ -89,6 +110,7 @@
         let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
         panelList.show(null, document.getElementById("anchor"));
         await shown;
+        await whileOpen?.(panelList);
         let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
         panelList.hide(undefined, { force: true });
         await hidden;
@@ -100,6 +122,31 @@
       add_setup(async function setup() {
         await customElements.whenDefined("panel-list");
         await customElements.whenDefined("panel-item");
+
+        L10nRegistry.getInstance().registerSources([
+          L10nFileSource.createMock(
+            "accesskey-test",
+            "app",
+            ["en-US"],
+            "/localization/{locale}/",
+            [
+              {
+                path: "/localization/en-US/accesskey-test.ftl",
+                source: `
+check-for-updates = Check for Updates
+  .accesskey = C
+`,
+              },
+            ]
+          ),
+        ]);
+        SimpleTest.registerCleanupFunction(() =>
+          L10nRegistry.getInstance().removeSources(["accesskey-test"])
+        );
+        let link = document.createElement("link");
+        link.rel = "localization";
+        link.href = "accesskey-test.ftl";
+        document.head.append(link);
       });
 
       add_task(async function testDistinctAccessKeys() {
@@ -160,6 +207,35 @@
         );
       });
 
+      add_task(async function testAutoAccessKeys() {
+        let items = [...document.querySelectorAll("#auto [auto-accesskey]")];
+        is(
+          (await openAndCollectErrors("auto")).length,
+          0,
+          "An item with auto-accesskey may share its accesskey"
+        );
+        assert.deepEqual(
+          items.map(item => item.label.accessKey),
+          ["c", "F"],
+          "Each item gets its label's first typeable letter"
+        );
+      });
+
+      add_task(async function testAutoAccessKeysOthersUnkeyed() {
+        let item = document.querySelector(
+          "#auto-others-unkeyed [auto-accesskey]"
+        );
+        is(
+          (await openAndCollectErrors("auto-others-unkeyed")).length,
+          0,
+          "A panel-list without accesskeys gets none for its auto-accesskey items"
+        );
+        ok(
+          !item.hasAttribute("accesskey"),
+          "The item doesn't take the first letter of another item's label"
+        );
+      });
+
       add_task(async function testMixedAccessKeys() {
         let errors = await openAndCollectErrors("mixed");
         is(
@@ -211,6 +287,26 @@
           errors[0],
           `"Two" has no accesskey`,
           "A disabled item counts for a missing accesskey"
+        );
+      });
+
+      add_task(async function testPendingTranslation() {
+        let item = document.getElementById("translated-item");
+        let errors = await openAndCollectErrors("translated", panelList => {
+          document.l10n.setAttributes(item, "check-for-updates");
+          ok(document.hasPendingL10nMutations, "Translation is pending");
+          return checkAccessKeys(panelList);
+        });
+        is(
+          item.label.textContent,
+          "Check for Updates",
+          "The item got its translation"
+        );
+        is(errors.length, 1, "The check waits for the pending translation");
+        assert.stringContains(
+          errors[0],
+          `accesskey "c" is shared by "Close", "Check for Updates"`,
+          "The translated item is compared"
         );
       });
     </script>

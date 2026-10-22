@@ -499,6 +499,94 @@ class ReaderViewFeatureTest {
         }
 
     @Test
+    fun `GIVEN a color scheme override WHEN reader view is shown THEN the reader url uses the override`() {
+        val engine: Engine = mock()
+        val engineSession: EngineSession = mock()
+        val tab = createTab(url = "https://www.mozilla.org", id = "test-tab", engineSession = engineSession)
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab), selectedTabId = tab.id),
+                middleware = listOf(captureActionsMiddleware) + EngineMiddleware.create(engine),
+            )
+
+        val readerViewFeature =
+            ReaderViewFeature(
+                testContext,
+                engine,
+                store,
+                mock(),
+                testDispatcher,
+                { "bbbbf5ce-3b0f-4f74-8a1f-986d89bffea7" },
+            )
+        readerViewFeature.readerBaseUrl = "moz-extension://012345/"
+        readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK
+        readerViewFeature.showReaderView()
+
+        captureActionsMiddleware.assertFirstAction(EngineAction.LoadUrlAction::class) { action ->
+            assertEquals(
+                "moz-extension://012345/readerview.html?url=https%3A%2F%2Fwww.mozilla.org" +
+                    "&id=bbbbf5ce-3b0f-4f74-8a1f-986d89bffea7&colorScheme=dark",
+                action.url,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN a reader page is displayed WHEN a color scheme override is set THEN it is sent to the web extension`() {
+        val port = mock<Port>()
+        val message = argumentCaptor<JSONObject>()
+
+        val readerViewFeature = prepareFeatureForTest(readerActivePort = port)
+
+        readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK
+
+        assertEquals(ReaderViewFeature.ColorScheme.DARK, readerViewFeature.colorSchemeOverride)
+        verify(port, times(1)).postMessage(message.capture())
+        assertEquals(ReaderViewFeature.ACTION_SET_COLOR_SCHEME, message.value[ReaderViewFeature.ACTION_MESSAGE_KEY])
+        assertEquals(ReaderViewFeature.ColorScheme.DARK.name, message.value[ReaderViewFeature.ACTION_VALUE])
+
+        // Setting to the same value should not cause another message to be sent
+        readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK
+        verify(port, times(1)).postMessage(message.capture())
+    }
+
+    @Test
+    fun `GIVEN a color scheme override WHEN the user changes the color scheme THEN it persists but is not applied`() {
+        val port = mock<Port>()
+
+        val readerViewFeature = prepareFeatureForTest(readerActivePort = port)
+        val prefs = testContext.getSharedPreferences(ReaderViewFeature.SHARED_PREF_NAME, Context.MODE_PRIVATE)
+        readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK
+        verify(port, times(1)).postMessage(any())
+
+        readerViewFeature.config.colorScheme = ReaderViewFeature.ColorScheme.SEPIA
+
+        assertEquals(
+            ReaderViewFeature.ColorScheme.SEPIA.name,
+            prefs.getString(ReaderViewFeature.COLOR_SCHEME_KEY, null),
+        )
+        assertEquals(ReaderViewFeature.ColorScheme.DARK, readerViewFeature.config.colorScheme)
+        verify(port, times(1)).postMessage(any())
+    }
+
+    @Test
+    fun `GIVEN a color scheme override WHEN it is cleared THEN the user color scheme is sent to the web extension`() {
+        val port = mock<Port>()
+        val message = argumentCaptor<JSONObject>()
+
+        val readerViewFeature = prepareFeatureForTest(readerActivePort = port)
+        readerViewFeature.config.colorScheme = ReaderViewFeature.ColorScheme.SEPIA
+        readerViewFeature.colorSchemeOverride = ReaderViewFeature.ColorScheme.DARK
+
+        readerViewFeature.colorSchemeOverride = null
+
+        assertEquals(ReaderViewFeature.ColorScheme.SEPIA, readerViewFeature.config.colorScheme)
+        verify(port, times(3)).postMessage(message.capture())
+        assertEquals(ReaderViewFeature.ACTION_SET_COLOR_SCHEME, message.value[ReaderViewFeature.ACTION_MESSAGE_KEY])
+        assertEquals(ReaderViewFeature.ColorScheme.SEPIA.name, message.value[ReaderViewFeature.ACTION_VALUE])
+    }
+
+    @Test
     fun `font type config change persists and is sent to web extension`() =
         runTest(testDispatcher) {
             val port = mock<Port>()

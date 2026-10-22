@@ -59,11 +59,6 @@ nimbus {
     // The path to the Nimbus feature manifest file
     manifestFile = "fxsuggest.fml.yaml"
 
-    channels = [
-        debug: "debug",
-        release: "release",
-    ]
-
     applicationServicesDir = gradle.hasProperty('localProperties.autoPublish.application-services.dir')
         ? gradle.getProperty('localProperties.autoPublish.application-services.dir') : null
 }

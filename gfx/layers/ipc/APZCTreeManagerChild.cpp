@@ -4,11 +4,11 @@
 
 #include "mozilla/layers/APZCTreeManagerChild.h"
 
-#include "InputData.h"                           // for InputData
-#include "mozilla/dom/BrowserParent.h"           // for BrowserParent
-#include "mozilla/layers/APZCCallbackHelper.h"   // for APZCCallbackHelper
-#include "mozilla/layers/APZInputBridgeChild.h"  // for APZInputBridgeChild
-#include "mozilla/layers/DoubleTapToZoom.h"      // for DoubleTapToZoomMetrics
+#include "InputData.h"                          // for InputData
+#include "mozilla/dom/BrowserParent.h"          // for BrowserParent
+#include "mozilla/layers/APZBridgeChild.h"      // for APZBridgeChild
+#include "mozilla/layers/APZCCallbackHelper.h"  // for APZCCallbackHelper
+#include "mozilla/layers/DoubleTapToZoom.h"     // for DoubleTapToZoomMetrics
 #include "mozilla/layers/GeckoContentController.h"  // for GeckoContentController
 #include "mozilla/layers/RemoteCompositorSession.h"  // for RemoteCompositorSession
 #ifdef MOZ_WIDGET_ANDROID
@@ -28,25 +28,24 @@ void APZCTreeManagerChild::SetCompositorSession(
   // we're setting mCompositorSession or we're clearing it).
   MOZ_ASSERT(!mCompositorSession ^ !aSession);
   mCompositorSession = aSession;
-  if (mInputBridge) {
-    mInputBridge->SetCompositorSession(aSession);
+  if (mBridge) {
+    mBridge->SetCompositorSession(aSession);
   }
 }
 
-void APZCTreeManagerChild::SetInputBridge(
-    RefPtr<APZInputBridgeChild>&& aInputBridge) {
-  // The input bridge only exists from the UI process to the GPU process.
+void APZCTreeManagerChild::SetBridge(RefPtr<APZBridgeChild>&& aBridge) {
+  // The APZ bridge only exists from the UI process to the GPU process.
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(!mInputBridge);
+  MOZ_ASSERT(!mBridge);
 
-  mInputBridge = std::move(aInputBridge);
+  mBridge = std::move(aBridge);
 }
 
 void APZCTreeManagerChild::Destroy() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mInputBridge) {
-    mInputBridge->Destroy();
-    mInputBridge = nullptr;
+  if (mBridge) {
+    mBridge->Destroy();
+    mBridge = nullptr;
   }
 }
 
@@ -98,11 +97,11 @@ void APZCTreeManagerChild::NotifyApzAwareListenerAdded(
   }
 }
 
-APZInputBridge* APZCTreeManagerChild::InputBridge() {
+RefPtr<APZBridge> APZCTreeManagerChild::Bridge() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mInputBridge);
+  MOZ_ASSERT(mBridge);
 
-  return mInputBridge.get();
+  return mBridge;
 }
 
 }  // namespace layers

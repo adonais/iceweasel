@@ -69,7 +69,7 @@ impl InitiatorHandshake {
         let local_pub = local_identity.public.key_data()?;
 
         if local_pub.len() != P256_X962_LENGTH
-            || local_pub.as_slice().first().is_none_or(|&b| b != 4)
+            || local_pub.first().is_none_or(|&b| b != 4)
         {
             // Doesn't look like a raw P256 public key!
             return Err(Error::InvalidArgument);

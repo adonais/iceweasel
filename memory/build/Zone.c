@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozmemory_wrap.h"
+#include "malloc_decls.h"
 
 #include <stdlib.h>
 #include <mach/mach_types.h>

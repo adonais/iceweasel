@@ -1519,14 +1519,6 @@ public class GeckoSession {
     @WrapForJNI(dispatchTo = "proxy", stubName = "Close")
     private native void nativeClose();
 
-    @WrapForJNI(dispatchTo = "proxy", stubName = "Transfer")
-    private native void nativeTransfer(
-        NativeQueue queue,
-        Compositor compositor,
-        EventDispatcher dispatcher,
-        SessionAccessibility.NativeProvider sessionAccessibility,
-        GeckoBundle initData);
-
     @WrapForJNI(dispatchTo = "proxy")
     public native void attachEditable(IGeckoEditableParent parent);
 

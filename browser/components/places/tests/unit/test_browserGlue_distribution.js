@@ -16,7 +16,10 @@ function run_test() {
 
   // Copy distribution.ini file to the profile dir.
   let distroDir = gProfD.clone();
-  distroDir.leafName = "distribution";
+  distroDir.append("distribution");
+  if (!distroDir.exists()) {
+    distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+  }
   let iniFile = distroDir.clone();
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {
@@ -33,10 +36,8 @@ function run_test() {
 }
 
 registerCleanupFunction(function () {
-  // Remove the distribution file, even if the test failed, otherwise all
-  // next tests will import it.
   let iniFile = gProfD.clone();
-  iniFile.leafName = "distribution";
+  iniFile.append("distribution");
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {
     iniFile.remove(false);
@@ -46,7 +47,7 @@ registerCleanupFunction(function () {
 
 add_task(async function () {
   let { DistributionManagement } = ChromeUtils.importESModule(
-    "resource:///modules/distribution.sys.mjs"
+    "moz-src:///browser/components/distribution.sys.mjs"
   );
 
   // Ensure browser glue is running so it notices places initializing.

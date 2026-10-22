@@ -63,7 +63,6 @@ webrtc::PeerConnectionFactoryDependencies CreateSomePcfDeps() {
   pcf_deps.env = CreateEnvironment();
   pcf_deps.signaling_thread = Thread::Current();
   pcf_deps.network_thread = Thread::Current();
-  pcf_deps.worker_thread = Thread::Current();
   pcf_deps.event_log_factory = std::make_unique<RtcEventLogFactory>();
   CreateSomeMediaDeps(pcf_deps);
   EnableMedia(pcf_deps);

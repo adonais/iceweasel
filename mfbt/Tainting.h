@@ -60,6 +60,7 @@ class Tainted {
   explicit Tainted() = default;
 
   template <typename U>
+    requires(std::is_constructible_v<T, U>)
   explicit Tainted(U&& aValue) : mValue(std::forward<U>(aValue)) {}
 
   T& Coerce() { return this->mValue; }

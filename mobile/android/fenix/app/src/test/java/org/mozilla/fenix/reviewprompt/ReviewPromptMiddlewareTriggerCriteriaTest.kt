@@ -31,7 +31,7 @@ class ReviewPromptMiddlewareTriggerCriteriaTest {
             context = getApplicationContext(),
             appInfo =
                 NimbusAppInfo(
-                    appName = ReviewPromptMiddlewareTriggerCriteriaTest::javaClass.name,
+                    appName = ReviewPromptMiddlewareTriggerCriteriaTest::class.java.name,
                     channel = "test",
                 ),
             server = null,

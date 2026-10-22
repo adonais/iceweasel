@@ -131,7 +131,7 @@ add_task(async function test_trainhop_addon_download_errors() {
     Services.fog.testResetFOG();
     const nimbusFeatureCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
       {
-        featureId: TRAINHOP_NIMBUS_FEATURE_ID,
+        featureId: TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
         value: {
           xpi_download_path,
           addon_version,
@@ -326,16 +326,13 @@ async function checkUnenrollLow({ cleanupLow }) {
 }
 
 /**
- * Resets the in-memory "exposure event already sent" flag on both train-hop
- * features so a subsequent task can assert exposure recording from a clean state.
+ * Resets the in-memory "exposure event already sent" flag on the train-hop
+ * deployment feature so a subsequent task can assert exposure recording from a
+ * clean state.
  */
 function resetNimbusExposureEventForTests() {
-  for (const featureId of [
-    TRAINHOP_NIMBUS_FEATURE_ID,
-    TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
-  ]) {
-    NimbusFeatures[featureId]._didSendExposureEvent = false;
-  }
+  NimbusFeatures[TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID]._didSendExposureEvent =
+    false;
 }
 
 /**
@@ -491,164 +488,6 @@ add_task(
     sandbox.restore();
   }
 );
-
-// Graceful retirement: an existing enrollment in the original settings-pref
-// newtabTrainhopAddon feature keeps working (install, in-use, exposure) after
-// the co-enrollment deployment feature is added. This is the guarantee that
-// upgrading to a build with the new feature does not downgrade currently
-// train-hopped clients.
-add_task(async function test_original_feature_enrollment_still_works() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI._rsLoader, "updateRecipes");
-
-  Services.fog.testResetFOG();
-  assertNewTabResourceMapping();
-  await asyncAssertNewTabAddon({
-    locationName: BUILTIN_LOCATION_NAME,
-    version: BUILTIN_ADDON_VERSION,
-  });
-  assertTrainhopAddonVersionPref("");
-
-  const updateAddonVersion = `${BUILTIN_ADDON_VERSION}.123`;
-
-  const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
-    updateAddonVersion,
-    featureId: TRAINHOP_NIMBUS_FEATURE_ID,
-  });
-  // The original feature still sets the version pref via setPref on enroll.
-  assertTrainhopAddonVersionPref(updateAddonVersion);
-
-  await AboutNewTabResourceMapping.updateTrainhopAddonState();
-  assertTrainhopAddonVersionPref(updateAddonVersion);
-  await asyncAssertNimbusTrainhopAddonStaged({ updateAddonVersion });
-
-  info("Simulate browser restart while original-feature version staged");
-  Services.fog.testResetFOG();
-  mockAboutNewTabUninit();
-  await AddonTestUtils.promiseRestartManager();
-  AboutNewTab.init();
-
-  await checkHighVersionIsInstalledAndInUse({
-    highVersion: updateAddonVersion,
-  });
-  // Exposure is attributed to the original feature.
-  assertTrainhopAddonNimbusExposure({
-    expectedExposure: true,
-    featureId: TRAINHOP_NIMBUS_FEATURE_ID,
-  });
-
-  await nimbusFeatureCleanup();
-  await AboutNewTabResourceMapping.updateTrainhopAddonState();
-  assertTrainhopAddonVersionPref("");
-
-  info("Simulate browser restart while unenrolled");
-  mockAboutNewTabUninit();
-  await AddonTestUtils.promiseRestartManager();
-  AboutNewTab.init();
-
-  await checkBuiltinTakesOver();
-
-  resetNimbusExposureEventForTests();
-  Services.fog.testResetFOG();
-  sandbox.restore();
-});
-
-// Graceful retirement: the winning enrollment is chosen across both features.
-// A higher version from the co-enrollment deployment feature wins over a lower
-// version from the original feature, and unenrolling the higher one while the
-// lower remains must not downgrade.
-add_task(async function test_dual_read_highest_across_features_wins() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI._rsLoader, "updateRecipes");
-
-  assertNewTabResourceMapping();
-  assertTrainhopAddonVersionPref("");
-
-  const lowVersion = `${BUILTIN_ADDON_VERSION}.1`;
-  const highVersion = `${BUILTIN_ADDON_VERSION}.2`;
-
-  // Lower version from the original settings-pref feature.
-  const { nimbusFeatureCleanup: cleanupLow } = await setupNimbusTrainhopAddon({
-    updateAddonVersion: lowVersion,
-    featureId: TRAINHOP_NIMBUS_FEATURE_ID,
-  });
-  assertTrainhopAddonVersionPref(lowVersion);
-
-  // Higher version from the co-enrollment deployment feature.
-  const { nimbusFeatureCleanup: cleanupHigh } = await setupNimbusTrainhopAddon({
-    updateAddonVersion: highVersion,
-    featureId: TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
-  });
-
-  await checkHighVersionWinsWhenManyActive({ highVersion });
-
-  info("Simulate browser restart while high version staged");
-  Services.fog.testResetFOG();
-  mockAboutNewTabUninit();
-  await AddonTestUtils.promiseRestartManager();
-  AboutNewTab.init();
-
-  await checkHighVersionIsInstalledAndInUse({ highVersion });
-  // Exposure is attributed to the winning (deployment) feature.
-  assertTrainhopAddonNimbusExposure({
-    expectedExposure: true,
-    featureId: TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
-  });
-
-  // Unenrolling the higher (deployment) version while the lower (original) one
-  // remains must not downgrade.
-  await checkUnenrollHigh({ cleanupHigh, lowVersion });
-  await checkUnenrollLow({ cleanupLow });
-
-  info("Simulate browser restart while unenrolled");
-  mockAboutNewTabUninit();
-  await AddonTestUtils.promiseRestartManager();
-  AboutNewTab.init();
-
-  await checkBuiltinTakesOver();
-
-  resetNimbusExposureEventForTests();
-  Services.fog.testResetFOG();
-  sandbox.restore();
-});
-
-// Graceful retirement: the union is feature-agnostic. A higher version from the
-// original feature wins over a lower version from the deployment feature.
-add_task(async function test_dual_read_original_feature_version_can_win() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI._rsLoader, "updateRecipes");
-
-  assertNewTabResourceMapping();
-  assertTrainhopAddonVersionPref("");
-
-  const lowVersion = `${BUILTIN_ADDON_VERSION}.1`;
-  const highVersion = `${BUILTIN_ADDON_VERSION}.2`;
-
-  const { nimbusFeatureCleanup: cleanupLow } = await setupNimbusTrainhopAddon({
-    updateAddonVersion: lowVersion,
-    featureId: TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
-  });
-  const { nimbusFeatureCleanup: cleanupHigh } = await setupNimbusTrainhopAddon({
-    updateAddonVersion: highVersion,
-    featureId: TRAINHOP_NIMBUS_FEATURE_ID,
-  });
-
-  await AboutNewTabResourceMapping.updateTrainhopAddonState();
-  assertTrainhopAddonVersionPref(highVersion);
-  const { pendingInstall } = await asyncAssertNimbusTrainhopAddonStaged({
-    updateAddonVersion: highVersion,
-  });
-
-  await cancelPendingInstall(pendingInstall);
-  await cleanupHigh();
-  await cleanupLow();
-  await AboutNewTabResourceMapping.updateTrainhopAddonState();
-  assertTrainhopAddonVersionPref("");
-
-  resetNimbusExposureEventForTests();
-  Services.fog.testResetFOG();
-  sandbox.restore();
-});
 
 // Track highest active (Bug 1995391): with a higher and a lower deployment
 // rollout both active, the client runs the higher version.
@@ -819,7 +658,7 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
     "Re-computed Experiment recipes"
   );
 
-  info("Simulate newtabTrainhopAddon nimbus feature unenrolled");
+  info("Simulate newtabTrainhopAddonDeployment nimbus feature unenrolled");
   await nimbusFeatureCleanup();
 
   // Expect train-hop add-on to not be uninstalled yet because it is still
@@ -833,7 +672,7 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
   });
 
   info(
-    "Simulated browser restart while newtabTrainhopAddon nimbus feature is unenrolled"
+    "Simulated browser restart while newtabTrainhopAddonDeployment nimbus feature is unenrolled"
   );
   mockAboutNewTabUninit();
   await AddonTestUtils.promiseRestartManager();

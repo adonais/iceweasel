@@ -52,6 +52,37 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
         return this
     }
 
+    fun verifyHttpsOnlyModeMenuHeader(): SettingsHTTPSOnlyModePage {
+        mozVerify(SettingsHTTPSOnlyModeSelectors.TOOLBAR_TITLE)
+        return this
+    }
+
+    fun verifyHttpsOnlyModeSummary(): SettingsHTTPSOnlyModePage {
+        mozVerify(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_MODE_TITLE)
+        mozVerify(SettingsHTTPSOnlyModeSelectors.HTTPS_MODE_OPTION_SUMMARY)
+        return this
+    }
+
+    fun verifyHttpsOnlyModeToggle(enabled: Boolean): SettingsHTTPSOnlyModePage {
+        if (enabled) {
+            mozVerifyElementIsChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_MODE_TOGGLE)
+        } else {
+            mozVerifyElementIsNotChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_MODE_TOGGLE)
+        }
+        return this
+    }
+
+    fun verifyHttpsOnlyModeOptionsEnabled(enabled: Boolean): SettingsHTTPSOnlyModePage {
+        if (enabled) {
+            mozVerifyElementIsEnabled(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_ALL_TABS_OPTION)
+            mozVerifyElementIsEnabled(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_PRIVATE_TABS_OPTION)
+        } else {
+            mozVerifyElementIsNotEnabled(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_ALL_TABS_OPTION)
+            mozVerifyElementIsNotEnabled(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_PRIVATE_TABS_OPTION)
+        }
+        return this
+    }
+
     fun enableHttpsOnlyMode(): SettingsHTTPSOnlyModePage {
         if (!appContext.components.settings.shouldUseHttpsOnly) {
             mozClick(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_MODE_TOGGLE)
@@ -61,6 +92,12 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
 
     fun verifyHttpsOnlyAllTabsSelected(): SettingsHTTPSOnlyModePage {
         mozVerifyElementIsChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_ALL_TABS_OPTION)
+        mozVerifyElementIsNotChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_PRIVATE_TABS_OPTION)
+        return this
+    }
+
+    fun verifyNoHttpsOnlyModeOptionSelected(): SettingsHTTPSOnlyModePage {
+        mozVerifyElementIsNotChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_ALL_TABS_OPTION)
         mozVerifyElementIsNotChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_PRIVATE_TABS_OPTION)
         return this
     }

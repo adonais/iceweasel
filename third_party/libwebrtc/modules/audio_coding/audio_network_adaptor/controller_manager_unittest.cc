@@ -106,7 +106,7 @@ void CheckControllersOrder(
     const std::optional<int>& uplink_bandwidth_bps,
     const std::optional<float>& uplink_packet_loss_fraction,
     const std::vector<int>& expected_order) {
-  RTC_DCHECK_EQ(kNumControllers, expected_order.size());
+  RTC_DCHECK_EQ(expected_order.size(), kNumControllers);
   Controller::NetworkMetrics metrics;
   metrics.uplink_bandwidth_bps = uplink_bandwidth_bps;
   metrics.uplink_packet_loss_fraction = uplink_packet_loss_fraction;

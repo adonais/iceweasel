@@ -74,7 +74,7 @@ class AbstractCanonical {
   AbstractThread* OwnerThread() const { return mOwnerThread; }
 
  protected:
-  virtual ~AbstractCanonical() {}
+  virtual ~AbstractCanonical() = default;
   RefPtr<AbstractThread> mOwnerThread;
 };
 
@@ -96,7 +96,7 @@ class AbstractMirror {
   AbstractThread* OwnerThread() const { return mOwnerThread; }
 
  protected:
-  virtual ~AbstractMirror() {}
+  virtual ~AbstractMirror() = default;
   RefPtr<AbstractThread> mOwnerThread;
 };
 
@@ -121,7 +121,7 @@ class Canonical {
     mImpl = new Impl(aThread, aInitialValue, aName);
   }
 
-  ~Canonical() {}
+  ~Canonical() = default;
 
  private:
   class Impl : public AbstractCanonical<T>, public WatchTarget {

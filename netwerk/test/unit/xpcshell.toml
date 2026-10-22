@@ -73,9 +73,13 @@ prefs = ["network.xhr.block_sync_system_requests=false"] # Bug 721336
 
 ["test_aboutblank.js"]
 
+["test_activity_observer_remove.js"]
+
 ["test_addr_in_use_error.js"]
 
 ["test_alt-data_closeWithStatus.js"]
+
+["test_alt-data_failed_write.js"]
 
 ["test_alt-data_overwrite.js"]
 
@@ -134,6 +138,8 @@ firefox-appdir = "browser"
 ["test_bhttp.js"]
 
 ["test_blob_channelname.js"]
+
+["test_blocked_local_ports.js"]
 
 ["test_brotli_decoding.js"]
 
@@ -521,18 +527,15 @@ prefs = ["browser.cache.disk.encryption.enabled=true"]
 
 ["test_cache2-44-no-rewrite-unchanged-metadata.js"]
 
-["test_cache2-45-clear-base-domain-context-evictor.js"]
-
 ["test_cache2-44-no_cache_revalidating_hang.js"]
 
+["test_cache2-45-clear-base-domain-context-evictor.js"]
+
 ["test_cache2_clear_with_principal.js"]
-run-sequentially = ["true"] # httpd server
 
 ["test_cache2_clear_with_usercontext_oa.js"]
-run-sequentially = ["true"] # httpd server
 
 ["test_cache2_compression_dictionary.js"]
-run-sequentially = ["true"]
 
 ["test_cache2_nostore.js"]
 
@@ -548,7 +551,6 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_cert_info.js"]
 
 ["test_cert_verification_failure.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_channel_close.js"]
 
@@ -591,7 +593,6 @@ prefs = [
 ["test_connection_reuse_timings.js"]
 
 ["test_content_decoding_error_telemetry.js"]
-run-sequentially = ["true"]
 
 ["test_content_encoding_gzip.js"]
 
@@ -649,7 +650,6 @@ prefs = ["security.storage.encryption.sqlite.enabled=false"]
 ["test_cookies_validation_epoch.js"]
 
 ["test_cors_preflight_dns_cache.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 run-if = [
   "!socketprocess_networking", # can't read DNS cache syncly from socket process
 ]
@@ -660,19 +660,14 @@ prefs = ["content.cors.use_triggering_principal=true"] # See bug 1982916.
 ["test_defaultURI.js"]
 
 ["test_dictionary_compression_dcb.js"]
-run-sequentially = ["true"]
 
 ["test_dictionary_oa_isolation.js"]
-run-sequentially = ["true"]
 
 ["test_dictionary_replacement.js"]
-run-sequentially = ["true"]
 
 ["test_dictionary_retrieval.js"]
-run-sequentially = ["true"]
 
 ["test_dictionary_storage.js"]
-run-sequentially = ["true"]
 
 ["test_dns_by_type_resolve.js"]
 
@@ -696,7 +691,6 @@ skip-if = [
 ["test_dns_negative_grace.js"]
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_dns_negative_refresh_on_use.js"]
@@ -716,7 +710,6 @@ skip-if = [
 ["test_dns_proxy_bypass.js"]
 
 ["test_dns_retry.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 run-if = [
   "os != 'mac'", # server on a local ipv6 is not started on mac
 ]
@@ -774,7 +767,6 @@ run-if = [
 ["test_extract_charset_from_content_type.js"]
 
 ["test_fetch_streaming_upload.js"]
-run-sequentially = ["true"] # http3server + node servers
 prefs = ["dom.fetch.streaming_upload=true"] # nightly-only by default
 skip-if = [
   "os == 'win' && msix",
@@ -801,7 +793,6 @@ skip-if = [
 prefs = ["network.http.speculative-parallel-limit=0"]
 
 ["test_h2proxy_connection_limit.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_happy_eyeballs_0rtt_abandoned_requeueed.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
@@ -835,11 +826,9 @@ skip-if = [
 ["test_happy_eyeballs_cancel_and_reuse.js"]
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_concurrent_channels.js"]
-run-sequentially = ["true"]
 
 ["test_happy_eyeballs_conn_failure.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -849,7 +838,6 @@ skip-if = [
 ]
 
 ["test_happy_eyeballs_dns_prefetch_reuse.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_happy_eyeballs_h1_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
@@ -864,10 +852,8 @@ skip-if = [
 ]
 
 ["test_happy_eyeballs_h2_fallback.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_h3_0rtt.js"]
@@ -882,14 +868,12 @@ skip-if = [
 ]
 
 ["test_happy_eyeballs_h3_0rtt_reset.js"]
-run-sequentially = ["true"] # http3server + node server
 skip-if = [
   "os == 'android'",
   "os == 'win'",
 ]
 
 ["test_happy_eyeballs_h3_fallback.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win'",
@@ -905,31 +889,24 @@ skip-if = [
 ]
 
 ["test_happy_eyeballs_https_rr_prefetch_reuse.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_happy_eyeballs_ip_preference.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_happy_eyeballs_local_addr_retry.js"]
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_negative_optimistic_dns.js"]
 
 ["test_happy_eyeballs_optimistic_dns.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_tcp_fallback.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_timings.js"]
@@ -942,13 +919,11 @@ skip-if = [
 ["test_happy_eyeballs_trr_connect_fallback.js"]
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_websocket_https_rr.js"]
 
 ["test_happy_eyeballs_zero_ip_blocked.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win'",
@@ -1095,7 +1070,7 @@ skip-if = [
 ]
 
 ["test_http3_alt_svc_validation.js"]
-run-sequentially = ["true"] # http3server
+run-sequentially = ["true"] # timing-sensitive: under load the first follow-up can use h3 without Alt-Used
 prefs = ["network.http.speculative-parallel-limit=20"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
@@ -1110,7 +1085,6 @@ run-if = [
 ]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1866067
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1808049
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1808049
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1808049
@@ -1161,7 +1135,6 @@ skip-if = [
 ]
 
 ["test_http3_fallback_anonymous_conn.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 1808049
@@ -1185,6 +1158,16 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 1807931
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 1807931
+]
+
+["test_http3_ipv6_send_would_block.js"]
+run-sequentially = ["true"] # http3server + node server
+run-if = [
+  "!socketprocess_networking",
+]
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
 ]
 
 ["test_http3_kyber.js"]
@@ -1259,6 +1242,12 @@ skip-if = [
   "true", # Will be reenabled in bug 1865394
 ]
 
+["test_http3_protocol_error_fallback.js"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win' && msix",
+]
+
 ["test_http3_proxy.js"]
 head = "head_cookies.js head_channels.js head_cache.js head_http3.js http3_proxy_common.js"
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -1275,10 +1264,8 @@ skip-if = [
 ]
 
 ["test_http3_proxy_ipv6_fallback.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
-  "os == 'win' && msix", # Bug 1808049
 ]
 
 ["test_http3_proxy_no_speculative.js"]
@@ -1400,10 +1387,8 @@ skip-if = [
 ["test_httpcancel.js"]
 
 ["test_https_rr_ech_prefs.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_https_rr_sorted_alpn.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_httpssvc_ech_with_alpn.js"]
 skip-if = [
@@ -1506,13 +1491,6 @@ skip-if = [
 ["test_nestedabout_serialize.js"]
 
 ["test_net_addr.js"]
-skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 732363: test fails on windows for unknown reasons.
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 732363: test fails on windows for unknown reasons.
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 732363: test fails on windows for unknown reasons.
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 732363: test fails on windows for unknown reasons.
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 732363: test fails on windows for unknown reasons.
-]
 
 ["test_network_connectivity_service.js"]
 
@@ -1613,7 +1591,7 @@ skip-if = [
 
 ["test_protocolproxyservice.js"]
 skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1707738
+  "macos_vm", # Bug 2076510
 ]
 
 ["test_proxy-failover_canceled.js"]
@@ -1637,7 +1615,6 @@ skip-if = [
 ["test_proxy_auth_securityInfo.js"]
 
 ["test_proxy_cancel.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_proxy_fast_path.js"]
 
@@ -1835,6 +1812,8 @@ skip-if = [
 ["test_stale-while-revalidate_negative.js"]
 
 ["test_stale-while-revalidate_positive.js"]
+
+["test_stale-while-revalidate_redirect.js"]
 
 ["test_standardurl.js"]
 
@@ -2055,7 +2034,6 @@ skip-if = [
 ["test_uri_mutator.js"]
 
 ["test_use_httpssvc.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_verify_traffic.js"]
 
@@ -2065,13 +2043,10 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "verify",
 ]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_fails.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_fails_2.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_offline.js"]
 
@@ -2081,10 +2056,8 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 head = "head_cookies.js head_channels.js head_cache.js head_http3.js http3_proxy_common.js"
 
 ["test_websocket_server.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_server_multiclient.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_with_h3_active.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well

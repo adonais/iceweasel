@@ -95,7 +95,7 @@ namespace xsimd
     template <class T, class A>
     XSIMD_INLINE batch<T, A> sqrt(batch<T, A> const& self) noexcept;
     template <class T, class A, class Vt, Vt... Values>
-    XSIMD_INLINE std::enable_if_t<std::is_arithmetic<T>::value, batch<T, A>>
+    XSIMD_INLINE std::enable_if_t<std::is_arithmetic_v<T>, batch<T, A>>
     swizzle(batch<T, A> const& x, batch_constant<Vt, A, Values...> mask) noexcept;
     template <class T, class A>
     XSIMD_INLINE batch<T, A> tan(batch<T, A> const& self) noexcept;
@@ -301,13 +301,11 @@ namespace xsimd
                 using type = with_slow_conversion;
             };
 
-            using xsimd::detail::void_t;
-
             template <class A, class From, class To>
             struct conversion_type_impl<A, From, To,
-                                        void_t<decltype(fast_cast(std::declval<const batch<From, A>&>(),
-                                                                  std::declval<const batch<To, A>&>(),
-                                                                  std::declval<const A&>()))>>
+                                        std::void_t<decltype(fast_cast(std::declval<const batch<From, A>&>(),
+                                                                       std::declval<const batch<To, A>&>(),
+                                                                       std::declval<const A&>()))>>
             {
                 using type = with_fast_conversion;
             };

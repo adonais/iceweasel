@@ -37,7 +37,6 @@ sys.path.insert(0, str(OUR_DIR))
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
     "sphinx.ext.graphviz",
     "sphinx.ext.napoleon",
@@ -163,13 +162,6 @@ html_context = {
     "github_repo": "firefox",
     "github_version": "main",
 }
-
-# Only run autosection for the page title.
-# Otherwise, we have a huge number of duplicate links.
-# For example, the page https://firefox-source-docs.mozilla.org/code-quality/lint/
-# is called "Linting"
-# just like https://firefox-source-docs.mozilla.org/remote/CodeStyle.html
-autosectionlabel_maxdepth = 1
 
 
 def install_sphinx_design(app, pagename, templatename, context, doctree):

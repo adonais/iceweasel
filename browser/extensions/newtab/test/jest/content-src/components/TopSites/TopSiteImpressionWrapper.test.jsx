@@ -42,7 +42,7 @@ describe("<TopSiteImpressionWrapper>", () => {
       tile_id: 1,
       position: 1,
       reporting_url: "https://test.reporting.com",
-      advertiser: "test_advertiser",
+      advertiser_name: "test_advertiser",
     },
     IntersectionObserver: buildIntersectionObserver(FullIntersectEntries),
     document: {

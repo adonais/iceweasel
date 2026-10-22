@@ -24,7 +24,7 @@ add_task(async function () {
   setupTest();
 
   let { DistributionCustomizer } = ChromeUtils.importESModule(
-    "resource:///modules/distribution.sys.mjs"
+    "moz-src:///browser/components/distribution.sys.mjs"
   );
   let distribution = new DistributionCustomizer();
 
@@ -97,8 +97,7 @@ add_task(async function () {
  */
 function copyDistributionToProfile() {
   // Copy distribution.ini file to the profile dir.
-  let distroDir = gProfD.clone();
-  distroDir.leafName = "distribution";
+  let distroDir = ensureDistributionDir();
   let iniFile = distroDir.clone();
   iniFile.append("distribution.ini");
   if (iniFile.exists()) {
@@ -113,9 +112,8 @@ function copyDistributionToProfile() {
 }
 
 function deleteDistribution() {
-  let distroDir = gProfD.clone();
-  distroDir.leafName = "distribution";
-  let iniFile = distroDir.clone();
+  let iniFile = gProfD.clone();
+  iniFile.append("distribution");
   iniFile.append("distribution.ini");
   iniFile.remove(false);
 }

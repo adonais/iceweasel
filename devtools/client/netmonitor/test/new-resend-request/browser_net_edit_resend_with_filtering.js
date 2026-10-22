@@ -37,7 +37,7 @@ add_task(async function () {
 
   // Confirm XHR request and click it
   const xhrRequestItem = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequestItem);
+  clickOnRequestRow(xhrRequestItem);
   const waitForHeaders = waitUntil(() =>
     document.querySelector(".headers-overview")
   );
@@ -112,7 +112,7 @@ add_task(async function () {
 
     // Confirm XHR request and click it
     const xhrRequestItem = document.querySelectorAll(".request-list-item")[0];
-    EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequestItem);
+    clickOnRequestRow(xhrRequestItem);
     const waitForHeaders = waitUntil(() =>
       document.querySelector(".headers-overview")
     );
@@ -142,7 +142,7 @@ add_task(async function () {
 
     // Select new request
     const newRequest = document.querySelectorAll(".request-list-item")[1];
-    EventUtils.sendMouseEvent({ type: "mousedown" }, newRequest);
+    clickOnRequestRow(newRequest);
     const resendRequest = getSelectedRequest(store.getState());
 
     Assert.notStrictEqual(

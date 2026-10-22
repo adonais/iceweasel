@@ -4,10 +4,11 @@
 
 package org.mozilla.fenix.ui.efficiency.tests
 
-import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchAddSearchEngineSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchDefaultSearchEngineSelectors
@@ -26,17 +27,60 @@ class SettingsSearchTest : BaseTest() {
         )
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333
-    @Ignore("Covered by verifyNavigationReachability[1: SettingsSearchPage (TBD) — Navigation Reachability]")
+    @Critical
     @Test
     fun verifySearchSettingsMenuItemsTest() {
-        // Given: App is loaded with default settings
-        // on = AndroidComposeTestRule<HomeActivityIntentTestRule, *> with app defaults
-
-        // When: We navigate to the Settings 'Search' page
-        on.settingsSearch.navigateToPage()
-
-        // Then: all elements should load
-        // By default navigateToPage() asserts the page's interactive readiness profile.
+        on.settingsSearch
+            .navigateToPage()
+            // Search engines section
+            .mozVerify(SettingsSearchSelectors.SETTINGS_SEARCH_TITLE)
+            .mozVerify(SettingsSelectors.GO_BACK_BUTTON)
+            .mozVerify(SettingsSearchSelectors.SEARCH_ENGINES_SECTION_HEADER)
+            .mozVerify(SettingsSearchSelectors.DEFAULT_SEARCH_ENGINE_SETTING_OPTION)
+            .mozVerifyElementHasSiblingWithText(
+                SettingsSearchSelectors.DEFAULT_SEARCH_ENGINE_SETTING_OPTION,
+                siblingText = "Google",
+            )
+            .mozVerify(SettingsSearchSelectors.MANAGE_SHORTCUTS_SETTING_OPTION)
+            .mozVerifyElementHasSiblingWithText(
+                SettingsSearchSelectors.MANAGE_SHORTCUTS_SETTING_OPTION,
+                siblingText = SettingsSearchSelectors.MANAGE_SHORTCUTS_SUMMARY,
+            )
+            .mozSwipeTo(SettingsSearchSelectors.GOOGLE_LENS_OPTION, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.GOOGLE_LENS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.GOOGLE_LENS_OPTION)
+            .mozSwipeTo(SettingsSearchSelectors.HOME_SCREEN_WIDGET_OPTION, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.HOME_SCREEN_WIDGET_OPTION)
+            .mozVerifyOptionSwitchIsNotChecked(SettingsSearchSelectors.HOME_SCREEN_WIDGET_OPTION)
+            // Suggestions from search engines section: search + trending + recent on by default,
+            // private-session suggestions off by default
+            .mozSwipeTo(SettingsSearchSelectors.SEARCH_SUGGESTIONS_SECTION_HEADER, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.SEARCH_SUGGESTIONS_SECTION_HEADER)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SHOW_SEARCH_SUGGESTIONS_TOGGLE)
+            .mozVerifyOptionCheckBoxIsNotChecked(SettingsSearchSelectors.SHOW_SUGGESTIONS_IN_PRIVATE_OPTION)
+            .mozVerifyOptionCheckBoxIsChecked(SettingsSearchSelectors.SHOW_TRENDING_SUGGESTIONS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SHOW_RECENT_SEARCHES_OPTION)
+            // Address bar - Firefox Suggest section: all sources on by default
+            .mozSwipeTo(SettingsSearchSelectors.ADDRESS_BAR_FX_SUGGEST_HEADER, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.ADDRESS_BAR_FX_SUGGEST_HEADER)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SEARCH_BROWSING_HISTORY_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SEARCH_BOOKMARKS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SEARCH_SYNCED_TABS_OPTION)
+            // Firefox Suggest sources (shown when FxSuggest is enabled): on by default, plus the Learn more link
+            .mozSwipeTo(SettingsSearchSelectors.NONSPONSORED_SUGGESTIONS_OPTION, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.NONSPONSORED_SUGGESTIONS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.NONSPONSORED_SUGGESTIONS_OPTION)
+            .mozSwipeTo(SettingsSearchSelectors.SPONSORED_SUGGESTIONS_OPTION, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.SPONSORED_SUGGESTIONS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SPONSORED_SUGGESTIONS_OPTION)
+            .mozSwipeTo(SettingsSearchSelectors.LEARN_ABOUT_FX_SUGGEST_LINK, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.LEARN_ABOUT_FX_SUGGEST_LINK)
+            // Address bar preferences section: all on by default
+            .mozSwipeTo(SettingsSearchSelectors.ADDRESS_BAR_PREFERENCES_SECTION_HEADER, direction = SwipeDirection.UP)
+            .mozVerify(SettingsSearchSelectors.ADDRESS_BAR_PREFERENCES_SECTION_HEADER)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.SHOW_CLIPBOARD_SUGGESTIONS_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.VOICE_SEARCH_OPTION)
+            .mozVerifyOptionSwitchIsChecked(SettingsSearchSelectors.AUTOCOMPLETE_URLS_OPTION)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203308

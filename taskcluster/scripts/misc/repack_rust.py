@@ -654,7 +654,6 @@ def expand_platform(name):
         "mac32": "i686-apple-darwin",
         "win64": "x86_64-pc-windows-msvc",
         "win32": "i686-pc-windows-msvc",
-        "mingw32": "i686-pc-windows-gnu",
     }
     return platforms.get(name, name)
 

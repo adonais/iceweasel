@@ -8,7 +8,6 @@ task-defaults:
     run-on-repo-type: [hg]
     run:
         clone-with: hg
-        mozconfig-variant: null
 
 android-geckoview-docs/opt:
     description: "Android GeckoView docs"
@@ -33,6 +32,9 @@ android-geckoview-docs/opt:
               path: /builds/worker/workspace/obj-build/mobile/android/geckoview/docs/javadoc/debug/geckoview-javadoc.jar
               type: file
         max-run-time: 7200
+    mozconfig:
+        variant: nightly-android-lints
+        platform: android-arm
     run:
         using: mozharness
         actions: [get-secrets, build]

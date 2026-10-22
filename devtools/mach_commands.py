@@ -3,9 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
+import json
 import os
 import subprocess
 import sys
+import tarfile
+import tempfile
+import urllib.request
 
 from mach.decorators import Command, CommandArgument
 from mozbuild.base import MozbuildObject
@@ -160,3 +164,96 @@ def run_devtools_node_test(command_context, suite=None, artifact=None, **kwargs)
     )
 
     return runner.run_node_tests(suite=suite, artifact=artifact)
+
+
+MDN_COMPAT_DATA_PACKAGE = "@mdn/browser-compat-data"
+
+
+def download_mdn_compat_data(dest_dir):
+    """Download the latest MDN compat data package and extract it in dest_dir.
+
+    The package only contains data files and has no dependencies, so it can be
+    extracted directly from the npm tarball without using npm.
+
+    Returns a tuple with the package version and the path to its data.json file.
+    """
+    url = f"https://registry.npmjs.org/{MDN_COMPAT_DATA_PACKAGE}/latest"
+    with urllib.request.urlopen(url) as response:
+        latest = json.load(response)
+    print(f"Downloading {MDN_COMPAT_DATA_PACKAGE} {latest['version']}")
+
+    tarball_path = os.path.join(dest_dir, "package.tgz")
+    urllib.request.urlretrieve(latest["dist"]["tarball"], tarball_path)
+    with tarfile.open(tarball_path) as tarball:
+        # filter="data" prevents CVE-2007-4559, remove the check when mach requires Python >= 3.12.
+        if hasattr(tarfile, "data_filter"):
+            tarball.extractall(dest_dir, filter="data")
+        else:
+            tarball.extractall(dest_dir)
+
+    return latest["version"], os.path.join(dest_dir, "package", "data.json")
+
+
+@Command(
+    "devtools-update-compat-data",
+    category="devenv",
+    description="Update the MDN compatibility dataset used by the DevTools "
+    "Compatibility panel.",
+)
+@CommandArgument(
+    "--run-tests",
+    action="store_true",
+    help="Run the tests using the real compatibility dataset after the update.",
+)
+def run_devtools_update_compat_data(command_context, run_tests=False):
+    """Update devtools/shared/compatibility/dataset/css-properties.json."""
+    topsrcdir = command_context.topsrcdir
+    compat_dir = os.path.join(topsrcdir, "devtools", "shared", "compatibility")
+
+    node_binary, _ = find_node_executable()
+    if not node_binary:
+        print("ERROR: Node.js not found. Run `./mach bootstrap` to install it.")
+        return 1
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        version, data_path = download_mdn_compat_data(tmp_dir)
+        sys.stdout.flush()
+        result = subprocess.run(
+            [node_binary, os.path.join("bin", "update.js"), data_path],
+            cwd=compat_dir,
+            check=False,
+        )
+    if result.returncode:
+        return result.returncode
+
+    dataset = "devtools/shared/compatibility/dataset/css-properties.json"
+    if dataset not in command_context.repository.get_changed_files("M"):
+        print("The dataset did not change.")
+    else:
+        print(f"Updated {dataset} to {MDN_COMPAT_DATA_PACKAGE} {version}.")
+
+    test_commands = [
+        ["xpcshell-test", "--tag", "devtools-compat-data"],
+        [
+            "mochitest",
+            "--subsuite",
+            "devtools",
+            "--tag",
+            "devtools-compat-data",
+            "--headless",
+        ],
+    ]
+    if not run_tests:
+        print("Before submitting for review, run the tests:")
+        for args in test_commands:
+            print(f"  ./mach {' '.join(args)}")
+        print("Or run this command again with --run-tests.")
+        return 0
+
+    mach = os.path.join(topsrcdir, "mach")
+    for args in test_commands:
+        sys.stdout.flush()
+        result = subprocess.run([sys.executable, mach, *args], check=False)
+        if result.returncode:
+            return result.returncode
+    return 0

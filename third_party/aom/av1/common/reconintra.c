@@ -1750,8 +1750,8 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, BLOCK_SIZE sb_size,
   // separate function build_non_directional_intra_predictors() is introduced
   // for these modes to avoid redundant computations while generating pred data.
 
-  const int n_top_px = have_top ? AOMMIN(txwpx, xr + txwpx) : 0;
-  const int n_left_px = have_left ? AOMMIN(txhpx, yd + txhpx) : 0;
+  const int n_top_px = have_top ? clamp(xr + txwpx, 0, txwpx) : 0;
+  const int n_left_px = have_left ? clamp(yd + txhpx, 0, txhpx) : 0;
   if (!use_filter_intra && !is_dr_mode) {
 #if CONFIG_AV1_HIGHBITDEPTH
     if (is_hbd) {
@@ -1815,9 +1815,9 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, BLOCK_SIZE sb_size,
   const int disable_edge_filter = !enable_intra_edge_filter;
   const int intra_edge_filter_type = get_intra_edge_filter_type(xd, plane);
   const int n_topright_px =
-      have_top_right > 0 ? AOMMIN(txwpx, xr) : have_top_right;
+      have_top_right > 0 ? clamp(xr, 0, txwpx) : have_top_right;
   const int n_bottomleft_px =
-      have_bottom_left > 0 ? AOMMIN(txhpx, yd) : have_bottom_left;
+      have_bottom_left > 0 ? clamp(yd, 0, txhpx) : have_bottom_left;
 #if CONFIG_AV1_HIGHBITDEPTH
   if (is_hbd) {
     highbd_build_directional_and_filter_intra_predictors(

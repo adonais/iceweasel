@@ -14,6 +14,11 @@ UNIFIED_SOURCES = [
     "TestUtilityProcessSandboxing.cpp",
 ]
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    UNIFIED_SOURCES += [
+        "TestMacChildProcessPaths.cpp",
+    ]
+
 LOCAL_INCLUDES += [
     "/widget",
     "/widget/android",

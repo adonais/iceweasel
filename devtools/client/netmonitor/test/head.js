@@ -219,6 +219,40 @@ registerCleanupFunction(() => {
   Services.cookies.removeAll();
 });
 
+/**
+ * Scroll an element into view and click its center with real mouse events,
+ * as a user would.
+ *
+ * @param {Element} element
+ * @param {object} options
+ *        Passed to EventUtils.synthesizeMouseAtCenter, e.g. { button: 1 }.
+ */
+function clickInView(element, options = {}) {
+  // Centered, as sticky column headers would cover an element scrolled to the
+  // top edge.
+  element.scrollIntoView({ block: "center" });
+  EventUtils.synthesizeMouseAtCenter(
+    element,
+    options,
+    element.ownerDocument.defaultView
+  );
+}
+
+/**
+ * Select a request by clicking the file cell of its row, which has no mouse
+ * handler of its own. The cell is clicked rather than the file name, as a long
+ * file name overflows the cell and its center can be over another column or a
+ * column resizer.
+ *
+ * @param {Element} row
+ *        The .request-list-item element.
+ * @param {object} options
+ *        Passed to EventUtils.synthesizeMouseAtCenter, e.g. { button: 1 }.
+ */
+function clickOnRequestRow(row, options) {
+  clickInView(row.querySelector(".requests-list-file"), options);
+}
+
 async function disableCacheAndReload(toolbox, waitForLoad) {
   // Disable the cache for any toolbox that it is opened from this point on.
   Services.prefs.setBoolPref("devtools.cache.disabled", true);
@@ -1150,10 +1184,7 @@ async function selectIndexAndWaitForSourceEditor(monitor, index) {
   );
   // Select the request first, as it may try to fetch whatever is the current request's
   // responseContent if we select the ResponseTab first.
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[index]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[index]);
   // We may already be on the ResponseTab, so only select it if needed.
   const editor = document.querySelector("#response-panel .cm-content");
   if (!editor) {
@@ -1766,7 +1797,7 @@ function findRequestByInitiator(document, initiator) {
  *     The request item in the netmonitor table
  */
 async function triggerSaveResponseAs(monitor, request) {
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, request);
 
   info("Open the save dialog");

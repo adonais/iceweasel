@@ -19,5 +19,5 @@ the table have the type `PLHashEntry` and are organized into buckets.
 The number of buckets in a hash table may be changed by the library
 functions during the lifetime of the table to optimize speed and space.
 
-A new hash table is created by the {ref}`PL_NewHashTable` function, and
-destroyed by the {ref}`PL_HashTableDestroy` function.
+A new hash table is created by the {doc}`pl_newhashtable` function, and
+destroyed by the {doc}`pl_hashtabledestroy` function.

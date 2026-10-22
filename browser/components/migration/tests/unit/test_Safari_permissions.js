@@ -10,7 +10,7 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
  */
 
 const { SafariProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/SafariProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/SafariProfileMigrator.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.importESModule(

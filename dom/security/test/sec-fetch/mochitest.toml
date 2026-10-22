@@ -21,7 +21,6 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !fission", # Bug 1805760
 ]
 support-files = ["file_trustworthy_loopback.html"]
 

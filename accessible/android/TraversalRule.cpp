@@ -121,13 +121,6 @@ bool TraversalRule::IsFlatSubtree(const Accessible* aAccessible) {
   return true;
 }
 
-bool TraversalRule::HasName(const Accessible* aAccessible) {
-  nsAutoString name;
-  aAccessible->Name(name);
-  name.CompressWhitespace();
-  return !name.IsEmpty();
-}
-
 uint16_t TraversalRule::LinkMatch(Accessible* aAccessible) {
   if (aAccessible->Role() == roles::LINK &&
       (aAccessible->State() & states::LINKED) != 0) {
@@ -218,12 +211,15 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       }
       break;
     case roles::TEXT_LEAF:
-    case roles::GRAPHIC:
-      // Nameless text leaves are boring, skip them.
-      if (HasName(aAccessible)) {
+    case roles::GRAPHIC: {
+      nsAutoString name;
+      aAccessible->Name(name);
+      name.CompressWhitespace();
+      if (!name.IsEmpty()) {
+        // Nameless text leaves are boring, skip them.
         return nsIAccessibleTraversalRule::FILTER_MATCH;
       }
-      break;
+    } break;
     case roles::STATICTEXT:
       // Ignore list bullets
       if (!IsListItemBullet(aAccessible)) {
@@ -234,7 +230,7 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
     case roles::COLUMNHEADER:
     case roles::ROWHEADER:
     case roles::STATUSBAR:
-      if ((aAccessible->ChildCount() > 0 || HasName(aAccessible)) &&
+      if ((aAccessible->ChildCount() > 0 || !aAccessible->NameIsEmpty()) &&
           (IsSingleLineage(aAccessible) || IsFlatSubtree(aAccessible))) {
         return nsIAccessibleTraversalRule::FILTER_MATCH |
                nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
@@ -280,6 +276,13 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       return nsIAccessibleTraversalRule::FILTER_MATCH |
              nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     default:
+      if ((aAccessible->State() & states::FOCUSABLE) &&
+          !aAccessible->NameIsEmpty()) {
+        // If this accessible is not defined by any role above, but is focusable
+        // and has a name, it is intended to be interactive and we should match
+        // it.
+        return nsIAccessibleTraversalRule::FILTER_MATCH;
+      }
       break;
   }
 

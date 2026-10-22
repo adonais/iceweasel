@@ -21,9 +21,9 @@ Conventions](introduction_to_nspr.md#nspr-naming-conventions).
 These types are used to support cross-platform declarations of
 prototypes and implementations:
 
-> - {ref}`PR_EXTERN` is used for declarations of external functions or
+> - {doc}`pr_extern` is used for declarations of external functions or
 >   variables.
-> - {ref}`PR_IMPLEMENT` is used for definitions of external functions or
+> - {doc}`pr_implement` is used for definitions of external functions or
 >   variables.
 > - `PR_CALLBACK` is used for definitions and declarations of functions
 >   that are called via function pointers. A typical example is a
@@ -79,17 +79,17 @@ platform-dependent bit widths:
 
 ### Signed Integers
 
-> - {ref}`PRInt8`
-> - {ref}`PRInt16`
-> - {ref}`PRInt32`
+> - {doc}`print8`
+> - {doc}`print16`
+> - {doc}`print32`
 
 (unsigned-integers)=
 
 ### Unsigned Integers
 
-> - {ref}`PRUint8`
-> - {ref}`PRUint16`
-> - {ref}`PRUint32`
+> - {doc}`pruint8`
+> - {doc}`pruint16`
+> - {doc}`pruint32`
 
 (nspr-types-64-bit-integer-types)=
 
@@ -104,8 +104,8 @@ manipulate 64-bit numeric fields. These macros are defined in
 code to all the platforms supported by NSPR and still provides optimal
 behavior on those systems that treat long long values directly.
 
-> - {ref}`PRInt64`
-> - {ref}`PRUint64`
+> - {doc}`print64`
+> - {doc}`pruint64`
 
 (floating-point-number-type)=
 
@@ -113,7 +113,7 @@ behavior on those systems that treat long long values directly.
 
 The NSPR floating-point type is always 64 bits.
 
-> - {ref}`PRFloat64`
+> - {doc}`prfloat64`
 
 (native-os-integer-types)=
 
@@ -124,8 +124,8 @@ guaranteed to be at least 16 bits, though various architectures may
 define them to be wider (for example, 32 or even 64 bits). These types
 are never valid for fields of a structure.
 
-> - {ref}`PRIntn`
-> - {ref}`PRUintn`
+> - {doc}`printn`
+> - {doc}`pruintn`
 
 (miscellaneous-types)=
 
@@ -140,7 +140,7 @@ are never valid for fields of a structure.
 
 ## Size Type
 
-> - {ref}`PRSize`
+> - {doc}`prsize`
 
 (pointer-difference-types)=
 
@@ -150,8 +150,8 @@ Types for pointer difference. Variables of these types are suitable for
 storing a pointer or pointer subtraction. These are the same as the
 corresponding types in `libc`.
 
-> - {ref}`PRPtrdiff`
-> - {ref}`PRUptrdiff`
+> - {doc}`prptrdiff`
+> - {doc}`pruptrdiff`
 
 (boolean-types)=
 
@@ -159,11 +159,11 @@ corresponding types in `libc`.
 
 Type and constants for Boolean values.
 
-> - {ref}`PRBool`
-> - {ref}`PRPackedBool`
+> - {doc}`prbool`
+> - {doc}`prpackedbool`
 
 (status-type-for-return-values)=
 
 ## Status Type for Return Values
 
-> - {ref}`PRStatus`
+> - {doc}`prstatus`

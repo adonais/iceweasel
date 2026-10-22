@@ -64,7 +64,7 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
     // to sessions and content processes:
     // * mainSession is the only session, it is open, and its content process is the only
     //   content process (but note that the content process assigned to mainSession is
-    //   *not* guaranteed to be ":tab_disable_art_image_0").
+    //   *not* guaranteed to be ":sandboxed_tab_disable_art_image_0").
     // * With multi-e10s configured to run N content processes, we create and open
     //   an additional N content processes. With the default e10s process allocation
     //   scheme, this means that the first N-1 new sessions we create each get their

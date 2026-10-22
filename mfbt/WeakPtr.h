@@ -75,6 +75,8 @@
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
+#include <functional>
+
 #if defined(MOZILLA_INTERNAL_API)
 #  include "mozilla/Assertions.h"
 // For thread safety checking.
@@ -295,6 +297,20 @@ class WeakPtr {
   operator T*() const { return get(); }
   T& operator*() const { return *get(); }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
+
+  // Comparator for sorted containers. Orders by the identity of the underlying
+  // weak reference rather than by the referent, so that a container stays
+  // sorted when a referent is destroyed. Note the corollary that Equals() is
+  // identity on the weak reference: two WeakPtrs whose referents have both
+  // been destroyed compare unequal, even though both get() as nullptr.
+  struct StableOrdering {
+    bool Equals(const WeakPtr& aLhs, const WeakPtr& aRhs) const {
+      return aLhs.mRef == aRhs.mRef;
+    }
+    bool LessThan(const WeakPtr& aLhs, const WeakPtr& aRhs) const {
+      return std::less<>()(aLhs.mRef.get(), aRhs.mRef.get());
+    }
+  };
 
 #ifdef MOZILLA_INTERNAL_API
   ~WeakPtr() {

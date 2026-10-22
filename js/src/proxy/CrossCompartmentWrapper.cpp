@@ -33,14 +33,15 @@ using namespace js;
 
 #define NOTHING (true)
 
-static bool RecordReferences(JSContext* cx, jsid id) {
-  cx->recordRefToId(id);
-  return true;
+static bool WrapOrRecordRefs(JSContext* cx, MutableHandleId id) {
+  return cx->wrapOrRecordRefToId(id);
 }
 
-static bool RecordReferences(JSContext* cx, HandleIdVector ids) {
+static bool WrapOrRecordRefs(JSContext* cx, MutableHandleIdVector ids) {
   for (size_t i = 0; i < ids.length(); i++) {
-    cx->recordRefToId(ids[i]);
+    if (!cx->wrapOrRecordRefToId(ids[i])) {
+      return false;
+    }
   }
   return true;
 }
@@ -48,8 +49,9 @@ static bool RecordReferences(JSContext* cx, HandleIdVector ids) {
 bool CrossCompartmentWrapper::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject wrapper, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
-  PIERCE(cx, wrapper, RecordReferences(cx, id),
-         Wrapper::getOwnPropertyDescriptor(cx, wrapper, id, desc),
+  Rooted<jsid> idCopy(cx, id);
+  PIERCE(cx, wrapper, WrapOrRecordRefs(cx, &idCopy),
+         Wrapper::getOwnPropertyDescriptor(cx, wrapper, idCopy, desc),
          cx->compartment()->wrap(cx, desc));
 }
 
@@ -57,23 +59,25 @@ bool CrossCompartmentWrapper::defineProperty(JSContext* cx,
                                              HandleObject wrapper, HandleId id,
                                              Handle<PropertyDescriptor> desc,
                                              ObjectOpResult& result) const {
+  Rooted<jsid> idCopy(cx, id);
   Rooted<PropertyDescriptor> desc2(cx, desc);
   PIERCE(cx, wrapper,
-         RecordReferences(cx, id) && cx->compartment()->wrap(cx, &desc2),
-         Wrapper::defineProperty(cx, wrapper, id, desc2, result), NOTHING);
+         WrapOrRecordRefs(cx, &idCopy) && cx->compartment()->wrap(cx, &desc2),
+         Wrapper::defineProperty(cx, wrapper, idCopy, desc2, result), NOTHING);
 }
 
 bool CrossCompartmentWrapper::ownPropertyKeys(
     JSContext* cx, HandleObject wrapper, MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING, Wrapper::ownPropertyKeys(cx, wrapper, props),
-         RecordReferences(cx, props));
+         WrapOrRecordRefs(cx, props));
 }
 
 bool CrossCompartmentWrapper::delete_(JSContext* cx, HandleObject wrapper,
                                       HandleId id,
                                       ObjectOpResult& result) const {
-  PIERCE(cx, wrapper, RecordReferences(cx, id),
-         Wrapper::delete_(cx, wrapper, id, result), NOTHING);
+  Rooted<jsid> idCopy(cx, id);
+  PIERCE(cx, wrapper, WrapOrRecordRefs(cx, &idCopy),
+         Wrapper::delete_(cx, wrapper, idCopy, result), NOTHING);
 }
 
 bool CrossCompartmentWrapper::getPrototype(JSContext* cx, HandleObject wrapper,
@@ -137,14 +141,16 @@ bool CrossCompartmentWrapper::isExtensible(JSContext* cx, HandleObject wrapper,
 
 bool CrossCompartmentWrapper::has(JSContext* cx, HandleObject wrapper,
                                   HandleId id, bool* bp) const {
-  PIERCE(cx, wrapper, RecordReferences(cx, id),
-         Wrapper::has(cx, wrapper, id, bp), NOTHING);
+  Rooted<jsid> idCopy(cx, id);
+  PIERCE(cx, wrapper, WrapOrRecordRefs(cx, &idCopy),
+         Wrapper::has(cx, wrapper, idCopy, bp), NOTHING);
 }
 
 bool CrossCompartmentWrapper::hasOwn(JSContext* cx, HandleObject wrapper,
                                      HandleId id, bool* bp) const {
-  PIERCE(cx, wrapper, RecordReferences(cx, id),
-         Wrapper::hasOwn(cx, wrapper, id, bp), NOTHING);
+  Rooted<jsid> idCopy(cx, id);
+  PIERCE(cx, wrapper, WrapOrRecordRefs(cx, &idCopy),
+         Wrapper::hasOwn(cx, wrapper, idCopy, bp), NOTHING);
 }
 
 static bool WrapReceiver(JSContext* cx, HandleObject wrapper,
@@ -170,14 +176,15 @@ bool CrossCompartmentWrapper::get(JSContext* cx, HandleObject wrapper,
                                   HandleValue receiver, HandleId id,
                                   MutableHandleValue vp) const {
   RootedValue receiverCopy(cx, receiver);
+  Rooted<jsid> idCopy(cx, id);
   {
     AutoRealm call(cx, wrappedObject(wrapper));
-    if (!RecordReferences(cx, id) ||
+    if (!WrapOrRecordRefs(cx, &idCopy) ||
         !WrapReceiver(cx, wrapper, &receiverCopy)) {
       return false;
     }
 
-    if (!Wrapper::get(cx, wrapper, receiverCopy, id, vp)) {
+    if (!Wrapper::get(cx, wrapper, receiverCopy, idCopy, vp)) {
       return false;
     }
   }
@@ -188,25 +195,28 @@ bool CrossCompartmentWrapper::set(JSContext* cx, HandleObject wrapper,
                                   HandleId id, HandleValue v,
                                   HandleValue receiver,
                                   ObjectOpResult& result) const {
+  Rooted<jsid> idCopy(cx, id);
   RootedValue valCopy(cx, v);
   RootedValue receiverCopy(cx, receiver);
   PIERCE(cx, wrapper,
-         RecordReferences(cx, id) && cx->compartment()->wrap(cx, &valCopy) &&
+         WrapOrRecordRefs(cx, &idCopy) &&
+             cx->compartment()->wrap(cx, &valCopy) &&
              WrapReceiver(cx, wrapper, &receiverCopy),
-         Wrapper::set(cx, wrapper, id, valCopy, receiverCopy, result), NOTHING);
+         Wrapper::set(cx, wrapper, idCopy, valCopy, receiverCopy, result),
+         NOTHING);
 }
 
 bool CrossCompartmentWrapper::getOwnEnumerablePropertyKeys(
     JSContext* cx, HandleObject wrapper, MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING,
          Wrapper::getOwnEnumerablePropertyKeys(cx, wrapper, props),
-         RecordReferences(cx, props));
+         WrapOrRecordRefs(cx, props));
 }
 
 bool CrossCompartmentWrapper::enumerate(JSContext* cx, HandleObject wrapper,
                                         MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING, Wrapper::enumerate(cx, wrapper, props),
-         RecordReferences(cx, props));
+         WrapOrRecordRefs(cx, props));
 }
 
 bool CrossCompartmentWrapper::call(JSContext* cx, HandleObject wrapper,

@@ -19,7 +19,7 @@ expression
 
 : Any valid expression which evaluates at compile-time to `TRUE` or
   `FALSE`. An expression which cannot be evaluated at compile time
-  will cause a compiler error; see {ref}`PR_ASSERT` for a runtime
+  will cause a compiler error; see {doc}`pr_assert` for a runtime
   alternative.
 
 ### Returns

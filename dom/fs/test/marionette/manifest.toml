@@ -1,0 +1,11 @@
+[DEFAULT]
+subsuite = "integration"
+tags = "inc-origin-init os_integration"
+# test_OPFS_encryption_PBM contrasts the ciphertext of a private origin's
+# metadata database with the plaintext of a non-private one. SQLite at-rest
+# encryption would encrypt both and remove the contrast.
+prefs = ["security.storage.encryption.sqlite.enabled=false"]
+
+["test_OPFS_encryption_PBM.py"]
+
+["test_OPFS_syncAccessHandle_encryption_PBM.py"]

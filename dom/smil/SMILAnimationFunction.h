@@ -286,9 +286,8 @@ class SMILAnimationFunction {
   virtual bool IsDisallowedAttribute(const nsAtom* aAttribute) const {
     return false;
   }
-  virtual nsresult InterpolateResult(const SMILValueArray& aValues,
-                                     SMILValue& aResult, SMILValue& aBaseValue);
-  nsresult AccumulateResult(const SMILValueArray& aValues, SMILValue& aResult);
+  nsresult InterpolateResult(const SMILValueArray& aValues, SMILValue& aResult,
+                             SMILValue& aBaseValue);
 
   nsresult ComputePacedPosition(const SMILValueArray& aValues,
                                 double aSimpleProgress,

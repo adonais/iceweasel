@@ -200,31 +200,31 @@ void AnimationInfo::EnumerateGenerationOnFrame(
 }
 
 static StyleTransformOperation ResolveTranslate(
-    TransformReferenceBox& aRefBox, StyleZoom aEffectiveZoom,
-    const LengthPercentage& aX,
+    TransformReferenceBox& aRefBox, const LengthPercentage& aX,
     const LengthPercentage& aY = LengthPercentage::Zero(),
     const Length& aZ = Length{0}) {
-  float x = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+  StyleZoom effectiveZoom = aRefBox.EffectiveZoom();
+  float x = effectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
       aX, &aRefBox, &TransformReferenceBox::Width));
-  float y = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+  float y = effectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
       aY, &aRefBox, &TransformReferenceBox::Height));
   return StyleTransformOperation::Translate3D(
       LengthPercentage::FromPixels(x), LengthPercentage::FromPixels(y),
-      aZ.ScaledBy(aEffectiveZoom.ToFloat()));
+      aZ.ScaledBy(effectiveZoom.ToFloat()));
 }
 
 static StyleTranslate ResolveTranslate(const StyleTranslate& aValue,
-                                       TransformReferenceBox& aRefBox,
-                                       StyleZoom aEffectiveZoom) {
+                                       TransformReferenceBox& aRefBox) {
   if (aValue.IsTranslate()) {
     const auto& t = aValue.AsTranslate();
-    float x = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+    StyleZoom effectiveZoom = aRefBox.EffectiveZoom();
+    float x = effectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
         t._0, &aRefBox, &TransformReferenceBox::Width));
-    float y = aEffectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
+    float y = effectiveZoom.Zoom(nsStyleTransformMatrix::ProcessTranslatePart(
         t._1, &aRefBox, &TransformReferenceBox::Height));
     return StyleTranslate::Translate(LengthPercentage::FromPixels(x),
                                      LengthPercentage::FromPixels(y),
-                                     t._2.ScaledBy(aEffectiveZoom.ToFloat()));
+                                     t._2.ScaledBy(effectiveZoom.ToFloat()));
   }
 
   MOZ_ASSERT(aValue.IsNone());
@@ -232,8 +232,7 @@ static StyleTranslate ResolveTranslate(const StyleTranslate& aValue,
 }
 
 static StyleTransform ResolveTransformOperations(
-    const StyleTransform& aTransform, TransformReferenceBox& aRefBox,
-    mozilla::StyleZoom aEffectiveZoom) {
+    const StyleTransform& aTransform, TransformReferenceBox& aRefBox) {
   // Note that we need to manually apply CSS zoom because animation values are
   // unzoomed (unlike other computed values).
   auto convertMatrix = [](const gfx::Matrix4x4& aM) {
@@ -250,52 +249,49 @@ static StyleTransform ResolveTransformOperations(
   for (const StyleTransformOperation& op : aTransform.Operations()) {
     switch (op.tag) {
       case StyleTransformOperation::Tag::TranslateX:
-        result.infallibleAppend(
-            ResolveTranslate(aRefBox, aEffectiveZoom, op.AsTranslateX()));
+        result.infallibleAppend(ResolveTranslate(aRefBox, op.AsTranslateX()));
         break;
       case StyleTransformOperation::Tag::TranslateY:
-        result.infallibleAppend(ResolveTranslate(aRefBox, aEffectiveZoom,
-                                                 LengthPercentage::Zero(),
-                                                 op.AsTranslateY()));
+        result.infallibleAppend(ResolveTranslate(
+            aRefBox, LengthPercentage::Zero(), op.AsTranslateY()));
         break;
       case StyleTransformOperation::Tag::TranslateZ:
         result.infallibleAppend(
-            ResolveTranslate(aRefBox, aEffectiveZoom, LengthPercentage::Zero(),
+            ResolveTranslate(aRefBox, LengthPercentage::Zero(),
                              LengthPercentage::Zero(), op.AsTranslateZ()));
         break;
       case StyleTransformOperation::Tag::Translate: {
         const auto& translate = op.AsTranslate();
-        result.infallibleAppend(ResolveTranslate(aRefBox, aEffectiveZoom,
-                                                 translate._0, translate._1));
+        result.infallibleAppend(
+            ResolveTranslate(aRefBox, translate._0, translate._1));
         break;
       }
       case StyleTransformOperation::Tag::Translate3D: {
         const auto& translate = op.AsTranslate3D();
-        result.infallibleAppend(ResolveTranslate(
-            aRefBox, aEffectiveZoom, translate._0, translate._1, translate._2));
+        result.infallibleAppend(ResolveTranslate(aRefBox, translate._0,
+                                                 translate._1, translate._2));
         break;
       }
       case StyleTransformOperation::Tag::InterpolateMatrix: {
         gfx::Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessInterpolateMatrix(
-            matrix, op, aRefBox, aEffectiveZoom,
-            nsStyleTransformMatrix::Zoomed::Yes);
+            matrix, op, aRefBox, nsStyleTransformMatrix::Zoomed::Yes);
         result.infallibleAppend(convertMatrix(matrix));
         break;
       }
       case StyleTransformOperation::Tag::AccumulateMatrix: {
         gfx::Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessAccumulateMatrix(
-            matrix, op, aRefBox, aEffectiveZoom,
-            nsStyleTransformMatrix::Zoomed::Yes);
+            matrix, op, aRefBox, nsStyleTransformMatrix::Zoomed::Yes);
         result.infallibleAppend(convertMatrix(matrix));
         break;
       }
       case StyleTransformOperation::Tag::Matrix: {
         auto matrix = op.AsMatrix();
 
-        matrix.e = aEffectiveZoom.Zoom(matrix.e);
-        matrix.f = aEffectiveZoom.Zoom(matrix.f);
+        StyleZoom effectiveZoom = aRefBox.EffectiveZoom();
+        matrix.e = effectiveZoom.Zoom(matrix.e);
+        matrix.f = effectiveZoom.Zoom(matrix.f);
 
         result.infallibleAppend(StyleTransformOperation::Matrix(matrix));
         break;
@@ -303,9 +299,10 @@ static StyleTransform ResolveTransformOperations(
       case StyleTransformOperation::Tag::Matrix3D: {
         auto matrix3d = op.AsMatrix3D();
 
-        matrix3d.m41 = aEffectiveZoom.Zoom(matrix3d.m41);
-        matrix3d.m42 = aEffectiveZoom.Zoom(matrix3d.m42);
-        matrix3d.m43 = aEffectiveZoom.Zoom(matrix3d.m43);
+        StyleZoom effectiveZoom = aRefBox.EffectiveZoom();
+        matrix3d.m41 = effectiveZoom.Zoom(matrix3d.m41);
+        matrix3d.m42 = effectiveZoom.Zoom(matrix3d.m42);
+        matrix3d.m43 = effectiveZoom.Zoom(matrix3d.m43);
 
         result.infallibleAppend(StyleTransformOperation::Matrix3D(matrix3d));
         break;
@@ -391,13 +388,12 @@ static void SetAnimatable(NonCustomCSSPropertyId aProperty,
       aAnimatable = aAnimationValue.GetScaleProperty();
       break;
     case eCSSProperty_translate:
-      aAnimatable = ResolveTranslate(aAnimationValue.GetTranslateProperty(),
-                                     aRefBox, aFrame->Style()->EffectiveZoom());
+      aAnimatable =
+          ResolveTranslate(aAnimationValue.GetTranslateProperty(), aRefBox);
       break;
     case eCSSProperty_transform:
-      aAnimatable =
-          ResolveTransformOperations(aAnimationValue.GetTransformProperty(),
-                                     aRefBox, aFrame->Style()->EffectiveZoom());
+      aAnimatable = ResolveTransformOperations(
+          aAnimationValue.GetTransformProperty(), aRefBox);
       break;
     case eCSSProperty_offset_path:
       aAnimatable = StyleOffsetPath::None();
@@ -904,16 +900,14 @@ void AnimationInfo::AddNonAnimatingTransformLikePropertiesStyles(
         if (!display->mTransform.IsNone()) {
           TransformReferenceBox refBox(aFrame, TransformReferenceBox::Unzoomed);
           appendFakeAnimation(
-              id, ResolveTransformOperations(display->mTransform, refBox,
-                                             aFrame->Style()->EffectiveZoom()));
+              id, ResolveTransformOperations(display->mTransform, refBox));
         }
         break;
       case eCSSProperty_translate:
         if (!display->mTranslate.IsNone()) {
           TransformReferenceBox refBox(aFrame, TransformReferenceBox::Unzoomed);
-          appendFakeAnimation(
-              id, ResolveTranslate(display->mTranslate, refBox,
-                                   aFrame->Style()->EffectiveZoom()));
+          appendFakeAnimation(id,
+                              ResolveTranslate(display->mTranslate, refBox));
         }
         break;
       case eCSSProperty_rotate:

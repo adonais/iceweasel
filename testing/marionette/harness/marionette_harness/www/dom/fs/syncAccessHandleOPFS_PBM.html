@@ -1,0 +1,23 @@
+<html>
+	<head>
+		<script>
+			async function writeFileWithSyncAccessHandle(name, value) {
+				// createSyncAccessHandle() is only exposed in a dedicated worker.
+				const worker = new Worker("syncAccessHandleOPFS_PBM.js");
+				try {
+					const result = await new Promise((resolve, reject) => {
+						worker.onmessage = event => resolve(event.data);
+						worker.onerror = reject;
+						worker.postMessage({ name, value });
+					});
+
+					if (!result.ok) {
+						throw new Error(result.error);
+					}
+				} finally {
+					worker.terminate();
+				}
+			};
+		</script>
+	</head>
+</html>

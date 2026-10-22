@@ -54,16 +54,21 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         self.run_as_root(["pip3", "install", "--upgrade", "Mercurial"])
 
     def _check_packages_installed(self, *packages):
-        command = ["dpkg-query", "-W"]
+        # `dpkg-query -W` succeeds for any name dpkg merely knows about, which
+        # includes packages that were installed in the past but were removed,
+        # so the status of every match has to be inspected rather than relying
+        # on the exit code alone.
+        command = ["dpkg-query", "-W", "-f=${db:Status-Status}\n"]
         command.extend(packages)
-        return (
-            subprocess.run(
-                command,
-                check=False,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            ).returncode
-            == 0
+        result = subprocess.run(
+            command,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        return result.returncode == 0 and all(
+            status == "installed" for status in result.stdout.split()
         )
 
     def apt_install(self, *packages):

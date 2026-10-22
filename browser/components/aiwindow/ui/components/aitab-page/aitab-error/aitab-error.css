@@ -1,0 +1,50 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  --aitab-error-background-color: var(--background-color-box);
+
+  @media not (forced-colors) {
+    --aitab-error-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
+  }
+}
+
+.aitab-error {
+  align-items: center;
+  background-color: var(--aitab-error-background-color);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.aitab-error-wrapper {
+  align-items: center;
+  display: flex;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: 40px;
+
+  @container aitab-page (width < 600px) {
+    flex-direction: column;
+    gap: var(--space-large);
+  }
+}
+
+.aitab-error-image {
+  aspect-ratio: 1/1;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: 162px;
+  width: 100%;
+}
+
+.aitab-error-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.aitab-error-heading {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: 26px;
+  font-weight: var(--font-weight-heading);
+}

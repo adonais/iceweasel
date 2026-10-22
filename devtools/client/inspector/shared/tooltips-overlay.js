@@ -517,10 +517,12 @@ class TooltipsOverlay {
     }
 
     if (type === TOOLTIP_CSS_EXPLAINERS) {
-      const functionEl = target.closest(
-        "[data-function-expression]:has(.css-explainers-function-name)"
-      );
-      if (!functionEl) {
+      const tooltipAnchorEl = target.hasAttribute("data-length-expression")
+        ? target
+        : target.closest(
+            "[data-function-expression]:has(.css-explainers-function-name)"
+          );
+      if (!tooltipAnchorEl) {
         return false;
       }
 
@@ -534,7 +536,7 @@ class TooltipsOverlay {
       );
 
       this.sendOpenScalarToTelemetry(type);
-      return functionEl;
+      return tooltipAnchorEl;
     }
 
     if (type === TOOLTIP_CSS_SELECTOR_WARNINGS) {

@@ -70,7 +70,7 @@ class PeerConnectionDataChannelOpenTest
   scoped_refptr<PeerConnectionTestWrapper> CreatePc(
       absl::string_view field_trials = "") {
     auto pc_wrapper = make_ref_counted<PeerConnectionTestWrapper>(
-        "pc", env_, &vss_, background_thread_.get(), background_thread_.get());
+        "pc", env_, &vss_, background_thread_.get());
     pc_wrapper->CreatePc({}, CreateBuiltinAudioEncoderFactory(),
                          CreateBuiltinAudioDecoderFactory(),
                          CreateTestFieldTrialsPtr(field_trials));

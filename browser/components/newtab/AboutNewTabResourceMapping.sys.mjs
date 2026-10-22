@@ -8,32 +8,16 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 export const BUILTIN_ADDON_ID = "newtab@mozilla.org";
 export const DISABLE_NEWTAB_AS_ADDON_PREF =
   "browser.newtabpage.disableNewTabAsAddon";
-export const TRAINHOP_NIMBUS_FEATURE_ID = "newtabTrainhopAddon";
 export const TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID =
   "newtabTrainhopAddonDeployment";
-// For trainhop migration to enable co-enrollment: for now, enrollments
-// are read from both the original settings-pref feature
-// (newtabTrainhopAddon) and its co-enrollment successor
-// (newtabTrainhopAddonDeployment), joined together with the highest
-// addon_version winning. The original feature can be dropped from this list
-// once its rollouts have aged out (see Bug 1995391).
-export const TRAINHOP_NIMBUS_FEATURE_IDS = [
-  TRAINHOP_NIMBUS_FEATURE_ID,
-  TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID,
-];
 export const TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID =
   "newtabTrainhopFirstStartup";
 export const TRAINHOP_XPI_BASE_URL_PREF =
   "browser.newtabpage.trainhopAddon.xpiBaseURL";
-export const TRAINHOP_XPI_VERSION_PREF =
-  "browser.newtabpage.trainhopAddon.version";
 // Records the highest currently-enrolled train-hop version for the co-enrollment
 // deployment feature. Owned exclusively by AboutNewTabResourceMapping. It tracks
 // the current winner and can decrease (e.g. when a higher-version rollout ends,
-// which is what drives a downgrade). It is kept separate from
-// TRAINHOP_XPI_VERSION_PREF (which the original newtabTrainhopAddon feature owns
-// via setPref) because writing the original feature's pref externally would make
-// Nimbus treat it as a user opt-out and unenroll the client. See Bug 1995391.
+// which is what drives a downgrade).
 export const TRAINHOP_XPI_DEPLOYMENT_VERSION_PREF =
   "browser.newtabpage.trainhopAddonDeployment.version";
 // "any" is a sentinel value accepted in either of the two version prefs above,
@@ -91,34 +75,11 @@ const lazy = XPCOMUtils.declareLazy({
     pref: TRAINHOP_XPI_BASE_URL_PREF,
     default: "",
   },
-  trainhopAddonXPIVersion: {
-    pref: TRAINHOP_XPI_VERSION_PREF,
-    default: "",
-  },
   trainhopAddonDeploymentXPIVersion: {
     pref: TRAINHOP_XPI_DEPLOYMENT_VERSION_PREF,
     default: "",
   },
 });
-
-/**
- * Returns the greater of two version strings, treating an empty string as
- * "no version". Returns "" only when both are empty.
- *
- * @param {string} a A version string (or "").
- * @param {string} b A version string (or "").
- * @returns {string} The higher of the two versions (either one when they are
- *   equal), or "" if both are empty.
- */
-function maxVersionString(a, b) {
-  if (!a) {
-    return b;
-  }
-  if (!b) {
-    return a;
-  }
-  return Services.vc.compare(a, b) >= 0 ? a : b;
-}
 
 /**
  * AboutNewTabResourceMapping is responsible for creating the mapping between
@@ -334,11 +295,10 @@ export var AboutNewTabResourceMapping = {
     // Do not use XPI resources to prepare to uninstall the train-hop add-on xpi
     // later in the current application session from updateTrainhopAddonState, if:
     //
-    // - both train-hop version prefs are empty (the client has been unenrolled
-    //   from both the original and the deployment feature in the previous
-    //   browsing session and so we fallback to the resources bundled in the
-    //   Desktop omni jar). Either pref being set means the client is still
-    //   entitled to a train-hop version.
+    // - the train-hop version pref is empty (the client has been unenrolled
+    //   from from the deployment feature in the previous browsing session and
+    //   so we fallback to the resources bundled in the Desktop omni jar). The
+    //   pref being set means the client is still entitled to a train-hop version.
     // - the builtin add-on version is equal or greater than the train-hop add-on
     //   version (and so the application has been updated and the old train-hop
     //   add-on is obsolete and can be uninstalled)
@@ -351,13 +311,9 @@ export var AboutNewTabResourceMapping = {
     // - the train-hop add-on xpi is not system-signed (as specifically required for
     //   newtab xpi being installed in the `extensions` profile subdirectory by
     //   the custom install logic provided by the _installTrainhopAddon method).
-    const entitledVersion = maxVersionString(
-      lazy.trainhopAddonXPIVersion,
-      lazy.trainhopAddonDeploymentXPIVersion
-    );
+    const entitledVersion = lazy.trainhopAddonDeploymentXPIVersion;
     const entitledToAnyVersion =
-      lazy.trainhopAddonXPIVersion === TRAINHOP_ANY_VERSION_SENTINEL ||
-      lazy.trainhopAddonDeploymentXPIVersion === TRAINHOP_ANY_VERSION_SENTINEL;
+      entitledVersion === TRAINHOP_ANY_VERSION_SENTINEL;
     const shouldUninstallXPI = isXPI
       ? entitledVersion === "" ||
         Services.vc.compare(this._builtinVersion, version) >= 0 ||
@@ -737,11 +693,9 @@ export var AboutNewTabResourceMapping = {
         delayMs,
         idleTimeoutMs
       );
-      for (const featureId of TRAINHOP_NIMBUS_FEATURE_IDS) {
-        lazy.NimbusFeatures[featureId].onUpdate(() =>
-          this._updateAddonStateDeferredTask.arm()
-        );
-      }
+      lazy.NimbusFeatures[TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID].onUpdate(() =>
+        this._updateAddonStateDeferredTask.arm()
+      );
     }
     this.logger.debug("re-arming _updateAddonStateDeferredTask");
     this._updateAddonStateDeferredTask.arm();
@@ -758,15 +712,11 @@ export var AboutNewTabResourceMapping = {
    *   installed or pending to be installed). Rejects on failures or unexpected cancellations
    *   during installation or uninstallation process.
    *
-   *   The winning enrollment is chosen across both the original newtabTrainhopAddon
-   *   feature (a settings-pref feature) and its co-enrollment successor
-   *   newtabTrainhopAddonDeployment, joining their active enrollments and keeping
-   *   the highest addon_version. The original feature owns
-   *   browser.newtabpage.trainhopAddon.version via its setPref. This method never
-   *   writes that pref (doing so would make Nimbus treat it as a user opt-out and
-   *   unenroll the client). Instead, the front-end records the winning version in its
-   *   own pref (browser.newtabpage.trainhopAddonDeployment.version), and early
-   *   startup keeps the train-hop XPI while either pref is non-empty.
+   *   The winning enrollment is chosen across all active co-enrollments of the
+   *   newtabTrainhopAddonDeployment feature, keeping the highest addon_version. The
+   *   front-end records the winning version in its own pref
+   *   (browser.newtabpage.trainhopAddonDeployment.version), and early startup keeps
+   *   the train-hop XPI while that pref is non-empty.
    *
    *   The highest currently-enrolled version always wins, including downgrades: if
    *   the highest-version rollout ends while a lower-version one is still active,
@@ -783,29 +733,24 @@ export var AboutNewTabResourceMapping = {
       return;
     }
 
-    // Union the active enrollments of both trainhop features (the original
-    // settings-pref feature and its co-enrollment successor) and keep the one
-    // with the highest addon_version.
+    // Pick the active co-enrollment of the deployment feature with the highest
+    // addon_version.
+    const feature = lazy.NimbusFeatures[TRAINHOP_NIMBUS_DEPLOYMENT_FEATURE_ID];
+    await feature.ready();
     let winningEnrollment = null;
-    let winningFeature = null;
-    for (const featureId of TRAINHOP_NIMBUS_FEATURE_IDS) {
-      const feature = lazy.NimbusFeatures[featureId];
-      await feature.ready();
-      for (const enrollment of feature.getAllEnrollments()) {
-        const { addon_version } = enrollment.value;
-        if (!addon_version) {
-          continue;
-        }
-        if (
-          !winningEnrollment ||
-          Services.vc.compare(
-            addon_version,
-            winningEnrollment.value.addon_version
-          ) > 0
-        ) {
-          winningEnrollment = enrollment;
-          winningFeature = feature;
-        }
+    for (const enrollment of feature.getAllEnrollments()) {
+      const { addon_version } = enrollment.value;
+      if (!addon_version) {
+        continue;
+      }
+      if (
+        !winningEnrollment ||
+        Services.vc.compare(
+          addon_version,
+          winningEnrollment.value.addon_version
+        ) > 0
+      ) {
+        winningEnrollment = enrollment;
       }
     }
 
@@ -815,18 +760,17 @@ export var AboutNewTabResourceMapping = {
 
     // Record the winning version in the deployment pref (owned exclusively by the
     // front-end). It only ever holds an empty string or a version that came from
-    // a Nimbus train-hop enrollment, never the built-in add-on version. We
-    // deliberately do not write TRAINHOP_XPI_VERSION_PREF here: that pref is owned
-    // by the original newtabTrainhopAddon feature's setPref, and writing it
-    // externally would make Nimbus treat it as a user opt-out and unenroll the
-    // client. This pref tracks the current winner and can decrease, which is what
-    // drives a downgrade when a higher-version rollout ends.
+    // a Nimbus train-hop enrollment, never the built-in add-on version. This pref
+    // tracks the current winner and can decrease, which is what drives a downgrade
+    // when a higher-version rollout ends.
     if (addon_version) {
       Services.prefs.setCharPref(
         TRAINHOP_XPI_DEPLOYMENT_VERSION_PREF,
         addon_version
       );
-    } else {
+    } else if (
+      lazy.trainhopAddonDeploymentXPIVersion !== TRAINHOP_ANY_VERSION_SENTINEL
+    ) {
       Services.prefs.clearUserPref(TRAINHOP_XPI_DEPLOYMENT_VERSION_PREF);
     }
 
@@ -837,8 +781,8 @@ export var AboutNewTabResourceMapping = {
     let addon = await lazy.AddonManager.getAddonByID(BUILTIN_ADDON_ID);
 
     // Uninstall train-hop add-on xpi if its resources are not currently
-    // being used and the client has been unenrolled from the newtabTrainhopAddon
-    // Nimbus feature.
+    // being used and the client has been unenrolled from the
+    // newtabTrainhopAddonDeployment Nimbus feature.
     if (!this._addonIsXPI && addon) {
       let changed = false;
       if (addon_version === null && xpi_download_path === null) {
@@ -893,8 +837,8 @@ export var AboutNewTabResourceMapping = {
       }
     }
 
-    // Record Nimbus feature newtabTrainhopAddon exposure event if NewTab
-    // is currently using the resources from the train-hop add-on version.
+    // Record the Nimbus exposure event if NewTab is currently using the
+    // resources from the train-hop add-on version.
     if (
       this._addonIsXPI &&
       this._addonVersion === addon_version &&
@@ -903,11 +847,7 @@ export var AboutNewTabResourceMapping = {
       this.logger.debug(
         `train-hop add-on version ${addon_version} already in use`
       );
-      // Record exposure event for the winning train-hop feature if the
-      // train-hop add-on version is already in use. recordExposureEvent requires
-      // a slug for co-enrollment features and ignores it otherwise, so passing
-      // the winning enrollment's slug is safe for both features.
-      winningFeature.recordExposureEvent({
+      feature.recordExposureEvent({
         once: true,
         slug: winningEnrollment.meta.slug,
       });
@@ -1029,10 +969,9 @@ export var AboutNewTabResourceMapping = {
       let newInstall = await lazy.AddonManager.getInstallForURL(
         xpiDownloadURL,
         {
-          // Intentionally stable across both trainhop features: this categorizes
-          // the install as coming from the Nimbus newtab train-hop mechanism, so
-          // it is kept the same whether the winning enrollment is from
-          // newtabTrainhopAddon or newtabTrainhopAddonDeployment.
+          // Categorizes the install as coming from the Nimbus newtab train-hop
+          // mechanism. This source id is kept stable for historical continuity
+          // (it predates the co-enrollment newtabTrainhopAddonDeployment feature).
           telemetryInfo: { source: "nimbus-newtabTrainhopAddon" },
         }
       );

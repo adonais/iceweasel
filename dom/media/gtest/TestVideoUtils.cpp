@@ -9,6 +9,26 @@
 
 using namespace mozilla;
 
+TEST(VideoUtils, IsValidVideoRegionPictureContainedInFrame)
+{
+  const gfx::IntSize frame(16, 16);
+  const gfx::IntSize display(16, 16);
+
+  EXPECT_TRUE(IsValidVideoRegion(frame, gfx::IntRect(0, 0, 16, 16), display));
+  EXPECT_TRUE(IsValidVideoRegion(frame, gfx::IntRect(15, 0, 1, 16), display));
+  EXPECT_TRUE(IsValidVideoRegion(frame, gfx::IntRect(0, 15, 16, 1), display));
+
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(16, 0, 1, 16), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(-1, 0, 1, 16), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(15, 0, 2, 16), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(0, 0, 17, 16), display));
+
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(0, 16, 16, 1), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(0, -1, 16, 1), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(0, 15, 16, 2), display));
+  EXPECT_FALSE(IsValidVideoRegion(frame, gfx::IntRect(0, 0, 16, 17), display));
+}
+
 TEST(MediaMIMETypes, IsMediaMIMEType)
 {
   EXPECT_TRUE(IsMediaMIMEType(AUDIO_MP4));

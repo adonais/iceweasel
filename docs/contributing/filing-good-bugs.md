@@ -44,9 +44,9 @@ If you're looking to open a bug as a "good first bug" for new contributors, plea
 5. **Documentation**
    Provide links to essential documentation that can assist the contributor. For example, you might include:
 
-   - {ref}`How To Contribute Code To Firefox`
-   - {ref}`Firefox Contributors' Quick Reference`
-   - {ref}`Working with stack of patches Quick Reference`
+   - {doc}`/setup/contributing_code`
+   - {doc}`contribution_quickref`
+   - {doc}`stack_quickref`
 
 By following these guidelines, you'll be setting up new contributors for success and fostering a welcoming environment for them.
 

@@ -33,6 +33,8 @@ import mozilla.components.browser.toolbar.display.DisplayToolbar.Indicators
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupProperties
+import mozilla.components.compose.menu.store.MenuState
+import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.feature.customtabs.CustomTabsToolbarFeature
 import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
 import mozilla.components.feature.session.SessionUseCases
@@ -55,10 +57,22 @@ import org.mozilla.focus.ext.isCustomTab
 import org.mozilla.focus.ext.isTablet
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.BrowserFragment
+import org.mozilla.focus.menu.BrowserMenuCallbacks
+import org.mozilla.focus.menu.CustomTabMenuItemsMiddleware
+import org.mozilla.focus.menu.MenuItems
+import org.mozilla.focus.menu.MenuMiddleware
+import org.mozilla.focus.menu.MenuToolbarAction
+import org.mozilla.focus.menu.browser.BrowserMenu
 import org.mozilla.focus.menu.browser.CustomTabMenu
 import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.focusTypography
+
+private const val TAB_COUNTER_ACTION_WEIGHT = 1
+private const val MENU_ACTION_WEIGHT = 2
+
+// The menu button of a custom tab must have the largest weight of all its toolbar items to stay right aligned.
+private const val CUSTOM_TAB_MENU_ACTION_WEIGHT = Int.MAX_VALUE
 
 /** Integration for the browser toolbar, managing its behavior and display. */
 @Suppress("LongParameterList", "LargeClass")
@@ -66,14 +80,15 @@ class BrowserToolbarIntegration(
     private val store: BrowserStore,
     private val toolbar: BrowserToolbar,
     private val fragment: BrowserFragment,
-    controller: BrowserMenuController,
-    sessionUseCases: SessionUseCases,
+    private val currentTabId: String,
+    private val menuCallbacks: BrowserMenuCallbacks,
+    private val sessionUseCases: SessionUseCases,
     customTabsUseCases: CustomTabsUseCases,
     private val onUrlLongClicked: () -> Boolean,
     private val eraseActionListener: () -> Unit,
     private val tabCounterListener: () -> Unit,
     private val customTabId: String? = null,
-    isOnboardingTab: Boolean = false,
+    private val isOnboardingTab: Boolean = false,
     renderStyle: ToolbarFeature.RenderStyle = ToolbarFeature.RenderStyle.ColoredUrl,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
@@ -142,7 +157,85 @@ class BrowserToolbarIntegration(
             },
             store = store,
             showMaskInPrivateMode = false,
+            weight = { TAB_COUNTER_ACTION_WEIGHT },
         )
+    private val menuAction =
+        MenuToolbarAction(
+            iconTintColor = backgroundColor?.let { getReadableTextColor(it) },
+            weight = { if (customTabId == null) MENU_ACTION_WEIGHT else CUSTOM_TAB_MENU_ACTION_WEIGHT },
+        ) { scope, onDismiss ->
+            when (customTabId) {
+                null -> buildBrowserMenuStore(scope, onDismiss)
+                else -> buildCustomTabMenuStore(customTabId, scope, onDismiss)
+            }
+        }
+
+    private fun buildBrowserMenuStore(
+        scope: CoroutineScope,
+        onDismiss: () -> Unit,
+    ): MenuStore {
+        val menu =
+            BrowserMenu(
+                browserStore = store,
+                appStore = toolbar.context.components.appStore,
+                context = toolbar.context,
+            )
+
+        return MenuStore(
+            initialState = MenuState(menuGroups = menu.currentMenuGroups()),
+            middleware = listOf(buildMenuMiddleware(menu, scope, onDismiss)),
+        )
+    }
+
+    private fun buildCustomTabMenuStore(
+        customTabId: String,
+        scope: CoroutineScope,
+        onDismiss: () -> Unit,
+    ): MenuStore {
+        val context = toolbar.context
+        val menu =
+            CustomTabMenu(
+                context = context,
+                browserStore = store,
+                customTabId = customTabId,
+                appName = context.getString(R.string.app_name),
+                isOnboardingTab = isOnboardingTab,
+            )
+
+        return MenuStore(
+            initialState = MenuState(menuGroups = menu.currentMenuGroups(), attribution = menu.attribution),
+            middleware =
+                listOf(
+                    buildMenuMiddleware(menu, scope, onDismiss),
+                    CustomTabMenuItemsMiddleware(
+                        context = context,
+                        browserStore = store,
+                        customTabId = customTabId,
+                        onDismiss = onDismiss,
+                    ),
+                ),
+        )
+    }
+
+    private fun buildMenuMiddleware(
+        menu: MenuItems,
+        scope: CoroutineScope,
+        onDismiss: () -> Unit,
+    ): MenuMiddleware {
+        val components = toolbar.context.components
+        return MenuMiddleware(
+            menu = menu,
+            sessionUseCases = sessionUseCases,
+            appStore = components.appStore,
+            browserStore = store,
+            topSitesUseCases = components.topSitesUseCases,
+            currentTabId = currentTabId,
+            callbacks = menuCallbacks,
+            onDismiss = onDismiss,
+            scope = scope,
+            applicationScope = components.applicationScope,
+        )
+    }
 
     @VisibleForTesting internal var toolbarController = ToolbarBehaviorController(toolbar, store, customTabId)
 
@@ -200,23 +293,13 @@ class BrowserToolbarIntegration(
         }
 
         if (customTabId != null) {
-            val menu =
-                CustomTabMenu(
-                    context = fragment.requireContext(),
-                    store = store,
-                    currentTabId = customTabId,
-                    isOnboardingTab = isOnboardingTab,
-                    onItemTapped = { controller.handleMenuInteraction(it) },
-                )
             customTabsFeature =
                 CustomTabsToolbarFeature(
                     store,
                     toolbar,
                     sessionId = customTabId,
                     useCases = customTabsUseCases,
-                    menuBuilder = menu.menuBuilder,
                     window = fragment.activity?.window,
-                    menuItemIndex = menu.menuBuilder.items.size - 1,
                     closeListener = { fragment.closeCustomTab() },
                     forceActionButtonTinting = false,
                 )
@@ -253,6 +336,8 @@ class BrowserToolbarIntegration(
     }
 
     private fun setBrowserActionButtons() {
+        toolbar.addBrowserAction(menuAction)
+
         tabsCounterScope =
             store.flowScoped(dispatcher = coroutineDispatcher) { flow ->
                 flow
@@ -277,6 +362,8 @@ class BrowserToolbarIntegration(
         if (store.state.findCustomTabOrSelectedTab(customTabId)?.isCustomTab() == false) {
             setBrowserActionButtons()
             observeEraseCfr()
+        } else {
+            toolbar.addBrowserAction(menuAction)
         }
 
         observeTrackingProtectionCfr()
@@ -441,6 +528,7 @@ class BrowserToolbarIntegration(
         navigationButtonsIntegration?.stop()
         stopObserverSecurityIndicatorChanges()
         toolbar.removeBrowserAction(tabsAction)
+        toolbar.removeBrowserAction(menuAction)
         tabsCounterScope?.cancel()
         stopObserverEraseTabsCfrChanges()
         stopObserverTrackingProtectionCfrChanges()

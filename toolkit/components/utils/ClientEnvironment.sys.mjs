@@ -140,7 +140,7 @@ export class ClientEnvironmentBase {
   }
 
   static get isDefaultBrowser() {
-    return lazy.ShellService.isDefaultBrowser();
+    return lazy.ShellService.isDefaultBrowserAsync();
   }
 
   static get searchEngine() {

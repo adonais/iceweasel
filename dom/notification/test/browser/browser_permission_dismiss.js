@@ -104,7 +104,7 @@ add_setup(async function () {
     "dom.webnotifications.requireuserinteraction",
     false
   );
-  SimpleTest.registerCleanupFunction(() => {
+  registerCleanupFunction(() => {
     Services.prefs.clearUserPref("dom.webnotifications.requireuserinteraction");
 
     clearPermission(ORIGIN_URI, PERMISSION_NAME, false /* private origin */);

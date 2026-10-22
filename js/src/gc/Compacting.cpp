@@ -837,8 +837,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
     // Mark all gray roots.
     traceEmbeddingGrayRoots(&trc);
-    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-        &trc, Compartment::GrayEdges);
+    traceIncomingCrossCompartmentEdgesForZoneGC(&trc, GrayEdges);
   }
 
   // Sweep everything to fix up weak pointers.

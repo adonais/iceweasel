@@ -89,7 +89,7 @@
                     android:layout_height="56dp"
                     android:layout_weight="1" />
 
-                <mozilla.components.browser.menu.view.MenuButton
+                <androidx.compose.ui.platform.ComposeView
                     android:id="@+id/menuView"
                     android:layout_width="40dp"
                     android:layout_height="56dp" />

@@ -139,13 +139,13 @@ async function testClearing(
       await cookiesCleared;
       let uri = Services.io.newURI(originA);
       is(
-        Services.cookies.countCookiesFromHost(uri.host, {}),
+        Services.cookies.getCookiesFromHost(uri.host, {}).length,
         0,
         "Cookies from the base domain should be cleared"
       );
       uri = Services.io.newURI(subOriginA);
       is(
-        Services.cookies.countCookiesFromHost(uri.host, {}),
+        Services.cookies.getCookiesFromHost(uri.host, {}).length,
         0,
         "Cookies from the sub domain should be cleared"
       );

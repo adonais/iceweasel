@@ -24,9 +24,9 @@ The function returns one of the following values:
 
 - If the memory region is successfully unmapped, `PR_SUCCESS`.
 - If the memory region is not successfully unmapped, `PR_FAILURE`.
-  The error code can be retrieved via {ref}`PR_GetError`.
+  The error code can be retrieved via {doc}`pr_geterror`.
 
 ## Description
 
-When a file mapping created with a call to {ref}`PR_CreateFileMap` is no
-longer needed, it should be closed with a call to {ref}`PR_CloseFileMap`.
+When a file mapping created with a call to {doc}`pr_createfilemap` is no
+longer needed, it should be closed with a call to {doc}`pr_closefilemap`.

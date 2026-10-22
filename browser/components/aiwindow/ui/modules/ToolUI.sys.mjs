@@ -5,6 +5,11 @@
  */
 
 /**
+ * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+ * @import { ChatMessage } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
+ */
+
+/**
  * Tab action result status.
  *
  * @typedef {"success" | "partial_success" | "error"} TabActionCompletion
@@ -21,6 +26,7 @@
 
 /**
  * @typedef {object} ToolUpdateData
+ * @property {"current" | "new"} [openTarget] - Where to open an AITab
  * @property {Array<TabSelectionData>} [selectedTabs] - Array of selected tabs
  * @property {Array<string>} [operationIds] - Undo handles for the action
  * @property {boolean} [wasRestored] - Flag indicating tabs were restored
@@ -51,6 +57,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs",
   MESSAGE_ROLE:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
+  SmartWindowTelemetry:
+    "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -63,6 +72,7 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
  * UI labels for tool results and follow-ups.
  */
 export const UI_TYPES = {
+  AITAB: "aitab",
   WEBSITE_CONFIRMATION: "website-confirmation",
   TAB_GROUP_CONFIRMATION: "tab-group-confirmation",
   AI_ACTION_RESULT: "ai-action-result",
@@ -74,6 +84,7 @@ export const UI_TYPES = {
  * UI update types for communicating user interactions with tool UIs back to the actor.
  */
 export const UI_UPDATE_TYPES = {
+  OPEN_AITAB: "open-aitab",
   CONFIRMATION_TAB_SELECTION: "confirmation-tab-selection",
   CANCEL_TAB_SELECTION: "cancel-tab-selection",
   CONFIRM_TAB_GROUP_SELECTION: "confirm-tab-group-selection",
@@ -610,15 +621,12 @@ export class ToolUI {
     const { selectedTabs = [], tabGroupLabel = "Tab Group" } = updateData ?? {};
 
     const originTab = this.findChatTab(conversation?.id);
-    const isSingleTab = selectedTabs.length === 1;
-    const result = isSingleTab
-      ? await this.openOrSwitchToTab({ tab: selectedTabs[0], window })
-      : await this.openAndGroupTabs({
-          tabs: selectedTabs,
-          window,
-          label: tabGroupLabel,
-          originTab,
-        });
+    const result = await this.openOrGroupTabs({
+      tabs: selectedTabs,
+      window,
+      label: tabGroupLabel,
+      originTab,
+    });
     this.clearTabKeys(toolCallId);
     if (!result?.success) {
       return false;
@@ -632,7 +640,7 @@ export class ToolUI {
         operationIds: result.group?.id ? [result.group.id] : [],
         group: result.group ?? null,
         mergedCount: result.mergedCount,
-        switched: isSingleTab ? result.switched : false,
+        switched: result.switched ?? false,
       },
     });
 
@@ -1115,6 +1123,24 @@ export class ToolUI {
   }
 
   /**
+   * Opens or switches to a single tab, or opens and groups multiple tabs.
+   *
+   * @param {object} options
+   * @param {Array<TabSelectionData>} options.tabs - Tabs to open
+   * @param {ChromeWindow} options.window - The browser window
+   * @param {string} options.label - Tab group label, used only when grouping
+   * @param {MozTabbrowserTab} [options.originTab] - See openAndGroupTabs
+   * @returns {Promise<object|null>} Result of openOrSwitchToTab for a
+   *   single tab, or of openAndGroupTabs otherwise
+   */
+  static async openOrGroupTabs({ tabs = [], window: win, label, originTab }) {
+    if (tabs.length === 1) {
+      return this.openOrSwitchToTab({ tab: tabs[0], window: win });
+    }
+    return this.openAndGroupTabs({ tabs, window: win, label, originTab });
+  }
+
+  /**
    * Finds the original user prompt that led to the given assistant message
    * by traversing the message chain backwards using parentMessageId
    *
@@ -1185,11 +1211,77 @@ export class ToolUI {
   }
 
   /**
+   * Opens the stored AITab page in the requested tab.
+   *
+   * @param {HandlerContext & {
+   *   updateData: {openTarget: "current" | "new"}
+   * }} context
+   * @param {ChatMessage} context.message - Stored assistant message containing
+   *   the viewer URL and card state. Used to validate the action and mark the
+   *   card complete after opening.
+   * @param {{openTarget: "current" | "new"}} context.updateData - Opens the
+   *   page in the current tab or a new tab.
+   * @param {ChatConversation} context.conversation - Conversation owning the
+   *   card, used to update its state and record telemetry.
+   * @param {ChromeWindow} context.window - Browser window hosting the chat.
+   * @param {string} [context.mode] - Chat mode for telemetry.
+   *
+   * @returns {boolean} Whether opening the AITab was successful
+   */
+  static #handleOpenAITab({ message, updateData, conversation, window, mode }) {
+    const { openTarget } = updateData ?? {};
+    const viewerURL = message.toolUIData?.properties?.viewerURL;
+    const parsedURL = URL.parse(viewerURL);
+    if (
+      message.toolUIData?.uiType !== UI_TYPES.AITAB ||
+      message.toolUIData.properties?.state !== "choose" ||
+      (openTarget !== "current" && openTarget !== "new") ||
+      parsedURL?.protocol !== "about:" ||
+      parsedURL.pathname !== "smartpage" ||
+      !parsedURL.searchParams.get("page") ||
+      !window?.gBrowser
+    ) {
+      return false;
+    }
+
+    try {
+      const { userContextId } =
+        window.gBrowser.selectedBrowser.browsingContext.originAttributes;
+
+      lazy.URILoadingHelper.openTrustedLinkIn(
+        window,
+        viewerURL,
+        openTarget === "current" ? "current" : "tab",
+        { userContextId, forceForeground: true }
+      );
+    } catch (error) {
+      lazy.console.error(`Error opening AITab URL: ${error}`);
+
+      return false;
+    }
+
+    Glean.smartWindow.linkClick.record({
+      location: mode,
+      chat_id: conversation.id,
+      message_seq: conversation.messageCount,
+    });
+    lazy.SmartWindowTelemetry.recordUriLoad();
+    conversation.updateToolUI(
+      message,
+      { properties: { state: "complete" } },
+      UI_TYPES.AITAB
+    );
+
+    return true;
+  }
+
+  /**
    * Map of update type strings to their handler functions
    *
    * @private
    */
   static #UPDATE_TYPE_HANDLERS = {
+    [UI_UPDATE_TYPES.OPEN_AITAB]: this.#handleOpenAITab.bind(this),
     [UI_UPDATE_TYPES.CONFIRMATION_TAB_SELECTION]:
       this.#handleConfirmationTabSelection.bind(this),
     [UI_UPDATE_TYPES.CANCEL_TAB_SELECTION]:

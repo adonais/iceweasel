@@ -124,33 +124,33 @@ or prevening some classes of errors (memory, threading, etc).
    :header: "Platform", "Owner", "Why?"
    :widths: 40, 20, 40
 
-   Linux 18.04 x64 tsan, Christian Holler, Identify threading issues with :ref:`ThreadSanitizer <Thread Sanitizer>`
+   Linux 18.04 x64 tsan, Christian Holler, Identify threading issues with :doc:`ThreadSanitizer </tools/sanitizer/tsan>`
    Linux x64 asan, "| Christian Holler
-   | Tyson Smith (ubsan)", "| Identify memory issues with :ref:`Address Sanitizer`.
+   | Tyson Smith (ubsan)", "| Identify memory issues with :doc:`/tools/sanitizer/asan`.
    | Also includes the UndefinedBehaviorSanitizer"
    Linux x64 WebRender asan, "| Christian Holler
-   | Tyson Smith (ubsan)", "| Identify memory issues with :ref:`Address Sanitizer`.
+   | Tyson Smith (ubsan)", "| Identify memory issues with :doc:`/tools/sanitizer/asan`.
    | Also includes the UndefinedBehaviorSanitizer"
-   Linux x64 CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
+   Linux x64 CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
    Linux 18.04 x64 asan, "| Christian Holler
-   | Tyson Smith (ubsan)", "| Identify memory issues with :ref:`Address Sanitizer`.
+   | Tyson Smith (ubsan)", "| Identify memory issues with :doc:`/tools/sanitizer/asan`.
    | Also includes the UndefinedBehaviorSanitizer"
    Linux 18.04 x64 WebRender asan, "| Christian Holler
-   | Tyson Smith (ubsan)", "| Identify memory issues with :ref:`Address Sanitizer`.
+   | Tyson Smith (ubsan)", "| Identify memory issues with :doc:`/tools/sanitizer/asan`.
    | Also includes the UndefinedBehaviorSanitizer"
-   Linux 18.04 x64 CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
-   OS X Cross Compiled CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
-   OS X 10.14 Cross Compiled CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
-   Windows 10 x64 CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
-   Android 4.0 API16+ CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
-   Android 4.3 API16+ CCov, Marco Castelluccio , Collect :ref:`Code coverage` information to identify what is tested (or not)
+   Linux 18.04 x64 CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
+   OS X Cross Compiled CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
+   OS X 10.14 Cross Compiled CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
+   Windows 10 x64 CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
+   Android 4.0 API16+ CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
+   Android 4.3 API16+ CCov, Marco Castelluccio , Collect :doc:`/tools/code-coverage/index` information to identify what is tested (or not)
    Diffoscope, Mike Hommey, Make sure the build remains reproducible
    Linting, "| Sylvestre Ledru
-   | Andrew Halberstadt", "| Identify :ref:`code quality` earlier
+   | Andrew Halberstadt", "| Identify :doc:`/code-quality/index` earlier
    | Also contains some Bugzilla
    | Run on all branches (except the Bugzilla task)"
    Documentation, "| Sylvestre Ledru
-   | Andrew Halberstadt", "| :ref:`Documentation jobs <Managing Documentation>`
+   | Andrew Halberstadt", "| :doc:`Documentation jobs </tools/moztreedocs/index>`
    | integration repository plus mozilla-central"
 
 

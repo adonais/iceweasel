@@ -963,10 +963,6 @@ class TextPropertyEditor {
   }
 
   get #shouldShowWarning() {
-    if (this.prop.name.startsWith("--")) {
-      return false;
-    }
-
     return !this.editing && !this.isValid();
   }
 
@@ -1158,10 +1154,7 @@ class TextPropertyEditor {
       this.expander.hidden = true;
     }
 
-    if (
-      !this.editing &&
-      (this.prop.overridden || !this.prop.enabled || !this.prop.isKnownProperty)
-    ) {
+    if (!this.editing && (this.prop.overridden || !this.prop.enabled)) {
       this.element.classList.add("ruleview-overridden");
     } else {
       this.element.classList.remove("ruleview-overridden");

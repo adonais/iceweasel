@@ -699,9 +699,16 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
       }
     }
 
+    // documentGlobal doesn't exist in content privileged windows.
+    // eslint-disable-next-line mozilla/use-documentGlobal
+    const win = rawNode.ownerDocument.defaultView;
     this.actors = [];
 
     for (const animation of animations) {
+      if (this.#shouldIgnoreAnimation(animation, win)) {
+        continue;
+      }
+
       const createdTime = this.getCreatedTime(animation);
       const actor = new AnimationActor(this, animation, createdTime);
       this.actors.push(actor);
@@ -712,9 +719,6 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     // either getAnimationPlayersForNode is called again or
     // stopAnimationsUpdates is called.
     this.stopAnimationsUpdates();
-    // documentGlobal doesn't exist in content privileged windows.
-    // eslint-disable-next-line mozilla/use-documentGlobal
-    const win = rawNode.ownerDocument.defaultView;
     this.observer = new win.MutationObserver(this.onAnimationMutation);
     this.observer.observe(rawNode, {
       animations: true,
@@ -784,6 +788,14 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
           continue;
         }
 
+        // documentGlobal doesn't exist in content privileged windows.
+        // eslint-disable-next-line mozilla/use-documentGlobal
+        const win = animation.effect.target.ownerDocument.defaultView;
+
+        if (this.#shouldIgnoreAnimation(animation, win)) {
+          continue;
+        }
+
         // If the added animation has the same name and target node as a animation we
         // already have, it means it's a transition that's re-starting. So send
         // a "removed" event for the one we already have.
@@ -827,6 +839,25 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
         this.emit("mutations", eventData);
       });
     }
+  }
+
+  /**
+   * Whether or not the passed animation should be ignored
+   *
+   * @param {Animation} animation
+   * @param {Window} win
+   * @returns {boolean}
+   */
+  #shouldIgnoreAnimation(animation, win) {
+    // We don't support scroll animation at the moment (see Bug 1350461)
+    if (
+      win.ScrollTimeline &&
+      win.ScrollTimeline.isInstance(animation.timeline)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   /**

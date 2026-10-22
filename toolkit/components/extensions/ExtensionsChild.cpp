@@ -50,7 +50,7 @@ void ExtensionsChild::Init() {
 
     ManagedEndpoint<PExtensionsParent> endpoint =
         ipChild->OpenPExtensionsEndpoint(this);
-    ipParent->BindPExtensionsEndpoint(std::move(endpoint), parent);
+    (void)ipParent->BindPExtensionsEndpoint(std::move(endpoint), parent);
   }
 }
 

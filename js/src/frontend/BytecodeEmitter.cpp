@@ -1594,6 +1594,12 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
     return true;
   }
 
+  // `.initializers` is an implementation detail that is always populated
+  // before a constructor can read it.
+  if (name == TaggedParserAtomIndex::WellKnown::dot_initializers_()) {
+    return true;
+  }
+
   Maybe<MaybeCheckTDZ> check =
       innermostTDZCheckCache->needsTDZCheck(this, name);
   if (!check) {
@@ -2163,6 +2169,11 @@ bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,
 bool BytecodeEmitter::allocateTableSwitchResumeIndexRange(
     mozilla::Span<BytecodeOffset> caseOffsets, BytecodeOffset switchOffset,
     uint32_t* firstResumeIndex) {
+  if (caseOffsets.empty()) {
+    // Empty switches don't need adjustment.
+    *firstResumeIndex = 0;
+    return true;
+  }
   auto& list = bytecodeSection().tableSwitchOffsetList();
 
   // The final resume index depends on the number of yield and await ops in the

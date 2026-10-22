@@ -493,11 +493,16 @@ seckey_DSADecodePQG(PLArenaPool *arena, SECKEYPublicKey *pubk,
     SECStatus rv;
     SECItem newparams;
 
-    if (params == NULL)
+    if (params == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
+    }
 
-    if (params->data == NULL)
+    /* Absent parameters, e.g. inherited from the issuer (RFC 3279). */
+    if (params->data == NULL) {
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
         return SECFailure;
+    }
 
     PORT_Assert(arena);
 
@@ -1114,22 +1119,7 @@ int
 SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
 {
     SECOidTag tag;
-    SECItem oid = { siBuffer, NULL, 0 };
-
-    /* The encodedParams data contains 0x06 (SEC_ASN1_OBJECT_ID),
-     * followed by the length of the curve oid and the curve oid.
-     */
-    if (!encodedParams || !encodedParams->data ||
-        encodedParams->len < 2 ||
-        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
-        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
-        PORT_SetError(SEC_ERROR_BAD_DER);
-        return 0;
-    }
-    oid.len = encodedParams->data[1];
-    oid.data = encodedParams->data + 2;
-    if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)
-        return 0;
+    tag = SECKEY_GetECCOid(encodedParams);
 
     switch (tag) {
         case SEC_OID_SECG_EC_SECP112R1:
@@ -1254,24 +1244,10 @@ SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
 int
 SECKEY_ECParamsToBasePointOrderLen(const SECItem *encodedParams)
 {
-    SECOidTag tag;
-    SECItem oid = { siBuffer, NULL, 0 };
-
-    /* The encodedParams data contains 0x06 (SEC_ASN1_OBJECT_ID),
-     * followed by the length of the curve oid and the curve oid.
-     */
-    if (!encodedParams || !encodedParams->data ||
-        encodedParams->len < 2 ||
-        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
-        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
-        PORT_SetError(SEC_ERROR_BAD_DER);
-        return 0;
+    SECOidTag tag = SECKEY_GetECCOid(encodedParams);
+    if (tag == SEC_OID_UNKNOWN) {
+        return 0; /* error set by SECKEY_GetECCOid */
     }
-    oid.len = encodedParams->data[1];
-    oid.data = encodedParams->data + 2;
-    if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)
-        return 0;
-
     switch (tag) {
         case SEC_OID_SECG_EC_SECP112R1:
             return 112;
@@ -1543,6 +1519,8 @@ SECKEY_PrivateKeyStrengthInBits(const SECKEYPrivateKey *privk)
             PORT_Free(params.data);
             return bitSize;
         case ecKey:
+        case edKey:
+        case ecMontKey:
             rv = PK11_ReadAttribute(privk->pkcs11Slot, privk->pkcs11ID,
                                     CKA_EC_PARAMS, NULL, &params);
             if ((rv != SECSuccess) || (params.data == NULL)) {
@@ -1797,9 +1775,10 @@ SECKEY_EnforceKeySize(KeyType keyType, unsigned keyLength, SECErrorCodes error)
         case ecKey:
             opt = NSS_ECC_MIN_KEY_SIZE;
             break;
+        case edKey:
         case mldsaKey:
         case kyberKey:
-            return SECSuccess; /* mldsa and kyber handles key size policy
+            return SECSuccess; /* mldsa, ed, and mlkem handles key size policy
                                 * by having separate controls on
                                 * key params */
         case nullKey:
@@ -2045,6 +2024,42 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
     return NULL;
 }
 
+/* Return the AlgorithmIdentifier OID to use in a SubjectPublicKeyInfo for an
+ * edKey or ecMontKey public key.
+ *
+ * RFC 8410 identifies these keys by the algorithm OID alone (id-X25519 =
+ * 1.3.101.110, id-Ed25519 = 1.3.101.112); the curve is not named separately.
+ * NSS additionally recognizes the pre-RFC 8410 curve25519 OID
+ * (1.3.6.1.4.1.11591.15.1, from the expired draft-josefsson-pkix-newcurves)
+ * as a named curve, and CKM_EC_MONTGOMERY_KEY_PAIR_GEN will generate a key
+ * whose CKA_EC_PARAMS carries it. That OID has no SubjectPublicKeyInfo
+ * encoding of its own, so map it to id-X25519 rather than emitting an SPKI
+ * that no parser -- including seckey_ExtractPublicKey -- will accept.
+ */
+static SECOidTag
+seckey_GetRFC8410AlgTag(const SECKEYPublicKey *pubk)
+{
+    SECOidTag curve = SECKEY_GetECCOid(&pubk->u.ec.DEREncodedParams);
+
+    switch (pubk->keyType) {
+        case ecMontKey:
+            if (curve == SEC_OID_X25519 || curve == SEC_OID_CURVE25519) {
+                return SEC_OID_X25519;
+            }
+            break;
+        case edKey:
+            if (curve == SEC_OID_ED25519) {
+                return SEC_OID_ED25519_PUBLIC_KEY;
+            }
+            break;
+        default:
+            break;
+    }
+
+    PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+    return SEC_OID_UNKNOWN;
+}
+
 static CERTSubjectPublicKeyInfo *
 seckey_CreateSubjectPublicKeyInfo_helper(SECKEYPublicKey *pubk)
 {
@@ -2153,7 +2168,10 @@ seckey_CreateSubjectPublicKeyInfo_helper(SECKEYPublicKey *pubk)
                 break;
             case edKey:
             case ecMontKey:
-                tag = SECKEY_GetECCOid(&pubk->u.ec.DEREncodedParams);
+                tag = seckey_GetRFC8410AlgTag(pubk);
+                if (tag == SEC_OID_UNKNOWN) {
+                    break;
+                }
                 rv = SECOID_SetAlgorithmID(arena, &spki->algorithm,
                                            tag,
                                            &params);
@@ -2830,8 +2848,12 @@ SECKEY_GetECCOid(const SECKEYECParams *params)
      * before the actual OID and use the OID to look up a named curve.
      */
     if (!params || !params->data || params->len < 2 ||
-        params->data[0] != SEC_ASN1_OBJECT_ID)
+        params->data[0] != SEC_ASN1_OBJECT_ID ||
+        (params->data[1] & 0x80) != 0 ||
+        params->data[1] != (params->len - 2)) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
         return 0;
+    }
     oid.len = params->len - 2;
     oid.data = params->data + 2;
     if ((oidData = SECOID_FindOID(&oid)) == NULL)

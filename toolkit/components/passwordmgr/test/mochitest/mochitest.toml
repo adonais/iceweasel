@@ -75,7 +75,6 @@ run-if = [
   "os != 'android'", # autocomplete
 ]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857071
   "xorigin", # Bug 1716412 - New fission platform triage
 ]
 scheme = "https"
@@ -141,9 +140,6 @@ skip-if = [
 scheme = "https"
 run-if = [
   "os != 'android'", # autocomplete
-]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1554959 for linux debug disable
 ]
 
 ["test_autocomplete_password_generation.html"]
@@ -438,9 +434,6 @@ support-files = [
 ["test_prompt.html"]
 run-if = [
   "os != 'android'", # Tests desktop prompts
-]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_prompt_async.html"]

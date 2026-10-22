@@ -10,6 +10,7 @@ run-if = [
 prefs = [
   "browser.privatebrowsing.autostart=true",
   "extensions.blocklist.enabled=false",
+  "dom.fs.privateBrowsing.enabled=true",
 ]
 
 support-files = [
@@ -17,8 +18,37 @@ support-files = [
   "bucketFS_getDirectory.html",
 ]
 
+["test_basics.html"]
+scheme = "https"
+fail-if = ["true"] # getFile() is not supported in private browsing yet
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1841281
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1841281
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1841281
+]
+
+["test_basics_worker.html"]
+scheme = "https"
+fail-if = ["true"] # getFile() is not supported in private browsing yet
+
+["test_fileSystemDirectoryHandle.html"]
+scheme = "https"
+fail-if = ["true"] # createWritable() is not supported in private browsing yet
+
+["test_fileSystemDirectoryHandle_worker.html"]
+scheme = "https"
+fail-if = ["true"] # createWritable() is not supported in private browsing yet
+
 ["test_iframes.html"]
 scheme = "https"
-fail-if = [
-  "true", # Until PBM support
-]
+
+["test_syncAccessHandle_worker.html"]
+scheme = "https"
+
+["test_writableFileStream.html"]
+scheme = "https"
+fail-if = ["true"] # createWritable() is not supported in private browsing yet
+
+["test_writableFileStream_worker.html"]
+scheme = "https"
+fail-if = ["true"] # createWritable() is not supported in private browsing yet

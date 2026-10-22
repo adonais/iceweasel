@@ -41,7 +41,7 @@ add_task(async function test_qrcode_share_menu() {
     );
     Assert.equal(
       qrCodeItem.getAttribute("data-l10n-id"),
-      "menu-file-share-qrcode",
+      "menu-file-share-qrcode3",
       "QR Code menu item should have correct localization ID"
     );
   });
@@ -274,7 +274,7 @@ add_task(async function test_qrcode_disabled_for_multiselect_tabs() {
 add_task(
   // The address bar Share context menu item is only built on macOS.
   { skip_if: () => AppConstants.platform != "macosx" },
-  async function test_qrcode_disabled_for_multiselect_tabs_urlbar() {
+  async function test_qrcode_enabled_for_multiselect_tabs_urlbar() {
     let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
     let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
@@ -296,21 +296,16 @@ add_task(
       });
       await popupShown;
 
-      let shareItem = contextMenu.querySelector(".share-tab-url-item");
+      let qrCodeItem = contextMenu.querySelector(".share-qrcode-item");
       Assert.ok(
-        shareItem,
-        "Share menu item should exist in urlbar context menu"
+        qrCodeItem,
+        "QR Code menu item should exist in urlbar context menu"
       );
-
-      shareItem.menupopup.dispatchEvent(
-        new MouseEvent("popupshowing", { bubbles: true })
-      );
-
-      let qrCodeItem = shareItem.menupopup.querySelector(".share-qrcode-item");
-      Assert.ok(qrCodeItem, "QR Code menu item should exist in Share submenu");
+      // The address bar acts on the tab its URL belongs to, so the multiple
+      // selection does not disable the item.
       Assert.ok(
-        qrCodeItem.disabled,
-        "QR Code menu item should be disabled when multiple tabs are selected"
+        !qrCodeItem.hasAttribute("disabled"),
+        "QR Code menu item stays enabled when multiple tabs are selected"
       );
 
       let popupHidden = BrowserTestUtils.waitForEvent(

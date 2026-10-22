@@ -2,14 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.card {
-  margin-bottom: 16px;
-}
+.window-card {
+  margin-block-end: var(--space-large);
 
-.window-card-title {
-  display: inline;
-}
-
-.window-card-title:not(.current-window) {
-  font-weight: normal;
+  &:not(:first-of-type) {
+    --card-heading-font-weight: var(--font-weight);
+  }
 }

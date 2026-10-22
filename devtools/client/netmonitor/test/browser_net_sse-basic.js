@@ -131,7 +131,7 @@ add_task(async function testBasicServerSentEvents() {
   is(type, "eventsource", "Type should be rendered correctly.");
 
   // Select the request to open the side panel.
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
 
   // Wait for messages to be displayed in DevTools
   const waitForMessages = waitForDOM(
@@ -277,7 +277,7 @@ add_task(async function testServerSentEventsDetails() {
   );
 
   // Select the request to open the side panel.
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
 
   // Click on the "Response" panel
   clickOnSidebarTab(document, "response");
@@ -369,7 +369,7 @@ add_task(async function testBadFormatServerSentEvents() {
   const waitForEditor = waitForDOM(document, "#response-panel .cm-editor", 1);
 
   // Select the request to open the side panel.
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
 
   // Click on the "Response" panel
   clickOnSidebarTab(document, "response");

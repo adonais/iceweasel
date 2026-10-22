@@ -2551,8 +2551,12 @@ tls13_HandleClientHelloPart2(sslSocket *ss,
 
             PORT_Assert(!ss->sec.localCert);
             ss->sec.localCert = CERT_DupCertificate(ss->sec.serverCert->serverCert);
-            if (sid->peerCert != NULL) {
-                ss->sec.peerCert = CERT_DupCertificate(sid->peerCert);
+            if (sid->peerCertDER.data != NULL) {
+                rv = ssl_SetPeerCertificate(&ss->sec, &sid->peerCertDER);
+                if (rv != SECSuccess) {
+                    FATAL_ERROR(ss, PORT_GetError(), internal_error);
+                    goto loser;
+                }
             }
         } else if (sid) {
             /* We should never have a SID in the non-resumption case. */
@@ -3668,8 +3672,12 @@ tls13_HandleServerHelloPart2(sslSocket *ss, const PRUint8 *savedMsg, PRUint32 sa
         ss->ssl3.hs.kea_def_mutable.authKeyType = ssl_auth_psk;
         if (ss->statelessResume) {
             tls13_RestoreCipherInfo(ss, sid);
-            if (sid->peerCert) {
-                ss->sec.peerCert = CERT_DupCertificate(sid->peerCert);
+            if (sid->peerCertDER.data) {
+                rv = ssl_SetPeerCertificate(&ss->sec, &sid->peerCertDER);
+                if (rv != SECSuccess) {
+                    FATAL_ERROR(ss, PORT_GetError(), internal_error);
+                    return SECFailure;
+                }
             }
 
             SSL_AtomicIncrementLong(&ssl3stats->hsh_sid_cache_hits);
@@ -3698,8 +3706,12 @@ tls13_HandleServerHelloPart2(sslSocket *ss, const PRUint8 *savedMsg, PRUint32 sa
         return SECFailure;
     }
     if (ss->statelessResume) {
-        PORT_Assert(ss->sec.peerCert);
-        sid->peerCert = CERT_DupCertificate(ss->sec.peerCert);
+        PORT_Assert(ss->sec.peerCertDER.data);
+        rv = SECITEM_CopyItem(NULL, &sid->peerCertDER, &ss->sec.peerCertDER);
+        if (rv != SECSuccess) {
+            FATAL_ERROR(ss, SEC_ERROR_NO_MEMORY, internal_error);
+            return SECFailure;
+        }
     }
     sid->version = ss->version;
 
@@ -4451,9 +4463,9 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length, PRBool alrea
         }
 
         if (first) {
-            ss->sec.peerCert = CERT_NewTempCertificate(ss->dbHandle, &derCert,
-                                                       NULL, PR_FALSE, PR_TRUE);
-            if (!ss->sec.peerCert) {
+            /* This keeps the DER and the subjectPublicKeyInfo parsed out of
+             * it; nothing is added to any certificate database here. */
+            if (ssl_SetPeerCertificate(&ss->sec, &derCert) != SECSuccess) {
                 PRErrorCode errCode = PORT_GetError();
                 switch (errCode) {
                     case PR_OUT_OF_MEMORY_ERROR:
@@ -4498,7 +4510,6 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length, PRBool alrea
 
         first = PR_FALSE;
     }
-    SECKEY_UpdateCertPQG(ss->sec.peerCert);
 
     return ssl3_AuthCertificate(ss); /* sets ss->ssl3.hs.ws */
 }
@@ -5536,7 +5547,7 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
                     SSL_GETPID(), ss->fd));
         spki = dc->spki;
     } else {
-        spki = &ss->sec.peerCert->subjectPublicKeyInfo;
+        spki = ss->sec.peerCertSPKI;
     }
 
     rv = ssl_CheckSignatureSchemeConsistency(ss, sigScheme, spki);
@@ -6580,10 +6591,10 @@ tls13_HandleNewSessionTicket(sslSocket *ss, PRUint8 *b, PRUint32 length)
                 return SECFailure;
             }
 
-            /* Copy over the peerCert. */
-            PORT_Assert(ss->sec.ci.sid->peerCert);
-            sid->peerCert = CERT_DupCertificate(ss->sec.ci.sid->peerCert);
-            if (!sid->peerCert) {
+            /* Copy over the peer certificate. */
+            PORT_Assert(ss->sec.ci.sid->peerCertDER.data);
+            if (SECITEM_CopyItem(NULL, &sid->peerCertDER,
+                                 &ss->sec.ci.sid->peerCertDER) != SECSuccess) {
                 ssl_FreeSID(sid);
                 return SECFailure;
             }

@@ -248,6 +248,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
   bool nonSyntacticScope = false;
+  bool allowRedeclaringExistingLexicalBinding = false;
 
   // Top-level await is enabled by default but is not supported for chrome
   // modules loaded with ChromeUtils.importModule.
@@ -382,6 +383,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(sourceIsLazy);
     PrintFields_(allowHTMLComments);
     PrintFields_(nonSyntacticScope);
+    PrintFields_(allowRedeclaringExistingLexicalBinding);
     PrintFields_(topLevelAwait);
     PrintFields_(borrowBuffer);
     PrintFields_(usePinnedBytecode);
@@ -614,6 +616,11 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
 
   CompileOptions& setNonSyntacticScope(bool n) {
     nonSyntacticScope = n;
+    return *this;
+  }
+
+  CompileOptions& setAllowRedeclaringExistingLexicalBinding(bool allow) {
+    allowRedeclaringExistingLexicalBinding = allow;
     return *this;
   }
 

@@ -675,6 +675,8 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "fxa_client"))
         uniffiCheckContractApiVersion(this)
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_fxa_client_checksum_method_firefoxaccount_simulate_network_error(
     ): Int
     external fun uniffi_fxa_client_checksum_method_firefoxaccount_get_connection_success_url(
@@ -778,6 +780,8 @@ internal object UniffiLib {
         mozilla.appservices.sync15.uniffiEnsureInitialized()
         
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_fxa_client_fn_clone_firefoxaccount(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_fxa_client_fn_free_firefoxaccount(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -988,10 +992,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    IntegrityCheckingUniffiLib
-    // UniffiLib() initialized as objects are used, but we still need to explicitly
-    // reference it so initialization across crates works as expected.
-    UniffiLib
+    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
+    // their init blocks run. This ensures initialization across crates works as expected.
+    IntegrityCheckingUniffiLib.ensureInitialized()
+    UniffiLib.ensureInitialized()
 }
 
 // Async support

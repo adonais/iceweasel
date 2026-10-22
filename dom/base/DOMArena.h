@@ -14,7 +14,7 @@
 #define NS_IMPL_DOMARENA_DESTROY(class)                           \
   void class ::Destroy(void) {                                    \
     RefPtr<nsNodeInfoManager> nim = mNodeInfo->NodeInfoManager(); \
-    RefPtr<DOMArena> arena =                                      \
+    RefPtr<mozilla::dom::DOMArena> arena =                        \
         HasFlag(NODE_KEEPS_DOMARENA)                              \
             ? nsContentUtils::TakeEntryFromDOMArenaTable(this)    \
             : nullptr;                                            \

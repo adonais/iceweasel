@@ -96,6 +96,15 @@ class ShareResourceFeature(
                         )
                     }
                 }
+                is ShareResourceState.DirectResource -> {
+                    withTimeout(operationTimeoutMs) {
+                        val download = downloadDirectResource(internetResource.response)
+                        shareInternetResource(
+                            contentType = internetResource.contentType,
+                            filePath = download.canonicalPath,
+                        )
+                    }
+                }
                 is ShareResourceState.LocalResource -> shareLocalPdf(internetResource.url, internetResource.contentType)
             }
         }

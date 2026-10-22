@@ -619,7 +619,6 @@ async function generateTestShims() {
       logos: ["instagram.svg"],
       needsShimHelpers: [
         "embedClicked",
-        "smartblockEmbedReplaced",
         "smartblockGetFluentString",
         "shouldShowEmbedContentInPlaceholders",
       ],

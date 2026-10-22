@@ -4,7 +4,7 @@
 This is a deep-dive into the underlying mechanisms that power the XPCOM
 hashtables. Some of this information is quite old and may be out of date. If
 you're looking for how to use XPCOM hashtables, you should consider reading
-the {ref}`XPCOM Hashtable Guide` instead.
+the {doc}`hashtables` instead.
 :::
 
 ## Mozilla's Hashtable Implementations

@@ -402,45 +402,6 @@ void av1_vmaf_neg_preprocessing(AV1_COMP *const cpi,
   aom_free_frame_buffer(&blurred);
 }
 
-void av1_vmaf_frame_preprocessing(AV1_COMP *const cpi,
-                                  const YV12_BUFFER_CONFIG *const source) {
-  const AV1_COMMON *const cm = &cpi->common;
-  const int bit_depth = cpi->td.mb.e_mbd.bd;
-  const int width = source->y_width;
-  const int height = source->y_height;
-
-  YV12_BUFFER_CONFIG source_extended, blurred;
-  memset(&source_extended, 0, sizeof(source_extended));
-  memset(&blurred, 0, sizeof(blurred));
-  aom_alloc_frame_buffer(
-      &source_extended, width, height, source->subsampling_x,
-      source->subsampling_y, cm->seq_params->use_highbitdepth,
-      cpi->oxcf.border_in_pixels, cm->features.byte_alignment, false, 0);
-  aom_alloc_frame_buffer(
-      &blurred, width, height, source->subsampling_x, source->subsampling_y,
-      cm->seq_params->use_highbitdepth, cpi->oxcf.border_in_pixels,
-      cm->features.byte_alignment, false, 0);
-
-  av1_copy_and_extend_frame(source, &source_extended);
-  gaussian_blur(bit_depth, &source_extended, &blurred);
-  aom_free_frame_buffer(&source_extended);
-
-  const GF_GROUP *const gf_group = &cpi->ppi->gf_group;
-  const int layer_depth =
-      AOMMIN(gf_group->layer_depth[cpi->gf_frame_index], MAX_ARF_LAYERS - 1);
-  const double last_frame_unsharp_amount =
-      get_layer_value(cpi->vmaf_info.last_frame_unsharp_amount, layer_depth);
-
-  const double best_frame_unsharp_amount = find_best_frame_unsharp_amount(
-      cpi, source, &blurred, last_frame_unsharp_amount, 0.05, 20, 1.01);
-
-  cpi->vmaf_info.last_frame_unsharp_amount[layer_depth] =
-      best_frame_unsharp_amount;
-
-  unsharp(cpi, source, &blurred, source, best_frame_unsharp_amount);
-  aom_free_frame_buffer(&blurred);
-}
-
 void av1_vmaf_blk_preprocessing(AV1_COMP *const cpi,
                                 const YV12_BUFFER_CONFIG *const source) {
   const AV1_COMMON *const cm = &cpi->common;

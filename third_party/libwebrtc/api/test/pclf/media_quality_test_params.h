@@ -100,7 +100,6 @@ struct InjectableComponents {
                        std::unique_ptr<NetworkManager> network_manager,
                        SocketFactory* socket_factory)
       : network_thread(network_thread),
-        worker_thread(nullptr),
         pcf_dependencies(std::make_unique<PeerConnectionFactoryComponents>()),
         pc_dependencies(std::make_unique<PeerConnectionComponents>()) {
     RTC_CHECK(network_thread);
@@ -109,7 +108,6 @@ struct InjectableComponents {
   }
 
   Thread* const network_thread;
-  Thread* worker_thread;
 
   std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies;
   std::unique_ptr<PeerConnectionComponents> pc_dependencies;

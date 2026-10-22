@@ -16,6 +16,7 @@ bounce-tracking-protection:
     - ohttp
   bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1889444
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2071313
   data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1889444#c16
   notification_emails:

@@ -17,6 +17,7 @@
 #include "mozilla/Vector.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"

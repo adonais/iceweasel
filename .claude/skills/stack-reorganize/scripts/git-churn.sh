@@ -120,7 +120,8 @@ for c in $(git rev-list --reverse "$range"); do
                 done
         done
     in=$(printf '%s\n' "$classified" | awk '$3 == "in" { s += $1 } END { print s + 0 }')
-    printf '    %5d removed from inside the range\n' "$in"
+    below=$(printf '%s\n' "$classified" | awk '$3 == "below" { s += $1 } END { print s + 0 }')
+    printf '    %5d removed from inside the range, %d from before it\n' "$in" "$below"
     all_in=$((all_in + in))
     [ -z "$lines" ] || git show --numstat --format= "$c" -- "$@" | awk -F"$tab" '$1 > 0 { printf "    %5d added  %s\n", $1, $3 }'
 done

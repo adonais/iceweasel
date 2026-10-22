@@ -2899,7 +2899,6 @@ def security_hardening_cflags(
     hardening_flag, asan, debug, optimize, c_compiler, target
 ):
     compiler_is_gccish = c_compiler.type in ("gcc", "clang")
-    mingw_clang = c_compiler.type == "clang" and target.os == "WINNT"
 
     flags = []
     ldflags = []
@@ -2964,12 +2963,6 @@ def security_hardening_cflags(
             # Cannot use level 3 because we have many uses of the [0] GNU syntax.
             # Cannot use level 2 because sqlite3 and icu use the [1] GNU syntax.
             flags.append("-fstrict-flex-arrays=1")
-
-        # ASLR ------------------------------------------------
-        # ASLR (dynamicbase) is enabled by default in clang-cl; but the
-        # mingw-clang build requires it to be explicitly enabled
-        if mingw_clang:
-            ldflags.append("-Wl,--dynamicbase")
 
         # Control Flow Guard (CFG) ----------------------------
         if (
@@ -3906,7 +3899,6 @@ set_config("SSE_FLAGS", ["-msse"])
 set_config("SSE2_FLAGS", ["-msse2"])
 set_config("SSSE3_FLAGS", ["-mssse3"])
 set_config("SSE4_2_FLAGS", ["-msse4.2"])
-set_config("FMA_FLAGS", ["-mfma"])
 set_config("AVX2_FLAGS", ["-mavx2"])
 set_config(
     "AVXVNNI_FLAGS",
@@ -4001,6 +3993,11 @@ set_config(
 )
 
 
+# LoongArch SIMD and Advanced SIMD Extensions
+set_config("LSX_FLAGS", ["-mlsx"])
+set_config("LASX_FLAGS", ["-mlasx"])
+
+
 @depends(target, c_compiler)
 def htmlaccel_config(target, c_compiler):
     # Keep this is sync with the mozilla::htmlaccel::htmlaccelEnabled function.
@@ -4015,11 +4012,16 @@ def htmlaccel_config(target, c_compiler):
     #
     # aarch64 does not need extra flags.
     #
+    # loongarch64 needs -mlsx to explicitly enable LSX on ABI 1.0
+    # toolchains.
+    #
     # clang-cl doesn't tolerate -flax-vector-conversions but GCC requires it.
     #
     # -mavx2 doesn't change codegen vs. -mavx. AVX2 and BMI always co-occur
     # in Intel CPUs, but there are AMD CPUs that have AVX and BMI without
     # AVX2.
+    if target.cpu == "loongarch64":
+        return ["-mlsx"]
     if target.cpu != "x86_64":
         return []
     if c_compiler.type == "gcc":

@@ -62,8 +62,11 @@ downloads-shortcut =
        *[other] J
     }
 
-addons-shortcut =
-    .key = A
+addons-shortcut-2 =
+    .key = { PLATFORM() ->
+        [macos] E
+       *[other] F
+    }
 
 file-open-shortcut =
     .key = O
@@ -205,6 +208,9 @@ bidi-switch-direction-shortcut =
 
 private-browsing-shortcut =
     .key = P
+
+search-tabs-shortcut =
+    .key = A
 
 ## The shortcuts below are for Mac specific
 ## global menu.

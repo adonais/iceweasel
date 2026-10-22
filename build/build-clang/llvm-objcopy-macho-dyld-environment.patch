@@ -1,0 +1,67 @@
+From 93757f4249552958ef53f1323d7eacd11ea7a225 Mon Sep 17 00:00:00 2001
+From: Stephen A Pohl <spohl@mozilla.com>
+Date: Sun, 27 Sep 2026 13:00:22 -0400
+Subject: [PATCH] [llvm-objcopy][MachO] Copy LC_DYLD_ENVIRONMENT load commands
+ unchanged
+
+LC_DYLD_ENVIRONMENT carries a string payload like LC_LOAD_DYLINKER and has no
+offsets into the file that need updating, but the layout builder rejected it
+as unsupported, so llvm-objcopy and llvm-strip failed on any Mach-O binary
+linked with -dyld_env.
+---
+ llvm/lib/ObjCopy/MachO/MachOLayoutBuilder.cpp |  1 +
+ .../MachO/dyld-environment-load-command.test  | 30 +++++++++++++++++++
+ 2 files changed, 31 insertions(+)
+ create mode 100644 llvm/test/tools/llvm-objcopy/MachO/dyld-environment-load-command.test
+
+diff --git a/llvm/lib/ObjCopy/MachO/MachOLayoutBuilder.cpp b/llvm/lib/ObjCopy/MachO/MachOLayoutBuilder.cpp
+index 8660c90..d22b3f1 100644
+--- a/llvm/lib/ObjCopy/MachO/MachOLayoutBuilder.cpp
++++ b/llvm/lib/ObjCopy/MachO/MachOLayoutBuilder.cpp
+@@ -419,6 +419,7 @@ Error MachOLayoutBuilder::layoutTail(uint64_t Offset) {
+     case MachO::LC_ENCRYPTION_INFO:
+     case MachO::LC_ENCRYPTION_INFO_64:
+     case MachO::LC_LOAD_DYLINKER:
++    case MachO::LC_DYLD_ENVIRONMENT:
+     case MachO::LC_MAIN:
+     case MachO::LC_RPATH:
+     case MachO::LC_SEGMENT:
+diff --git a/llvm/test/tools/llvm-objcopy/MachO/dyld-environment-load-command.test b/llvm/test/tools/llvm-objcopy/MachO/dyld-environment-load-command.test
+new file mode 100644
+index 0000000..3910edd
+--- /dev/null
++++ b/llvm/test/tools/llvm-objcopy/MachO/dyld-environment-load-command.test
+@@ -0,0 +1,30 @@
++## This test verifies that llvm-objcopy copies the LC_DYLD_ENVIRONMENT load
++## command unchanged.
++
++# RUN: yaml2obj %s -o %t
++# RUN: llvm-objcopy %t %t2
++# RUN: cmp %t %t2
++# RUN: llvm-strip -S %t -o %t3
++# RUN: llvm-objdump --macho --private-headers %t3 | FileCheck %s
++
++--- !mach-o
++FileHeader:
++  magic:      0xFEEDFACF
++  cputype:    0x01000007
++  cpusubtype: 0x80000003
++  filetype:   0x00000002
++  ncmds:      1
++  sizeofcmds: 40
++  flags:      0x00200085
++  reserved:   0x00000000
++LoadCommands:
++  - cmd:          LC_DYLD_ENVIRONMENT
++    cmdsize:      40
++    name:         12
++    Content:      'DYLD_FRAMEWORK_PATH=/foo'
++    ZeroPadBytes: 4
++
++# CHECK: Load command 0
++# CHECK:          cmd LC_DYLD_ENVIRONMENT
++# CHECK:      cmdsize 40
++# CHECK:         name DYLD_FRAMEWORK_PATH=/foo (offset 12)
+-- 
+2.54.0 (Apple Git-157)
+

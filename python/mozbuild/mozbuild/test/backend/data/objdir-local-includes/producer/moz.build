@@ -1,0 +1,17 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def Library(name):
+    LIBRARY_NAME = name
+
+
+Library("producer")
+
+GENERATED_FILES += ["generated.c"]
+GENERATED_FILES["generated.c"].script = "generate.py"
+
+SOURCES += ["!generated.c"]
+
+LOCAL_INCLUDES += ["!/producer"]

@@ -75,11 +75,13 @@ async function runUtf8Generation({ minOutputBufferSize, nPredict }) {
  * get the character back. Independent of the fix.
  */
 add_task(async function test_ml_llama_utf8_valid_buffered() {
-  const text = await runUtf8Generation({
-    minOutputBufferSize: 20,
-    nPredict: 3,
+  await runOnBothInferenceProcesses(async () => {
+    const text = await runUtf8Generation({
+      minOutputBufferSize: 20,
+      nPredict: 3,
+    });
+    Assert.equal(text, "嗣", "Whole codepoint buffered into one chunk decodes");
   });
-  Assert.equal(text, "嗣", "Whole codepoint buffered into one chunk decodes");
 });
 
 /**
@@ -88,12 +90,17 @@ add_task(async function test_ml_llama_utf8_valid_buffered() {
  * converted to JS individually. The runner must reassemble the codepoint.
  */
 add_task(async function test_ml_llama_utf8_split_across_chunks() {
-  const text = await runUtf8Generation({ minOutputBufferSize: 1, nPredict: 3 });
-  Assert.equal(
-    text,
-    "嗣",
-    "Codepoint split across byte-token chunks is reassembled"
-  );
+  await runOnBothInferenceProcesses(async () => {
+    const text = await runUtf8Generation({
+      minOutputBufferSize: 1,
+      nPredict: 3,
+    });
+    Assert.equal(
+      text,
+      "嗣",
+      "Codepoint split across byte-token chunks is reassembled"
+    );
+  });
 });
 
 /**
@@ -103,15 +110,17 @@ add_task(async function test_ml_llama_utf8_split_across_chunks() {
  * thrown.
  */
 add_task(async function test_ml_llama_utf8_truncated_at_end() {
-  const text = await runUtf8Generation({
-    minOutputBufferSize: 20,
-    nPredict: 2,
+  await runOnBothInferenceProcesses(async () => {
+    const text = await runUtf8Generation({
+      minOutputBufferSize: 20,
+      nPredict: 2,
+    });
+    Assert.equal(
+      text,
+      "",
+      "Codepoint truncated at end-of-generation is dropped, not thrown"
+    );
   });
-  Assert.equal(
-    text,
-    "",
-    "Codepoint truncated at end-of-generation is dropped, not thrown"
-  );
 });
 
 /**
@@ -120,13 +129,15 @@ add_task(async function test_ml_llama_utf8_truncated_at_end() {
  * the preceding valid codepoint is preserved.
  */
 add_task(async function test_ml_llama_utf8_malformed_byte() {
-  const text = await runUtf8Generation({
-    minOutputBufferSize: 20,
-    nPredict: 4,
+  await runOnBothInferenceProcesses(async () => {
+    const text = await runUtf8Generation({
+      minOutputBufferSize: 20,
+      nPredict: 4,
+    });
+    Assert.equal(
+      text,
+      "嗣" + REPLACEMENT,
+      "Malformed byte becomes U+FFFD without dropping the valid codepoint"
+    );
   });
-  Assert.equal(
-    text,
-    "嗣" + REPLACEMENT,
-    "Malformed byte becomes U+FFFD without dropping the valid codepoint"
-  );
 });

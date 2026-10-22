@@ -156,6 +156,7 @@ nsresult PartialSegmentReader(nsIOutputStream*, void* aClosure,
  * stream before removing the file so individual tests do not need cleanup code.
  */
 struct ScopedTestFileStream {
+  ScopedTestFileStream() = default;
   ScopedTestFileStream(nsCOMPtr<nsIFile> aFile,
                        nsCOMPtr<nsIRandomAccessStream> aStream)
       : mFile(std::move(aFile)), mStream(std::move(aStream)) {}
@@ -376,6 +377,27 @@ void ExpectPaddedFinalBlock(const DecryptedBlockLayout& aBlock,
   EXPECT_TRUE(paddingHasNonZero);
 }
 
+// Queries through |nsIRandomAccessStream|, the way consumers such as
+// |FileSystemSyncAccessHandle::GetSize()| reach the metadata.
+void QueryFileMetadata(nsIRandomAccessStream* aStream,
+                       nsCOMPtr<nsIFileMetadata>& aMetadata) {
+  aMetadata = do_QueryInterface(aStream);
+  ASSERT_TRUE(aMetadata);
+}
+
+void CreateEncryptedTestStream(
+    ScopedTestFileStream& aFileStream,
+    RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>>&
+        aStream) {
+  auto res = CreateEncryptedFileStream();
+  ASSERT_TRUE(res.isOk());
+
+  aFileStream = res.unwrap();
+  ASSERT_TRUE(aFileStream.mStream);
+
+  aStream = CreateEncryptedRandomAccessStream(aFileStream.mStream);
+}
+
 }  // namespace
 
 // Exercise the same behavior with one partial block, one full block,
@@ -408,6 +430,9 @@ struct SetEOFBufferedExpandCase {
 
 class SetEOFBufferedExpandEncryptedRandomAccessStreamTest
     : public testing::TestWithParam<SetEOFBufferedExpandCase> {};
+
+class GetSizeAfterSetEOFEncryptedRandomAccessStreamTest
+    : public testing::TestWithParam<size_t> {};
 
 // -------------------------
 // Tests covering Create()
@@ -2852,6 +2877,107 @@ TEST(
   }
 }
 
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_getSizeReturnsThePlaintextSize)
+{
+  ScopedTestFileStream fileStream;
+  RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>> stream;
+  ASSERT_NO_FATAL_FAILURE(CreateEncryptedTestStream(fileStream, stream));
+
+  const nsCOMPtr<nsIFileMetadata> baseMetadata =
+      do_QueryInterface(fileStream.mStream);
+  ASSERT_TRUE(baseMetadata);
+  int64_t physicalSize = -1;
+  ASSERT_EQ(baseMetadata->GetSize(&physicalSize), NS_OK);
+
+  nsCOMPtr<nsIFileMetadata> metadata;
+  ASSERT_NO_FATAL_FAILURE(QueryFileMetadata(stream, metadata));
+
+  int64_t size = -1;
+  ASSERT_EQ(metadata->GetSize(&size), NS_OK);
+  EXPECT_EQ(size, static_cast<int64_t>(kTextLength));
+
+  // The per-block overhead makes the encrypted file larger than its plaintext,
+  // so this also shows the size isn't taken from the base stream.
+  EXPECT_GT(physicalSize, size);
+}
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_getSizeReflectsAnUnflushedWrite)
+{
+  ScopedTestFileStream fileStream;
+  RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>> stream;
+  ASSERT_NO_FATAL_FAILURE(CreateEncryptedTestStream(fileStream, stream));
+
+  ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+
+  constexpr uint32_t count = 7;
+  std::array<char, count> data{};
+  uint32_t written = 0;
+  ASSERT_EQ(stream->Write(data.data(), data.size(), &written), NS_OK);
+  ASSERT_EQ(written, count);
+
+  nsCOMPtr<nsIFileMetadata> metadata;
+  ASSERT_NO_FATAL_FAILURE(QueryFileMetadata(stream, metadata));
+
+  int64_t size = -1;
+  ASSERT_EQ(metadata->GetSize(&size), NS_OK);
+  EXPECT_EQ(size, static_cast<int64_t>(kTextLength) + count);
+}
+
+TEST_P(GetSizeAfterSetEOFEncryptedRandomAccessStreamTest,
+       EncryptedRandomAccessStream_getSizeReflectsSetEOF) {
+  ScopedTestFileStream fileStream;
+  RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>> stream;
+  ASSERT_NO_FATAL_FAILURE(CreateEncryptedTestStream(fileStream, stream));
+
+  const auto newSize = static_cast<int64_t>(GetParam());
+  ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET, newSize), NS_OK);
+  ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+  nsCOMPtr<nsIFileMetadata> metadata;
+  ASSERT_NO_FATAL_FAILURE(QueryFileMetadata(stream, metadata));
+
+  int64_t size = -1;
+  ASSERT_EQ(metadata->GetSize(&size), NS_OK);
+  EXPECT_EQ(size, newSize);
+}
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_getSizeFailsAfterClose)
+{
+  ScopedTestFileStream fileStream;
+  RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>> stream;
+  ASSERT_NO_FATAL_FAILURE(CreateEncryptedTestStream(fileStream, stream));
+
+  nsCOMPtr<nsIFileMetadata> metadata;
+  ASSERT_NO_FATAL_FAILURE(QueryFileMetadata(stream, metadata));
+
+  ASSERT_EQ(stream->OutputStream()->Close(), NS_OK);
+
+  int64_t size = -1;
+  EXPECT_EQ(metadata->GetSize(&size), NS_BASE_STREAM_CLOSED);
+}
+
+TEST(
+    EncryptedRandomAccessStreamTest,
+    EncryptedRandomAccessStream_getLastModifiedAndGetFileDescriptorAreNotImplemented)
+{
+  ScopedTestFileStream fileStream;
+  RefPtr<EncryptedRandomAccessStream<DummyRandomAccessCipherStrategy>> stream;
+  ASSERT_NO_FATAL_FAILURE(CreateEncryptedTestStream(fileStream, stream));
+
+  nsCOMPtr<nsIFileMetadata> metadata;
+  ASSERT_NO_FATAL_FAILURE(QueryFileMetadata(stream, metadata));
+
+  int64_t lastModified = -1;
+  EXPECT_EQ(metadata->GetLastModified(&lastModified), NS_ERROR_NOT_IMPLEMENTED);
+
+  PRFileDesc* fileDescriptor = nullptr;
+  EXPECT_EQ(metadata->GetFileDescriptor(&fileDescriptor),
+            NS_ERROR_NOT_IMPLEMENTED);
+}
+
 INSTANTIATE_TEST_SUITE_P(EncryptedRandomAccessStreamTextLengths,
                          ParameterizedEncryptedRandomAccessStreamTest,
                          testing::Values(kTextLength, kMaxTextLength,
@@ -3000,6 +3126,20 @@ INSTANTIATE_TEST_SUITE_P(
                         "WithinSecondBlock"}),
     [](const testing::TestParamInfo<SetEOFBufferedExpandCase>& aInfo) {
       return std::string(aInfo.param.mName);
+    });
+
+INSTANTIATE_TEST_SUITE_P(
+    EncryptedRandomAccessStreamGetSizeAfterSetEOF,
+    GetSizeAfterSetEOFEncryptedRandomAccessStreamTest,
+    testing::Values(kTextLength / 2, kMaxTextLength + kTextLength),
+    [](const testing::TestParamInfo<size_t>& aInfo) -> std::string {
+      if (aInfo.param == kTextLength / 2) {
+        return "Shrink";
+      }
+      if (aInfo.param == kMaxTextLength + kTextLength) {
+        return "GrowIntoSecondBlock";
+      }
+      MOZ_CRASH("Unexpected target size.");
     });
 
 }  // namespace mozilla::dom::quota::test

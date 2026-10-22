@@ -17,6 +17,10 @@ class EmulationModule extends WindowGlobalBiDiModule {
 
   _applySessionData() {}
 
+  _flushMediaFeatures() {
+    this.messageHandler.window.windowUtils.flushLayoutWithoutThrottledAnimations();
+  }
+
   /**
    * Set the geolocation override to the navigable.
    *

@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "media-gpu"
 support-files = [
@@ -247,7 +244,6 @@ support-files = [
 skip-if = [
   "os == 'android' && arch == 'aarch64' && debug", # Bug 1776960 - android aarch64 debug
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # mac due to bug 1487973
-  "os == 'win'", # bug 1487973,
 ]
 
 ["test_H264_SPS_InvalidDimensions.html"]

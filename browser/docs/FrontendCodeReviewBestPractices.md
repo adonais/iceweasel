@@ -138,7 +138,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 * If the meaning of a string changes, or \[in fluent\] you add/remove attributes, **you must update the message identifier**.
 * More detailed [fluent review guidelines](/l10n/fluent/review.md#guidelines-for-working-with-fluent-files) are available separately.
 
-### Accessibility {#accessibility}
+### Accessibility
 
 * Write semantic HTML.
 * Anything mouse-accessible should be keyboard-accessible or have a keyboard-accessible equivalent.

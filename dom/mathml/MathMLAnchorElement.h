@@ -51,13 +51,47 @@ class MathMLAnchorElement final : public MathMLElement {
     SetAttr(nsGkAtoms::type, aValue, rv);
   }
 
+  void GetPing(nsAString& aPing) { GetAttr(nsGkAtoms::ping, aPing); }
+  void SetPing(const nsAString& aPing, ErrorResult& rv) {
+    SetAttr(nsGkAtoms::ping, aPing, rv);
+  }
+
+  void GetDownload(DOMString& aValue) const {
+    GetAttr(nsGkAtoms::download, aValue);
+  }
+  void SetDownload(const nsAString& aValue, mozilla::ErrorResult& rv) {
+    SetAttr(nsGkAtoms::download, aValue, rv);
+  }
+
+  void GetRel(nsAString& aRel) { GetAttr(nsGkAtoms::rel, aRel); }
+  void SetRel(const nsAString& aRel, ErrorResult& rv) {
+    SetAttr(nsGkAtoms::rel, aRel, rv);
+  }
+
+  void GetReferrerPolicy(nsAString& aPolicy) {
+    GetEnumAttr(nsGkAtoms::referrerpolicy, "", aPolicy);
+  }
+  void SetReferrerPolicy(const nsAString& aPolicy, ErrorResult& rv) {
+    SetAttr(nsGkAtoms::referrerpolicy, aPolicy, rv);
+  }
+
+  nsDOMTokenList* RelList();
+
   void GetBaseTarget(nsAString& aValue) const;
   void GetLinkTargetImpl(nsAString& aTarget) override;
+
+  bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                      const nsAString& aValue,
+                      nsIPrincipal* aMaybeScriptedPrincipal,
+                      nsAttrValue& aResult) override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
  protected:
   virtual ~MathMLAnchorElement() = default;
+
+  RefPtr<nsDOMTokenList> mRelList;
+
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
 };

@@ -23,6 +23,11 @@ transforms:
 
 task-defaults:
     run-on-repo-type: [hg]
+    priority:
+        by-project:
+            autoland: high
+            mozilla-central: medium
+            default: null
     attributes:
         retrigger: true
     use-python:
@@ -121,10 +126,8 @@ task-defaults:
                 by-test-platform:
                     linux.*64/debug: 1
                     default: 2
-            default:
-                by-test-platform:
-                    android-em.*/debug-isolated-process: 2
-                    default: default
+            geckoview-isolated-process: 2
+            default: default
     mozharness:
         requires-signed-builds:
             by-test-platform:
@@ -171,6 +174,7 @@ tasks:
             - http3
             - http2
             - geckoview-fission-isolate-high-value
+            - geckoview-isolated-process
             - inc-origin-init
         run-on-projects:
             by-variant:
@@ -192,7 +196,6 @@ tasks:
                         macosx.*64(-shippable)?(-qr)?/.*: ['trunk']
                         windows11-64-24h2(-shippable)?(-qr)?/.*: ['trunk']
                         linux.*64-ccov/opt: ['mozilla-central']
-                        android-em.*/debug-isolated-process: ['trunk']
                         android-em.*: ['trunk']
                         default: []
                 aab+no-fission:
@@ -215,7 +218,6 @@ tasks:
                         default: []
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         android.*: built-projects
                         linux2404-64/debug: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -231,13 +233,15 @@ tasks:
                         default: []
                 geckoview-fission-isolate-high-value:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: ['trunk']
                         android-em.*: built-projects
+                        default: []
+                geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
                         default: []
                 inc-origin-init: []
                 default:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: ['trunk']
                         android.*: built-projects
                         # Compositor shutdown assertion in DisconnectApzcTreeManager
                         # on headless macOS aarch64 VM workers (Bug 2039987 family);
@@ -963,17 +967,13 @@ tasks:
                         default: []
                 no-fission:
                     by-test-platform:
-                        android-em.*/debug-isolated-process: []
                         linux.*64-ccov/opt: []
                         .*-tsan/opt: []
                         .*-wayland.*: []
                         linux.*: ['mozilla-central']  # linux opt/debug/asan
                         android.*: built-projects
                         default: []
-                default:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: []
-                        default: built-projects
+                default: built-projects
         virtualization: virtual-with-gpu
         tier:
             by-variant:
@@ -981,10 +981,8 @@ tasks:
                     by-test-platform:
                         linux.*64.*: 2
                         default: default
-                default:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: 3
-                        default: default
+                geckoview-isolated-process: 3
+                default: default
         mozharness:
             mochitest-flavor: plain
             extra-options:
@@ -1085,8 +1083,13 @@ tasks:
             - webrender-sw
             - wmf-media-engine
             - msix
+            - geckoview-isolated-process
         run-on-projects:
             by-variant:
+                geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
                 socketprocess+no-fission:
                     by-test-platform:
                         .*hw-ref.*: []
@@ -1133,7 +1136,6 @@ tasks:
                         .*hw-ref.*: []
                         android-hw-.*-arm7.*/(?:debug)?: ['trunk', 'mozilla-beta', 'mozilla-release']
                         android-em-14.*/debug: []  # Bug 1984064
-                        android-em.*/debug-isolated-process: []
                         android.*: built-projects
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
@@ -1160,7 +1162,6 @@ tasks:
                     by-test-platform:
                         .*hw-ref.*: []
                         android-hw.*/opt: []
-                        android-em.*/debug-isolated-process: []
                         android-em-14.*/debug: []  # Bug 1984064
                         android.*: built-projects
                         linux.*-asan/opt: []
@@ -1216,19 +1217,16 @@ tasks:
                     by-test-platform:
                         linux.*64.*: 2
                         default: default
+                geckoview-isolated-process: 2
                 default:
                     by-test-platform:
                         .*-ccov.*: 2
-                        android-em.*/debug-isolated-process: 2
                         android-em.*: 1
                         android-hw.*: 1
                         default: default
         worker-type:
             by-variant:
-                media-gpu:
-                    by-test-platform:
-                        linux.*: t-linux-talos-1804
-                        default: default
+                media-gpu: default
                 default:
                     by-test-platform:
                         windows11.*-asan/.*: win11-64-25h2-large

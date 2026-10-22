@@ -10,7 +10,7 @@ This chapter describes the NSPR API for anonymous shared memory.
 
 ## Anonymous Memory Protocol
 
-NSPR provides an anonymous shared memory based on NSPR's {ref}`PRFileMap`
+NSPR provides an anonymous shared memory based on NSPR's {doc}`prfilemap`
 type. The anonymous file-mapped shared memory provides an inheritable
 shared memory, as in: the child process inherits the shared memory.
 Compare the file-mapped anonymous shared memory to to a named shared
@@ -38,7 +38,7 @@ is done via helper-functions with PR_CreateProcess. In the second
 protocol, the parent process is responsible for creating the child
 process; the parent and child are mutually responsible for passing a
 `FileMap` string. NSPR provides helper functions for extracting data
-from the {ref}`PRFileMap` object. ... See the examples below.
+from the {doc}`prfilemap` object. ... See the examples below.
 
 Both sides should adhere strictly to the protocol for proper operation.
 The pseudo-code below shows the use of a file-mapped shared memory by a
@@ -106,8 +106,8 @@ PR_CloseFileMap(fm);
 
 ## Anonymous Shared Memory Functions
 
-- {ref}`PR_OpenAnonFileMap`
-- {ref}`PR_ProcessAttrSetInheritableFileMap`
-- {ref}`PR_GetInheritedFileMap`
-- {ref}`PR_ExportFileMapAsString`
-- {ref}`PR_ImportFileMapFromString`
+- {doc}`pr_openanonfilemap`
+- {doc}`pr_processattrsetinheritablefilemap`
+- {doc}`pr_getinheritedfilemap`
+- {doc}`pr_exportfilemapasstring`
+- {doc}`pr_importfilemapfromstring`

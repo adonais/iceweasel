@@ -204,7 +204,9 @@
       margin-bottom: -15px;
     }
 
-    --tab-width-transition: min-width 100ms ease-out, max-width 100ms ease-out;
+    @media (prefers-reduced-motion: no-preference) {
+      --tab-width-transition: min-width 100ms ease-out, max-width 100ms ease-out;
+    }
   }
 
   &[noshadowfortests] {
@@ -245,8 +247,10 @@
 .closing-tabs-spacer {
   pointer-events: none;
 
-  #tabbrowser-arrowscrollbox:not(:hover) > #tabbrowser-arrowscrollbox-periphery > & {
-    transition: width 0.15s ease-out;
+  @media (prefers-reduced-motion: no-preference) {
+    #tabbrowser-arrowscrollbox:not(:hover) > #tabbrowser-arrowscrollbox-periphery > & {
+      transition: width 0.15s ease-out;
+    }
   }
 }
 
@@ -1021,8 +1025,7 @@ tab-split-view-wrapper[dragtarget] {
     outline-color: var(--tab-close-button-border-color-active);
   }
 
-  #tabbrowser-tabs[orient="horizontal"] &[pinned],
-  :root:not([sidebar-expand-on-hover]) #tabbrowser-tabs[orient="vertical"] &[pinned],
+  &[pinned],
   #tabbrowser-tabs[closebuttons="activetab"][orient="horizontal"] &:not([selected]) {
     display: none;
   }
@@ -1390,7 +1393,7 @@ tab-group > tab-split-view-wrapper {
         inset-block-end: calc(var(--space-xsmall) * -1);
       }
 
-      &:last-child {
+      :root:not([sidebar-expand-on-hover]) &:last-child {
         .tab-group-line {
           display: none;
 
@@ -1544,6 +1547,10 @@ tab-group > tab-split-view-wrapper {
     outline: 1px solid var(--tab-dragover-outline-color);
   }
 
+  :root[uidensity="compact"] & {
+    --tab-margin-inline-inner: 13px;
+  }
+
   /* show outline when split view wrapper is about to be grouped */
   #tabbrowser-tabs[movingtab-group] &[dragover-groupTarget] {
     background-color: light-dark(var(--dragover-tab-group-color-pale), var(--dragover-tab-group-color));
@@ -1561,6 +1568,7 @@ tab-group > tab-split-view-wrapper {
   .tabbrowser-tab {
     :root[uidensity="compact"] & {
       --tab-collapsed-background-width: 24px;
+      --tab-min-height: 24px;
     }
 
     .tab-background {
@@ -1737,31 +1745,13 @@ tab-group > tab-split-view-wrapper {
     border-radius: var(--border-radius-large);
   }
 
-  &:not([hasactivetab]) .tabbrowser-tab {
-    &:first-child > .tab-stack {
-      border-block-end: 1px solid var(--toolbarbutton-icon-fill);
-      border-inline-end: transparent;
-    }
-
-    &:last-child > .tab-stack {
-      border-inline-start: transparent !important;
-    }
+  &:not([hasactivetab]) .tabbrowser-tab:first-child > .tab-stack {
+    border-block-end: 1px solid var(--toolbarbutton-icon-fill);
+    border-inline-end: none;
   }
-}
 
-/* When expand-on-hover is enabled, always stack split-view tabs in a single column */
-:root[sidebar-expand-on-hover] #tabbrowser-tabs[orient="vertical"][expanded] tab-split-view-wrapper {
-  grid-template-columns: 1fr;
-
-  &:not([hasactivetab]) .tabbrowser-tab {
-    &:first-child > .tab-stack {
-      border-block-end: 1px solid var(--toolbarbutton-icon-fill);
-      border-inline-end: transparent;
-    }
-
-    &:last-child > .tab-stack {
-      border-inline-start: transparent !important;
-    }
+  .tabbrowser-tab:last-child > .tab-stack {
+    border-inline-start: none !important;
   }
 }
 
@@ -1785,6 +1775,10 @@ tab-group > tab-split-view-wrapper {
 
   .tabbrowser-tab:last-child > .tab-stack {
     border-inline-start-width: 0;
+  }
+
+  :root[uidensity="compact"] & {
+    --tab-collapsed-split-pill-offset: 0px;
   }
 
   /* Allow close button to overflow the split view wrapper */
@@ -2360,7 +2354,7 @@ tab-group {
 
   @media -moz-pref("browser.nova.enabled") {
     --panel-padding: var(--space-large) var(--space-small) 0;
-    --input-text-background-color: var(--background-color-box);
+    --input-background-color: var(--background-color-box);
     --panel-separator-padding: 0;
     --panel-menuitem-padding-block: var(--space-xsmall);
     --panel-width: 24em;
@@ -2598,6 +2592,8 @@ tab-group {
 
       @media -moz-pref("browser.nova.enabled") {
         background-image: linear-gradient(to top, transparent, var(--toolbox-background-color));
+        /* Clear of the content area's rounded corner, then fade in. */
+        mask-image: linear-gradient(to right, transparent 8px, black calc(2 * 8px), black calc(100% - 2 * 8px), transparent calc(100% - 8px));
       }
     }
 
@@ -3166,7 +3162,7 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 #alltabs-button {
   list-style-image: url("chrome://browser/skin/search-tabs.svg");
 
-  @media not (-moz-platform: linux) {
+  @media (-moz-platform: windows) {
     #TabsToolbar & {
       list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
     }

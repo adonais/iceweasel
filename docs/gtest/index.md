@@ -81,7 +81,7 @@ GTEST_FILTER='AsyncPanZoom*' MOZ_RUN_GTEST=1 ./mach run --debug [--debugger gdb]
 
 ### Debugging with Xcode
 
-See {ref}`Debugging On macOS` for initial
+See {doc}`/contributing/debugging/debugging_on_macos` for initial
 setup. You'll likely want to create a separate scheme for running GTest
 ("Product" > "Scheme" > "New Scheme…"). In addition to GTEST_FILTER, Set
 the following environment variables:

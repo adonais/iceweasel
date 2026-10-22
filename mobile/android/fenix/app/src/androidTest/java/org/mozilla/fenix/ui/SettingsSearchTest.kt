@@ -11,6 +11,7 @@ import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
@@ -56,6 +57,12 @@ class SettingsSearchTest {
     @get:Rule val searchMockServerRule = SearchMockServerRule()
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsSearchTest#verifySearchSettingsMenuItemsTest"],
+        bug = 2074094,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifySearchSettingsMenuItemsTest() {
         homeScreen(composeTestRule) {}
@@ -664,11 +671,12 @@ class SettingsSearchTest {
                 verifyEnginesShortcutsListHeader()
                 verifyManageShortcutsList(composeTestRule)
                 verifySearchShortcutChecked(
-                    EngineShortcut(name = "Bing", checkboxIndex = 1, isChecked = true),
-                    EngineShortcut(name = "DuckDuckGo", checkboxIndex = 4, isChecked = true),
-                    EngineShortcut(name = "Wikipedia (en)", checkboxIndex = 7, isChecked = true),
-                    EngineShortcut(name = "Reddit", checkboxIndex = 10, isChecked = false),
-                    EngineShortcut(name = "YouTube", checkboxIndex = 13, isChecked = false),
+                    composeTestRule,
+                    EngineShortcut(name = "Bing", isChecked = true),
+                    EngineShortcut(name = "DuckDuckGo", isChecked = true),
+                    EngineShortcut(name = "Wikipedia (en)", isChecked = true),
+                    EngineShortcut(name = "Reddit", isChecked = false),
+                    EngineShortcut(name = "YouTube", isChecked = false),
                 )
             }
     }
@@ -690,8 +698,8 @@ class SettingsSearchTest {
             .clickSettingsButton {}
             .openSearchSubMenu {
                 openManageShortcutsMenu()
-                selectSearchShortcut(EngineShortcut(name = "Reddit", checkboxIndex = 10))
-                selectSearchShortcut(EngineShortcut(name = "YouTube", checkboxIndex = 13))
+                selectSearchShortcut(composeTestRule, EngineShortcut(name = "Reddit"))
+                selectSearchShortcut(composeTestRule, EngineShortcut(name = "YouTube"))
                 exitMenu()
             }
         searchScreen(composeTestRule) {

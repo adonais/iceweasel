@@ -221,6 +221,8 @@ void CycleCollectedJSContext::traceNonGCThingMicroTask(JSTracer* trc,
 
   MOZ_ASSERT(!valuePtr->isObject(),
              "This hook should only be called for non-objects");
+  MOZ_ASSERT(!valuePtr->isNullOrUndefined(),
+             "This hook should only be called with private values");
   if (void* ptr = valuePtr->toPrivate()) {
     // The pointer is a MicroTaskRunnable that may have GC-reachable data
     auto* runnable = static_cast<MicroTaskRunnable*>(ptr);
@@ -283,25 +285,47 @@ void CycleCollectedJSContext::runJobs(JSContext* aCx) {
   PerformMicroTaskCheckPoint();
 }
 
-MicroTaskRunnable* MayConsumeMicroTask::MaybeUnwrapTaskToRunnable() const {
-  if (!IsJSMicroTask()) {
-    void* nonJSTask = mMicroTask.toPrivate();
-    MicroTaskRunnable* task = reinterpret_cast<MicroTaskRunnable*>(nonJSTask);
-    return task;
-  }
-
-  return nullptr;
+JS::JSMicroTaskRef AsJSMicroTask(JS::Handle<MayConsumeMicroTask> aMicroTask) {
+  // Safe: aMicroTask is rooted, and its trace() traces mMicroTask.
+  return aMicroTask.get().mMicroTask->asJS();
 }
 
-already_AddRefed<MicroTaskRunnable>
-MustConsumeMicroTask::MaybeConsumeAsOwnedRunnable() {
-  MOZ_ASSERT(!IsConsumed(), "Attempting to consume an already-consumed task");
-  MicroTaskRunnable* mtr = MaybeUnwrapTaskToRunnable();
+// Unwrap (without interacting with refcounting) a Gecko MicroTaskRunnable if
+// the task is not a JS MicroTask (see MicroTask.h for "JS MicroTask");
+// otherwise, return nullptr.
+//
+// This is a non-owning conversion: aMicroTask still owns the refcount.
+MicroTaskRunnable* MaybeUnwrapTaskToRunnable(
+    JS::Handle<MayConsumeMicroTask> aMicroTask) {
+  if (aMicroTask.get().IsJSMicroTask()) {
+    return nullptr;
+  }
+
+  void* nonJSTask = aMicroTask.get().mMicroTask->embedderPtr();
+  return static_cast<MicroTaskRunnable*>(nonJSTask);
+}
+
+already_AddRefed<MicroTaskRunnable> MaybeConsumeAsOwnedRunnable(
+    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
+  MOZ_ASSERT(!aMicroTask.get().IsConsumed(),
+             "Attempting to consume an already-consumed task");
+  MicroTaskRunnable* mtr = MaybeUnwrapTaskToRunnable(aMicroTask);
   if (!mtr) {
     return nullptr;
   }
-  mMicroTask.setUndefined();
+  aMicroTask.get().markAsConsumed();
   return already_AddRefed(mtr);
+}
+
+bool RunAndConsumeJSMicroTask(
+    JSContext* aCx, JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
+  // Safe: aMicroTask is rooted, and its trace() traces mMicroTask.
+  bool result = JS::RunJSMicroTask(
+      aCx, JS::Handle<Maybe<JS::MicroTask>>::fromMarkedLocation(
+               &aMicroTask.get().mMicroTask));
+  aMicroTask.get().markAsConsumed();
+  return result;
 }
 
 // Preserve a debuggee's microtask queue while it is interrupted by the
@@ -347,15 +371,15 @@ class CycleCollectedJSContext::SavedMicroTaskQueue
     MOZ_ASSERT(JS::GetRegularMicroTaskCount(cx) <= 1);
     if (JS::HasRegularMicroTasks(cx)) {
       suppressedTasks = DequeueNextRegularMicroTask(cx);
-      MOZ_ASSERT(suppressedTasks.get().MaybeUnwrapTaskToRunnable() ==
+      MOZ_ASSERT(MaybeUnwrapTaskToRunnable(suppressedTasks) ==
                  ccjs->mSuppressedMicroTaskList);
     }
     MOZ_RELEASE_ASSERT(!JS::HasRegularMicroTasks(cx));
     JS::RestoreMicroTaskQueue(cx, std::move(mSavedQueue));
 
     if (suppressedTasks.get()) {
-      if (!EnqueueMicroTask(
-              cx, suppressedTasks.get().MaybeConsumeAsOwnedRunnable())) {
+      if (!EnqueueMicroTask(cx,
+                            MaybeConsumeAsOwnedRunnable(&suppressedTasks))) {
         NS_ABORT_OOM(0);
       }
     }
@@ -645,24 +669,20 @@ void CycleCollectedJSContext::AddPendingIDBTransaction(
 //
 // - This means runnables in the queue have their refcounts stay above zero for
 // the duration of the time they are in the queue.
-JS::GenericMicroTask RunnableToMicroTask(
+JS::MicroTask RunnableToMicroTask(
     already_AddRefed<MicroTaskRunnable>& aRunnable) {
-  JS::GenericMicroTask v;
   auto* r = aRunnable.take();
   MOZ_ASSERT(r);
-  v.setPrivate(r);
-  return v;
+  return JS::MicroTask::FromEmbedderPtr(r);
 }
 
 bool EnqueueMicroTask(JSContext* aCx,
                       already_AddRefed<MicroTaskRunnable> aRunnable) {
-  JS::GenericMicroTask v = RunnableToMicroTask(aRunnable);
-  return JS::EnqueueMicroTask(aCx, v);
+  return JS::EnqueueMicroTask(aCx, RunnableToMicroTask(aRunnable));
 }
 bool EnqueueDebugMicroTask(JSContext* aCx,
                            already_AddRefed<MicroTaskRunnable> aRunnable) {
-  JS::GenericMicroTask v = RunnableToMicroTask(aRunnable);
-  return JS::EnqueueDebugMicroTask(aCx, v);
+  return JS::EnqueueDebugMicroTask(aCx, RunnableToMicroTask(aRunnable));
 }
 
 void CycleCollectedJSContext::DispatchToMicroTask(
@@ -748,7 +768,7 @@ RunMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   LogMustConsumeMicroTask::Run log(&aMicroTask.get());
 
   if (RefPtr<MicroTaskRunnable> runnable =
-          aMicroTask.get().MaybeConsumeAsOwnedRunnable()) {
+          MaybeConsumeAsOwnedRunnable(aMicroTask)) {
     AUTO_PROFILER_TERMINATING_FLOW_MARKER_FLOW_ONLY(
         "RunMicroTaskRunnable", OTHER, Flow::FromPointer(runnable.get()));
     AutoSlowOperation aso;
@@ -811,18 +831,18 @@ void ExtractIncumbentAndSchedulingState(
   }
 }
 
-void MaybeGetFlowMarker(
-    JS::Handle<MustConsumeMicroTask> aMicroTask,
+static void MaybeGetFlowMarker(
+    JS::Handle<MayConsumeMicroTask> aMicroTask,
     mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
         aTerminatingMarker) {
-  // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
+  // Avoid the overhead of getFlowId in the common case
   // of not having the profiler enabled.
   if (profiler_is_active_and_unpaused() &&
       profiler_feature_active(ProfilerFeature::Flows)) {
     uint64_t flowId = 0;
     // Since this only returns false when the microtask won't run (dead wrapper)
     // we can elide the marker if it does fail.
-    if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
+    if (AsJSMicroTask(aMicroTask).getFlowId(&flowId)) {
       aTerminatingMarker.emplace("RunMicroTask",
                                  mozilla::baseprofiler::category::OTHER,
                                  Flow::ProcessScoped(flowId));
@@ -839,19 +859,20 @@ static bool ExtractTaskData(
     JS::MutableHandle<JSObject*> aIncumbentGlobal,
     JS::MutableHandle<JSObject*> aOptionalHostDefinedData,
     JS::MutableHandle<JSObject*> aAllocStack) {
-  aCallbackGlobal.set(aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
+  aCallbackGlobal.set(AsJSMicroTask(aMicroTask).executionGlobal());
   if (!aCallbackGlobal) {
     return false;
   }
 
   // Don't run if we fail to unwrap the host defined data, as that
   // would indicate the target realm is gone.
-  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
-          aIncumbentGlobal, aOptionalHostDefinedData)) {
+  if (!AsJSMicroTask(aMicroTask)
+           .maybeGetHostDefinedData(aIncumbentGlobal,
+                                    aOptionalHostDefinedData)) {
     return false;
   }
 
-  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(aAllocStack);
+  (void)AsJSMicroTask(aMicroTask).maybeGetAllocationSite(aAllocStack);
   return true;
 }
 
@@ -874,9 +895,9 @@ static bool CanRunJSCallback(nsIGlobalObject* aGlobalObject,
   return true;
 }
 
-bool ShouldPropagateUserInputEventHandlingState(
-    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
-  JSObject* maybePromise = aMicroTask.get().MaybeGetPromiseFromJSMicroTask();
+static bool ShouldPropagateUserInputEventHandlingState(
+    JS::Handle<MayConsumeMicroTask> aMicroTask) {
+  JSObject* maybePromise = AsJSMicroTask(aMicroTask).maybeGetPromise();
 
   // User Input State propagation.
   auto state = maybePromise
@@ -1021,7 +1042,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       // Note: We're dropping the return value on the floor here, however
       // cleanup and exception handling are done as part of the CallSetup
       // destructor if necessary.
-      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      bool ret = RunAndConsumeJSMicroTask(aCx, aMicroTask);
 
       // (The step after step 7): Set event loop’s current scheduling
       // state to null
@@ -1121,7 +1142,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
       // If this task fails we need cleanup code, which is in AutoJSAPI's
       // destructor to run, so abort execution.
-      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      bool ret = RunAndConsumeJSMicroTask(aCx, aMicroTask);
 
       // (The step after step 7): Set event loop’s current scheduling
       // state to null
@@ -1156,7 +1177,7 @@ WontConsumeMicroTask PeekNextMicroTask(JSContext* aCx) {
 
 static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> aTask) {
   if (aTask.get().IsJSMicroTask()) {
-    JSObject* jsGlobal = aTask.get().GetExecutionGlobalFromJSMicroTask();
+    JSObject* jsGlobal = AsJSMicroTask(aTask).executionGlobal();
     if (!jsGlobal) {
       return false;
     }
@@ -1164,7 +1185,7 @@ static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> aTask) {
     return global && global->IsInSyncOperation();
   }
 
-  MicroTaskRunnable* runnable = aTask.get().MaybeUnwrapTaskToRunnable();
+  MicroTaskRunnable* runnable = MaybeUnwrapTaskToRunnable(aTask);
 
   // If it's not a JS microtask, it must be a MicroTaskRunnable,
   // and so MaybeUnwrapTaskToRunnable must return non-null.
@@ -1233,7 +1254,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
     // list.
     bool isSuppressionJob =
         mSuppressedMicroTaskList
-            ? job.get().MaybeUnwrapTaskToRunnable() == mSuppressedMicroTaskList
+            ? MaybeUnwrapTaskToRunnable(job) == mSuppressedMicroTaskList
             : false;
 
     // No need to check Suppressed if there aren't ongoing sync operations nor
@@ -1258,8 +1279,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
         }
       } else {
         // Consume the runnable & simultaneously drop a ref count.
-        RefPtr<MicroTaskRunnable> refToDrop(
-            job.get().MaybeConsumeAsOwnedRunnable());
+        RefPtr<MicroTaskRunnable> refToDrop(MaybeConsumeAsOwnedRunnable(&job));
         MOZ_ASSERT(refToDrop);
       }
     } else {
@@ -1545,9 +1565,8 @@ void FinalizationRegistryCleanup::DoCleanup() {
   std::swap(callbacks.get(), mCallbacks.get());
 
   for (const Callback& callback : callbacks) {
-    JS::ExposeObjectToActiveJS(
-        JS_GetFunctionObject(callback.mCallbackFunction));
-    JS::ExposeObjectToActiveJS(callback.mIncumbentGlobal);
+    JS::AssertObjectIsNotGray(JS_GetFunctionObject(callback.mCallbackFunction));
+    JS::AssertObjectIsNotGray(callback.mIncumbentGlobal);
 
     JS::RootedObject functionObj(
         cx, JS_GetFunctionObject(callback.mCallbackFunction));

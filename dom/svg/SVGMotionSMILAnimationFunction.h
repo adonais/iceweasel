@@ -59,8 +59,8 @@ class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
   };
 
   SMILCalcMode GetCalcMode() const override;
-  virtual nsresult GetValues(const SMILAttr& aSMILAttr,
-                             SMILValueArray& aResult) override;
+  nsresult GetValues(const SMILAttr& aSMILAttr,
+                     SMILValueArray& aResult) override;
   void CheckValueListDependentAttrs(uint32_t aNumValues) override;
 
   bool IsToAnimation() const override;

@@ -13,6 +13,14 @@
 const ENGINE_TEST_URL =
   "http://mochi.test:8888/browser/browser/components/search/test/browser/opensearch.html";
 
+const BADGE_SHOWN_COUNT_PREF = "browser.urlbar.addEnginesBadgeShownCount";
+
+function clearBadgeShownCount() {
+  Cc["@mozilla.org/content-pref/service;1"]
+    .getService(Ci.nsIContentPrefService2)
+    .removeByName(BADGE_SHOWN_COUNT_PREF, null);
+}
+
 add_task(async function test_badge() {
   let switcherButton = document.querySelector(
     "#searchbar-new .searchmode-switcher"
@@ -57,6 +65,7 @@ add_task(async function test_badge_in_the_address_bar() {
   // The search bar badges its own button, so the address bar's only stands in
   // for it while the search bar is out of the toolbar.
   await gCUITestUtils.removeSearchBar();
+  clearBadgeShownCount();
 
   try {
     await SpecialPowers.pushPrefEnv({
@@ -86,8 +95,8 @@ add_task(async function test_badge_in_the_address_bar() {
     );
 
     await BrowserTestUtils.switchTab(gBrowser, offeringTab);
-    Assert.ok(
-      urlbarSwitcherButton.hasAttribute("addengines"),
+    await TestUtils.waitForCondition(
+      () => urlbarSwitcherButton.hasAttribute("addengines"),
       "Badge should reappear when switching back to the offering page."
     );
 
@@ -95,6 +104,7 @@ add_task(async function test_badge_in_the_address_bar() {
     BrowserTestUtils.removeTab(offeringTab);
     await SpecialPowers.popPrefEnv();
   } finally {
+    clearBadgeShownCount();
     await gCUITestUtils.addSearchBar();
   }
 });

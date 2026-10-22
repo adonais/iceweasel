@@ -5,6 +5,8 @@
 #ifndef mozilla_LateWriteChecks_h
 #define mozilla_LateWriteChecks_h
 
+#include "mozilla/Attributes.h"
+
 // This file, along with LateWriteChecks.cpp, serves to check for and report
 // late writes. The idea is discover writes to the file system that happens
 // during shutdown such that these maybe be moved forward and the process may be

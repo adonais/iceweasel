@@ -10,12 +10,10 @@ elif [ "$1" == "x86" ]; then
   machine="i686"
   compiler_rt_machine="i386"
   crt_flags="--enable-lib32 --disable-lib64"
-  WRAPPER_FLAGS=""
 elif [ "$1" == "x64" ]; then
   machine="x86_64"
   compiler_rt_machine="x86_64"
   crt_flags="--disable-lib32 --enable-lib64"
-  WRAPPER_FLAGS=""
 else
   echo "Provide either x86 or x64 to specify a toolchain."
   exit 1;
@@ -27,38 +25,18 @@ CROSS_PREFIX_DIR=$INSTALL_DIR/$machine-w64-mingw32
 
 make_flags="-j$(nproc)"
 
-if [ -d "$MOZ_FETCHES_DIR/binutils/bin" ]; then
-  export PATH="$MOZ_FETCHES_DIR/binutils/bin:$PATH"
-fi
-
-# This is default value of _WIN32_WINNT. Gecko configure script explicitly sets this,
-# so this is not used to build Gecko itself. We default to 0x601, which is Windows 7.
-default_win32_winnt=0x601
-
-cd $GECKO_PATH
-
-patch_file1="$(pwd)/taskcluster/scripts/misc/mingw-dwrite_3.patch"
-patch_file2="$(pwd)/taskcluster/scripts/misc/mingw-enum.patch"
-patch_file3="$(pwd)/taskcluster/scripts/misc/mingw-widl.patch"
-patch_file4="$(pwd)/taskcluster/scripts/misc/mingw-dispatchqueue.patch"
-patch_file5="$(pwd)/taskcluster/scripts/misc/mingw-ts_sd.patch"
-patch_file6="$(pwd)/taskcluster/scripts/misc/mingw-foundation_redef.patch"
-
 prepare() {
   pushd $MOZ_FETCHES_DIR/mingw-w64
-  patch -p1 <$patch_file1
-  patch -p1 <$patch_file2
-  patch -p1 <$patch_file3
-  patch -p1 <$patch_file4
-  patch -p1 <$patch_file5
-  patch -p1 <$patch_file6
+  for p in $GECKO_PATH/taskcluster/scripts/misc/mingw-*.patch; do
+    patch -p1 <$p
+  done
   popd
 }
 
 install_wrappers() {
   pushd $INSTALL_DIR/bin
 
-  compiler_flags="--sysroot \$DIR/../$machine-w64-mingw32 -rtlib=compiler-rt -stdlib=libc++ -fuse-ld=lld $WRAPPER_FLAGS -fuse-cxa-atexit -Qunused-arguments"
+  compiler_flags="--sysroot \$DIR/../$machine-w64-mingw32 -rtlib=compiler-rt -stdlib=libc++ -fuse-ld=lld -fuse-cxa-atexit -Qunused-arguments"
 
   cat <<EOF >$machine-w64-mingw32-clang
 #!/bin/sh
@@ -87,8 +65,6 @@ build_mingw() {
     --host=$machine-w64-mingw32 \
     --enable-sdk=all \
     --enable-idl \
-    --with-default-msvcrt=ucrt \
-    --with-default-win32-winnt=$default_win32_winnt \
     --prefix=$CROSS_PREFIX_DIR
   make $make_flags install
   popd
@@ -98,7 +74,6 @@ build_mingw() {
   $MOZ_FETCHES_DIR/mingw-w64/mingw-w64-crt/configure \
     --host=$machine-w64-mingw32 \
     $crt_flags \
-    --with-default-msvcrt=ucrt \
     CC="$CC" \
     AR=llvm-ar \
     RANLIB=llvm-ranlib \
@@ -158,7 +133,7 @@ build_runtimes() {
       -DLLVM_COMPILER_CHECKED=TRUE \
       -DCMAKE_AR=$INSTALL_DIR/bin/llvm-ar \
       -DCMAKE_RANLIB=$INSTALL_DIR/bin/llvm-ranlib \
-      -DCMAKE_CXX_FLAGS="${DEBUG_FLAGS} -D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS" \
+      -DCMAKE_CXX_FLAGS="${DEBUG_FLAGS}" \
       -DLIBCXX_USE_COMPILER_RT=ON \
       -DLIBCXX_INSTALL_HEADERS=ON \
       -DLIBCXX_ENABLE_EXCEPTIONS=ON \
@@ -166,15 +141,11 @@ build_runtimes() {
       -DLIBCXX_HAS_WIN32_THREAD_API=ON \
       -DLIBCXX_ENABLE_MONOTONIC_CLOCK=ON \
       -DLIBCXX_ENABLE_SHARED=OFF \
-      -DLIBCXX_SUPPORTS_STD_EQ_CXX11_FLAG=TRUE \
-      -DLIBCXX_HAVE_CXX_ATOMICS_WITHOUT_LIB=TRUE \
-      -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF \
       -DLIBCXX_ENABLE_FILESYSTEM=ON \
       -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=TRUE \
       -DLIBCXX_CXX_ABI=libcxxabi \
       -DLIBCXXABI_USE_LLVM_UNWINDER=TRUE \
       -DLIBCXXABI_ENABLE_STATIC_UNWINDER=TRUE \
-      -DLLVM_NO_OLD_LIBSTDCXX=TRUE \
       -DLIBUNWIND_USE_COMPILER_RT=TRUE \
       -DLIBUNWIND_ENABLE_THREADS=TRUE \
       -DLIBUNWIND_ENABLE_SHARED=FALSE \
@@ -185,9 +156,8 @@ build_runtimes() {
       -DLIBCXXABI_USE_COMPILER_RT=ON \
       -DLIBCXXABI_ENABLE_EXCEPTIONS=ON \
       -DLIBCXXABI_ENABLE_THREADS=ON \
-      -DLIBCXXABI_TARGET_TRIPLE=$machine-w64-mingw32 \
       -DLIBCXXABI_ENABLE_SHARED=OFF \
-      -DLIBCXXABI_CXX_FLAGS="${DEBUG_FLAGS} -D_LIBCPP_HAS_THREAD_API_WIN32" \
+      -DLIBCXXABI_CXX_FLAGS="${DEBUG_FLAGS}" \
       -DLLVM_ENABLE_RUNTIMES="libcxxabi;libcxx;libunwind" \
       $TOOLCHAIN_DIR/runtimes
 
@@ -197,34 +167,15 @@ build_runtimes() {
   popd
 }
 
-build_libssp() {
-  pushd $MOZ_FETCHES_DIR/gcc-source/
-
-  # Massage the environment for the build-libssp.sh script
-  mkdir -p ./$machine-w64-mingw32/lib
-  cp $MOZ_FETCHES_DIR/llvm-mingw/libssp-Makefile .
-  sed -i 's/set -e/set -x -e -v/' $MOZ_FETCHES_DIR/llvm-mingw/build-libssp.sh
-  sed -i 's/(CROSS)gcc/(CROSS)clang/' libssp-Makefile
-  sed -i 's/\$(CROSS)ar/llvm-ar/' libssp-Makefile
-  OLDPATH=$PATH
-  PATH=$INSTALL_DIR/bin:$PATH
-
-  # Run the script
-  TOOLCHAIN_ARCHS=$machine $MOZ_FETCHES_DIR/llvm-mingw/build-libssp.sh .
-
-  # Grab the artifacts, cleanup
-  cp $MOZ_FETCHES_DIR/gcc-source/$machine-w64-mingw32/lib/{libssp.a,libssp_nonshared.a} $INSTALL_DIR/$machine-w64-mingw32/lib/
-  unset TOOLCHAIN_ARCHS
-  PATH=$OLDPATH
-  popd
+build_libssp_stubs() {
+  for lib in libssp{,_nonshared}; do llvm-ar rcs $CROSS_PREFIX_DIR/lib/$lib.a; done
 }
 
 build_utils() {
   pushd $INSTALL_DIR/bin/
-  for prog in ar nm objcopy ranlib readobj strip; do
+  for prog in ar nm objcopy ranlib readobj strip windres; do
     ln -s llvm-$prog $machine-w64-mingw32-$prog
   done
-  ./clang $MOZ_FETCHES_DIR/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o $machine-w64-mingw32-windres
   popd
 }
 
@@ -239,7 +190,7 @@ install_wrappers
 build_mingw
 build_compiler_rt
 build_runtimes
-build_libssp
+build_libssp_stubs
 build_utils
 
 popd

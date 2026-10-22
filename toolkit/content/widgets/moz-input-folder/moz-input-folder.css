@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/content/elements/moz-input-text.css");
+@import url("chrome://global/content/elements/moz-input-folder.tokens.css");
 
 :host {
-  --input-text-icon-size: var(--icon-size);
+  --input-icon-size: var(--icon-size);
   width: 100%;
 }
 

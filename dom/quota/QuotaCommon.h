@@ -1657,7 +1657,8 @@ auto ReduceEachFileAtomicCancelable(nsIFile& aDirectory,
 }
 
 constexpr bool IsDatabaseCorruptionError(const nsresult aRv) {
-  return aRv == NS_ERROR_FILE_CORRUPTED || aRv == NS_ERROR_STORAGE_IOERR;
+  return aRv == NS_ERROR_FILE_CORRUPTED || aRv == NS_ERROR_STORAGE_IOERR ||
+         aRv == NS_ERROR_MALFORMED_URI;
 }
 
 enum class IntegrityCheckMode { Quick, Full };

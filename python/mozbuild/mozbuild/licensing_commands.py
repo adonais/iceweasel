@@ -48,7 +48,30 @@ from mach.decorators import Command, CommandArgument
     default=False,
     help="Exit non-zero if any moz.yaml fails to load.",
 )
-def sbom(command_context, output, version, product_name, strict):
+@CommandArgument(
+    "--gradle-runtime-dependencies",
+    default=None,
+    metavar="JSON",
+    help="Describe the Gradle application whose runtime closure a "
+    "writeRuntimeDependencies task wrote here, rather than the tree. Needs "
+    "--product-name.",
+)
+@CommandArgument(
+    "--build-tooling",
+    action="store_true",
+    default=False,
+    help="Describe the third-party code that builds and tests the tree rather "
+    "than what the product ships.",
+)
+def sbom(
+    command_context,
+    output,
+    version,
+    product_name,
+    strict,
+    gradle_runtime_dependencies,
+    build_tooling,
+):
     from mozbuild.action.generate_sbom import generate
     from mozbuild.base import BuildEnvironmentNotFoundException
 
@@ -72,6 +95,8 @@ def sbom(command_context, output, version, product_name, strict):
         version=version,
         product_name=product_name,
         strict=strict,
+        gradle_runtime_dependencies=gradle_runtime_dependencies,
+        build_tooling=build_tooling,
     )
 
 

@@ -49,7 +49,7 @@ An alert summary table will always be found in the first comment (comment 0) of 
 >
 > - Then some information on what we expect from the patch author is provided regarding how long they have to respond to the alert before it gets backed out along with links to the guidelines for handling regressions.
 >
-> - Finally, a helpful command to run these tests on try is provided using `./mach try perf --alert <ALERT-NUM>`. {ref}`See here for more information about mach try perf <Mach Try Perf>`.
+> - Finally, a helpful command to run these tests on try is provided using `./mach try perf --alert <ALERT-NUM>`. {doc}`See here for more information about mach try perf <mach-try-perf>`.
 
 **From the alert summary comment, there are multiple things that could be verified:**
 : - Check the graphs to ensure that the regression/improvements are very visible.
@@ -118,10 +118,10 @@ Performance tests can either be run locally, or in CI using try runs. In general
 
 It's still possible that a local test can reproduce a change found in CI though, but it's not guaranteed. To run a test locally, refer to the harness documentation test lists, such as this one for [Raptor tests](raptor.md#raptor-tests). There are four main ways that you'll find to run these tests:
 
-> - `./mach raptor` for {ref}`Raptor`
-> - `./mach talos-test` for {ref}`Talos`
-> - `./mach perftest` for {ref}`MozPerftest`
-> - `./mach awsy` for {ref}`AWSY`
+> - `./mach raptor` for {doc}`raptor`
+> - `./mach talos-test` for {doc}`talos`
+> - `./mach perftest` for {doc}`mozperftest`
+> - `./mach awsy` for {doc}`awsy`
 
 It's also possible to run all the alerting tests using `./mach perftest`. To do this, find the alert summary ID/number, then use it in the following command:
 
@@ -135,7 +135,7 @@ To run the exact same commands as what is run in CI, add the `--alert-exact` opt
 
 Comparing performance metrics across multiple try runs is an important step in the performance testing process. It's used to ensure that changes don't regress our metrics, to determine if a performance improvement is produced from a patch, and among other things, used to verify that a fix resolves a performance alert.
 
-We currently use PerfCompare for comparing performance numbers. Landing on PerfCompare, two search comparison workflows are available: Compare with a base or Compare over time. Compare with a base allows up to three new revisions to compare against a base revision. Although Talos is set at the default, any other testing framework or harness can also be selected before clicking the Compare button. {ref}`You can find more information about using PerfCompare here <PerfCompare>`.
+We currently use PerfCompare for comparing performance numbers. Landing on PerfCompare, two search comparison workflows are available: Compare with a base or Compare over time. Compare with a base allows up to three new revisions to compare against a base revision. Although Talos is set at the default, any other testing framework or harness can also be selected before clicking the Compare button. {doc}`You can find more information about using PerfCompare here <perfcompare>`.
 
 > ```{image} ./perfcomparehomescreen.png
 > :align: center

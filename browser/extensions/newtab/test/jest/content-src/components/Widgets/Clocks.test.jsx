@@ -155,7 +155,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
       ).not.toBeInTheDocument();
       expect(
         container.querySelector(
-          "moz-button[data-l10n-id='newtab-clock-widget-menu-button2']"
+          "moz-button[data-l10n-id='newtab-clock-widget-open-menu-button']"
         )
       ).toBeInTheDocument();
     });
@@ -539,7 +539,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
       const { container } = renderClocks();
       expect(
         container.querySelector(
-          ".clocks-context-menu-button[data-l10n-id='newtab-clock-widget-menu-button2']"
+          ".clocks-context-menu-button[data-l10n-id='newtab-clock-widget-open-menu-button']"
         )
       ).toBeInTheDocument();
     });

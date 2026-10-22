@@ -6,13 +6,16 @@
 #ifndef nsBaseFilePicker_h_
 #define nsBaseFilePicker_h_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsIFilePicker.h"
 #include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
+class nsIFile;
 class nsISimpleEnumerator;
 class nsIWidget;
 class nsIGlobalObject;
@@ -93,6 +96,19 @@ class nsBaseFilePicker : public nsIFilePicker {
   // browsing context that host a trusted document (system principal or an
   // about: page) are also excluded.
   bool IsContentInitiated() const;
+
+  using ContentAnalysisPromise =
+      mozilla::MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
+
+  // True when a selection made in this picker must be checked by Content
+  // Analysis before it is returned.
+  bool ShouldRunContentAnalysis() const;
+
+  // Checks aFiles with Content Analysis. Entries may be folders, whose contents
+  // are checked recursively. Resolves with the subset of aFiles that may be
+  // uploaded; callers should treat an empty result or a rejection as a cancel.
+  RefPtr<ContentAnalysisPromise> CheckContentAnalysis(
+      nsCOMArray<nsIFile>&& aFiles);
 
   bool mAddToRecentDocs = true;
   nsCOMPtr<nsIFile> mDisplayDirectory;

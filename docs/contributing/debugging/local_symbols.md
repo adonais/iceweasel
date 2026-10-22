@@ -1,7 +1,7 @@
 # Symbolicating TreeHerder stacks locally
 
-When using tools like the {ref}`Dark Matter Detector (DMD)` or
-{ref}`refcount logging<Refcount Tracing and Balancing>` to
+When using tools like the {doc}`/performance/memory/dmd` or
+{doc}`refcount logging </performance/memory/refcount_tracing_and_balancing>` to
 investigate issues occurring on TreeHerder that you can't reproduce locally, you
 can often end up with unsymbolicated stacks. Fortunately, there is a way to
 symbolicate these stacks on your own machine.

@@ -24,13 +24,15 @@ function getPrefs() {
   // the window, as part of the single port it publishes there. To expose more
   // methods, change the Urlbar actor.
   let get = p => window.UrlbarActorPort.getPref(p);
-  return /** @type {Pick<typeof UrlbarPrefs, "get" | "getScotchBonnetPref" | "addObserver" | "removeObserver">}*/ ({
+  return /** @type {Pick<typeof UrlbarPrefs, "get" | "getScotchBonnetPref" | "addObserver" | "removeObserver" | "toggleResultMenuKeyboardAccessible">}*/ ({
     get,
     // Composed from `get` rather than exposed on the port, since that is all the
     // privileged implementation does.
     getScotchBonnetPref: p => get("scotchBonnet.enableOverride") || get(p),
     addObserver: o => window.UrlbarActorPort.addPrefObserver(o),
     removeObserver: o => window.UrlbarActorPort.removePrefObserver(o),
+    toggleResultMenuKeyboardAccessible: () =>
+      window.UrlbarActorPort.toggleResultMenuKeyboardAccessible(),
   });
 }
 

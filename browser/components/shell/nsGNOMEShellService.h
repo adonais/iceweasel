@@ -6,7 +6,7 @@
 #define nsgnomeshellservice_h_
 
 #include "nsIGNOMEShellService.h"
-#include "nsToolkitShellService.h"
+#include "nsShellService.h"
 #include "nsString.h"
 #ifdef MOZ_ENABLE_DBUS
 #  include "nsGNOMEShellSearchProvider.h"
@@ -14,12 +14,12 @@
 
 class nsIGIOService;
 
-class nsGNOMEShellService final : public nsIGNOMEShellService,
-                                  public nsToolkitShellService {
+class nsGNOMEShellService final : public nsShellService,
+                                  public nsIGNOMEShellService {
  public:
   nsGNOMEShellService() : mAppIsInPath(false) {}
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSISHELLSERVICE
   NS_DECL_NSIGNOMESHELLSERVICE
 

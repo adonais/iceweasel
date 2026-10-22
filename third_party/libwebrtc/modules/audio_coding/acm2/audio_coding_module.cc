@@ -304,7 +304,9 @@ int32_t AudioCodingModuleImpl::Encode(
       packetization_callback_->SendData(
           frame_type, encoded_info.payload_type, encoded_info.encoded_timestamp,
           encode_buffer_.data(), encode_buffer_.size(),
-          absolute_capture_timestamp_ms_.value_or(-1));
+          encoded_info.absolute_capture_timestamp_ms_override.value_or(
+              absolute_capture_timestamp_ms_.value_or(-1)),
+          encoded_info.audio_level_dbov_override, encoded_info.csrcs_override);
     }
   }
   absolute_capture_timestamp_ms_.reset();

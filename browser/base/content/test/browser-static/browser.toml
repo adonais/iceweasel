@@ -9,9 +9,6 @@ run-if = [
 support-files = ["head.js"]
 
 ["browser_all_files_referenced.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # TODO: this probably needs to be fixed, why not skipped from default?
-]
 
 ["browser_glean_metrics_exist.js"]
 

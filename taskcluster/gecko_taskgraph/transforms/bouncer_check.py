@@ -7,7 +7,6 @@ from shlex import quote as shell_quote
 
 from mozilla_taskgraph.worker_types import get_release_config
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util import json
 
 logger = logging.getLogger(__name__)
 
@@ -16,72 +15,44 @@ transforms = TransformSequence()
 
 @transforms.add
 def add_command(config, jobs):
-    for job in jobs:
-        command = [
-            "python",
-            "testing/mozharness/scripts/release/bouncer_check.py",
-        ]
-        job["run"].update({
-            "using": "mach",
-            "clone-with": "hg",
-            "mach": command,
-        })
-        yield job
-
-
-@transforms.add
-def add_previous_versions(config, jobs):
-    release_config = get_release_config(config)
-    if not release_config.get("partial_versions"):
-        for job in jobs:
-            yield job
-    else:
-        extra_params = []
-        for partial in release_config["partial_versions"].split(","):
-            extra_params.append(
-                "--previous-version={}".format(partial.split("build")[0].strip())
-            )
-
-        for job in jobs:
-            job["run"]["mach"].extend(extra_params)
-            yield job
-
-
-@transforms.add
-def handle_keyed_by(config, jobs):
     """Build the bouncer-check command from resolved fields."""
     release_config = get_release_config(config)
-    version = release_config["version"]
 
     for job in jobs:
-        for cfg in job["run"]["config"]:
-            job["run"]["mach"].extend(["--config", cfg])
+        run = job["run"]
+        command = [
+            "python",
+            "python/mozrelease/mozrelease/bouncer_check.py",
+            "--config",
+            run.pop("config"),
+            "--bouncer-prefix",
+            run.pop("bouncer-prefix"),
+        ]
+        for locale in run.pop("locales", []):
+            command.extend(["--locale", locale])
+        for cdn_url in run.pop("cdn-urls", []):
+            command.extend(["--cdn-url", cdn_url])
 
         if config.kind == "cron-bouncer-check":
-            job["run"]["mach"].extend([
-                "--product-field={}".format(job["run"]["product-field"]),
-                "--products-url={}".format(job["run"]["products-url"]),
+            command.extend([
+                "--product-field",
+                run.pop("product-field"),
+                "--products-url",
+                run.pop("products-url"),
             ])
-            del job["run"]["product-field"]
-            del job["run"]["products-url"]
         elif config.kind == "release-bouncer-check":
-            job["run"]["mach"].append(f"--version={version}")
+            command.extend(["--version", release_config["version"]])
 
-        del job["run"]["config"]
+        for partial in release_config.get("partial_versions", "").split(","):
+            if partial:
+                command.extend([
+                    "--previous-version",
+                    partial.split("build")[0].strip(),
+                ])
 
-        if "extra-config" in job["run"]:
-            env = job["worker"].setdefault("env", {})
-            env["EXTRA_MOZHARNESS_CONFIG"] = json.dumps(
-                job["run"]["extra-config"], sort_keys=True
-            )
-            del job["run"]["extra-config"]
-
-        yield job
-
-
-@transforms.add
-def command_to_string(config, jobs):
-    """Convert command to string to make it work properly with run-task"""
-    for job in jobs:
-        job["run"]["mach"] = " ".join(map(shell_quote, job["run"]["mach"]))
+        run.update({
+            "using": "mach",
+            "clone-with": "hg",
+            "mach": " ".join(map(shell_quote, command)),
+        })
         yield job

@@ -15,7 +15,7 @@ ChromeUtils.defineLazyGetter(lazy, "MigrationUtils", () => {
   try {
     let { MigrationUtils } = ChromeUtils.importESModule(
       // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-      "resource:///modules/MigrationUtils.sys.mjs"
+      "moz-src:///browser/components/migration/MigrationUtils.sys.mjs"
     );
     return MigrationUtils;
   } catch (e) {

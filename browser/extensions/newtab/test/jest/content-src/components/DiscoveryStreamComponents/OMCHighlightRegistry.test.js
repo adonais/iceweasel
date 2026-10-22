@@ -15,7 +15,7 @@ import { SLOTS } from "content-src/components/DiscoveryStreamComponents/FeatureH
 describe("OMCHighlightRegistry", () => {
   describe("getRegistryEntry", () => {
     it("returns the entry for a known messageType", () => {
-      const entry = getRegistryEntry("WorldCupWidgetsCallout");
+      const entry = getRegistryEntry("WidgetsCallout");
       expect(entry).toBeTruthy();
       expect(entry.slot).toBe(SLOTS.WIDGETS_ROW);
       expect(entry.shell).toBe(SHELLS.POPOVER);
@@ -110,24 +110,7 @@ describe("OMCHighlightRegistry", () => {
     });
   });
 
-  describe("World Cup widgets popover entry", () => {
-    it("references the agreed-upon shared l10n ids", () => {
-      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
-      expect(entry.body.title.l10nId).toBe(
-        "newtab-sports-widget-message-day-in-play-title"
-      );
-      expect(entry.body.subtitle.l10nId).toBe(
-        "newtab-sports-widget-message-day-in-play-body"
-      );
-    });
-
-    it("uses BLOCK dismiss mode", () => {
-      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
-      expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
-    });
-  });
-
-  describe("Non-World-Cup widgets popover entry", () => {
+  describe("Widgets popover entry", () => {
     it("references the focus-and-forecasts l10n ids", () => {
       const entry = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
       expect(entry.body.title.l10nId).toBe(
@@ -141,54 +124,6 @@ describe("OMCHighlightRegistry", () => {
     it("uses BLOCK dismiss mode", () => {
       const entry = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
       expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
-    });
-
-    it("shares the widgets-callout className with the World Cup popover", () => {
-      const wc = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
-      const nonWc = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
-      expect(nonWc.chrome.modalClassName).toBe(wc.chrome.modalClassName);
-    });
-  });
-
-  describe("World Cup survey popover entries", () => {
-    it("WorldCupSurveyCallout references the survey l10n ids and cta", () => {
-      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupSurveyCallout;
-      expect(entry.body.title.l10nId).toBe(
-        "newtab-sports-widget-message-survey-title"
-      );
-      expect(entry.body.subtitle.l10nId).toBe(
-        "newtab-sports-widget-message-survey-body"
-      );
-      expect(entry.body.cta.l10nId).toBe(
-        "newtab-sports-widget-message-survey-cta"
-      );
-    });
-
-    it("WorldCupWidgetSurveyCallout references the widget-mention survey l10n ids", () => {
-      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetSurveyCallout;
-      expect(entry.body.title.l10nId).toBe(
-        "newtab-sports-widget-message-survey-widget-title"
-      );
-      expect(entry.body.subtitle.l10nId).toBe(
-        "newtab-sports-widget-message-survey-widget-body"
-      );
-      expect(entry.body.cta.l10nId).toBe(
-        "newtab-sports-widget-message-survey-cta"
-      );
-    });
-
-    it("both survey entries use BLOCK dismiss, the widgets-row slot, and the widgets-callout className", () => {
-      for (const key of [
-        "WorldCupSurveyCallout",
-        "WorldCupWidgetSurveyCallout",
-      ]) {
-        const entry = OMC_HIGHLIGHT_REGISTRY[key];
-        expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
-        expect(entry.slot).toBe(SLOTS.WIDGETS_ROW);
-        expect(entry.chrome.modalClassName).toBe(
-          "widgets-callout widgets-survey-callout"
-        );
-      }
     });
   });
 });

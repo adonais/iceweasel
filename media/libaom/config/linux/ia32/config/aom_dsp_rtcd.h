@@ -59,6 +59,10 @@ void aom_blend_a64_vmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src
 void aom_blend_a64_vmask_sse4_1(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h);
 RTCD_EXTERN void (*aom_blend_a64_vmask)(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h);
 
+int64_t aom_calc_variance_stat_c(const uint8_t *src, int stride, int bw, int bh);
+int64_t aom_calc_variance_stat_avx2(const uint8_t *src, int stride, int bw, int bh);
+RTCD_EXTERN int64_t (*aom_calc_variance_stat)(const uint8_t *src, int stride, int bw, int bh);
+
 void aom_comp_avg_pred_c(uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride);
 void aom_comp_avg_pred_avx2(uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride);
 RTCD_EXTERN void (*aom_comp_avg_pred)(uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride);
@@ -73,10 +77,10 @@ double aom_compute_correlation_sse4_1(const unsigned char *frame1, int stride1, 
 double aom_compute_correlation_avx2(const unsigned char *frame1, int stride1, int x1, int y1, double mean1, double one_over_stddev1, const unsigned char *frame2, int stride2, int x2, int y2, double mean2, double one_over_stddev2);
 RTCD_EXTERN double (*aom_compute_correlation)(const unsigned char *frame1, int stride1, int x1, int y1, double mean1, double one_over_stddev1, const unsigned char *frame2, int stride2, int x2, int y2, double mean2, double one_over_stddev2);
 
-void aom_compute_flow_at_point_c(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
-void aom_compute_flow_at_point_sse4_1(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
-void aom_compute_flow_at_point_avx2(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
-RTCD_EXTERN void (*aom_compute_flow_at_point)(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
+void aom_compute_flow_at_point_c(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
+void aom_compute_flow_at_point_sse4_1(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
+void aom_compute_flow_at_point_avx2(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
+RTCD_EXTERN void (*aom_compute_flow_at_point)(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
 
 bool aom_compute_mean_stddev_c(const unsigned char *frame, int stride, int x, int y, double *mean, double *one_over_stddev);
 bool aom_compute_mean_stddev_sse4_1(const unsigned char *frame, int stride, int x, int y, double *mean, double *one_over_stddev);
@@ -2164,6 +2168,10 @@ RTCD_EXTERN void (*aom_highbd_blend_a64_mask)(uint8_t *dst, uint32_t dst_stride,
 void aom_highbd_blend_a64_vmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
 void aom_highbd_blend_a64_vmask_sse4_1(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
 RTCD_EXTERN void (*aom_highbd_blend_a64_vmask)(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
+
+int64_t aom_highbd_calc_variance_stat_c(const uint16_t *src, int stride, int bw, int bh);
+int64_t aom_highbd_calc_variance_stat_avx2(const uint16_t *src, int stride, int bw, int bh);
+RTCD_EXTERN int64_t (*aom_highbd_calc_variance_stat)(const uint16_t *src, int stride, int bw, int bh);
 
 void aom_highbd_comp_avg_pred_c(uint8_t *comp_pred8, const uint8_t *pred8, int width, int height, const uint8_t *ref8, int ref_stride);
 #define aom_highbd_comp_avg_pred aom_highbd_comp_avg_pred_c
@@ -5642,6 +5650,8 @@ static void setup_rtcd_internal(void)
     if (flags & HAS_AVX2) aom_blend_a64_mask = aom_blend_a64_mask_avx2;
     aom_blend_a64_vmask = aom_blend_a64_vmask_c;
     if (flags & HAS_SSE4_1) aom_blend_a64_vmask = aom_blend_a64_vmask_sse4_1;
+    aom_calc_variance_stat = aom_calc_variance_stat_c;
+    if (flags & HAS_AVX2) aom_calc_variance_stat = aom_calc_variance_stat_avx2;
     aom_comp_avg_pred = aom_comp_avg_pred_c;
     if (flags & HAS_AVX2) aom_comp_avg_pred = aom_comp_avg_pred_avx2;
     aom_comp_mask_pred = aom_comp_mask_pred_c;
@@ -6570,6 +6580,8 @@ static void setup_rtcd_internal(void)
     if (flags & HAS_SSE4_1) aom_highbd_blend_a64_mask = aom_highbd_blend_a64_mask_sse4_1;
     aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_c;
     if (flags & HAS_SSE4_1) aom_highbd_blend_a64_vmask = aom_highbd_blend_a64_vmask_sse4_1;
+    aom_highbd_calc_variance_stat = aom_highbd_calc_variance_stat_c;
+    if (flags & HAS_AVX2) aom_highbd_calc_variance_stat = aom_highbd_calc_variance_stat_avx2;
     aom_highbd_comp_mask_pred = aom_highbd_comp_mask_pred_c;
     if (flags & HAS_SSE2) aom_highbd_comp_mask_pred = aom_highbd_comp_mask_pred_sse2;
     if (flags & HAS_AVX2) aom_highbd_comp_mask_pred = aom_highbd_comp_mask_pred_avx2;

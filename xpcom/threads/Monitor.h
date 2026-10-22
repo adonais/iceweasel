@@ -26,6 +26,10 @@ class MOZ_CAPABILITY("monitor") Monitor {
 
   ~Monitor() = default;
 
+  Monitor() = delete;
+  Monitor(const Monitor&) = delete;
+  Monitor& operator=(const Monitor&) = delete;
+
   void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
   [[nodiscard]] bool TryLock() MOZ_TRY_ACQUIRE(true) {
     return mMutex.TryLock();
@@ -48,10 +52,6 @@ class MOZ_CAPABILITY("monitor") Monitor {
   }
 
  private:
-  Monitor() = delete;
-  Monitor(const Monitor&) = delete;
-  Monitor& operator=(const Monitor&) = delete;
-
   Mutex mMutex;
   CondVar mCondVar;
 };
@@ -73,6 +73,11 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLockBase {
   }
 
   ~MonitorAutoLockBase() MOZ_CAPABILITY_RELEASE() { mMonitor->Unlock(); }
+
+  MonitorAutoLockBase() = delete;
+  MonitorAutoLockBase(const MonitorAutoLockBase&) = delete;
+  MonitorAutoLockBase& operator=(const MonitorAutoLockBase&) = delete;
+
   // It's very hard to mess up MonitorAutoLock lock(mMonitor); ... lock.Wait().
   // The only way you can fail to hold the lock when you call lock.Wait() is to
   // use MonitorAutoUnlock.   For now we'll ignore that case.
@@ -120,9 +125,6 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLockBase {
   }
 
  private:
-  MonitorAutoLockBase() = delete;
-  MonitorAutoLockBase(const MonitorAutoLockBase&) = delete;
-  MonitorAutoLockBase& operator=(const MonitorAutoLockBase&) = delete;
   static void* operator new(size_t) noexcept(true);
 
  protected:
@@ -149,10 +151,11 @@ class MOZ_STACK_CLASS MOZ_SCOPED_CAPABILITY MonitorAutoUnlockBase {
 
   ~MonitorAutoUnlockBase() MOZ_SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
 
- private:
   MonitorAutoUnlockBase() = delete;
   MonitorAutoUnlockBase(const MonitorAutoUnlockBase&) = delete;
   MonitorAutoUnlockBase& operator=(const MonitorAutoUnlockBase&) = delete;
+
+ private:
   static void* operator new(size_t) noexcept(true);
 
   MonitorType* mMonitor;
@@ -182,6 +185,11 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS ReleasableMonitorAutoLockBase {
       mMonitor->Unlock();
     }
   }
+
+  ReleasableMonitorAutoLockBase() = delete;
+  ReleasableMonitorAutoLockBase(const ReleasableMonitorAutoLockBase&) = delete;
+  ReleasableMonitorAutoLockBase& operator=(
+      const ReleasableMonitorAutoLockBase&) = delete;
 
   // See MonitorAutoLock::Wait
   void Wait() {
@@ -230,10 +238,6 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS ReleasableMonitorAutoLockBase {
   bool mLocked;
   MonitorType* mMonitor;
 
-  ReleasableMonitorAutoLockBase() = delete;
-  ReleasableMonitorAutoLockBase(const ReleasableMonitorAutoLockBase&) = delete;
-  ReleasableMonitorAutoLockBase& operator=(
-      const ReleasableMonitorAutoLockBase&) = delete;
   static void* operator new(size_t) noexcept(true);
 };
 

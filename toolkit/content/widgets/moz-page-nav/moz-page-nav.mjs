@@ -2,12 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-page-nav.tagmap.d.ts" />
+
 import {
   html,
   when,
   ifDefined,
 } from "chrome://global/content/vendor/lit.all.mjs";
-import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import {
+  MozLitElement,
+  hasModifierKey,
+} from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
@@ -35,7 +40,7 @@ import "chrome://global/content/elements/moz-support-link.mjs";
  * @slot [default] - Used to append moz-page-nav-button elements to the navigation.
  * @slot [subheading] - Used to append page specific search input or notification to the nav.
  */
-export default class MozPageNav extends MozLitElement {
+export class MozPageNav extends MozLitElement {
   static properties = {
     currentView: { type: String },
     heading: { type: String, fluent: true },
@@ -96,10 +101,16 @@ export default class MozPageNav extends MozLitElement {
   }
 
   handleFocus(e) {
-    if (e.key == "ArrowDown" || e.key == "ArrowRight") {
+    if (hasModifierKey(e)) {
+      return;
+    }
+    let isRTL = this.isDocumentRTL;
+    let nextKey = isRTL ? "ArrowLeft" : "ArrowRight";
+    let previousKey = isRTL ? "ArrowRight" : "ArrowLeft";
+    if (e.key == "ArrowDown" || e.key == nextKey) {
       e.preventDefault();
       this.focusNextView();
-    } else if (e.key == "ArrowUp" || e.key == "ArrowLeft") {
+    } else if (e.key == "ArrowUp" || e.key == previousKey) {
       e.preventDefault();
       this.focusPreviousView();
     }

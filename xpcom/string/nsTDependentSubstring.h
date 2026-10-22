@@ -96,8 +96,6 @@ class MOZ_GSL_POINTER nsTDependentSubstring : public nsTSubstring<T> {
   // copy-ctor?)
   nsTDependentSubstring(const nsTDependentSubstring&) = default;
 
- private:
-  // NOT USED
   void operator=(const self_type&) =
       delete;  // we're immutable, you can't assign into a substring
 };

@@ -27,6 +27,7 @@ void gfxConfigManager::Init() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   EmplaceUserPref("gfx.webrender.compositor", mWrCompositorEnabled);
+  mWrLayerCompositorEnabled = StaticPrefs::gfx_webrender_layer_compositor();
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
@@ -165,7 +166,9 @@ void gfxConfigManager::ConfigureWebRender() {
   // Disable native compositor when hardware stretching is not supported. It is
   // for avoiding a problem like Bug 1618370.
   // XXX Is there a better check for Bug 1618370?
-  if (!mHwStretchingSupport.IsFullySupported() && mScaledResolution) {
+  // Skip this restriction when the layer compositor is enabled.
+  if (!mWrLayerCompositorEnabled && !mHwStretchingSupport.IsFullySupported() &&
+      mScaledResolution) {
     nsPrintfCString failureId(
         "FEATURE_FAILURE_NO_HARDWARE_STRETCHING_B%uW%uF%uN%uE%u",
         mHwStretchingSupport.mBoth, mHwStretchingSupport.mWindowOnly,

@@ -9,6 +9,7 @@
 #include "PuppetWidget.h"
 #include "TextEvents.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/Utf16.h"
 #include "nsCharTraits.h"
 #include "nsIFrame.h"
@@ -23,8 +24,6 @@ namespace widget {
 TextEventDispatcher::TextEventDispatcher(nsIWidget* aWidget)
     : mWidget(aWidget),
       mInputTransactionType(eNoInputTransaction),
-      mIsComposing(false),
-      mIsHandlingComposition(false),
       mHasFocus(false) {
   MOZ_RELEASE_ASSERT(mWidget, "aWidget must not be nullptr");
 
@@ -158,20 +157,39 @@ nsresult TextEventDispatcher::BeginInputTransactionFor(
     case eKeyUp:
       return rv;
     case eCompositionStart:
-      MOZ_ASSERT(!mIsComposing);
-      mIsComposing = mIsHandlingComposition = true;
+      MOZ_ASSERT(!IsComposing());
+      mCompositionString = EmptyString();
+      // The event will be dispatched immediately, so, let's treat as that the
+      // content has the composition.
+      mHandlingCompositionString = EmptyString();
+      MOZ_ASSERT(IsComposing());
+      MOZ_ASSERT(IsHandlingComposition());
       return rv;
     case eCompositionChange:
-      MOZ_ASSERT(mIsComposing);
-      MOZ_ASSERT(mIsHandlingComposition);
-      mIsComposing = mIsHandlingComposition = true;
+      MOZ_ASSERT(IsComposing());
+      MOZ_ASSERT(IsHandlingComposition());
+      MOZ_DIAGNOSTIC_ASSERT(aEvent->AsCompositionEvent());
+      mCompositionString =
+          static_cast<const WidgetCompositionEvent*>(aEvent)->mData;
+      mCompositionString.SetIsVoid(false);
+      mHandlingCompositionString =
+          static_cast<const WidgetCompositionEvent*>(aEvent)->mData;
+      mHandlingCompositionString.SetIsVoid(false);
+      MOZ_ASSERT(IsComposing());
+      MOZ_ASSERT(IsHandlingComposition());
       return rv;
     case eCompositionCommit:
     case eCompositionCommitAsIs:
-      MOZ_ASSERT(mIsComposing);
-      MOZ_ASSERT(mIsHandlingComposition);
-      mIsComposing = false;
-      mIsHandlingComposition = true;
+      MOZ_ASSERT(IsComposing());
+      MOZ_ASSERT(IsHandlingComposition());
+      mCompositionString.SetIsVoid(true);
+      // XXX It might be better to wait NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.
+      // But perhaps, this won't cause any issues actually because the
+      // composition is in this process, i.e., anybody can check
+      // `TextComposition` directly.
+      mHandlingCompositionString.SetIsVoid(true);
+      MOZ_ASSERT(!IsComposing());
+      MOZ_ASSERT(!IsHandlingComposition());
       return rv;
     default:
       MOZ_ASSERT_UNREACHABLE("You forgot to handle the event");
@@ -367,9 +385,84 @@ TextEventDispatcher::DispatchPasteTransferableCommandEvent(
   return commandEvent.mIsEnabled;
 }
 
-nsEventStatus TextEventDispatcher::DispatchEvent(nsIWidget* aWidget,
-                                                 WidgetGUIEvent& aEvent) {
+nsEventStatus TextEventDispatcher::DispatchEvent(
+    nsIWidget* aWidget, WidgetGUIEvent& aEvent,
+    DispatchingPendingEvent
+        aDispatchingPendingEvent /* = DispatchingPendingEvent::No */) {
   MOZ_ASSERT(!aEvent.AsInputEvent(), "Use DispatchInputEvent()");
+
+  if (IsBatching() && aDispatchingPendingEvent == DispatchingPendingEvent::No) {
+    switch (aEvent.mClass) {
+      case eCompositionEventClass:
+        MOZ_ASSERT(aEvent.AsCompositionEvent());
+        mPendingEvents.AppendElement(MakeUnique<WidgetCompositionEvent>(
+            static_cast<WidgetCompositionEvent&>(aEvent)));
+        return nsEventStatus_eIgnore;
+      case eSelectionEventClass:
+        MOZ_ASSERT(aEvent.AsSelectionEvent());
+        mPendingEvents.AppendElement(MakeUnique<WidgetSelectionEvent>(
+            static_cast<WidgetSelectionEvent&>(aEvent)));
+        return nsEventStatus_eIgnore;
+      case eContentCommandEventClass: {
+        MOZ_ASSERT(aEvent.AsContentCommandEvent());
+        WidgetContentCommandEvent& contentCommandEvent =
+            static_cast<WidgetContentCommandEvent&>(aEvent);
+        // It's fine to check whether the command is enabled or disabled
+        // even in the batching.
+        if (contentCommandEvent.ShouldCheckEnabledOnly()) {
+          break;
+        }
+        // If we don't need to handle the command, we don't need to include it
+        // to the batch.
+        if (!contentCommandEvent.ShouldBeDispatchedByTextEventDispatcher()) {
+          break;
+        }
+        // Otherwise, we need to batch the command.
+        mPendingEvents.AppendElement(
+            MakeUnique<WidgetContentCommandEvent>(contentCommandEvent));
+        // However, the caller may need to want to know whether the command is
+        // enabled. Therefore, we need to dispatch the event with making it to
+        // check only the enabled state.
+        // XXX If the content command depends on whether selection range is
+        // collapsed and there is a preceding pending eSetSelection event or
+        // command command for deleting selected range, this may return
+        // different result.
+        contentCommandEvent.mOnlyEnabledCheck = OnlyEnabledCheck::Yes;
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  // Let's update mHandlingCompositionString when we dispatch the corresponding
+  // event.
+  // FYI: Don't assert current IsHandlingComposition() here because
+  // NOTIFY_IME_OF_CONTENT_EVENT_HANDLED may have not been reached yet or
+  // we're in a batch.
+  switch (aEvent.mMessage) {
+    case eCompositionStart:
+      mHandlingCompositionString = EmptyString();
+      MOZ_ASSERT(IsHandlingComposition());
+      break;
+    case eCompositionChange:
+    case eCompositionCommit:
+      MOZ_DIAGNOSTIC_ASSERT(aEvent.AsCompositionEvent());
+      mHandlingCompositionString =
+          static_cast<WidgetCompositionEvent&>(aEvent).mData;
+      mHandlingCompositionString.SetIsVoid(false);
+      // When the message is eCompositionCommit, we should have the handling
+      // composition state until we receive
+      // NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.
+      MOZ_ASSERT(IsHandlingComposition());
+      break;
+    case eCompositionCommitAsIs:
+      // We should have the handling composition state until we receive
+      // NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.
+      break;
+    default:
+      break;
+  }
 
   nsCOMPtr<nsIWidget> widget(aWidget);
   AutoDispatchingEvent storeDispatchingEvent(*this, aEvent);
@@ -378,7 +471,32 @@ nsEventStatus TextEventDispatcher::DispatchEvent(nsIWidget* aWidget,
 }
 
 nsEventStatus TextEventDispatcher::DispatchInputEvent(
-    nsIWidget* aWidget, WidgetInputEvent& aEvent) {
+    nsIWidget* aWidget, WidgetInputEvent& aEvent,
+    DispatchingPendingEvent
+        aDispatchingPendingEvent /* = DispatchingPendingEvent::No */) {
+  if (IsBatching() && aDispatchingPendingEvent == DispatchingPendingEvent::No &&
+      aEvent.mClass == eKeyboardEventClass) {
+    WidgetKeyboardEvent* const pendingKeyboardEvent =
+        static_cast<WidgetKeyboardEvent*>(
+            mPendingEvents
+                .AppendElement(
+                    MakeUnique<WidgetKeyboardEvent>(*aEvent.AsKeyboardEvent()))
+                ->get());
+    // The native key event may be deleted before the batch ends. E.g., when
+    // 2 native key events are nested by a API call or something and the
+    // nested one handler makes another batch. Then, the batch ends at the
+    // first key handler ends.
+    if (pendingKeyboardEvent->mNativeKeyEvent) {
+      if (XRE_IsParentProcess() &&
+          (aEvent.mMessage == eKeyDown || aEvent.mMessage == eKeyPress) &&
+          !pendingKeyboardEvent->AreAllEditCommandsInitialized()) {
+        pendingKeyboardEvent->InitAllEditCommands(mWritingMode);
+      }
+      pendingKeyboardEvent->mNativeKeyEvent = nullptr;
+    }
+    return nsEventStatus_eIgnore;
+  }
+
   nsCOMPtr<nsIWidget> widget(aWidget);
   AutoDispatchingEvent storeDispatchingEvent(*this, aEvent);
 
@@ -394,6 +512,261 @@ nsEventStatus TextEventDispatcher::DispatchInputEvent(
   return status;
 }
 
+nsresult TextEventDispatcher::EndBatch() {
+  MOZ_ASSERT(mBatching);
+  mBatching--;
+  if (mPendingEvents.IsEmpty() || IsBatching()) {
+    return NS_OK;
+  }
+  const nsTArray<UniquePtr<WidgetGUIEvent>> pendingEvents =
+      std::move(mPendingEvents);
+  MOZ_ASSERT(mPendingEvents.IsEmpty());
+  // Okay, start new batch temporarily. Then, the new events in nested event
+  // loop will be dispatched after dispatching the pending events in the
+  // previous batch.
+  AutoTextEventDispatcherBatch ensureDispatchingPendingEventsFirst(*this);
+  // XXX This method does not stop dispatching the event even if focus is
+  // changed during flushing this batch because we didn't take care about that
+  // and it should not happen in theory because only chrome content handles the
+  // events synchronously. So, if we need to stop dispatching events in this
+  // loop, it should be handled in EventStateManager or somewhere else maybe in
+  // content process.
+  for (uint32_t i = 0; i < pendingEvents.Length(); i++) {
+    if (NS_WARN_IF(!mWidget) || NS_WARN_IF(mWidget->Destroyed())) [[unlikely]] {
+      return NS_ERROR_FAILURE;
+    }
+    WidgetGUIEvent* const currentEvent = pendingEvents[i].get();
+    // If the pending event is not a composition event, dispatch it as-is.
+    if (currentEvent->mClass != eCompositionEventClass) {
+      if (WidgetInputEvent* const inputEvent = currentEvent->AsInputEvent()) {
+        DispatchInputEvent(mWidget, *inputEvent, DispatchingPendingEvent::Yes);
+        continue;
+      }
+      DispatchEvent(mWidget, *currentEvent, DispatchingPendingEvent::Yes);
+      continue;
+    }
+    MOZ_DIAGNOSTIC_ASSERT(currentEvent->AsCompositionEvent());
+    WidgetCompositionEvent* currentCompositionEvent =
+        static_cast<WidgetCompositionEvent*>(currentEvent);
+    if (currentEvent->mMessage == eCompositionChange) {
+      // If the composition change is followed by eCompositionChange and/or
+      // eCompositionCommit(AsIs), we should skip redundant events to avoid the
+      // content handles with unexpected composition string.
+      // E.g., on Linux, compose key may cause a dead key composing with
+      // composing accent character, but it cancels the composition and commits
+      // the composed character without composing state. In this case, we want
+      // to hide the canceling thing and treat the composition were commited
+      // with the composed character.
+      Maybe<WidgetCompositionEvent> alternativeCommitEvent;
+      const Maybe<uint32_t> newIndex = GetFollowingConclusionCompositionEvent(
+          i, pendingEvents, alternativeCommitEvent);
+      if (newIndex) {
+        i = *newIndex;
+        WidgetGUIEvent& newEvent = *pendingEvents[*newIndex];
+        if (alternativeCommitEvent) {
+          MOZ_ASSERT(newEvent.mMessage == eCompositionCommitAsIs ||
+                     newEvent.mMessage == eContentCommandInsertText);
+          MOZ_ASSERT(alternativeCommitEvent->mMessage == eCompositionCommit);
+          DispatchEvent(mWidget, *alternativeCommitEvent,
+                        DispatchingPendingEvent::Yes);
+          continue;
+        }
+        MOZ_ASSERT(newEvent.mMessage == eCompositionChange ||
+                   newEvent.mMessage == eCompositionCommit);
+        MOZ_DIAGNOSTIC_ASSERT(newEvent.AsCompositionEvent());
+        currentCompositionEvent =
+            static_cast<WidgetCompositionEvent*>(&newEvent);
+      }
+    } else if (currentEvent->mMessage == eCompositionCommit ||
+               currentEvent->mMessage == eCompositionCommitAsIs) {
+      // If the composition commit is canceling the composition and followed by
+      // another commit without composing state, we should treat the preceding
+      // composition were committed with the following commit string.
+      Maybe<WidgetCompositionEvent> alternativeCommitEvent;
+      const Maybe<uint32_t> newIndex =
+          GetFollowingCommitEventIndexWithoutComposingState(
+              i, pendingEvents, alternativeCommitEvent);
+      if (newIndex) {
+        i = *newIndex;
+        WidgetGUIEvent& newEvent = *pendingEvents[*newIndex];
+        if (alternativeCommitEvent) {
+          MOZ_ASSERT(newEvent.mMessage == eCompositionCommitAsIs ||
+                     newEvent.mMessage == eContentCommandInsertText);
+          MOZ_ASSERT(alternativeCommitEvent->mMessage == eCompositionCommit);
+          DispatchEvent(mWidget, *alternativeCommitEvent,
+                        DispatchingPendingEvent::Yes);
+          continue;
+        }
+        MOZ_ASSERT(newEvent.mMessage == eCompositionCommit);
+        MOZ_DIAGNOSTIC_ASSERT(newEvent.AsCompositionEvent());
+        currentCompositionEvent =
+            static_cast<WidgetCompositionEvent*>(&newEvent);
+      }
+    }
+    DispatchEvent(mWidget, *currentCompositionEvent,
+                  DispatchingPendingEvent::Yes);
+  }
+  return NS_OK;
+}
+
+// static
+bool TextEventDispatcher::EventCancelsComposition(
+    uint32_t aIndex, const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+    const nsAString& aCompositionString) {
+  MOZ_ASSERT(aIndex < aPendingEvents.Length());
+  WidgetGUIEvent& commitEvent = *aPendingEvents[aIndex];
+  if (commitEvent.mMessage == eCompositionCommit) {
+    MOZ_DIAGNOSTIC_ASSERT(commitEvent.AsCompositionEvent());
+    return static_cast<WidgetCompositionEvent&>(commitEvent).mData.IsEmpty();
+  }
+  if (commitEvent.mMessage == eCompositionCommitAsIs) {
+    return aCompositionString.IsEmpty();
+  }
+  return false;
+}
+
+Maybe<uint32_t>
+TextEventDispatcher::GetFollowingCommitEventIndexWithoutComposingState(
+    uint32_t aIndex, const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+    Maybe<WidgetCompositionEvent>& aAlternativeCommitEvent) {
+  MOZ_ASSERT(aAlternativeCommitEvent.isNothing());
+
+  const uint32_t nextEventIndex = aIndex + 1;
+  if (nextEventIndex >= aPendingEvents.Length()) {
+    return Nothing{};
+  }
+  const WidgetGUIEvent& nextEvent = *aPendingEvents[nextEventIndex];
+  if (nextEvent.mMessage == eContentCommandInsertText) {
+    // eContentCommandInsertText is used for commit composition without
+    // composing state only when this pref is disabled.
+    if (StaticPrefs::intl_ime_use_composition_events_for_insert_text()) {
+      return Nothing{};
+    }
+    MOZ_DIAGNOSTIC_ASSERT(nextEvent.AsContentCommandEvent());
+    const WidgetContentCommandEvent& insertTextCommandEvent =
+        static_cast<const WidgetContentCommandEvent&>(nextEvent);
+    aAlternativeCommitEvent.emplace(
+        insertTextCommandEvent.IsTrusted(), eCompositionCommit,
+        insertTextCommandEvent.mWidget,
+        static_cast<const WidgetEventTime*>(&insertTextCommandEvent));
+    aAlternativeCommitEvent->mData =
+        insertTextCommandEvent.mString.refOr(EmptyString());
+    InitEvent(aAlternativeCommitEvent.ref());
+    return Some(nextEventIndex);
+  }
+  if (nextEvent.mMessage == eCompositionStart) {
+    const uint32_t compositionStartEventIndex = nextEventIndex;
+    // A simple set of composition events may be used for commit composition
+    // without composing state. Note that even if the pref is disabled, this may
+    // be used by native IME. So, we need to accept multiple cases.
+    uint32_t nonCompositionChangeEventIndex = compositionStartEventIndex + 1;
+    for (; nonCompositionChangeEventIndex < aPendingEvents.Length();
+         nonCompositionChangeEventIndex++) {
+      if (aPendingEvents[nonCompositionChangeEventIndex]->mMessage !=
+          eCompositionChange) {
+        break;
+      }
+    }
+    if (nonCompositionChangeEventIndex >= aPendingEvents.Length()) {
+      return Nothing{};
+    }
+    const WidgetGUIEvent& firstNonCompositionChangeEvent =
+        *aPendingEvents[nonCompositionChangeEventIndex];
+    if (firstNonCompositionChangeEvent.mMessage == eCompositionCommit) {
+      return Some(nonCompositionChangeEventIndex);
+    }
+    if (firstNonCompositionChangeEvent.mMessage == eCompositionCommitAsIs) {
+      aAlternativeCommitEvent.emplace(
+          firstNonCompositionChangeEvent.IsTrusted(), eCompositionCommit,
+          firstNonCompositionChangeEvent.mWidget,
+          static_cast<const WidgetEventTime*>(&firstNonCompositionChangeEvent));
+      if (nonCompositionChangeEventIndex > compositionStartEventIndex + 1) {
+        const uint32_t latestCompositionChangeEventIndex =
+            nonCompositionChangeEventIndex - 1;
+        MOZ_DIAGNOSTIC_ASSERT(aPendingEvents[latestCompositionChangeEventIndex]
+                                  ->AsCompositionEvent());
+        aAlternativeCommitEvent->mData =
+            static_cast<const WidgetCompositionEvent&>(
+                *aPendingEvents[latestCompositionChangeEventIndex])
+                .mData;
+      }
+      InitEvent(aAlternativeCommitEvent.ref());
+      return Some(nonCompositionChangeEventIndex);
+    }
+  }
+  return Nothing{};
+}
+
+Maybe<uint32_t> TextEventDispatcher::GetFollowingConclusionCompositionEvent(
+    uint32_t aIndex, const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+    Maybe<WidgetCompositionEvent>& aAlternativeCommitEvent) {
+  MOZ_ASSERT(aAlternativeCommitEvent.isNothing());
+
+  const uint32_t nextEventIndex = aIndex + 1;
+  if (nextEventIndex >= aPendingEvents.Length()) {
+    return Nothing{};
+  }
+  uint32_t numberOfFollowingCompositionChanges = 0;
+  for (const uint32_t index :
+       IntegerRange(nextEventIndex, aPendingEvents.Length())) {
+    if (aPendingEvents[index]->mMessage == eCompositionChange) {
+      numberOfFollowingCompositionChanges++;
+      continue;
+    }
+    break;
+  }
+  const uint32_t latestCompositionChangeIndex =
+      aIndex + numberOfFollowingCompositionChanges;
+  if (latestCompositionChangeIndex + 1 >= aPendingEvents.Length()) {
+    // Let's skip the eCompositionChange events followed by another
+    // eCompositionChange.
+    return Some(latestCompositionChangeIndex);
+  }
+  const WidgetGUIEvent& nextEventOfLatestCompositionChange =
+      *aPendingEvents[latestCompositionChangeIndex + 1];
+  if (nextEventOfLatestCompositionChange.mMessage != eCompositionCommit &&
+      nextEventOfLatestCompositionChange.mMessage != eCompositionCommitAsIs) {
+    // Let's skip the eCompositionChange events followed by another
+    // eCompositionChange.
+    return Some(latestCompositionChangeIndex);
+  }
+  // The last eCompositionChange event is followed by a commit event. If so, we
+  // can skip all eCompositionChange events.
+  const uint32_t commitCompositionIndex = latestCompositionChangeIndex + 1;
+  const WidgetCompositionEvent& latestCompositionChangeEvent =
+      [&]() -> const WidgetCompositionEvent& {
+    const WidgetGUIEvent& event = *aPendingEvents[latestCompositionChangeIndex];
+    MOZ_ASSERT(event.mMessage == eCompositionChange);
+    MOZ_DIAGNOSTIC_ASSERT(event.AsCompositionEvent());
+    return static_cast<const WidgetCompositionEvent&>(event);
+  }();
+  // Additionally, if the event cancels the composition, it may be followed by
+  // another commit event without composing state.
+  if (TextEventDispatcher::EventCancelsComposition(
+          commitCompositionIndex, aPendingEvents,
+          latestCompositionChangeEvent.mData)) {
+    Maybe<uint32_t> index = GetFollowingCommitEventIndexWithoutComposingState(
+        commitCompositionIndex, aPendingEvents, aAlternativeCommitEvent);
+    if (index) {
+      return index;
+    }
+  }
+  // The composition is commited. Let's skip all eCompositionChange events.
+  if (nextEventOfLatestCompositionChange.mMessage == eCompositionCommit) {
+    return Some(commitCompositionIndex);
+  }
+  // The composition is commited with the latest eCompositionChange event.
+  // Let's skip the eCompositionCommitAsIs event and suggest alternative
+  // eCompositionCommit event.
+  aAlternativeCommitEvent.emplace(
+      nextEventOfLatestCompositionChange.IsTrusted(), eCompositionCommit,
+      nextEventOfLatestCompositionChange.mWidget,
+      static_cast<const WidgetEventTime*>(&nextEventOfLatestCompositionChange));
+  aAlternativeCommitEvent->mData = latestCompositionChangeEvent.mData;
+  InitEvent(aAlternativeCommitEvent.ref());
+  return Some(commitCompositionIndex);
+}
+
 nsresult TextEventDispatcher::StartComposition(
     nsEventStatus& aStatus, const WidgetEventTime* aEventTime) {
   aStatus = nsEventStatus_eIgnore;
@@ -403,13 +776,14 @@ nsresult TextEventDispatcher::StartComposition(
     return rv;
   }
 
-  if (NS_WARN_IF(mIsComposing)) {
+  if (NS_WARN_IF(IsComposing())) {
     return NS_ERROR_FAILURE;
   }
 
   // When you change some members from here, you may need same change in
   // BeginInputTransactionFor().
-  mIsComposing = mIsHandlingComposition = true;
+  mCompositionString = EmptyString();
+  MOZ_ASSERT(IsComposing());
   WidgetCompositionEvent compositionStartEvent(true, eCompositionStart,
                                                mWidget);
   InitEvent(compositionStartEvent);
@@ -484,9 +858,10 @@ nsresult TextEventDispatcher::CommitComposition(
   // BeginInputTransactionFor().
 
   // End current composition and make this free for other IMEs.
-  mIsComposing = false;
+  mCompositionString.SetIsVoid(true);
+  MOZ_ASSERT(!IsComposing());
 
-  EventMessage message =
+  const EventMessage message =
       aCommitString ? eCompositionCommit : eCompositionCommitAsIs;
   WidgetCompositionEvent compositionCommitEvent(true, message, widget);
   InitEvent(compositionCommitEvent);
@@ -527,7 +902,8 @@ nsresult TextEventDispatcher::NotifyIME(
       // process, this is sent when all dispatched composition events
       // have been handled in the remote process.
       if (!IsComposing()) {
-        mIsHandlingComposition = false;
+        mHandlingCompositionString.SetIsVoid(true);
+        MOZ_ASSERT(!IsHandlingComposition());
       }
       break;
     case NOTIFY_IME_OF_SELECTION_CHANGE:

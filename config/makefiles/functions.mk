@@ -16,6 +16,15 @@ $(error Do not include functions.mk twice!)
 endif
 INCLUDED_FUNCTIONS_MK = 1
 
+ifdef MACH
+ifndef NO_BUILDSTATUS_MESSAGES
+define BUILDSTATUS
+@echo 'BUILDSTATUS@$(relativesrcdir) $1'
+
+endef
+endif
+endif
+
 core_abspath = $(error core_abspath is unsupported, use $$(abspath) instead)
 core_realpath = $(error core_realpath is unsupported)
 

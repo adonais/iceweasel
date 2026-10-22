@@ -14,10 +14,10 @@
 #include "mozilla/net/urlpattern_glue.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
+#include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
-class nsIURI;
 class nsILoadInfo;
 
 namespace mozilla::ipc {
@@ -44,6 +44,13 @@ class ConnectionAllowlists final {
                                const nsACString& aReportOnlyHeader,
                                ConnectionAllowlists** aResult);
   void SetResponseURI(nsIURI* aURI);
+  // Freeze the list after it's inherited by another document, verified via
+  // debug asserts.
+  void Freeze() {
+#ifdef DEBUG
+    mFrozen = true;
+#endif
+  }
 
   bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
 
@@ -71,7 +78,7 @@ class ConnectionAllowlists final {
   // A single parsed "connection allowlist" struct.
   // https://wicg.github.io/connection-allowlists/#connection-allowlist
   struct Allowlist {
-    // Parses |aSerializedPattern| and if successfull appends it to
+    // Parses |aSerializedPattern| and if successful appends it to
     // |aAllowlist|.
     void AppendPattern(const nsACString& aSerializedPattern);
 
@@ -111,6 +118,9 @@ class ConnectionAllowlists final {
   Maybe<Allowlist> mEnforcement;
   Maybe<Allowlist> mReportOnly;
   nsCOMPtr<nsIURI> mResponseURI;
+#ifdef DEBUG
+  bool mFrozen = false;
+#endif
 };
 
 }  // namespace mozilla::dom

@@ -937,6 +937,7 @@ const POLICIES_TESTS = [
       },
     },
     lockedPrefs: {
+      "media.videocontrols.picture-in-picture.enabled": false,
       "media.videocontrols.picture-in-picture.video-toggle.enabled": false,
     },
   },

@@ -1057,8 +1057,10 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H2OrH1);
   if (!aEchConfig.IsEmpty()) {
-    info->SetEchConfig(
-        nsCString((const char*)aEchConfig.Elements(), aEchConfig.Length()));
+    info = info->Mutate()
+               .SetEchConfig(nsCString((const char*)aEchConfig.Elements(),
+                                       aEchConfig.Length()))
+               .Finalize();
     NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
@@ -1114,8 +1116,10 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H3);
   if (!aEchConfig.IsEmpty()) {
-    info->SetEchConfig(
-        nsCString((const char*)aEchConfig.Elements(), aEchConfig.Length()));
+    info = info->Mutate()
+               .SetEchConfig(nsCString((const char*)aEchConfig.Elements(),
+                                       aEchConfig.Length()))
+               .Finalize();
     NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);

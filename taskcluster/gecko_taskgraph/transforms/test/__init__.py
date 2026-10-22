@@ -158,6 +158,10 @@ class TestDescriptionSchema(Schema, kw_only=True):
     # attributes to appear in the resulting task (later transforms will add the
     # common attributes)
     attributes: TOptional[dict[str, object]] = None
+    # Override the default priority for the project
+    priority: TOptional[  # type: ignore
+        optionally_keyed_by("project", str, use_msgspec=True)
+    ] = None
     # relative path (from config.path) to the file task was defined in
     task_from: TOptional[str] = None
     # The `run_on_projects` attribute, defaulting to "all".  This dictates the
@@ -231,6 +235,9 @@ class TestDescriptionSchema(Schema, kw_only=True):
     # The different configurations that should be run against this task, defined
     # in the TEST_VARIANTS object in the variant.py transforms.
     variants: TOptional[list[str]] = None
+    # Keep variants in the treeherder group and put their suffix on the symbol
+    # instead of on the group name.
+    treeherder_group_variants: TOptional[bool] = None
     # Whether to run this task without any variants applied.
     run_without_variant: optionally_keyed_by("test-platform", bool, use_msgspec=True)  # type: ignore
     # The EC2 instance size to run these tests on.
@@ -455,6 +462,7 @@ def set_defaults(config, tasks):
         task.setdefault("run-as-administrator", False)
         task.setdefault("chunks", 1)
         task.setdefault("run-on-projects", "built-projects")
+        task.setdefault("run-on-repo-type", ["git", "hg"])
         task.setdefault("built-projects-only", False)
         task.setdefault("instance-size", "default")
         task.setdefault("max-run-time", 3600)
@@ -463,7 +471,7 @@ def set_defaults(config, tasks):
         task.setdefault("loopback-audio", False)
         task.setdefault("loopback-video", False)
         task.setdefault("limit-platforms", [])
-        task.setdefault("docker-image", {"in-tree": "ubuntu1804-test"})
+        task.setdefault("docker-image", {"in-tree": "ubuntu2404-test"})
         task.setdefault("checkout", False)
         task.setdefault("require-signed-extensions", False)
         task.setdefault("run-without-variant", True)
@@ -478,6 +486,22 @@ def set_defaults(config, tasks):
         task["mozharness"].setdefault("tooltool-downloads", "public")
         task["mozharness"].setdefault("set-moz-node-path", False)
         task["mozharness"].setdefault("chunked", False)
+        yield task
+
+
+@transforms.add
+def drop_artifact_build_unsupported(config, tasks):
+    """Artifact builds don't produce everything some suites need (gtest, for
+    instance, needs the compiled test binaries), so drop the tasks that declared
+    `supports-artifact-builds: false` rather than scheduling jobs that can only
+    fail. Dropping them here keeps them out of the full task graph entirely, so
+    they can't be selected on try, pulled in as a dependency, or added later via
+    the add-new-jobs action."""
+    try_config = config.params.get("try_task_config", {})
+    use_artifact_builds = try_config.get("use-artifact-builds", False)
+    for task in tasks:
+        if use_artifact_builds and not task["supports-artifact-builds"]:
+            continue
         yield task
 
 
@@ -621,6 +645,7 @@ def make_job_description(config, tasks):
         jobdesc["label"] = label
         jobdesc["description"] = task["description"]
         jobdesc["attributes"] = attributes
+        jobdesc["priority"] = task.get("priority")
         jobdesc["dependencies"] = {"build": build_label}
         jobdesc["task-from"] = task["task-from"]
 

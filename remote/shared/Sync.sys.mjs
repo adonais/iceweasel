@@ -457,6 +457,7 @@ export function PollPromise(func, options = {}) {
     timer.init(evalFn, interval, TYPE_REPEATING_SLACK);
   }).then(
     res => {
+      timer.cancel();
       if (didTimeOut) {
         const message = `${errorMessage} after ${timeout} ms`;
         if (throws !== null) {
@@ -466,7 +467,6 @@ export function PollPromise(func, options = {}) {
           lazy.logger.warn(message);
         }
       }
-      timer.cancel();
       return res;
     },
     err => {

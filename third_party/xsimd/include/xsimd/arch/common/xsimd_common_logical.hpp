@@ -110,7 +110,7 @@ namespace xsimd
         }
 
         // isinf
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> isinf(batch<T, A> const&, requires_arch<common>) noexcept
         {
             return batch_bool<T, A>(false);
@@ -137,7 +137,7 @@ namespace xsimd
         }
 
         // isfinite
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> isfinite(batch<T, A> const&, requires_arch<common>) noexcept
         {
             return batch_bool<T, A>(true);
@@ -154,14 +154,14 @@ namespace xsimd
         }
 
         // isnan
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> isnan(batch<T, A> const&, requires_arch<common>) noexcept
         {
             return batch_bool<T, A>(false);
         }
 
         // le
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch_bool<T, A> le(batch<T, A> const& self, batch<T, A> const& other, requires_arch<common>) noexcept
         {
             return (self < other) || (self == other);
@@ -210,10 +210,10 @@ namespace xsimd
         namespace detail
         {
             template <typename T, typename A>
-            using is_batch_bool_register_same = std::is_same<typename batch_bool<T, A>::register_type, typename batch<T, A>::register_type>;
+            constexpr bool is_batch_bool_register_same_v = std::is_same_v<typename batch_bool<T, A>::register_type, typename batch<T, A>::register_type>;
         }
 
-        template <class A, class T, std::enable_if_t<detail::is_batch_bool_register_same<T, A>::value, int> = 3>
+        template <class A, class T, std::enable_if_t<detail::is_batch_bool_register_same_v<T, A>, int> = 3>
         XSIMD_INLINE batch_bool<T, A> select(batch_bool<T, A> const& cond, batch_bool<T, A> const& true_br, batch_bool<T, A> const& false_br, requires_arch<common>)
         {
             using register_type = typename batch_bool<T, A>::register_type;
@@ -223,7 +223,7 @@ namespace xsimd
             return batch_bool<T, A> { select(cond, true_v, false_v) };
         }
 
-        template <class A, class T, std::enable_if_t<!detail::is_batch_bool_register_same<T, A>::value, int> = 3>
+        template <class A, class T, std::enable_if_t<!detail::is_batch_bool_register_same_v<T, A>, int> = 3>
         XSIMD_INLINE batch_bool<T, A> select(batch_bool<T, A> const& cond, batch_bool<T, A> const& true_br, batch_bool<T, A> const& false_br, requires_arch<common>)
         {
             return (true_br & cond) | (bitwise_andnot(false_br, cond));

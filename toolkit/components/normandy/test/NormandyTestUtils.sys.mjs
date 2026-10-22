@@ -3,18 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Preferences } from "resource://gre/modules/Preferences.sys.mjs";
-import { AddonStudies } from "resource://normandy/lib/AddonStudies.sys.mjs";
 import { RecipeRunner } from "resource://normandy/lib/RecipeRunner.sys.mjs";
 import { sinon } from "resource://testing-common/Sinon.sys.mjs";
 
-const FIXTURE_ADDON_ID = "normandydriver-a@example.com";
 const UUID_REGEX =
   /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-
-// Factory IDs
-let _addonStudyFactoryId = 0;
-let _preferenceStudyFactoryId = 0;
-let _preferenceRolloutFactoryId = 0;
 
 let testGlobals = {};
 
@@ -27,132 +20,6 @@ export const NormandyTestUtils = {
   init({ add_task, Assert } = {}) {
     testGlobals.add_task = add_task;
     testGlobals.Assert = Assert;
-  },
-
-  factories: {
-    addonStudyFactory(attrs = {}) {
-      for (const key of ["name", "description"]) {
-        if (attrs && attrs[key]) {
-          throw new Error(
-            `${key} is no longer a valid key for addon studies, please update to v2 study schema`
-          );
-        }
-      }
-
-      // Generate a slug from userFacingName
-      let recipeId = _addonStudyFactoryId++;
-      let { userFacingName = `Test study ${recipeId}`, slug } = attrs;
-      delete attrs.slug;
-      if (userFacingName && !slug) {
-        slug = userFacingName.replace(" ", "-").toLowerCase();
-      }
-
-      return Object.assign(
-        {
-          recipeId,
-          slug,
-          userFacingName: "Test study",
-          userFacingDescription: "test description",
-          branch: AddonStudies.NO_BRANCHES_MARKER,
-          active: true,
-          addonId: FIXTURE_ADDON_ID,
-          addonUrl: "http://test/addon.xpi",
-          addonVersion: "1.0.0",
-          studyStartDate: new Date(),
-          studyEndDate: null,
-          extensionApiId: 1,
-          extensionHash:
-            "ade1c14196ec4fe0aa0a6ba40ac433d7c8d1ec985581a8a94d43dc58991b5171",
-          extensionHashAlgorithm: "sha256",
-          temporaryErrorDeadline: null,
-        },
-        attrs
-      );
-    },
-
-    branchedAddonStudyFactory(attrs = {}) {
-      return NormandyTestUtils.factories.addonStudyFactory(
-        Object.assign(
-          {
-            branch: "a",
-          },
-          attrs
-        )
-      );
-    },
-
-    preferenceStudyFactory(attrs = {}) {
-      const defaultPref = {
-        "test.study": {},
-      };
-      const defaultPrefInfo = {
-        preferenceValue: false,
-        preferenceType: "boolean",
-        previousPreferenceValue: null,
-        preferenceBranchType: "default",
-        overridden: false,
-      };
-      const preferences = {};
-      for (const [prefName, prefInfo] of Object.entries(
-        attrs.preferences || defaultPref
-      )) {
-        preferences[prefName] = { ...defaultPrefInfo, ...prefInfo };
-      }
-
-      // Generate a slug from userFacingName
-      let {
-        userFacingName = `Test study ${_preferenceStudyFactoryId++}`,
-        slug,
-      } = attrs;
-      delete attrs.slug;
-      if (userFacingName && !slug) {
-        slug = userFacingName.replace(" ", "-").toLowerCase();
-      }
-
-      return Object.assign(
-        {
-          userFacingName,
-          userFacingDescription: `${userFacingName} description`,
-          slug,
-          branch: "control",
-          expired: false,
-          lastSeen: new Date().toJSON(),
-          experimentType: "exp",
-          actionName: "PreferenceExperimentAction",
-        },
-        attrs,
-        {
-          preferences,
-        }
-      );
-    },
-
-    preferenceRolloutFactory(attrs = {}) {
-      const defaultPrefInfo = {
-        preferenceName: "test.rollout.{}",
-        value: true,
-        previousValue: false,
-      };
-      const preferences = (attrs.preferences ?? [{}]).map((override, idx) => ({
-        ...defaultPrefInfo,
-        preferenceName: defaultPrefInfo.preferenceName.replace(
-          "{}",
-          (idx + 1).toString()
-        ),
-        ...override,
-      }));
-
-      return Object.assign(
-        {
-          slug: `test-rollout-${_preferenceRolloutFactoryId++}`,
-          state: "active",
-        },
-        attrs,
-        {
-          preferences,
-        }
-      );
-    },
   },
 
   /**

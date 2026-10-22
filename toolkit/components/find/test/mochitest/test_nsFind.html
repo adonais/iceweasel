@@ -112,6 +112,26 @@ async function runTests() {
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(retRange, "\"" + searchValue + "\" not found");
 
+  searchValue = "\u0303guahe";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (leading diacritic)");
+
+  searchValue = "guahe\u0301";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (trailing diacritic)");
+
+  searchValue = "g\u0303\u0301uahe";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (consecutive diacritics)");
+
+  searchValue = "\u{110AB}";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (non-BMP base char)");
+
+  searchValue = "\u{110A5}\u{110BA}";
+  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
+  ok(retRange, "\"" + searchValue + "\" not found (non-BMP diacritic)");
+
   rf.matchDiacritics = true;
 
   searchValue = "λογος";

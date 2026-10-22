@@ -887,29 +887,6 @@ SEC_PKCS7CreateCertsOnly(CERTCertificate *cert,
 }
 
 /*
- * Add "cert" and its entire chain to the set of certs included in "cinfo".
- *
- * "certdb" is the cert database to use for finding the chain.
- * It can be NULL, meaning use the default database.
- *
- * "cinfo" should be of type signedData or signedAndEnvelopedData;
- * SECFailure will be returned if it is not.
- */
-SECStatus
-SEC_PKCS7AddCertChain(SEC_PKCS7ContentInfo *cinfo,
-                      CERTCertificate *cert,
-                      CERTCertDBHandle *certdb)
-{
-    SECOidTag kind;
-
-    kind = SEC_PKCS7ContentType(cinfo);
-    if (kind != SEC_OID_PKCS7_SIGNED_DATA && kind != SEC_OID_PKCS7_SIGNED_ENVELOPED_DATA)
-        return SECFailure; /* XXX set an error? */
-
-    return sec_pkcs7_add_cert_chain(cinfo, cert, certdb);
-}
-
-/*
  * Add "cert" to the set of certs included in "cinfo".
  *
  * "cinfo" should be of type signedData or signedAndEnvelopedData;

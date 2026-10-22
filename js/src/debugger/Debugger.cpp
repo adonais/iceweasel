@@ -388,6 +388,13 @@ bool js::ParseEvalOptions(JSContext* cx, HandleValue value,
     options.setLineno(lineno);
   }
 
+  if (!JS_GetProperty(cx, opts, "allowRedeclaringExistingLexicalBinding", &v)) {
+    return false;
+  }
+  if (v.isBoolean()) {
+    options.setAllowRedeclaringExistingLexicalBinding(v.toBoolean());
+  }
+
   if (!JS_GetProperty(cx, opts, "hideFromDebugger", &v)) {
     return false;
   }
@@ -405,6 +412,21 @@ bool js::ParseEvalOptions(JSContext* cx, HandleValue value,
     if (ToBoolean(v)) {
       options.setUseInnerBindings();
     }
+  }
+
+  // allowRedeclaringExistingLexicalBinding only applies to
+  // executeInGlobal and executeInGlobalWithBindings (without
+  // useInnerBindings). It isn't supported by Frame.eval and its
+  // variants, and combining it with useInnerBindings should throw.
+  if (options.allowRedeclaringExistingLexicalBinding() &&
+      options.kind() != EvalOptions::EnvKind::Global &&
+      options.kind() != EvalOptions::EnvKind::GlobalWithExtraOuterBindings) {
+    JS_ReportErrorASCII(
+        cx,
+        "allowRedeclaringExistingLexicalBinding is only supported by "
+        "executeInGlobal and executeInGlobalWithBindings without "
+        "useInnerBindings");
+    return false;
   }
 
   return true;
@@ -6284,16 +6306,17 @@ bool Debugger::CallData::findSourceURLs() {
   for (auto iter = dbg->allDebuggees(); !iter.done(); iter.next()) {
     RootedObject holder(cx, iter.get()->getSourceURLsHolder());
     if (holder) {
+      RootedValue v(cx);
       for (size_t i = 0; i < holder->as<ArrayObject>().length(); i++) {
-        Value v = holder->as<ArrayObject>().getDenseElement(i);
+        v = holder->as<ArrayObject>().getDenseElement(i);
 
         // The value is an atom and doesn't need wrapping, but the holder may be
         // in another zone and the atom must be marked when we create a
         // reference in this zone.
         MOZ_ASSERT(v.isString() && v.toString()->isAtom());
-        cx->recordRefToValue(v);
 
-        if (!NewbornArrayPush(cx, result, v)) {
+        if (!cx->wrapOrRecordRefToValue(&v) ||
+            !NewbornArrayPush(cx, result, v)) {
           return false;
         }
       }

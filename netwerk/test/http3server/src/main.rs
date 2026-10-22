@@ -303,6 +303,7 @@ impl HttpServer for Http3TestServer {
         while let Some(event) = self.server.next_event() {
             qtrace!("Event: {:?}", event);
             match event {
+                Http3ServerEvent::OutgoingDatagramSpaceAvailable { .. } => {}
                 Http3ServerEvent::Headers {
                     stream,
                     headers,
@@ -325,6 +326,20 @@ impl HttpServer for Http3TestServer {
                         Header::new("content-length", default_ret.len().to_string()),
                         Header::new("x-http3-conn-hash", connection_hash.to_string()),
                     ];
+
+                    // Mimic a server that rejects a raw non-ASCII cookie by
+                    // closing the whole connection with H3_FRAME_ERROR.
+                    if headers
+                        .iter()
+                        .any(|h| h.name() == "cookie" && !h.value().is_ascii())
+                    {
+                        stream.conn.borrow_mut().close(
+                            now,
+                            0x0106,
+                            "http3.invalid_header_field",
+                        );
+                        continue;
+                    }
 
                     let path_hdr = headers.iter().find(|&h| h.name() == ":path");
                     match path_hdr {
@@ -1122,6 +1137,7 @@ impl HttpServer for Http3ReverseProxyServer {
         while let Some(event) = self.server.next_event() {
             qtrace!("Event: {:?}", event);
             match event {
+                Http3ServerEvent::OutgoingDatagramSpaceAvailable { .. } => {}
                 Http3ServerEvent::Headers {
                     stream,
                     headers,
@@ -1253,6 +1269,7 @@ impl HttpServer for Http3ConnectProxyServer {
         while let Some(event) = self.server.next_event() {
             qtrace!("Event: {:?}", event);
             match event {
+                Http3ServerEvent::OutgoingDatagramSpaceAvailable { .. } => {}
                 Http3ServerEvent::Headers {
                     stream,
                     headers,
@@ -1654,16 +1671,10 @@ fn spawn_server<S: HttpServer + Unpin + 'static>(
         Ok(s) => s,
     };
 
-    let local_addr = match socket.local_addr() {
-        Err(err) => {
-            eprintln!("Socket local address not bound: {}", err);
-            exit(1)
-        }
-        Ok(s) => s,
-    };
+    let local_addr = socket.local_addr();
 
     task_set
-        .spawn_local(Runner::new(server, Box::new(Instant::now), vec![(local_addr, socket)]).run());
+        .spawn_local(Runner::new(server, Box::new(Instant::now), vec![socket]).run());
     hosts.push(local_addr);
 
     Ok(())
@@ -1868,13 +1879,3 @@ extern "C" fn __tsan_default_suppressions() -> *const std::os::raw::c_char {
     )
     .as_ptr() as *const _
 }
-
-// Work around until we can use raw-dylibs.
-#[cfg_attr(target_os = "windows", link(name = "runtimeobject"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "propsys"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "iphlpapi"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "rpcrt4"))]
-extern "C" {}

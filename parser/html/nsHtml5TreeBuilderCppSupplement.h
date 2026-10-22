@@ -144,32 +144,56 @@ class nsHtml5TreeBuilder::SanitizerState {
     return entry && entry.Data().mReplaceWithChildren;
   }
 
-  // Redirects the content of an element the configuration replaces with its
-  // children to where the content of aParent goes. The adoption agency
-  // algorithm never inserts the clones it makes, so a clone that is replaced
-  // with its children gets its redirection here instead of from
-  // ResolveLocationForChild(). Returns whether the clone was replaced with
-  // its children, which is when the algorithm leaves lastNode where it is.
-  bool RedirectClone(nsIContent* aClone, nsIContent* aParent) {
+  // Queues an adoption agency algorithm clone the configuration replaces with
+  // its children for RedirectPending(). The algorithm never inserts the
+  // clones it makes, so such a clone gets its redirection there instead of
+  // from ResolveLocationForChild(). Returns whether the clone was replaced
+  // with its children, which is when the algorithm leaves lastNode where it
+  // is.
+  bool RedirectClone(nsIContent* aClone) {
     auto entry = mDropped.Lookup(aClone);
     if (!entry || !entry.Data().mReplaceWithChildren) {
       return false;
     }
     entry.Data().mLocationResolved = true;
-    entry.Data().mLocation = LocationFor(aParent);
+    mPendingRedirects.AppendElement(aClone);
     return true;
   }
 
-  // Moves the redirection of an element that has one already, which the
-  // adoption agency algorithm does for a furthest block once it has moved the
-  // block's content to (aParent, aBefore).
-  void MoveRedirection(nsIContent* aElement, nsIContent* aParent,
-                       nsIContent* aBefore = nullptr) {
-    auto entry = mDropped.Lookup(aElement);
-    if (!entry || !entry.Data().mLocation.mParent) {
-      return;
+  // Queues a furthest block the configuration replaced with its children for
+  // RedirectPending(). A block that never reached an insertion point has no
+  // redirection to move.
+  void DeferRedirect(nsIContent* aFurthestBlock) {
+    auto entry = mDropped.Lookup(aFurthestBlock);
+    if (entry && entry.Data().mReplaceWithChildren &&
+        entry.Data().mLocation.mParent) {
+      mPendingRedirects.AppendElement(aFurthestBlock);
     }
-    entry.Data().mLocation = LocationFor(aParent, aBefore);
+  }
+
+  // Moves the redirection of every queued element to (aParent, aBefore),
+  // which the adoption agency algorithm does once it knows where it inserts
+  // lastNode: into the next kept clone, or the common ancestor.
+  void RedirectPending(nsIContent* aParent, nsIContent* aBefore = nullptr) {
+    for (nsIContent* element : mPendingRedirects) {
+      mDropped.Lookup(element).Data().mLocation = LocationFor(aParent, aBefore);
+    }
+    mPendingRedirects.ClearAndRetainStorage();
+  }
+
+  // Re-points the content of aElement, which the adoption agency algorithm
+  // found below the furthest block in the stack, at where the content of
+  // its new formatting clone aClone goes. Returns whether aElement had a
+  // redirection to move, which is when the algorithm goes on to the next
+  // element below it.
+  bool RedirectIntoClone(nsIContent* aElement, nsIContent* aClone) {
+    auto entry = mDropped.Lookup(aElement);
+    if (!entry || !entry.Data().mReplaceWithChildren ||
+        !entry.Data().mLocation.mParent) {
+      return false;
+    }
+    entry.Data().mLocation = LocationFor(aClone);
+    return true;
   }
 
   // The location content whose tree construction parent is aParent goes to.
@@ -194,9 +218,7 @@ class nsHtml5TreeBuilder::SanitizerState {
     if (location.mBefore && location.mBefore->GetParent() != location.mParent) {
       location.mBefore = nullptr;
     }
-    if (aBefore && aBefore->GetParent() == location.mParent) {
-      location.mBefore = aBefore;
-    }
+    MOZ_ASSERT(!aBefore, "refChild must be null");
     return location;
   }
 
@@ -254,6 +276,9 @@ class nsHtml5TreeBuilder::SanitizerState {
   // whole parse by nsHtml5DocumentBuilder::HoldElement(), so an entry can
   // neither dangle nor be matched by a later element at the same address.
   nsTHashMap<nsPtrHashKey<nsIContent>, Dropped> mDropped;
+  // Elements the adoption agency algorithm has yet to find the insertion
+  // target for. Only non-empty while that algorithm runs.
+  AutoTArray<nsIContent*, 4> mPendingRedirects;
   const mozilla::dom::Sanitizer* const mSanitizer;
   const bool mSafe;
   // What the configuration does with the element the last sanitized start tag
@@ -284,22 +309,35 @@ void nsHtml5TreeBuilder::SetSanitizer(mozilla::dom::Sanitizer* aSanitizer,
   }
 }
 
-bool nsHtml5TreeBuilder::SanitizerRedirectsCloneImpl(
-    nsIContent* aClone, nsIContent* aCommonAncestor) {
-  return mSanitizerState->RedirectClone(aClone, aCommonAncestor);
+bool nsHtml5TreeBuilder::SanitizerRedirectsCloneImpl(nsIContent* aClone) {
+  return mSanitizerState->RedirectClone(aClone);
 }
 
-void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockImpl(
-    nsIContent* aFurthestBlock, nsIContent* aParent) {
-  mSanitizerState->MoveRedirection(aFurthestBlock, aParent);
+void nsHtml5TreeBuilder::SanitizerDeferRedirectImpl(
+    nsIContent* aFurthestBlock) {
+  mSanitizerState->DeferRedirect(aFurthestBlock);
 }
 
-void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockToFosterParentImpl(
-    nsIContent* aFurthestBlock, nsIContent* aTable, nsIContent* aStackParent) {
+void nsHtml5TreeBuilder::SanitizerRedirectPendingImpl(nsIContent* aParent) {
+  mSanitizerState->RedirectPending(aParent);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectPendingToFosterParentImpl(
+    nsIContent* aTable, nsIContent* aStackParent) {
   SanitizerState::Location foster =
       SanitizerState::FosterLocation(aStackParent, aTable);
-  mSanitizerState->MoveRedirection(aFurthestBlock, foster.mParent,
-                                   foster.mBefore);
+  mSanitizerState->RedirectPending(foster.mParent, foster.mBefore);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectBelowFormattingCloneImpl(
+    int32_t aClonePos) {
+  nsIContent* clone = static_cast<nsIContent*>(stack[aClonePos]->node);
+  for (int32_t i = aClonePos + 1; i <= currentPtr; ++i) {
+    if (!mSanitizerState->RedirectIntoClone(
+            static_cast<nsIContent*>(stack[i]->node), clone)) {
+      return;
+    }
+  }
 }
 
 bool nsHtml5TreeBuilder::SanitizerDropsTemplateTokenImpl(

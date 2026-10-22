@@ -75,7 +75,7 @@ class HomeDeepLinkIntentProcessor(
                 "settings_accessibility" -> GlobalDirections.Accessibility
                 "settings_delete_browsing_data" -> GlobalDirections.DeleteData
                 "settings_addon_manager" -> GlobalDirections.SettingsAddonManager
-                "settings_logins" -> GlobalDirections.SettingsLogins
+                "settings_logins" -> if (settings.isAutofillSupported) GlobalDirections.SettingsLogins else return
                 "settings_tracking_protection" -> GlobalDirections.SettingsTrackingProtection
                 // We'd like to highlight views within the fragment
                 // https://github.com/mozilla-mobile/fenix/issues/11856

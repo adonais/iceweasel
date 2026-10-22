@@ -45,7 +45,7 @@ This list reflects the state of the Google Google Coding Style for C++ Code as o
 ## Formatting code
 
 Formatting is done automatically via clang-format, and controlled via in-tree
-configuration files. See {ref}`Formatting C++ Code With clang-format`
+configuration files. See {doc}`format_cpp_code_with_clang-format`
 for more information.
 
 Unix-style linebreaks (`\n`), not Windows-style (`\r\n`). You can
@@ -67,7 +67,7 @@ for the check called `google-readability-braces-around-statements`, you can run:
 ```
 
 It may be necessary to reformat the files after automatically applying fixes, see
-{ref}`Formatting C++ Code With clang-format`.
+{doc}`format_cpp_code_with_clang-format`.
 
 ## Additional rules
 
@@ -132,7 +132,7 @@ namespace. Modules should avoid adding nested namespaces under
   all-lowercase names.
 - Classes that implement WebIDL bindings tend to live in `mozilla::dom`,
   though this is not strictly required and can be customized via
-  `Bindings.conf`. See {ref}`Web IDL bindings` for more information.
+  `Bindings.conf`. See {doc}`/dom/webIdlBindings/index` for more information.
 
 Other global namespaces besides `mozilla` are not allowed.
 

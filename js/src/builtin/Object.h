@@ -50,6 +50,11 @@ JSString* ObjectClassToString(JSContext* cx, JSObject* obj);
 [[nodiscard]] bool GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
 
+// Exposed for SelfHosting.cpp
+[[nodiscard]] bool CopyDataProperties(JSContext* cx, JS::HandleObject target,
+                                      JS::HandleValue source,
+                                      JS::HandleObject excludedItems);
+
 /*
  * Like IdToValue, but convert int jsids to strings. This is used when
  * exposing a jsid to script for Object.getOwnProperty{Names,Symbols}

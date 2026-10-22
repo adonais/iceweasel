@@ -10,6 +10,7 @@ EXPORTS.mozilla.dom += [
     "FileSystemAccessHandle.h",
     "FileSystemAccessHandleControlParent.h",
     "FileSystemAccessHandleParent.h",
+    "FileSystemCipherKeyManager.h",
     "FileSystemManagerParent.h",
     "FileSystemManagerParentFactory.h",
     "FileSystemParentTypes.h",

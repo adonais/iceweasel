@@ -77,6 +77,7 @@ def print_landmines():  # pylint: disable=invalid-name
         print('Lets clobber iOS due to signing issue b/396118151 (2nd try)')
         print('Lets clobber iOS due to rtc_executable -> rtc_test')
         print('Lets clobber iOS due to rtc_executable -> rtc_test')
+        print('Lets clobber iOS due to rtc_library -> rtc_test')
 
 
 def main():

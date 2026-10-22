@@ -453,7 +453,7 @@ void nsFilePicker::PresentOpenPanel(bool aAllowMultiple,
         retVal = returnOK;
       }
     }
-    InvokeFilePickerCallbackDeferred(callback, retVal);
+    self->FinishOpenOrFolderPanel(callback, retVal);
     NS_OBJC_END_TRY_IGNORE_BLOCK;
   });
 
@@ -510,11 +510,47 @@ void nsFilePicker::PresentFolderPanel(nsIFilePickerShownCallback* aCallback) {
         }
       }
     }
-    InvokeFilePickerCallbackDeferred(callback, retVal);
+    self->FinishOpenOrFolderPanel(callback, retVal);
     NS_OBJC_END_TRY_IGNORE_BLOCK;
   });
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsFilePicker::FinishOpenOrFolderPanel(
+    nsIFilePickerShownCallback* aCallback, ResultCode aResult) {
+  if (aResult == returnCancel || !ShouldRunContentAnalysis()) {
+    InvokeFilePickerCallbackDeferred(aCallback, aResult);
+    return;
+  }
+
+  // Content Analysis may show its own dialog, so as with
+  // InvokeFilePickerCallbackDeferred, wait for the panel's modal session to
+  // finish unwinding before starting the check.
+  RefPtr<nsFilePicker> self = this;
+  nsCOMPtr<nsIFilePickerShownCallback> callback = aCallback;
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "nsFilePicker::CheckContentAnalysis", [self, callback, aResult]() {
+        nsCOMArray<nsIFile> files;
+        files.AppendElements(self->mFiles);
+        self->CheckContentAnalysis(std::move(files))
+            ->Then(
+                GetMainThreadSerialEventTarget(), __func__,
+                [self, callback, aResult](nsCOMArray<nsIFile> aAllowedFiles) {
+                  self->mFiles.Clear();
+                  aAllowedFiles.SwapElements(self->mFiles);
+                  if (callback) {
+                    callback->Done(self->mFiles.IsEmpty() ? returnCancel
+                                                          : aResult);
+                  }
+                },
+                [self, callback](nsresult aError) {
+                  self->mFiles.Clear();
+                  if (callback) {
+                    callback->Done(returnCancel);
+                  }
+                });
+      }));
 }
 
 void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {

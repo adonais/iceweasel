@@ -74,7 +74,7 @@ export class PageExtractorChild extends JSWindowActorChild {
         return this.getText(options, traceId);
       }
       case "PageExtractorParent:WaitForPageReady":
-        return this.waitForPageReady(data?.traceId);
+        return this.waitForPageReady(data?.traceId, data?.refreshWithinMs);
       case "PageExtractorParent:GetPageMetadata":
         return this.#getPageMetadata(data?.traceId);
     }
@@ -87,9 +87,13 @@ export class PageExtractorChild extends JSWindowActorChild {
    * extraction reads page geometry.
    *
    * @param {TraceId} [traceId]
-   * @returns {Promise<void>}
+   * @param {number} [refreshWithinMs] - A refresh only counts as a pending
+   *   navigation when it fires within this many milliseconds.
+   * @returns {Promise<{hasPendingNavigation: boolean}>} hasPendingNavigation
+   *   is true when the document is about to be replaced by a refresh or a
+   *   load that has started but not yet committed.
    */
-  async waitForPageReady(traceId) {
+  async waitForPageReady(traceId, refreshWithinMs = Infinity) {
     const doc = this.document;
     const win = doc.documentGlobal;
     return this.#trace(lazy.Phase.waitForReady, { traceId }, async event => {
@@ -116,7 +120,74 @@ export class PageExtractorChild extends JSWindowActorChild {
       }
 
       event.finish({ status: wasHidden ? "document-hidden" : "success" });
+      return {
+        hasPendingNavigation: this.#hasPendingNavigation(refreshWithinMs),
+      };
     });
+  }
+
+  /**
+   * @param {number} refreshWithinMs
+   * @returns {boolean}
+   */
+  #hasPendingNavigation(refreshWithinMs) {
+    const { docShell } = this;
+    if (docShell.QueryInterface(Ci.nsIRefreshURI).refreshPending) {
+      // A page that reloads itself every few minutes is read as it is, rather
+      // than waited on past the point where the read gives up.
+      const delayMs = this.#refreshDelayMs();
+      if (delayMs === null || delayMs <= refreshWithinMs) {
+        return true;
+      }
+    }
+    // During a replacement load, documentRequest is the incoming document,
+    // while currentDocumentChannel remains the current one until it commits.
+    const webProgress = docShell.QueryInterface(Ci.nsIWebProgress);
+    return (
+      webProgress.isLoadingDocument &&
+      webProgress.documentRequest !== docShell.currentDocumentChannel
+    );
+  }
+
+  /**
+   * The shortest delay of the refreshes the document declares, in a meta
+   * element or a Refresh response header, parsed the way the HTML spec's
+   * shared declarative refresh steps read the time. The URL is not parsed,
+   * so a declaration the docshell drops for an unparsable URL still counts.
+   *
+   * @returns {number | null} The delay in milliseconds, or null when no
+   *   declaration can be parsed.
+   */
+  #refreshDelayMs() {
+    const declarations = Array.from(
+      this.document.querySelectorAll('meta[http-equiv="refresh" i]'),
+      meta => meta.content
+    );
+    try {
+      declarations.push(
+        this.docShell.currentDocumentChannel
+          .QueryInterface(Ci.nsIHttpChannel)
+          .getResponseHeader("Refresh")
+      );
+    } catch {
+      // Not an http document, or no Refresh header.
+    }
+    const delays = [];
+    for (const declaration of declarations) {
+      // ^[\t\n\f\r ]*          Skip leading ASCII whitespace.
+      // (?=[\d.])              The time must start with a digit or a dot.
+      // (\d*)                  Capture the whole seconds, possibly none (".5").
+      // [\d.]*                 Skip any fraction; the spec ignores it.
+      // (?:[;,\t\n\f\r ]|$)    The time ends at a separator or the end, else
+      //                        the declaration is invalid.
+      const match = /^[\t\n\f\r ]*(?=[\d.])(\d*)[\d.]*(?:[;,\t\n\f\r ]|$)/.exec(
+        declaration
+      );
+      if (match) {
+        delays.push(Number(match[1] || 0) * 1000);
+      }
+    }
+    return delays.length ? Math.min(...delays) : null;
   }
 
   /**

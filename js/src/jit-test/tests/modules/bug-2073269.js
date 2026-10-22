@@ -1,4 +1,4 @@
-// |jit-test| module
+// |jit-test| module; skip-if: isLcovEnabled()
 
 function a() {
   let x = 1;

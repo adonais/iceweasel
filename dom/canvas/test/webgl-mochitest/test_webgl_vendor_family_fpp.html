@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>WebGL vendor is bucketed to a GPU family while the renderer stays constant</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script>
+/* global SimpleTest SpecialPowers */
+SimpleTest.waitForExplicitFinish();
+
+// Bug 2055176: shader libraries (e.g. luma.gl) pick driver workarounds by
+// regexing UNMASKED_VENDOR_WEBGL / UNMASKED_RENDERER_WEBGL for a GPU-family
+// token. Collapsing both to "Mozilla" drops them onto a fallback path whose
+// workarounds are wrong for the real hardware. So the renderer is collapsed to
+// a constant but the vendor is only bucketed to a family.
+async function vendorFor(rawVendor) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["webgl.override-unmasked-vendor", rawVendor]],
+  });
+  const canvas = document.body.appendChild(document.createElement("canvas"));
+  const gl = canvas.getContext("webgl");
+  const ext = gl && gl.getExtension("WEBGL_debug_renderer_info");
+  if (!ext) {
+    return null;
+  }
+  return {
+    vendor: gl.getParameter(ext.UNMASKED_VENDOR_WEBGL),
+    renderer: gl.getParameter(ext.UNMASKED_RENDERER_WEBGL),
+  };
+}
+
+document.addEventListener("DOMContentLoaded", async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.fingerprintingProtection", true],
+      ["privacy.resistFingerprinting", false],
+      ["privacy.fingerprintingProtection.overrides",
+       "+WebGLRendererConstant,+WebGLVendorSanitize,-WebGLVendorConstant,-WebGLVendorRandomize,-WebGLRenderInfo"],
+    ],
+  });
+
+  // Recognised families survive, so the library picks the right branch.
+  for (const [raw, expected] of [
+    ["NVIDIA Corporation", "NVIDIA Corporation"],
+    ["ATI Technologies Inc.", "AMD"],
+    ["Intel Inc.", "Intel"],
+    ["Apple", "Apple"],
+    // Low-population vendors collapse; luma.gl classifies them as unknown
+    // anyway, so nothing is lost behaviourally.
+    ["ARM", "Other"],
+    ["Qualcomm", "Other"],
+    ["Collabora Ltd. & Valve Corp.", "Other"],
+  ]) {
+    const got = await vendorFor(raw);
+    if (!got) {
+      SimpleTest.ok(false, "WEBGL_debug_renderer_info should be available");
+      SimpleTest.finish();
+      return;
+    }
+    SimpleTest.is(got.vendor, expected, `vendor "${raw}" buckets to "${expected}"`);
+    SimpleTest.is(got.renderer, "Mozilla",
+      `renderer stays the constant for vendor "${raw}"`);
+  }
+
+  SimpleTest.finish();
+});
+</script>

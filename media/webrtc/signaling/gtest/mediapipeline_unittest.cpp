@@ -210,8 +210,6 @@ class LoopbackTransport : public MediaTransportHandler {
     return NS_OK;
   }
 
-  void Destroy() override {}
-
   // We will probably be able to move the proxy lookup stuff into
   // this class once we move mtransport to its own process.
   void SetProxyConfig(NrSocketProxyConfig&& aProxyConfig) override {}
@@ -277,7 +275,7 @@ class LoopbackTransport : public MediaTransportHandler {
     if (aPacket.len() && aPacket.type() == MediaPacket::RTCP) {
       ++rtcp_packets_received_;
     }
-    mRtpPacketReceived.Notify(aTransportId, aPacket);
+    mEvents->mRtpPacketReceived.Notify(aTransportId, aPacket);
   }
 
   int RtcpPacketsReceived() const { return rtcp_packets_received_; }

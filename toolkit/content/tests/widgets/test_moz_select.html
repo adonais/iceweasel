@@ -285,6 +285,124 @@
           "Renders the hr as a direct descendant of select"
         );
       });
+
+      // Fluent sets the label attribute from C++, so moz-select's
+      // MutationObserver runs before Lit has synced the attribute onto the
+      // label property. Without a later mutation to correct it, the last
+      // option in the list keeps whatever was read too early.
+      add_task(async function testFluentLabelOnLastOption() {
+        let l10nReg = new L10nRegistry();
+        l10nReg.registerSources([
+          L10nFileSource.createMock(
+            "test",
+            "app",
+            ["en-US"],
+            "/localization/{locale}",
+            [
+              {
+                path: "/localization/en-US/mock.ftl",
+                source: `
+moz-select-first-option =
+  .label = First option
+moz-select-last-option =
+  .label = Last option
+              `,
+              },
+            ]
+          ),
+        ]);
+        let mockL10n = new DOMLocalization(["/mock.ftl"], false, l10nReg, [
+          "en-US",
+        ]);
+        mockL10n.addResourceIds(["/mock.ftl"]);
+
+        let target = await testHelpers.renderTemplate(
+          testHelpers.html`<moz-select>
+            <moz-option value="first"></moz-option>
+            <moz-option value="last"></moz-option>
+          </moz-select>`
+        );
+        let mozSelect = target.querySelector("moz-select");
+        await mozSelect.updateComplete;
+
+        let mozOptions = mozSelect.querySelectorAll("moz-option");
+        for (let [i, id] of [
+          "moz-select-first-option",
+          "moz-select-last-option",
+        ].entries()) {
+          // MozLitElement sets this for its fluent properties once it has a
+          // document.l10n, which this test document does not have.
+          mozOptions[i].dataset.l10nAttrs = "label";
+          mockL10n.setAttributes(mozOptions[i], id);
+        }
+        await mockL10n.translateElements([...mozOptions]);
+        await TestUtils.waitForTick();
+        await mozSelect.updateComplete;
+
+        is(
+          mozOptions[1].getAttribute("label"),
+          "Last option",
+          "Fluent set the label attribute of the last option"
+        );
+        is(
+          mozSelect.options[0].label,
+          "First option",
+          "The first option picks up its Fluent label"
+        );
+        is(
+          mozSelect.options[1].label,
+          "Last option",
+          "The last option picks up its Fluent label"
+        );
+        is(
+          [...mozSelect.inputEl.querySelectorAll("option")]
+            .map(o => o.textContent.trim())
+            .join(","),
+          "First option,Last option",
+          "Both labels are rendered"
+        );
+      });
+
+      // setting-control passes option data to moz-option via property
+      // bindings. Those properties reflect to attributes asynchronously, so a
+      // slotchange can run before the attributes exist.
+      add_task(async function testOptionsSetViaProperties() {
+        let target = await testHelpers.renderTemplate(
+          testHelpers.html`<moz-select></moz-select>`
+        );
+        let mozSelect = target.querySelector("moz-select");
+        await mozSelect.updateComplete;
+
+        mozSelect.value = "brave";
+
+        for (let value of ["google", "brave", "bing"]) {
+          let option = document.createElement("moz-option");
+          option.value = value;
+          option.label = value;
+          option.iconSrc = "chrome://global/skin/icons/search-glass.svg";
+          mozSelect.appendChild(option);
+        }
+        await TestUtils.waitForTick();
+        await mozSelect.updateComplete;
+
+        is(
+          mozSelect.value,
+          "brave",
+          "Value assigned before the options are slotted is preserved"
+        );
+        is(
+          mozSelect.selectedOption?.value,
+          "brave",
+          "The option matching the assigned value is selected"
+        );
+        is(
+          mozSelect.shadowRoot
+            .querySelector(".panel-trigger-text")
+            ?.textContent.trim(),
+          "brave",
+          "The label of the assigned option is displayed"
+        );
+      });
     </script>
   </head>
   <body></body>

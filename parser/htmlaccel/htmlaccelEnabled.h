@@ -8,6 +8,8 @@
 #include "mozilla/Assertions.h"
 #if defined(__x86_64__)
 #  include "mozilla/SSE.h"
+#elif defined(__loongarch__)
+#  include "mozilla/LSX.h"
 #endif
 
 namespace mozilla::htmlaccel {
@@ -31,6 +33,9 @@ inline bool htmlaccelEnabled() {
 #elif defined(__aarch64__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #  define MOZ_MAY_HAVE_HTMLACCEL 1
   return true;
+#elif defined(__loongarch__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#  define MOZ_MAY_HAVE_HTMLACCEL 1
+  return mozilla::supports_lsx();
 #elif defined(__x86_64__)
 #  define MOZ_MAY_HAVE_HTMLACCEL 1
   bool ret = mozilla::supports_bmi();

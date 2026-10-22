@@ -67,7 +67,7 @@ class PrefetchMatchWaiter final {
  private:
   PrefetchMatchWaiter(WindowGlobalParent* aWGP, nsIURI* aURI,
                       TimeDuration aTimeout);
-  ~PrefetchMatchWaiter() = default;
+  ~PrefetchMatchWaiter();
 
   // Resolves exactly once (atomic exchange guard). Cancels timer, resolves
   // promise with aMatch (nullptr on timeout), and removes self from WGP.

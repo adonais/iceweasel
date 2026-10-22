@@ -11,12 +11,12 @@
   ChromeUtils.defineESModuleGetters(lazy, {
     OpenInTabsUtils:
       "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
-    Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
   });
 
-  const isTab = element => gBrowser.isTab(element);
-  const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
-  const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
+  const { Tabbrowser } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs"
+  );
+  const { isTab, isTabGroupLabel, isSplitViewWrapper } = Tabbrowser;
 
   /**
    * The elements in the tab strip from `this.dragAndDropElements` that contain
@@ -2523,7 +2523,7 @@
           dropElementSize
         );
 
-        moveOverThreshold = lazy.Tabbrowser.prefs.tabGroupsEnabled
+        moveOverThreshold = Tabbrowser.prefs.tabGroupsEnabled
           ? Services.prefs.getIntPref(
               "browser.tabs.dragDrop.moveOverThresholdPercent"
             ) / 100
@@ -2596,7 +2596,7 @@
       }
 
       if (
-        lazy.Tabbrowser.prefs.tabGroupsEnabled &&
+        Tabbrowser.prefs.tabGroupsEnabled &&
         (isTab(draggedTab) || isSplitViewWrapper(draggedTab)) &&
         !isPinned &&
         (!numPinned || newDropElementIndex >= numPinned)

@@ -92,6 +92,57 @@ add_task(async function testDialogAccept() {
   Assert.ok(callbackCalled, "Accept callback was called");
 });
 
+add_task(async function testDialogTitleForPerDeviceSync() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["identity.fxaccounts.enabled", true],
+      ["services.sync.perDeviceEngineChoices", true],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+
+  // This will check if the callback was actually called during the test
+  let callbackCalled = false;
+
+  // Enabling all the sync UI is painful in tests, so we just open the dialog manually
+  let syncWindow = await openAndLoadSubDialog(
+    "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
+    null,
+    {},
+    () => {
+      for (const [prefKey, prefValue] of Object.entries(syncPrefs)) {
+        Assert.equal(
+          Services.prefs.getBoolPref(prefKey),
+          prefValue,
+          `${prefValue} is expected value`
+        );
+      }
+      callbackCalled = true;
+    }
+  );
+
+  Assert.ok(syncWindow, "Choose what to sync window opened");
+  let syncChooseDialog =
+    syncWindow.document.getElementById("syncChooseOptions");
+  Assert.ok(syncChooseDialog, "The choose what to sync dialog is present");
+  let dialogText = syncChooseDialog.getAttribute("data-l10n-id");
+
+  Assert.equal(
+    dialogText,
+    "sync-choose-what-to-sync-dialog5",
+    "The choose what to sync dialog string has been set for per-device syncing."
+  );
+
+  syncChooseDialog.cancelDialog();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  Assert.ok(callbackCalled, "Cancel callback was called");
+
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function testDialogCancel() {
   const cancelSyncPrefs = {
     "services.sync.engine.addons": true,

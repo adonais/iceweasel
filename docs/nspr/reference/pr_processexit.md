@@ -12,7 +12,7 @@ void PR_ProcessExit(PRIntn status);
 
 ### Parameter
 
-{ref}`PR_ProcessExit` has one parameter:
+{doc}`pr_processexit` has one parameter:
 
 status
 

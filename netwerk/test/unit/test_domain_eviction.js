@@ -85,7 +85,8 @@ function* do_run_test() {
   do_timeout(2100, continue_test);
   yield;
 
-  Assert.equal(countCookies("captchart.com", "captchart.com"), 50);
+  // The expired cookie is still stored, but it is not exposed anymore.
+  Assert.equal(countCookies("captchart.com", "captchart.com"), 49);
   cv = Services.cookies.add(
     "captchart.com",
     "",
@@ -130,12 +131,11 @@ function setCookies(aHost, aNumber, aExpiry) {
   }
 }
 
-// count how many cookies are within domain 'aBaseDomain', using three
+// count how many cookies are within domain 'aBaseDomain', using two
 // independent interface methods on nsICookieManager:
 // 1) 'cookies', an array of all cookies;
-// 2) 'countCookiesFromHost', which returns the number of cookies within the
-//    base domain of 'aHost',
-// 3) 'getCookiesFromHost', which returns an array of 2).
+// 2) 'getCookiesFromHost', which returns an array of the cookies within the
+//    base domain of 'aHost'.
 function countCookies(aBaseDomain, aHost) {
   // count how many cookies are within domain 'aBaseDomain' using the cookies
   // array.
@@ -149,14 +149,14 @@ function countCookies(aBaseDomain, aHost) {
     }
   }
 
-  // confirm the count using countCookiesFromHost and getCookiesFromHost.
+  // confirm the count using getCookiesFromHost.
   let result = cookies.length;
   Assert.equal(
-    Services.cookies.countCookiesFromHost(aBaseDomain, {}),
+    Services.cookies.getCookiesFromHost(aBaseDomain, {}).length,
     cookies.length
   );
   Assert.equal(
-    Services.cookies.countCookiesFromHost(aHost, {}),
+    Services.cookies.getCookiesFromHost(aHost, {}).length,
     cookies.length
   );
 

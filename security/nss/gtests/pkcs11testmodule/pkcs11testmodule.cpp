@@ -125,6 +125,7 @@ static const CK_PROFILE_ID profiles[] = {CKP_PUBLIC_CERTIFICATES_TOKEN,
 static int profileIndex = 0;
 
 static bool readingCert = false;
+static bool readingPrivKey = false;
 static const unsigned char certId1[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
@@ -135,7 +136,7 @@ static const unsigned char certId2[] = {
   0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
 };
 static const char *certLabel2 = "cert2";
-
+// ECC 256 certificate
 static const unsigned char certValue[] = {
   0x30, 0x82, 0x01, 0x54, 0x30, 0x81, 0xfc, 0xa0, 0x03, 0x02, 0x01, 0x02,
   0x02, 0x02, 0x0e, 0x42, 0x30, 0x0a, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce,
@@ -167,6 +168,25 @@ static const unsigned char certValue[] = {
   0x5f, 0x7f, 0x0f, 0x3a, 0x55, 0x34, 0xfa, 0x86, 0x35, 0xcb, 0x68, 0x4f,
   0xad, 0x67, 0x67, 0x05, 0x36, 0xcb, 0x11, 0x4d
 };
+// fake modulus, only the length is relevant
+static const unsigned char modulusValue[] = {
+  0x00, 0x04, 0x24, 0xd1, 0x96, 0xcc, 0x72, 0x36,
+  0xbb, 0xd6, 0x04, 0x36, 0x14, 0x59, 0x9a, 0x27,
+  0x24, 0x6b, 0x03, 0x7c, 0x02, 0x69, 0x68, 0x50,
+  0x70, 0x52, 0xe5, 0x5f, 0xe1, 0xf1, 0xd4, 0x0a,
+  0x00, 0x18, 0x76, 0x14, 0xa3, 0xed, 0x7d, 0xc5,
+  0x0a, 0xfe, 0xe4, 0x6f, 0x09, 0xf8, 0xcd, 0xe8,
+  0x5a, 0x39, 0x81, 0xf4, 0xcc, 0x25, 0xbe, 0x26,
+  0x76, 0xe1, 0x23, 0x52, 0x09, 0x6f, 0xbd, 0xf1,
+  0x00, 0x04, 0x24, 0xd1, 0x96, 0xcc, 0x72, 0x36,
+  0xbb, 0xd6, 0x04, 0x36, 0x14, 0x59, 0x9a, 0x27,
+  0x24, 0x6b, 0x03, 0x7c, 0x02, 0x69, 0x68, 0x50,
+  0x70, 0x52, 0xe5, 0x5f, 0xe1, 0xf1, 0xd4, 0x0a,
+  0x00, 0x18, 0x76, 0x14, 0xa3, 0xed, 0x7d, 0xc5,
+  0x0a, 0xfe, 0xe4, 0x6f, 0x09, 0xf8, 0xcd, 0xe8,
+  0x5a, 0x39, 0x81, 0xf4, 0xcc, 0x25, 0xbe, 0x26,
+  0x76, 0xe1, 0x23, 0x52, 0x09, 0x6f, 0xbd, 0xf1,
+};
 static const unsigned char certSerial[] = {
   0x02, 0x02, 0x0e, 0x42
 };
@@ -183,6 +203,7 @@ static const struct cert {
   { certId1, sizeof(certId1), certLabel1 },
   { certId2, sizeof(certId2), certLabel2 }
 };
+static size_t certCount = PR_ARRAY_SIZE(certs);
 static int certIndex = 0;
 static CK_OBJECT_HANDLE certHandle = CK_INVALID_HANDLE;
 static bool certIdGiven = false;
@@ -321,18 +342,33 @@ CK_RV Test_C_GetTokenInfo(CK_SLOT_ID slotID, CK_TOKEN_INFO_PTR pInfo) {
   return CKR_OK;
 }
 
-CK_RV Test_C_GetMechanismList(CK_SLOT_ID, CK_MECHANISM_TYPE_PTR,
+static CK_MECHANISM_TYPE mechs4[] = { CKM_RSA_PKCS };
+CK_RV Test_C_GetMechanismList(CK_SLOT_ID slotID, CK_MECHANISM_TYPE_PTR mech,
                               CK_ULONG_PTR pulCount) {
   if (!pulCount) {
     return CKR_ARGUMENTS_BAD;
+  }
+
+  /* fake that we can do RSA */
+  if (slotID == 4) {
+      if (mech) {
+          memcpy(mech, mechs4, sizeof(mechs4));
+      }
+      *pulCount = PR_ARRAY_SIZE(mechs4);
+      return CKR_OK;
   }
 
   *pulCount = 0;
   return CKR_OK;
 }
 
-CK_RV Test_C_GetMechanismInfo(CK_SLOT_ID, CK_MECHANISM_TYPE,
-                              CK_MECHANISM_INFO_PTR) {
+static CK_MECHANISM_INFO mech4RSA = { 1024, 1024, CKF_DECRYPT };
+CK_RV Test_C_GetMechanismInfo(CK_SLOT_ID slotID, CK_MECHANISM_TYPE type,
+                              CK_MECHANISM_INFO_PTR mechInfoPtr) {
+  if ((slotID !=4) || (type != CKM_RSA_PKCS) ) {
+      return CKR_OK;
+  }
+  memcpy(mechInfoPtr, &mech4RSA, sizeof(mech4RSA));
   return CKR_OK;
 }
 
@@ -520,9 +556,80 @@ CK_RV Test_C_Logout(CK_SESSION_HANDLE hSession) {
   return CKR_OK;
 }
 
-CK_RV Test_C_CreateObject(CK_SESSION_HANDLE, CK_ATTRIBUTE_PTR, CK_ULONG,
-                          CK_OBJECT_HANDLE_PTR) {
-  return CKR_FUNCTION_NOT_SUPPORTED;
+struct MustHaveStr {
+  CK_ATTRIBUTE_TYPE attribute;
+  CK_BBOOL bVerifyULongValue;
+  CK_ULONG ulValue;
+  CK_BBOOL bFound;
+};
+
+CK_RV Test_C_CreateObject(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
+                          CK_ULONG ulTemplateCount,
+                          CK_OBJECT_HANDLE_PTR phObjectHandle) {
+  CK_ULONG  i;
+  size_t j;
+  struct MustHaveStr aMustHave[] = {
+    {CKA_CLASS, PR_TRUE, CKO_PRIVATE_KEY, PR_FALSE},
+    {CKA_KEY_TYPE, PR_TRUE, CKK_RSA, PR_FALSE},
+    {CKA_MODULUS, PR_FALSE, 0, PR_FALSE },
+    {CKA_PUBLIC_EXPONENT, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIVATE_EXPONENT, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIME_1, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIME_2, PR_FALSE, 0, PR_FALSE },
+    {CKA_EXPONENT_1, PR_FALSE, 0, PR_FALSE },
+    {CKA_EXPONENT_2, PR_FALSE, 0, PR_FALSE },
+    {CKA_COEFFICIENT, PR_FALSE, 0, PR_FALSE },
+  };
+  size_t iMustHaveLen = PR_ARRAY_SIZE(aMustHave);
+
+  CK_ATTRIBUTE_TYPE aCanHave[] = { CKA_TOKEN, CKA_PRIVATE, CKA_LABEL,
+    CKA_MODIFIABLE, CKA_ID, CKA_START_DATE, CKA_END_DATE, CKA_LOCAL,
+    CKA_SUBJECT, CKA_SENSITIVE, CKA_EXTRACTABLE, CKA_DECRYPT,
+    CKA_SIGN, CKA_SIGN_RECOVER, CKA_UNWRAP, CKA_ALWAYS_SENSITIVE,
+    CKA_NEVER_EXTRACTABLE,
+  };
+  size_t iCanHaveLen = PR_ARRAY_SIZE(aCanHave);
+
+  /* check that we are importing a valid rsa key */
+  for (i=0; i < ulTemplateCount; i++) {
+    CK_ATTRIBUTE_TYPE attr = pTemplate[i].type;
+    CK_BBOOL found=PR_FALSE;
+    for (j=0; j < iMustHaveLen; j++) {
+      struct MustHaveStr *mhp = &aMustHave[j];
+      if (attr == mhp->attribute) {
+        if (mhp->bVerifyULongValue) {
+          if (pTemplate[i].ulValueLen != sizeof(CK_ULONG)) {
+            return CKR_ATTRIBUTE_VALUE_INVALID;
+          }
+          if (*((CK_ULONG *)pTemplate[i].pValue) != mhp->ulValue) {
+            return CKR_ATTRIBUTE_VALUE_INVALID;
+          }
+        }
+        mhp->bFound=PR_TRUE;
+        found=PR_TRUE;
+        break;
+      }
+    }
+    if (found) {
+      continue;
+    }
+    for (j=0; j < iCanHaveLen; j++) {
+      if (attr == aCanHave[j]) {
+        found=PR_TRUE;
+        break;
+      }
+    }
+    if (!found) {
+      return CKR_ATTRIBUTE_TYPE_INVALID;
+    }
+  }
+  for (j=0; j < iMustHaveLen; j++) {
+    if (!aMustHave[j].bFound) {
+      return CKR_TEMPLATE_INCOMPLETE;
+    }
+  }
+  *phObjectHandle = 0x6;
+  return CKR_OK;
 }
 
 CK_RV Test_C_CopyObject(CK_SESSION_HANDLE, CK_OBJECT_HANDLE, CK_ATTRIBUTE_PTR,
@@ -560,7 +667,19 @@ CK_RV Test_C_GetAttributeValue(CK_SESSION_HANDLE hSession,
       }
       return CKR_OK;
     case 3:
-    case 4:
+    default:
+      if ((hObject < 3) || (hObject > 200)) {
+          break;
+      }
+      CK_OBJECT_CLASS objClass = CKO_CERTIFICATE;
+      if (hObject > 100) {
+          objClass = CKO_PRIVATE_KEY;
+          hObject -= 100;
+      }
+      size_t lCertIndex = hObject - 3;
+      if (lCertIndex >=  certCount) {
+          break;
+      }
       for (CK_ULONG count = 0; count < ulCount; count++) {
         switch (pTemplate[count].type) {
         case CKA_TOKEN:
@@ -573,8 +692,20 @@ CK_RV Test_C_GetAttributeValue(CK_SESSION_HANDLE hSession,
           }
           break;
 
+        case CKA_CLASS:
+          if (pTemplate[count].pValue) {
+            if (pTemplate[count].ulValueLen >= sizeof(objClass)) {
+              memcpy(pTemplate[count].pValue, &objClass, sizeof(objClass));
+            } else {
+              pTemplate[count].ulValueLen = CK_UNAVAILABLE_INFORMATION;
+            }
+          } else {
+            pTemplate[count].ulValueLen = sizeof(objClass);
+          }
+          break;
+
         case CKA_LABEL: {
-          const char *label = certs[hObject - 3].label;
+          const char *label = certs[lCertIndex].label;
           size_t labelLen = strlen(label);
           if (pTemplate[count].pValue) {
             if (pTemplate[count].ulValueLen >= labelLen) {
@@ -588,8 +719,12 @@ CK_RV Test_C_GetAttributeValue(CK_SESSION_HANDLE hSession,
           break;
         }
 
-#define BYTEARRAY_CASE(label, array) \
+#define BYTEARRAY_CASE(label, type_ok, array) \
         case label: \
+          if (!(type_ok)) { \
+              pTemplate[count].ulValueLen = CK_UNAVAILABLE_INFORMATION; \
+              break; \
+          } \
           if (pTemplate[count].pValue) { \
             if (pTemplate[count].ulValueLen >= sizeof(array)) { \
               memcpy(pTemplate[count].pValue, array, sizeof(array)); \
@@ -601,13 +736,31 @@ CK_RV Test_C_GetAttributeValue(CK_SESSION_HANDLE hSession,
           } \
           break;
 
-        BYTEARRAY_CASE(CKA_VALUE, certValue)
-        BYTEARRAY_CASE(CKA_SERIAL_NUMBER, certSerial)
-        BYTEARRAY_CASE(CKA_ISSUER, certIssuer)
+        BYTEARRAY_CASE(CKA_VALUE, objClass == CKO_CERTIFICATE, certValue)
+        BYTEARRAY_CASE(CKA_MODULUS, objClass == CKO_PRIVATE_KEY, modulusValue)
+        BYTEARRAY_CASE(CKA_SERIAL_NUMBER, PR_TRUE, certSerial)
+        BYTEARRAY_CASE(CKA_ISSUER, PR_TRUE, certIssuer)
+
+        case CKA_KEY_TYPE:
+          if (objClass == CKO_CERTIFICATE) {
+            pTemplate[count].ulValueLen = CK_UNAVAILABLE_INFORMATION;
+            break;
+          }
+          if (pTemplate[count].pValue) {
+            if (pTemplate[count].ulValueLen >= sizeof(CK_KEY_TYPE)) {
+              CK_KEY_TYPE keyType =  CKK_RSA;
+              memcpy(pTemplate[count].pValue, &keyType, sizeof(CK_KEY_TYPE));
+            } else {
+              pTemplate[count].ulValueLen = CK_UNAVAILABLE_INFORMATION;
+            }
+          } else {
+            pTemplate[count].ulValueLen = sizeof(CK_KEY_TYPE);
+          }
+          break;
 
         case CKA_ID: {
-          const unsigned char *idData = certs[hObject - 3].id;
-          CK_ULONG idLen = certs[hObject - 3].idLen;
+          const unsigned char *idData = certs[lCertIndex].id;
+          CK_ULONG idLen = certs[lCertIndex].idLen;
           if (pTemplate[count].pValue) {
             if (pTemplate[count].ulValueLen >= idLen) {
               memcpy(pTemplate[count].pValue, idData, idLen);
@@ -626,8 +779,6 @@ CK_RV Test_C_GetAttributeValue(CK_SESSION_HANDLE hSession,
         }
       }
       return CKR_OK;
-    default:
-      break;
     }
   }
   // Auth slot: a private key that always requires per-operation
@@ -701,10 +852,24 @@ CK_RV Test_C_FindObjectsInit(CK_SESSION_HANDLE hSession,
       certIndex = 0;
       if (id) {
         certIdGiven = true;
-        for (size_t count = 0; count < sizeof(certs) / sizeof(certs[0]); count++) {
+        for (size_t count = 0; count < certCount; count++) {
           if (certs[count].idLen == idLen &&
               memcmp(certs[count].id, id, idLen) == 0) {
             certHandle = count + 3;
+            break;
+          }
+        }
+      }
+      break;
+    case CKO_PRIVATE_KEY:
+      readingPrivKey = true;
+      certIndex = 0;
+      if (id) {
+        certIdGiven = true;
+        for (size_t count = 0; count < certCount; count++) {
+          if (certs[count].idLen == idLen &&
+              memcmp(certs[count].id, id, idLen) == 0) {
+            certHandle = count + 3 + 100;
             break;
           }
         }
@@ -733,8 +898,9 @@ CK_RV Test_C_FindObjects(CK_SESSION_HANDLE hSession,
     }
     profileIndex += count;
     *pulObjectCount = count;
-  } else if (readingCert) {
+  } else if (readingCert || readingPrivKey) {
     assert(hSession == 4);
+    CK_ULONG offset = readingCert ? 0 : 100;
     if (!certIdGiven) {
       CK_ULONG count = ulMaxObjectCount;
       size_t remaining = sizeof(certs) / sizeof(certs[0]) - certIndex;
@@ -742,7 +908,7 @@ CK_RV Test_C_FindObjects(CK_SESSION_HANDLE hSession,
         count = remaining;
       }
       for (CK_ULONG i = 0; i < count; i++) {
-        phObject[i] = i + 3;
+        phObject[i] = i + 3 + offset;
       }
       *pulObjectCount = count;
       certIndex += count;
@@ -766,6 +932,7 @@ CK_RV Test_C_FindObjects(CK_SESSION_HANDLE hSession,
 CK_RV Test_C_FindObjectsFinal(CK_SESSION_HANDLE hSession) {
   readingProfile = false;
   readingCert = false;
+  readingPrivKey = false;
   certHandle = CK_INVALID_HANDLE;
   certIdGiven = false;
   return CKR_OK;
@@ -792,7 +959,7 @@ CK_RV Test_C_EncryptFinal(CK_SESSION_HANDLE, CK_BYTE_PTR, CK_ULONG_PTR) {
 
 CK_RV Test_C_DecryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR,
                          CK_OBJECT_HANDLE) {
-  if (hSession == 5) {
+  if ((hSession == 5) || (hSession == 4)) {
     return CKR_OK;
   }
   return CKR_FUNCTION_NOT_SUPPORTED;
@@ -800,18 +967,42 @@ CK_RV Test_C_DecryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR,
 
 CK_RV Test_C_Decrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR, CK_ULONG,
                      CK_BYTE_PTR pData, CK_ULONG_PTR pulDataLen) {
-  if (hSession != 5) {
-    return CKR_FUNCTION_NOT_SUPPORTED;
-  }
   // No real crypto: return a fixed dummy plaintext.
   static const CK_BYTE kPlaintext[8] = {7, 6, 5, 4, 3, 2, 1, 0};
+  // slot 4 similates "unwrap" case with a token decrypt, make the value
+  // a valid AES 256 key
+  static const CK_BYTE kPlaintext2[32] = {
+      0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18,
+      0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
+      0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,
+      0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+  };
+  static const CK_ULONG kPlaintextLen = sizeof(kPlaintext);
+  static const CK_ULONG kPlaintext2Len = sizeof(kPlaintext2);
+  const CK_BYTE *plaintext = nullptr;
+  CK_ULONG plaintextLen = 0;
+
+  switch (hSession) {
+      case 5:
+          plaintext = kPlaintext;
+          plaintextLen = kPlaintextLen;
+          break;
+      case 4:
+          plaintext = kPlaintext2;
+          plaintextLen = kPlaintext2Len;
+          break;
+      default:
+        return CKR_FUNCTION_NOT_SUPPORTED;
+  }
+
+
   if (pData) {
-    if (*pulDataLen < sizeof(kPlaintext)) {
+    if (*pulDataLen < plaintextLen) {
       return CKR_BUFFER_TOO_SMALL;
     }
-    memcpy(pData, kPlaintext, sizeof(kPlaintext));
+    memcpy(pData, plaintext, plaintextLen);
   }
-  *pulDataLen = sizeof(kPlaintext);
+  *pulDataLen = plaintextLen;
   return CKR_OK;
 }
 

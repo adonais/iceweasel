@@ -118,8 +118,6 @@ linux64-clang-22-mingw-x86:
         fetch:
             - clang-22
             - mingw-w64
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-22
 
@@ -144,8 +142,6 @@ linux64-clang-22-mingw-x64:
         fetch:
             - clang-22
             - mingw-w64
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-22
 
@@ -767,8 +763,6 @@ linux64-clang-23-mingw-x86:
         fetch:
             - clang-23
             - mingw-w64
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-23
 
@@ -789,8 +783,6 @@ linux64-clang-23-mingw-x64:
         fetch:
             - clang-23
             - mingw-w64
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-23
 
@@ -1386,8 +1378,6 @@ linux64-clang-trunk-mingw-x86:
         fetch:
             - clang-trunk
             - mingw-w64-trunk
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-trunk
 
@@ -1414,8 +1404,6 @@ linux64-clang-trunk-mingw-x64:
         fetch:
             - clang-trunk
             - mingw-w64-trunk
-            - llvm-mingw
-            - gcc-9.5.0
         toolchain:
             - linux64-clang-trunk
 
@@ -1658,6 +1646,7 @@ macosx64-clang-trunk-profile:
         toolchain:
             - macosx64-clang-trunk-stage2
             - macosx64-sdk-toolchain
+            - macosx64-x64-compiler-rt-trunk
 
 macosx64-clang-trunk-raw:
     description: "Clang trunk toolchain build"

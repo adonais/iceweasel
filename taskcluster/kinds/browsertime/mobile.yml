@@ -103,7 +103,11 @@ task-defaults:
     dependencies:
         by-app:
             fenix:
-                signing-apk: signing-apk-fenix-nightly-simulation
+                by-test-platform:
+                    android-hw.*nightlyasrelease.*:
+                        signing-apk: signing-apk-fenix-nightlyasrelease-simulation
+                    default:
+                        signing-apk: signing-apk-fenix-nightly-simulation
             default: {}
 
 browsertime-tp6m:
@@ -146,14 +150,11 @@ browsertime-tp6m:
             - dailymail
             - [ebay-kleinanzeigen, ebay-k]
             - [ebay-kleinanzeigen-search, ebay-k-s]
-            # Bug 1682027 - Disabled due to high failure rate
-            # - [facebook-cristiano, fb-cris]
             - [google-maps, gmaps]
             - [google-search-restaurants, gsearch-r]
             - instagram
             - imdb
             - reddit
-            - sina
             - [stackoverflow, stacko]
             - bild-de
             - wikipedia
@@ -183,8 +184,6 @@ browsertime-tp6m-essential:
             - allrecipes
             - [amazon-search, amazon-s]
             - espn
-            # Bug 1682027 - Disabled due to high failure rate
-            # - facebook
             - google
             - [microsoft-support, micros-sup]
             - [youtube-watch, youtube-w]
@@ -339,8 +338,6 @@ browsertime-tp6m-live:
             - [ebay-kleinanzeigen-search, ebay-k-s]
             - espn
             - expedia
-            - facebook
-            - [facebook-cristiano, fb-cris]
             - [fashionbeans, fashbea]
             - google
             - [google-accounts, gacc]
@@ -471,12 +468,25 @@ browsertime-benchmark-speedometer3-mobile:
     run-on-projects:
         by-app:
             fenix:
-                by-test-platform:
-                    android-hw-a55.*shippable.*: [trunk-only]
-                    android-hw-p6.*shippable.*: [mozilla-central]
-                    android-hw-s24.*shippable.*: [mozilla-central]
-                    android-em-14-arm64.*shippable.*: [autoland]
-                    default: []
+                by-variant:
+                    # Bug 2037229 - clean up this config once no-fission is fully removed
+                    geckoview-no-fission:
+                        by-test-platform:
+                            android-hw-a55.*shippable.*: [trunk-only]
+                            android-hw-p6.*shippable.*: [mozilla-central]
+                            android-hw-s24.*shippable.*: [mozilla-central]
+                            android-em-14-arm64.*shippable.*: [autoland]
+                            default: []
+                    default:
+                        by-test-platform:
+                            android-hw-a55.*nightlyasrelease.*: [trunk-only]
+                            android-hw-p6.*nightlyasrelease.*: [mozilla-central]
+                            android-hw-s24.*nightlyasrelease.*: [mozilla-central]
+                            android-hw-a55.*shippable.*: [trunk-only]
+                            android-hw-p6.*shippable.*: [mozilla-central]
+                            android-hw-s24.*shippable.*: [mozilla-central]
+                            android-em-14-arm64.*shippable.*: [autoland]
+                            default: []
             geckoview: []
             chrome-m:
                 by-test-platform:

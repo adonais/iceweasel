@@ -2192,8 +2192,8 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
       bool rasterizedForDest = false;
       IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              imgCon, this, destRect, destRect, aSc, aFlags, svgContext, region,
-              &rasterizedForDest);
+              imgCon, this, destRect, destRect, aBuilder, aSc, aFlags,
+              svgContext, region, &rasterizedForDest);
       RefPtr<image::WebRenderImageProvider> provider;
       result = imgCon->GetImageProvider(aManager->LayerManager(), decodeSize,
                                         svgContext, region, aFlags,
@@ -2499,8 +2499,8 @@ WebRenderCommandsResult nsDisplayImage::CreateWebRenderCommands(
   Maybe<ImageIntRegion> region;
   bool rasterizedForDest = false;
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
-      image, mFrame, destRect, destRect, aSc, flags, svgContext, region,
-      &rasterizedForDest);
+      image, mFrame, destRect, destRect, aBuilder, aSc, flags, svgContext,
+      region, &rasterizedForDest);
 
   RefPtr<image::WebRenderImageProvider> provider;
   ImgDrawResult drawResult =

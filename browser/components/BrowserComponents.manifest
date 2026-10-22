@@ -22,12 +22,12 @@ category browser-before-ui-startup moz-src:///browser/components/privatebrowsing
 category browser-before-ui-startup moz-src:///browser/components/remotecontrol/RemoteControlPanel.sys.mjs RemoteControlPanel.init
 #endif
 category browser-before-ui-startup resource:///modules/AboutHomeStartupCache.sys.mjs AboutHomeStartupCache.init
-category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs AccountsGlue.init
+category browser-before-ui-startup moz-src:///browser/components/AccountsGlue.sys.mjs AccountsGlue.init
 category browser-before-ui-startup moz-src:///browser/modules/ObserverForwarder.sys.mjs ObserverForwarder.init
 #ifdef XP_WIN
 category browser-before-ui-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.applyCustomIconOnStartup
 #endif
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+#ifdef XP_MACOSX
 category browser-before-ui-startup moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.init
 category browser-idle-startup moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.removeLeftoverEphemeralContainers
 category browser-quit-application-granted moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.uninit
@@ -63,7 +63,7 @@ category browser-window-load chrome://browser/content/browser.js#gUIDensity gUID
 category browser-window-load chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.init
 category browser-window-load chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.ensureInitialized
 category browser-window-load moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs PrivateBrowsingUI.init
-category browser-window-load resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs TaskbarTabsChrome.init
+category browser-window-load moz-src:///browser/components/taskbartabs/TaskbarTabsChrome.sys.mjs TaskbarTabsChrome.init
 category browser-window-load chrome://browser/content/browser-pageActions.js BrowserPageActions.init
 category browser-window-load chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.init
 category browser-window-load moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.initWindow
@@ -74,7 +74,7 @@ category browser-window-delayed-startup moz-src:///browser/components/genai/Link
 category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
 category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
 category browser-window-delayed-startup moz-src:///browser/components/sharing/SharePageAction.sys.mjs SharePageAction.init
-category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
+category browser-window-delayed-startup moz-src:///browser/components/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
 #ifdef XP_MACOSX
 category browser-window-delayed-startup resource://gre/modules/RosettaUtils.sys.mjs RosettaUtils.maybeWarnAboutRosetta
 #endif

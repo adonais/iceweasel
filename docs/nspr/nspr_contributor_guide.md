@@ -33,7 +33,7 @@ other language wrappers.
 NSPR does not have a documented coding style guide. Look at the extant
 code. Make yours look like that. Some guidelines concerning naming
 conventions can be found in {ref}`nspr-naming-conventions`.
-in the {ref}`NSPR API Reference`.
+in the {doc}`reference/index`.
 
 ### *Ownership of your contribution*
 

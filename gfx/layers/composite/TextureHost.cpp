@@ -10,11 +10,9 @@
 #include "CompositableHost.h"  // for CompositableHost
 #include "gfxUtils.h"
 #include "mozilla/RefPtr.h"  // for nsRefPtr
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/2D.h"  // for DataSourceSurface, Factory
 #include "mozilla/gfx/CanvasManagerParent.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/Shmem.h"  // for Shmem
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/BufferTexture.h"
@@ -33,7 +31,6 @@
 #include "mozilla/layers/VideoBridgeParent.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/webrender/RenderBufferTextureHost.h"
-#include "mozilla/webrender/RenderExternalTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsAString.h"
@@ -495,18 +492,6 @@ BufferTextureHost::BufferTextureHost(const BufferDescriptor& aDesc,
                          << (int)mDescriptor.type();
       MOZ_CRASH("GFX: Bad descriptor");
   }
-
-#ifdef XP_MACOSX
-  const int kMinSize = 1024;
-  const int kMaxSize = 4096;
-  mUseExternalTextures =
-      kMaxSize >= mSize.width && mSize.width >= kMinSize &&
-      kMaxSize >= mSize.height && mSize.height >= kMinSize &&
-      StaticPrefs::gfx_webrender_enable_client_storage_AtStartup() &&
-      !gfx::gfxVars::UseWebRenderANGLE();
-#else
-  mUseExternalTextures = false;
-#endif
 }
 
 BufferTextureHost::~BufferTextureHost() = default;
@@ -521,15 +506,9 @@ void BufferTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture;
-
-  if (UseExternalTextures()) {
-    texture = MakeRefPtr<wr::RenderExternalTextureHost>(GetBuffer(),
-                                                        GetBufferDescriptor());
-  } else {
-    texture = MakeRefPtr<wr::RenderBufferTextureHost>(GetBuffer(),
-                                                      GetBufferDescriptor());
-  }
+  RefPtr<wr::RenderTextureHost> texture =
+      MakeRefPtr<wr::RenderBufferTextureHost>(GetBuffer(),
+                                              GetBufferDescriptor());
 
   if (auto* shmemTextureHost = AsShmemTextureHost()) {
     shmemTextureHost->OnRenderTextureCreated(texture);
@@ -554,15 +533,12 @@ void BufferTextureHost::PushResourceUpdates(
                     ? &wr::TransactionBuilder::AddExternalImage
                     : &wr::TransactionBuilder::UpdateExternalImage;
 
-  // Use native textures if our backend requires it, or if our backend doesn't
-  // forbid it and we want to use them.
+  // Use native textures only if our backend requires it.
   NativeTexturePolicy policy = BackendNativeTexturePolicy(
       aResources.GetCapabilities().mBackendType, GetSize());
-  bool useNativeTexture =
-      (policy == REQUIRE) || (policy != FORBID && UseExternalTextures());
-  auto imageType = useNativeTexture ? wr::ExternalImageType::TextureHandle(
-                                          wr::ImageBufferKind::TextureRect)
-                                    : wr::ExternalImageType::Buffer();
+  auto imageType = policy == REQUIRE ? wr::ExternalImageType::TextureHandle(
+                                           wr::ImageBufferKind::TextureRect)
+                                     : wr::ExternalImageType::Buffer();
 
   if (!IsYCbCr()) {
     if (aImageKeys.length() != 1) {

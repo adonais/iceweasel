@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 // We use importESModule here instead of static import so that
 // the Karma test environment won't choke on this module. This
 // is because the Karma test environment already stubs out
@@ -383,6 +385,9 @@ for (const action of [
 EventEmitter.decorate(SectionsManager);
 
 export class SectionsFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.init = this.init.bind(this);
     this.onAddSection = this.onAddSection.bind(this);

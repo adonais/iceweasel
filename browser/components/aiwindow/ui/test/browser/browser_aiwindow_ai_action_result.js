@@ -325,6 +325,56 @@ add_task(async function test_label_links_render_and_do_not_toggle() {
   });
 });
 
+add_task(async function test_linked_pending_label_completes_and_expands() {
+  const link = {
+    l10nName: "exa-link",
+    href: "https://support.mozilla.org/kb/smart-window-exa",
+  };
+
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      labelL10nId: "action-log-searching-web-with-exa",
+      labelLink: link,
+      isLoading: true,
+      rows: [
+        { labelL10nId: "action-log-searched-web-with-exa", link, items: [] },
+      ],
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          shadow.querySelector(".action-result-label").textContent.trim() ==
+          "Searching the web with Exa",
+        "Pending label is translated with its link"
+      );
+
+      el.isLoading = false;
+      el.labelL10nId = "action-log-completed-steps";
+      el.labelL10nArgs = { count: 1 };
+      el.labelLink = null;
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          shadow.querySelector(".action-result-label").textContent.trim() ==
+          "Completed 1 step",
+        "Completed label replaces the linked pending label"
+      );
+
+      shadow.querySelector(".action-result-header").click();
+      await el.updateComplete;
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          shadow
+            .querySelector(".action-result-expanded-row-label")
+            ?.textContent.trim() == "Searched the web with Exa",
+        "Expanded row renders after the linked label completes"
+      );
+    });
+  });
+});
+
 add_task(async function test_toggle_dispatches_event() {
   await withTestPage(async browser => {
     await setProps(browser, { label: "Closed tabs", isExpanded: false });

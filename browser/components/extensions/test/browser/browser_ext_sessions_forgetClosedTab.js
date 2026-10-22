@@ -3,6 +3,9 @@
 const { TabStateFlusher } = ChromeUtils.importESModule(
   "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
 );
+const { TabGroupTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TabGroupTestUtils.sys.mjs"
+);
 
 function getExtension(incognitoOverride) {
   function background() {
@@ -107,6 +110,52 @@ add_task(async function test_sessions_forget_closed_tab() {
     "The correct tab remains."
   );
 
+  await extension.unload();
+});
+
+add_task(async function test_sessions_forget_closed_tab_in_closed_group() {
+  let extension = getExtension();
+  await extension.startup();
+
+  await openAndCloseTab(window, "https://example.com/?single");
+
+  let tabs = [
+    BrowserTestUtils.addTab(gBrowser, "https://example.com/?group1"),
+    BrowserTestUtils.addTab(gBrowser, "https://example.com/?group2"),
+  ];
+  let group = gBrowser.addTabGroup(tabs);
+  let groupId = group.id;
+  await Promise.all(
+    tabs.map(async tab => {
+      await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+      await TabStateFlusher.flush(tab.linkedBrowser);
+    })
+  );
+  await TabGroupTestUtils.removeTabGroup(group);
+
+  let getClosedTabs = async () => {
+    extension.sendMessage("check-sessions");
+    let recentlyClosed = await extension.awaitMessage("recentlyClosed");
+    return recentlyClosed.filter(({ tab }) => tab).map(({ tab }) => tab);
+  };
+
+  let closedTabs = await getClosedTabs();
+  let groupTab = closedTabs.find(
+    tab => tab.url == "https://example.com/?group1"
+  );
+  extension.sendMessage("forget-tab", groupTab.windowId, groupTab.sessionId);
+  await extension.awaitMessage("forgot-tab");
+
+  Assert.deepEqual(
+    (await getClosedTabs()).map(tab => tab.sessionId),
+    closedTabs.filter(tab => tab != groupTab).map(tab => tab.sessionId),
+    "Only the group's first tab was forgotten."
+  );
+
+  SessionStore.forgetClosedTabGroup(window, groupId);
+  while (SessionStore.getClosedTabCountForWindow(window) > 0) {
+    SessionStore.forgetClosedTab(window, 0);
+  }
   await extension.unload();
 });
 

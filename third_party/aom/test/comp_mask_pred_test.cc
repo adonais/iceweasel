@@ -82,10 +82,10 @@ void AV1CompMaskPredBase::SetUp() {
   rnd_.Reset(libaom_test::ACMRandom::DeterministicSeed());
   av1_init_wedge_masks();
   comp_pred1_ =
-      (uint8_t *)aom_memalign(16, ((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE);
+      (uint8_t *)aom_memalign(16, (MAX_SB_SIZE + SUBPEL_TAPS) * MAX_SB_SIZE);
   ASSERT_NE(comp_pred1_, nullptr);
   comp_pred2_ =
-      (uint8_t *)aom_memalign(16, ((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE);
+      (uint8_t *)aom_memalign(16, (MAX_SB_SIZE + SUBPEL_TAPS) * MAX_SB_SIZE);
   ASSERT_NE(comp_pred2_, nullptr);
   pred_ = (uint8_t *)aom_memalign(16, MAX_SB_SQUARE);
   ASSERT_NE(pred_, nullptr);
@@ -458,10 +458,10 @@ void AV1HighbdCompMaskPredTestBase::SetUp() {
   av1_init_wedge_masks();
 
   comp_pred1_ = (uint16_t *)aom_memalign(
-      16, ((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE * sizeof(*comp_pred1_));
+      16, (MAX_SB_SIZE + SUBPEL_TAPS) * MAX_SB_SIZE * sizeof(*comp_pred1_));
   ASSERT_NE(comp_pred1_, nullptr);
   comp_pred2_ = (uint16_t *)aom_memalign(
-      16, ((MAX_SB_SIZE + 16) + 16) * MAX_SB_SIZE * sizeof(*comp_pred2_));
+      16, (MAX_SB_SIZE + SUBPEL_TAPS) * MAX_SB_SIZE * sizeof(*comp_pred2_));
   ASSERT_NE(comp_pred2_, nullptr);
   pred_ = (uint16_t *)aom_memalign(16, MAX_SB_SQUARE * sizeof(*pred_));
   ASSERT_NE(pred_, nullptr);

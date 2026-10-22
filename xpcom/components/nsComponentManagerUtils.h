@@ -53,18 +53,18 @@ class MOZ_STACK_CLASS nsCreateInstanceFromFactory final
   nsresult* mErrorPtr;
 };
 
-inline const nsCreateInstanceByCID do_CreateInstance(const nsCID& aCID,
-                                                     nsresult* aError = 0) {
+inline const nsCreateInstanceByCID do_CreateInstance(
+    const nsCID& aCID, nsresult* aError = nullptr) {
   return nsCreateInstanceByCID(aCID, aError);
 }
 
 inline const nsCreateInstanceByContractID do_CreateInstance(
-    const char* aContractID, nsresult* aError = 0) {
+    const char* aContractID, nsresult* aError = nullptr) {
   return nsCreateInstanceByContractID(aContractID, aError);
 }
 
 inline const nsCreateInstanceFromFactory do_CreateInstance(
-    nsIFactory* aFactory, nsresult* aError = 0) {
+    nsIFactory* aFactory, nsresult* aError = nullptr) {
   return nsCreateInstanceFromFactory(aFactory, aError);
 }
 

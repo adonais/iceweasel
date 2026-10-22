@@ -5,7 +5,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Web Apps")
 
-EXTRA_JS_MODULES.taskbartabs += [
+MOZ_SRC_FILES += [
     "TaskbarTabs.sys.mjs",
     "TaskbarTabsChrome.sys.mjs",
     "TaskbarTabsCmd.sys.mjs",

@@ -26,6 +26,7 @@ import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.StatePersistenceCallback
 import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
@@ -623,6 +624,31 @@ class FxaAccountManagerTest {
         fxaManager.logout()
         verify(accountObserver, times(1)).onAuthenticationProblems()
         verify(accountObserver, times(1)).onLoggedOut()
+    }
+
+    @Test
+    fun `syncNow refreshes the profile only for a full user sync`() = runTest {
+        val fxaManager =
+            TestableFxaAccountManager(
+                context = testContext,
+                config = FxaConfig(FxaServer.Release, "dummyId", "http://auth-url/redirect"),
+                storage = mock(),
+                syncConfig = SyncConfig(setOf(SyncEngine.Tabs, SyncEngine.History), periodicSyncConfig = null),
+                coroutineContext = this.coroutineContext,
+            )
+        val account = fxaManager.testableStorageWrapper.account
+        whenever(account.processEvent(any())).thenReturn(FxaState.Connected)
+        fxaManager.start()
+        clearInvocations(account)
+
+        fxaManager.syncNow(SyncReason.User, customEngineSubset = listOf(SyncEngine.Tabs))
+        verify(account, never()).getProfile(anyBoolean())
+
+        fxaManager.syncNow(SyncReason.Startup)
+        verify(account, never()).getProfile(anyBoolean())
+
+        fxaManager.syncNow(SyncReason.User)
+        verify(account, times(1)).getProfile(true)
     }
 
     @Test

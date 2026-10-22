@@ -263,7 +263,6 @@ skip-if = [
 ["test_toggling_performance_navigation_timing.html"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1730152
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 1730152
 ]
 
 ["test_vibrator.html"]

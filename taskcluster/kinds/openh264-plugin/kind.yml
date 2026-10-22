@@ -107,7 +107,6 @@ tasks:
                 TARGET: x86_64-apple-darwin
         fetches:
             toolchain:
-                - linux64-cctools-port
                 - linux64-clang
                 - linux64-dump_syms
                 - linux64-nasm
@@ -124,7 +123,6 @@ tasks:
                 TARGET: aarch64-apple-darwin
         fetches:
             toolchain:
-                - linux64-cctools-port
                 - linux64-clang
                 - linux64-dump_syms
                 - macosx64-sdk-toolchain

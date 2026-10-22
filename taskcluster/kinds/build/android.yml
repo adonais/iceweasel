@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
+
 task-defaults:
     attributes:
         artifact_map: taskcluster/gecko_taskgraph/manifests/fennec_geckoview.yml
@@ -80,10 +81,11 @@ android-arm/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: arm-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -118,6 +120,36 @@ android-arm/opt:
             - android-gradle-dependencies
             - linux64-sccache
 
+
+android-arm-appservices/opt:
+    description: "Android Arm Opt with an in-tree app-services"
+    attributes:
+        skip-verify-test-packaging: true
+    index:
+        job-name: android-arm-appservices-opt
+    treeherder:
+        platform: android-5-0-armv7/opt
+        symbol: B-as
+        tier: 3
+    run-on-projects: []
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_APPSERVICES_IN_TREE: "1"
+            PERFHERDER_EXTRA_OPTIONS: appservices
+    run:
+        actions: [get-secrets, build]
+        custom-build-variant-cfg: arm
+    use-sccache: true
+    use-python: "3.11"
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies-appservices
+            - linux64-sccache
+
 android-arm-lite/opt:
     description: "Android Arm Opt Lite"
     index:
@@ -132,6 +164,8 @@ android-arm-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-arm-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: arm-lite
@@ -196,6 +230,8 @@ android-arm-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-arm-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -212,6 +248,7 @@ android-aarch64/opt:
         job-name: android-aarch64-opt
     attributes:
         enable-full-crashsymbols: true
+        code-review-build-test: true
     treeherder:
         platform: android-5-0-aarch64/opt
         symbol: B
@@ -232,6 +269,36 @@ android-aarch64/opt:
             - linux64-sccache
             - android-gradle-dependencies
 
+
+android-aarch64-appservices/opt:
+    description: "Android AArch64 Opt with an in-tree app-services"
+    attributes:
+        skip-verify-test-packaging: true
+    index:
+        job-name: android-aarch64-appservices-opt
+    treeherder:
+        platform: android-5-0-aarch64/opt
+        symbol: B-as
+        tier: 3
+    run-on-projects: []
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_APPSERVICES_IN_TREE: "1"
+            PERFHERDER_EXTRA_OPTIONS: appservices
+    run:
+        actions: [get-secrets, build]
+        custom-build-variant-cfg: aarch64
+    use-sccache: true
+    use-python: "3.11"
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - linux64-sccache
+            - android-gradle-dependencies-appservices
+
 android-aarch64-lite/opt:
     description: "Android AArch64 Opt Lite"
     index:
@@ -246,6 +313,8 @@ android-aarch64-lite/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-aarch64-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64-lite
@@ -271,12 +340,11 @@ android-aarch64-non-unified/opt:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+    mozconfig:
+        variant: non-unified
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64
-        extra-config:
-            extra_mozconfig_content:
-                - ac_add_options --disable-unified-build
     use-sccache: true
     use-python: "3.11"
     fetches:
@@ -299,10 +367,11 @@ android-aarch64/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -364,6 +433,8 @@ android-aarch64-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-aarch64-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -417,10 +488,11 @@ android-x86_64-ccov/opt:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: code-coverage-opt
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-ccov
-        mozconfig-variant: code-coverage-opt
     use-sccache: false
     fetches:
         toolchain:
@@ -429,6 +501,34 @@ android-x86_64-ccov/opt:
             - linux64-rust-android-dev
             - linux64-sccache
             - android-gradle-dependencies
+
+
+android-x86_64-appservices/opt:
+    description: "Android x86-64 Opt with an in-tree app-services"
+    index:
+        job-name: android-x86_64-appservices-opt
+    treeherder:
+        platform: android-5-0-x86_64/opt
+        symbol: B-as
+        tier: 3
+    run-on-projects: []
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            MOZ_APPSERVICES_IN_TREE: "1"
+            PERFHERDER_EXTRA_OPTIONS: appservices
+    run:
+        actions: [get-secrets, build]
+        custom-build-variant-cfg: x86_64
+    use-sccache: true
+    use-python: "3.11"
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - linux64-sccache
+            - android-gradle-dependencies-appservices
 
 android-x86_64-lite/opt:
     description: "Android x86-64 Opt Lite"
@@ -445,6 +545,8 @@ android-x86_64-lite/opt:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-x86_64-lite
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-lite
@@ -467,10 +569,11 @@ android-x86_64-fuzzing/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             PERFHERDER_EXTRA_OPTIONS: fuzzing
+    mozconfig:
+        variant: debug-fuzzing
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: fuzzing-debug
-        mozconfig-variant: debug-fuzzing
     use-sccache: true
     fetches:
         toolchain:
@@ -495,12 +598,11 @@ android-x86_64-non-unified/opt:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+    mozconfig:
+        variant: non-unified
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64
-        extra-config:
-            extra_mozconfig_content:
-                - ac_add_options --disable-unified-build
     use-sccache: true
     use-python: "3.11"
     fetches:
@@ -563,6 +665,8 @@ android-x86_64-shippable-lite/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             MOZ_GENERATE_SBOM: "1"
             PERFHERDER_EXTRA_OPTIONS: lite
+    mozconfig:
+        platform: android-x86_64-lite
     run:
         actions: [get-secrets, build, multi-l10n]
         config: [taskcluster_nightly.py]
@@ -586,10 +690,11 @@ android-x86_64/debug:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64-debug
-        mozconfig-variant: debug
     use-sccache: true
     fetches:
         toolchain:
@@ -598,28 +703,127 @@ android-x86_64/debug:
             - linux64-sccache
             - android-gradle-dependencies
 
-android-x86_64/debug-isolated-process:
-    description: "Android x86-64 Debug with Isolated Process"
-    index:
-        job-name: android-x86_64-debug-isolated-process
+android-x86_64-appservices/debug:
+    description: "Android x86-64 Debug with an in-tree app-services"
     attributes:
-        enable-full-crashsymbols: true
+        skip-verify-test-packaging: true
+    index:
+        job-name: android-x86_64-appservices-debug
     treeherder:
         platform: android-5-0-x86_64/debug
-        symbol: Bip
+        symbol: B-as
+        tier: 3
+    run-on-projects: []
     worker:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            PERFHERDER_EXTRA_OPTIONS: isolated-process
+            MOZ_APPSERVICES_IN_TREE: "1"
+            PERFHERDER_EXTRA_OPTIONS: appservices
+    mozconfig:
+        variant: debug
     run:
         actions: [get-secrets, build]
-        custom-build-variant-cfg: x86_64-debug-isolated-process
-        mozconfig-variant: debug-isolated-process
+        custom-build-variant-cfg: x86_64-debug
     use-sccache: true
     fetches:
         toolchain:
             - linux64-clang
             - linux64-rust-android
             - linux64-sccache
+            - android-gradle-dependencies-appservices
+
+# Nightly-as-release builds compile the nightly source with a release
+# milestone (--as-milestone=release).
+# This will allow performance tests measure the release
+# configuration, similar to the nightly as release variant on Desktop
+# platforms
+android-arm-nightlyasrelease/opt:
+    description: "Android Arm Nightly-As-Release"
+    use-pgo: android-arm-shippable/opt
+    attributes:
+        enable-full-crashsymbols: true
+    index:
+        job-name: android-arm-nightlyasrelease-opt
+    treeherder:
+        platform: android-5-0-armv7-nightlyasrelease/opt
+        symbol: Bpgo(Bnar)
+    run-on-projects: []
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            PERFHERDER_EXTRA_OPTIONS: nightly-as-release
+    mozconfig:
+        variant: nightly-as-release
+    run:
+        actions: [get-secrets, build]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: arm
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies
+
+android-aarch64-nightlyasrelease/opt:
+    description: "Android AArch64 Nightly-As-Release"
+    use-pgo: android-aarch64-nightlyasrelease/opt
+    attributes:
+        enable-full-crashsymbols: true
+    index:
+        job-name: android-aarch64-nightlyasrelease-opt
+    treeherder:
+        platform: android-5-0-aarch64-nightlyasrelease/opt
+        symbol: Bpgo(Bnar)
+    run-on-projects: []
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
+            PERFHERDER_EXTRA_OPTIONS: nightly-as-release
+    mozconfig:
+        variant: nightly-as-release
+    run:
+        actions: [get-secrets, build]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: aarch64
+        extra-config:
+            # This build makes test packages (MOZ_AUTOMATION_PACKAGE_TESTS)
+            # for the browsertime task. A multi-locale build puts them in
+            # en-US/. The android-hw harness needs top-level packages.
+            multi_locale: false
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies
+
+android-x86_64-nightlyasrelease/opt:
+    description: "Android x86-64 Nightly-As-Release"
+    use-pgo: android-x86_64-shippable/opt
+    attributes:
+        enable-full-crashsymbols: true
+    index:
+        job-name: android-x86_64-nightlyasrelease-opt
+    treeherder:
+        platform: android-5-0-x86_64-nightlyasrelease/opt
+        symbol: Bpgo(Bnar)
+    run-on-projects: []
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+            PERFHERDER_EXTRA_OPTIONS: nightly-as-release
+    mozconfig:
+        variant: nightly-as-release
+    run:
+        actions: [get-secrets, build]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: x86_64
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
             - android-gradle-dependencies

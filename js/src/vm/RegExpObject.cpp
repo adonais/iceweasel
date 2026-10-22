@@ -729,12 +729,6 @@ bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
     return false;
   }
 
-  // Check the first character against the reject bitset.
-  auto [word, bit] = quickCheckBitsetBit(chars[index]);
-  if ((quickCheckRejectBitset_[word] & bit) != 0) {
-    return true;
-  }
-
   // If there are at least 4 characters remaining in the string, test the mask.
   if (index + sizeof(uint32_t) <= length) {
     // We use memcpy here because this load may not be aligned. It will generate
@@ -744,6 +738,12 @@ bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
     if ((word & quickCheckMask_) != quickCheckValue_) {
       return true;
     }
+  }
+
+  // Check the first character against the reject bitset.
+  auto [word, bit] = quickCheckBitsetBit(chars[index]);
+  if ((quickCheckRejectBitset_[word] & bit) != 0) {
+    return true;
   }
 
   return false;

@@ -1850,8 +1850,6 @@ class RustTest(BaseConfigureTest):
             "i686-pc-windows-msvc",
             "x86_64-pc-windows-msvc",
             "aarch64-pc-windows-msvc",
-            "i686-pc-windows-gnu",
-            "x86_64-pc-windows-gnu",
         ):
             self.assertEqual(self.get_rust_target(straightforward), straightforward)
 
@@ -1866,9 +1864,13 @@ class RustTest(BaseConfigureTest):
             ("i386-unknown-linux-android", "i686-linux-android"),
             ("i686-unknown-linux-android21", "i686-linux-android"),
             ("i686-pc-linux-gnu", "i686-unknown-linux-gnu"),
+            ("i686-pc-windows-gnu", "i686-pc-windows-gnullvm"),
+            ("x86_64-pc-windows-gnu", "x86_64-pc-windows-gnullvm"),
             ("x86_64-unknown-linux-android", "x86_64-linux-android"),
             ("x86_64-unknown-linux-android21", "x86_64-linux-android"),
             ("x86_64-pc-linux-gnu", "x86_64-unknown-linux-gnu"),
+            ("aarch64-pld-linux-gnu", "aarch64-unknown-linux-gnu"),
+            ("x86_64-pld-linux-gnu", "x86_64-unknown-linux-gnu"),
             ("riscv64-unknown-linux-gnu", "riscv64gc-unknown-linux-gnu"),
             ("sparcv9-sun-solaris2", "sparcv9-sun-solaris"),
             ("x86_64-sun-solaris2", "x86_64-pc-solaris"),
@@ -1932,6 +1934,16 @@ class RustTest(BaseConfigureTest):
                 "armv7-unknown-linux-gnueabihf",
                 arm_target=ReadOnlyNamespace(
                     arm_arch=7, fpu="vfpv2", thumb2=True, float_abi="hard"
+                ),
+            ),
+            "armv7-unknown-linux-gnueabihf",
+        )
+
+        self.assertEqual(
+            self.get_rust_target(
+                "armv7-pld-linux-gnueabihf",
+                arm_target=ReadOnlyNamespace(
+                    arm_arch=7, fpu="neon", thumb2=False, float_abi="hard"
                 ),
             ),
             "armv7-unknown-linux-gnueabihf",

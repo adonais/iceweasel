@@ -339,4 +339,144 @@
       gap: var(--space-small);
     }
   }
+
+  // Floating arrows: an arrow at each edge that has a space beyond it, in place
+  // of the tablist.
+  &.spaces-floating-arrows {
+    // Full-bleed: the band extends over the container's padding and takes one
+    // full-width track, so the panel and arrows reach the window edges.
+    max-inline-size: none;
+    inline-size: auto;
+    justify-self: stretch;
+    margin-inline: calc(-1 * var(--space-xlarge));
+    grid-template-columns: 100%;
+
+    // Keeps the feed's breakpoints where they were before the band widened.
+    .spaces-frame {
+      container: content-grid / inline-size;
+    }
+
+    // The panel moves to the container, below.
+    .spaces-frame::before {
+      content: none;
+    }
+
+    // Anchors the .spaces-panel-backdrop.
+    .spaces-container {
+      position: relative;
+      anchor-name: --spaces-panel;
+    }
+
+    // Faster than the other spaces variants.
+    .spaces-track.animate .space {
+      transition-duration: 150ms;
+    }
+
+    // Spans the band's height, so the sticky arrow never rises above it into
+    // the search bar or shortcuts.
+    .spaces-arrow-rail {
+      position: absolute;
+      // Arrow is centered at the panel's top edge.
+      // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+      inset-block-start: calc(
+        -1 * (var(--space-medium) + var(--button-min-height) / 2)
+      );
+      inset-block-end: 0;
+      z-index: 1;
+      pointer-events: none;
+
+      &.prev {
+        inset-inline-start: 0;
+      }
+
+      &.next {
+        inset-inline-end: 0;
+      }
+    }
+
+    .spaces-arrow {
+      position: sticky;
+      inset-block-start: 40vh;
+      pointer-events: auto;
+    }
+
+    .spaces-arrow::part(button) {
+      padding-inline: var(--space-medium);
+      transition:
+        padding-inline 0.2s ease,
+        gap 0.2s ease;
+    }
+
+    // Icon-sized until hover or focus reveals the name. The name stays in the
+    // DOM so it is always the accessible name.
+    .spaces-arrow:not(:hover, [focusvisible])::part(button) {
+      gap: 0;
+      padding-inline: var(--space-small);
+    }
+
+    .spaces-arrow::part(moz-button-label) {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition:
+        max-width 0.2s ease,
+        opacity 0.2s ease;
+    }
+
+    .spaces-arrow:is(:hover, [focusvisible])::part(moz-button-label) {
+      max-width: 30ch;
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spaces-arrow::part(button),
+      .spaces-arrow::part(moz-button-label) {
+        transition: none;
+      }
+    }
+
+    // Square on the side against the window edge.
+    .prev .spaces-arrow::part(button) {
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+    }
+
+    .next .spaces-arrow::part(button) {
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
+    }
+
+    // The icons are physical arrows, so they swap in RTL.
+    .prev .spaces-arrow:dir(rtl) {
+      --button-icon-content: url('chrome://global/skin/icons/shaft-arrow-right.svg');
+    }
+
+    .next .spaces-arrow:dir(rtl) {
+      --button-icon-content: url('chrome://global/skin/icons/shaft-arrow-left.svg');
+    }
+  }
+}
+
+// Floating arrows: the panel runs from the spaces container's top edge to the
+// bottom of the page. Base.jsx renders this only for that variant. Its
+// containing block is #root, which spans the page's full height, so the box
+// ends exactly at the page bottom with no overflow.
+.spaces-panel-backdrop {
+  position: absolute;
+  position-anchor: --spaces-panel;
+  inset-block-start: calc(anchor(start) - var(--space-medium));
+  inset-block-end: 0;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-start: anchor(start);
+  inset-inline-end: anchor(end);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  z-index: -1;
+  pointer-events: none;
+  border-block-start: var(--border-width) solid var(--card-border-color);
+}
+
+:is(.lightWallpaper, .darkWallpaper) .spaces-panel-backdrop {
+  border-color: transparent;
+  background-color: var(--newtab-layout-panel-background); // stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens
 }

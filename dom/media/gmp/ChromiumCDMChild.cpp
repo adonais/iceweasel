@@ -67,9 +67,12 @@ void ChromiumCDMChild::Init(cdm::ContentDecryptionModule_11* aCDM,
 }
 
 void ChromiumCDMChild::TimerExpired(void* aContext) {
-  MOZ_ASSERT(IsOnMessageLoopThread());
   GMP_LOG_DEBUG("ChromiumCDMChild::TimerExpired(context=0x{})",
                 fmt::ptr(aContext));
+  if (mDestroyed) {
+    return;
+  }
+  MOZ_ASSERT(IsOnMessageLoopThread());
   if (mCDM) {
     mCDM->TimerExpired(aContext);
   }

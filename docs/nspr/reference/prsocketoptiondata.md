@@ -1,7 +1,7 @@
 # PRSocketOptionData
 
-Type for structure used with {ref}`PR_GetSocketOption` and
-{ref}`PR_SetSocketOption` to specify options for file descriptors that
+Type for structure used with {doc}`pr_getsocketoption` and
+{doc}`pr_setsocketoption` to specify options for file descriptors that
 represent sockets.
 
 ## Syntax
@@ -99,7 +99,7 @@ The structure has the following fields:
 
 ### Description
 
-{ref}`PRSocketOptionData` is a name-value pair for a socket option. The
-`option` field (of enumeration type {ref}`PRSockOption`) specifies the
+{doc}`prsocketoptiondata` is a name-value pair for a socket option. The
+`option` field (of enumeration type {doc}`prsockoption`) specifies the
 name of the socket option, and the `value` field (a union of all
 possible values) specifies the value of the option.

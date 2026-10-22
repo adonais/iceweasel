@@ -87,6 +87,57 @@ add_task(async function test_UrlTokenizer_encodeToken() {
   }
 });
 
+add_task(function test_UrlTokenizer_tokenizeText() {
+  const tokenizer = new UrlTokenizer();
+  const text = tokenizer.tokenizeText(
+    "See https://example.com/a?x=1. Also (https://example.org/b), fine"
+  );
+  Assert.equal(
+    text,
+    "See §url_token: EXAMPLE_COM_A_1§. Also (§url_token: EXAMPLE_ORG_B_1§), fine"
+  );
+  Assert.equal(
+    tokenizer.resolveExactToken("§url_token: EXAMPLE_COM_A_1§"),
+    "https://example.com/a?x=1"
+  );
+  Assert.equal(tokenizer.resolveExactToken("https://example.com/a?x=1"), null);
+});
+
+add_task(function test_UrlTokenizer_tokenizeText_no_raw_urls() {
+  const tokenizer = new UrlTokenizer();
+  const cases = [
+    {
+      message: "A valid URL after an invalid one is still tokenized.",
+      text: "http://[bad]https://example.com",
+      expected: "[bad]§url_token: EXAMPLE_COM_1§",
+    },
+    {
+      message: "A URL without a word boundary before it is tokenized.",
+      text: "xhttps://example.com",
+      expected: "x§url_token: EXAMPLE_COM_1§",
+    },
+    {
+      message: "An invalid URL has its scheme removed.",
+      text: "Go to http://a:b:c/ now",
+      expected: "Go to a:b:c/ now",
+    },
+    {
+      message: "A lone scheme is removed.",
+      text: "HTTPS:// only",
+      expected: " only",
+    },
+    {
+      message: "A closing parenthesis that belongs to the URL is kept.",
+      text: "See (https://en.wikipedia.org/wiki/Function_(mathematics)).",
+      expected:
+        "See (§url_token: EN_WIKIPEDIA_ORG_WIKI_FUNCTION__MATHEMATICS__1§).",
+    },
+  ];
+  for (const { message, text, expected } of cases) {
+    Assert.equal(tokenizer.tokenizeText(text), expected, message);
+  }
+});
+
 // expandUrlTokens tests
 
 add_task(function test_expandUrlTokens_bare_token() {

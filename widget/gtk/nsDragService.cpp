@@ -969,6 +969,11 @@ gboolean nsDragSession::Schedule(UniquePtr<DragTask> aTask) {
     return FALSE;
   }
 
+  // A leave task carries no window, and mSourceWindow is only set on Wayland,
+  // so the null test is not redundant. Set here and not in RunScheduledTask(),
+  // which runs from a timeout that may still be pending when the drag ends.
+  mDragIsOverSourceWindow = aTask->mWindow && aTask->mWindow == mSourceWindow;
+
   mNextScheduledTask = std::move(aTask);
 
   if (!mTaskSource) {

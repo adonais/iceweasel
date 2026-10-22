@@ -17,7 +17,7 @@ The function has the following parameter:
 
 `fd`
 
-: Pointer to a {ref}`PRFileDesc` object representing a file.
+: Pointer to a {doc}`prfiledesc` object representing a file.
 
 ### Returns
 
@@ -28,5 +28,5 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_Sync` writes all the in-memory buffered data of the specified file
+{doc}`pr_sync` writes all the in-memory buffered data of the specified file
 to the disk.

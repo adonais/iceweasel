@@ -64,6 +64,10 @@ namespace fontlist {
 struct Face;
 struct Family;
 }  // namespace fontlist
+namespace gfx {
+class FontPalette;
+class PaletteCache;
+}  // namespace gfx
 }  // namespace mozilla
 
 typedef struct gr_face gr_face;
@@ -366,6 +370,10 @@ class gfxFontEntry {
 
   bool TryGetColorGlyphs();
 
+  already_AddRefed<mozilla::gfx::FontPalette> GetPalette(
+      nsAtom* aPaletteName,
+      mozilla::gfx::FontPaletteValueSet* aPaletteValueSet);
+
   bool HasColorBitmapTable() {
     LazyFlag flag = mHasColorBitmapTable;
     if (flag == LazyFlag::Uninitialized) {
@@ -638,6 +646,8 @@ class gfxFontEntry {
   mozilla::Atomic<hb_blob_t*> mCPAL;
   hb_blob_t* GetCOLR() const { return mCOLR; }
   hb_blob_t* GetCPAL() const { return mCPAL; }
+
+  mozilla::Atomic<mozilla::gfx::PaletteCache*> mPaletteCache;
 
   // bitvector of substitution space features per script, one each
   // for default and non-default features

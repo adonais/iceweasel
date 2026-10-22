@@ -208,6 +208,15 @@ if CONFIG["OS_ARCH"] == "Darwin":
     OS_LIBS += [
         "-framework CoreFoundation",
     ]
+    # Safari updates on older macOS versions install newer frameworks in this
+    # folder, among them the AuthenticationServices framework that the
+    # ASWebAuthenticationSession broker uses. On macOS 10.15 the system copy
+    # fails to decode the broker's messages. Safari loads its frameworks from
+    # this folder. Let dyld pick a framework from it when it is newer than the
+    # system copy.
+    LDFLAGS += [
+        "-Wl,-dyld_env,DYLD_VERSIONED_FRAMEWORK_PATH=/Library/Apple/System/Library/StagedFrameworks/Safari",
+    ]
 
 if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
     # For sandbox includes and the include dependencies those have
@@ -252,11 +261,14 @@ if CONFIG["HAVE_CLOCK_MONOTONIC"]:
 
 if CONFIG["MOZ_LINUX_32_SSE2_STARTUP_ERROR"]:
     DEFINES["MOZ_LINUX_32_SSE2_STARTUP_ERROR"] = True
+    # If we are trying to show an error dialog about the lack of SSE2 support,
+    # make sure that code itself doesn't use SSE2.
     COMPILE_FLAGS["OS_CXXFLAGS"] = [
         f
         for f in COMPILE_FLAGS["OS_CXXFLAGS"]
         if not f.startswith("-march=") and f not in ("-msse", "-msse2", "-mfpmath=sse")
     ] + [
+        "-march=pentiumpro",
         "-mno-sse",
         "-mno-sse2",
         "-mfpmath=387",

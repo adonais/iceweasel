@@ -313,9 +313,6 @@ this.trackingProtection = class extends ExtensionAPI {
             "smartblock:open-protections-panel"
           );
         },
-        incrementSmartblockEmbedShownTelemetry() {
-          Glean.securityUiProtectionspopup.smartblockembedsShown.add();
-        },
         async getSmartBlockEmbedFluentString(tabId, shimId, websiteHost) {
           let win = tabManager.get(tabId).window;
           let document = win.document;

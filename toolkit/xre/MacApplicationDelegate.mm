@@ -17,9 +17,7 @@
 #include "NativeMenuMac.h"
 #import <Carbon/Carbon.h>
 
-#ifdef NIGHTLY_BUILD
-#  include "ASWebAuthSessionHandler.h"
-#endif
+#include "ASWebAuthSessionHandler.h"
 #include "CustomCocoaEvents.h"
 #include "gfxPlatform.h"
 #include "nsCOMPtr.h"
@@ -133,13 +131,11 @@ void SetupMacApplicationDelegate(bool* gRestartedByOS) {
       "Launch status should be in intial state when setting up delegate");
   sLaunchStatus = LaunchStatus::DelegateIsSetup;
 
-#ifdef NIGHTLY_BUILD
   // Apple requires the session handler to be registered before
   // applicationDidFinishLaunching returns. We register here, as early as
   // possible, so auth requests that arrive during startup are queued rather
   // than dropped.
   RegisterASWebAuthSessionHandler();
-#endif
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

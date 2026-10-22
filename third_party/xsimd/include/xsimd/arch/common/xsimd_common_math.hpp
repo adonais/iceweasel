@@ -29,7 +29,7 @@ namespace xsimd
         template <class A, class T, class>
         XSIMD_INLINE batch<T, A> abs(batch<T, A> const& self, requires_arch<common>) noexcept
         {
-            if (std::is_unsigned<T>::value)
+            if (std::is_unsigned_v<T>)
                 return self;
             else
             {
@@ -46,60 +46,44 @@ namespace xsimd
         }
 
         // avg
-        namespace detail
+        template <class A, class T>
+        XSIMD_INLINE batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y, requires_arch<common>) noexcept
         {
-            template <class A, class T>
-            XSIMD_INLINE batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y, std::true_type, std::false_type) noexcept
+            if constexpr (std::is_integral_v<T>)
             {
-                return (x & y) + ((x ^ y) >> 1);
+                if constexpr (std::is_signed_v<T>)
+                {
+                    // Inspired by
+                    // https://stackoverflow.com/questions/5697500/take-the-average-of-two-signed-numbers-in-c
+                    auto t = (x & y) + ((x ^ y) >> 1);
+                    auto t_u = bitwise_cast<std::make_unsigned_t<T>>(t);
+                    return t + (bitwise_cast<T>(t_u >> (8 * sizeof(T) - 1)) & (x ^ y));
+                }
+                else
+                {
+                    return (x & y) + ((x ^ y) >> 1);
+                }
             }
-
-            template <class A, class T>
-            XSIMD_INLINE batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y, std::true_type, std::true_type) noexcept
-            {
-                // Inspired by
-                // https://stackoverflow.com/questions/5697500/take-the-average-of-two-signed-numbers-in-c
-                auto t = (x & y) + ((x ^ y) >> 1);
-                auto t_u = bitwise_cast<std::make_unsigned_t<T>>(t);
-                auto avg = t + (bitwise_cast<T>(t_u >> (8 * sizeof(T) - 1)) & (x ^ y));
-                return avg;
-            }
-
-            template <class A, class T>
-            XSIMD_INLINE batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y, std::false_type, std::true_type) noexcept
+            else
             {
                 return (x + y) / 2;
             }
         }
 
-        template <class A, class T>
-        XSIMD_INLINE batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y, requires_arch<common>) noexcept
-        {
-            return detail::avg(x, y, typename std::is_integral<T>::type {}, typename std::is_signed<T>::type {});
-        }
-
         // avgr
-        namespace detail
-        {
-            template <class A, class T>
-            XSIMD_INLINE batch<T, A> avgr(batch<T, A> const& x, batch<T, A> const& y, std::true_type) noexcept
-            {
-                constexpr unsigned shift = 8 * sizeof(T) - 1;
-                auto adj = std::is_signed<T>::value ? ((x ^ y) & 0x1) : (((x ^ y) << shift) >> shift);
-                return ::xsimd::kernel::avg(x, y, A {}) + adj;
-            }
-
-            template <class A, class T>
-            XSIMD_INLINE batch<T, A> avgr(batch<T, A> const& x, batch<T, A> const& y, std::false_type) noexcept
-            {
-                return ::xsimd::kernel::avg(x, y, A {});
-            }
-        }
-
         template <class A, class T>
         XSIMD_INLINE batch<T, A> avgr(batch<T, A> const& x, batch<T, A> const& y, requires_arch<common>) noexcept
         {
-            return detail::avgr(x, y, typename std::is_integral<T>::type {});
+            if constexpr (std::is_integral_v<T>)
+            {
+                constexpr unsigned shift = 8 * sizeof(T) - 1;
+                auto adj = std::is_signed_v<T> ? ((x ^ y) & 0x1) : (((x ^ y) << shift) >> shift);
+                return ::xsimd::kernel::avg(x, y, A {}) + adj;
+            }
+            else
+            {
+                return ::xsimd::kernel::avg(x, y, A {});
+            }
         }
 
         // batch_cast
@@ -124,7 +108,7 @@ namespace xsimd
             template <class A, class T_out, class T_in>
             XSIMD_INLINE batch<T_out, A> batch_cast(batch<T_in, A> const& self, batch<T_out, A> const&, requires_arch<common>, with_slow_conversion) noexcept
             {
-                static_assert(!std::is_same<T_in, T_out>::value, "there should be no conversion for this type combination");
+                static_assert(!std::is_same_v<T_in, T_out>, "there should be no conversion for this type combination");
                 using batch_type_in = batch<T_in, A>;
                 using batch_type_out = batch<T_out, A>;
                 static_assert(batch_type_in::size == batch_type_out::size, "compatible sizes");
@@ -148,8 +132,8 @@ namespace xsimd
         template <class A, class T>
         XSIMD_INLINE batch<T, A> bitofsign(batch<T, A> const& self, requires_arch<common>) noexcept
         {
-            static_assert(std::is_integral<T>::value, "int type implementation");
-            if (std::is_unsigned<T>::value)
+            static_assert(std::is_integral_v<T>, "int type implementation");
+            if (std::is_unsigned_v<T>)
                 return batch<T, A>(0);
             else
                 return self >> (T)(8 * sizeof(T) - 1);
@@ -286,7 +270,7 @@ namespace xsimd
         }
 
         // copysign
-        template <class A, class T, class = std::enable_if_t<std::is_floating_point<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_floating_point_v<T>>>
         XSIMD_INLINE batch<T, A> copysign(batch<T, A> const& self, batch<T, A> const& other, requires_arch<common>) noexcept
         {
             return abs(self) | bitofsign(other);
@@ -1899,7 +1883,7 @@ namespace xsimd
         }
 
         // mod
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> mod(batch<T, A> const& self, batch<T, A> const& other, requires_arch<common>) noexcept
         {
             return detail::apply([](T x, T y) noexcept -> T
@@ -1908,7 +1892,7 @@ namespace xsimd
         }
 
         // nearbyint
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> nearbyint(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             return self;
@@ -1940,7 +1924,7 @@ namespace xsimd
         }
 
         // nearbyint_as_int
-        template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class T, class A, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> nearbyint_as_int(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             return self;
@@ -1970,7 +1954,7 @@ namespace xsimd
         // nextafter
         namespace detail
         {
-            template <class T, class A, bool is_int = std::is_integral<T>::value>
+            template <class T, class A, bool is_int = std::is_integral_v<T>>
             struct nextafter_kernel
             {
                 using batch_type = batch<T, A>;
@@ -2102,7 +2086,7 @@ namespace xsimd
         }
 
         // reciprocal
-        template <class T, class A, class = std::enable_if_t<std::is_floating_point<T>::value>>
+        template <class T, class A, class = std::enable_if_t<std::is_floating_point_v<T>>>
         XSIMD_INLINE batch<T, A> reciprocal(batch<T, A> const& self,
                                             requires_arch<common>) noexcept
         {
@@ -2117,7 +2101,7 @@ namespace xsimd
             return { reduce_add(self.real()), reduce_add(self.imag()) };
         }
 
-        template <class A, class T, class /*=std::enable_if_t<std::is_scalar<T>::value>*/>
+        template <class A, class T, class /*=std::enable_if_t<std::is_scalar_v<T>>*/>
         XSIMD_INLINE T reduce_add(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             alignas(A::alignment()) T buffer[batch<T, A>::size];
@@ -2189,7 +2173,7 @@ namespace xsimd
             return res;
         }
 
-        template <class A, class T, class /*=std::enable_if_t<std::is_scalar<T>::value>*/>
+        template <class A, class T, class /*=std::enable_if_t<std::is_scalar_v<T>>*/>
         XSIMD_INLINE T reduce_mul(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             alignas(A::alignment()) T buffer[batch<T, A>::size];
@@ -2217,7 +2201,7 @@ namespace xsimd
             detail::reassociation_barrier(q, "prevent pulling multiply back through rounded quotient");
             return fnma(q, other, self);
         }
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> remainder(batch<T, A> const& self, batch<T, A> const& other, requires_arch<common>) noexcept
         {
             auto mod = self % other;
@@ -2232,7 +2216,7 @@ namespace xsimd
         }
 
         // sign
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> sign(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             using batch_type = batch<T, A>;
@@ -2278,7 +2262,7 @@ namespace xsimd
         }
 
         // signnz
-        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        template <class A, class T, class = std::enable_if_t<std::is_integral_v<T>>>
         XSIMD_INLINE batch<T, A> signnz(batch<T, A> const& self, requires_arch<common>) noexcept
         {
             using batch_type = batch<T, A>;
@@ -2315,8 +2299,8 @@ namespace xsimd
         XSIMD_INLINE batch<std::complex<T>, A> sqrt(batch<std::complex<T>, A> const& z, requires_arch<common>) noexcept
         {
 
-            constexpr T csqrt_scale_factor = std::is_same<T, float>::value ? 6.7108864e7f : 1.8014398509481984e16;
-            constexpr T csqrt_scale = std::is_same<T, float>::value ? 1.220703125e-4f : 7.450580596923828125e-9;
+            constexpr T csqrt_scale_factor = std::is_same_v<T, float> ? 6.7108864e7f : 1.8014398509481984e16;
+            constexpr T csqrt_scale = std::is_same_v<T, float> ? 1.220703125e-4f : 7.450580596923828125e-9;
             using batch_type = batch<std::complex<T>, A>;
             using real_batch = batch<T, A>;
             real_batch x = z.real();

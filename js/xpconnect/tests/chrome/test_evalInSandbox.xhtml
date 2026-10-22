@@ -178,7 +178,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=533596
       outerSB.sop = this;
       Cu.evalInSandbox('checkExplicitVersions();', outerSB);
 
-      const {addDebuggerToGlobal} = ChromeUtils.importESModule("resource://gre/modules/jsdebugger.sys.mjs");
+      const {addDebuggerToGlobal} = ChromeUtils.importESModule("moz-src:///devtools/platform/jsdebugger.sys.mjs");
       addDebuggerToGlobal(globalThis);
 
       try {

@@ -209,6 +209,8 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   virtual void OnBeforePaintTransaction() {}
   virtual void OnDidPaintTransaction() {}
 
+  virtual void OnWindowDestroy() {}
+
   virtual mozilla::layers::PersistentBufferProvider* GetBufferProvider() {
     return nullptr;
   }

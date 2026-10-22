@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-reorderable-list.tagmap.d.ts" />
+
 import { html } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
@@ -50,7 +52,7 @@ const REORDER_PROP = "__mozReorderableIndex";
  * @fires dragstarted - Fired when an item is dragged.
  * @fires dragended - Fired when an item is dropped.
  */
-export default class MozReorderableList extends MozLitElement {
+export class MozReorderableList extends MozLitElement {
   static queries = {
     slotEl: "slot",
     indicatorEl: ".indicator",

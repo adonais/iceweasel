@@ -402,6 +402,12 @@ class H265 final {
   static uint32_t ComputeMaxRefFrames(
       const mozilla::MediaByteBuffer* aExtraData);
 
+  // Return sps_max_num_reorder_pics at the highest sub-layer from a valid
+  // SPS in the extradata, otherwise return 0. A non-zero value means
+  // decode order can differ from presentation order (B-frames).
+  static uint32_t ComputeMaxReorderPics(
+      const mozilla::MediaByteBuffer* aExtraData);
+
   // Create a dummy extradata, useful to create a decoder and test the
   // capabilities of the decoder.
   static already_AddRefed<mozilla::MediaByteBuffer> CreateFakeExtraData();

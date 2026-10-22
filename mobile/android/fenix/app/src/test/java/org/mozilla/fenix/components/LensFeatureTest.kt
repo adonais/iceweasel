@@ -13,15 +13,19 @@ import android.net.Uri
 import androidx.activity.result.ActivityResultLauncher
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.qr.QrScanActivity
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.lens.LensCameraActivity
 import org.mozilla.fenix.components.lens.LensImageSearch
@@ -55,6 +59,13 @@ class LensFeatureTest {
         mockk<Intent> {
             every { data } returns Uri.parse("content://test/image.jpg")
             every { getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE) } returns source
+            every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
+        }
+
+    private fun uploadedResultIntent(isPrivate: Boolean) =
+        Intent().apply {
+            putExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL, "https://lens.google.com/results")
+            putExtra(LensCameraActivity.EXTRA_IS_PRIVATE, isPrivate)
         }
 
     @Before
@@ -86,16 +97,6 @@ class LensFeatureTest {
         }
 
     @Test
-    fun `GIVEN a photo picker image result WHEN handleImageResult is called THEN the photo_picker source is forwarded`() =
-        runTest(testDispatcher) {
-            feature.handleImageResult(Activity.RESULT_OK, imageResultIntent(source = "photo_picker"))
-
-            verify {
-                lensImageSearch.searchWithImage(Uri.parse("content://test/image.jpg"), source = "photo_picker")
-            }
-        }
-
-    @Test
     fun `GIVEN a missing source extra WHEN handleImageResult is called THEN the unknown source is forwarded`() =
         runTest(testDispatcher) {
             feature.handleImageResult(Activity.RESULT_OK, imageResultIntent(source = null))
@@ -106,6 +107,16 @@ class LensFeatureTest {
                     source = LensImageSearch.SOURCE_UNKNOWN,
                 )
             }
+        }
+
+    @Test
+    fun `GIVEN an already uploaded private result WHEN handleImageResult is called THEN the result is opened as private without uploading`() =
+        runTest(testDispatcher) {
+            feature.handleImageResult(Activity.RESULT_OK, uploadedResultIntent(isPrivate = true))
+
+            verify { lensImageSearch.openResult("https://lens.google.com/results", isPrivate = true) }
+            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
+            verify(exactly = 0) { appStore.dispatch(LensAction.LensDismissed) }
         }
 
     @Test
@@ -120,7 +131,11 @@ class LensFeatureTest {
     @Test
     fun `GIVEN an image result with no URI WHEN handleImageResult is called THEN dispatches LensDismissed`() =
         runTest(testDispatcher) {
-            val resultData = mockk<Intent> { every { data } returns null }
+            val resultData =
+                mockk<Intent> {
+                    every { data } returns null
+                    every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
+                }
 
             feature.handleImageResult(Activity.RESULT_OK, resultData)
 
@@ -183,6 +198,19 @@ class LensFeatureTest {
             verify { lensLauncher.launch(any()) }
             verify(exactly = 0) { lensImageSearch.searchWithImageUrl(any()) }
             verify { appStore.dispatch(LensAction.LensRequestConsumed) }
+        }
+
+    @Test
+    fun `GIVEN private browsing WHEN LensRequested is dispatched THEN the camera is launched in private mode`() =
+        runTest(testDispatcher) {
+            appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private))
+            val intentSlot = slot<Intent>()
+            every { lensLauncher.launch(capture(intentSlot)) } returns Unit
+
+            appStore.dispatch(LensAction.LensRequested)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(intentSlot.captured.getBooleanExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false))
         }
 
     @Test
@@ -253,6 +281,7 @@ class LensFeatureTest {
                     every { hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) } returns false
                     every { data } returns Uri.parse("content://test/image.jpg")
                     every { getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE) } returns "camera"
+                    every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
                 }
 
             feature.handleCameraActivityResult(Activity.RESULT_OK, imageIntent, qrFeature)

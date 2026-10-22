@@ -15,6 +15,7 @@ import android.os.Looper
 import androidx.activity.result.ActivityResult
 import androidx.appcompat.app.AlertDialog
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -104,6 +105,28 @@ class LensSearchActivityTest {
         assertNotNull(events)
         assertEquals("true", events.last().extra?.get("succeeded"))
         assertEquals("200", events.last().extra?.get("http_status_code"))
+    }
+
+    @Test
+    fun `GIVEN an image the camera screen already uploaded WHEN handling the camera result THEN it forwards the result without uploading`() {
+        controller.create()
+        activity.uploader = uploader
+
+        val resultIntent =
+            Intent().apply {
+                putExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL, "https://lens.google.com/results")
+                putExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false)
+            }
+        activity.handleCameraResult(ActivityResult(RESULT_OK, resultIntent))
+
+        val browserIntent = shadow.peekNextStartedActivity()
+        assertEquals(
+            ComponentName(activity, IntentReceiverActivity::class.java),
+            browserIntent.component,
+        )
+        assertEquals("https://lens.google.com/results", browserIntent.getStringExtra(LENS_RESULT_URL))
+        assertTrue(activity.isFinishing)
+        coVerify(exactly = 0) { uploader.upload(any(), any()) }
     }
 
     @Test

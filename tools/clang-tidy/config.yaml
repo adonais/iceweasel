@@ -25,10 +25,50 @@ platforms:
 # This is also used by 'mach lint -l clang-format'
 package_version: "22.1.8"
 
-# Header file that are platform dependant and generate false positive, we don't
-# want to analyze them.
+# Header file that are platform dependant, not used to declare functions and
+# codes, not self-contained or generate false positive.
+# We don't want to analyze them.
 header_skiplist:
+  - dom/media/webrtc/libwebrtc_overrides/rtc_base/trace_event.h
+  - dom/media/webrtc/transport/sigslot.h
+  - dom/onnx/onnxruntime_ep_c_api.h
+  - dom/quota/DirectoryLockInlines.h
+  - gfx/gl/GLContextProviderImpl.h
+  - gfx/pixman/pixman/pixman/pixman-version.h
+  - intl/components/src/FormatBuffer.h
   - js/src/jit/MacroAssembler.h
+  - layout/style/ServoStyleConstsForwards.h
+  - memory/build/malloc_decls.h
+  - memory/mozalloc/cxxalloc.h
+  - memory/mozalloc/mozalloc.h
+  - modules/libpref/init/StaticPrefListBegin.h
+  - modules/libpref/init/StaticPrefListEnd.h
+  - mozglue/baseprofiler/public/BaseProfilerMarkersDetail.h
+  - netwerk/socket/neqo_glue/NeqoHttp3Conn.h
+  - parser/html/nsHtml5UTF16BufferHSupplement.h
+  - parser/htmlaccel/htmlaccel.h
+  - storage/Variant_inl.h
+  - tools/profiler/public/ProfilerMarkersDetail.h
+  # those wayland headers are not self-contained (at all)
+  - widget/gtk/mozwayland/mozwayland.h
+  - widget/gtk/wayland/color-management-v1-client-protocol.h
+  - widget/gtk/wayland/color-representation-v1-client-protocol.h
+  - widget/gtk/wayland/fractional-scale-v1-client-protocol.h
+  - widget/gtk/wayland/gtk-primary-selection-client-protocol.h
+  - widget/gtk/wayland/idle-inhibit-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/kde-appmenu-client-protocol.h
+  - widget/gtk/wayland/linux-dmabuf-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/pointer-constraints-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/pointer-gestures-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/primary-selection-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/relative-pointer-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/viewporter-client-protocol.h
+  - widget/gtk/wayland/xdg-activation-v1-client-protocol.h
+  - widget/gtk/wayland/xdg-output-unstable-v1-client-protocol.h
+  - widget/gtk/wayland/xdg-session-management-v1-client-protocol.h
+  - widget/gtk/wayland/xdg-shell-client-protocol.h
+  - widget/gtk/wayland/xx-fractional-scale-v2-client-protocol.h
+  - widget/gtk/wayland/xx-pip-v1-client-protocol.h
 
 clang_checkers:
   - name: -*

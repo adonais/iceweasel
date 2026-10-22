@@ -21,3 +21,7 @@ commit = '979d0fcb9'
 [[repos]]
 name = 'wide-arithmetic'
 commit = '024d4ce1b'
+
+[[repos]]
+name = 'extended-name-section'
+commit = '9ddd7af12'

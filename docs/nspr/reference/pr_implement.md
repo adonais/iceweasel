@@ -13,7 +13,7 @@ PR_IMPLEMENT(type)implementation
 
 ## Description
 
-{ref}`PR_IMPLEMENT` is used to define implementations of externally visible
+{doc}`pr_implement` is used to define implementations of externally visible
 routines and globals. For syntax details for each platform, see
 {searchfox}`prtypes.h <nsprpub/pr/include/prtypes.h>`.
 

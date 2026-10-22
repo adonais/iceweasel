@@ -30,6 +30,5 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1417723
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1417723
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1417723
-  "os == 'win' && msix",
   "release_or_beta",
 ]

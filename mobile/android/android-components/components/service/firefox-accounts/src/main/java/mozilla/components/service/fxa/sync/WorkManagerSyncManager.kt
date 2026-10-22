@@ -77,6 +77,8 @@ internal enum class SyncWorkerName {
 private const val KEY_DATA_STORES = "stores"
 private const val KEY_REASON = "reason"
 
+private const val KEY_IS_FULL_SYNC = "is_full_sync"
+
 private const val SYNC_WORKER_BACKOFF_DELAY_MINUTES = 3L
 
 /**
@@ -437,14 +439,28 @@ internal class WorkManagerSyncDispatcher(
     }
 
     companion object {
+
+        /**
+         * Creates the worker data for [WorkManagerSyncWorker]
+         *
+         * @param reason The [SyncReason] for the sync
+         * @param supportedEngines The set of supported [SyncEngine] defined by [SyncConfig]
+         * @param customEngineSubset The specific set of [SyncEngine]s which are to be synced. The collection must be a
+         *   subset of [supportedEngines]. An empty collection implies that we want to sync all of the user's active
+         *   engines (full sync) and a non-empty collection implies that these are the specific engines that we want to
+         *   sync.
+         */
         internal fun getWorkerData(
             reason: SyncReason,
             supportedEngines: Set<SyncEngine>,
             customEngineSubset: List<SyncEngine> = listOf(),
         ): Data {
+            // an empty list of engine subset implies "do a full sync of all the user's enabled engines"
+            val isFullSync = customEngineSubset.isEmpty()
             val enginesToSync = customEngineSubset.takeIf { it.isNotEmpty() } ?: supportedEngines
             return Data.Builder()
                 .putStringArray(KEY_DATA_STORES, enginesToSync.map { it.nativeName }.toTypedArray())
+                .putBoolean(KEY_IS_FULL_SYNC, isFullSync)
                 .putString(KEY_REASON, reason.asString())
                 .build()
         }
@@ -470,6 +486,15 @@ internal class WorkManagerSyncWorker(
         GlobalAccountManager.systemClock
     }
 
+    /**
+     * Whether or not this sync is a full sync. See [WorkManagerSyncDispatcher.Companion.getWorkerData] for how
+     * [KEY_IS_FULL_SYNC] input is determined.
+     *
+     * We choose to default to true in this case to keep existing behaviours on jobs that have been scheduled prior to
+     * this update. Once the app is opened and we schedule new sync, this flag will always be present.
+     */
+    private val isFullSync by lazy { params.inputData.getBoolean(KEY_IS_FULL_SYNC, true) }
+
     @VisibleForTesting
     internal fun isDebounced(): Boolean {
         return params.tags.contains(SyncWorkerTag.Debounce.name)
@@ -491,7 +516,8 @@ internal class WorkManagerSyncWorker(
             // We will need a list of SyncableStores.
             val syncableStores =
                 params.inputData
-                    .getStringArray(KEY_DATA_STORES)
+                    .getNullableStringArray(KEY_DATA_STORES)
+                    ?.filterNotNull()
                     ?.filter {
                         !lastSyncedWithinStaggerBuffer(it)
                     }
@@ -678,8 +704,10 @@ internal class WorkManagerSyncWorker(
                 // it's not clear if a single failure should prevent its update. That's the current behaviour
                 // in Fennec, but for very specific reasons that aren't relevant here. We could have
                 // a timestamp per store, or whatever we want here really.
-                // For now, we just update it every time we succeed to sync.
-                syncStateStorage.lastSynced = clock.now()
+                // For now, we just update it every time we successfully do a full sync
+                if (isFullSync) {
+                    syncStateStorage.lastSynced = clock.now()
+                }
                 Result.success()
             }
 

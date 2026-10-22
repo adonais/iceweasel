@@ -118,7 +118,6 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "mask-origin",
       "mask-repeat",
       "mask-type",
-      "masonry-auto-flow",
       "math-shift",
       "math-style",
       "mix-blend-mode",

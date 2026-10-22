@@ -155,7 +155,7 @@ const PAGE_LAYOUTS_INFO = {
     label: "Spaces (Buttons at the bottom)",
     description:
       "Stories, widgets and Highlights each get their own panel, navigated " +
-      "with a segmented control below the content and arrows at either edge.",
+      "with a segmented control floating at the bottom of the window.",
   },
   [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_TOP]: {
     label: "Spaces (Buttons at the top)",
@@ -168,12 +168,26 @@ const PAGE_LAYOUTS_INFO = {
       "holding the whole side-by-side pair over only its own content topics " +
       "and widgets.",
   },
+  [PAGE_LAYOUT_VARIANTS.SPACES_FLOATING_ARROWS]: {
+    label: "Spaces (Floating arrows)",
+    description:
+      "Same panels as the buttons variants, navigated with an arrow at each " +
+      "edge leading to the space beyond it instead of a segmented control. " +
+      "pageLayouts.spacesOrder sets the order.",
+  },
   // @experiment(remove) { bug 2069496 }
   [PAGE_LAYOUT_VARIANTS.WIDGETS_AD_LARGE]: {
     label: "Widgets row ad (large)",
     description:
       "Nova, plus a large sponsored card at the end of the first widget row. " +
       "At one card column it sits second. It stays large when minimized.",
+  },
+  // @experiment(remove) { bug 2078816 }
+  [PAGE_LAYOUT_VARIANTS.WIDGET_FIRST_CONTENT_SLOT]: {
+    label: "Widget in first content slot",
+    description:
+      "A widget occupies the first card of Popular Today. " +
+      "pageLayouts.widgetFirstContentSlot.widget picks the widget type.",
   },
 };
 

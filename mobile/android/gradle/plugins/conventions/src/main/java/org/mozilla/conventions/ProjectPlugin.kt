@@ -12,6 +12,7 @@ import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.StandardOutputListener
 import org.gradle.api.artifacts.ArtifactView
@@ -402,9 +403,14 @@ class ProjectPlugin : Plugin<Project> {
                     }
                     capabilitiesResolution {
                         withCapability("org.mozilla.telemetry:glean-native") {
+                            // GeckoView provides Glean either as an in-build project or as a
+                            // published module, depending on the build composition.
                             val toBeSelected = candidates.find {
-                                it.id is ModuleComponentIdentifier &&
-                                    (it.id as ModuleComponentIdentifier).module.contains("geckoview")
+                                when (val id = it.id) {
+                                    is ProjectComponentIdentifier -> id.projectName.contains("geckoview")
+                                    is ModuleComponentIdentifier -> id.module.contains("geckoview")
+                                    else -> false
+                                }
                             }
                             if (toBeSelected != null) {
                                 select(toBeSelected)

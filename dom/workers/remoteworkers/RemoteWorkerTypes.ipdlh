@@ -79,7 +79,7 @@ struct RemoteWorkerData
   // that a ServiceWorker's client id can have a mapping established in the
   // parent so that the keepalive contribution of ServiceWorkers to other
   // ServiceWorkers is limited to their own keepalive lifetime.
-  IPCClientInfo? clientInfo;
+  IPCClientInfo clientInfo;
 
   nullable nsIReferrerInfo referrerInfo;
 

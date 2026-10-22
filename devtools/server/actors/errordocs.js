@@ -145,6 +145,8 @@ const DOCTYPE_MODES_LEARN_MORE =
   "https://developer.mozilla.org/docs/Web/HTML/Guides/Quirks_Mode_and_Standards_Mode";
 const BOUNCE_TRACKING_PROTECTION_LEARN_MORE =
   "https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/bounce-tracking-protection/index.html";
+const SAFE_PROMISE_RESOLVE_LEARN_MORE =
+  "https://firefox-source-docs.mozilla.org/dom/promise/safe-promise-resolve.html";
 
 const ErrorCategories = {
   "X-Frame-Options": X_FRAME_OPTIONS_LEARN_MORE,
@@ -155,6 +157,7 @@ const ErrorCategories = {
   "Invalid HSTS Headers": STRICT_TRANSPORT_SECURITY_LEARN_MORE,
   "Tracking Protection": TRACKING_PROTECTION_LEARN_MORE,
   MIMEMISMATCH: MIME_TYPE_MISMATCH_LEARN_MORE,
+  SafePromiseResolve: SAFE_PROMISE_RESOLVE_LEARN_MORE,
   "source map": SOURCE_MAP_LEARN_MORE,
   TLS: TLS_LEARN_MORE,
   requestStorageAccess: REQUEST_STORAGE_ACCESS_LEARN_MORE,

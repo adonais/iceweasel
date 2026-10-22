@@ -335,16 +335,16 @@ See `ImportESModuleTargetGlobal` in {searchfox}`ChromeUtils.webidl <dom/chrome-w
 
 ## Integration with JSActors
 
-{ref}`JSActors <jsactors>` are implemented with system modules.
+{doc}`JSActors </dom/ipc/jsactors>` are implemented with system modules.
 
-See the {ref}`JSActors <jsactors>` document for more details.
+See the {doc}`JSActors </dom/ipc/jsactors>` document for more details.
 
 ## Integration with XPCOM Components
 
-{ref}`XPCOM Components <Defining XPCOM Components>` can be implemented with
+{doc}`XPCOM Components </build/buildsystem/defining-xpcom-components>` can be implemented with
 system modules, by passing `esModule` option.
 
-See the {ref}`XPCOM Components <Defining XPCOM Components>` document for more
+See the {doc}`XPCOM Components </build/buildsystem/defining-xpcom-components>` document for more
 details.
 
 ## Importing into Current Global
@@ -353,7 +353,7 @@ details.
 the current global, by passing `{ global: "current" }` option.
 In this case the imported module is not a system module.
 
-See the {ref}`JS Loader APIs <JS Loader APIs>` document for more details.
+See the {doc}`JS Loader APIs <jsloader-api>` document for more details.
 
 ## JSM
 

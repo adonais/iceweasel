@@ -69,6 +69,11 @@
 #define CONFIG_PRORES_RAW_VULKAN_HWACCEL 0
 #define CONFIG_DPX_VULKAN_HWACCEL 0
 
+#ifdef MOZ_FFVPX_VULKAN_LIBDRM
+#undef CONFIG_LIBDRM
+#define CONFIG_LIBDRM 1
+#endif
+
 /**
  * Windows Hardware Video Decoding
  **/

@@ -1119,6 +1119,127 @@ static bool AssignSlow(JSContext* cx, HandleObject to, HandleObject from) {
   return true;
 }
 
+// ES2027 Draft rev e28783d5fc9dc12b3de905961e2c71410b38a202
+// 7.3.25 CopyDataProperties ( target, source, excludedItems )
+bool js::CopyDataProperties(JSContext* cx, HandleObject target,
+                            HandleValue source, HandleObject excludedItems) {
+  // Step 1.
+  if (source.isNullOrUndefined()) {
+    return true;
+  }
+
+  // Step 2.
+  RootedObject from(cx, ToObject(cx, source));
+  if (!from) {
+    return false;
+  }
+
+  // Fast path for steps 3-4: everything can be copied in native code.
+  if (from->is<NativeObject>() && target->is<PlainObject>() &&
+      (!excludedItems || excludedItems->is<PlainObject>())) {
+    bool optimized;
+    if (!CopyDataPropertiesNative(
+            cx, target.as<PlainObject>(), from.as<NativeObject>(),
+            (excludedItems ? excludedItems.as<PlainObject>() : nullptr),
+            &optimized)) {
+      return false;
+    }
+    if (optimized) {
+      return true;
+    }
+  }
+
+  // Step 3.
+  RootedIdVector keys(cx);
+  if (!GetPropertyKeys(
+          cx, from, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, &keys)) {
+    return false;
+  }
+
+  // Step 4.
+  Rooted<NativeObject*> nativeTarget(cx);
+  if (target->is<PlainObject>() && target->as<PlainObject>().isExtensible()) {
+    nativeTarget = &target->as<PlainObject>();
+  }
+
+  // It is possible for two keys to collide during copying in two cases:
+  //     1) The target is non-empty.
+  //     2) A non-JS source enumeration results in duplicate keys.
+  bool keysMayCollide =
+      !from->is<NativeObject>() || !nativeTarget || !nativeTarget->empty();
+
+  RootedId nextKey(cx);
+  RootedValue propValue(cx);
+  for (size_t i = 0, len = keys.length(); i < len; i++) {
+    nextKey = keys[i];
+
+    // Step 4.b.
+    if (excludedItems) {
+      bool found;
+      if (!HasOwnProperty(cx, excludedItems, nextKey, &found)) {
+        return false;
+      }
+      if (found) {
+        continue;
+      }
+    }
+
+    // Steps 4.c.i-ii and 4.c.ii.1.
+    // Faster slow path using a single lookup on dense elements. This single
+    // lookup uses the fact that dense elements are always enumerable data
+    // properties.
+    if (from->is<NativeObject>() &&
+        !ClassCanHaveExtraEnumeratedProperties(from->getClass())) {
+      Handle<NativeObject*> nfrom = from.as<NativeObject>();
+      if (nextKey.isInt() && nfrom->containsDenseElement(nextKey.toInt())) {
+        propValue.set(nfrom->getDenseElement(nextKey.toInt()));
+      } else {
+        mozilla::Maybe<PropertyInfo> prop = nfrom->lookup(cx, nextKey);
+        if (prop.isNothing() || !prop->enumerable()) {
+          continue;
+        }
+        if (prop->isDataProperty()) {
+          propValue = nfrom->getSlot(prop->slot());
+        } else {
+          if (!NativeGetExistingProperty(cx, from, nfrom, nextKey, *prop,
+                                         &propValue)) {
+            return false;
+          }
+        }
+      }
+    } else {
+      // The above lookup is only valid when |from|'s class can't produce extra
+      // enumerated properties such as typed arrays and String objects.
+      bool enumerable;
+      if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable)) {
+        return false;
+      }
+      if (!enumerable) {
+        continue;
+      }
+      if (!GetProperty(cx, from, from, nextKey, &propValue)) {
+        return false;
+      }
+    }
+
+    // Step 4.c.ii.2.
+    if (nativeTarget && !nextKey.isInt() &&
+        (!keysMayCollide || !nativeTarget->contains(cx, nextKey))) {
+      if (!AddDataPropertyToNativeObjectNoHooks(cx, nativeTarget, nextKey,
+                                                propValue)) {
+        return false;
+      }
+    } else {
+      if (!DefineDataProperty(cx, target, nextKey, propValue,
+                              JSPROP_ENUMERATE)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 JS_PUBLIC_API bool JS_AssignObject(JSContext* cx, JS::HandleObject target,
                                    JS::HandleObject src) {
   bool optimized = false;

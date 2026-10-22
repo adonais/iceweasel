@@ -5,14 +5,14 @@
 #ifndef mozilla_layers_APZCTreeManagerChild_h
 #define mozilla_layers_APZCTreeManagerChild_h
 
-#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/PAPZCTreeManagerChild.h"
 
 namespace mozilla {
 namespace layers {
 
-class APZInputBridgeChild;
+class APZBridgeChild;
 class RemoteCompositorSession;
 
 class APZCTreeManagerChild final : public IAPZCTreeManager,
@@ -26,7 +26,7 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
   APZCTreeManagerChild();
 
   void SetCompositorSession(RemoteCompositorSession* aSession);
-  void SetInputBridge(RefPtr<APZInputBridgeChild>&& aInputBridge);
+  void SetBridge(RefPtr<APZBridgeChild>&& aBridge);
   void Destroy();
 
   void ZoomToRect(const ScrollableLayerGuid& aGuid,
@@ -52,14 +52,14 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
 
   void NotifyApzAwareListenerAdded(const ScrollableLayerGuid& aGuid) override;
 
-  APZInputBridge* InputBridge() override;
+  RefPtr<APZBridge> Bridge() override;
 
  protected:
   virtual ~APZCTreeManagerChild();
 
  private:
   MOZ_NON_OWNING_REF RemoteCompositorSession* mCompositorSession;
-  RefPtr<APZInputBridgeChild> mInputBridge;
+  RefPtr<APZBridgeChild> mBridge;
 };
 
 }  // namespace layers

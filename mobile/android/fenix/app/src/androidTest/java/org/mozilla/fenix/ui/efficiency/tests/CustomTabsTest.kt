@@ -8,6 +8,7 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.TestAssetHelper.downloadPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
@@ -241,5 +242,32 @@ class CustomTabsTest : BaseTest() {
         const val LOGIN_FORM_URL = "https://mozilla-mobile.github.io/testapp/loginForm"
         const val LOGIN_USERNAME = "mozilla"
         const val LOGIN_PASSWORD = "firefox"
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334762
+    @Critical
+    @Test
+    fun copyCustomTabToolbarUrlTest() {
+        val customTabPage = mockWebServer.getGenericAsset(1)
+        val defaultWebPage = mockWebServer.getGenericAsset(2)
+        val customTabUrl = customTabPage.url.toString()
+        val defaultWebPageUrl = defaultWebPage.url.toString()
+
+        on.customTabs.launchCustomTab(customTabUrl, "TestMenuItem")
+        on.customTabs.verifyUrl(customTabUrl)
+        on.customTabs.longClickAndCopyToolbarUrl()
+
+        // Re-enter through an external link, as legacy does; this lands in the full browser. Assert the browser
+        // loaded before driving the search bar: the external-link intent switches activities, so the toolbar is
+        // not immediately present. ENGINE_VIEW is the layout-invariant "browser is loaded" signal.
+        on.customTabs.openUrlFromExternalLink(defaultWebPageUrl)
+        on.browserPage.mozVerify(BrowserPageSelectors.ENGINE_VIEW, timeout = waitingTimeLong)
+
+        on.searchBar
+            .navigateToPage()
+            .clickClearButton()
+            .longClickToolbar()
+            .clickContextMenuItem("Paste")
+            .verifyTypedToolbarText(customTabUrl, exists = true)
     }
 }

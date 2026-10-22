@@ -44,6 +44,7 @@ import org.mozilla.fenix.components.share.store.ShareUiState
 import org.mozilla.fenix.components.share.store.ShareUiStore
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.account.SignOutFragment
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
@@ -52,6 +53,7 @@ import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
 
     private lateinit var shareUiStore: ShareUiStore
+    private lateinit var deviceObserver: ShareUiDevicesObserver
 
     private val sendTabUseCases by lazy {
         SendTabUseCases(requireComponents.backgroundServices.accountManager)
@@ -87,6 +89,10 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
                 onSignOutClicked = {
                     removeAccountFromSync()
                 },
+                onRetryClicked = { deviceObserver.refreshDevices(null) },
+                onLearnMoreClicked = {
+                    openLearnMoreLink()
+                },
             )
         }
     }
@@ -94,14 +100,14 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val app = requireContext().applicationContext
-        viewLifecycleOwner.lifecycle.addObserver(
+        deviceObserver =
             ShareUiDevicesObserver(
                 store = shareUiStore,
                 fxaAccountManager = requireComponents.backgroundServices.accountManager,
                 connectivityManager = app.getSystemService<ConnectivityManager>(),
                 scope = storeProvider.viewModelScope,
             )
-        )
+        viewLifecycleOwner.lifecycle.addObserver(deviceObserver)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -190,6 +196,11 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
             )
             dismiss()
         }
+    }
+
+    private fun openLearnMoreLink() {
+        val url = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.CONNECT_ADDITIONAL_DEVICES_TO_SYNC)
+        SupportUtils.launchSandboxCustomTab(requireContext(), url)
     }
 
     /**

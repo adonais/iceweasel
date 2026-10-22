@@ -7,6 +7,7 @@
 %{C++
 // These constants are duplicated in `PushComponents.js`.
 #define OBSERVER_TOPIC_PUSH "push-message"
+#define OBSERVER_TOPIC_PUSH_MESSAGE_HANDLED "push-message-handled"
 #define OBSERVER_TOPIC_SUBSCRIPTION_CHANGE "push-subscription-change"
 #define OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED "push-subscription-modified"
 %}
@@ -25,18 +26,27 @@ interface nsIPushNotifier : nsISupports
    * Fires a `push-message` observer notification, and sends a `push` event to
    * the service worker registered for the |scope|. |messageId| is an opaque ID
    * used to report errors if the worker fails to handle the message.
+   *
+   * The returned promise resolves once the worker's `push` event has settled,
+   * or right away when no worker gets the message, and rejects with the
+   * reason the message never reached a worker.
+   *
+   * A `push-message-handled` observer notification is fired, with the
+   * |messageId| as the data, whenever the returned promise settles.
    */
-  void notifyPush(in ACString scope, in nsIPrincipal principal,
-                  in AString messageId);
+  [implicit_jscontext] Promise notifyPush(in ACString scope,
+                                          in nsIPrincipal principal,
+                                          in AString messageId);
 
   /**
    * Same as `notifyPush`, except the subject of the observer notification
    * receives an `nsIPushMessage` instance containing the |data|. Service
    * workers can access the |data| via the `PushMessageData` WebIDL interface.
    */
-  void notifyPushWithData(in ACString scope, in nsIPrincipal principal,
-                          in AString messageId,
-                          in Array<uint8_t> data);
+  [implicit_jscontext] Promise notifyPushWithData(in ACString scope,
+                                                  in nsIPrincipal principal,
+                                                  in AString messageId,
+                                                  in Array<uint8_t> data);
 
   /**
    * Fires a `push-subscription-change` observer notification, and sends a

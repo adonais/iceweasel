@@ -16,6 +16,8 @@
   <string name="feedback_erase2">براؤزنگ تاریخ صاف تھی ڳئی</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">ٹیب دی براؤزنگ تاریخ مٹا ڈتی ڳئی ہے۔</string>
+  <!-- Content description for the button that opens the menu. -->
+  <string name="content_description_menu">مینیو</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">شیئر۔۔۔</string>
   <!--
@@ -267,6 +269,9 @@
   <string name="preference_mozilla_telemetry_summary">ٻیا سِکھو</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">موزلّا صرف ایں کوں وٹلا کرݨ دی کوشش کریندےجہڑا ساکوں ہر کہیں کیتے %1$s فراہم کرݨ تے چنڳا بݨاوݨ دی لوڑ ہے۔</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">روزانہ دی ورتیں دا پنگ</string>
+  <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">ایندے نال موزیلا کوں فعال (active) ورتݨ آلیاں دا اندازہ لایا ویندا ہے۔</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">رازداری نوٹس</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
@@ -335,6 +340,24 @@
   <string name="onboarding_first_screen_title">%1$s وچ ست بسم اللہ</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">تکھا۔ نجی۔ کوئی پریشانی کائنی۔</string>
+  <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">جاری رکھݨ کیتے، تساں %1$s نال اتفاق کریندے ہاؤ۔</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">فائر فاکس دی ورتݨ دیاں شرطاں</string>
+  <!--
+    New Onboarding flow first screen 'privacy notice' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
+  -->
+  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">موزیلا فائر فاکس تہاݙی رازداری دا خیال رکھیندے۔ ساݙی %1$s وچ ٻیا پڑھو۔</string>
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">رازداری نوٹس</string>
   <!-- New Onboarding flow first screen button label -->
@@ -394,11 +417,30 @@
   <string name="notification_browsing_session_channel_description">اطلاعواں تہاکوں %1$s مجلس ہک انگل پھیرݨ نال مٹاوݨ دی اجازت ݙیندیاں ہن۔ تہاکوں ایپ کھولݨ یا ایہ ݙیکھݨ دی لوڑ کائنی جو تہاݙے براؤزر وچ کیا چلدا پئے۔</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">ٻیاں ٹیباں بند کرو</string>
+  <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
+  <string name="tabs_tray_action_add_new_tab">نواں ٹیب شامل کرو</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">فائرفوکس ڈاؤن لوڈ کرو</string>
+  <!--
+    Text shown in Security Information Popup
+
+    %1$s will be replaced with the organization for which the certificate
+    used by the site was issued. For example, the certificate in use by
+    the site https://eidas.ec.europa.eu/ was issued to "The European
+    Commission".
+  -->
+  <string name="qualified_identity">سرٹیفیکیٹ %1$s دے ناں جاری کیتا ڳیا ہے۔</string>
+  <!--
+    The European Union eIDAS Regulation specifies a type of certificate
+    called a "qualified website authentication certificate" (QWAC) and
+    requires that browsers identify and indicate such certificates. This
+    text was paraphrased from ETSI TS 119 411-5 V2.1.1 section 6.3 and
+    indicates that the website uses a QWAC.
+  -->
+  <string name="qualified_text">ریگولیشن (EU) 2024/1183 وچ ݙسی ڳئی شرائط دے مطابق اہل ہے۔</string>
   <string name="preference_autocomplete_duplicate_url_error">یوآرایل پہلے ہی موجود ہے</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">ورقے وچ لبھو</string>

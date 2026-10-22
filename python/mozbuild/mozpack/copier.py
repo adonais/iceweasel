@@ -20,11 +20,19 @@ def _scandir_dest_info(top):
 
     Returns (existing_files, existing_dirs, mtimes, symlink_targets).
     """
+    return _scandir_info([top], recurse=True)
+
+
+def _scandir_info(dirs, recurse):
+    """Collect file metadata from ``dirs``, descending into them if ``recurse``.
+
+    Returns (existing_files, existing_dirs, mtimes, symlink_targets).
+    """
     existing_files = set()
     existing_dirs = set()
     mtimes = {}
     symlink_targets = {}
-    stack = [top]
+    stack = list(dirs)
     while stack:
         current = stack.pop()
         existing_dirs.add(os.path.normpath(current))
@@ -44,7 +52,8 @@ def _scandir_dest_info(top):
                         )
                     elif entry.is_dir(follow_symlinks=False):
                         existing_dirs.add(normed)
-                        stack.append(entry.path)
+                        if recurse:
+                            stack.append(entry.path)
                     else:
                         existing_files.add(normed)
                         st = entry.stat(follow_symlinks=False)
@@ -450,7 +459,9 @@ class FileCopier(FileRegistry):
             )
             existing_dirs |= {os.path.normpath(destination)}
             if skip_if_older and len(self) > 100:
-                _, _, dest_mtimes, dest_symlinks = _scandir_dest_info(destination)
+                _, _, dest_mtimes, dest_symlinks = _scandir_info(
+                    required_dirs, recurse=False
+                )
         else:
             # Walk the destination with os.scandir() instead of os.walk().
             # On Windows this is dramatically faster because scandir returns

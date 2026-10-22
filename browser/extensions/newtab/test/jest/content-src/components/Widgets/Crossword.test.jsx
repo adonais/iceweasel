@@ -907,10 +907,13 @@ describe("<Crossword>", () => {
       const { container } = renderCrossword();
       const menu = container.querySelector("#crossword-context-menu");
 
-      // Crossword-specific strings are hardcoded inline (English-only).
       expect(
         container.querySelector(".crossword-context-menu-button")
-      ).toHaveAttribute("aria-label", "Crossword options");
+      ).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-crossword-widget-open-menu-button"
+      );
+      // Crossword-specific menu items are hardcoded inline (English-only).
       expect(menu.querySelector("panel-item.show-all-clues")).toHaveTextContent(
         "Show clues"
       );

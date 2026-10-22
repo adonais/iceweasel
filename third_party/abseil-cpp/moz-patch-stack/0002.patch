@@ -9,7 +9,7 @@ Drops a group we do not need and allows building all of absl_component_deps.
  1 file changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/abseil-cpp/BUILD.gn b/abseil-cpp/BUILD.gn
-index 3b1cb12de3e..80f4c3943be 100644
+index de7b95f3f92..43aa9b5a825 100644
 --- a/abseil-cpp/BUILD.gn
 +++ b/abseil-cpp/BUILD.gn
 @@ -39,7 +39,7 @@ component("absl") {

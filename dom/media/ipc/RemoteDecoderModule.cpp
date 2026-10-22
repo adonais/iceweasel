@@ -86,6 +86,14 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
 
 RefPtr<RemoteDecoderModule::SupportsDecoderPromise>
 RemoteDecoderModule::SupportsAsync(const SupportDecoderParams& aParams) const {
+  // The media engine CDM process only creates decoders for media engine
+  // playback, so don't wait for it to report support for other queries.
+  if (mLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM &&
+      !aParams.mMediaEngineId) {
+    return SupportsDecoderPromise::CreateAndResolve(media::DecodeSupportSet{},
+                                                    __func__);
+  }
+
   // SupportDecoderParams is stack-only and holds a reference to its config, so
   // clone the bits we need to survive the asynchronous wait below.
   UniquePtr<TrackInfo> config = aParams.mConfig.Clone();

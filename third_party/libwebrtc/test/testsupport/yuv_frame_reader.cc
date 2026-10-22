@@ -11,8 +11,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <memory>
+#include <optional>
 #include <string>
 
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/resolution.h"
@@ -156,6 +160,115 @@ std::unique_ptr<FrameReader> CreateYuvFrameReader(
       new YuvFrameReaderImpl(filepath, resolution, repeat_mode);
   frame_reader->Init();
   return std::unique_ptr<FrameReader>(frame_reader);
+}
+
+std::optional<Resolution> ParseResolutionFromFileName(absl::string_view path) {
+  const size_t last_slash = path.find_last_of("/\\");
+  const absl::string_view filename = (last_slash == absl::string_view::npos)
+                                         ? path
+                                         : path.substr(last_slash + 1);
+
+  const std::string lower = absl::AsciiStrToLower(filename);
+  if (absl::StrContains(lower, "qcif")) {
+    return Resolution{.width = 176, .height = 144};
+  }
+  if (absl::StrContains(lower, "cif")) {
+    return Resolution{.width = 352, .height = 288};
+  }
+  if (absl::StrContains(lower, "qvga")) {
+    return Resolution{.width = 320, .height = 240};
+  }
+  if (absl::StrContains(lower, "vga")) {
+    return Resolution{.width = 640, .height = 480};
+  }
+  if (absl::StrContains(lower, "180p")) {
+    return Resolution{.width = 320, .height = 180};
+  }
+  if (absl::StrContains(lower, "360p")) {
+    return Resolution{.width = 640, .height = 360};
+  }
+  if (absl::StrContains(lower, "480p")) {
+    return Resolution{.width = 640, .height = 480};
+  }
+  if (absl::StrContains(lower, "720p")) {
+    return Resolution{.width = 1280, .height = 720};
+  }
+  if (absl::StrContains(lower, "1080p")) {
+    return Resolution{.width = 1920, .height = 1080};
+  }
+  if (absl::StrContains(lower, "1440p")) {
+    return Resolution{.width = 2560, .height = 1440};
+  }
+  if (absl::StrContains(lower, "2160p") || absl::StrContains(lower, "4k")) {
+    return Resolution{.width = 3840, .height = 2160};
+  }
+
+  // 1. Look for <width>x<height> pattern (e.g. "1280x720", "128x96").
+  for (size_t i = 0; i < filename.size(); ++i) {
+    if ((filename[i] == 'x' || filename[i] == 'X') && i > 0 &&
+        absl::ascii_isdigit(filename[i - 1]) && i + 1 < filename.size() &&
+        absl::ascii_isdigit(filename[i + 1])) {
+      size_t start_w = i - 1;
+      while (start_w > 0 && absl::ascii_isdigit(filename[start_w - 1])) {
+        --start_w;
+      }
+      if (start_w > 0 && absl::ascii_isalnum(filename[start_w - 1])) {
+        continue;
+      }
+      size_t end_h = i + 1;
+      while (end_h < filename.size() && absl::ascii_isdigit(filename[end_h])) {
+        ++end_h;
+      }
+      if (end_h < filename.size() && absl::ascii_isalnum(filename[end_h])) {
+        continue;
+      }
+      int width = 0;
+      for (size_t k = start_w; k < i; ++k) {
+        width = width * 10 + (filename[k] - '0');
+      }
+      int height = 0;
+      for (size_t k = i + 1; k < end_h; ++k) {
+        height = height * 10 + (filename[k] - '0');
+      }
+      if (width >= 16 && height >= 16) {
+        return Resolution{.width = width, .height = height};
+      }
+    }
+  }
+
+  // 2. Look for <width>_<height> pattern (e.g. "1280_720", "1850_1110").
+  for (size_t i = 0; i < filename.size(); ++i) {
+    if (filename[i] == '_' && i > 0 && absl::ascii_isdigit(filename[i - 1]) &&
+        i + 1 < filename.size() && absl::ascii_isdigit(filename[i + 1])) {
+      size_t start_w = i - 1;
+      while (start_w > 0 && absl::ascii_isdigit(filename[start_w - 1])) {
+        --start_w;
+      }
+      if (start_w > 0 && absl::ascii_isalnum(filename[start_w - 1])) {
+        continue;
+      }
+      size_t end_h = i + 1;
+      while (end_h < filename.size() && absl::ascii_isdigit(filename[end_h])) {
+        ++end_h;
+      }
+      if (end_h < filename.size() && absl::ascii_isalnum(filename[end_h])) {
+        continue;
+      }
+      int width = 0;
+      for (size_t k = start_w; k < i; ++k) {
+        width = width * 10 + (filename[k] - '0');
+      }
+      int height = 0;
+      for (size_t k = i + 1; k < end_h; ++k) {
+        height = height * 10 + (filename[k] - '0');
+      }
+      if (width >= 64 && height >= 64) {
+        return Resolution{.width = width, .height = height};
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 }  // namespace test

@@ -1144,7 +1144,22 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   }
 
   mHandlingKeyEvent = aEvent;
-  gboolean isFiltered = gtk_im_context_filter_keypress(currentContext, aEvent);
+  gboolean isFiltered = [&]() {
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   Calling gtk_im_context_filter_keypress() with a batch...",
+                static_cast<void*>(this));
+    RefPtr<TextEventDispatcher> dispatcher(GetTextEventDispatcher());
+    MOZ_DIAGNOSTIC_ASSERT(dispatcher);
+    AutoTextEventDispatcherBatch batchEvents(*dispatcher);
+    const auto ret = gtk_im_context_filter_keypress(currentContext, aEvent);
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   Called gtk_im_context_filter_keypress(), ending the "
+                "batch (pending events={})...",
+                static_cast<void*>(this), dispatcher->GetPendingEventCount());
+    return ret;
+  }();
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info, "{}   The batch finished",
+              static_cast<void*>(this));
 
   // If we're not sure whether the event is handled by IME asynchronously or
   // synchronously, we need to trust the result of
@@ -1303,9 +1318,10 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
 }
 
 void IMContextWrapper::ResetIME() {
-  MOZ_LOG(gIMELog, LogLevel::Info,
-          ("0x%p ResetIME(), mCompositionState=%s, mIMEFocusState=%s", this,
-           GetCompositionStateName(), ToString(mIMEFocusState).c_str()));
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{} ResetIME(), mCompositionState={}, mIMEFocusState={}",
+              static_cast<void*>(this), GetCompositionStateName(),
+              mIMEFocusState);
 
   GtkIMContext* activeContext = GetActiveContext();
   if (MOZ_UNLIKELY(!activeContext)) {
@@ -1318,6 +1334,9 @@ void IMContextWrapper::ResetIME() {
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
 
   mPendingResettingIMContext = false;
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{}   ResetIME() calling gtk_im_context_reset()...",
+              static_cast<void*>(this));
   gtk_im_context_reset(activeContext);
 
   // The last focused window might have been destroyed by a DOM event handler
@@ -1325,19 +1344,25 @@ void IMContextWrapper::ResetIME() {
   if (!lastFocusedWindow ||
       NS_WARN_IF(lastFocusedWindow != mLastFocusedWindow) ||
       lastFocusedWindow->Destroyed()) {
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   ResetIME() called gtk_im_context_reset() and focused "
+                "window is changed, "
+                "activeContext={}, mCompositionState={}, mIMEFocusState={}",
+                static_cast<void*>(this), static_cast<void*>(activeContext),
+                GetCompositionStateName(), mIMEFocusState);
     return;
   }
 
   nsAutoString compositionString;
   GetCompositionString(activeContext, compositionString);
 
-  MOZ_LOG(gIMELog, LogLevel::Debug,
-          ("0x%p   ResetIME() called gtk_im_context_reset(), "
-           "activeContext=0x%p, mCompositionState=%s, compositionString=%s, "
-           "mIMEFocusState=%s",
-           this, activeContext, GetCompositionStateName(),
-           NS_ConvertUTF16toUTF8(compositionString).get(),
-           ToString(mIMEFocusState).c_str()));
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{}   ResetIME() called gtk_im_context_reset(), "
+              "activeContext={}, mCompositionState={}, compositionString={}, "
+              "mIMEFocusState={}",
+              static_cast<void*>(this), static_cast<void*>(activeContext),
+              GetCompositionStateName(),
+              NS_ConvertUTF16toUTF8(compositionString).get(), mIMEFocusState);
 
   // XXX IIIMF (ATOK X3 which is one of the Language Engine of it is still
   //     used in Japan!) sends only "preedit_changed" signal with empty
@@ -1663,10 +1688,32 @@ void IMContextWrapper::NotifyIMEOfFocusChange(IMEFocusState aIMEFocusState) {
 
 void IMContextWrapper::OnSelectionChange(
     nsWindow* aCaller, const IMENotification& aIMENotification) {
-  const bool isSelectionRangeChanged =
-      mContentSelection.isNothing() ||
-      !aIMENotification.mSelectionChangeData.EqualsRange(
-          mContentSelection.ref());
+  const bool isSelectionRangeChanged = [&]() {
+    if (mContentSelection.isNothing()) [[unlikely]] {
+      return true;
+    }
+    // If the new range exactly matches with the caret in the composition
+    // string, we can treat the selection is not changed actually.
+    if (aIMENotification.mSelectionChangeData.EqualsRange(
+            mContentSelection.ref())) {
+      return false;
+    }
+    if (!EditorHasCompositionString()) {
+      return true;
+    }
+    // If there is composition string, we should treat that selection is not
+    // changed if there is no range or the new range is in the composition
+    // string because we will set new caret position at the next composition
+    // change and the web app does not intent to make the user to insert text to
+    // different place.
+    if (!aIMENotification.mSelectionChangeData.HasRange()) [[unlikely]] {
+      return false;
+    }
+    return aIMENotification.mSelectionChangeData.StartOffset() >=
+               mCompositionStart &&
+           aIMENotification.mSelectionChangeData.EndOffset() <=
+               mCompositionStart + mDispatchedCompositionString.Length();
+  }();
   mContentSelection =
       Some(ContentSelection(aIMENotification.mSelectionChangeData));
   const bool retrievedSurroundingSignalReceived =
@@ -1743,7 +1790,7 @@ void IMContextWrapper::OnSelectionChange(
     return;
   }
 
-  bool occurredBeforeComposition =
+  const bool occurredBeforeComposition =
       IsComposing() && !selectionChangeData.mOccurredDuringComposition &&
       !selectionChangeData.mCausedByComposition;
   if (occurredBeforeComposition) {
@@ -2593,6 +2640,24 @@ bool IMContextWrapper::DispatchCompositionChangeEvent(
   mCompositionTargetRange.mOffset =
       mCompositionStart + rangeArray->TargetClauseOffset();
   mCompositionTargetRange.mLength = rangeArray->TargetClauseLength();
+
+  // If the web content updates selection as-is at `compositionupdate`,
+  // `beforeinput` or `input` as-is, we should ignore it in OnSelectionChange().
+  // To check whether the range is actually changed, we need to update the
+  // normal selection range right now.
+  const uint32_t caretOffsetInCompositionString =
+      rangeArray->HasCaret() ? rangeArray->GetCaretPosition()
+                             : mDispatchedCompositionString.Length();
+  if (mContentSelection) {
+    mContentSelection->Collapse(mCompositionStart +
+                                caretOffsetInCompositionString);
+  } else {
+    mContentSelection.emplace(ContentSelection(
+        mCompositionStart + caretOffsetInCompositionString,
+        // OnSelectionChange() will assign the actual WritingMode. So, it should
+        // be fine to use the default writing mode temporarily.
+        WritingMode{}));
+  }
 
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
   nsEventStatus status;

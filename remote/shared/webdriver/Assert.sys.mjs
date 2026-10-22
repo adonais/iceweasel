@@ -127,7 +127,7 @@ assert.content = function (context, msg = "") {
 assert.hasSystemAccess = function (msg = "") {
   msg =
     msg ||
-    `System access is required. Start ${lazy.AppInfo.name} with "-remote-allow-system-access" to enable it.`;
+    `System access is required. Start ${lazy.AppInfo.name} with the "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS=1" environment variable set to enable it.`;
 
   assert.that(
     hasSystemAccess => hasSystemAccess,

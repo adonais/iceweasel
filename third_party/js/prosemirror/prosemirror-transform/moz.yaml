@@ -37,6 +37,8 @@ origin:
   # optional
   license-file: LICENSE
 
+  npm-name: prosemirror-transform
+
 # Configuration for the automated vendoring system.
 # optional
 vendoring:

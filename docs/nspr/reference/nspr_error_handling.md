@@ -13,18 +13,18 @@ Conventions](introduction_to_nspr.md#nspr-naming-conventions).
 
 # Error Type
 
-> - {ref}`PRErrorCode`
+> - {doc}`prerrorcode`
 
 (error-functions)=
 
 # Error Functions
 
-> - {ref}`PR_SetError`
-> - {ref}`PR_SetErrorText`
-> - {ref}`PR_GetError`
-> - {ref}`PR_GetOSError`
-> - {ref}`PR_GetErrorTextLength`
-> - {ref}`PR_GetErrorText`
+> - {doc}`pr_seterror`
+> - {doc}`pr_seterrortext`
+> - {doc}`pr_geterror`
+> - {doc}`pr_getoserror`
+> - {doc}`pr_geterrortextlength`
+> - {doc}`pr_geterrortext`
 
 (error-codes)=
 
@@ -68,7 +68,7 @@ Error codes defined in `prerror.h`:
 `PR_PENDING_INTERRUPT_ERROR`
 
 : The operation terminated because another thread has interrupted it
-  with {ref}`PR_Interrupt`.
+  with {doc}`pr_interrupt`.
 
 `PR_NOT_IMPLEMENTED_ERROR`
 
@@ -99,7 +99,7 @@ Error codes defined in `prerror.h`:
 
 `PR_ADDRESS_NOT_AVAILABLE_ERROR`
 
-: The network address ({ref}`PRNetAddr`) is not available (probably in
+: The network address ({doc}`prnetaddr`) is not available (probably in
   use).
 
 `PR_ADDRESS_NOT_SUPPORTED_ERROR`
@@ -118,7 +118,7 @@ Error codes defined in `prerror.h`:
 
 `PR_ADDRESS_IN_USE_ERROR`
 
-: Network address specified ({ref}`PRNetAddr`) is in use.
+: Network address specified ({doc}`prnetaddr`) is in use.
 
 `PR_CONNECT_REFUSED_ERROR`
 

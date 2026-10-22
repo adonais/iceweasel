@@ -31,6 +31,7 @@ export const SessionDataCategory = {
   Event: "event",
   GeolocationOverride: "geolocation-override",
   LocaleOverride: "locale-override",
+  MediaFeaturesOverride: "media-features-override",
   NetworkConditions: "network-conditions",
   PreloadScript: "preload-script",
   ResponseCollector: "response-collector",

@@ -420,14 +420,16 @@ macosx1500-aarch64-nightlyasrelease/opt:
     test-sets:
         - browsertime
 
+macosx2700-aarch64-shippable/opt:
+    build-platform: macosx64-shippable/opt
+    test-sets:
+        - macosx2700-aarch64-perftests
+
 macosx1470-64-shippable/opt:
     build-platform: macosx64-shippable/opt
     test-sets:
-        - awsy
         - browsertime
         - browsertime-profiling
-        - macosx64-talos
-        - talos-profiling
         - macosx1470-64-tests
         - webgpu
         - web-platform-tests-backlog
@@ -478,6 +480,11 @@ android-em-14-x86_64-ccov/opt:
         - android14-x86_64-tests
         - web-platform-tests-backlog
 
+android-em-14-x86_64-appservices/opt:
+    build-platform: android-x86_64-appservices/opt
+    test-sets:
+        - android14-x86_64-appservices-tests
+
 android-em-14-x86_64-lite/opt:
     build-platform: android-x86_64-lite/opt
     test-sets:
@@ -496,11 +503,6 @@ android-em-14-x86_64-shippable-lite/opt:
 
 android-em-14-x86_64/debug:
     build-platform: android-x86_64/debug
-    test-sets:
-        - android14-x86_64-tests
-
-android-em-14-x86_64/debug-isolated-process:
-    build-platform: android-x86_64/debug-isolated-process
     test-sets:
         - android14-x86_64-tests
 
@@ -532,6 +534,11 @@ android-hw-p6-13-0-aarch64-shippable/opt:
         - android-hw-speedometer-tests
         - android-hw-power-tests
 
+android-hw-p6-13-0-aarch64-nightlyasrelease/opt:
+    build-platform: android-aarch64-nightlyasrelease/opt
+    test-sets:
+        - android-hw-speedometer3-nightlyasrelease
+
 android-hw-a55-14-0-aarch64-shippable/opt:
     build-platform: android-aarch64-shippable/opt
     test-sets:
@@ -539,6 +546,11 @@ android-hw-a55-14-0-aarch64-shippable/opt:
         - android-hw-browsertime
         - android-hw-aarch64
         - android-hw-aarch64-pgo-unittests
+
+android-hw-a55-14-0-aarch64-nightlyasrelease/opt:
+    build-platform: android-aarch64-nightlyasrelease/opt
+    test-sets:
+        - android-hw-speedometer3-nightlyasrelease
 
 android-hw-a55-14-0-aarch64/opt:
     build-platform: android-aarch64/opt
@@ -553,6 +565,11 @@ android-hw-a55-14-0-aarch64/debug:
     test-sets:
         - android-hw-aarch64
         - android-hw-aarch64-debug-unittests
+
+android-hw-s24-14-0-aarch64-nightlyasrelease/opt:
+    build-platform: android-aarch64-nightlyasrelease/opt
+    test-sets:
+        - android-hw-speedometer3-nightlyasrelease
 
 android-hw-s24-14-0-aarch64-shippable/opt:
     build-platform: android-aarch64-shippable/opt

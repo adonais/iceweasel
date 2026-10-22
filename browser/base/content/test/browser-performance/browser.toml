@@ -23,10 +23,6 @@ support-files = ["head.js"]
 skip-if = [
   "asan",
   "debug",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1969231
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1969231
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1969231
-  "os == 'win'", # Bug 1775626
 ]
 
 ["browser_hidden_browser_vsync.js"]
@@ -45,7 +41,6 @@ run-if = [
 ]
 skip-if = [
   "socketprocess_networking",
-  "os == 'win' && standalone", # Bug 2029498
 ]
 
 ["browser_startup.js"]
@@ -77,7 +72,6 @@ skip-if = [
 ["browser_tabclose.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1531417
-  "os == 'win'", # Bug 1488537, Bug 1497713
 ]
 
 ["browser_tabclose_grow.js"]
@@ -95,9 +89,6 @@ skip-if = [
 ["browser_tabstrip_overflow_underflow.js"]
 
 ["browser_tabswitch.js"]
-skip-if = [
-  "os == 'win'", # Bug 1455054
-]
 
 ["browser_toolbariconcolor_restyles.js"]
 

@@ -11,7 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
-import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineView
@@ -39,7 +39,7 @@ open class BrowserActivity : LocaleAwareAppCompatActivity(), ComponentCallbacks2
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         window.setupPersistentInsets()
 
         AppServicesInitializer.init(AppServicesInitializer.Config(null))

@@ -82,8 +82,8 @@ struct FieldDebugInfoT {
 template <class StructT, class TupleOfFields, size_t FieldId>
 struct TightlyPackedFieldEndOffsetT {
   template <size_t I>
-  using FieldTAt = std::remove_reference_t<
-      typename std::tuple_element<I, TupleOfFields>::type>;
+  using FieldTAt =
+      std::remove_reference_t<std::tuple_element_t<I, TupleOfFields>>;
 
   static constexpr size_t Fn() {
     constexpr auto num_fields = std::tuple_size_v<TupleOfFields>;
@@ -110,7 +110,7 @@ struct TightlyPackedFieldEndOffsetT {
 template <class StructT, class TupleOfFields>
 struct TightlyPackedFieldEndOffsetT<StructT, TupleOfFields, 0> {
   static constexpr size_t Fn() {
-    using FieldT = typename std::tuple_element<0, TupleOfFields>::type;
+    using FieldT = std::tuple_element_t<0, TupleOfFields>;
     return sizeof(FieldT);
   }
 };
@@ -153,7 +153,7 @@ struct PaddingField {
 
   std::array<T, N> ignored = {};
 
-  PaddingField() {}
+  PaddingField() = default;
 
   friend constexpr bool operator==(const PaddingField&, const PaddingField&) {
     return true;

@@ -18,9 +18,6 @@ skip-if = [
 
 ["test_assign_event_data.html"]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # bug 933303
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # bug 933303
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 933303
   "os == 'win' && headless",
 ]
 

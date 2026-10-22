@@ -28,6 +28,8 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 class OrientationDelegateTest : BaseSessionTest() {
     val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
 
+    private val iframeOrientation = "document.querySelector('iframe').contentWindow.screen.orientation"
+
     @get:Rule override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     @Before
@@ -36,10 +38,14 @@ class OrientationDelegateTest : BaseSessionTest() {
     }
 
     private fun goFullscreen() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("full-screen-api.allow-trusted-requests-only" to false))
         mainSession.loadTestPath(FULLSCREEN_PATH)
         mainSession.waitForPageStop()
-        val promise = mainSession.evaluatePromiseJS("document.querySelector('#fullscreen').requestFullscreen()")
+        enterFullscreen()
+    }
+
+    private fun enterFullscreen(doc: String = "document") {
+        sessionRule.setPrefsUntilTestEnd(mapOf("full-screen-api.allow-trusted-requests-only" to false))
+        val promise = mainSession.evaluatePromiseJS("$doc.querySelector('#fullscreen').requestFullscreen()")
         sessionRule.waitUntilCalled(
             object : ContentDelegate {
                 @AssertCalled(count = 1)
@@ -49,6 +55,59 @@ class OrientationDelegateTest : BaseSessionTest() {
             }
         )
         promise.value
+    }
+
+    private fun goFullscreenInIframe() {
+        mainSession.loadTestPath(FULLSCREEN_PATH)
+        mainSession.waitForPageStop()
+        mainSession
+            .evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    const iframe = document.createElement('iframe');
+                    iframe.allowFullscreen = true;
+                    iframe.onload = resolve;
+                    iframe.src = '$FULLSCREEN_PATH';
+                    document.body.append(iframe);
+                })
+                """
+                    .trimIndent()
+            )
+            .value
+        enterFullscreen("document.querySelector('iframe').contentDocument")
+    }
+
+    private fun exitFullscreenAndWaitForUnlock(doc: String = "document") {
+        val promise = mainSession.evaluatePromiseJS("$doc.exitFullscreen()")
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate, OrientationController.OrientationDelegate {
+                @AssertCalled(count = 1)
+                override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) {
+                    assertThat("Exited fullscreen", fullScreen, equalTo(false))
+                }
+
+                @AssertCalled(count = 1)
+                override fun onOrientationUnlock() {
+                    activityRule.scenario.onActivity { activity ->
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                }
+            }
+        )
+        promise.value
+    }
+
+    private fun waitForUnlock() {
+        sessionRule.waitUntilCalled(
+            object : OrientationController.OrientationDelegate {
+                @AssertCalled(count = 1)
+                override fun onOrientationUnlock() {
+                    activityRule.scenario.onActivity { activity ->
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                }
+            }
+        )
     }
 
     private fun lockPortrait() {
@@ -75,8 +134,8 @@ class OrientationDelegateTest : BaseSessionTest() {
         mainSession.waitForRoundTrip()
     }
 
-    private fun lockLandscape() {
-        val promise = mainSession.evaluatePromiseJS("screen.orientation.lock('landscape-primary')")
+    private fun lockLandscape(orientation: String = "screen.orientation") {
+        val promise = mainSession.evaluatePromiseJS("$orientation.lock('landscape-primary')")
         sessionRule.delegateDuringNextWait(
             object : OrientationController.OrientationDelegate {
                 @AssertCalled(count = 1)
@@ -117,16 +176,7 @@ class OrientationDelegateTest : BaseSessionTest() {
     fun orientationUnlock() {
         goFullscreen()
         mainSession.evaluateJS("screen.orientation.unlock()")
-        sessionRule.waitUntilCalled(
-            object : OrientationController.OrientationDelegate {
-                @AssertCalled(count = 1)
-                override fun onOrientationUnlock() {
-                    activityRule.scenario.onActivity { activity ->
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    }
-                }
-            }
-        )
+        waitForUnlock()
     }
 
     @Test
@@ -271,23 +321,51 @@ class OrientationDelegateTest : BaseSessionTest() {
             }
         }
 
-        val promise = mainSession.evaluatePromiseJS("document.exitFullscreen()")
-        sessionRule.waitUntilCalled(
-            object : ContentDelegate, OrientationController.OrientationDelegate {
-                @AssertCalled(count = 1)
-                override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) {
-                    assertThat("Exited fullscreen", fullScreen, equalTo(false))
-                }
+        exitFullscreenAndWaitForUnlock()
+    }
 
-                @AssertCalled(count = 1)
-                override fun onOrientationUnlock() {
-                    activityRule.scenario.onActivity { activity ->
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    }
-                }
+    @Test
+    fun orientationUnlockByRemovingFullscreenIframe() {
+        goFullscreenInIframe()
+        lockLandscape(iframeOrientation)
+        mainSession.evaluateJS("document.querySelector('iframe').remove()")
+        waitForUnlock()
+    }
+
+    @Test
+    fun orientationUnlockByNavigatingFullscreenIframe() {
+        goFullscreenInIframe()
+        lockLandscape(iframeOrientation)
+        mainSession.evaluateJS("document.querySelector('iframe').src = '$HELLO_HTML_PATH'")
+        waitForUnlock()
+    }
+
+    @WithDisplay(width = 300, height = 200)
+    @Test
+    fun orientationLockKeptWhenUnlockedIframeIsRemoved() {
+        goFullscreenInIframe()
+        lockLandscape(iframeOrientation)
+        exitFullscreenAndWaitForUnlock("document.querySelector('iframe').contentDocument")
+
+        enterFullscreen()
+        lockPortrait()
+        sessionRule.delegateDuringNextWait(
+            object : OrientationController.OrientationDelegate {
+                @AssertCalled(false) override fun onOrientationUnlock() {}
             }
         )
-        promise.value
+        mainSession.evaluateJS("document.querySelector('iframe').remove()")
+        mainSession.waitForRoundTrip()
+
+        exitFullscreenAndWaitForUnlock()
+    }
+
+    @Test
+    fun orientationUnlockByClosingSession() {
+        goFullscreen()
+        lockLandscape()
+        mainSession.close()
+        waitForUnlock()
     }
 
     @WithDisplay(width = 200, height = 300)

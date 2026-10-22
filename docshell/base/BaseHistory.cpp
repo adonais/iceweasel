@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BaseHistory.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
@@ -24,13 +25,26 @@ static constexpr nsLiteralCString kDisallowedSchemes[] = {
     "moz-extension"_ns, "moz-page-thumb"_ns, "moz-src"_ns,
     "x-moz-ews"_ns,     "x-moz-graph"_ns};
 
+// about:smartpage renders a page the user asked Firefox to generate, so unlike
+// the rest of about: it belongs in history alongside the pages they browsed to.
+static bool IsSmartPage(nsIURI* aURI, const nsACString& aScheme) {
+  if (!aScheme.EqualsLiteral("about") ||
+      !StaticPrefs::browser_smartwindow_aitab_enabled()) {
+    return false;
+  }
+  nsAutoCString module;
+  return NS_SUCCEEDED(NS_GetAboutModuleName(aURI, module)) &&
+         module.EqualsLiteral("smartpage");
+}
+
 bool BaseHistory::CanStore(nsIURI* aURI) {
   nsAutoCString scheme;
   if (NS_WARN_IF(NS_FAILED(aURI->GetScheme(scheme)))) {
     return false;
   }
 
-  if (!scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https")) {
+  if (!scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https") &&
+      !IsSmartPage(aURI, scheme)) {
     for (const nsLiteralCString& disallowed : kDisallowedSchemes) {
       if (scheme.Equals(disallowed)) {
         return false;

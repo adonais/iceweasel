@@ -91,7 +91,7 @@ already_AddRefed<GdkPixbuf> nsImageToPixbuf::SourceSurfaceToPixbuf(
     }
 
     RefPtr<mozilla::gfx::DrawTarget> dt = Factory::CreateDrawTargetForData(
-        mozilla::gfx::BackendType::CAIRO, map.mData, dataSurface->GetSize(),
+        mozilla::gfx::BackendType::SKIA, map.mData, dataSurface->GetSize(),
         map.mStride, dataSurface->GetFormat());
     if (!dt) {
       dataSurface->Unmap();

@@ -30,14 +30,25 @@ class WaylandBuffer {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandBuffer);
 
-  virtual already_AddRefed<gfx::DrawTarget> Lock() { return nullptr; };
-  virtual void* GetImageData() { return nullptr; }
-  virtual GLuint GetTexture() { return 0; }
-  virtual void DestroyGLResources() {};
-  virtual gfx::SurfaceFormat GetSurfaceFormat() = 0;
-  virtual WaylandBufferDMABUF* AsWaylandBufferDMABUF() { return nullptr; };
+  static already_AddRefed<WaylandBuffer> Create(RefPtr<BufferSurface> aSurface);
+  static already_AddRefed<WaylandBuffer> CreateDMABuf(
+      const LayoutDeviceIntSize& aSize, gl::GLContext* aGL,
+      RefPtr<DRMFormat> aFormat);
+  static RefPtr<WaylandBuffer> CreateSHM(
+      const LayoutDeviceIntSize& aSize,
+      RefPtr<widget::DRMFormat> aFormat = nullptr);
 
-  LayoutDeviceIntSize GetSize() const { return mSize; };
+  already_AddRefed<gfx::DrawTarget> Lock();
+  void* GetImageData();
+  GLuint GetTexture() { return mBufferSurface->GetTexture(); }
+  void DestroyGLResources() { mBufferSurface->ReleaseTextures(); }
+  gfx::SurfaceFormat GetSurfaceFormat() { return mBufferSurface->GetFormat(); }
+
+  DMABufSurface* GetDMABufSurface() {
+    return mBufferSurface->GetAsDMABufSurface();
+  }
+
+  LayoutDeviceIntSize GetSize() const { return mSize; }
   bool IsMatchingSize(const LayoutDeviceIntSize& aSize) const {
     return aSize == mSize;
   }
@@ -47,27 +58,33 @@ class WaylandBuffer {
   void RemoveTransaction(const WaylandSurfaceLock& aSurfaceLock,
                          RefPtr<BufferTransaction> aTransaction);
 
+  size_t GetBufferAge() const { return mBufferAge; }
+  void IncrementBufferAge() { mBufferAge++; }
+  void ResetBufferAge() { mBufferAge = 0; }
+
 #ifdef MOZ_LOGGING
-  virtual void DumpToFile(const char* aHint) = 0;
+  void DumpToFile(const char* aHint);
 #endif
 
   // Create and return wl_buffer for underlying memory buffer if it's missing.
-  virtual wl_buffer* CreateWlBuffer() = 0;
+  wl_buffer* CreateWlBuffer();
 
   // Set wl_buffer from external source (WaylandBufferDMABUFHolder).
   void SetExternalWLBuffer(wl_buffer* aWLBuffer);
 
  protected:
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
-  virtual ~WaylandBuffer() = default;
+  virtual ~WaylandBuffer();
 
   // if set the wl_buffer is managed by someone else
-  // (for instance WaylandBufferDMABUFHolder)
+  // (for instance WaylandBufferHolder)
   // and WaylandBuffer can't destroy it.
   wl_buffer* mExternalWlBuffer = nullptr;
   AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
   LayoutDeviceIntSize mSize;
   static gfx::SurfaceFormat sFormat;
+  RefPtr<BufferSurface> mBufferSurface;
+  size_t mBufferAge = 0;
 
 #ifdef MOZ_LOGGING
   static int mDumpSerial;
@@ -75,76 +92,14 @@ class WaylandBuffer {
 #endif
 };
 
-// Holds actual graphics data for wl_surface
-class WaylandBufferSHM final : public WaylandBuffer {
+class WaylandBufferHolder final {
  public:
-  static RefPtr<WaylandBufferSHM> Create(
-      const LayoutDeviceIntSize& aSize,
-      RefPtr<widget::DRMFormat> aFormat = nullptr);
-
-  already_AddRefed<gfx::DrawTarget> Lock() override;
-  void* GetImageData() override;
-
-  gfx::SurfaceFormat GetSurfaceFormat() override;
-
-  void Clear();
-  size_t GetBufferAge() const { return mBufferAge; };
-  void IncrementBufferAge() { mBufferAge++; };
-  void ResetBufferAge() { mBufferAge = 0; };
-
-#ifdef MOZ_LOGGING
-  void DumpToFile(const char* aHint) override;
-#endif
-
-  wl_buffer* CreateWlBuffer() override;
-
- private:
-  explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
-  ~WaylandBufferSHM() override;
-
-  // SHMBufSurface provides actual shared memory we draw into.
-  RefPtr<SHMBufSurface> mSHMBufSurface;
-  size_t mBufferAge = 0;
-};
-
-class WaylandBufferDMABUF final : public WaylandBuffer {
- public:
-  static already_AddRefed<WaylandBufferDMABUF> CreateRGBA(
-      const LayoutDeviceIntSize& aSize, gl::GLContext* aGL,
-      RefPtr<DRMFormat> aFormat);
-  static already_AddRefed<WaylandBufferDMABUF> CreateExternal(
-      RefPtr<DMABufSurface> aSurface);
-
-  WaylandBufferDMABUF* AsWaylandBufferDMABUF() override { return this; };
-
-  GLuint GetTexture() override { return mDMABufSurface->GetTexture(); };
-  void DestroyGLResources() override { mDMABufSurface->ReleaseTextures(); };
-  gfx::SurfaceFormat GetSurfaceFormat() override {
-    return mDMABufSurface->GetFormat();
-  }
-  DMABufSurface* GetSurface() { return mDMABufSurface; }
-
-#ifdef MOZ_LOGGING
-  void DumpToFile(const char* aHint) override;
-#endif
-
-  wl_buffer* CreateWlBuffer() override;
-
- private:
-  explicit WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize);
-  ~WaylandBufferDMABUF();
-
-  RefPtr<DMABufSurface> mDMABufSurface;
-};
-
-class WaylandBufferDMABUFHolder final {
- public:
-  bool Matches(DMABufSurface* aSurface) const;
+  bool Matches(BufferSurface* aSurface) const;
 
   wl_buffer* GetWLBuffer() { return mWLBuffer; }
 
-  WaylandBufferDMABUFHolder(DMABufSurface* aSurface, wl_buffer* aWLBuffer);
-  ~WaylandBufferDMABUFHolder();
+  WaylandBufferHolder(BufferSurface* aSurface, wl_buffer* aWLBuffer);
+  ~WaylandBufferHolder() = default;
 
  private:
   wl_buffer* mWLBuffer = nullptr;

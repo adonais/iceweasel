@@ -12,7 +12,7 @@
 #define MODULES_PACING_RTP_PACKET_PACER_H_
 
 #include <optional>
-#include <vector>
+#include <span>
 
 #include "api/transport/network_types.h"
 #include "api/units/data_size.h"
@@ -26,7 +26,7 @@ class RtpPacketPacer {
   virtual ~RtpPacketPacer() = default;
 
   virtual void CreateProbeClusters(
-      std::vector<ProbeClusterConfig> probe_cluster_configs) = 0;
+      std::span<const ProbeClusterConfig> probe_cluster_configs) = 0;
 
   // Temporarily pause all sending.
   virtual void Pause() = 0;

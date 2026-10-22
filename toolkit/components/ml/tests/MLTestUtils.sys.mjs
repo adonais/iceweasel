@@ -30,6 +30,7 @@
 
 import { PipelineOptions } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 import { MLEngineParent } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs";
+import { TextGenerationEngine } from "moz-src:///toolkit/components/ml/textgeneration/TextGenerationEngine.sys.mjs";
 import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 import { HttpServer } from "resource://testing-common/httpd.sys.mjs";
 
@@ -68,6 +69,9 @@ const engineCreationInterceptors = new Map();
 /** @type {MLEngineParent["getEngine"] | null} */
 let originalGetEngine = null;
 
+/** @type {typeof TextGenerationEngine.create | null} */
+let originalCreateTextGenerationEngine = null;
+
 /**
  * Restores production engine creation.
  *
@@ -79,26 +83,27 @@ function restoreEngineCreation() {
   }
 
   MLEngineParent.prototype.getEngine = originalGetEngine;
+  TextGenerationEngine.create = originalCreateTextGenerationEngine;
   originalGetEngine = null;
+  originalCreateTextGenerationEngine = null;
 }
 
 /**
- * Intercepts armed engine creations and passes unrelated requests through.
+ * Intercepts an armed engine creation and passes unrelated requests through.
  *
- * @this {MLEngineParent}
- * @param {Parameters<MLEngineParent["getEngine"]>[0]} params - The engine
- *   creation parameters.
- * @returns {ReturnType<MLEngineParent["getEngine"]>} The production engine.
+ * @param {PipelineOptions} pipelineOptions - The requested engine options.
+ * @param {(pipelineOptions: PipelineOptions) => Promise<any>} create - Creates
+ *   the production engine from the given options.
+ * @returns {Promise<any>} The production engine.
  */
-async function getEngineWithInterception(params) {
-  const { featureId } = params.pipelineOptions;
+async function createEngineWithInterception(pipelineOptions, create) {
+  const { featureId } = pipelineOptions;
   const interceptor = engineCreationInterceptors.get(featureId);
 
   if (!interceptor) {
-    return originalGetEngine.call(this, params);
+    return create(pipelineOptions);
   }
 
-  const getEngine = originalGetEngine;
   engineCreationInterceptors.delete(featureId);
 
   const { expectedOptions, overrides, resolve, reject } = interceptor;
@@ -110,7 +115,7 @@ async function getEngineWithInterception(params) {
     }
 
     for (const [name, expectedValue] of Object.entries(expectedOptions)) {
-      const actualValue = params.pipelineOptions[name];
+      const actualValue = pipelineOptions[name];
 
       if (actualValue !== expectedValue) {
         throw new Error(
@@ -119,13 +124,10 @@ async function getEngineWithInterception(params) {
       }
     }
 
-    const pipelineOptions = new PipelineOptions(params.pipelineOptions);
-    pipelineOptions.updateOptions(overrides);
+    const overriddenOptions = new PipelineOptions(pipelineOptions);
+    overriddenOptions.updateOptions(overrides);
 
-    const engine = await getEngine.call(this, {
-      ...params,
-      pipelineOptions,
-    });
+    const engine = await create(overriddenOptions);
 
     resolve({ engine, start, end: ChromeUtils.now() });
 
@@ -135,6 +137,49 @@ async function getEngineWithInterception(params) {
 
     throw error;
   }
+}
+
+/**
+ * Intercepts armed engine creations in the inference process.
+ *
+ * @this {MLEngineParent}
+ * @param {Parameters<MLEngineParent["getEngine"]>[0]} params - The engine
+ *   creation parameters.
+ * @returns {ReturnType<MLEngineParent["getEngine"]>} The production engine.
+ */
+function getEngineWithInterception(params) {
+  const getEngine = originalGetEngine;
+
+  return createEngineWithInterception(params.pipelineOptions, pipelineOptions =>
+    getEngine.call(this, { ...params, pipelineOptions })
+  );
+}
+
+/**
+ * Intercepts armed engine creations in the HWInference process.
+ *
+ * @param {PipelineOptions} pipelineOptions - The requested engine options.
+ * @param {Parameters<typeof TextGenerationEngine.create>[1]} notificationsCallback
+ *   - Receives creation progress notifications.
+ * @param {AbortSignal} [abortSignal] - Cancels the model download.
+ * @returns {ReturnType<typeof TextGenerationEngine.create>} The production
+ *   engine.
+ */
+function createTextGenerationEngineWithInterception(
+  pipelineOptions,
+  notificationsCallback,
+  abortSignal
+) {
+  const create = originalCreateTextGenerationEngine;
+
+  return createEngineWithInterception(pipelineOptions, options =>
+    create.call(
+      TextGenerationEngine,
+      options,
+      notificationsCallback,
+      abortSignal
+    )
+  );
 }
 
 /**
@@ -162,6 +207,8 @@ function interceptEngineCreation(
   if (!originalGetEngine) {
     originalGetEngine = MLEngineParent.prototype.getEngine;
     MLEngineParent.prototype.getEngine = getEngineWithInterception;
+    originalCreateTextGenerationEngine = TextGenerationEngine.create;
+    TextGenerationEngine.create = createTextGenerationEngineWithInterception;
   }
 
   const { promise, resolve, reject } = Promise.withResolvers();
@@ -481,6 +528,34 @@ export const MLTestUtils = {
 
   cleanupEngineCreationInterceptions,
   interceptEngineCreation,
+
+  /**
+   * Runs `run` once per process that can serve llama.cpp: the inference
+   * content process, then the HWInference utility process. Call it from a
+   * task whose assertions hold whichever process served it; a task that
+   * asserts something specific to one of them stays on that one.
+   *
+   * @param {(hwInference: boolean) => Promise<void>} run
+   */
+  async runOnBothInferenceProcesses(run) {
+    const pref = "browser.ml.llama.hwInference";
+    const hadUserValue = Services.prefs.prefHasUserValue(pref);
+    const previous = Services.prefs.getBoolPref(pref, false);
+    try {
+      for (const hwInference of [false, true]) {
+        const where = hwInference ? "HWInference utility" : "inference content";
+        dump(`runOnBothInferenceProcesses | in the ${where} process\n`);
+        Services.prefs.setBoolPref(pref, hwInference);
+        await run(hwInference);
+      }
+    } finally {
+      if (hadUserValue) {
+        Services.prefs.setBoolPref(pref, previous);
+      } else {
+        Services.prefs.clearUserPref(pref);
+      }
+    }
+  },
 
   /**
    * Gather just the text for the chunked response to an LLM call.

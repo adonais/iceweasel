@@ -19,6 +19,7 @@
 #include "jit/PerfSpewer.h"
 #include "js/HeapAPI.h"
 #include "js/Prefs.h"
+#include "util/Denormals.h"
 #include "vm/JSContext.h"
 
 #ifdef JS_CODEGEN_ARM64
@@ -50,6 +51,8 @@ static JitContext* CurrentJitContext() {
 
 void jit::SetJitContext(JitContext* ctx) {
   MOZ_ASSERT(!TlsJitContext.get());
+  // Compilers should always run with denormals enabled.
+  MOZ_ASSERT(!DenormalsDisabled());
   TlsJitContext.set(ctx);
 }
 

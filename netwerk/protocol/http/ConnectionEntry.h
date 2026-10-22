@@ -112,12 +112,13 @@ class ConnectionEntry : public SupportsWeakPtr {
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();
   void LogConnections();
 
-  // Fixed at construction; describes the origin, not necessarily the entry's
-  // current connections. Under Happy Eyeballs an Alt-Svc alternate shares the
-  // origin's entry, so an h2-origin entry can hold an h3 connection while this
-  // still reports IsHttp3()==false. Don't infer protocol/route from it; query
-  // the live connections (HasActiveH3Connection(), GetH2orH3ActiveConn()).
-  const RefPtr<nsHttpConnectionInfo> mConnInfo;
+  // Describes the origin, not necessarily the entry's current connections.
+  // Under Happy Eyeballs an Alt-Svc alternate shares the origin's entry, so an
+  // h2-origin entry can hold an h3 connection while this still reports
+  // IsHttp3()==false. Don't infer protocol/route from it; query the live
+  // connections (HasActiveH3Connection(), GetH2orH3ActiveConn()). Replaced
+  // wholesale when a property changes, since the conn info is immutable.
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   bool AvailableForDispatchNow();
 

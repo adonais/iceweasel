@@ -36,6 +36,8 @@ import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAN
 import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_SYNC_PREFERENCES
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.service.fxa.FxaAuthData
+import mozilla.components.service.fxa.FxaScope
+import mozilla.components.service.fxa.FxaService
 import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
@@ -52,12 +54,12 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** Configurable FxA capabilities. */
-enum class FxaCapability {
-    // Enables "choose what to sync" selection during support auth flows (currently, sign-up).
-    CHOOSE_WHAT_TO_SYNC,
+sealed interface FxaCapability {
+    /** Enables "choose what to sync" selection during support auth flows (currently, sign-up). */
+    data object ChooseWhatToSync : FxaCapability
 
-    // Advertises `pairingVersion` to FxA and enables the v2 pairing web channel commands.
-    PAIRING_V2,
+    /** Advertises `pairingVersion` to FxA and enables the v2 pairing web channel commands. */
+    data object PairingV2 : FxaCapability
 
     /**
      * Indicates to FxA that the authentication may not require the existence of "keys".
@@ -65,7 +67,21 @@ enum class FxaCapability {
      * This enables the ability for FxA to decide based on other parameters (like the service being authenticated),
      * whether or not to enforce a password used to generate the keys
      */
-    KEYS_OPTIONAL,
+    data object KeysOptional : FxaCapability
+
+    /**
+     * Indicates the list of services and required scopes that the host application supports.
+     *
+     * This helps FxA determine which scopes are to be considered mandatory during auth. It is expected to be used in
+     * conjunction with [KeysOptional] because some auth paths require keys to be present on the account.
+     *
+     * For example, if the scopes required for a service do not require keys/password on the account, FxA would inspect
+     * the required scopes the auth flow, and if [KeysOptional] is true, then FxA would not force the creation of one.
+     *
+     * See more information in the
+     * [server-side scope resolution ADR from FxA](https://github.com/mozilla/fxa/blob/354665d3016e14a34f0af3ad6566eb975697ecde/docs/adr/0049-service-driven-scope-resolution.md)
+     */
+    data class Services(val values: List<FxaService>) : FxaCapability
 }
 
 private object PairingWebChannelEntryPoint : FxAEntryPoint {
@@ -402,18 +418,19 @@ class FxaWebChannelFeature(
                                         },
                                     )
 
-                                    if (fxaCapabilities.contains(FxaCapability.CHOOSE_WHAT_TO_SYNC)) {
+                                    if (fxaCapabilities.contains(FxaCapability.ChooseWhatToSync)) {
                                         capabilities.put("choose_what_to_sync", true)
                                     }
                                     // Note that we don't report `pairing`: we support the pairing
                                     // OAuth commands, but we have no pairing authority UI.
-                                    if (fxaCapabilities.contains(FxaCapability.PAIRING_V2)) {
+                                    if (fxaCapabilities.contains(FxaCapability.PairingV2)) {
                                         capabilities.put("pairingVersion", 2)
                                     }
                                     // we can check for uid in canLinkAccount
                                     capabilities.put("can_link_account_uid", true)
 
                                     capabilities.maybePutKeysOptional(fxaCapabilities)
+                                    capabilities.maybePutServices(fxaCapabilities)
                                 },
                             )
                             val account = accountManager.authenticatedAccount()
@@ -430,11 +447,34 @@ class FxaWebChannelFeature(
             return status
         }
 
-        /** Conditionally add "keys_optional=true" if [fxaCapabilities] contains [FxaCapability.KEYS_OPTIONAL] */
+        /** Conditionally add "keys_optional=true" if [fxaCapabilities] contains [FxaCapability.KeysOptional] */
         private fun JSONObject.maybePutKeysOptional(fxaCapabilities: Set<FxaCapability>) {
-            if (fxaCapabilities.contains(FxaCapability.KEYS_OPTIONAL)) {
+            if (fxaCapabilities.contains(FxaCapability.KeysOptional)) {
                 put("keys_optional", true)
             }
+        }
+
+        /** Conditionally adds the "services" object if [fxaCapabilities] contains [FxaCapability.Services] */
+        private fun JSONObject.maybePutServices(fxaCapabilities: Set<FxaCapability>) {
+            val services = fxaCapabilities.filterIsInstance<FxaCapability.Services>().firstOrNull() ?: return
+            if (services.values.isEmpty()) return
+            put("services", services.values.asJsonObject())
+        }
+
+        /** Converts a list of [FxaService] to a JSON object. */
+        private fun List<FxaService>.asJsonObject(): JSONObject {
+            val services = JSONObject()
+            forEach { fxaService ->
+                services.put(
+                    fxaService.identifier,
+                    JSONObject().put("scope", fxaService.requiredScopes.asJsonArray()),
+                )
+            }
+            return services
+        }
+
+        private fun Iterable<FxaScope>.asJsonArray(): JSONArray {
+            return JSONArray(map { it.value })
         }
 
         private fun JSONArray.toStringList(): List<String> {
@@ -583,7 +623,7 @@ class FxaWebChannelFeature(
             command: String,
             messageId: String,
         ): JSONObject? {
-            return if (fxaCapabilities.contains(FxaCapability.PAIRING_V2)) {
+            return if (fxaCapabilities.contains(FxaCapability.PairingV2)) {
                 null
             } else {
                 errorResponse(command, messageId, "Pairing is disabled for command: $command")

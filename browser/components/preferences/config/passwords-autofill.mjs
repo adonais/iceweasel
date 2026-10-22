@@ -182,8 +182,11 @@ const {
   EDIT_CREDITCARD_L10N_IDS,
 } = FormAutofillUtils;
 
-const { ENABLED_AUTOFILL_ADDRESSES_PREF, ENABLED_AUTOFILL_CREDITCARDS_PREF } =
-  FormAutofill;
+const {
+  ENABLED_AUTOFILL_ADDRESSES_PREF,
+  ENABLED_AUTOFILL_CREDITCARDS_PREF,
+  ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+} = FormAutofill;
 
 const FORM_AUTOFILL_CONFIG = {
   payments: {
@@ -202,6 +205,10 @@ const FORM_AUTOFILL_CONFIG = {
             l10nId: "autofill-reauth-payment-methods-checkbox-2",
             supportPage:
               "credit-card-autofill#w_require-authentication-for-autofill",
+          },
+          {
+            id: "saveSecurityCodes",
+            l10nId: "autofill-payment-methods-save-security-codes-checkbox",
           },
         ],
       },
@@ -267,6 +274,7 @@ Preferences.addAll([
   // Credit cards and addresses
   { id: ENABLED_AUTOFILL_ADDRESSES_PREF, type: "bool" },
   { id: ENABLED_AUTOFILL_CREDITCARDS_PREF, type: "bool" },
+  { id: ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF, type: "bool" },
 
   // Personal info (one .enabled pref per member type)
   ...personalInfoEnabledPrefs().map(pref => ({ id: pref, type: "bool" })),
@@ -396,6 +404,11 @@ Preferences.addSetting({
     Services.obs.addObserver(emitChange, "OSAuthEnabledChange");
     return () => Services.obs.removeObserver(emitChange, "OSAuthEnabledChange");
   },
+});
+Preferences.addSetting({
+  id: "saveSecurityCodes",
+  pref: ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+  visible: () => FormAutofill.isAutofillCreditCardCVVSupported,
 });
 
 Preferences.addSetting({

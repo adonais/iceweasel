@@ -83,7 +83,7 @@ int AudioEncoderG722Impl::GetTargetBitrate() const {
 void AudioEncoderG722Impl::Reset() {
   num_10ms_frames_buffered_ = 0;
   for (size_t i = 0; i < num_channels_; ++i)
-    RTC_CHECK_EQ(0, WebRtcG722_EncoderInit(encoders_[i].encoder));
+    RTC_CHECK_EQ(WebRtcG722_EncoderInit(encoders_[i].encoder), 0);
 }
 
 std::optional<std::pair<TimeDelta, TimeDelta>>
@@ -148,11 +148,11 @@ AudioEncoder::EncodedInfo AudioEncoderG722Impl::EncodeImpl(
 }
 
 AudioEncoderG722Impl::EncoderState::EncoderState() {
-  RTC_CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
+  RTC_CHECK_EQ(WebRtcG722_CreateEncoder(&encoder), 0);
 }
 
 AudioEncoderG722Impl::EncoderState::~EncoderState() {
-  RTC_CHECK_EQ(0, WebRtcG722_FreeEncoder(encoder));
+  RTC_CHECK_EQ(WebRtcG722_FreeEncoder(encoder), 0);
 }
 
 size_t AudioEncoderG722Impl::SamplesPerChannel() const {

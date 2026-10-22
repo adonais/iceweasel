@@ -322,6 +322,7 @@ class _Handler(BaseHTTPRequestHandler):
                 )
             )
         elif path == "/target.html":
+            LOG.info(f"demo-server: target request arrived at {time.time() * 1000:.0f}")
             time.sleep(TARGET_STALL_MS / 1000.0)
             self._send(TARGET_HTML)
         else:

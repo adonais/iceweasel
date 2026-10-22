@@ -107,13 +107,12 @@ class LSValue final {
     Converter(Converter&& aOther) = default;
     ~Converter() = default;
 
-    operator const nsString&() const { return mBuffer; }
-
-   private:
     Converter() = delete;
     Converter(const Converter&) = delete;
     Converter& operator=(const Converter&) = delete;
     Converter& operator=(const Converter&&) = delete;
+
+    operator const nsString&() const { return mBuffer; }
   };
 
   Converter AsString() const { return Converter{*this}; }

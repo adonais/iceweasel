@@ -14,6 +14,7 @@ from gecko_taskgraph.util.bugbug import (
     CT_LOW,
     CT_MEDIUM,
     BugbugTimeoutException,
+    get_confidence_threshold,
     push_schedules,
 )
 from gecko_taskgraph.util.hg import get_push_data
@@ -26,6 +27,13 @@ def merge_bugbug_replies(data, new_data):
     in the `data` argument).
     """
     for key, value in new_data.items():
+        # The confidence thresholds depend on the models used for each reply: use the ones of
+        # the latest reply.
+        if key == "confidence_thresholds":
+            if value:
+                data[key] = value
+            continue
+
         if isinstance(value, dict):
             if key not in data:
                 data[key] = {}
@@ -155,10 +163,13 @@ class BugBugPushSchedules(OptimizationStrategy):
                 return self.should_remove_task(task, params, importance)
 
         key = "reduced_tasks" if self.use_reduced_tasks else "tasks"
+        tasks_threshold = get_confidence_threshold(
+            data, "tasks", self.confidence_threshold
+        )
         tasks = {
             task
             for task, confidence in data.get(key, {}).items()
-            if confidence >= self.confidence_threshold
+            if confidence >= tasks_threshold
         }
 
         test_manifests = task.attributes.get("test_manifests")
@@ -173,8 +184,11 @@ class BugBugPushSchedules(OptimizationStrategy):
 
         # If a task contains more than one group, use the max confidence.
         groups = data.get("groups", {})
+        groups_threshold = get_confidence_threshold(
+            data, "groups", self.confidence_threshold
+        )
         confidences = [c for g, c in groups.items() if g in test_manifests]
-        if not confidences or max(confidences) < self.confidence_threshold:
+        if not confidences or max(confidences) < groups_threshold:
             return True
 
         # If the task configuration doesn't match the ones selected by bugbug for
@@ -183,7 +197,7 @@ class BugBugPushSchedules(OptimizationStrategy):
             selected_groups = [
                 g
                 for g, c in groups.items()
-                if g in test_manifests and c > self.confidence_threshold
+                if g in test_manifests and c > groups_threshold
             ]
 
             config_groups = data.get("config_groups", defaultdict(list))
@@ -206,16 +220,20 @@ class BugBugPushSchedules(OptimizationStrategy):
                 return True
 
         # Store group importance so future optimizers can access it.
+        ct_high, ct_medium, ct_low = (
+            get_confidence_threshold(data, "groups", ct)
+            for ct in (CT_HIGH, CT_MEDIUM, CT_LOW)
+        )
         for manifest in test_manifests:
             if manifest not in groups:
                 continue
 
             confidence = groups[manifest]
-            if confidence >= CT_HIGH:
+            if confidence >= ct_high:
                 importance[manifest] = "high"
-            elif confidence >= CT_MEDIUM:
+            elif confidence >= ct_medium:
                 importance[manifest] = "medium"
-            elif confidence >= CT_LOW:
+            elif confidence >= ct_low:
                 importance[manifest] = "low"
             else:
                 importance[manifest] = "lowest"

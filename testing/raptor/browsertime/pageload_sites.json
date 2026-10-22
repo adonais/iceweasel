@@ -63,16 +63,6 @@
     },
     {
       "login": true,
-      "name": "facebook",
-      "test_url": "https://m.facebook.com"
-    },
-    {
-      "login": false,
-      "name": "facebook-cristiano",
-      "test_url": "https://m.facebook.com/Cristiano"
-    },
-    {
-      "login": true,
       "name": "google",
       "test_url": "https://www.google.com"
     },
@@ -95,11 +85,6 @@
       "login": true,
       "name": "instagram",
       "test_url": "https://www.instagram.com"
-    },
-    {
-      "login": false,
-      "name": "sina",
-      "test_url": "https://www.sina.com.cn/"
     },
     {
       "login": false,
@@ -368,22 +353,6 @@
       "secondary_url": "https://www.netflix.com/title/699257"
     },
     {
-      "login": false,
-      "name": "nytimes",
-      "test_url": "https://www.nytimes.com/2020/02/19/opinion/surprise-medical-bill.html",
-      "secondary_url": "https://www.nytimes.com/section/opinion/columnists",
-      "test_cmds": [
-        [
-          "click.byXpathAndWait",
-          "/html/body/div/div/div[2]/div/div[2]/div/div/div[1]/div[3]/div[3]/a"
-        ],
-        [
-          "click.byXpathAndWait",
-          "//*[@id='opt-out-of-new-york-times-nonessential-trackers']"
-        ]
-      ]
-    },
-    {
       "login": true,
       "name": "office",
       "test_url": "https://www.office.com/launch/powerpoint/",
@@ -422,29 +391,6 @@
       "name": "tumblr",
       "test_url": "https://www.tumblr.com/dashboard",
       "secondary_url": "https://www.tumblr.com/tagged/funny+cats?sort=top"
-    },
-    {
-      "login": false,
-      "name": "twitch",
-      "test_url": "https://www.twitch.tv/videos/894226211",
-      "secondary_url": "https://www.twitch.tv/gmashley",
-      "preferences": {
-        "media.autoplay.default": 5,
-        "media.autoplay.ask-permission": true,
-        "media.autoplay.blocking_policy": 1,
-        "media.allowed-to-play.enabled": false,
-        "media.block-autoplay-until-in-foreground": true
-      },
-      "test_cmds": [
-        [
-          "click.byXpathAndWait",
-          "/html/body/div[1]/div/div[2]/div[1]/div/div/div[3]/div/button/div/div/div"
-        ],
-        [
-          "click.byXpathAndWait",
-          "/html/body/div[3]/div/div/div/div/div/div[1]/div[2]/div/button/div/div"
-        ]
-      ]
     },
     {
       "login": true,
@@ -578,32 +524,6 @@
           "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[4]/div[1]/div[1]/div[2]/a[3]"
         ],
         ["wait.byTime", 15000],
-        ["measure.stop", ""]
-      ]
-    },
-    {
-      "login": false,
-      "name": "facebook-nav",
-      "test_url": "https://www.facebook.com/",
-      "type": "interactive",
-      "test_cmds": [
-        ["navigate", "https://www.facebook.com/login"],
-        ["wait.byTime", 30000],
-        ["measure.start", "landing"],
-        ["navigate", "https://www.facebook.com/"],
-        ["wait.byTime", 5000],
-        ["measure.stop", ""],
-        ["measure.start", "marketplace"],
-        ["navigate", "https://www.facebook.com/marketplace"],
-        ["wait.byTime", 5000],
-        ["measure.stop", ""],
-        ["measure.start", "groups"],
-        ["navigate", "https://www.facebook.com/groups/discover/"],
-        ["wait.byTime", 5000],
-        ["measure.stop", ""],
-        ["measure.start", "friends"],
-        ["navigate", "https://www.facebook.com/friends/"],
-        ["wait.byTime", 5000],
         ["measure.stop", ""]
       ]
     }

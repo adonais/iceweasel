@@ -27,6 +27,7 @@ import {
   normalize,
   MAX_STOCKS_WATCHLIST,
 } from "common/StocksWatchlist.mjs";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { StockTicker } from "./StockTicker";
@@ -477,8 +478,8 @@ function Stocks({
           {/* Keep the region name while the search panel replaces the body. */}
           <h2
             id="stocks-widget-label"
-            className="stocks-heading sr-only"
-            data-l10n-id="newtab-stocks-widget-title"
+            className="newtab-widget-title stocks-heading sr-only"
+            data-l10n-id="newtab-stocks-widget-title2"
           />
           <StockSearch
             searchStatus={searchStatus}
@@ -503,12 +504,12 @@ function Stocks({
               {/* Keep the heading mounted so aria-labelledby always resolves. */}
               <h2
                 id="stocks-widget-label"
-                className={`stocks-heading${
+                className={`newtab-widget-title stocks-heading${
                   showDropdown || (widgetSize === "small" && chosenSymbol)
                     ? " sr-only"
                     : ""
                 }`}
-                data-l10n-id="newtab-stocks-widget-title"
+                data-l10n-id="newtab-stocks-widget-title2"
               />
               {widgetSize === "small" && chosenSymbol && (
                 <span className="stocks-small-symbol">{headerSymbol}</span>
@@ -551,14 +552,11 @@ function Stocks({
               )}
             </div>
             <div className="stocks-context-menu-wrapper">
-              <moz-button
-                ref={menuButtonRef}
+              <WidgetMenuButton
                 className="stocks-context-menu-button"
-                iconSrc="chrome://global/skin/icons/more.svg"
                 menuId="stocks-context-menu"
-                type="icon ghost"
-                size="small"
-                data-l10n-id="newtab-stocks-widget-menu-button"
+                l10nId="newtab-stocks-widget-open-menu-button2"
+                ref={menuButtonRef}
               />
               <panel-list
                 className="panel-list-no-icons"

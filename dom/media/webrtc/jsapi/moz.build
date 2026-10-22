@@ -11,6 +11,7 @@ LOCAL_INCLUDES += [
     "/dom/media/webrtc",
     "/ipc/chromium/src",
     "/media/webrtc",
+    "/netwerk/base",  # For nsSocketTransportService2.h
     "/netwerk/dns",  # For nsDNSService2.h
     "/netwerk/sctp/datachannel",
     "/third_party/abseil-cpp",

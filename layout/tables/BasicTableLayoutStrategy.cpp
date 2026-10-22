@@ -98,15 +98,17 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     // specified block size. See nsTableFrame::Reflow() and
     // ReflowInput::Flags::mSpecialBSizeReflow.
     const nscoord cbBSize = NS_UNCONSTRAINEDSIZE;
+    const auto bSizeOffsets = aFrame->IntrinsicBSizeOffsets();
     const nscoord contentEdgeToBoxSizingBSize =
         stylePos->mBoxSizing == StyleBoxSizing::BorderBox
-            ? aFrame->IntrinsicBSizeOffsets().BorderPadding()
+            ? bSizeOffsets.BorderPadding()
             : 0;
     const nscoord cellBSize = nsIFrame::ComputeBSizeValueAsPercentageBasis(
         *stylePos->BSize(aWM, anchorResolutionParams),
         *stylePos->MinBSize(aWM, anchorResolutionParams),
         *stylePos->MaxBSize(aWM, anchorResolutionParams), cbBSize,
-        contentEdgeToBoxSizingBSize);
+        contentEdgeToBoxSizingBSize, bSizeOffsets.margin,
+        bSizeOffsets.BorderPadding());
 
     const IntrinsicSizeInput input(
         aRenderingContext, Nothing(),
@@ -195,8 +197,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (maxISize->ConvertsToLength() || nsIFrame::ToExtremumLength(*maxISize)) {
     nscoord c =
         aFrame
-            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize, 0,
-                                *maxISize,
+            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize,
+                                zeroSize, *maxISize,
                                 *stylePos->BSize(aWM, anchorResolutionParams),
                                 aFrame->GetAspectRatio())
             .mISize;
@@ -223,8 +225,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (minISize->ConvertsToLength() || nsIFrame::ToExtremumLength(*minISize)) {
     nscoord c =
         aFrame
-            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize, 0,
-                                *minISize,
+            ->ComputeISizeValue(aRenderingContext, aWM, zeroSize, zeroSize,
+                                zeroSize, *minISize,
                                 *stylePos->BSize(aWM, anchorResolutionParams),
                                 aFrame->GetAspectRatio())
             .mISize;

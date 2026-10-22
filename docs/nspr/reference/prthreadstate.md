@@ -21,12 +21,12 @@ typedef enum PRThreadState {
   the root function. The time of release of the resources assigned to
   the thread cannot be determined in advance. Threads created with a
   `PR_UNJOINABLE_THREAD` state cannot be used as arguments to
-  {ref}`PR_JoinThread`.
+  {doc}`pr_jointhread`.
 
 `PR_JOINABLE_THREAD`
 
 : Joinable thread references remain valid after they have returned from
-  their root function until {ref}`PR_JoinThread` is called. This approach
+  their root function until {doc}`pr_jointhread` is called. This approach
   facilitates management of the process' critical resources.
 
 ## Description
@@ -35,7 +35,7 @@ A thread is a critical resource and must be managed.
 
 The lifetime of a thread extends from the time it is created to the time
 it returns from its root function. What happens when it returns from its
-root function depends on the thread state passed to {ref}`PR_CreateThread`
+root function depends on the thread state passed to {doc}`pr_createthread`
 when the thread was created.
 
 If a thread is created as a joinable thread, it continues to exist after

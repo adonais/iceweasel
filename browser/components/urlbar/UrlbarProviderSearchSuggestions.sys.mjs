@@ -559,11 +559,11 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
               query,
               icon: !entry.value
                 ? await UrlbarUtils.getEngineIconUrl(engine, controller)
-                : UrlbarUtils.getRemoteIconUrl(
-                    entry.icon,
-                    UrlbarProviderSearchSuggestions.RICH_ICON_SIZE,
-                    controller
-                  ),
+                : UrlbarUtils.getRemoteImageUrl({
+                    controller,
+                    url: entry.icon,
+                    size: UrlbarProviderSearchSuggestions.RICH_ICON_SIZE,
+                  }),
               helpUrl: entry.trending ? TRENDING_HELP_URL : undefined,
             },
             highlights: {

@@ -631,8 +631,12 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
       // for now.  That's what js::Wrapper expects, and since we're same-origin
       // anyway this is not changing any security behavior.
       JSAutoRealm ar(cx, proxy);
-      JS_MarkCrossZoneId(cx, id);
-      bool ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+      JS::Rooted<jsid> wrappedId(cx, id);
+      if (!JS_WrapId(cx, &wrappedId)) {
+        return false;
+      }
+      bool ok =
+          js::Wrapper::getOwnPropertyDescriptor(cx, proxy, wrappedId, desc);
       if (!ok) {
         return false;
       }
@@ -789,8 +793,10 @@ bool nsOuterWindowProxy::ownPropertyKeys(
         return false;
       }
     }
-    for (auto& id : innerProps) {
-      JS_MarkCrossZoneId(cx, id);
+    for (size_t i = 0; i < innerProps.length(); i++) {
+      if (!JS_WrapId(cx, innerProps[i])) {
+        return false;
+      }
     }
     return js::AppendUnique(cx, props, innerProps);
   }
@@ -850,8 +856,11 @@ bool nsOuterWindowProxy::delete_(JSContext* cx, JS::Handle<JSObject*> proxy,
   // Let's do that, just in case, to avoid cross-compartment issues in our
   // js::Wrapper caller..
   JSAutoRealm ar(cx, proxy);
-  JS_MarkCrossZoneId(cx, id);
-  return js::Wrapper::delete_(cx, proxy, id, result);
+  JS::Rooted<jsid> wrappedId(cx, id);
+  if (!JS_WrapId(cx, &wrappedId)) {
+    return false;
+  }
+  return js::Wrapper::delete_(cx, proxy, wrappedId, result);
 }
 
 JSObject* nsOuterWindowProxy::getSameOriginPrototype(JSContext* cx) const {
@@ -878,8 +887,11 @@ bool nsOuterWindowProxy::has(JSContext* cx, JS::Handle<JSObject*> proxy,
   // Just to be safe in terms of compartment asserts, enter the Realm of
   // "proxy".  We're same-origin with it, so this should be safe.
   JSAutoRealm ar(cx, proxy);
-  JS_MarkCrossZoneId(cx, id);
-  return js::Wrapper::has(cx, proxy, id, bp);
+  JS::Rooted<jsid> wrappedId(cx, id);
+  if (!JS_WrapId(cx, &wrappedId)) {
+    return false;
+  }
+  return js::Wrapper::has(cx, proxy, wrappedId, bp);
 }
 
 bool nsOuterWindowProxy::hasOwn(JSContext* cx, JS::Handle<JSObject*> proxy,
@@ -911,8 +923,11 @@ bool nsOuterWindowProxy::hasOwn(JSContext* cx, JS::Handle<JSObject*> proxy,
   // Just to be safe in terms of compartment asserts, enter the Realm of
   // "proxy".  We're same-origin with it, so this should be safe.
   JSAutoRealm ar(cx, proxy);
-  JS_MarkCrossZoneId(cx, id);
-  return js::Wrapper::hasOwn(cx, proxy, id, bp);
+  JS::Rooted<jsid> wrappedId(cx, id);
+  if (!JS_WrapId(cx, &wrappedId)) {
+    return false;
+  }
+  return js::Wrapper::hasOwn(cx, proxy, wrappedId, bp);
 }
 
 bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
@@ -947,7 +962,10 @@ bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
     // safe.
     JSAutoRealm ar(cx, proxy);
 
-    JS_MarkCrossZoneId(cx, id);
+    JS::Rooted<jsid> wrappedId(cx, id);
+    if (!JS_WrapId(cx, &wrappedId)) {
+      return false;
+    }
 
     JS::Rooted<JS::Value> wrappedReceiver(cx, receiver);
     if (!MaybeWrapValue(cx, &wrappedReceiver)) {
@@ -955,7 +973,7 @@ bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
     }
 
     // Fall through to js::Wrapper.
-    if (!js::Wrapper::get(cx, proxy, wrappedReceiver, id, vp)) {
+    if (!js::Wrapper::get(cx, proxy, wrappedReceiver, wrappedId, vp)) {
       return false;
     }
   }
@@ -989,9 +1007,13 @@ bool nsOuterWindowProxy::set(JSContext* cx, JS::Handle<JSObject*> proxy,
     return false;
   }
 
-  JS_MarkCrossZoneId(cx, id);
+  JS::Rooted<jsid> wrappedId(cx, id);
+  if (!JS_WrapId(cx, &wrappedId)) {
+    return false;
+  }
 
-  return js::Wrapper::set(cx, proxy, id, wrappedArg, wrappedReceiver, result);
+  return js::Wrapper::set(cx, proxy, wrappedId, wrappedArg, wrappedReceiver,
+                          result);
 }
 
 bool nsOuterWindowProxy::getOwnEnumerablePropertyKeys(
@@ -1026,8 +1048,10 @@ bool nsOuterWindowProxy::getOwnEnumerablePropertyKeys(
     }
   }
 
-  for (auto& id : innerProps) {
-    JS_MarkCrossZoneId(cx, id);
+  for (size_t i = 0; i < innerProps.length(); i++) {
+    if (!JS_WrapId(cx, innerProps[i])) {
+      return false;
+    }
   }
 
   return js::AppendUnique(cx, props, innerProps);
@@ -2246,14 +2270,19 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     // currentInner->RefreshRealmPrincipals() here because we haven't yet set
     // its mDoc to aDocument.
     JS::Realm* realm = js::GetNonCCWObjectRealm(newInnerGlobal);
+    nsJSPrincipals* existing =
+        nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
+    nsJSPrincipals* jsPrincipals =
+        nsJSPrincipals::get(aDocument->NodePrincipal());
+    if (existing != jsPrincipals) {
+      newInnerWindow->HoldOldPrincipal(existing);
+    }
 #ifdef DEBUG
     bool sameOrigin = false;
-    nsIPrincipal* existing = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
     aDocument->NodePrincipal()->Equals(existing, &sameOrigin);
     MOZ_ASSERT(sameOrigin);
 #endif
-    JS::SetRealmPrincipals(realm,
-                           nsJSPrincipals::get(aDocument->NodePrincipal()));
+    JS::SetRealmPrincipals(realm, jsPrincipals);
   } else {
     if (aState) {
       newInnerWindow = wsh->GetInnerWindow();
@@ -4675,8 +4704,10 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType,
     nsCOMPtr<nsIDragService> ds =
         do_GetService("@mozilla.org/widget/dragservice;1");
     if (ds) {
-      nsGlobalWindowInner::sDragServiceDisabled = true;
+      // Suppress() ends the current drag session, which calls
+      // MouseButtonReleased(), so only mark the suppression as ours afterwards.
       ds->Suppress();
+      nsGlobalWindowInner::sDragServiceDisabled = true;
     }
   }
   return true;
@@ -5712,8 +5743,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
 }
 
 WindowProxyHolder nsGlobalWindowOuter::GetFramesOuter() {
-  RefPtr<nsPIDOMWindowOuter> frames(this);
-  FlushPendingNotifications(FlushType::ContentAndNotify);
   return WindowProxyHolder(mBrowsingContext);
 }
 

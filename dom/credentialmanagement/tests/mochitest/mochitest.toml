@@ -8,6 +8,5 @@ scheme = "https"
 skip-if = [
   "http2",
   "http3",
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1718296
   "xorigin", # Application time out
 ]

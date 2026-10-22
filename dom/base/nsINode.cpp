@@ -4208,10 +4208,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
   // aNode.
   class NodeInfo* nodeInfo = aNode->mNodeInfo;
   RefPtr<class NodeInfo> newNodeInfo;
+  Document* newDoc =
+      nodeInfoManager ? nodeInfoManager->GetDocument() : aNode->OwnerDoc();
   if (nodeInfoManager) {
     // Don't allow importing/adopting nodes from non-privileged "scriptable"
     // documents to "non-scriptable" documents.
-    Document* newDoc = nodeInfoManager->GetDocument();
     if (NS_WARN_IF(!newDoc)) {
       aError.Throw(NS_ERROR_UNEXPECTED);
       return nullptr;
@@ -4249,7 +4250,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
     // https://dom.spec.whatwg.org/#clone-a-single-node
     // Step 2: If node is an element:
-    if (elem) {
+    if (elem && !newDoc->IsStaticDocument()) {
       Element* cloneElem = clone->AsElement();
       CustomElementRegistry* registry = nullptr;
 

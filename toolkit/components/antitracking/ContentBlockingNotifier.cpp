@@ -297,20 +297,22 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
     return;
   }
 
-  if (aRejectedReason ==
-      nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER) {
-    ContentBlockingNotifier::OnEvent(
-        aTrackingChannel, true,
-        nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER,
-        trackingOrigin);
-    // Stop notifying the tracker cookie loaded events if they are partitioned.
+  const bool partitionedTracker =
+      aRejectedReason ==
+      nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER;
+  // A block decision for partitioned tracker cookies already sent its
+  // STATE_COOKIES_PARTITIONED_TRACKER event above.
+  if (partitionedTracker &&
+      aDecision == ContentBlockingNotifier::BlockingDecision::eBlock) {
     return;
   }
 
   uint32_t classificationFlags =
       classifiedChannel->GetThirdPartyClassificationFlags();
-  if (classificationFlags &
-      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING) {
+  // Partitioned tracker cookies are not allowed tracker cookies.
+  if (!partitionedTracker &&
+      (classificationFlags & nsIClassifiedChannel::ClassificationFlags::
+                                 CLASSIFIED_ANY_BASIC_TRACKING)) {
     ContentBlockingNotifier::OnEvent(
         aTrackingChannel, false,
         nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, trackingOrigin);

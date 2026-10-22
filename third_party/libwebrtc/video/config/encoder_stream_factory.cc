@@ -607,7 +607,8 @@ std::vector<Resolution> EncoderStreamFactory::GetStreamResolutions(
     // opposed to 180p:360p:540p. This makes CPU adaptation consistent with BW
     // adaptation (bitrate allocator disabling layers rather than downscaling)
     // and means we don't have to break power of two optimization paths (i.e.
-    // S-modes based simulcast). Note that the lowest layer is never disabled.
+    // S-modes based simulcast). Note that the lowest active layer is never
+    // disabled.
     if (has_scale_resolution_down_to && restrictions_.has_value() &&
         restrictions_->max_pixels_per_frame().has_value()) {
       int max_pixels =
@@ -632,7 +633,8 @@ std::vector<Resolution> EncoderStreamFactory::GetStreamResolutions(
         }
         prev_pixel_count = pixel_count;
       }
-      max_num_layers = restricted_num_layers.value_or(max_num_layers);
+      max_num_layers = std::max(min_num_layers,
+                                restricted_num_layers.value_or(max_num_layers));
     }
 
     Resolution norm_resolution =

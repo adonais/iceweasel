@@ -109,7 +109,7 @@ NSS_CMSDigestContext_StartMultiple(SECAlgorithmID **digestalgs)
 
 loser:
     /* free any earlier digest objects that may have bee allocated. */
-    for (i = 0; i < digcnt; i++) {
+    for (i = 0; cmsdigcx && cmsdigcx->digPairs && i < digcnt; i++) {
         digestPair *pair = &cmsdigcx->digPairs[i];
         if (pair->digobj) {
             (*pair->digobj->destroy)(pair->digcx, PR_TRUE);

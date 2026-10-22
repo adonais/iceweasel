@@ -37,3 +37,63 @@
   padding: 46px 5px 5px;
   margin: 2px;
 }
+
+.mini-window-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  min-width: 24em;
+  max-width: 32em;
+}
+
+.mini-window-title {
+  margin: 0;
+  font-size: var(--font-size-xlarge);
+  text-wrap: nowrap;
+}
+
+.mini-window-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-medium);
+}
+
+.mini-window-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-small);
+  padding: var(--space-large) var(--space-xxlarge);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+
+  &[data-default] {
+    border-color: var(--border-color-interactive);
+    background-color: var(--button-background-color-ghost-hover);
+    color: var(--button-text-color-ghost-hover);
+  }
+
+  &:hover {
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
+    border-color: var(--border-color-interactive);
+  }
+
+  &:focus-visible {
+    border-color: var(--border-color-interactive);
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+}
+
+.mini-window-option-icon {
+  width: var(--size-item-large);
+  height: var(--size-item-large);
+  /* These SVGs paint a second shape with context-stroke; without it that
+     shape falls back to its own bright placeholder colour. */
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: var(--screenshots-icon-background-color);
+}

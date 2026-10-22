@@ -353,14 +353,18 @@ NSS_CMSRecipientInfo_Destroy(NSSCMSRecipientInfo *ri)
     }
     /* version was allocated on the pool, so no need to destroy it */
     /* issuerAndSN was allocated on the pool, so no need to destroy it */
-    if (ri->cert != NULL)
+    if (ri->cert != NULL) {
         CERT_DestroyCertificate(ri->cert);
+        ri->cert = NULL;
+    }
 
     if (nss_cmsrecipientinfo_usessubjectkeyid(ri)) {
         NSSCMSKeyTransRecipientInfoEx *extra;
         extra = &ri->ri.keyTransRecipientInfoEx;
-        if (extra->pubKey)
+        if (extra->pubKey) {
             SECKEY_DestroyPublicKey(extra->pubKey);
+            extra->pubKey = NULL;
+        }
     }
     if (ri->cmsg && ri->cmsg->contentInfo.contentTypeTag == &fakeContent) {
         NSS_CMSMessage_Destroy(ri->cmsg);
@@ -398,46 +402,6 @@ NSS_CMSRecipientInfo_GetVersion(NSSCMSRecipientInfo *ri)
         return 0;
     else
         return (int)version;
-}
-
-SECItem *
-NSS_CMSRecipientInfo_GetEncryptedKey(NSSCMSRecipientInfo *ri, int subIndex)
-{
-    SECItem *enckey = NULL;
-
-    switch (ri->recipientInfoType) {
-        case NSSCMSRecipientInfoID_KeyTrans:
-            /* ignore subIndex */
-            enckey = &(ri->ri.keyTransRecipientInfo.encKey);
-            break;
-        case NSSCMSRecipientInfoID_KEK:
-            /* ignore subIndex */
-            enckey = &(ri->ri.kekRecipientInfo.encKey);
-            break;
-        case NSSCMSRecipientInfoID_KeyAgree:
-            enckey = &(ri->ri.keyAgreeRecipientInfo.recipientEncryptedKeys[subIndex]->encKey);
-            break;
-    }
-    return enckey;
-}
-
-SECOidTag
-NSS_CMSRecipientInfo_GetKeyEncryptionAlgorithmTag(NSSCMSRecipientInfo *ri)
-{
-    SECOidTag encalgtag = SEC_OID_UNKNOWN; /* an invalid encryption alg */
-
-    switch (ri->recipientInfoType) {
-        case NSSCMSRecipientInfoID_KeyTrans:
-            encalgtag = SECOID_GetAlgorithmTag(&(ri->ri.keyTransRecipientInfo.keyEncAlg));
-            break;
-        case NSSCMSRecipientInfoID_KeyAgree:
-            encalgtag = SECOID_GetAlgorithmTag(&(ri->ri.keyAgreeRecipientInfo.keyEncAlg));
-            break;
-        case NSSCMSRecipientInfoID_KEK:
-            encalgtag = SECOID_GetAlgorithmTag(&(ri->ri.kekRecipientInfo.keyEncAlg));
-            break;
-    }
-    return encalgtag;
 }
 
 SECStatus

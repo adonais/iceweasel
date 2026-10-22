@@ -13,6 +13,7 @@
 #include "mozilla/Array.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
@@ -104,8 +105,8 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
       layers::TextureType aTextureType, SourceSurface* aSurface);
 
   already_AddRefed<SourceSurface> ImportSurfaceDescriptor(
-      const layers::SurfaceDescriptor& aDesc, const gfx::IntSize& aSize,
-      SurfaceFormat aFormat);
+      DrawTargetWebgl* aDT, const layers::SurfaceDescriptor& aDesc,
+      const gfx::IntSize& aSize, SurfaceFormat aFormat);
 
  private:
   SharedContextWebgl();
@@ -246,6 +247,9 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 
   uint32_t mMaxTextureSize = 0;
   bool mRasterizationTruncates = false;
+  // Whether mUploadBuffer should be used for PBO uploads, or whether direct
+  // uploads should be used instead.
+  bool mUseUploadBuffer = true;
 
   // The current blending operation.
   CompositionOp mLastCompositionOp = CompositionOp::OP_SOURCE;
@@ -390,8 +394,9 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void BindScratchFramebuffer(TextureHandle* aHandle, bool aInit,
                               const IntSize& aViewportSize = IntSize());
   already_AddRefed<TextureHandle> AllocateTextureHandle(
-      SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared = true,
-      bool aRenderable = false, const WebGLTexture* aAvoid = nullptr);
+      DrawTargetWebgl* aDT, SurfaceFormat aFormat, const IntSize& aSize,
+      bool aAllowShared = true, bool aRenderable = false,
+      const WebGLTexture* aAvoid = nullptr);
   void DrawQuad();
   void DrawTriangles(const PathVertexRange& aRange);
   bool DrawRectAccel(const Rect& aRect, const Pattern& aPattern,
@@ -601,6 +606,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   UsageProfile mProfile;
 
   RefPtr<SharedContextWebgl> mSharedContext;
+  dom::ContentParentId mContentId;
 
  public:
   DrawTargetWebgl();
@@ -609,10 +615,12 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   static bool CanCreate(const IntSize& aSize, SurfaceFormat aFormat);
   static already_AddRefed<DrawTargetWebgl> Create(
       const IntSize& aSize, SurfaceFormat aFormat,
-      const RefPtr<SharedContextWebgl>& aSharedContext);
+      const RefPtr<SharedContextWebgl>& aSharedContext,
+      const dom::ContentParentId& aContentId);
 
   bool Init(const IntSize& aSize, SurfaceFormat aFormat,
-            const RefPtr<SharedContextWebgl>& aSharedContext);
+            const RefPtr<SharedContextWebgl>& aSharedContext,
+            const dom::ContentParentId& aContentId);
 
   bool IsValid() const override;
 
@@ -625,6 +633,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   const RefPtr<SharedContextWebgl>& GetSharedContext() const {
     return mSharedContext;
   }
+  const dom::ContentParentId& GetContentId() const { return mContentId; }
 
   bool HasDataSnapshot() const;
   bool EnsureDataSnapshot();

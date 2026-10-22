@@ -22,6 +22,6 @@ A pointer to a list element.
 
 ## Description
 
-{ref}`PR_PREV_LINK` returns a pointer to the element preceding the
+{doc}`pr_prev_link` returns a pointer to the element preceding the
 specified element. It can be used to traverse a list. The preceding
 element is not removed from the list.

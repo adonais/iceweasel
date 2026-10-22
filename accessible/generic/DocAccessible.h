@@ -242,10 +242,10 @@ class DocAccessible : public HyperTextAccessible,
       typename TNotification<Class, Args...>::Callback aMethod, Args*... aArgs);
 
   /**
-   * This function asserts that mContent is the document node's root element
-   * or null (not yet mapped).
-   * Return true if the given aNode is this document's mContent, and false
-   * otherwise.
+   * Return false unless ALL of the following are true:
+   * - mContent is non null
+   * - the given aNode is equal to mContent
+   * - mContent is the root element of mDocumentNode
    */
   bool IsRootContent(nsINode* aNode) const;
 

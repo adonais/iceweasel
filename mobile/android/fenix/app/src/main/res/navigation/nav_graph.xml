@@ -196,11 +196,11 @@
         app:popUpToInclusive="true"
         app:destination="@+id/unlockPrivateTabsFragment"/>
     <action
-        android:id="@+id/action_global_customReviewPromptDialogFragment"
-        app:destination="@id/customReviewPromptDialogFragment" />
-    <action
         android:id="@+id/action_global_to_installedAddonDetailsFragment"
         app:destination="@id/installedAddonDetailsFragment" />
+    <action
+        android:id="@+id/action_global_addonDetailsFragment"
+        app:destination="@id/addonDetailsFragment" />
     <action
         android:id="@+id/action_global_to_downloadAddonDialogFragment"
         app:destination="@id/downloadAddonDialogFragment" />
@@ -303,6 +303,9 @@
         <action
             android:id="@+id/action_homeFragment_to_global_protections_dashboard"
             app:destination="@id/global_protections_dashboard" />
+        <action
+          android:id="@+id/action_homeFragment_to_menuFragment"
+          app:destination="@id/menu_graph" />
     </fragment>
 
     <fragment
@@ -1838,9 +1841,16 @@
   <navigation
     android:id="@+id/menu_graph"
     app:startDestination="@id/menuFragment">
+    <argument
+      android:name="accessPoint"
+      app:argType="org.mozilla.fenix.components.menu.MenuAccessPoint" />
+
     <dialog
       android:id="@+id/menuFragment"
       android:name="org.mozilla.fenix.components.menu.MenuFragment">
+      <argument
+        android:name="accessPoint"
+        app:argType="org.mozilla.fenix.components.menu.MenuAccessPoint" />
 
       <action
         android:id="@+id/action_menuFragment_to_translationsDialogFragment"
@@ -1857,6 +1867,10 @@
       <action
         android:id="@+id/action_menuFragment_to_createShortcutFragment"
         app:destination="@id/createShortcutFragment" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_loginsListFragment"
+        app:destination="@id/savedLogins" />
     </dialog>
   </navigation>
 
@@ -1938,8 +1952,4 @@
             app:argType="string"
             app:nullable="true" />
     </dialog>
-
-    <dialog
-        android:id="@+id/customReviewPromptDialogFragment"
-        android:name="org.mozilla.fenix.reviewprompt.CustomReviewPromptBottomSheetFragment" />
 </navigation>

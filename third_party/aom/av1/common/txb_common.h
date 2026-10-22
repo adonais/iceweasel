@@ -278,18 +278,38 @@ static inline void set_dc_sign(int *cul_level, int dc_val) {
     *cul_level += 2 << COEFF_CONTEXT_BITS;
 }
 
+#define MAX_TX_SIZE_UNIT 16
+static const int8_t kTxbCtxSigns[3] = { 0, -1, 1 };
+static const int8_t kTxbCtxDcSignContexts[4 * MAX_TX_SIZE_UNIT + 1] = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+};
+
+// This is the algorithm to generate table kTxbCtxSkipContexts[top][left].
+//    const int max = AOMMIN(top | left, 4);
+//    const int min = AOMMIN(AOMMIN(top, left), 4);
+//    if (!max)
+//      txb_skip_ctx = 1;
+//    else if (!min)
+//      txb_skip_ctx = 2 + (max > 3);
+//    else if (max <= 3)
+//      txb_skip_ctx = 4;
+//    else if (min <= 3)
+//      txb_skip_ctx = 5;
+//    else
+//      txb_skip_ctx = 6;
+static const uint8_t kTxbCtxSkipContexts[5][5] = { { 1, 2, 2, 2, 3 },
+                                                   { 2, 4, 4, 4, 5 },
+                                                   { 2, 4, 4, 4, 5 },
+                                                   { 2, 4, 4, 4, 5 },
+                                                   { 3, 5, 5, 5, 6 } };
+
 static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
                                 const TX_SIZE tx_size, const int plane,
                                 const ENTROPY_CONTEXT *const a,
                                 const ENTROPY_CONTEXT *const l,
                                 TXB_CTX *const txb_ctx) {
-#define MAX_TX_SIZE_UNIT 16
-  static const int8_t signs[3] = { 0, -1, 1 };
-  static const int8_t dc_sign_contexts[4 * MAX_TX_SIZE_UNIT + 1] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
-  };
   const int txb_w_unit = tx_size_wide_unit[tx_size];
   const int txb_h_unit = tx_size_high_unit[tx_size];
   int dc_sign = 0;
@@ -298,40 +318,22 @@ static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
   do {
     const unsigned int sign = ((uint8_t)a[k]) >> COEFF_CONTEXT_BITS;
     assert(sign <= 2);
-    dc_sign += signs[sign];
+    dc_sign += kTxbCtxSigns[sign];
   } while (++k < txb_w_unit);
 
   k = 0;
   do {
     const unsigned int sign = ((uint8_t)l[k]) >> COEFF_CONTEXT_BITS;
     assert(sign <= 2);
-    dc_sign += signs[sign];
+    dc_sign += kTxbCtxSigns[sign];
   } while (++k < txb_h_unit);
 
-  txb_ctx->dc_sign_ctx = dc_sign_contexts[dc_sign + 2 * MAX_TX_SIZE_UNIT];
+  txb_ctx->dc_sign_ctx = kTxbCtxDcSignContexts[dc_sign + 2 * MAX_TX_SIZE_UNIT];
 
   if (plane == 0) {
     if (plane_bsize == txsize_to_bsize[tx_size]) {
       txb_ctx->txb_skip_ctx = 0;
     } else {
-      // This is the algorithm to generate table skip_contexts[top][left].
-      //    const int max = AOMMIN(top | left, 4);
-      //    const int min = AOMMIN(AOMMIN(top, left), 4);
-      //    if (!max)
-      //      txb_skip_ctx = 1;
-      //    else if (!min)
-      //      txb_skip_ctx = 2 + (max > 3);
-      //    else if (max <= 3)
-      //      txb_skip_ctx = 4;
-      //    else if (min <= 3)
-      //      txb_skip_ctx = 5;
-      //    else
-      //      txb_skip_ctx = 6;
-      static const uint8_t skip_contexts[5][5] = { { 1, 2, 2, 2, 3 },
-                                                   { 2, 4, 4, 4, 5 },
-                                                   { 2, 4, 4, 4, 5 },
-                                                   { 2, 4, 4, 4, 5 },
-                                                   { 3, 5, 5, 5, 6 } };
       // For top and left, we only care about which of the following three
       // categories they belong to: { 0 }, { 1, 2, 3 }, or { 4, 5, ... }. The
       // spec calculates top and left with the Max() function. We can calculate
@@ -354,7 +356,7 @@ static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
       left &= COEFF_CONTEXT_MASK;
       left = AOMMIN(left, 4);
 
-      txb_ctx->txb_skip_ctx = skip_contexts[top][left];
+      txb_ctx->txb_skip_ctx = kTxbCtxSkipContexts[top][left];
     }
   } else {
     const int ctx_base = get_entropy_context(tx_size, a, l);
@@ -371,12 +373,6 @@ static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
       const BLOCK_SIZE plane_bsize, const int plane,                          \
       const ENTROPY_CONTEXT *const a, const ENTROPY_CONTEXT *const l,         \
       TXB_CTX *const txb_ctx) {                                               \
-    static const int8_t signs[3] = { 0, -1, 1 };                              \
-    static const int8_t dc_sign_contexts[4 * MAX_TX_SIZE_UNIT + 1] = {        \
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,       \
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,       \
-      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2           \
-    };                                                                        \
     const TX_SIZE tx_size = TX_##w##X##h;                                     \
     const int txb_w_unit = tx_size_wide_unit[tx_size];                        \
     const int txb_h_unit = tx_size_high_unit[tx_size];                        \
@@ -386,27 +382,23 @@ static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
     do {                                                                      \
       const unsigned int sign = ((uint8_t)a[k]) >> COEFF_CONTEXT_BITS;        \
       assert(sign <= 2);                                                      \
-      dc_sign += signs[sign];                                                 \
+      dc_sign += kTxbCtxSigns[sign];                                          \
     } while (++k < txb_w_unit);                                               \
                                                                               \
     k = 0;                                                                    \
     do {                                                                      \
       const unsigned int sign = ((uint8_t)l[k]) >> COEFF_CONTEXT_BITS;        \
       assert(sign <= 2);                                                      \
-      dc_sign += signs[sign];                                                 \
+      dc_sign += kTxbCtxSigns[sign];                                          \
     } while (++k < txb_h_unit);                                               \
                                                                               \
-    txb_ctx->dc_sign_ctx = dc_sign_contexts[dc_sign + 2 * MAX_TX_SIZE_UNIT];  \
+    txb_ctx->dc_sign_ctx =                                                    \
+        kTxbCtxDcSignContexts[dc_sign + 2 * MAX_TX_SIZE_UNIT];                \
                                                                               \
     if (plane == 0) {                                                         \
       if (plane_bsize == txsize_to_bsize[tx_size]) {                          \
         txb_ctx->txb_skip_ctx = 0;                                            \
       } else {                                                                \
-        static const uint8_t skip_contexts[5][5] = { { 1, 2, 2, 2, 3 },       \
-                                                     { 2, 4, 4, 4, 5 },       \
-                                                     { 2, 4, 4, 4, 5 },       \
-                                                     { 2, 4, 4, 4, 5 },       \
-                                                     { 3, 5, 5, 5, 6 } };     \
         int top = 0;                                                          \
         int left = 0;                                                         \
                                                                               \
@@ -424,7 +416,7 @@ static void get_txb_ctx_general(const BLOCK_SIZE plane_bsize,
         left &= COEFF_CONTEXT_MASK;                                           \
         left = AOMMIN(left, 4);                                               \
                                                                               \
-        txb_ctx->txb_skip_ctx = skip_contexts[top][left];                     \
+        txb_ctx->txb_skip_ctx = kTxbCtxSkipContexts[top][left];               \
       }                                                                       \
     } else {                                                                  \
       const int ctx_base = get_entropy_context(tx_size, a, l);                \

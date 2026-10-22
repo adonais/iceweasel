@@ -118,6 +118,9 @@ def manifest_to_record(rel_path, manifest):
         "moz:bugzilla.component": manifest["bugzilla"]["component"],
     }
     for key, value in (
+        # sbom_npm.py turns a declared npm name into a pkg:npm purl; it is
+        # recorded here so that pass does not have to reparse every manifest.
+        ("moz:npm.name", origin.get("npm-name")),
         ("moz:origin.release", origin.get("release")),
         ("moz:origin.notes", origin.get("notes")),
         ("moz:vendoring.source-hosting", vendoring.get("source-hosting")),
@@ -220,6 +223,12 @@ def _covers(notice_path, component_dir):
     return fnmatch.fnmatch(component_dir, notice_path)
 
 
+def _locations(record):
+    """Where a record's code lives: its directory, or where an npm package was
+    installed, whose bom_ref is not a path."""
+    return [record["bom_ref"], *(record.get("occurrences") or ())]
+
+
 def merge_license_notices(records, notices):
     """Attach moz.build license notices to the moz.yaml records they cover.
 
@@ -241,11 +250,11 @@ def merge_license_notices(records, notices):
     index = [(path, notice) for notice in notices for path in notice["paths"]]
 
     for record in records:
-        component_dir = record["bom_ref"]
+        locations = _locations(record)
         covering = [
             (path.rstrip("/"), notice)
             for path, notice in index
-            if _covers(path, component_dir)
+            if any(_covers(path, location) for location in locations)
         ]
         if not covering:
             continue
@@ -259,7 +268,9 @@ def merge_license_notices(records, notices):
         # here". A path that merely contains the component adds nothing it
         # does not already know.
         inside = sorted({
-            path for path, _ in covering if path.startswith(component_dir + "/")
+            path
+            for path, _ in covering
+            if any(path.startswith(location + "/") for location in locations)
         })
         if inside:
             record["occurrences"] = sorted(
@@ -301,7 +312,7 @@ def components_for_unmatched(records, notices, is_file=None):
     defaults to the filesystem-free heuristic that a basename with a suffix is
     a file, so callers with a real tree should pass ``os.path.isfile``.
     """
-    known = {record["bom_ref"] for record in records}
+    known = {location for record in records for location in _locations(record)}
 
     def covered(path):
         """Is `path` already described by a component, exactly or within one?
@@ -340,7 +351,9 @@ def components_for_unmatched(records, notices, is_file=None):
             # database while looking like it might.
             "purl": None,
             "type": "file" if all(is_file(path) for path in paths) else "library",
-            "licenses": [notice["spdx"]] if notice["spdx"] else [],
+            # A license with no SPDX id, JPNIC's for one, is still a license:
+            # its title is what CycloneDX's license name is for.
+            "licenses": [notice["spdx"] or notice["title"]],
             "website": notice["url"],
             "vcs": None,
             "bugzilla": None,

@@ -3,7 +3,7 @@
 # HWInference: the on-device hardware-accelerated inference process
 
 `HWInference` is a utility process that runs native, hardware-accelerated
-inference libraries (currently `parakeet.cpp`, backed by `libggml`) outside of
+inference libraries (`parakeet.cpp` and `llama.cpp`, backed by `libggml`) outside of
 any content process, and outside the main process. Unlike the [Firefox AI
 Runtime](inference-architecture) inference process, it does not run
 JavaScript: its job is purely computational, receiving some input, running it
@@ -18,8 +18,8 @@ The plumbing lives in {searchfox}`toolkit/components/ml/ipc`, and the process
 itself is managed by {searchfox}`UtilityProcessManager
 <ipc/glue/UtilityProcessManager.cpp>`.
 [`SpeechRecognition`](/media/SpeechRecognition), which implements the
-on-device recognition side of the Web Speech API, is the only consumer today,
-and is used as the worked example throughout.
+on-device recognition side of the Web Speech API, and browser text generation are its current consumers. Speech recognition
+is used as the worked example for content-process connections.
 
 ## The `HWInference` process
 
@@ -51,219 +51,176 @@ Since it doesn't run JavaScript, it will eventually be possible to tighten the
 sandbox further on macOS by making it a different executable, relinquishing
 the capability to mark pages as executable for JITing code.
 
-`ONNX Runtime` (for non-LLM type inference) and `llama.cpp` (for LLM-type
-inference on text) are eventually expected to also run inside `HWInference`, to
-be able to use hardware acceleration for tasks unrelated to speech recognition.
+`llama.cpp` runs text generation here when `browser.ml.llama.hwInference` is
+enabled. `ONNX Runtime` (for non-LLM inference) is expected to follow.
 
-## One process, many users
+## Two processes, two kinds of users
 
-There is a single `HWInference` process, keyed like every other utility process
-by its `SandboxingKind` alone (see `GetProcess`/`LaunchProcess` in
-{searchfox}`ipc/glue/UtilityProcessManager.cpp`), with one
-`HWInferenceParent` on the main-process side,
-`HWInferenceParent::GetSingleton()`.
+A `SandboxingKind` does not imply a single process. `mProcesses` in
+{searchfox}`ipc/glue/UtilityProcessManager.cpp` is a flat list: `LaunchProcess`
+still hands out the kind's shared process, which lives until `CleanShutdown`,
+and `LaunchIndependentProcess` spawns one whose lifetime is exactly that of the
+`UtilityProcessKeepAlive` it hands back. `HW_INFERENCE` has two live processes
+of the second sort, one per class of consumer, each with its own
+`HWInferenceParent` on the main-process side and both under the same sandbox
+policy.
 
-Content-driven inference reaches it through
-`UtilityProcessManager::StartContentHWInferenceManager`. A privileged,
-parent-process-triggered consumer — future "browser AI" features — launches the
-same process, with `UtilityProcessManager::LaunchProcessWithKeepAlive`.
+They are separate so that a process a content process can reach never shares an
+address space with browser data. Content is the riskier IPC peer, and the
+process serving it parses what it sends; the browser's process holds page text
+and prompts from every origin its features touch. The two also have independent
+lifetimes and restart budgets.
 
-What such a consumer does need is a manager protocol of its own alongside
-{searchfox}`PHWInferenceManager
-<toolkit/components/ml/ipc/PHWInferenceManager.ipdl>`, which is
-content-specific: today the only way into the process from outside it is the
-content path described below.
+{searchfox}`HWInferenceProcess <toolkit/components/ml/ipc/HWInferenceProcess.h>`
+is what shares one of them between the consumers of one class: it launches the
+process on the first `Acquire`, hands every consumer the same keep-alive, and
+tracks that keep-alive weakly, so the consumers alone decide how long the process
+lives. It also owns the `HWInferenceParent` bound to that process.
+Both `HWInferenceProcess::Content` and `HWInferenceProcess::Browser` stop
+relaunching after `browser.ml.hwinference.max_restarts` unexpected deaths in a
+row. Their counters are independent; a clean shutdown resets the counter.
 
-Isolating consumers from each other in separate processes — chrome-driven from
-content-driven, per origin, per feature — is a matter of keying
-`UtilityProcessManager` by more than the `SandboxingKind`, so that a single kind
-can have several live processes.
+Content-driven inference reaches its process through `PContent`, see below. A
+browser consumer calls `HWInferenceProcess::Browser().Acquire()`, sends on
+`Actor()` once its `WhenReady` resolves, and drops its keep-alive when done.
+`TextGenerationParent::ActorDestroy` delays its release by
+`browser.ml.hwinference.browser_idle_shutdown_grace_ms`, allowing a subsequent
+generator to reuse the process. This grace belongs to text generation, not to
+all users of the process. A dead process's keep-alive is harmless to drop; the
+next acquire launches a fresh process if its restart budget permits.
 
-The topology this produces: **every** content process shares the one
-`HWInference` process, getting its own `HWInferenceManagerParent`
-there, which gives its task actors their identity. Solid arrows
-are task traffic, going straight between content and the utility process;
-dotted ones are model provisioning, which always goes through the main
-process.
+Either way, task endpoints reach the process through a `Start*` member of that
+`HWInferenceProcess`'s actor, which waits for it to be bound before sending.
+`TextGenerationParent::Create` does this for a text generator: it acquires the
+process, binds the parent side of a `PTextGeneration` and hands the child side
+over with the model file.
+
+Isolating consumers further, per origin, per feature, is a matter of giving each
+class its own `HWInferenceProcess`.
+
+The content and browser instances do not share task channels or model state:
 
 ```{mermaid}
-%%{init: {"flowchart": {"htmlLabels": false}}}%%
 flowchart LR
-  subgraph CP1[Content Process A]
-    SR1[SpeechRecognition]
+  CP[Content processes] --> SR[SpeechRecognitionParent]
+  subgraph ContentHW[Content HWInference]
+    SR
   end
-  subgraph CP2[Content Process B]
-    SR2[SpeechRecognition]
+  subgraph Main[Main process]
+    API[TextGenerator] --> TP[TextGenerationParent]
+    CHP[Content HWInferenceParent]
+    BHP[Browser HWInferenceParent]
   end
-  subgraph HWC["HWInference"]
-    direction TB
-    HMP1[Manager for A] --> SRP1[SpeechRecognitionParent]
-    HMP2[Manager for B] --> SRP2[SpeechRecognitionParent]
+  subgraph BrowserHW[Browser HWInference]
+    TC[TextGenerationChild] --> LB[LlamaBackend]
   end
-  subgraph MP[Main Process]
-    HWP["HWInferenceParent"]
-  end
-
-  SR1 --> HMP1
-  SR2 --> HMP2
-  SRP1 -.-> HWP
-  SRP2 -.-> HWP
+  TP --> TC
+  SR -. Model requests .-> CHP
+  BHP -. Creates generator .-> TC
 ```
+
+### Text generation threads
+
+`TextGenerationChild` binds on the utility main thread. IPC handlers move each
+request to the generation thread, which owns the conversation history. Formatting
+reads the committed history and the incoming messages; successful results move
+the incoming messages into history before replying. Errors leave history unchanged.
+Cancelled and zero-token results retain their input messages, as other successful
+results do. `Clear` and history destruction run on the same worker queue.
+There is no per-generation history snapshot. Backend input conversion and prompt
+formatting still traverse the conversation on the worker.
+
+Each generator owns a `TextGenerator` thread for model loading, prompt formatting,
+prefill, decoding, and backend destruction. llama.cpp's internal thread pools
+are driven from that thread. Replies and output deltas dispatch back to the
+actor's event target. Cancellation and shutdown cross the boundary through
+atomic flags. Future engines sharing this process must likewise keep engine
+compute and blocking model operations off the utility main thread.
 
 ## Process lifetime
 
-Users of the `HWInference` process decide how long it lives.
+Users of an `HWInference` process decide how long it lives.
 
-`UtilityProcessManager::LaunchProcessWithKeepAlive` hands out a
-`UtilityProcessKeepAlive` on the process (main thread only), a single one shared
-by every caller; when the last reference to it goes away the process is shut down
-with `CleanShutdown`, rather than lingering until browser shutdown like other
-Utility processes.
+`HWInferenceProcess::Acquire` hands out the `UtilityProcessKeepAlive` of the
+running or launching process (main thread only), the same one to every caller;
+when the last reference to it goes away the process is shut down, rather than
+lingering until browser shutdown like other Utility processes.
 
 - **Content-process consumers** go through {searchfox}`PContent
-  <dom/ipc/PContent.ipdl>`: `RequestHWInferenceConnection` acquires a keep-alive
-  for the requesting content process -- whether or not the process then starts
-  -- and `ReleaseHWInferenceConnection` drops it. `HWInferenceManagerChild`
-  sends exactly one release per request, from `ActorDestroy`. `ContentParent`
-  holds a single keep-alive for as long as its content process has a connection
-  outstanding, and drops it in its own `ActorDestroy`, so a crashed content
-  process cannot pin the utility process forever.
-- **Parent-process consumers** call `LaunchProcessWithKeepAlive` directly, with
-  no IPC involved, and bind their actor to the process it hands back with
-  `UtilityProcessKeepAlive::StartUtility`.
+  <dom/ipc/PContent.ipdl>`: `AcquireHWInferenceProcess` acquires the content
+  process' keep-alive -- whether or not the process then starts -- and
+  `ReleaseHWInferenceConnection` drops it. `ContentParent` holds a single
+  keep-alive for as long as its content process has a connection outstanding,
+  and drops it in its own `ActorDestroy`, so a crashed content process cannot
+  pin the utility process forever.
+- **Parent-process consumers** call `Acquire` directly, with no IPC involved,
+  send on `HWInferenceProcess::Actor` once its `WhenReady` resolves, and drop
+  the keep-alive when their own lifetime policy allows.
 
 A keep-alive holds the process it was acquired on rather than its
 `SandboxingKind`, so one that outlives that process — it crashed, or the browser
-is shutting down — cannot shut down the process that replaced it.
+is shutting down — cannot shut down the process that replaced it. A process that
+dies, or never comes up, needs nothing from its consumers: the next `Acquire`
+launches a fresh one, with a fresh actor, and whoever waited on the old actor's
+`WhenReady` is told.
 
 `UtilityProcessManager` has no policy of its own: it shuts the process down the
-moment the last keep-alive on it goes away. Other policies can be implemented,
-they belong in the user of the process. An example is `SpeechRecognition`: the
-Web API has numerous async static methods, and it would be wasteful to shutdown
-the process every time one of those static methods finish, when another one is
-about to be called.
+moment the last keep-alive on it goes away. Other policies belong in the user of
+the process. An example is `SpeechRecognition`: the Web API has numerous async
+static methods, and it would be wasteful to shutdown the process every time one
+of those static methods finish, when another one is about to be called.
 
 ## Connecting from a content process
 
-A content process gets a direct channel to the utility process the first time
-one is needed, and reuses it: `PHWInferenceManager` is a process-wide singleton,
-shared by every `HWInference` consumer in that content process.
+Content consumers first send `PContent::AcquireHWInferenceProcess`. The main
+process counts outstanding connections in `ContentParent` and acquires the
+content instance's keep-alive. `PContent::ReleaseHWInferenceConnection` drops
+that keep-alive when the connection count reaches zero. Content-process death
+also drops it.
 
-- `HWInferenceManagerChild::AcquireConnection()` returns an
-  `HWInferenceConnectionGuard`, and establishes the connection if it is not up
-  yet. Establishing it creates a `PHWInferenceManager` endpoint pair, binds the
-  child-side endpoint locally as `HWInferenceManagerChild` right away, and calls
-  `ContentChild::SendRequestHWInferenceConnection` with the parent-side
-  endpoint. The connection works right away, no need to wait.
-- The connection is owned by its guards: it is closed once the last one is
-  dropped, and each consumer decides how long to hold one, so no consumer can
-  tear the channel out from under another.
-- `ContentParent::RecvRequestHWInferenceConnection`, in the main process,
-  acquires a keep-alive for that content process and brokers the endpoint via
-  `UtilityProcessManager::StartContentHWInferenceManager`, which starts (or
-  reuses) the `HWInference` process and hands the endpoint over via
-  `PHWInference::NewContentHWInferenceManager`.
-- The utility process binds it as `HWInferenceManagerParent`
-  (`HWInferenceManagerParent::CreateForContent`), the parent side of
-  {searchfox}`PHWInferenceManager
-  <toolkit/components/ml/ipc/PHWInferenceManager.ipdl>`.
-
-This detour through the main process happens once per content process
-(subsequent callers reuse the same `HWInferenceManagerChild`). It is also the
-riskier of the two `HWInference` IPC boundaries, since content, unlike a
-parent-process consumer, may be compromised. See [Security](#security) for
-what a task's actor under this manager can and cannot trust from content. Once
-established, task traffic, (e.g. audio and timed text for speech recognition)
-flows directly between the content and utility processes, without going through
-the main process on every message. Model install and consent still route through
-the main process, see [Model
-provisioning](#model-provisioning-task-resolvers-and-modelhub) below.
+For speech recognition, content creates a `PSpeechRecognition` endpoint pair
+and sends the parent endpoint through `PContent::CreateSpeechRecognition`.
+`ContentParent::RecvCreateSpeechRecognition` requires an outstanding connection
+and supplies its trusted content-process identity to
+`HWInferenceParent::StartContentSpeechRecognition`. Once the utility actor is
+ready, `PHWInference::NewContentSpeechRecognition` delivers the endpoint and
+identity. `HWInferenceChild` binds a `SpeechRecognitionParent` on the utility
+main thread.
 
 ```{mermaid}
 sequenceDiagram
-  autonumber
-
-  box Content Process
-    participant SRB as HWInferenceManagerChild
-    participant CC as ContentChild
-  end
-
-  box Main Process
-    participant CP as ContentParent
-    participant UPM as UtilityProcessManager
-    participant HWP as HWInferenceParent
-  end
-
-  box HWInference
-    participant HWC as HWInferenceChild
-    participant HMP as HWInferenceManagerParent
-  end
-
-  Note over SRB: AcquireConnection():<br/>CreateEndpoints(parentEp, childEp)<br/>for PHWInferenceManager
-  Note over SRB: bind childEp locally
-  SRB->>CC: SendRequestHWInferenceConnection(parentEp)
-  CC->>CP: PContent::RequestHWInferenceConnection(parentEp)
-  CP->>UPM: StartContentHWInferenceManager(parentEp, contentId)
-  Note over UPM: LaunchProcessWithKeepAlive(HW_INFERENCE), then<br/>keepAlive->StartUtility(HWInferenceParent):<br/>launches the process if not already running
-  Note over CP: ++mHWInferenceConnections<br/>keeps the UtilityProcessKeepAlive it got back
-  UPM->>HWP: SendNewContentHWInferenceManager(parentEp, contentId)
-  HWP->>HWC: PHWInference::NewContentHWInferenceManager(parentEp, contentId)
-  HWC->>HMP: CreateForContent(parentEp, contentId) (bind)
-  Note over SRB,HMP: direct channel established: task actors<br/>(e.g. PSpeechRecognition) are created<br/>directly over it as soon as childEp is bound,<br/>no further main-process hop
+  participant C as Content process
+  participant CP as ContentParent
+  participant HWP as HWInferenceParent
+  participant HWC as HWInferenceChild
+  participant SRP as SpeechRecognitionParent
+  C->>CP: AcquireHWInferenceProcess()
+  Note over CP: Hold content HWInference keep-alive
+  C->>CP: CreateSpeechRecognition(parentEndpoint)
+  CP->>HWP: StartContentSpeechRecognition(endpoint, contentId)
+  Note over HWP: Wait for utility actor readiness
+  HWP->>HWC: NewContentSpeechRecognition(endpoint, contentId)
+  HWC->>SRP: Bind endpoint on utility main thread
+  C->>SRP: Direct speech IPC
+  C->>CP: ReleaseHWInferenceConnection()
 ```
+
+The main process brokers each task endpoint, but subsequent audio and timed
+text flow directly between content and the utility process. Model provisioning
+and consent continue to route through the main process. Failed startup drops
+the endpoint, allowing the content-side actor to report failure.
 
 ### Task protocols
 
-`Endpoint::Bind()` binds an actor to the thread that calls it, and that is the
-thread every one of that actor's `Recv` methods then runs on. Each task
-protocol is a separate toplevel connection created through the manager, so the
-two sides choose their threads independently.
-
-`PHWInferenceManager` itself is bound on the main thread in both processes. The
-manager answers a request (e.g. `CreateSpeechRecognition()` for speech
-recognition) by creating the endpoint pair, binding the utility-process side on
-its own thread, passing it the trusted content id it carries
-(`HWInferenceManagerParent::ContentId()`), and resolving with the
-content-process endpoint.
-`HWInferenceManagerChild::CreateSpeechRecognitionSession()` takes the event
-target the caller wants its side bound on, dispatches the bind there, and
-resolves its promise there too.
-
-Speech recognition passes its `SpeechIPC` thread, keeping audio off the content
-main thread. The utility side is bound on the main thread and dispatches
-inference to a `Parakeet` thread of its own, so `RecvProcessAudioData` returns
-without blocking on it.
-
-```{mermaid}
-sequenceDiagram
-  autonumber
-
-  box Content Process
-    participant C as Consumer<br/>(main thread)
-    participant HMC as HWInferenceManagerChild<br/>(main thread)
-    participant SRC as SpeechRecognitionChild<br/>(SpeechIPC thread)
-  end
-
-  box HWInference
-    participant HMP as HWInferenceManagerParent<br/>(main thread)
-    participant SRP as SpeechRecognitionParent<br/>(main thread)
-  end
-
-  C->>HMC: CreateSpeechRecognitionSession(SpeechIPC)
-  HMC->>HMP: CreateSpeechRecognition()
-  Note over HMP: CreateEndpoints(parentEp, childEp)
-  HMP->>SRP: parentEp.Bind() here, so SRP is bound<br/>to the HWInference main thread
-  HMP-->>HMC: resolve(childEp)
-  HMC->>SRC: dispatch to SpeechIPC, childEp.Bind() there,<br/>so SRC is bound to SpeechIPC
-  SRC-->>C: promise resolves on SpeechIPC
-  SRC->>SRP: PSpeechRecognition, SpeechIPC to HWInference main
-```
-
-Creating one costs a round trip; teardown is `Close()`.
+`Endpoint::Bind()` selects the thread on which an actor's `Recv` methods run.
+Each task protocol is a separate top-level connection, so its two sides choose
+their event targets independently. Speech recognition uses `SpeechIPC` in
+content; the utility side receives on the main thread and dispatches inference
+to its `Parakeet` thread. Text generation uses the thread split described above.
 
 ## Model provisioning: task resolvers and `ModelHub`
 
-Every {searchfox}`PHWInference <toolkit/components/ml/ipc/PHWInference.ipdl>`
+Each model-provisioning {searchfox}`PHWInference <toolkit/components/ml/ipc/PHWInference.ipdl>`
 request carries a `(task, id)` pair. Two things happen with it, both in the
 parent process, in `HWInferenceParent`.
 
@@ -380,9 +337,8 @@ process:
 - The task's utility-process actor maps the request to a model id and relays
   `PHWInference::InstallModel` to the main process, attaching the **trusted**
   `ContentParentId` of the content process that owns the connection — never a
-  value content supplies. That id comes from the manager
-  (`HWInferenceManagerParent::ContentId()`), which got it from `ContentParent`
-  when it brokered the connection.
+  value content supplies. `ContentParent` attaches it when brokering the
+  speech-recognition endpoint through `StartContentSpeechRecognition`.
 - `HWInferenceParent::RecvInstallModel` (main process) resolves the id via the
   task's `nsIMLModelResolver`, then resolves the content-supplied inner window
   id to a `WindowGlobalParent` (`WindowGlobalParent::GetByInnerWindowId`) and
@@ -404,11 +360,13 @@ process:
 `RecvInstallModel`/`RecvIsModelInstalled` and the rest of the model path, and
 actor lifetime, in every process involved. `ModelHub:4` can also be useful.
 
-The process and its lifetime rules are covered by gtests in
-{searchfox}`ipc/glue/test/gtest/TestUtilityProcess.cpp`:
-
-Gtest exercise this new process: 'TestUtilityProcess.HWInference*'.
+The process lifetime and restart policy are covered by `HWInferenceProcessTest`
+and `BrowserHWInferenceProcessTest` in
+{searchfox}`toolkit/components/ml/tests/gtest/TestHWInferenceProcess.cpp`.
+`TextGenerationTest` covers model loading, generation, cancellation, failure,
+and the idle grace with the utility sandbox enabled. Browser tests in
+{searchfox}`toolkit/components/ml/tests/browser` cover the WebIDL and MLEngine
+surfaces, concurrent generators, profiler markers, and telemetry.
 
 The content path, model provisioning and consent are exercised end to end by
-the speech recognition tests, see [its
-documentation](/media/SpeechRecognition).
+the speech recognition tests, see [its documentation](/media/SpeechRecognition).

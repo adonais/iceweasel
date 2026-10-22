@@ -41,6 +41,7 @@ struct WFreeDeleter {
   void operator()(wp_image_description_v1* aPtr) const {
     wp_image_description_v1_destroy(aPtr);
   }
+  void operator()(wl_shm_pool* aPtr) const { wl_shm_pool_destroy(aPtr); }
 };
 
 template <typename T>

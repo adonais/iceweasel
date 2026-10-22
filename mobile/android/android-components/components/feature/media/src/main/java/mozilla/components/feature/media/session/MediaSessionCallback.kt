@@ -5,18 +5,30 @@
 package mozilla.components.feature.media.session
 
 import android.support.v4.media.session.MediaSessionCompat
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.media.ext.MS_PER_SECOND
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.support.base.log.logger.Logger
 
-internal class MediaSessionCallback(private val store: BrowserStore) : MediaSessionCompat.Callback() {
+/**
+ * @param onMediaSessionPlay Invoked with the active media tab when Play arrives through the media session. The tab is
+ *   told to play only if it returns true.
+ */
+internal class MediaSessionCallback(
+    private val store: BrowserStore,
+    private val onMediaSessionPlay: (SessionState) -> Boolean,
+) : MediaSessionCompat.Callback() {
     private val logger = Logger("MediaSessionCallback")
 
     override fun onPlay() {
         logger.debug("play()")
 
-        store.state.findActiveMediaTab()?.mediaSessionState?.controller?.play()
+        store.state.findActiveMediaTab()?.let { tab ->
+            if (onMediaSessionPlay(tab)) {
+                tab.mediaSessionState?.controller?.play()
+            }
+        }
     }
 
     override fun onPause() {

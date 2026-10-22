@@ -21,4 +21,4 @@ entry to a hash number.
 
 ## See Also
 
-[PL_HashString](PL_HashString)
+[PL_HashString](pl_hashstring.md)

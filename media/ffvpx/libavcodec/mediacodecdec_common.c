@@ -428,7 +428,20 @@ static int mediacodec_wrap_sw_audio_buffer(AVCodecContext *avctx,
            "Frame: format=%d channels=%d sample_rate=%d nb_samples=%d",
            avctx->sample_fmt, avctx->ch_layout.nb_channels, avctx->sample_rate, frame->nb_samples);
 
-    memcpy(frame->data[0], data, info->size);
+    if (s->ch_offsets) {
+        const int channels = avctx->ch_layout.nb_channels;
+        const int stride = channels * sample_size;
+
+        for (int i = 0; i < frame->nb_samples; i++) {
+            const uint8_t *src = data + i * stride;
+            uint8_t *dst = frame->data[0] + i * stride;
+
+            for (int ch = 0; ch < channels; ch++)
+                memcpy(dst + ch * sample_size, src + s->ch_offsets[ch] * sample_size, sample_size);
+        }
+    } else {
+        memcpy(frame->data[0], data, info->size);
+    }
 
     ret = 0;
 done:
@@ -692,11 +705,18 @@ static int mediacodec_dec_parse_audio_format(AVCodecContext *avctx, MediaCodecDe
 
     avctx->sample_rate = sample_rate;
 
+    s->ch_offsets = NULL;
     AMEDIAFORMAT_GET_INT32(channel_mask, "channel-mask", 0);
-    if (channel_mask)
+    if (channel_mask) {
         av_channel_layout_from_mask(&avctx->ch_layout, mcdec_map_channel_mask(avctx, channel_mask));
-    else
+    } else if (s->codec_ch_layouts && channel_count > 2 && channel_count <= 8) {
+        ret = av_channel_layout_copy(&avctx->ch_layout, &s->codec_ch_layouts[channel_count - 1]);
+        if (ret < 0)
+            goto fail;
+        s->ch_offsets = s->codec_ch_offsets[channel_count - 1];
+    } else {
         av_channel_layout_default(&avctx->ch_layout, channel_count);
+    }
 
     av_log(avctx, AV_LOG_INFO,
         "Output parameters channel-count=%d channel-layout=%x sample-rate=%d\n",

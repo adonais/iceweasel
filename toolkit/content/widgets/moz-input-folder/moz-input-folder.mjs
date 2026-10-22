@@ -2,8 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-input-folder.tagmap.d.ts" />
+
 import { html, classMap, styleMap } from "../vendor/lit.all.mjs";
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozInputFolder.ftl");
 
@@ -26,7 +28,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozInputFolder.ftl");
  * @property {string} title - The title attribute, mapped onto the inner input.
  */
 
-export default class MozInputFolder extends MozInputText {
+export class MozInputFolder extends MozInputText {
   #folder;
 
   static properties = {

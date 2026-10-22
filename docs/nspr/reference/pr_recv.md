@@ -21,7 +21,7 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object representing a socket.
+: A pointer to a {doc}`prfiledesc` object representing a socket.
 
 `buf`
 
@@ -37,7 +37,7 @@ The function has the following parameters:
 
 `timeout`
 
-: A value of type {ref}`PRIntervalTime` specifying the time limit for
+: A value of type {doc}`printervaltime` specifying the time limit for
   completion of the receive operation.
 
 ### Returns
@@ -47,10 +47,10 @@ The function returns one of the following values:
 - A positive number indicates the number of bytes actually received.
 - The value 0 means the network connection is closed.
 - The value -1 indicates a failure. The reason for the failure can be
-  obtained by calling {ref}`PR_GetError`.
+  obtained by calling {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_Recv` blocks until some positive number of bytes are transferred,
+{doc}`pr_recv` blocks until some positive number of bytes are transferred,
 a timeout occurs, or an error occurs. No more than `amount` bytes will
 be transferred.

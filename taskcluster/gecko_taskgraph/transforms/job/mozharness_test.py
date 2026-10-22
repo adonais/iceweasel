@@ -155,17 +155,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     env["PYTHON"] = "python3"
 
-    if test.get("docker-image", {}).get("in-tree") == "ubuntu1804-test":
-        env["NEED_PULSEAUDIO"] = "true"
-
-        # Bug 1602701/1601828 - use compiz on ubuntu1804 due to GTK asynchiness
-        # when manipulating windows.
-        if "wdspec" in job["run"]["test"]["suite"] or (
-            "marionette" in job["run"]["test"]["suite"]
-            and "headless" not in job["label"]
-        ):
-            env.update({"NEED_COMPIZ": "true"})
-
     if test.get("docker-image", {}).get("in-tree") == "ubuntu2404-test":
         env["NEED_PIPEWIRE"] = "true"
 

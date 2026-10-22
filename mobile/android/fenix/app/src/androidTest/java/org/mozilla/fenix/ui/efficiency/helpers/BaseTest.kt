@@ -219,6 +219,7 @@ abstract class BaseTest(
                                 shouldUseExpandedToolbar = cfg.shouldUseExpandedToolbar,
                                 isTabStripEnabled = cfg.isTabStripEnabled,
                                 shakeToSummarizeFeatureFlagEnabled = cfg.shakeToSummarizeFeatureFlagEnabled,
+                                isPrivateModeAndStoriesEntryPointEnabled = cfg.isPrivateModeAndStoriesEntryPointEnabled,
                             )
                         ) {
                             it.activity

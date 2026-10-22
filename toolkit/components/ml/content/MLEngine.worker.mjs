@@ -127,6 +127,16 @@ export class MLEngineWorker {
   }
 
   /**
+   * End a run early, resolving once the backend is ready for the next one.
+   * Backends that cannot do this leave the run to finish on its own.
+   *
+   * @param {string} requestId - The identifier of the run to cancel.
+   */
+  async cancel(requestId) {
+    await this.#pipeline?.cancel?.(requestId);
+  }
+
+  /**
    * Glue code to connect the `MLEngineWorker` to the PromiseWorker interface.
    */
   #connectToPromiseWorker() {

@@ -234,7 +234,7 @@ nsHttpActivityDistributor::RemoveObserver(nsIHttpActivityObserver* aObserver) {
     if (!mObservers.RemoveElement(observer)) {
       return NS_ERROR_FAILURE;
     }
-    mActivated = mObservers.IsEmpty();
+    mActivated = !mObservers.IsEmpty();
   }
 
   if (nsIOService::UseSocketProcess() && !mActivated) {

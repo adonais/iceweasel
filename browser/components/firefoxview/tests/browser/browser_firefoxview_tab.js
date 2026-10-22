@@ -387,3 +387,20 @@ add_task(async function testFxViewEntryPointsInPrivateBrowsing() {
   await checkEntryPointsInWindow(privateWin, false);
   await BrowserTestUtils.closeWindow(privateWin);
 });
+
+add_task(async function click_opens_a_single_tab() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  let openedTabs = 0;
+  win.gBrowser.tabContainer.addEventListener("TabOpen", () => openedTabs++);
+  EventUtils.synthesizeMouseAtCenter(win.FirefoxViewHandler.button, {}, win);
+  let tab = win.FirefoxViewHandler.tab;
+  Assert.equal(openedTabs, 1, "The click opened a single tab");
+  Assert.ok(tab.selected, "Firefox View tab is selected");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  Assert.equal(
+    win.FirefoxViewHandler.tab,
+    tab,
+    "The Firefox View tab wasn't replaced"
+  );
+  await BrowserTestUtils.closeWindow(win);
+});

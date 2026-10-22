@@ -19,10 +19,7 @@ add_task(async function () {
   // Execute requests.
   await performRequests(monitor, tab, CONTENT_TYPE_WITHOUT_CACHE_REQUESTS);
 
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[5]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[5]);
   EventUtils.sendMouseEvent(
     { type: "contextmenu" },
     document.querySelectorAll(".request-list-item")[5]

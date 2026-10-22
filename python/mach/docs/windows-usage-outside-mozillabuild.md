@@ -1,7 +1,7 @@
 # Using Mach on Windows Outside MozillaBuild
 
 :::{note}
-These docs still require that you've followed the {ref}`Building Firefox On Windows` guide.
+These docs still require that you've followed the {doc}`/setup/windows_build` guide.
 :::
 
 [MozillaBuild](https://wiki.mozilla.org/MozillaBuild) is required to build

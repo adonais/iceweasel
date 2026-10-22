@@ -32,18 +32,23 @@
   }
 
   // With the search bar in its variant B, the card behind it overhangs the
-  // search by 80px on each side (urlbar.css) and, centered in the container,
-  // reaches the wordmark at the narrower widths of each search width step.
-  // The wordmark ends at the logo, its margin and its own width from the
+  // search by $search-card-overhang on each side. The search is centered in
+  // the container and grows with the content column, so the card reaches the
+  // wordmark until the container fits the search at the content column's
+  // maximum width plus the overhang and the wordmark on each side. The
+  // wordmark ends at the logo, its margin and its own width from the
   // container's start edge.
-  .nova-enabled.search-has-own-row & .wordmark {
-    // The wordmark's margin-inline-start is var(--space-large), 1rem.
-    $wordmark-end: calc(#{$logo-size + $wordmark-size} + 1rem);
-    $overlap-threshold-6-cols: calc(#{6 * $col-width-px} + #{5 * $col-gap-px} + 2 * (#{$search-card-overhang} + #{$wordmark-end}));
-    $overlap-threshold-10-cols: calc(#{10 * $col-width-px} + #{9 * $col-gap-px} + 2 * (#{$search-card-overhang} + #{$wordmark-end}));
-    $min-width-10-cols: calc(2 * #{$side-col-width-px} + 11 * #{$col-gap-px} + 10 * #{$col-width-px});
+  // The wordmark's margin-inline-start is var(--space-large), 1rem.
+  $wordmark-end: calc(#{$logo-size + $wordmark-size} + 1rem);
 
-    @container outer-grid ((inline-size < #{$overlap-threshold-6-cols}) or ((inline-size >= #{$min-width-10-cols}) and (inline-size < #{$overlap-threshold-10-cols}))) {
+  .nova-enabled.search-has-own-row & .wordmark {
+    @container outer-grid (inline-size < calc(#{$search-width-ratio} * (#{16 * $col-width-px} + #{15 * $col-gap-px}) + 2 * (#{$search-card-overhang} + #{$wordmark-end}))) {
+      display: none;
+    }
+  }
+
+  .nova-enabled.search-has-own-row.sections-5-col & .wordmark {
+    @container outer-grid (inline-size < calc(#{$search-width-ratio} * (#{20 * $col-width-px} + #{19 * $col-gap-px}) + 2 * (#{$search-card-overhang} + #{$wordmark-end}))) {
       display: none;
     }
   }

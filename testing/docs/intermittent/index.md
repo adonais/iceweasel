@@ -328,7 +328,7 @@ should be taken into account. For example consecutive calls to
 [Date()](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date) don't
 guarantee to get different values. Also when crossing XPCOM different
 time implementations can give surprising results. For example when
-comparing a timestamp got through {ref}`PR_Now` with one
+comparing a timestamp got through {doc}`/nspr/reference/pr_now` with one
 got though a JavaScript date, the last call could result in the past of
 the first call! These differences are more pronounced on Windows, where
 the skew can be up to 16ms. Globally, the timers' resolutions are

@@ -16,8 +16,6 @@
 #include "modules/video_coding/utility/frame_sampler.h"
 #ifdef WEBRTC_USE_H264
 
-#include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +40,9 @@
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "common_video/h264/h264_common.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
@@ -138,29 +138,6 @@ std::optional<ScalabilityMode> ScalabilityModeFromTemporalLayers(
   }
   return std::nullopt;
 }
-
-bool IsValidResolution(int width, int height) {
-  // H.264 Level 5.2 limits:
-  // Max macroblocks per frame (MaxFS) = 36864
-  // Max width/height in macroblocks = Sqrt(MaxFS * 8) = 543
-  // A macroblock is 16x16.
-  const int64_t width_in_mbs = (static_cast<int64_t>(width) + 15) / 16;
-  const int64_t height_in_mbs = (static_cast<int64_t>(height) + 15) / 16;
-
-  if (width_in_mbs * height_in_mbs > 36864) {
-    return false;
-  }
-
-  // Aspect ratio check:
-  // PicWidthInMbs <= Sqrt(MaxFS * 8)
-  // FrameHeightInMbs <= Sqrt(MaxFS * 8)
-  if (width_in_mbs > 543 || height_in_mbs > 543) {
-    return false;
-  }
-
-  return true;
-}
-
 }  // namespace
 
 // Helper method used by H264EncoderImpl::Encode.
@@ -287,8 +264,8 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   for (int i = 0; i < number_of_streams; ++i) {
-    if (!IsValidResolution(codec_.simulcastStream[i].width,
-                           codec_.simulcastStream[i].height)) {
+    if (!H264::IsValidResolution(codec_.simulcastStream[i].width,
+                                 codec_.simulcastStream[i].height)) {
       RTC_LOG(LS_ERROR) << "InitEncode: Invalid stream resolution: "
                         << codec_.simulcastStream[i].width << "x"
                         << codec_.simulcastStream[i].height;

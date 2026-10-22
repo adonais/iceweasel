@@ -443,8 +443,7 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   nsHtml5StackNode* createStackNode(nsHtml5ElementName* elementName,
                                     nsIContentHandle* node, nsAtom* popName,
                                     bool markAsIntegrationPoint);
-  void insertIntoFosterParent(nsIContentHandle* child,
-                              nsIContentHandle* furthestBlock);
+  void insertIntoFosterParent(nsIContentHandle* child);
   nsIContentHandle* createAndInsertFosterParentedElement(
       int32_t ns, nsAtom* name, nsHtml5HtmlAttributes* attributes,
       nsHtml5ContentCreatorFunction creator);

@@ -64,6 +64,9 @@ add_task(async function test_smartbar_click_suppresses_outline() {
         new content.MouseEvent("mousedown", { bubbles: true })
       );
       smartbar.inputField.focus();
+      smartbar.dispatchEvent(
+        new content.MouseEvent("mouseup", { bubbles: true })
+      );
 
       return smartbar.hasAttribute("suppress-focus-border");
     }
@@ -160,6 +163,9 @@ add_task(async function test_smartbar_action_buttons_keep_view_open() {
         `mousedown on ${host.localName} should be preventDefault'd ` +
           "so focus stays on the input"
       );
+      host.dispatchEvent(
+        new content.MouseEvent("mouseup", { bubbles: true, composed: true })
+      );
 
       const blur = new content.FocusEvent("blur", {
         bubbles: false,
@@ -183,6 +189,9 @@ add_task(async function test_smartbar_action_buttons_keep_view_open() {
         Assert.ok(
           innerMousedown.defaultPrevented,
           "context-icon-button's mousedown handler should preventDefault"
+        );
+        innerTarget.dispatchEvent(
+          new content.MouseEvent("mouseup", { bubbles: true, composed: true })
         );
       }
     }
@@ -234,6 +243,9 @@ add_task(async function test_smartbar_button_container_click_no_focus() {
     });
 
     buttonContainer.dispatchEvent(mousedownEvent);
+    buttonContainer.dispatchEvent(
+      new content.MouseEvent("mouseup", { bubbles: true, composed: true })
+    );
 
     // Wait a moment for any focus changes to occur
     await new Promise(resolve => content.setTimeout(resolve, 50));

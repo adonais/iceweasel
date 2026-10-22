@@ -153,12 +153,9 @@ class PeerConnectionRampUpTest : public ::testing::Test {
   PeerConnectionRampUpTest()
       : env_(CreateTestEnvironment()),
         firewall_socket_server_(&virtual_socket_server_),
-        network_thread_(&firewall_socket_server_),
-        worker_thread_(Thread::Create()) {
+        network_thread_(&firewall_socket_server_) {
     network_thread_.SetName("PCNetworkThread", this);
-    worker_thread_->SetName("PCWorkerThread", this);
     RTC_CHECK(network_thread_.Start());
-    RTC_CHECK(worker_thread_->Start());
 
     virtual_socket_server_.set_bandwidth(kNetworkBandwidth / 8);
   }
@@ -179,7 +176,6 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.env = env_;
     pcf_deps.network_thread = network_thread();
-    pcf_deps.worker_thread = worker_thread_.get();
     pcf_deps.signaling_thread = Thread::Current();
     pcf_deps.socket_factory = &firewall_socket_server_;
     auto network_manager =
@@ -341,7 +337,6 @@ class PeerConnectionRampUpTest : public ::testing::Test {
   FirewallSocketServer firewall_socket_server_;
 
   Thread network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
 
   std::unique_ptr<PeerConnectionWrapperForRampUpTest> caller_;
   std::unique_ptr<PeerConnectionWrapperForRampUpTest> callee_;

@@ -838,10 +838,6 @@ class BufferTextureHost : public TextureHost {
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
       gfx::DataSourceSurface* aSurface) override;
 
-  bool NeedsDeferredDeletion() const override {
-    return TextureHost::NeedsDeferredDeletion() || UseExternalTextures();
-  }
-
   BufferTextureHost* AsBufferTextureHost() override { return this; }
 
   const BufferDescriptor& GetBufferDescriptor() const { return mDescriptor; }
@@ -874,14 +870,11 @@ class BufferTextureHost : public TextureHost {
   int32_t GetCbCrStride() const;
 
  protected:
-  bool UseExternalTextures() const { return mUseExternalTextures; }
-
   BufferDescriptor mDescriptor;
   RefPtr<Compositor> mCompositor;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
   bool mLocked;
-  bool mUseExternalTextures;
 
   class DataTextureSourceYCbCrBasic;
 };

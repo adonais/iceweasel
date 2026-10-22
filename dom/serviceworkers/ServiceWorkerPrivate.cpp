@@ -63,6 +63,7 @@
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/CookieService.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
@@ -82,6 +83,7 @@
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
 #include "nsIURI.h"
+#include "nsIUploadChannel.h"
 #include "nsIUploadChannel2.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
@@ -212,13 +214,22 @@ ServiceWorkerPrivate::PendingPushEvent::PendingPushEvent(
   AssertIsOnMainThread();
 }
 
+ServiceWorkerPrivate::PendingPushEvent::~PendingPushEvent() {
+  mPromiseHolder.RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
+}
+
 nsresult ServiceWorkerPrivate::PendingPushEvent::Send() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mOwner);
   MOZ_ASSERT(mOwner->mInfo);
 
-  return mOwner->SendPushEventInternal(std::move(mRegistration),
-                                       std::move(mArgs));
+  mOwner->SendPushEventInternal(std::move(mRegistration), std::move(mArgs))
+      ->ChainTo(mPromiseHolder.Steal(), __func__);
+  return NS_OK;
+}
+
+RefPtr<PushHandledPromise> ServiceWorkerPrivate::PendingPushEvent::Promise() {
+  return mPromiseHolder.Ensure(__func__);
 }
 
 ServiceWorkerPrivate::PendingFetchEvent::PendingFetchEvent(
@@ -443,8 +454,20 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
 
   if (uploadChannel) {
     nsCOMPtr<nsIInputStream> uploadStream;
-    MOZ_TRY(uploadChannel->CloneUploadStream(&aIPCRequest.bodySize(),
-                                             getter_AddRefs(uploadStream)));
+    RefPtr<net::HttpBaseChannel> httpBase = do_QueryObject(channel);
+    if (httpBase && httpBase->UploadStreamIsStreaming()) {
+      // Transfer streaming uploads to the worker; fallback returns its unread
+      // body instead of replaying a clone. The channel gives up its reference
+      // so that the stream, which serialization may drain and close
+      // It is only restored if the worker returns it.
+      uploadStream = httpBase->TakeUploadStream();
+      // The length is only known once the stream ends.
+      aIPCRequest.bodySize() = -1;
+      aIPCRequest.hasStreamBody() = !!uploadStream;
+    } else {
+      MOZ_TRY(uploadChannel->CloneUploadStream(&aIPCRequest.bodySize(),
+                                               getter_AddRefs(uploadStream)));
+    }
 
     if (uploadStream) {
       Maybe<BodyStreamVariant>& body = aIPCRequest.body();
@@ -793,7 +816,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       cjsData, domain,
       /* isSecureContext */ true,
-      /* clientInfo*/ Some(ipcClientInfo.ToIPC()),
+      /* clientInfo */ ipcClientInfo.ToIPC(),
 
       // The RemoteWorkerData CTOR doesn't allow to set the referrerInfo via
       // already_AddRefed<>. Let's set it to null.
@@ -830,11 +853,9 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
   // subsequent spawns. mClientInfo itself must not carry policyContainerArgs
   // (see Initialize() comment), so we apply it only to the IPC copy.
   nsILoadInfo::IPAddressSpace ipAddressSpace = nsILoadInfo::Unknown;
-  if (mRemoteWorkerData.clientInfo().isSome()) {
-    ClientInfo current(mRemoteWorkerData.clientInfo().ref());
-    if (const auto& args = current.GetPolicyContainerArgs()) {
-      ipAddressSpace = args->ipAddressSpace();
-    }
+  ClientInfo current(mRemoteWorkerData.clientInfo());
+  if (const auto& args = current.GetPolicyContainerArgs()) {
+    ipAddressSpace = args->ipAddressSpace();
   }
 
   mClientInfo = ClientManager::CreateInfo(
@@ -845,9 +866,9 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
     mozilla::ipc::PolicyContainerArgs policyContainerArgs;
     policyContainerArgs.ipAddressSpace() = ipAddressSpace;
     ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
-    mRemoteWorkerData.clientInfo().ref() = ipcClientInfo.ToIPC();
+    mRemoteWorkerData.clientInfo() = ipcClientInfo.ToIPC();
   } else {
-    mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
+    mRemoteWorkerData.clientInfo() = mClientInfo.ref().ToIPC();
   }
 }
 
@@ -1064,7 +1085,7 @@ nsresult ServiceWorkerPrivate::SendCookieChangeEventInternal(
   return NS_OK;
 }
 
-nsresult ServiceWorkerPrivate::SendPushEvent(
+RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
@@ -1074,7 +1095,8 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
   // failed, and unlike the ops below we dereference it before delegating to
   // SpawnWorkerIfNeeded(), which is where that is normally caught.
   if (NS_WARN_IF(!mInfo)) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+    return PushHandledPromise::CreateAndReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+                                               __func__);
   }
 
   ServiceWorkerPushEventOpArgs args;
@@ -1087,13 +1109,13 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
   }
 
   if (mInfo->State() == ServiceWorkerState::Activating) {
-    UniquePtr<PendingFunctionalEvent> pendingEvent =
-        MakeUnique<PendingPushEvent>(this, std::move(aRegistration),
-                                     std::move(args));
+    UniquePtr<PendingPushEvent> pendingEvent = MakeUnique<PendingPushEvent>(
+        this, std::move(aRegistration), std::move(args));
+    RefPtr<PushHandledPromise> promise = pendingEvent->Promise();
 
     mPendingFunctionalEvents.AppendElement(std::move(pendingEvent));
 
-    return NS_OK;
+    return promise;
   }
 
   MOZ_ASSERT(mInfo->State() == ServiceWorkerState::Activated);
@@ -1101,7 +1123,7 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
   return SendPushEventInternal(std::move(aRegistration), std::move(args));
 }
 
-nsresult ServiceWorkerPrivate::SendPushEventInternal(
+RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEventInternal(
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
     ServiceWorkerPushEventOpArgs&& aArgs) {
   MOZ_ASSERT(aRegistration);
@@ -1109,18 +1131,24 @@ nsresult ServiceWorkerPrivate::SendPushEventInternal(
   RefPtr<ServiceWorkerOpPromise> opPromise = ExecServiceWorkerOp(
       std::move(aArgs),
       ServiceWorkerLifetimeExtension(FullLifetimeExtension{}));
-  opPromise->Then(
+
+  return opPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [registration = aRegistration](ServiceWorkerOpResult&& aResult) {
-        MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
+      [registration = std::move(aRegistration)](
+          ServiceWorkerOpPromise::ResolveOrRejectValue&& aResult)
+          -> RefPtr<PushHandledPromise> {
+        registration->MaybeScheduleTimeCheckAndUpdate();
 
-        registration->MaybeScheduleTimeCheckAndUpdate();
-      },
-      [registration = aRegistration]() {
-        registration->MaybeScheduleTimeCheckAndUpdate();
+        if (aResult.IsReject()) {
+          return PushHandledPromise::CreateAndReject(aResult.RejectValue(),
+                                                     __func__);
+        }
+
+        MOZ_ASSERT(aResult.ResolveValue().type() ==
+                   ServiceWorkerOpResult::Tnsresult);
+
+        return PushHandledPromise::CreateAndResolve(Ok(), __func__);
       });
-
-  return NS_OK;
 }
 
 nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent(

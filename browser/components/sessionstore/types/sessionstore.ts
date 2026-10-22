@@ -18,11 +18,10 @@ type ClosedTabGroupStateData =
   import("../TabGroupState.sys.mjs").ClosedTabGroupStateData;
 type SavedTabGroupStateData =
   import("../TabGroupState.sys.mjs").SavedTabGroupStateData;
+type SavedGroupTabStateData =
+  import("../TabGroupState.sys.mjs").SavedGroupTabStateData;
 
-// Set on a tab while the debugging pref is on, so a test can observe that a
-// speculative connection was prepared and for which URL. Private to this
-// component.
-interface MozTabbrowserTab {
-  __test_connection_prepared?: boolean;
-  __test_connection_url?: string;
-}
+type SessionStoreLogger =
+  typeof import("../SessionLogger.sys.mjs").sessionStoreLogger;
+type TabMetricsContext =
+  import("../../tabbrowser/TabMetrics.sys.mjs").TabMetricsContext;

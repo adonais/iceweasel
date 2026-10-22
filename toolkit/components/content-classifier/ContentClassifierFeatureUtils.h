@@ -11,6 +11,7 @@ class nsILoadInfo;
 namespace mozilla {
 
 class ContentClassifierRequest;
+enum class ClassifyMode;
 
 namespace extensions {
 class WebExtensionPolicy;
@@ -18,9 +19,12 @@ class WebExtensionPolicy;
 
 class ContentClassifierFeatureUtils final {
  public:
-  static bool IsThirdPartyRequest(const ContentClassifierRequest& aRequest);
+  // Checking whether a request is third-party unless annotating. We annotate
+  // first-party requests for the first-party tracking flag.
+  static bool IsThirdPartyUnlessAnnotating(
+      const ContentClassifierRequest& aRequest, ClassifyMode aMode);
   static bool IsNonRecommendedAddonRequest(
-      const ContentClassifierRequest& aRequest);
+      const ContentClassifierRequest& aRequest, ClassifyMode aMode);
   static void HarmfulAddonCancelChannelCallback(nsIChannel* aChannel);
 
   // Returns the WebExtensionPolicy associated with the triggering or loading

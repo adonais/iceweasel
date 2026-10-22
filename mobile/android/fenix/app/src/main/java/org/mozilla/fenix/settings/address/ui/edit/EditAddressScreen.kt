@@ -158,6 +158,7 @@ private fun TextField(
 }
 
 @Composable
+@Suppress("Deprecation")
 private fun SelectField(
     store: AddressStore,
     field: AddressStructure.Field.SelectField,

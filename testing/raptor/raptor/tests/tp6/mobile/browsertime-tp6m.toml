@@ -62,14 +62,6 @@ test_url = "https://m.ebay-kleinanzeigen.de/s-anzeigen/auf-zeit-wg-berlin/zimmer
 [espn]
 test_url = "http://www.espn.com/nba/story/_/page/allstarweekend25788027/the-comparison-lebron-james-michael-jordan-their-own-words"
 
-[facebook]
-login = true
-playback_pageset_manifest = "mitm6-g5-fenix-{subtest}.manifest"
-test_url = "https://m.facebook.com"
-
-[facebook-cristiano]
-test_url = "https://m.facebook.com/Cristiano"
-
 [google]
 login = true
 playback_pageset_manifest = "mitm6-g5-fenix-{subtest}.manifest"
@@ -97,11 +89,6 @@ test_url = "https://support.microsoft.com/en-us"
 
 [reddit]
 test_url = "https://www.reddit.com"
-
-[sina]
-playback_version = "12.2.1"
-playback_pageset_manifest = "mitm8-android-fenix-{subtest}.manifest"
-test_url = "https://www.sina.com.cn/"
 
 [stackoverflow]
 test_url = "https://stackoverflow.com/"

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.reviewprompt
 
 import android.app.Activity
-import androidx.navigation.NavDirections
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.helpers.AbstractBinding
-import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.PlayStoreReviewPromptController
 import org.mozilla.fenix.components.appstate.AppAction
@@ -28,7 +26,7 @@ class ShowReviewPromptBinding(
     private val promptController: PlayStoreReviewPromptController,
     private val activityRef: WeakReference<Activity>,
     private val uiScope: CoroutineScope,
-    private val navigationDirection: (NavDirections) -> Unit,
+    private val showCustomReviewPrompt: () -> Unit,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
@@ -44,7 +42,7 @@ class ShowReviewPromptBinding(
                     is ReviewPromptState.Eligible -> {
                         when (it.type) {
                             Type.PlayStore -> tryShowPlayStorePrompt()
-                            Type.Custom -> navigationDirection.invoke(CUSTOM_PROMPT_DIRECTION)
+                            Type.Custom -> showCustomReviewPrompt()
                         }
                         appStore.dispatch(AppAction.ReviewPromptAction.ReviewPromptShown)
                     }
@@ -55,9 +53,5 @@ class ShowReviewPromptBinding(
     private fun tryShowPlayStorePrompt() = uiScope.launch {
         val activity = activityRef.get() ?: return@launch
         promptController.tryPromptReview(activity)
-    }
-
-    companion object {
-        private val CUSTOM_PROMPT_DIRECTION = NavGraphDirections.actionGlobalCustomReviewPromptDialogFragment()
     }
 }

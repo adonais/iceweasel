@@ -1779,6 +1779,24 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
       break;
   }
 
+  switch (INSN(31, 22) << 22) {
+    case op_vld:
+      return SummarizeResult(TrapMachineInsn::Load128, 4);
+    case op_vst:
+      return SummarizeResult(TrapMachineInsn::Store128, 4);
+    default:
+      break;
+  }
+
+  switch (INSN(31, 15) << 15) {
+    case op_vldx:
+      return SummarizeResult(TrapMachineInsn::Load128, 4);
+    case op_vstx:
+      return SummarizeResult(TrapMachineInsn::Store128, 4);
+    default:
+      break;
+  }
+
   // Loads/stores with reg + offset (si12).
   if (INSN(31, 26) == 0b001010) {
     switch (INSN(25, 22)) {

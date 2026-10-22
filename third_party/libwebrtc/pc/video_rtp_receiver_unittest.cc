@@ -19,8 +19,13 @@
 
 #include "api/make_ref_counted.h"
 #include "api/media_stream_interface.h"
+#include "api/media_types.h"
+#include "api/rtp_packet_info.h"
+#include "api/rtp_packet_infos.h"
+#include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/timestamp.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video/test/mock_recordable_encoded_frame.h"
 #include "api/video/video_sink_interface.h"
@@ -213,6 +218,105 @@ TEST_F(VideoRtpReceiverTest, EnablesEncodedOutputOnChannelRestart) {
   EXPECT_CALL(channel_, SetRecordableEncodedFrameCallback(0, _));
   auto setup_task = receiver_->GetSetupForUnsignaledMediaChannel();
   worker_thread_->BlockingCall([&]() { std::move(setup_task)(); });
+}
+
+class FakeVideoRtpReceiverObserver : public RtpReceiverObserverInterface {
+ public:
+  void OnFirstPacketReceived(MediaType media_type) override {}
+  void OnSourceChanged(bool ssrc_changed, bool csrc_changed) override {
+    source_changed_count_++;
+    last_ssrc_changed_ = ssrc_changed;
+    last_csrc_changed_ = csrc_changed;
+  }
+
+  int source_changed_count() const { return source_changed_count_; }
+  bool last_ssrc_changed() const { return last_ssrc_changed_; }
+  bool last_csrc_changed() const { return last_csrc_changed_; }
+
+ private:
+  int source_changed_count_ = 0;
+  bool last_ssrc_changed_ = false;
+  bool last_csrc_changed_ = false;
+};
+
+TEST_F(VideoRtpReceiverTest, SourceChangeNotification) {
+  constexpr uint32_t kVideoSsrc = 12345;
+  FakeVideoRtpReceiverObserver observer;
+  receiver_->SetObserver(&observer);
+
+  // Deliver initial packet info.
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc, {}, 100, Timestamp::Millis(100))}),
+      Timestamp::Millis(100));
+
+  EXPECT_EQ(observer.source_changed_count(), 1);
+  EXPECT_TRUE(observer.last_ssrc_changed());
+  EXPECT_FALSE(observer.last_csrc_changed());
+
+  // Subsequent frame with same SSRC should not fire callback.
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc, {}, 101, Timestamp::Millis(120))}),
+      Timestamp::Millis(120));
+
+  EXPECT_EQ(observer.source_changed_count(), 1);
+
+  // Frame with CSRC change should fire callback.
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc, {9999}, 102, Timestamp::Millis(140))}),
+      Timestamp::Millis(140));
+
+  EXPECT_EQ(observer.source_changed_count(), 2);
+  EXPECT_FALSE(observer.last_ssrc_changed());
+  EXPECT_TRUE(observer.last_csrc_changed());
+
+  receiver_->SetObserver(nullptr);
+}
+
+TEST_F(VideoRtpReceiverTest, LateObserverRegistration) {
+  constexpr uint32_t kVideoSsrc = 12345;
+  FakeVideoRtpReceiverObserver observer;
+
+  // Frame delivered before observer is registered.
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc, {}, 100, Timestamp::Millis(100))}),
+      Timestamp::Millis(100));
+
+  EXPECT_EQ(observer.source_changed_count(), 0);
+
+  // Setting observer should trigger callback for existing source.
+  receiver_->SetObserver(&observer);
+
+  EXPECT_EQ(observer.source_changed_count(), 1);
+  EXPECT_TRUE(observer.last_ssrc_changed());
+  EXPECT_FALSE(observer.last_csrc_changed());
+
+  receiver_->SetObserver(nullptr);
+}
+
+TEST_F(VideoRtpReceiverTest, ObserverTeardownStopsNotifications) {
+  constexpr uint32_t kVideoSsrc = 12345;
+  FakeVideoRtpReceiverObserver observer;
+  receiver_->SetObserver(&observer);
+
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc, {}, 100, Timestamp::Millis(100))}),
+      Timestamp::Millis(100));
+  EXPECT_EQ(observer.source_changed_count(), 1);
+
+  receiver_->SetObserver(nullptr);
+
+  // New SSRC after observer is cleared should not reach observer.
+  receiver_->OnFrameDelivered(
+      RtpPacketInfos(
+          {RtpPacketInfo(kVideoSsrc + 1, {}, 101, Timestamp::Millis(120))}),
+      Timestamp::Millis(120));
+
+  EXPECT_EQ(observer.source_changed_count(), 1);
 }
 
 }  // namespace

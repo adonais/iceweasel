@@ -75,7 +75,12 @@ class OnboardingFragment : Fragment() {
     private val addMarketingFeature = ViewBoundFeatureWrapper<MarketingPageAdditionSupport>()
 
     private val rtamoAttributionHandler by lazy {
-        RtamoAttributionHandler(requireContext(), requireComponents.settings, requireComponents.addonsProvider)
+        RtamoAttributionHandler(
+            requireContext(),
+            requireComponents.settings,
+            requireComponents.addonsProvider,
+            requireComponents.applicationScope,
+        )
     }
 
     private val termsOfServiceEventHandler by lazy {

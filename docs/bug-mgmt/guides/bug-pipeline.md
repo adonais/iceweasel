@@ -28,7 +28,7 @@ graph TD
 
 ## More details
 
-- {ref}`fuzzing`
+- {doc}`/tools/fuzzing/index`
 - [Autonag](https://wiki.mozilla.org/Release_Management/autonag#Introduction) - [Source](https://github.com/mozilla/relman-auto-nag/)
 - [Bugbug](https://github.com/mozilla/bugbug) - [Blog post about triage](https://hacks.mozilla.org/2019/04/teaching-machines-to-triage-firefox-bugs/) / [Blog post about CI](https://hacks.mozilla.org/2020/07/testing-firefox-more-efficiently-with-machine-learning/)
 - [Bugmon](https://hacks.mozilla.org/2021/01/analyzing-bugzilla-testcases-with-bugmon/) - [Source](https://github.com/MozillaSecurity/bugmon)

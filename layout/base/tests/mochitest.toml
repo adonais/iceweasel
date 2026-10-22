@@ -276,7 +276,6 @@ support-files = ["file_dynamic_toolbar_max_height.html"]
 ["test_event_target_radius.html"]
 support-files = ["helper_bug1733509.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1968682
   "xorigin", # JavaScript error: resource://specialpowers/SpecialPowersChild.sys.mjs, line 73: SecurityError: Permission denied to access property "windowUtils" on cross-origin object
 ]
 
@@ -338,16 +337,10 @@ support-files = ["preserve3d_sorting_hit_testing2_iframe.html"]
 
 ["test_re_enable_apz_on_blur.html"]
 support-files = ["helper_re_enable_apz_on_blur.html"]
-skip-if = [
-  "os == 'win'",
-]
 
 ["test_refreshDriver_hasPendingTick.html"]
 
 ["test_reftests_with_caret.html"]
-skip-if = [
-  "tsan", # Bug 1612707
-]
 support-files = [
   "bug106855-1.html",
   "bug106855-2.html",

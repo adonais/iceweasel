@@ -441,6 +441,31 @@
         await SpecialPowers.popPrefEnv();
       });
 
+      // Verify that arrow keys with modifiers are not handled by the group.
+      add_task(async function testRadioGroupIgnoresModifiedArrowKeys() {
+        let renderTarget = await testHelpers.renderTemplate(defaultTemplate);
+        let radioGroup = renderTarget.querySelector("moz-radio-group");
+        let [firstButton] = renderTarget.querySelectorAll("moz-radio");
+
+        firstButton.focus();
+        await radioGroup.updateComplete;
+        is(document.activeElement, firstButton, "First radio is focused.");
+        is(radioGroup.value, "first", "First radio is selected.");
+
+        // Radios wrap, so from the first radio every direction would change
+        // the value.
+        await testHelpers.verifyModifiedArrowKeysIgnored({
+          target: firstButton,
+          getState: () => radioGroup.value,
+          afterKeydown: () => radioGroup.updateComplete,
+        });
+        is(
+          radioGroup.value,
+          "second",
+          "Bare ArrowDown selects the next radio."
+        );
+      });
+
       // Verify first radio buttons is focusable when all radio buttons are un-checked.
       add_task(async function testKeyboardNavigationUncheckedRadioButtons() {
         let template = html`

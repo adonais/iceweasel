@@ -149,7 +149,7 @@ class MediaDataEncoderTest : public testing::Test {
           new layers::RecyclingPlanarYCbCrImage(mRecycleBin);
       img->CopyData(mYUV);
       RefPtr<MediaData> frame = VideoData::CreateFromImage(
-          kImageSize, 0,
+          mSize, 0,
           // The precise time unit should be media::TimeUnit(1, FRAME_RATE)
           // instead of media::TimeUnit(FRAME_DURATION, USECS_PER_S)
           // (FRAME_DURATION microseconds), but this setting forces us to take

@@ -7,6 +7,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
+  PinnableSitesProvider:
+    "resource:///modules/asrouter/PinnableSitesProvider.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
@@ -89,6 +91,24 @@ export const ASRouterScreenUtils = {
     });
 
     return filteredScreens;
+  },
+
+  /**
+   * Resolve anything a screen needs computed in the parent before content
+   * renders it, for surfaces that can do this work before they paint (ex.
+   * Spotlight filling a `pinnable_sites` tile that has `source:
+   * "topFrecentSites"` with the user's most-used sites, which is the
+   * only current use case.)
+   *
+   * @param {object} content - Message content with a `screens` array.
+   * @returns {Promise<?object>} The content to render, prepared if needed, or
+   *   `null` if preparing it determined the message should not be shown at all.
+   */
+  async prepareContentForFirstPaint(content) {
+    if (!lazy.PinnableSitesProvider.hasPersonalizedTile(content)) {
+      return content;
+    }
+    return lazy.PinnableSitesProvider.populate(structuredClone(content));
   },
 
   /**

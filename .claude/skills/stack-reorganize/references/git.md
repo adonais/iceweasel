@@ -5,6 +5,8 @@ contract, the envision phase and the diagnosis. The commands assume a POSIX
 shell (on Windows, Git Bash or the MozillaBuild shell; cmd.exe eats the `^`
 in `HEAD^`).
 
+## Backup, staging and finishing the branch
+
 git has no operation log, no recorded conflicts and no `absorb`, so: back the
 branch up before the first rewrite and keep the backup until the series is
 submitted, prefer constructions that are correct by construction over long
@@ -29,7 +31,11 @@ git branch -f <branch> HEAD
 On the branch itself (`git reset --hard <base>` with it checked out) HEAD and
 the branch move together and this step falls away, but the reset moves
 whichever branch is checked out, so in a tree another agent can reach read
-`git branch --show-current` immediately before it. Check
+`git branch --show-current` immediately before it.
+
+## Checking a rewrite
+
+Check
 `git diff <backup> <branch>` after each rewrite of the whole branch and at the
 last leaf of a construction, whose tree differs by design until then; for a
 reorder it is **empty**. With a residue commit on top, `git diff <backup>
@@ -44,7 +50,10 @@ reading one pair. The markers:
   lost an edit to a remainder now below it, or a narrowed commit the pairing
   still recognizes. The pair prints the old subject, so a reworded commit
   shows its old one.
-- `<`: an absorbed or dropped commit, with no counterpart on the right.
+- `<`: an absorbed or dropped commit, with no counterpart on the right. The
+  pairing goes by similarity, so a target rebuilt from the absorbed commit's
+  lines can pair with the absorbed commit instead, leaving its own original as
+  `<`; read the subjects of each pair before calling a `<` absorbed.
 - `>`: a new commit, with none on the left. A narrowed commit the pairing no
   longer recognizes shows twice, its old form as `<` and its new form as `>`
   on a line that starts `-:`, which a filter on a leading number drops.
@@ -58,15 +67,18 @@ only the lines themselves:
 git show --format= -U0 <commit> | git patch-id --verbatim
 ```
 
+A matching id settles it; a different one does not yet mean different lines.
 The id covers the path headers, so a hunk re-targeted to another path, as a
-drop's cascade does, never matches; there compare the changed lines themselves:
+drop's cascade does, never matches, and a moved commit's diff can align a
+repeated line, such as a blank one, differently at its new depth. On a
+mismatch compare the changed lines themselves:
 
 ```
 diff <(git show --format= -U0 <a> | grep '^[-+]' | grep -vE '^(\+\+\+|---) ' | sort) \
      <(git show --format= -U0 <b> | grep '^[-+]' | grep -vE '^(\+\+\+|---) ' | sort)
 ```
 
-Empty means the same lines, in another file.
+Empty means the same lines, whatever their file or alignment.
 
 Inventory the range's renames and deletions before picking a construction;
 they decide which ones are legal:
@@ -75,7 +87,9 @@ they decide which ones are legal:
 git diff --name-status <base> <tip>
 ```
 
-**An empty diff is blind to misattribution.** A conflict resolved by taking one
+## An empty diff is blind to misattribution
+
+A conflict resolved by taking one
 side whole (`git checkout --theirs <file>`) can carry a change out of the
 commit whose message explains it and into another one, with the net diff still
 empty and the linter clean. After a rebase that conflicted, read each rewritten
@@ -138,16 +152,6 @@ Attribute by block: a block belongs to the commit that wrote most of it, a
 blank line to the block it separates, and a line a commit only extended is
 that commit's own work.
 
-Then grep the tip for each dead symbol, `git grep -n '\bsymbol\b' <tip> --
-<paths>`: a hit is a comment that still describes the dead model, and a rebuild
-that reproduces the tip byte for byte makes some commit write that stale
-comment at the symbol's birth. Collect the hits before building and fix them
-in a residue commit on top, which the owner is free to drop; the `git diff
-<backup> <branch>` check then takes its residue form. A dead data shape has no
-one name: grep for its removed field names too, and read the doc comment of
-every function whose signature the replacement changed, since a description
-of the old shape can name no dead symbol at all.
-
 The span from the first birth to the last death carries the dead model and is
 often much smaller than the full range; resplitting only it captures most of
 the churn win. Confirm the sub-range holds the bulk of the gap by measuring it
@@ -175,6 +179,19 @@ since blame at the parent sees the file under its old name and carries no
 alignment. After a rebuild that keeps the rename, the gap is that alignment
 plus twice the remaining in-range count, so read the `--origins` total rather
 than the gap.
+
+## Stale comments at the tip
+
+Before the build, grep the tip for each dead symbol the churn measurement
+found, `git grep -n '\bsymbol\b' <tip> -- <paths>`: a hit is a comment that
+still describes the dead model, and a rebuild that reproduces the tip byte for
+byte makes some commit write that stale comment at the symbol's birth. Collect
+the hits before building and fix them in a residue commit on top, which the
+owner is free to drop; the `git diff <backup> <branch>` check then takes its
+residue form. A dead data shape has no one name: grep for its removed field
+names too, and read the doc comment of every function whose signature the
+replacement changed, since a description of the old shape can name no dead
+symbol at all.
 
 ## Finding a forward reference
 
@@ -219,10 +236,11 @@ reference. Reorder so the introducing commit comes first, or absorb the
 reference into it. A reference to a name that exists at that depth is not a
 forward reference, whatever a later commit does with the name. The mirror
 defect, a comment at the tip naming a symbol the range removed, is what the
-tip grep under Measuring the churn finds. That stale comment is the residue
+tip grep under "Stale comments at the tip" finds. That stale comment is the residue
 commit's business, not this check's: a byte-exact rebuild makes some leaf
 write it at the symbol's birth, so exclude the tip's stale symbols from this
-grep and fix them on top.
+grep and fix them on top. A stale symbol that no commit of the rebuilt series
+defines is wrong from the leaf that writes the comment, so fix it in that leaf.
 
 ## Splits
 
@@ -253,7 +271,8 @@ The commands for `drop-superseded.md`, by its step.
    location, `git rm <path>` resolves the conflicted entry. A hunk written by
    hand during the cascade takes its text from the backup tip byte for byte,
    as under Absorbs, at the path where the text lives at the tip: the dropped
-   file's own path does not exist there. `GIT_EDITOR=true git rebase
+   file's own path does not exist there, and a directory the range keeps
+   mirrored takes the hand resolution in every copy. `GIT_EDITOR=true git rebase
    --continue` after each: the continue opens an editor on the resolved
    commit's message, which a non-interactive shell cannot answer.
 4. **Finish coupled changes at their source.** `git commit
@@ -261,7 +280,39 @@ The commands for `drop-superseded.md`, by its step.
    --autosquash <base>` with the base named explicitly (`--autosquash` without
    `-i` works from git 2.44).
 5. **Validate.** `git diff <backup> <branch>` must be empty for a net-zero
-   drop; `git reset --hard <backup>` returns to the input where it is not.
+   drop, and `git rev-list --count <base>..<branch>` two lower than on the
+   backup; `git reset --hard <backup>` returns to the input where either
+   fails.
+
+## Committing a rebuilt commit
+
+Commit every rebuilt commit, hand-written or restored, in any construction
+under Absorbs, Reorder or Fold-resplit, with `git commit -C <original>`, so it
+keeps the author, date, subject and `Differential Revision` trailer; where the
+body changes, `git commit -C <original>` then `git commit --amend -F <file>`.
+`git commit -m` or `-F` alone drops the author date and the trailer with no
+warning. `git log -1 --format=%B <new> | grep '^Differential Revision:'`
+confirms the trailer; `%(trailers)` does not parse that key.
+
+## Restoring paths from the backup tip
+
+`git restore --source=<backup-tip> --staged --worktree -- <paths>` runs in
+no-overlay mode by default: every tracked path the pathspec matches and the
+source lacks is removed, so a directory pathspec at a target commit also
+carries the deletions and renames that belong to later commits, the
+misattribution above. Inventory them first, at every restore of any
+construction:
+
+```
+git diff --name-status <target> <backup-tip> -- <paths>
+```
+
+Name files rather than directories where the target must keep a path the
+backup tip lacks, and stage by hand only what the pathspec did not name: a
+rename whose `<new>` alone is named leaves `<old>` in place, so `git rm <old>`
+goes with it. `git checkout <tree> -- <paths>` never removes a path and aborts
+on one the tree lacks. The whole-tree form, `:/`, is right only for the leaf
+whose tree is the end state.
 
 ## Absorbs
 
@@ -272,12 +323,13 @@ tip, or a path it touches belongs to several targets, take the bottom-up
 construction whatever the other paths do**; the others then cost one saved
 diff and one cascade per commit. The path partition only
 decides whether each bottom-up step is a whole-path restore or hand-written.
-Whatever the construction, commit every rebuilt commit with
-`git commit -C <original>`, then `git commit --amend -F <file>` where the body
-changes: `git commit -m` or `-F` alone drops the author date and the
-`Differential Revision` trailer with no warning.
+Whatever the construction, commit every rebuilt commit per "Committing a
+rebuilt commit" above and inventory before every restore per "Restoring paths
+from the backup tip" above.
 
-**By fixup**, where each target's part is a whole file. Drop the absorbed
+### By fixup
+
+Use it where each target's part is a whole file. Drop the absorbed
 commit, re-add each target's part as a fixup of that target, and squash them
 all in one rebase:
 
@@ -300,7 +352,9 @@ final text from the backup tip, the bottom-up construction below.
 Abort on a conflict during the autosquash rather than resolving it, which
 misattributes per above, and take the path rebuild instead.
 
-**By path rebuild**, where the hunks partition by path. At each target commit,
+### By path rebuild
+
+Use it where the hunks partition by path. At each target commit,
 take the paths it owns straight from the backup tip, so the content is correct
 by construction:
 
@@ -308,20 +362,8 @@ by construction:
 git restore --source=<backup-tip> --staged --worktree -- <paths>
 ```
 
-`git restore --source` runs in no-overlay mode by default: every tracked path
-the pathspec matches and the source lacks is removed, so a directory pathspec
-at a target commit also carries the deletions and renames that belong to
-later commits, the misattribution above. Inventory them first, name files
-rather than directories where the target must keep a path the backup tip
-lacks, and stage by hand only what the pathspec did not name: a rename whose
-`<new>` alone is named leaves `<old>` in place, so `git rm <old>` goes with
-it. `git checkout <tree> -- <paths>` never removes a path and aborts on one
-the tree lacks. Every restore in the bottom-up construction needs the same
-inventory:
-
-```
-git diff --name-status <target> <backup-tip> -- <paths>
-```
+Inventory first, per "Restoring paths from the backup tip" above: the restore
+removes what the backup tip lacks.
 
 The backup tip carries every later commit's contribution too, so where a
 commit above the target is being kept and touches the same paths, restoring
@@ -339,7 +381,9 @@ lands at false matches and reports success. Edit the file by hand from the tip
 and judge it by its own diff and by the leaf above's, each of which must be
 one concern alone, and by the per-commit gates.
 
-**Bottom-up from the backup tip**, where one path belongs to several targets
+### Bottom-up from the backup tip
+
+Use it where one path belongs to several targets
 and so cannot be restored whole at any one of them. Reset to the commit below
 the range and build upward. Re-add a commit that moves unchanged with
 `git cherry-pick <commit>`, which keeps its author, message and trailer where
@@ -353,19 +397,21 @@ rebuild. Write the early commits that share the path by hand, taking each block'
 text from the backup tip (`git show <backup-tip>:<path>`) byte for byte rather
 than retyping it, so the later whole-path restore adds nothing back; for the
 leaf directly below the tip, start from the tip's file and delete the lines the
-top leaf owns, which keeps everything else byte-identical by construction. A
+top leaf owns, which keeps everything else byte-identical by construction.
+Repeat that downward, each leaf's file being the one above it minus the lines
+the leaf above owns. Where that leaf's original commit still describes those
+lines, `git show --format= <original> -- <path> | git apply -R --reject`, run
+in a scratch directory holding the file at `<path>`, removes them without fuzz
+and leaves only the rejected hunks to write by hand. A
 file assembled outside the tree goes in through git, the `hash-object` route
 at the end of "Without touching the worktree" below. At each
-later commit restore the paths whose final content is that commit's. Commit
-every rebuilt commit, hand-written or restored, with `git commit -C <original>`
-so it keeps the author, date, subject and `Differential Revision` trailer
-(`git log -1 --format=%B <new> | grep '^Differential Revision:'` confirms the
-trailer; `%(trailers)` does not parse that key); where the message must change
-but the author and date stay, `git commit -C <original>` then `git commit
---amend -F <file>`. Nothing rebases, so no conflict arises and the net diff is
-empty by construction.
+later commit restore the paths whose final content is that commit's, and
+commit each per "Committing a rebuilt commit" above. Nothing rebases, so no
+conflict arises and the net diff is empty by construction.
 
-**Without touching the worktree**, where the checkout is not yours to edit, the
+### Without touching the worktree
+
+Where the checkout is not yours to edit, the
 same construction runs on a scratch index and loose objects, and the checkout
 stays at the old tip until the end. Assemble each hand-written file outside
 the tree from spans of the backup tip's blobs, then per commit:
@@ -432,8 +478,11 @@ the target. In git the fold needs no squash and the resplit is the bottom-up
 construction under Absorbs, whole (`git commit -C <original>` for a leaf equal
 to an input commit): the backup tip's tree is the end state, so
 build on the branch (`git reset --hard <base>`, then write or restore each
-leaf), take the last leaf with `git restore --source=<backup-tip> --staged
---worktree :/`, and cherry-pick back whatever sat above the range.
+leaf, inventorying each restore per "Restoring paths from the backup tip", or
+a directory pathspec carries a later commit's deletions into the leaf),
+take the last leaf with `git restore --source=<backup-tip> --staged
+--worktree :/`, the one leaf whose tree is the end state, and cherry-pick back
+whatever sat above the range.
 Fold-resplit is reserved for never-reviewed work, so `stack-split-commit`,
 which adds the handling of a revision already in review, is not needed.
 `fold-resplit.md` covers planning the leaves from the final state and building
@@ -446,12 +495,32 @@ end-state's whole tree is `git restore --source=<end-state> --staged
 
 ## Verifying every commit, not just the tip
 
+A build, a linter or a test run needs a real tree at each commit. On the
+branch, in a clean tree you own, `git rebase --exec '<command>' <base>` runs
+the command at every commit in turn and stops at the first failure (`warning:
+execution failed`); when every step passes nothing is rewritten and the
+commits keep their ids. A failed step is consumed, so `git rebase --continue`
+moves on without re-running it unless the rebase began with
+`--reschedule-failed-exec`: either amend the commit it stopped at under that
+flag and continue, or `git rebase --abort`, which returns to the branch, fix,
+and rerun.
+
 `mach lint` scores the worktree whichever commit you had in mind, so it cannot
 check the per-commit invariant `# Goals` asks for from the tip. A bare
 `./mach lint` scopes itself to the outgoing set against the default remote, so
 at a detached checkout of a commit it lints the files that commit's prefix
 changed, in that commit's tree; `./mach lint --outgoing <base>` names the base
 instead of the remote.
+
+The command can name the commit's own files, except at a commit that changes
+the linter itself (a rule, its helpers, the config), whose own files are the
+plugin's own sources, which the linter does not take as input, so the per-file
+form passes there without linting anything; the invariant at such a commit is
+that the whole tree lints clean under the changed rule:
+
+```
+git rebase --exec 'if git diff --quiet HEAD^ HEAD -- <linter-dir> <linter-config>; then ./mach lint -l <linter> $(git diff --name-only --diff-filter=d HEAD^ HEAD); else ./mach lint -l <linter> .; fi' <base>
+```
 
 Where the invariant is a whole-tree property git can read out of a commit - two
 directories that have to stay in sync, a generated file that has to match its
@@ -466,23 +535,7 @@ done
 ```
 
 A tree diff covers the file set as well as the content; `git ls-tree -r
-<commit> <path>` reads the set. A build, a linter or a test run needs a real
-tree. On the branch, in a clean tree you own, `git rebase --exec '<command>'
-<base>` runs the command at every commit in turn and stops at the first
-failure (`warning: execution failed`); when every step passes nothing is
-rewritten and the commits keep their ids. A failed step is consumed, so `git
-rebase --continue` moves on without re-running it unless the rebase began with
-`--reschedule-failed-exec`: either amend the commit it stopped at under that
-flag and continue, or `git rebase --abort`, which returns to the branch, fix,
-and rerun. The command can name the commit's own files, except at a commit
-that changes the linter itself (a rule, its helpers, the config), whose own
-files are the plugin's own sources, which the linter does not take as input,
-so the per-file form passes there without linting anything; the invariant at
-such a commit is that the whole tree lints clean under the changed rule:
-
-```
-git rebase --exec 'if git diff --quiet HEAD^ HEAD -- <linter-dir> <linter-config>; then ./mach lint -l <linter> $(git diff --name-only --diff-filter=d HEAD^ HEAD); else ./mach lint -l <linter> .; fi' <base>
-```
+<commit> <path>` reads the set.
 
 The command stays on one line: `--exec` rejects a command containing a
 newline, so a longer gate goes in a script file. `--diff-filter=d` keeps a path the commit deletes out of the list: `mach lint`
@@ -492,9 +545,9 @@ count under the same cross mark as a failure, so read the count, or let the
 rebase read the exit status. Send the command's output to a file under
 `artifacts/` (`{ ...; } >> artifacts/lint-<branch>.txt 2>&1` around the quoted
 command) and read the summary lines there; the rebase acts on the exit status
-either way. A message check run over the range scores the
-kept commits' verbatim messages too; a complaint there is the owner's, not the
-rebuild's.
+either way. A message check run over the range, or run by a hook on each
+commit the rebuild creates, scores the kept commits' verbatim messages too; a
+complaint there is the owner's, not the rebuild's.
 
 A stack that changes a lint plugin has that plugin's own test suite and eslint
 on its `.mjs` as per-commit gates too, run as the plugin's docs say (`npm`

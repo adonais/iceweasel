@@ -22,7 +22,7 @@ generated via `git format-patch`.
 
 :::{warning}
 Be mindful of not pushing security-sensitive commits to your personal fork.
-See [](<Fixing Security Bugs>).
+See {doc}`/bug-mgmt/processes/fixing-security-bugs`.
 :::
 
 1. Ensure you have a Git checkout already set up.

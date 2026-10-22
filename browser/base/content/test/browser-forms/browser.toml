@@ -7,10 +7,6 @@ support-files = ["head.js"]
 ["browser_selectpopup.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1329991
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1329991
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1661132, 1775896
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1661132, 1775896
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1661132, 1775896
 ]
 
 ["browser_selectpopup_checked.js"]

@@ -687,7 +687,7 @@ namespace xsimd
         }
 
         // mul_hi
-        template <class A, class T, typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+        template <class A, class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         XSIMD_INLINE batch<T, A> mul_hi(batch<T, A> const& lhs, batch<T, A> const& rhs, requires_arch<rvv>) noexcept
         {
             return detail_rvv::rvvmulh(lhs, rhs);
@@ -1251,9 +1251,9 @@ namespace xsimd
             XSIMD_RVV_OVERLOAD_INTS(rvvfcvt_f, (__riscv_vfcvt_f), , fvec(vec))
 
             template <class T, class U>
-            using rvv_enable_ftoi_t = std::enable_if_t<(sizeof(T) == sizeof(U) && std::is_floating_point<T>::value && !std::is_floating_point<U>::value), int>;
+            using rvv_enable_ftoi_t = std::enable_if_t<(sizeof(T) == sizeof(U) && std::is_floating_point_v<T> && !std::is_floating_point_v<U>), int>;
             template <class T, class U>
-            using rvv_enable_itof_t = std::enable_if_t<(sizeof(T) == sizeof(U) && !std::is_floating_point<T>::value && std::is_floating_point<U>::value), int>;
+            using rvv_enable_itof_t = std::enable_if_t<(sizeof(T) == sizeof(U) && !std::is_floating_point_v<T> && std::is_floating_point_v<U>), int>;
 
             template <class A, class T, class U, rvv_enable_ftoi_t<T, U> = 0>
             XSIMD_INLINE batch<U, A> fast_cast(batch<T, A> const& arg, batch<U, A> const&, requires_arch<rvv>) noexcept
@@ -1338,7 +1338,7 @@ namespace xsimd
         template <class A, size_t I, class T, detail::enable_arithmetic_t<T> = 0>
         XSIMD_INLINE T get(batch<T, A> const& arg, index<I>, requires_arch<rvv>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(I == 0)
+            if constexpr (I == 0)
             {
                 return detail_rvv::rvvmv_lane0(arg);
             }
@@ -1348,7 +1348,7 @@ namespace xsimd
         template <class A, size_t I, class T, detail::enable_arithmetic_t<T> = 0>
         XSIMD_INLINE std::complex<T> get(batch<std::complex<T>, A> const& arg, index<I>, requires_arch<rvv>) noexcept
         {
-            XSIMD_IF_CONSTEXPR(I == 0)
+            if constexpr (I == 0)
             {
                 return std::complex<T> { detail_rvv::rvvmv_lane0(arg.real()), detail_rvv::rvvmv_lane0(arg.imag()) };
             }
@@ -1498,7 +1498,7 @@ namespace xsimd
         template <class A, class T>
         XSIMD_INLINE uint64_t mask(batch_bool<T, A> const& self, requires_arch<rvv>) noexcept
         {
-            XSIMD_IF_CONSTEXPR((8 * sizeof(T)) >= batch_bool<T, A>::size)
+            if constexpr ((8 * sizeof(T)) >= batch_bool<T, A>::size)
             {
                 // (A) Easy case: the number of slots fits in T.
                 const auto zero = detail_rvv::broadcast<as_unsigned_integer_t<T>, types::detail::rvv_width_m1>(T(0));
@@ -1508,7 +1508,7 @@ namespace xsimd
                 auto r = __riscv_vredor(self.data.as_mask(), upowers, (typename decltype(zero)::register_type)zero, batch_bool<T, A>::size);
                 return detail_rvv::reduce_scalar<A, as_unsigned_integer_t<T>>(r);
             }
-            else XSIMD_IF_CONSTEXPR((2 * 8 * sizeof(T)) == batch_bool<T, A>::size)
+            else if constexpr ((2 * 8 * sizeof(T)) == batch_bool<T, A>::size)
             {
                 // (B) We need two rounds, one for the low part, one for the high part.
 

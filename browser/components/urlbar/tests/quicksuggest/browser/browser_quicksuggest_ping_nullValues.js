@@ -70,6 +70,8 @@ add_task(async function () {
       source,
       contextId: "",
       isClicked: false,
+      experimentName: "",
+      experimentBranch: "",
     },
     click: [
       {
@@ -87,6 +89,8 @@ add_task(async function () {
         source,
         contextId: "",
         isClicked: true,
+        experimentName: "",
+        experimentBranch: "",
       },
       {
         reportingUrl: null, // click_url
@@ -102,6 +106,8 @@ add_task(async function () {
         requestId: MerinoTestUtils.server.response.body.request_id,
         source,
         contextId: "",
+        experimentName: "",
+        experimentBranch: "",
       },
     ],
     commands: [
@@ -123,6 +129,8 @@ add_task(async function () {
             source,
             contextId: "",
             isClicked: false,
+            experimentName: "",
+            experimentBranch: "",
           },
           {
             reportingUrl: null, // not set
@@ -139,6 +147,8 @@ add_task(async function () {
             source,
             contextId: "",
             iabCategory: SUGGESTION.iab_category,
+            experimentName: "",
+            experimentBranch: "",
           },
         ],
       },
@@ -160,6 +170,8 @@ add_task(async function () {
             source,
             contextId: "",
             isClicked: false,
+            experimentName: "",
+            experimentBranch: "",
           },
         ],
       },

@@ -665,6 +665,36 @@ Unexpected results: 3
         self.logger.process_exit(1234, -signal.SIGTERM)
         self.assertIn("1234: killed by SIGTERM", self.loglines[0])
 
+    def test_assertion_failure(self):
+        self.logger.assertion_failure(
+            "MOZ_ASSERT", "x == y", file="dom/a.cpp", lineno=12, fatal=True
+        )
+        self.assertIn("ERROR MOZ_ASSERT: x == y [dom/a.cpp:12]", self.loglines[0])
+
+    def test_assertion_failure_non_fatal_without_location(self):
+        self.logger.assertion_failure("NS_ASSERTION", "boom: 'expr'")
+        self.assertIn("WARNING NS_ASSERTION: boom: 'expr'", self.loglines[0])
+
+    def test_ubsan_error(self):
+        self.logger.ubsan_error(
+            "undefined-behavior",
+            "applying non-zero offset 96 to null pointer",
+            file="ggml-c.c",
+            lineno=7106,
+            column=33,
+        )
+        self.assertIn(
+            "WARNING UndefinedBehaviorSanitizer: applying non-zero offset 96 "
+            "to null pointer [ggml-c.c:7106:33]",
+            self.loglines[0],
+        )
+
+    def test_ubsan_error_without_location(self):
+        self.logger.ubsan_error("undefined-behavior", "division by zero")
+        self.assertIn(
+            "WARNING UndefinedBehaviorSanitizer: division by zero", self.loglines[0]
+        )
+
     def test_expected_fail_log_conversion(self):
         """Test that ERROR TEST-EXPECTED-FAIL messages are converted to TODO"""
         self.set_position()

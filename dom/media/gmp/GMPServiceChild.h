@@ -49,6 +49,11 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
   static void UpdateGMPCapabilities(
       nsTArray<mozilla::dom::GMPCapabilityData>&& aCapabilities);
 
+  // Returns whether the GMP capabilities received from the parent process
+  // support aAPI with aTags. This does not need the GMP service to exist.
+  static bool HasCapabilityForAPI(const nsACString& aAPI,
+                                  const nsTArray<nsCString>& aTags);
+
   void BeginShutdown();
 
  protected:

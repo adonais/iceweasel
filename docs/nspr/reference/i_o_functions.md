@@ -35,48 +35,48 @@ the native system calls.
 
 Some file systems also differentiate drives or volumes.
 
-- {ref}`PR_Open`
+- {doc}`pr_open`
 
-- {ref}`PR_Delete`
+- {doc}`pr_delete`
 
-- {ref}`PR_GetFileInfo`
+- {doc}`pr_getfileinfo`
 
-- {ref}`PR_GetFileInfo64`
+- {doc}`pr_getfileinfo64`
 
-- {ref}`PR_Rename`
+- {doc}`pr_rename`
 
-- {ref}`PR_Access`
+- {doc}`pr_access`
 
-  - type {ref}`PRAccessHow`
+  - type {doc}`praccesshow`
 
 (functions-that-act-on-file-descriptors)=
 
 ## Functions that Act on File Descriptors
 
-- {ref}`PR_Close`
-- {ref}`PR_Read`
-- {ref}`PR_Write`
-- {ref}`PR_Writev`
-- {ref}`PR_GetOpenFileInfo`
-- {ref}`PR_GetOpenFileInfo64`
-- {ref}`PR_Seek`
-- {ref}`PR_Seek64`
-- {ref}`PR_Available`
-- {ref}`PR_Available64`
-- {ref}`PR_Sync`
-- {ref}`PR_GetDescType`
-- {ref}`PR_GetSpecialFD`
-- {ref}`PR_CreatePipe`
+- {doc}`pr_close`
+- {doc}`pr_read`
+- {doc}`pr_write`
+- {doc}`pr_writev`
+- {doc}`pr_getopenfileinfo`
+- {doc}`pr_getopenfileinfo64`
+- {doc}`pr_seek`
+- {doc}`pr_seek64`
+- {doc}`pr_available`
+- {doc}`pr_available64`
+- {doc}`pr_sync`
+- {doc}`pr_getdesctype`
+- {doc}`pr_getspecialfd`
+- {doc}`pr_createpipe`
 
 (directory-i-2fo-functions)=
 
 ## Directory I/O Functions
 
-- {ref}`PR_OpenDir`
-- {ref}`PR_ReadDir`
-- {ref}`PR_CloseDir`
-- {ref}`PR_MkDir`
-- {ref}`PR_RmDir`
+- {doc}`pr_opendir`
+- {doc}`pr_readdir`
+- {doc}`pr_closedir`
+- {doc}`pr_mkdir`
+- {doc}`pr_rmdir`
 
 (socket-manipulation-functions)=
 
@@ -86,43 +86,43 @@ The network programming interface presented here is a socket API modeled
 after the popular Berkeley sockets. Differences include the following:
 
 - The blocking socket functions in NSPR take a timeout parameter.
-- Two new functions, {ref}`PR_TransmitFile` and {ref}`PR_AcceptRead`, can
+- Two new functions, {doc}`pr_transmitfile` and {doc}`pr_acceptread`, can
   exploit the new system calls of some operating systems for higher
   performance.
 
 List of functions:
 
-- {ref}`PR_OpenUDPSocket`
-- {ref}`PR_NewUDPSocket`
-- {ref}`PR_OpenTCPSocket`
-- {ref}`PR_NewTCPSocket`
-- {ref}`PR_ImportTCPSocket`
-- {ref}`PR_Connect`
-- {ref}`PR_ConnectContinue`
-- {ref}`PR_Accept`
-- {ref}`PR_Bind`
-- {ref}`PR_Listen`
-- {ref}`PR_Shutdown`
-- {ref}`PR_Recv`
-- {ref}`PR_Send`
-- {ref}`PR_RecvFrom`
-- {ref}`PR_SendTo`
-- {ref}`PR_TransmitFile`
-- {ref}`PR_AcceptRead`
-- {ref}`PR_GetSockName`
-- {ref}`PR_GetPeerName`
-- {ref}`PR_GetSocketOption`
-- {ref}`PR_SetSocketOption`
+- {doc}`pr_openudpsocket`
+- {doc}`pr_newudpsocket`
+- {doc}`pr_opentcpsocket`
+- {doc}`pr_newtcpsocket`
+- {doc}`pr_importtcpsocket`
+- {doc}`pr_connect`
+- {doc}`pr_connectcontinue`
+- {doc}`pr_accept`
+- {doc}`pr_bind`
+- {doc}`pr_listen`
+- {doc}`pr_shutdown`
+- {doc}`pr_recv`
+- {doc}`pr_send`
+- {doc}`pr_recvfrom`
+- {doc}`pr_sendto`
+- {doc}`pr_transmitfile`
+- {doc}`pr_acceptread`
+- {doc}`pr_getsockname`
+- {doc}`pr_getpeername`
+- {doc}`pr_getsocketoption`
+- {doc}`pr_setsocketoption`
 
 (converting-between-host-and-network-addresses)=
 
 ## Converting Between Host and Network Addresses
 
-- {ref}`PR_ntohs`
-- {ref}`PR_ntohl`
-- {ref}`PR_htons`
-- {ref}`PR_htonl`
-- {ref}`PR_FamilyInet`
+- {doc}`pr_ntohs`
+- {doc}`pr_ntohl`
+- {doc}`pr_htons`
+- {doc}`pr_htonl`
+- {doc}`pr_familyinet`
 
 (memory-mapped-i-2fo-functions)=
 
@@ -135,16 +135,16 @@ accomplished by normal memory accesses.
 Memory-mapped I/O functions are currently implemented for Unix, Linux,
 Mac OS X, and Win32 only.
 
-- {ref}`PR_CreateFileMap`
-- {ref}`PR_MemMap`
-- {ref}`PR_MemUnmap`
-- {ref}`PR_CloseFileMap`
+- {doc}`pr_createfilemap`
+- {doc}`pr_memmap`
+- {doc}`pr_unmap`
+- {doc}`pr_closefilemap`
 
 (anonymous-pipe-function)=
 
 ## Anonymous Pipe Function
 
-- {ref}`PR_CreatePipe`
+- {doc}`pr_createpipe`
 
 (polling-functions)=
 
@@ -153,8 +153,8 @@ Mac OS X, and Win32 only.
 This section describes two of the most important polling functions
 provided by NSPR:
 
-- {ref}`PR_Poll`
-- {ref}`PR_GetConnectStatus`
+- {doc}`pr_poll`
+- {doc}`pr_getconnectstatus`
 
 (manipulating-layers)=
 
@@ -195,11 +195,11 @@ code are equivalent:
 
 `rv = PR_PushIOLayer(stack, PR_GetLayersIdentity(stack), my_layer);`
 
-- {ref}`PR_GetUniqueIdentity`
-- {ref}`PR_GetNameForIdentity`
-- {ref}`PR_GetLayersIdentity`
-- {ref}`PR_GetIdentitiesLayer`
-- {ref}`PR_GetDefaultIOMethods`
-- {ref}`PR_CreateIOLayerStub`
-- {ref}`PR_PushIOLayer`
-- {ref}`PR_PopIOLayer`
+- {doc}`pr_getuniqueidentity`
+- {doc}`pr_getnameforidentity`
+- {doc}`pr_getlayersidentity`
+- {doc}`pr_getidentitieslayer`
+- {doc}`pr_getdefaultiomethods`
+- {doc}`pr_createiolayerstub`
+- {doc}`pr_pushiolayer`
+- {doc}`pr_popiolayer`

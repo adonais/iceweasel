@@ -100,6 +100,33 @@ object Relations {
         }
 
     /**
+     * Does [element]'s preference row own a check box in the given [checked] state? Unlike a switch row, a
+     * `CheckBoxPreference` nests its title and the check box as siblings, so the check box is reached as the title's
+     * sibling's child: `hasSibling(withChild(checkBox))`. Espresso only - a View-hierarchy question. Mirrors the legacy
+     * `hasSibling(withChild(allOf(withClassName(endsWith("CheckBox")), isChecked(...))))`.
+     */
+    fun hasSiblingCheckBox(element: UiElement, checked: Boolean): Boolean =
+        element.backend().let { raw ->
+            raw is ViewInteraction &&
+                runCatching {
+                        raw.check(
+                            matches(
+                                hasSibling(
+                                    withChild(
+                                        allOf(
+                                            withClassName(endsWith("CheckBox")),
+                                            if (checked) isChecked() else isNotChecked(),
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        true
+                    }
+                    .getOrDefault(false)
+        }
+
+    /**
      * Does [upper] render above [lower]? Compares the top edge of each element's on-screen bounds, so it answers "A
      * comes before B" for lists whose rows are not one queryable collection - the History screen's UiAutomator
      * RecyclerView, where the Compose collection verbs cannot help. Espresso views have no cheap bounds query here and

@@ -82,7 +82,7 @@ class ShareUiDevicesObserver(
         }
     }
 
-    private fun refreshDevices(network: Network?) {
+    internal fun refreshDevices(network: Network?) {
         scope.launch {
             store.dispatch(ShareUiAction.Loading)
 

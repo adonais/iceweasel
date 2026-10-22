@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,13 +23,13 @@ import mozilla.components.feature.intent.ext.sanitize
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.GoogleLens
 import org.mozilla.fenix.GleanMetrics.SearchWidget
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.LensImageUploader
 import org.mozilla.fenix.components.lens.LensCameraActivity
+import org.mozilla.fenix.components.lens.runLensUpload
 import org.mozilla.fenix.components.showQrScanConfirmationDialog
 import org.mozilla.fenix.components.showQrScanInvalidUrlDialog
 import org.mozilla.fenix.ext.components
@@ -46,14 +45,7 @@ class LensSearchActivity : AppCompatActivity() {
 
     @VisibleForTesting
     internal var uploader: LensImageUploader? = null
-        get() =
-            field
-                ?: LensImageUploader(
-                        context = this,
-                        client = components.core.client,
-                        userAgent = components.core.engine.settings.userAgentString ?: "",
-                    )
-                    .also { field = it }
+        get() = field ?: components.lensImageUploader.also { field = it }
 
     @VisibleForTesting internal var uploadDispatcher: CoroutineDispatcher = Dispatchers.Main
 
@@ -70,7 +62,7 @@ class LensSearchActivity : AppCompatActivity() {
         // still delivered to the re-registered launcher above.
         if (savedInstanceState == null) {
             SearchWidget.lensButton.record(NoExtras())
-            cameraLauncher.launch(LensCameraActivity.newIntent(this))
+            cameraLauncher.launch(LensCameraActivity.newIntent(this, isPrivate = false))
         }
     }
 
@@ -85,6 +77,13 @@ class LensSearchActivity : AppCompatActivity() {
         val qrString = data?.getStringExtra(LensCameraActivity.EXTRA_SCAN_RESULT_DATA)
         if (!qrString.isNullOrEmpty()) {
             handleQrScanResult(qrString)
+            return
+        }
+
+        val resultUrl = data?.getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL)
+        if (resultUrl != null) {
+            forwardToBrowser(resultUrl)
+            finish()
             return
         }
 
@@ -126,20 +125,7 @@ class LensSearchActivity : AppCompatActivity() {
         lifecycleScope.launch(uploadDispatcher) {
             // The widget always opens results in a normal tab, so the upload never runs in the
             // private cookie context.
-            val uploadResult =
-                try {
-                    uploader?.upload(imageUri, isPrivate = false)
-                } catch (e: IOException) {
-                    null
-                }
-            val resultUrl = uploadResult?.resultUrl
-            GoogleLens.searchCompleted.record(
-                GoogleLens.SearchCompletedExtra(
-                    succeeded = resultUrl != null,
-                    httpStatusCode = uploadResult?.httpStatusCode,
-                    source = source,
-                )
-            )
+            val resultUrl = runLensUpload(source) { uploader?.upload(imageUri, isPrivate = false) }?.resultUrl
             if (resultUrl != null) {
                 forwardToBrowser(resultUrl)
             }

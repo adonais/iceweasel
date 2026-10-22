@@ -6,7 +6,7 @@
 
 use log::{debug, error, trace};
 use pkcs11_bindings::*;
-use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
+use rsclientcerts::manager::Manager;
 use rsclientcerts::{
     declare_pkcs11_find_functions, declare_pkcs11_informational_functions,
     declare_pkcs11_pin_functions, declare_pkcs11_session_functions, declare_pkcs11_sign_functions,
@@ -18,7 +18,7 @@ mod backend;
 
 use backend::Backend;
 
-static MANAGER: Mutex<Option<Manager<Backend, AlwaysSearchingForClientCerts>>> = Mutex::new(None);
+static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
 
 macro_rules! try_to_get_manager_guard {
     () => {
@@ -36,14 +36,6 @@ macro_rules! manager_guard_to_manager {
             None => return CKR_DEVICE_ERROR,
         }
     };
-}
-
-struct AlwaysSearchingForClientCerts;
-
-impl IsSearchingForClientCerts for AlwaysSearchingForClientCerts {
-    fn is_searching_for_client_certs() -> bool {
-        true
-    }
 }
 
 extern "C" fn C_Initialize(_pInitArgs: CK_VOID_PTR) -> CK_RV {

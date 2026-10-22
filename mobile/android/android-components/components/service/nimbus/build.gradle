@@ -80,14 +80,6 @@ nimbus {
     // The path to the Nimbus feature manifest file
     manifestFile = "messaging.fml.yaml"
 
-    // Map from the variant name to the channel as experimenter and nimbus understand it.
-    // If nimbus's channels were accurately set up well for this project, then this
-    // shouldn't be needed.
-    channels = [
-            debug: "debug",
-            release: "release",
-    ]
-
     // This is an optional value, and updates the plugin to use a copy of application
     // services. The path should be relative to the root project directory.
     // *NOTE*: This example will not work for all projects, but should work for Fenix, Focus, and Android Components

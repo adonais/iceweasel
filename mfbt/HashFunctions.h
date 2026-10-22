@@ -212,7 +212,7 @@ template <typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 template <typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
 [[nodiscard]] constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
   // Hash using AddUintNToHash with the underlying type of the enum type
-  using UnderlyingType = typename std::underlying_type<T>::type;
+  using UnderlyingType = std::underlying_type_t<T>;
   return detail::AddUintNToHash<sizeof(UnderlyingType)>(
       aHash, static_cast<UnderlyingType>(aA));
 }

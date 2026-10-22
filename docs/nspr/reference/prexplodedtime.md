@@ -23,15 +23,15 @@ typedef struct PRExplodedTime {
 
 ## Description
 
-The {ref}`PRExplodedTime` structure represents clock/calendar time.
-{ref}`PRExplodedTime` has the familiar time components: year, month, day of
+The {doc}`prexplodedtime` structure represents clock/calendar time.
+{doc}`prexplodedtime` has the familiar time components: year, month, day of
 month, hour, minute, second. It also has a microsecond component, as
 well as the day of week and the day of year. In addition,
-{ref}`PRExplodedTime` includes a {ref}`PRTimeParameters` structure
+{doc}`prexplodedtime` includes a {doc}`prtimeparameters` structure
 representing the local time zone information, so that the time point is
 non-ambiguously specified.
 
-The essential members of {ref}`PRExplodedTime` are:
+The essential members of {doc}`prexplodedtime` are:
 
 > - `tm_year`: absolute year, AD (by "absolute," we mean if the year is
 >   2000, this field's value is 2000).
@@ -48,7 +48,7 @@ The essential members of {ref}`PRExplodedTime` are:
 > - `tm_params`: a `PRTimeParameters` structure representing the
 >   local time zone information.
 
-The nonessential members of {ref}`PRExplodedTime` are:
+The nonessential members of {doc}`prexplodedtime` are:
 
 > - `tm_wday`: day of week. The range is [0, 6]. 0 is Sunday, 1 is
 >   Monday, and 6 is Saturday.
@@ -56,10 +56,10 @@ The nonessential members of {ref}`PRExplodedTime` are:
 >   January.
 
 On input to NSPR functions, only the essential members of
-{ref}`PRExplodedTime` must be specified. The two nonessential members (day
+{doc}`prexplodedtime` must be specified. The two nonessential members (day
 of week and day of year) are ignored by NSPR functions as input. When an
-NSPR function returns a {ref}`PRExplodedTime` object or sets a
-{ref}`PRExplodedTime` object as output, all of the {ref}`PRExplodedTime`
+NSPR function returns a {doc}`prexplodedtime` object or sets a
+{doc}`prexplodedtime` object as output, all of the {doc}`prexplodedtime`
 members are set, including the nonessential members. You can also use
 `PR_NormalizeTime()` to calculate the values of the nonessential
 members.

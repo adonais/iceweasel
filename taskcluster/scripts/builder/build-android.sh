@@ -34,6 +34,7 @@ eval $PRE_GRADLEW
 
 eval $GET_SECRETS
 
-$GRADLE listRepositories $GRADLEW_ARGS
+mkdir -p "$BUILD_METRICS_DIR"
+$GRADLE listRepositories $GRADLEW_ARGS -PbuildMetricsOutputDir="$BUILD_METRICS_DIR"
 
 eval $POST_GRADLEW

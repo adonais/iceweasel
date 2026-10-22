@@ -64,7 +64,8 @@ h6 {
   flex-direction: column;
   gap: var(--space-large);
 
-  fieldset[aria-orientation="horizontal"] & {
+  fieldset[aria-orientation="horizontal"] &,
+  &[aria-orientation="horizontal"] {
     flex-direction: row;
     flex-wrap: wrap;
     row-gap: var(--fieldset-gap-row);

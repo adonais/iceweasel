@@ -24,6 +24,7 @@
       'android_instrumentation_test_apk': {},
       'audio_decoder_unittests': {},
       'audio_engine_tests': {},
+      'audio_processing_unittests': {},
       'call_tests': {},
       'common_audio_unittests': {},
       'common_video_unittests': {},
@@ -76,6 +77,7 @@
       # keep-sorted start block=yes
       'audio_decoder_unittests': {},
       'audio_engine_tests': {},
+      'audio_processing_unittests': {},
       'call_tests': {},
       'common_audio_unittests': {},
       'common_video_unittests': {},
@@ -175,6 +177,7 @@
       },
       'audio_decoder_unittests': {},
       'audio_engine_tests': {},
+      'audio_processing_unittests': {},
       'call_tests': {},
       'common_audio_unittests': {},
       'common_video_unittests': {},

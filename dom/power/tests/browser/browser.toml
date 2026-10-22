@@ -1,0 +1,9 @@
+[DEFAULT]
+
+["browser_hal_during_content_shutdown.js"]
+run-if = [ # needs full content process shutdown
+  "debug",
+  "asan",
+  "tsan",
+  "ccov",
+]

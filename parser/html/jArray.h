@@ -92,7 +92,7 @@ class autoJArray {
 
  public:
   L length;
-  autoJArray() : arr(0), length(0) {}
+  autoJArray() : arr(nullptr), length(0) {}
   MOZ_IMPLICIT autoJArray(const jArray<T, L>& other)
       : arr(other.arr), length(other.length) {}
   ~autoJArray() { delete[] arr; }

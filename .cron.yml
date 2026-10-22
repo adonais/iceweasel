@@ -361,12 +361,14 @@ jobs:
           - autoland
           - mozilla-beta
           - mozilla-release
+          - mozilla-esr153
       when:
           by-project:
               autoland: [{hour: 6, minute: 45}, {hour: 18, minute: 45}]
               # 4h before launch of `daily-releases`
               mozilla-beta: [{hour: 9, minute: 00}]
               mozilla-release: [{weekday: 'Sunday', hour: 19, minute: 00}]
+              mozilla-esr153: [{weekday: 'Sunday', hour: 19, minute: 00}]
               # No default
 
     - name: system-symbols
@@ -571,3 +573,14 @@ jobs:
       # Replaces manual smoke tests from the DevTools release checklist.
       when:
           - {hour: 8, minute: 0}
+
+    - name: appservices
+      job:
+          type: decision-task
+          treeherder-symbol: as
+          target-tasks-method: appservices
+          optimize-target-tasks: false
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {hour: 12, minute: 0}

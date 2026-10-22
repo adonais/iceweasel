@@ -46,7 +46,7 @@ class nsAHtml5TreeBuilderState {
 
   virtual bool isQuirks() = 0;
 
-  virtual ~nsAHtml5TreeBuilderState() {}
+  virtual ~nsAHtml5TreeBuilderState() = default;
 };
 
 #endif /* nsAHtml5TreeBuilderState_h */

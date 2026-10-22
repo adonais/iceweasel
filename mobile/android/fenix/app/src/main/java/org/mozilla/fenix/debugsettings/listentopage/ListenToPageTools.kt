@@ -6,7 +6,6 @@ package org.mozilla.fenix.debugsettings.listentopage
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,20 +22,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import java.util.Locale
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.button.FilledButton
-import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.feature.listentopage.ArticleProgress
 import mozilla.components.feature.listentopage.ListenAction
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.feature.listentopage.listenReducer
-import mozilla.components.feature.listentopage.ui.VoiceSelection
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private const val MILLIS_PER_SECOND = 1000
@@ -49,8 +45,6 @@ private const val MILLIS_PER_SECOND = 1000
  */
 @Composable
 fun ListenToPageTools(listenStore: ListenStore, browserStore: BrowserStore) {
-    var voicesExpanded by remember { mutableStateOf(false) }
-    var languageTag by remember { mutableStateOf(Locale.getDefault().toLanguageTag()) }
     var showingLog by remember { mutableStateOf(false) }
 
     // Recorded out here rather than inside the log, which is only composed while it is on screen. The article's
@@ -69,29 +63,20 @@ fun ListenToPageTools(listenStore: ListenStore, browserStore: BrowserStore) {
 
     ListenToPageToolsContent(
         showingLog = showingLog,
-        languageTag = languageTag,
-        voicesExpanded = voicesExpanded,
         lengthChanges = lengthChanges,
         listenStore = listenStore,
         browserStore = browserStore,
-        onChangeLangTag = { languageTag = it },
         onChangeLogVisibility = { showingLog = it },
-        onChangeVoiceListVisibility = { voicesExpanded = it },
     )
 }
 
 @Composable
-@Suppress("LongParameterList")
 private fun ListenToPageToolsContent(
     showingLog: Boolean,
-    languageTag: String,
-    voicesExpanded: Boolean,
     lengthChanges: List<LengthChange>,
     listenStore: ListenStore,
     browserStore: BrowserStore,
-    onChangeLangTag: (String) -> Unit,
     onChangeLogVisibility: (Boolean) -> Unit,
-    onChangeVoiceListVisibility: (Boolean) -> Unit,
 ) {
     val listenState by listenStore.stateFlow.collectAsState()
 
@@ -110,42 +95,11 @@ private fun ListenToPageToolsContent(
                 FilledButton(text = "Listen") {
                     browserStore.state.selectedTab?.let {
                         listenStore.dispatch(ListenAction.Session.ListenRequested(tabId = it.id, url = it.content.url))
+                        listenStore.dispatch(ListenAction.Controls.PlayPauseClicked)
                     }
                 }
 
                 FilledButton(text = "Timeline log") { onChangeLogVisibility(true) }
-
-                TextField(
-                    value = languageTag,
-                    onValueChange = onChangeLangTag,
-                    placeholder = "en-US",
-                    errorText = "",
-                    modifier = Modifier.fillMaxWidth(),
-                    label = "Article language tag",
-                )
-
-                FilledButton(text = "Load voices for this language") {
-                    listenStore.dispatch(ListenAction.Session.StopRequested)
-                    listenStore.dispatch(ListenAction.Content.ContentReady(languageTag))
-                }
-
-                Text(
-                    text =
-                        "Loaded ${listenState.voiceState.availableVoices.size} voice(s) for " +
-                            "${listenState.languageTag ?: "nothing"}, ${listenState.voiceState.loadState}",
-                    style = FirefoxTheme.typography.caption,
-                )
-
-                FilledButton(text = "Open voice selection") {
-                    onChangeLogVisibility(true)
-                }
-                VoiceSelection(
-                    expanded = voicesExpanded,
-                    availableVoices = listenState.voiceState.availableVoices,
-                    selectedVoice = listenState.voiceState.selectedVoice,
-                    onVoiceClick = { listenStore.dispatch(ListenAction.Voices.VoiceSelected(it)) },
-                    onDismissRequest = { onChangeVoiceListVisibility(false) },
-                )
             }
         }
     }

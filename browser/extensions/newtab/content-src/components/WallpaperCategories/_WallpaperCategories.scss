@@ -283,10 +283,31 @@ button.arrow-button {
       // arrow keys, so the two cannot drift apart.
       grid-template-columns: repeat(var(--your-images-columns, 3), 1fr);
 
-      // Thumbnails arrive after the picker opens, so a saved image has nothing
-      // to show for a moment. Without this the tile is an empty hole.
-      .wallpaper-input {
+      // A CSS background keeps the full resolution decoded surface alive. An
+      // img is decoded at the size it is drawn. The input stays on top so its
+      // ring, hover and focus styles are unchanged.
+      .your-images-preview {
         background-color: var(--newtab-background-color-secondary);
+        block-size: 86px;
+        border-radius: var(--border-radius-medium);
+        inline-size: 100%;
+        inset-block-start: 0;
+        inset-inline: 0;
+        object-fit: cover;
+        pointer-events: none;
+        position: absolute;
+      }
+
+      // Transparent so the picture behind it shows through. The color is on
+      // the img, which is what the tile shows before the picture loads.
+      .wallpaper-input {
+        background-color: transparent;
+        position: relative;
+      }
+
+      // Dimming the input alone would do nothing now that it is transparent.
+      .your-images-item:hover .your-images-preview {
+        filter: brightness(55%);
       }
 
       .your-images-item {
@@ -410,13 +431,52 @@ button.arrow-button {
   }
 }
 
+// The folder tile draws its picture the same way the tiles inside it do, so
+// one saved photo does not hold a full resolution decoded surface.
+.category-list .wallpaper-input.your-images-folder {
+  position: relative;
+
+  // An img is a replaced element, so inset alone leaves it at its intrinsic
+  // size. The sizes are what keep the decode down to the tile.
+  .your-images-preview {
+    background-color: var(--newtab-background-color-secondary);
+    block-size: 100%;
+    border-radius: var(--border-radius-medium);
+    inline-size: 100%;
+    inset: 0;
+    object-fit: cover;
+    pointer-events: none;
+    position: absolute;
+  }
+}
+
 // A saved image can be any color, so a band of the panel color sits between
-// the picture and the accent ring. The folder tile shows one of those images.
-.wallpaper-list.category fieldset.your-images .wallpaper-input:checked,
-.category-list .wallpaper-input.your-images-folder.selected {
+// the picture and the accent ring.
+.wallpaper-list.category fieldset.your-images .wallpaper-input:checked {
   box-shadow:
     inset 0 0 0 2px var(--newtab-background-color-secondary),
     inset 0 0 0 5px var(--color-accent-primary);
+}
+
+// On the folder the picture is a child of the button, and an inset shadow
+// paints under child content, so the ring goes on an overlay above it. The
+// tiles inside keep theirs: there the input is a sibling over the picture.
+.category-list .wallpaper-input.your-images-folder.selected {
+  // Without this the ring every .wallpaper-input gets when it is selected
+  // stays behind the picture, showing only where the rounded corners of the
+  // two boxes part company.
+  box-shadow: none;
+
+  &::after {
+    border-radius: var(--border-radius-medium);
+    box-shadow:
+      inset 0 0 0 2px var(--newtab-background-color-secondary),
+      inset 0 0 0 5px var(--color-accent-primary);
+    content: '';
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+  }
 }
 
 // Touch and other pointers with no hover cannot reveal the remove button, so
@@ -444,6 +504,7 @@ button.arrow-button {
   }
 
   .wallpaper-list.category fieldset.your-images .wallpaper-input:hover,
+  .wallpaper-list.category fieldset.your-images .your-images-item:hover .your-images-preview,
   .category-list .wallpaper-input.your-images-folder:hover {
     filter: none;
   }
@@ -455,6 +516,11 @@ button.arrow-button {
     border-color: var(--border-color-selected);
     border-width: calc(var(--border-width) * 3);
     box-shadow: none;
+  }
+
+  // The border above is what marks the folder here, so the ring overlay goes.
+  .category-list .wallpaper-input.your-images-folder.selected::after {
+    content: none;
   }
 
   // Keep the ghost family rather than the static background, which is a raw

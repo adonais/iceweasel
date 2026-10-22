@@ -96,9 +96,10 @@ class GoogleLensSearchTest : BaseTest() {
             .respondWith(Instrumentation.ActivityResult(RESULT_OK, Intent().apply { data = galleryImageUri }))
         googleLens.mozClick(GoogleLensSelectors.GALLERY_BUTTON)
 
-        // Deterministic boundary: the picker was launched and the selection was accepted (Lens camera closed). The
-        // uploaded-image Lens result opens in a tab only after a live upload to Google, so it stays a manual step.
+        // Deterministic boundary: the picker was launched and the selection was accepted, so the upload loading screen
+        // replaced the camera. The uploaded-image Lens result opens in a tab only after a live upload to Google, so it
+        // stays a manual step.
         intended(hasAction(MediaStore.ACTION_PICK_IMAGES))
-        googleLens.mozWaitUntilAbsent(GoogleLensSelectors.GALLERY_BUTTON)
+        googleLens.mozVerify(GoogleLensSelectors.UPLOAD_LOADING_STATUS)
     }
 }

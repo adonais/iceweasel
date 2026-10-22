@@ -58,7 +58,7 @@ static PackedRegisterMask ReadRegisterMask(CompactBufferReader& stream) {
 static void WriteFloatRegisterMask(CompactBufferWriter& stream,
                                    FloatRegisters::SetType bits) {
   switch (sizeof(FloatRegisters::SetType)) {
-#ifdef JS_CODEGEN_ARM64
+#if defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64)
     case 16:
       stream.writeUnsigned64(bits.low());
       stream.writeUnsigned64(bits.high());
@@ -82,7 +82,7 @@ static void WriteFloatRegisterMask(CompactBufferWriter& stream,
 static FloatRegisters::SetType ReadFloatRegisterMask(
     CompactBufferReader& stream) {
   switch (sizeof(FloatRegisters::SetType)) {
-#ifdef JS_CODEGEN_ARM64
+#if defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64)
     case 16: {
       uint64_t low = stream.readUnsigned64();
       uint64_t high = stream.readUnsigned64();

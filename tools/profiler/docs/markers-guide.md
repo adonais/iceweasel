@@ -410,7 +410,7 @@ The first step is to determine the location of the marker type definition:
 
 Each marker type must be defined once and only once.
 The definition is a C++ `struct`, that inherits from `BaseMarkerType`, its identifier is used when recording
-markers of that type in C++.
+markers of that type in C++. Marker types that do not inherit from `BaseMarkerType` are rejected at compile time.
 By convention, the suffix "Marker" is recommended to better distinguish them
 from non-profiler entities in the source.
 
@@ -485,7 +485,11 @@ contains (file paths, host names, preference values) is kept.
       {"number", MS::InputType::Uint32t, "Number", MS::Format::Integer}};
 ```
 
-In addition, a `StreamJSONMarkerData` function must be defined that matches
+If the arguments given to PROFILER_MARKER match the `PayloadFields`, both in
+order and number, nothing else is needed: they are stored and streamed using
+the types described by each field's `InputType`.
+
+Otherwise, a `StreamJSONMarkerData` function must be defined that matches
 the C++ argument types to PROFILER_MARKER.
 
 The first function parameters is always `SpliceableJSONWriter& aWriter`,

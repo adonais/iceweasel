@@ -646,7 +646,8 @@ void PDMFactory::CreateRddPDMs() {
   if (StaticPrefs::media_ffmpeg_enabled() &&
       StaticPrefs::media_rdd_ffmpeg_enabled()) {
     // Prefer system FFmpeg first only when Vulkan is wanted and
-    // PreferSystemFFmpegForVulkan() is true; otherwise leave ffvpx first.
+    // media.hardware-video-decoding-vulkan.prefer-system-ffmpeg is true;
+    // otherwise leave ffvpx first.
     const bool preferSystemForVulkan =
         gfx::gfxVars::CanUseVulkanHardwareVideoDecoding() &&
         FFmpegRuntimeLinker::PreferSystemFFmpegForVulkan();

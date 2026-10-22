@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-five-star.tagmap.d.ts" />
+
 import { ifDefined, html, classMap } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
@@ -27,7 +29,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozFiveStar.ftl");
  * @property {number} rating - The rating out of 5.
  * @property {string} title - The title text.
  */
-export default class MozFiveStar extends MozLitElement {
+export class MozFiveStar extends MozLitElement {
   static properties = {
     rating: { type: Number, reflect: true },
     title: { type: String },

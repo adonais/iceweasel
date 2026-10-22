@@ -16,32 +16,32 @@ operating systems.
 
 ## Using Named Shared Memory Functions
 
-{ref}`PR_OpenSharedMemory` creates the shared memory segment, if it does
+{doc}`pr_opensharedmemory` creates the shared memory segment, if it does
 not already exist, or opens a connection with the existing shared memory
 segment if it already exists.
 
-{ref}`PR_AttachSharedMemory` should be called following
-{ref}`PR_OpenSharedMemory` to map the memory segment to an address in the
-application's address space. {ref}`PR_AttachSharedMemory` may also be
+{doc}`pr_attachsharedmemory` should be called following
+{doc}`pr_opensharedmemory` to map the memory segment to an address in the
+application's address space. {doc}`pr_attachsharedmemory` may also be
 called to remap a shared memory segment after detaching the same
 `PRSharedMemory` object. Be sure to detach it when you're finished.
 
-{ref}`PR_DetachSharedMemory` should be called to unmap the shared memory
+{doc}`pr_detachsharedmemory` should be called to unmap the shared memory
 segment from the application's address space.
 
-{ref}`PR_CloseSharedMemory` should be called when no further use of the
+{doc}`pr_closesharedmemory` should be called when no further use of the
 `PRSharedMemory` object is required within a process. Following a call
-to {ref}`PR_CloseSharedMemory`, the `PRSharedMemory` object is invalid
+to {doc}`pr_closesharedmemory`, the `PRSharedMemory` object is invalid
 and cannot be reused.
 
-{ref}`PR_DeleteSharedMemory` should be called before process termination.
-After you call {ref}`PR_DeleteSharedMemory`, any further use of the shared
+{doc}`pr_deletesharedmemory` should be called before process termination.
+After you call {doc}`pr_deletesharedmemory`, any further use of the shared
 memory associated with the name may cause unpredictable results.
 
 ## Filenames
 
-The name passed to {ref}`PR_OpenSharedMemory` should be a valid filename
-for a Unix platform. {ref}`PR_OpenSharedMemory` creates file using the name
+The name passed to {doc}`pr_opensharedmemory` should be a valid filename
+for a Unix platform. {doc}`pr_opensharedmemory` creates file using the name
 passed in. Some platforms may mangle the name before creating the file
 and the shared memory. The Unix implementation may use SysV IPC shared
 memory, Posix shared memory, or memory mapped files; the filename may be
@@ -52,7 +52,7 @@ No assumptions about the persistence of data in the named file should be
 made. Depending on platform, the shared memory may be mapped onto system
 paging space and be discarded at process termination.
 
-All names provided to {ref}`PR_OpenSharedMemory` should be valid filename
+All names provided to {doc}`pr_opensharedmemory` should be valid filename
 syntax or name syntax for shared memory for the target platform.
 Referenced directories should have permissions appropriate for writing.
 
@@ -82,8 +82,8 @@ On Windows platforms, no special security measures are provided.
 
 # Named Shared Memory Functions
 
-> - {ref}`PR_OpenSharedMemory`
-> - {ref}`PR_AttachSharedMemory`
-> - {ref}`PR_DetachSharedMemory`
-> - {ref}`PR_CloseSharedMemory`
-> - {ref}`PR_DeleteSharedMemory`
+> - {doc}`pr_opensharedmemory`
+> - {doc}`pr_attachsharedmemory`
+> - {doc}`pr_detachsharedmemory`
+> - {doc}`pr_closesharedmemory`
+> - {doc}`pr_deletesharedmemory`

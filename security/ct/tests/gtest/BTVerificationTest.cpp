@@ -32,7 +32,7 @@ class BTVerificationTest
   }
 };
 
-// This comes from testing/mozharness/test/test_mozilla_merkle.py
+// This comes from python/mozrelease/test/test_merkle.py
 static const char* kValidInclusionProofHex =
     "020000"
     "0000000000000007"  // 7 total nodes

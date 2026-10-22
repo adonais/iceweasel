@@ -5,6 +5,7 @@
 package org.mozilla.gecko.media;
 
 import android.util.Log;
+import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.media3.common.C;
 import androidx.media3.common.Format;
@@ -45,11 +46,6 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
   protected long mFirstSampleStartTime = Long.MIN_VALUE;
 
   protected abstract void createInputBuffer() throws ExoPlaybackException;
-
-  protected abstract void handleReconfiguration(DecoderInputBuffer bufferForRead);
-
-  protected abstract void handleFormatRead(DecoderInputBuffer bufferForRead)
-      throws ExoPlaybackException;
 
   protected abstract void handleEndOfStream(DecoderInputBuffer bufferForRead);
 
@@ -105,6 +101,11 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
     return fmt;
   }
 
+  @Nullable
+  protected final Format getCurrentFormat() {
+    return mFormats.isEmpty() ? null : mFormats.get(mFormats.size() - 1);
+  }
+
   public synchronized long getFirstSamplePTS() {
     return mFirstSampleStartTime;
   }
@@ -156,31 +157,19 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
     return false;
   }
 
-  protected void prepareReconfiguration() {
-    // Referring to ExoPlayer's MediaCodec related renderers, only video
-    // renderer handles this.
-  }
-
   protected void updateCSDInfo(final Format format) {
     // do nothing.
   }
 
   protected void onInputFormatChanged(final Format newFormat) throws ExoPlaybackException {
-    Format oldFormat;
-    try {
-      oldFormat = mFormats.get(mFormats.size() - 1);
-    } catch (final IndexOutOfBoundsException e) {
-      oldFormat = null;
-    }
+    final Format oldFormat = getCurrentFormat();
     if (DEBUG) {
       Log.d(LOGTAG, "[onInputFormatChanged] old : " + oldFormat + " => new : " + newFormat);
     }
     mFormats.add(newFormat);
     handleDrmInitChanged(oldFormat, newFormat);
 
-    if (mInitialized && canReconfigure(oldFormat, newFormat)) {
-      prepareReconfiguration();
-    } else {
+    if (!mInitialized || !canReconfigure(oldFormat, newFormat)) {
       resetRenderer();
       maybeInitRenderer();
     }
@@ -204,7 +193,7 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
           e,
           getName(),
           getIndex(),
-          mFormats.isEmpty() ? null : getFormat(mFormats.size() - 1),
+          getCurrentFormat(),
           C.FORMAT_HANDLED,
           null,
           false,
@@ -234,8 +223,6 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
       mBufferForRead.clear();
     }
 
-    handleReconfiguration(mBufferForRead);
-
     // Read data from HlsMediaSource
     int result = C.RESULT_NOTHING_READ;
     try {
@@ -250,7 +237,7 @@ public abstract class GeckoHlsRendererBase extends BaseRenderer {
     }
 
     if (result == C.RESULT_FORMAT_READ) {
-      handleFormatRead(mBufferForRead);
+      onInputFormatChanged(mFormatHolder.format);
       return true;
     }
 

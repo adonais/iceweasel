@@ -134,6 +134,7 @@
   "SubDialog",
   "SubDialogManager",
   "TabCrashHandler",
+  "Tabbrowser",
   "TabsSetupFlowManager",
   "TaskbarTabsChrome",
   "TelemetryEnvironment",

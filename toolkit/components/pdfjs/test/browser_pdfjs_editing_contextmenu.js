@@ -286,6 +286,9 @@ add_task(async function test_highlight_selection() {
         set: [
           ["pdfjs.annotationEditorMode", 0],
           ["pdfjs.enableComment", false],
+          // Right-clicking text selects the word under the cursor on macOS, which
+          // would add a selection this test does not expect.
+          ["ui.mouse.right_click.select_under_cursor", false],
         ],
       });
 

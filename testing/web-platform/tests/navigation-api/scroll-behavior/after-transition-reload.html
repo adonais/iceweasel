@@ -3,7 +3,7 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <body>
-<div id="buffer" style="height: 1000px; width: 200vw;"></div>
+<div id="buffer" style="height: 200vh; width: 200vw;"></div>
 <div id="frag"></div>
 <div style="height: 200vh; width: 200vw;"></div>
 <script>
@@ -27,11 +27,12 @@ promise_test(async t => {
   let reload_promises = navigation.reload();
   await reload_promises.committed;
 
-  // removing the <div id="buffer"> should scroll up 1000px.
+  // removing the <div id="buffer"> should scroll up 200vh.
   assert_equals(window.scrollY, scrollY_frag_plus_10);
   buffer.remove();
   let scrollY_after_buffer_remove = window.scrollY;
-  assert_equals(scrollY_after_buffer_remove, scrollY_frag_plus_10 - 1000);
+  const bufferY = (window.innerHeight * 200) / 100;
+  assert_equals(scrollY_after_buffer_remove, scrollY_frag_plus_10 - bufferY);
 
   // Finishing should scroll to #frag, which is 10px up from the current location
   intercept_resolve();

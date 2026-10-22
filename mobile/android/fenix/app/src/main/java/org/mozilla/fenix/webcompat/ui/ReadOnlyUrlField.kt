@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_EDIT_URL_BUTTON
 
 /**
  * A custom list item that displays a URL with its base domain bolded. The entire component acts as a clickable surface.
@@ -112,6 +116,11 @@ fun ReadOnlyUrlField(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_edit_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = BROKEN_SITE_REPORTER_EDIT_URL_BUTTON
+                        },
                 )
             }
         }

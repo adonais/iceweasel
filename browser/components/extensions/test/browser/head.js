@@ -532,7 +532,7 @@ async function openContextMenuInPopup(
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
     selector,
-    { type: "mousedown", button: 2 },
+    { button: 2 },
     browser
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -582,7 +582,7 @@ async function openContextMenuInSidebar(selector = "body") {
   info("Opening context menu in sidebarAction panel");
   await BrowserTestUtils.synthesizeMouseAtCenter(
     selector,
-    { type: "mousedown", button: 2 },
+    { button: 2 },
     browser
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -624,7 +624,7 @@ async function openContextMenu(selector = "#img1", win = window) {
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(
     selector,
-    { type: "mousedown", button: 2 },
+    { button: 2 },
     win.gBrowser.selectedBrowser
   );
   await BrowserTestUtils.synthesizeMouseAtCenter(

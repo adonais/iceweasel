@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2067720
+-->
+<head>
+  <meta charset="UTF-8">
+  <title>Test for Bug 2067720</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2067720">Mozilla Bug 2067720</a>
+<div id="content"></div>
+<script>
+// An HTMLCollection reports a named item and an expando with the same name as
+// two separate own keys. Copying such a collection into a fresh object must
+// still produce a single property for that name.
+function makeCollection(name) {
+  const host = document.createElement("div");
+  document.getElementById("content").append(host);
+  const collection = host.getElementsByTagName("span");
+  for (let i = 0; i < 8; i++) {
+    Object.defineProperty(collection, "x" + i, {
+      value: 1000 + i,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+  Object.defineProperty(collection, name, {
+    get() {
+      return "expando";
+    },
+    enumerable: true,
+    configurable: true,
+  });
+  const child = document.createElement("span");
+  child.id = name;
+  host.append(child);
+  return { host, collection };
+}
+
+function checkCopy(copy, name, label) {
+  const keys = Object.keys(copy);
+  is(
+    keys.length,
+    new Set(keys).size,
+    `${label}: copied keys are unique: ${keys}`
+  );
+  is(keys.filter(k => k == name).length, 1, `${label}: ${name} is copied once`);
+
+  for (let i = 0; i < 5; i++) {
+    delete copy["x" + i];
+  }
+  delete copy[name];
+
+  is(copy[name], undefined, `${label}: ${name} was deleted`);
+  for (let i = 5; i < 8; i++) {
+    is(copy["x" + i], 1000 + i, `${label}: x${i} survives the deletes`);
+  }
+
+  copy[name] = "again";
+  copy.extra1 = 1;
+  copy.extra2 = 2;
+  is(copy[name], "again", `${label}: ${name} can be re-added`);
+  is(copy.extra1, 1, `${label}: extra1`);
+  is(copy.extra2, 2, `${label}: extra2`);
+  for (let i = 5; i < 8; i++) {
+    is(copy["x" + i], 1000 + i, `${label}: x${i} survives the adds`);
+  }
+}
+
+add_task(function test_spread() {
+  for (let trial = 0; trial < 50; trial++) {
+    const name = "d" + trial;
+    const { host, collection } = makeCollection(name);
+    checkCopy({ ...collection }, name, `spread ${trial}`);
+    host.remove();
+  }
+});
+
+add_task(function test_object_rest() {
+  for (let trial = 0; trial < 50; trial++) {
+    const name = "r" + trial;
+    const { host, collection } = makeCollection(name);
+    const { notThere, ...rest } = collection;
+    is(notThere, undefined, "excluded key is not present");
+    checkCopy(rest, name, `rest ${trial}`);
+    host.remove();
+  }
+});
+
+add_task(function test_spread_after_literal_entries() {
+  const name = "lit";
+  const { host, collection } = makeCollection(name);
+  const copy = { first: 1, [name]: "literal", ...collection };
+  const keys = Object.keys(copy);
+  is(keys.length, new Set(keys).size, `keys are unique: ${keys}`);
+  const stringKeys = keys.filter(k => isNaN(k));
+  is(stringKeys[0], "first", "literal entries stay first");
+  host.remove();
+});
+</script>
+</body>
+</html>

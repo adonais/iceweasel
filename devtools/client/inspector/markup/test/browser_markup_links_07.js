@@ -104,43 +104,26 @@ add_task(async function testDocumentWithBaseAttribute() {
   );
 });
 
-function performMouseDown(linkEl, metactrl) {
-  const evt = linkEl.ownerDocument.createEvent("MouseEvents");
-
-  let button = -1;
-
+function performClick(linkEl, metactrl) {
+  let options;
   if (metactrl) {
     info("Performing Meta/Ctrl+Left Click");
-    button = 0;
+    options = { accelKey: true };
   } else {
     info("Performing Middle Click");
-    button = 1;
+    options = { button: 1 };
   }
 
-  evt.initMouseEvent(
-    "mousedown",
-    true,
-    true,
-    linkEl.ownerDocument.defaultView,
-    1,
-    0,
-    0,
-    0,
-    0,
-    metactrl,
-    false,
-    false,
-    metactrl,
-    button,
-    null
+  EventUtils.synthesizeMouseAtCenter(
+    linkEl,
+    options,
+    linkEl.ownerDocument.defaultView
   );
-
-  linkEl.dispatchEvent(evt);
 }
 
 async function followLinkWaitForTab(linkEl, isMetaClick, expectedTabURI) {
   const onTabOpened = once(gBrowser.tabContainer, "TabOpen");
-  performMouseDown(linkEl, isMetaClick);
+  performClick(linkEl, isMetaClick);
   const { target } = await onTabOpened;
   await BrowserTestUtils.browserLoaded(target.linkedBrowser);
   ok(true, "A new tab opened");
@@ -159,7 +142,7 @@ async function followLinkWaitForNewNode(
   expectedSelectedNodeId
 ) {
   const onSelection = inspector.selection.once("new-node-front");
-  performMouseDown(linkEl, isMetaClick);
+  performClick(linkEl, isMetaClick);
   await onSelection;
 
   ok(true, "A new node was selected");
@@ -172,7 +155,7 @@ async function followLinkWaitForNewNode(
 
 async function followLinkNoNewNode(linkEl, isMetaClick, inspector) {
   const onFailed = inspector.markup.once("idref-attribute-link-failed");
-  performMouseDown(linkEl, isMetaClick);
+  performClick(linkEl, isMetaClick);
   await onFailed;
 
   ok(true, "The node selection failed");

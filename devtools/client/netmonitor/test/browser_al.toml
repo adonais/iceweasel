@@ -133,9 +133,6 @@ support-files = [
 ["browser_net_block-context.js"]
 
 ["browser_net_block-csp.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_block-draganddrop.js"]
 
@@ -252,10 +249,6 @@ fail-if = [
 ["browser_net_domain-not-found.js"]
 
 ["browser_net_duration-sort.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && !opt", # Bug 2021427 Frequent delays on windows non-opt builds
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && !opt", # Bug 2021427 Frequent delays on windows non-opt builds
-]
 
 ["browser_net_duration.js"]
 
@@ -268,9 +261,6 @@ skip-if = [
 ["browser_net_fission_switch_target.js"]
 
 ["browser_net_fonts.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_footer-summary.js"]
 
@@ -306,9 +296,6 @@ fail-if = [
 ["browser_net_headers_sorted.js"]
 
 ["browser_net_html-preview.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_image-tooltip.js"]
 

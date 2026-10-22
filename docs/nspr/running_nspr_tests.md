@@ -5,8 +5,7 @@ NSPR has a test suite in the `pr/tests` directory.
 By default, we don't build the test programs. Running `make` in the
 top-level directory only builds the NSPR libraries.
 To build the test programs, you need to change directory to
-`pr/tests` and run `make`. Refer to {ref}`NSPR build
-instructions` for details.
+`pr/tests` and run `make`. Refer to {doc}`nspr_build_instructions` for details.
 
 To run the test suite, run the shell script
 `pr/tests/runtests.sh` in the directory where the test

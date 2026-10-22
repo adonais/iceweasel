@@ -7,27 +7,11 @@ const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 const PAGE_NAME = "hotels_san_francisco_1.html";
 const PAGE_URL = `about:smartpage?page=${PAGE_NAME}`;
 
-const PAGE_CONFIG = {
-  header: {
-    type: "header",
-    eyebrow: "From your open tabs",
-    title: "Hotels in Lisbon",
-    subhead: "4 options gathered from your open tabs",
-  },
-  blocks: [
-    { type: "text", layout: "summary", title: "What you are comparing" },
-    { type: "table", layout: "comparison", title: "Nightly rates" },
-    { layout: "summary", title: "A block with no type" },
-  ],
-  footer: {
-    type: "footer",
-    text: "Keep it going",
-    buttons: [
-      { text: "Open the booking site", href: "https://example.com/book" },
-      { text: "Add a block", href: "app://views/add" },
-    ],
-  },
-};
+/* import-globals-from head_aitab.js */
+Services.scriptloader.loadSubScript(
+  getRootDirectory(gTestPath) + "head_aitab.js",
+  this
+);
 
 add_task(async function test_actor_registered_when_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[AITAB_PREF, true]] });
@@ -88,8 +72,8 @@ add_task(async function test_unknown_page_reports_unavailable() {
       Assert.ok(
         content.document
           .querySelector("aitab-page")
-          .shadowRoot.querySelector(".aitab-status"),
-        "The unavailable message is rendered"
+          .shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered"
       );
     });
   });
@@ -125,9 +109,8 @@ add_task(async function test_path_like_page_name_rejected() {
           "error",
           "A name shaped like a path is refused rather than looked up"
         );
-        Assert.equal(
-          element.shadowRoot.querySelector(".aitab-status")?.dataset.l10nId,
-          "ai-tab-page-error",
+        Assert.ok(
+          element.shadowRoot.querySelector("aitab-error"),
           "The error message is rendered"
         );
         Assert.ok(
@@ -160,6 +143,13 @@ add_task(async function test_missing_page_reports_unavailable() {
         "unavailable",
         "A URL with no page name renders the unavailable state"
       );
+
+      Assert.ok(
+        content.document
+          .querySelector("aitab-page")
+          .shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered for the unavailable state"
+      );
     });
   });
 
@@ -189,31 +179,21 @@ add_task(async function test_renders_page_config() {
       await header.updateComplete;
       Assert.equal(
         header.shadowRoot.querySelector(".aitab-title").textContent,
-        config.header.title,
+        config.children[0].title,
         "The header title is rendered"
       );
       Assert.equal(
         content.document.title,
-        config.header.title,
+        config.children[0].title,
         "The document title follows the header title so history shows it"
       );
       Assert.deepEqual(
         [...shadowRoot.querySelectorAll(".aitab-block")].map(
           block => block.dataset.blockType
         ),
-        ["text", "table"],
+        ["textblock", "timeline"],
         "Every typed block gets a placeholder that keeps its type, and a block with no type is skipped"
       );
-
-      const chips = [...shadowRoot.querySelectorAll(".aitab-chip")];
-      Assert.equal(chips.length, 2, "Both footer buttons are rendered");
-      Assert.equal(chips[0].localName, "a", "An https href becomes a link");
-      Assert.equal(
-        chips[0].target,
-        "_blank",
-        "The link opens in a new tab, leaving the generated page up"
-      );
-      Assert.equal(chips[1].localName, "span", "A non-http href stays inert");
     });
   });
 
@@ -237,17 +217,24 @@ const { Conversation } = ChromeUtils.importESModule(
  * Reads the page the content document ended up with.
  *
  * @param {object} browser
- * @returns {Promise<object>} status and the resolved page title, if any.
+ * @returns {Promise<object>} status, the resolved page title, if any, and
+ *   whether the error component is rendered.
  */
 function getPageState(browser) {
   return SpecialPowers.spawn(browser, [], async () => {
     await content.customElements.whenDefined("aitab-page");
-    const page = content.document.querySelector("aitab-page").wrappedJSObject;
+    const element = content.document.querySelector("aitab-page");
+    const page = element.wrappedJSObject;
     await ContentTaskUtils.waitForCondition(
       () => page.status != "loading",
       "The page finishes its lookup"
     );
-    return { status: page.status, title: page.page?.title ?? null };
+    await page.updateComplete;
+    return {
+      status: page.status,
+      title: page.page?.title ?? null,
+      errorRendered: !!element.shadowRoot.querySelector("aitab-error"),
+    };
   });
 }
 
@@ -304,10 +291,41 @@ add_task(async function test_a_failing_store_surfaces_an_error() {
         "error",
         "A store that throws renders the error state, not an empty page"
       );
+      Assert.ok(
+        state.errorRendered,
+        "The error component is rendered for the error state"
+      );
     });
   } finally {
     AITabStore.getBySlug = original;
   }
 
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_visit_recorded_in_history() {
+  await SpecialPowers.pushPrefEnv({ set: [[AITAB_PREF, true]] });
+  await PlacesUtils.history.clear();
+
+  const visited = PlacesTestUtils.waitForNotification("page-visited", visits =>
+    visits.some(visit => visit.url == PAGE_URL)
+  );
+  const titled = PlacesTestUtils.waitForNotification(
+    "page-title-changed",
+    events => events.some(event => event.url == PAGE_URL && event.title)
+  );
+
+  await BrowserTestUtils.withNewTab(PAGE_URL, async () => {
+    await Promise.all([visited, titled]);
+  });
+
+  Assert.ok(
+    await PlacesUtils.history.hasVisits(PAGE_URL),
+    "Visiting a generated page records it in history"
+  );
+  const { title } = await PlacesUtils.history.fetch(PAGE_URL);
+  Assert.ok(title, "The history entry has a title");
+
+  await PlacesUtils.history.clear();
   await SpecialPowers.popPrefEnv();
 });

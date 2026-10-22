@@ -2985,6 +2985,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   masm.moveStackPtrTo(scratch2.get());
 
   // Construct a native exit frame.
+  masm.push(calleeReg);
   masm.push(argcReg);
 
   masm.push(FrameDescriptor(FrameType::BaselineStub));

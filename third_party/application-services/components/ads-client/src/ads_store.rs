@@ -30,10 +30,22 @@ impl AsRef<str> for PlacementId {
     }
 }
 
+impl From<String> for PlacementId {
+    fn from(value: String) -> Self {
+        PlacementId(value)
+    }
+}
+
+impl From<PlacementId> for String {
+    fn from(value: PlacementId) -> Self {
+        value.0
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum StorableAd {
     Image(AdImage),
-    Spoc(AdSpoc),
+    Spoc(Vec<AdSpoc>),
     Tile(AdTile),
 }
 
@@ -41,6 +53,7 @@ pub struct AdsStore {
     holder: AdsStoreHolder,
     #[allow(dead_code)]
     max_size: ByteSize,
+    is_memory: bool,
 }
 
 impl AdsStore {
@@ -61,29 +74,40 @@ impl AdsStore {
         self.holder.invalidate_ad_by_id(placement_id)?;
         Ok(())
     }
+
+    pub fn is_memory(&self) -> bool {
+        self.is_memory
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mars::ad_response::{AdCallbacks, AdImage};
+    use crate::{
+        ffi::telemetry::MozAdsTelemetryWrapper,
+        mars::ad_response::{AdCallbacks, AdImage},
+    };
     use url::Url;
+    use url_macro::url;
 
     #[test]
     fn test_ads_store_creation() {
         // Test that AdsStore can be created successfully with test config
-        let store: Result<AdsStore, _> = AdsStore::builder("test_store.db").build();
+        let store: Result<AdsStore, _> =
+            AdsStore::builder("test_store.db").build(MozAdsTelemetryWrapper::noop());
         assert!(store.is_ok());
     }
 
     #[test]
     fn test_clear_store() {
-        let store: AdsStore = AdsStore::builder("test_clear.db").build().unwrap();
+        let store: AdsStore = AdsStore::builder("test_clear.db")
+            .build(MozAdsTelemetryWrapper::noop())
+            .unwrap();
 
         let base_url = mockito::server_url();
         let ad = StorableAd::Image(AdImage {
-            url: "https://ads.fakeexample.org/example_ad_1".to_string(),
-            image_url: "https://ads.fakeexample.org/example_image_1".to_string(),
+            url: url!("https://ads.fakeexample.org/example_ad_1"),
+            image_url: url!("https://ads.fakeexample.org/example_image_1"),
             format: "billboard".to_string(),
             block_key: "abc123".into(),
             alt_text: Some("An ad for a puppy".to_string()),
@@ -110,12 +134,14 @@ mod tests {
 
     #[test]
     fn test_invalidate_by_id() {
-        let store: AdsStore = AdsStore::builder("test_invalidate.db").build().unwrap();
+        let store: AdsStore = AdsStore::builder("test_invalidate.db")
+            .build(MozAdsTelemetryWrapper::noop())
+            .unwrap();
 
         let base_url = mockito::server_url();
         let ad = StorableAd::Image(AdImage {
-            url: "https://ads.fakeexample.org/example_ad_1".to_string(),
-            image_url: "https://ads.fakeexample.org/example_image_1".to_string(),
+            url: url!("https://ads.fakeexample.org/example_ad_1"),
+            image_url: url!("https://ads.fakeexample.org/example_image_1"),
             format: "billboard".to_string(),
             block_key: "abc123".into(),
             alt_text: Some("An ad for a puppy".to_string()),

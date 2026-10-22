@@ -332,8 +332,10 @@ generate_pkg_config()
     vpatch=$(sed -n 's/^#define NSS_VPATCH \([0-9]*\).*/\1/p' "$nss_h")
     [ -n "$vmajor" ] || return 0
 
-    nspr_version=$(sed -n 's/^Version: *//p' \
-        "$obj_dir/lib/pkgconfig/nspr.pc" 2>/dev/null)
+    if [ "$no_local_nspr" = 0 ]; then
+        nspr_version=$(sed -n 's/^Version: *//p' \
+            "$obj_dir/lib/pkgconfig/nspr.pc" 2>/dev/null)
+    fi
     : "${nspr_version:=4.32}"
 
     mkdir -p "$obj_dir/lib/pkgconfig"

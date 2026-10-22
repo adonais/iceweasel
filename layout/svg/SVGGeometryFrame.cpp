@@ -762,8 +762,13 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     auto color = wr::ToColorF(
         ToDeviceColor(StyleSVG()->mFill.kind.AsColor().CalcColor(this)));
     color.a *= opacity;
-    aBuilder.PushRect(wrRect, wrRect, !aItem->BackfaceIsHidden(), true, false,
-                      color);
+
+    // shape-rendering: crispEdges / optimizeSpeed disables anti-aliasing, the
+    // same way it does for the gfxContext path in Render().
+    const bool antialiased = SVGUtils::ToAntialiasMode(
+                                 style->mShapeRendering) != AntialiasMode::NONE;
+    aBuilder.PushRect(wrRect, wrRect, !aItem->BackfaceIsHidden(), antialiased,
+                      false, color);
   }
 
   return Ok();

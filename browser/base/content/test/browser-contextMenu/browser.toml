@@ -1,6 +1,6 @@
 [DEFAULT]
+head = "head.js"
 support-files = [
-  "head.js",
   "subtst_contextmenu_webext.html",
   "test_contextmenu_links.html",
   "subtst_contextmenu.html",
@@ -8,7 +8,6 @@ support-files = [
   "subtst_contextmenu_add_search_engine.html",
   "subtst_contextmenu_xul.xhtml",
   "ctxmenu-image.png",
-  "../browser-general/head.js",
   "../browser-general/audio.ogg",
   "../../../../../toolkit/components/pdfjs/test/file_pdfjs_test.pdf",
   "contextmenu_common.js",
@@ -33,14 +32,12 @@ skip-if = [
 support-files = ["subtst_contextmenu_add_search_engine.html"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # disabled on Linux due to bug 513558
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # disabled on Linux due to bug 513558
 ]
 
 ["browser_contextmenu_badiframe.js"]
 https_first_disabled = true
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-  "os == 'win'", # Bug 1719856
 ]
 
 ["browser_contextmenu_blocked_image_protocols.js"]
@@ -66,7 +63,6 @@ skip-if = [
 ["browser_contextmenu_input.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["browser_contextmenu_inspect.js"]
@@ -89,9 +85,6 @@ skip-if = [
 ]
 
 ["browser_contextmenu_plaintextlinks.js"]
-skip-if = [
-  "a11y_checks", # Bugs 1858041 and 1835079 for causing intermittent crashes
-]
 
 ["browser_contextmenu_save_blocked.js"]
 skip-if = [
@@ -125,7 +118,6 @@ https_first_disabled = true
 skip-if = [
   "debug", # bug 1798233 - this trips assertions that seem harmless in opt and unlikely to occur in practical use.
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["browser_contextmenu_touch.js"]
@@ -149,6 +141,8 @@ skip-if = [
 ["browser_copy_link_to_highlight.js"]
 
 ["browser_copy_link_to_highlight_viewsource.js"]
+
+["browser_right_click_select.js"]
 
 ["browser_save_image.js"]
 

@@ -69,9 +69,11 @@ hardware:
     group: Desktop
     description: >-
       Apple Silicon Mac Minis running macOS 15. They also host the Android
-      arm64 emulator tests.
+      arm64 emulator tests. A small number of the same machines run macOS 27
+      and are dedicated to Safari testing.
     worker-pools:
       - releng-hardware/gecko-t-osx-1500-m4
+      - releng-hardware/gecko-t-osx-2700-m4
     specifications:
       Model Name: Mac mini
       Model Identifier: Mac16,10

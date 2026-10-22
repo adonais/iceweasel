@@ -9,9 +9,9 @@
  * from the source profile.
  */
 
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
 
-import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
+import { MigratorBase } from "moz-src:///browser/components/migration/MigratorBase.sys.mjs";
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 

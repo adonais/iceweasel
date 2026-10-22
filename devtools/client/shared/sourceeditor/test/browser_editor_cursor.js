@@ -46,6 +46,12 @@ async function test() {
     gutter,
     iframe.contentWindow
   );
+  // Release the button, otherwise it stays pressed for the following tests.
+  EventUtils.sendMouseEvent(
+    { type: "mouseup", shiftKey: true },
+    gutter,
+    iframe.contentWindow
+  );
   is(ed.getSelection(), "", "shift-click");
 
   teardown(ed, win);

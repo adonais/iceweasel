@@ -20,6 +20,7 @@
 #include "mozilla/dom/ClientHandle.h"
 #include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
 #include "mozilla/dom/ServiceWorkerRegistrationInfo.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -269,9 +270,9 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
                                  const net::CookieStruct& aCookie,
                                  bool aCookieDeleted);
 
-  nsresult SendPushEvent(const nsACString& aOriginAttributes,
-                         const nsACString& aScope, const nsAString& aMessageId,
-                         const Maybe<nsTArray<uint8_t>>& aData);
+  RefPtr<PushHandledPromise> SendPushEvent(
+      const nsACString& aOriginAttributes, const nsACString& aScope,
+      const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData);
 
   void WorkerIsIdle(ServiceWorkerInfo* aWorker);
 

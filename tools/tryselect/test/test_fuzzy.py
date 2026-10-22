@@ -134,6 +134,35 @@ def test_query(run_mach, capfd, full):
 
 
 @pytest.mark.skipif(os.name == "nt", reason="fzf not installed on host")
+@pytest.mark.parametrize("include_duplicates", [True, False])
+def test_query_duplicates(run_mach, capfd, include_duplicates):
+    cmd = [
+        "try",
+        "fuzzy",
+        "--no-push",
+        "--full",
+        "-q",
+        "^build-components-browser-state !-nightly !-beta !-release",
+    ]
+    if include_duplicates:
+        cmd.append("--include-duplicates")
+    assert run_mach(cmd) == 0
+
+    output = capfd.readouterr().out
+    print(output)
+
+    delim = "Calculated try_task_config.json:"
+    index = output.find(delim)
+    result = json.loads(output[index + len(delim) :])
+
+    tasks = result["parameters"]["try_task_config"]["tasks"]
+    expected = ["build-components-browser-state"]
+    if include_duplicates:
+        expected.append("build-components-browser-state-appservices-in-tree")
+    assert sorted(tasks) == expected
+
+
+@pytest.mark.skipif(os.name == "nt", reason="fzf not installed on host")
 @pytest.mark.parametrize("tag", ["webextensions", "not_a_valid_tag"])
 def test_query_tags(run_mach, capfd, tag):
     cmd = [

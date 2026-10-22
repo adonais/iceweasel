@@ -47,7 +47,7 @@ PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*)
 PROXY_SECONDARY_METHOD1(void,
                         SetJitterBufferMinimumDelay,
                         std::optional<double>)
-PROXY_SECONDARY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)
+PROXY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)
 // TODO(bugs.webrtc.org/12772): Remove.
 PROXY_SECONDARY_METHOD1(void,
                         SetFrameDecryptor,

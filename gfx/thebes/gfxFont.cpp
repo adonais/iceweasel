@@ -5,6 +5,7 @@
 #include "gfxFont.h"
 
 #include "COLRFonts.h"
+#include "FontPaletteCache.h"
 #include "GreekCasing.h"
 #include "TextDrawTarget.h"
 #include "ThebesRLBox.h"
@@ -1789,8 +1790,7 @@ bool gfxFont::HasFeatureSet(uint32_t aFeature, bool& aFeatureOn) {
 
 already_AddRefed<mozilla::gfx::ScaledFont> gfxFont::GetScaledFont(
     mozilla::gfx::DrawTarget* aDrawTarget) {
-  mozilla::gfx::PaletteCache dummy;
-  TextRunDrawParams params(dummy);
+  TextRunDrawParams params(nullptr);
   return GetScaledFont(params);
 }
 
@@ -2321,7 +2321,7 @@ void gfxFont::DrawEmphasisMarks(const gfxTextRun* aShapedText, gfx::Point* aPt,
                                 imgDrawingParams& aImgParams) {
   float& inlineCoord = aParams.isVertical ? aPt->y.value : aPt->x.value;
   gfxTextRun::Range markRange(aParams.mark);
-  gfxTextRun::DrawParams params(aParams.context, aParams.paletteCache);
+  gfxTextRun::DrawParams params(aParams.context, aParams.paletteValueSet);
 
   float clusterStart = -std::numeric_limits<float>::infinity();
   bool shouldDrawEmphasisMark = false;
@@ -2389,8 +2389,8 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
     fontParams.currentColor = aRunParams.context->GetDeviceColor(ctxColor)
                                   ? sRGBColor::FromABGR(ctxColor.ToABGR())
                                   : sRGBColor::OpaqueBlack();
-    fontParams.palette = aRunParams.paletteCache.GetPaletteFor(
-        GetFontEntry(), aRunParams.fontPalette);
+    fontParams.palette = GetFontEntry()->GetPalette(aRunParams.fontPalette,
+                                                    aRunParams.paletteValueSet);
   }
 
   if (textDrawer) {

@@ -27,6 +27,21 @@ geolocation:
     notification_emails:
       - krosylight@mozilla.com
     expires: never
+  request_activation:
+    type: labeled_counter
+    description: >
+      The user activation state on each geolocation request.
+    labels:
+      - full_activated
+      - has_been_activated
+      - none
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2078221
+    notification_emails:
+      - krosylight@mozilla.com
+    expires: never
   request_result:
     type: labeled_counter
     description: >

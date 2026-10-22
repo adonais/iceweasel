@@ -33,12 +33,6 @@ SECStatus intel_aes_decrypt_cbc_128(AESContext *cx, unsigned char *output,
                                     const unsigned char *input,
                                     unsigned int inputLen,
                                     unsigned int blocksize);
-SECStatus intel_aes_encrypt_ctr_128(CTRContext *cx, unsigned char *output,
-                                    unsigned int *outputLen,
-                                    unsigned int maxOutputLen,
-                                    const unsigned char *input,
-                                    unsigned int inputLen,
-                                    unsigned int blocksize);
 SECStatus intel_aes_encrypt_ecb_192(AESContext *cx, unsigned char *output,
                                     unsigned int *outputLen,
                                     unsigned int maxOutputLen,
@@ -58,12 +52,6 @@ SECStatus intel_aes_encrypt_cbc_192(AESContext *cx, unsigned char *output,
                                     unsigned int inputLen,
                                     unsigned int blocksize);
 SECStatus intel_aes_decrypt_cbc_192(AESContext *cx, unsigned char *output,
-                                    unsigned int *outputLen,
-                                    unsigned int maxOutputLen,
-                                    const unsigned char *input,
-                                    unsigned int inputLen,
-                                    unsigned int blocksize);
-SECStatus intel_aes_encrypt_ctr_192(CTRContext *cx, unsigned char *output,
                                     unsigned int *outputLen,
                                     unsigned int maxOutputLen,
                                     const unsigned char *input,
@@ -93,17 +81,6 @@ SECStatus intel_aes_decrypt_cbc_256(AESContext *cx, unsigned char *output,
                                     const unsigned char *input,
                                     unsigned int inputLen,
                                     unsigned int blocksize);
-SECStatus intel_aes_encrypt_ctr_256(CTRContext *cx, unsigned char *output,
-                                    unsigned int *outputLen,
-                                    unsigned int maxOutputLen,
-                                    const unsigned char *input,
-                                    unsigned int inputLen,
-                                    unsigned int blocksize);
-
-#define intel_aes_ctr_worker(nr)              \
-    ((nr) == 10   ? intel_aes_encrypt_ctr_128 \
-     : (nr) == 12 ? intel_aes_encrypt_ctr_192 \
-                  : intel_aes_encrypt_ctr_256)
 
 #define native_aes_init(encrypt, keysize)                           \
     do {                                                            \

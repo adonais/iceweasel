@@ -13,7 +13,7 @@ PRStatus PR_NotifyCondVar(PRCondVar *cvar);
 
 ### Parameter
 
-{ref}`PR_NotifyCondVar` has one parameter:
+{doc}`pr_notifycondvar` has one parameter:
 
 `cvar`
 

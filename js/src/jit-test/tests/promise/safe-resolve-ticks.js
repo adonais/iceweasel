@@ -1,5 +1,3 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta")
-//
 // JS::SafeResolve of a thenable settles the outer promise at the SAME
 // microtask depth as an ordinary resolve(thenable). Under the updated
 // thenable-curtailment spec, PerformPromiseResolution runs in ~deferred~

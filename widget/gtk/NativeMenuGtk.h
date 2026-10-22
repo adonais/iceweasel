@@ -36,7 +36,7 @@ class NativeMenuGtk : public NativeMenu {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ShowMenuAtPosition(
       nsIFrame* aClickedFrame, const CSSIntPoint& aPosition,
       bool aIsContextMenu) override;
-  bool Close() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool Close() override;
   void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers,
                     int16_t aButton, ErrorResult& aRv) override;
   void OpenSubmenu(dom::Element* aMenuElement) override;
@@ -50,7 +50,13 @@ class NativeMenuGtk : public NativeMenu {
 
   MOZ_CAN_RUN_SCRIPT void FireEvent(EventMessage);
 
+  // Fires the popuphiding / popuphidden events that OnUnmap() postponed.
+  // Returns false if none were pending.
+  MOZ_CAN_RUN_SCRIPT bool FinishClose();
+
   bool mPoppedUp = false;
+  // Whether OnUnmap() has run but FinishClose() has not yet.
+  bool mClosePending = false;
   RefPtr<GtkWidget> mNativeMenu;
   RefPtr<MenuModelGMenu> mMenuModel;
 };

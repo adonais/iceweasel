@@ -215,6 +215,8 @@ class nsTableRowFrame : public nsContainerFrame {
 
   nsTableRowFrame* GetPrevRow() const;
   nsTableRowFrame* GetNextRow() const;
+  // Like GetNextRow(), but continues into the next-in-flows of our row group.
+  nsTableRowFrame* GetNextRowAcrossFragments() const;
 
   bool HasUnpaginatedBSize() const {
     return HasAnyStateBits(NS_TABLE_ROW_HAS_UNPAGINATED_BSIZE);

@@ -1,15 +1,25 @@
 From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
 Date: Sun, 23 Aug 2026 13:55:19 -0400
-Subject: Bug 1921707 - abseil-cpp gn build integration.
+Subject: Bug 1921707, Bug 1974813, Bug 1965053 - abseil-cpp gn build
+ integration.
 
 Relocates abseil out of libwebrtc: preprocessor/.json/.gni/*.gn changes, dep-path
 filtering from //third_party/abseil-cpp/ to //, and pointing at the new build
-directory location. Squashed from four commits that were all the same change.
+directory location.
+
+absl.gni also drops the prevent_unsafe_narrowing config, which chromium/build now
+includes automatically, and silences -Wcomma and -Wtautological-type-limit-compare.
+Those fire on deliberate comma expressions and on portability range checks that
+are tautological only on 64-bit; abseil does not enable either warning.
+
+absl.gni also defines CHECK_INCLUDES_STRICT_PUBLIC_INCLUDES_PRIVATE, which the
+abseil BUILD.gn files reference and chromium provides from
+build/strict_deps_failures.gni, a file our chromium build config does not carry.
 ---
- abseil-cpp/.gn      | 10 ++++++
- abseil-cpp/BUILD.gn |  8 ++---
- abseil-cpp/absl.gni | 83 +++++++++++++++++++++++++++++++++++++--------
- 3 files changed, 83 insertions(+), 18 deletions(-)
+ abseil-cpp/.gn      | 10 +++++
+ abseil-cpp/BUILD.gn |  8 ++--
+ abseil-cpp/absl.gni | 99 ++++++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 99 insertions(+), 18 deletions(-)
  create mode 100644 abseil-cpp/.gn
 
 diff --git a/abseil-cpp/.gn b/abseil-cpp/.gn
@@ -29,7 +39,7 @@ index 00000000000..bd6c38b3762
 +}
 +
 diff --git a/abseil-cpp/BUILD.gn b/abseil-cpp/BUILD.gn
-index 72c1655fee0..3b1cb12de3e 100644
+index 3761b75f66a..de7b95f3f92 100644
 --- a/abseil-cpp/BUILD.gn
 +++ b/abseil-cpp/BUILD.gn
 @@ -6,10 +6,10 @@
@@ -48,18 +58,21 @@ index 72c1655fee0..3b1cb12de3e 100644
  import("//third_party/abseil-cpp/absl.gni")
  
 diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
-index 5ec01f6d23c..3632789e941 100644
+index 5ec01f6d23c..7a684ca2e4a 100644
 --- a/abseil-cpp/absl.gni
 +++ b/abseil-cpp/absl.gni
-@@ -21,6 +21,7 @@ import("//build_overrides/build.gni")
+@@ -21,37 +21,54 @@ import("//build_overrides/build.gni")
  
  declare_args() {
    absl_build_tests = build_with_chromium
 +  moz_webrtc_build = true
  }
  
++CHECK_INCLUDES_STRICT_PUBLIC_INCLUDES_PRIVATE = false
++
  template("absl_source_set") {
-@@ -29,12 +30,12 @@ template("absl_source_set") {
+   source_set(target_name) {
+     if (defined(invoker.testonly) && invoker.testonly && !absl_build_tests) {
        not_needed(invoker, "*")
      } else {
        forward_variables_from(invoker, "*")
@@ -76,8 +89,23 @@ index 5ec01f6d23c..3632789e941 100644
 +        "//abseil-cpp:absl_define_config",
        ]
  
++      if (moz_webrtc_build) {
++        configs -= [ "//chromium/build/config/compiler:prevent_unsafe_narrowing" ]
++
++        # Silence -Wcomma / -Wtautological-type-limit-compare spam from
++        # third-party abseil sources. See bug 1965053.
++        if (!defined(cflags_cc)) {
++          cflags_cc = []
++        }
++        cflags_cc += [
++          "-Wno-comma",
++          "-Wno-tautological-type-limit-compare",
++        ]
++      }
++
        if (!defined(defines)) {
-@@ -43,15 +44,15 @@ template("absl_source_set") {
+         defines = []
+       }
        if (is_component_build) {
          defines += [ "ABSL_BUILD_DLL" ]
          if (!is_win && current_os != "aix") {
@@ -96,7 +124,7 @@ index 5ec01f6d23c..3632789e941 100644
  
        if (!defined(visibility)) {
          # Within Chromium builds, restrict direct visibility of Abseil sources,
-@@ -79,6 +80,45 @@ template("absl_source_set") {
+@@ -79,6 +96,45 @@ template("absl_source_set") {
            visibility = [ "*" ]
          }
        }
@@ -142,7 +170,7 @@ index 5ec01f6d23c..3632789e941 100644
      }
    }
  }
-@@ -90,18 +130,18 @@ template("absl_test") {
+@@ -90,18 +146,18 @@ template("absl_test") {
      } else {
        forward_variables_from(invoker, "*")
        testonly = true
@@ -167,7 +195,7 @@ index 5ec01f6d23c..3632789e941 100644
  
        visibility = [ "//third_party/abseil-cpp/:*" ]
        deps += [
-@@ -109,5 +149,20 @@ template("absl_test") {
+@@ -109,5 +165,20 @@ template("absl_test") {
          "//third_party/googletest:gtest",
        ]
      }

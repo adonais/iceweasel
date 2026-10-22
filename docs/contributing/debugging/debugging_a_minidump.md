@@ -27,7 +27,7 @@ Windows debugging tools. Each minidump includes the following data.
 
 Minidumps are not available to everyone. For details on how to gain
 access and where to find minidump files for crash reports, consult the
-{ref}`crash report documentation <Understanding Crash Reports>`
+{doc}`crash report documentation <understanding_crash_reports>`
 
 ## Using rust-minidump's tooling
 
@@ -45,9 +45,9 @@ minidump-stackwalk.
 
 ## Using the MS Visual Studio debugger
 
-1. Set up the debugger to {ref}`use the Mozilla symbol
-   server <Using The Mozilla Symbol Server>` and
-   {ref}`source server <Using The Mozilla Source Server>`.
+1. Set up the debugger to {doc}`use the Mozilla symbol
+   server </toolkit/crashreporter/crashreporter/Using_the_Mozilla_symbol_server>` and
+   {doc}`source server </taskcluster/using-the-mozilla-source-server>`.
 2. Double-click on the minidump file to open it in the debugger.
 3. When it loads, click the green icon in the visual studio debugger
    toolbar that looks like a play button.

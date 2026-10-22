@@ -707,8 +707,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
     request = new ScriptLoadRequest(ScriptKind::eClassic, SRIMetadata(),
-                                    nullptr,  // mReferrer
-                                    loadContext);
+                                    /* aReferrer = */ nullptr, loadContext,
+                                    /* aClassicScriptHintEncoding = */ nullptr);
   } else {
     // Implements part of "To fetch a worklet/module worker script graph"
     // including, setting up the request with a credentials mode,
@@ -962,12 +962,9 @@ nsresult WorkerScriptLoader::LoadScript(
   // window has a docshell, the caching behavior of this worker should match
   // that of that docshell.
   if (topWorkerPrivate->IsDedicatedWorker()) {
-    nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow();
-    if (window) {
-      nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
-      if (docShell) {
-        nsresult rv = docShell->GetDefaultLoadFlags(&loadFlags);
-        NS_ENSURE_SUCCESS(rv, rv);
+    if (nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow()) {
+      if (nsCOMPtr<nsIDocShell> docShell = window->GetDocShell()) {
+        loadFlags = docShell->GetDefaultLoadFlags();
       }
     }
   }

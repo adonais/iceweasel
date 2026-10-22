@@ -15,7 +15,7 @@ from taskgraph.util import json
 
 from gecko_taskgraph.test.conftest import FakeParameters
 from gecko_taskgraph.transforms import test as test_transforms
-from gecko_taskgraph.transforms.test import chunk
+from gecko_taskgraph.transforms.test import chunk, other
 from gecko_taskgraph.transforms.test.chunk import DYNAMIC_CHUNK_DURATION
 from gecko_taskgraph.util import chunking
 
@@ -138,6 +138,16 @@ def test_split_variants(monkeypatch, run_full_config_transform, make_test_task):
         "--setpref=bar=1",
     ]
     assert tasks[1]["treeherder-symbol"] == "g-foo-bar(t)"
+
+    # test variants kept in the treeherder group
+    input_task = make_test_task(**{
+        "run-without-variant": True,
+        "treeherder-symbol": "g()",
+        "treeherder-group-variants": True,
+        "variants": ["foo", "foo+bar"],
+    })
+    tasks = list(run_split_variants(input_task))
+    assert [t["treeherder-symbol"] for t in tasks] == ["g()", "g(foo)", "g(foo-bar)"]
 
     # test 'when' filter
     input_task = make_test_task(**{
@@ -326,6 +336,13 @@ def test_ensure_spi_disabled_on_all_but_spi(
     callback(task)
 
 
+@pytest.fixture(autouse=True)
+def clear_included_runtimes():
+    chunking._included_runtimes.cache_clear()
+    yield
+    chunking._included_runtimes.cache_clear()
+
+
 def test_resolve_dynamic_chunks_uses_variant_suffix(
     monkeypatch, run_transform, make_test_task
 ):
@@ -344,8 +361,10 @@ def test_resolve_dynamic_chunks_uses_variant_suffix(
     )
     monkeypatch.setattr(
         "gecko_taskgraph.transforms.test.chunk.resolve_manifest_runtimes",
-        lambda runtimes, manifests: {
-            m: runtimes[m] for m in manifests if m in runtimes
+        lambda platform, suite_name, manifests: {
+            m: r
+            for m, r in fake_get_runtimes(platform, suite_name).items()
+            if m in manifests
         },
     )
 
@@ -369,6 +388,7 @@ def test_resolve_dynamic_chunks_falls_back_without_runtimes(
     monkeypatch.setattr(
         "gecko_taskgraph.transforms.test.chunk.get_runtimes", lambda p, s: {}
     )
+    monkeypatch.setattr(chunking, "get_runtimes", lambda p, s: {})
 
     task = make_test_task(**{
         "chunks": "dynamic",
@@ -743,6 +763,7 @@ def task_with_zero_runtimes(monkeypatch, make_test_task):
         runtimes = dict.fromkeys(manifests, 0)
         runtimes["manifest0.toml"] = DYNAMIC_CHUNK_DURATION
         monkeypatch.setattr(chunk, "get_runtimes", lambda platform, suite: runtimes)
+        monkeypatch.setattr(chunking, "get_runtimes", lambda platform, suite: runtimes)
 
         return make_test_task(**{
             "attributes": {
@@ -790,6 +811,7 @@ def task_with_partial_chunk_runtimes(monkeypatch, make_test_task):
         manifests = [f"manifest{i}.toml" for i in range(4)]
         runtimes = dict.fromkeys(manifests, DYNAMIC_CHUNK_DURATION * 0.35)
         monkeypatch.setattr(chunk, "get_runtimes", lambda platform, suite: runtimes)
+        monkeypatch.setattr(chunking, "get_runtimes", lambda platform, suite: runtimes)
 
         return make_test_task(**{
             "attributes": {
@@ -830,6 +852,45 @@ def test_resolve_dynamic_chunks_rounds_to_nearest_when_unrestricted(
     )
 
     assert tasks[0]["chunks"] == 1
+
+
+@pytest.mark.parametrize(
+    "use_artifact_builds,supports_artifact_builds,expected_kept",
+    (
+        pytest.param(False, False, True, id="non_artifact_push_keeps_unsupported"),
+        pytest.param(True, True, True, id="artifact_push_keeps_supported"),
+        pytest.param(True, False, False, id="artifact_push_drops_unsupported"),
+    ),
+)
+def test_drop_artifact_build_unsupported(
+    run_transform,
+    make_test_task,
+    use_artifact_builds,
+    supports_artifact_builds,
+    expected_kept,
+):
+    task = make_test_task(**{"supports-artifact-builds": supports_artifact_builds})
+    params = FakeParameters({
+        "try_task_config": {"use-artifact-builds": use_artifact_builds}
+    })
+    tasks = list(
+        run_transform(
+            test_transforms.drop_artifact_build_unsupported, task, params=params
+        )
+    )
+    assert bool(tasks) is expected_kept
+
+
+def test_perfherder_extra_options(run_transform, make_test_task):
+    task = make_test_task(
+        attributes={"unittest_suite": "mochitest-plain", "unittest_variant": "xorig"}
+    )
+    task = list(run_transform(other.set_perfherder_extra_options, task))[0]
+    assert task["worker"]["env"]["PERFHERDER_EXTRA_OPTIONS"] == "mochitest-plain xorig"
+
+    task = make_test_task(attributes={"unittest_suite": "xpcshell"})
+    task = list(run_transform(other.set_perfherder_extra_options, task))[0]
+    assert task["worker"]["env"]["PERFHERDER_EXTRA_OPTIONS"] == "xpcshell"
 
 
 if __name__ == "__main__":

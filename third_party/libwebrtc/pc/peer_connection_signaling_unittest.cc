@@ -353,9 +353,34 @@ TEST_P(PeerConnectionSignalingStateTest, CreateOffer) {
   if (wrapper->signaling_state() != SignalingState::kClosed) {
     EXPECT_TRUE(wrapper->CreateOffer());
   } else {
-    std::string error;
-    ASSERT_FALSE(wrapper->CreateOffer(RTCOfferAnswerOptions(), &error));
-    EXPECT_EQ(error, "CreateOffer called when PeerConnection is closed.");
+    auto observer = make_ref_counted<MockCreateSessionDescriptionObserver>();
+    wrapper->pc()->CreateOffer(observer.get(), RTCOfferAnswerOptions());
+    EXPECT_TRUE(observer->called());
+    EXPECT_EQ(observer->error(),
+              "CreateOffer called when PeerConnection is closed.");
+  }
+}
+
+TEST_P(PeerConnectionSignalingStateTest,
+       CreateOfferWithWebApiSignalingStateRestriction) {
+  auto wrapper = CreatePeerConnectionUnderTest();
+  RTCOfferAnswerOptions options;
+  options.restrict_offer_to_stable_or_have_local_offer = true;
+  if (wrapper->signaling_state() == SignalingState::kStable ||
+      wrapper->signaling_state() == SignalingState::kHaveLocalOffer) {
+    EXPECT_TRUE(wrapper->CreateOffer(options));
+  } else {
+    auto observer = make_ref_counted<MockCreateSessionDescriptionObserver>();
+    wrapper->pc()->CreateOffer(observer.get(), options);
+    EXPECT_TRUE(observer->called());
+    if (wrapper->signaling_state() == SignalingState::kClosed) {
+      EXPECT_EQ(observer->error(),
+                "CreateOffer called when PeerConnection is closed.");
+    } else {
+      EXPECT_EQ(observer->error(),
+                "PeerConnection cannot create an offer in a state other than "
+                "stable or have-local-offer.");
+    }
   }
 }
 
@@ -365,11 +390,17 @@ TEST_P(PeerConnectionSignalingStateTest, CreateAnswer) {
       wrapper->signaling_state() == SignalingState::kHaveRemoteOffer) {
     EXPECT_TRUE(wrapper->CreateAnswer());
   } else {
-    std::string error;
-    ASSERT_FALSE(wrapper->CreateAnswer(RTCOfferAnswerOptions(), &error));
-    EXPECT_EQ(error,
-              "PeerConnection cannot create an answer in a state other than "
-              "have-remote-offer or have-local-pranswer.");
+    auto observer = make_ref_counted<MockCreateSessionDescriptionObserver>();
+    wrapper->pc()->CreateAnswer(observer.get(), RTCOfferAnswerOptions());
+    EXPECT_TRUE(observer->called());
+    if (wrapper->signaling_state() == SignalingState::kClosed) {
+      EXPECT_EQ(observer->error(),
+                "CreateAnswer called when PeerConnection is closed.");
+    } else {
+      EXPECT_EQ(observer->error(),
+                "PeerConnection cannot create an answer in a state other "
+                "than have-remote-offer or have-local-pranswer.");
+    }
   }
 }
 

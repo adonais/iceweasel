@@ -802,7 +802,6 @@ using CustomSectionVector = Vector<CustomSection, 0, SystemAllocPolicy>;
 // section. The offset of a name is expressed relative to the beginning of the
 // name section's payload so that Names can stored in wasm::Code, which only
 // holds the name section's bytes, not the whole bytecode.
-
 struct Name {
   // All fields are treated as cacheable POD:
   uint32_t offsetInNamePayload;
@@ -811,15 +810,48 @@ struct Name {
   WASM_CHECK_CACHEABLE_POD(offsetInNamePayload, length);
 
   Name() : offsetInNamePayload(UINT32_MAX), length(0) {}
+
+  bool valid() const { return offsetInNamePayload != UINT32_MAX; }
 };
 
 WASM_DECLARE_CACHEABLE_POD(Name);
 
-using NameVector = Vector<Name, 0, SystemAllocPolicy>;
+struct IndirectNameKey {
+  uint32_t outer;
+  uint32_t inner;
+
+  WASM_CHECK_CACHEABLE_POD(outer, inner);
+
+  IndirectNameKey() : outer(UINT32_MAX), inner(UINT32_MAX) {}
+  IndirectNameKey(uint32_t outer, uint32_t inner)
+      : outer(outer), inner(inner) {}
+
+  bool operator==(const IndirectNameKey& rhs) const = default;
+};
+WASM_DECLARE_CACHEABLE_POD(IndirectNameKey);
+
+struct IndirectNameKeyHasher {
+  using Lookup = IndirectNameKey;
+
+  static HashNumber hash(const Lookup& l) {
+    return mozilla::HashGeneric(l.outer, l.inner);
+  }
+  static bool match(const IndirectNameKey& key, const Lookup& l) {
+    return key == l;
+  }
+};
+
+using NameMap =
+    HashMap<uint32_t, Name, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+using IndirectNameMap =
+    HashMap<IndirectNameKey, Name, IndirectNameKeyHasher, SystemAllocPolicy>;
 
 struct NameSection {
   Name moduleName;
-  NameVector funcNames;
+  NameMap funcNames;
+  // We have no need for other name data at the moment, but more maps can be
+  // added here.
+
   uint32_t customSectionIndex;
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

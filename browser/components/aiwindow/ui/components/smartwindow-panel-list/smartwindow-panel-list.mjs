@@ -11,8 +11,11 @@ import {
   styleMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import { CONTEXT_MENTION_TYPE } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/panel-list.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/tab-group-icon.mjs";
 
 /**
  * A generic panel list component for displaying grouped items in a popup.
@@ -20,7 +23,7 @@ import "chrome://global/content/elements/panel-list.mjs";
  * This component is agnostic to the data it displays - consumers control
  * all logic including filtering, truncation, and special item handling.
  *
- * @typedef {{id: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string}} ListItem
+ * @typedef {{id: string, type?: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string, color?: string}} ListItem
  * @typedef {{items: ListItem[], headerL10nId?: string, header?: string}} ItemGroup
  * @property {ItemGroup[]} groups - Grouped list items to display
  * @property {string} placeholderL10nId - Fluent ID for empty state message
@@ -229,8 +232,10 @@ export class SmartwindowPanelList extends MozLitElement {
       const event = new CustomEvent("item-selected", {
         detail: {
           id: panelItem.itemId,
+          type: panelItem.itemType,
           label: panelItem.itemLabel || panelItem.textContent.trim(),
           icon: panelItem.itemIcon,
+          color: panelItem.itemColor,
         },
         bubbles: true,
         composed: true,
@@ -314,7 +319,38 @@ export class SmartwindowPanelList extends MozLitElement {
     return styles;
   }
 
+  // Wraps a panel-item so the row is selectable and keyboard reachable, with
+  // the icon beside it the way description rows put their icon.
+  #renderTabGroupItem(item, isSelected) {
+    return html`<div
+      class=${classMap({
+        "panel-item-container": true,
+        "panel-tab-group-item": true,
+        selected: isSelected,
+      })}
+    >
+      <tab-group-icon
+        class="panel-tab-group-icon"
+        .label=${item.label}
+        .color=${item.color}
+      ></tab-group-icon>
+      <panel-item
+        class="panel-tab-group-label"
+        .itemId=${item.id}
+        .itemType=${item.type}
+        .itemLabel=${item.label ?? ""}
+        .itemColor=${item.color}
+      >
+        ${item.label}
+      </panel-item>
+    </div>`;
+  }
+
   #renderItem(item, isSelected = false) {
+    if (item.type == CONTEXT_MENTION_TYPE.TAB_GROUP) {
+      return this.#renderTabGroupItem(item, isSelected);
+    }
+
     const hasDescription = !!item.description || !!item.descriptionL10nId;
     const panelItem = html`<panel-item
       .itemId=${item.id}

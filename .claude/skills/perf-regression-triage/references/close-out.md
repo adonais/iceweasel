@@ -68,3 +68,26 @@ without more CI.
 
 Write the comment and show it to the user. Never post to Bugzilla, change bug state, or
 needinfo anyone without their explicit approval.
+
+## Then tell the user where feedback goes
+
+Reaching any outcome above — the regression fixed, the alert found invalid, or the cost
+accepted as worth the feature — is the end of this skill's job. Once you get there, say so
+plainly, and tell the user that feedback on the skill is welcome and where to send it:
+
+- **Andrej Glavic (:aglavic)** maintains this skill. A needinfo on `aglavic@mozilla.com`,
+  set on the regression bug they were already working in, is the cheapest route.
+- **The perftest team**, in
+  [#perf-help](https://mozilla.enterprise.slack.com/archives/C03U19JCSFQ) on Slack or
+  [#perftest:mozilla.org](https://matrix.to/#/#perftest:mozilla.org) on Matrix.
+- A bug in **Testing :: Performance** for anything specific enough to act on. Note that
+  `mach file-info` maps the skill's own files to Developer Infrastructure :: AI for
+  Development, so if you reach for the **bug-filing** skill it will propose that component;
+  file it under Testing :: Performance instead.
+
+What is most useful to hear: a step that sent them the wrong way, a tool the skill assumed
+was installed, a command that did not do what the skill said it would, and how much CI the
+triage ended up costing. For a fix they can describe in a sentence, they can also patch
+`.claude/skills/perf-regression-triage/` directly and put it up with `r?#ai4dev-reviewers`.
+
+Offer this once, at the end. Do not raise it mid-triage.

@@ -9,6 +9,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -74,8 +75,6 @@ import org.mozilla.focus.GleanMetrics.TrackingProtection
 import org.mozilla.focus.R
 import org.mozilla.focus.activity.FirefoxInstallationHelper
 import org.mozilla.focus.activity.MainActivity
-import org.mozilla.focus.browser.integration.BrowserMenuCallbacks
-import org.mozilla.focus.browser.integration.BrowserMenuController
 import org.mozilla.focus.browser.integration.BrowserToolbarIntegration
 import org.mozilla.focus.browser.integration.FindInPageIntegration
 import org.mozilla.focus.browser.integration.FullScreenIntegration
@@ -94,7 +93,7 @@ import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.ext.showAsFixed
 import org.mozilla.focus.ext.titleOrDomain
-import org.mozilla.focus.menu.browser.DefaultBrowserMenu
+import org.mozilla.focus.menu.BrowserMenuCallbacks
 import org.mozilla.focus.open.OpenWithFragment
 import org.mozilla.focus.session.ui.TabsPopup
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermissionOptionsStorage
@@ -341,6 +340,11 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                         requireContext(),
                         singleMediaPicker,
                         multipleMediaPicker,
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            AndroidPhotoPicker.allHdrCapabilities()
+                        } else {
+                            null
+                        },
                     ),
             ),
             this,
@@ -576,35 +580,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
     }
 
     private fun customizeToolbar() {
-        val controller =
-            BrowserMenuController(
-                requireComponents.sessionUseCases,
-                requireComponents.appStore,
-                requireComponents.store,
-                requireComponents.topSitesUseCases,
-                tabId,
-                BrowserMenuCallbacks(
-                    shareCallback = ::shareCurrentUrl,
-                    requestDesktopCallback = ::toggleDesktopSite,
-                    addToHomeScreenCallback = ::showAddToHomescreenDialog,
-                    showFindInPageCallback = ::showFindInPageBar,
-                    openInCallback = ::openSelectBrowser,
-                    openInBrowser = ::openInBrowser,
-                    showShortcutAddedSnackBar = ::showShortcutAddedSnackBar,
-                ),
-            )
-
         val customTabSessionState = tab.ifCustomTab()
-        if (customTabSessionState?.config == null) {
-            val browserMenu =
-                DefaultBrowserMenu(
-                    context = requireContext(),
-                    appStore = requireComponents.appStore,
-                    store = requireComponents.store,
-                    onItemTapped = { controller.handleMenuInteraction(it) },
-                )
-            binding.browserToolbar.display.menuBuilder = browserMenu.menuBuilder
-        }
 
         val renderStyle =
             if (tab.isCustomTab()) {
@@ -618,7 +594,17 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                 requireComponents.store,
                 toolbar = binding.browserToolbar,
                 fragment = this,
-                controller = controller,
+                currentTabId = tabId,
+                menuCallbacks =
+                    BrowserMenuCallbacks(
+                        shareCallback = ::shareCurrentUrl,
+                        requestDesktopCallback = ::toggleDesktopSite,
+                        addToHomeScreenCallback = ::showAddToHomescreenDialog,
+                        showFindInPageCallback = ::showFindInPageBar,
+                        openInCallback = ::openSelectBrowser,
+                        openInBrowser = ::openInBrowser,
+                        showShortcutAddedSnackBar = ::showShortcutAddedSnackBar,
+                    ),
                 customTabId = tryGetCustomTabId(),
                 customTabsUseCases = requireComponents.customTabsUseCases,
                 sessionUseCases = requireComponents.sessionUseCases,

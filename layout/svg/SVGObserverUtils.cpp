@@ -589,7 +589,8 @@ void SVGTextPathObserver::OnRenderingChange() {
   if (text) {
     text->AddStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
 
-    if (text->HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW)) {
+    if (text->HasAnyStateBits(NS_STATE_SVG_TEXT_IN_REFLOW |
+                              NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY)) {
       return;
     }
 
@@ -992,8 +993,8 @@ class SVGFilterObserverListForCSSProp final : public SVGFilterObserverList {
   }
 
  protected:
-  SVGFilterObserverListForCSSProp(const SVGFilterObserverListForCSSProp& aOther)
-      : SVGFilterObserverList(aOther) {}
+  SVGFilterObserverListForCSSProp(const SVGFilterObserverListForCSSProp&) =
+      default;
 
   void OnRenderingChange(Element* aObservingElement) override;
 };
@@ -1039,10 +1040,7 @@ class SVGFilterObserverListForCanvasContext final
 
  private:
   SVGFilterObserverListForCanvasContext(
-      const SVGFilterObserverListForCanvasContext& aOther)
-      : SVGFilterObserverList(aOther),
-        mContext(aOther.mContext),
-        mActive(aOther.mActive) {}
+      const SVGFilterObserverListForCanvasContext&) = default;
 
   CanvasRenderingContext2D* mContext;
   bool mActive = true;
@@ -1330,7 +1328,9 @@ NS_DECLARE_FRAME_PROPERTY_RELEASABLE(OffsetPathProperty,
 template <class T>
 static T* GetEffectProperty(SVGReference* aReference, nsIFrame* aFrame,
                             const FramePropertyDescriptor<T>* aProperty) {
-  MOZ_ASSERT(!aFrame->GetPrevContinuation(), "Require first continuation");
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   if (!aReference) {
     return nullptr;
   }

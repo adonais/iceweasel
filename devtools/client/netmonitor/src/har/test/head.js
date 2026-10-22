@@ -30,7 +30,7 @@ async function copyAllAsHARWithContextMenu(monitor, { asString = false } = {}) {
   const firstRequest =
     monitor.panelWin.document.querySelectorAll(".request-list-item")[0];
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
 
   info("Trigger Copy All As HAR from the context menu");
@@ -55,7 +55,7 @@ async function saveAsHARWithContextMenu(monitor, { asString = false } = {}) {
   const firstRequest =
     monitor.panelWin.document.querySelectorAll(".request-list-item")[0];
 
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
 
   info("Trigger Save As HAR from the context menu");

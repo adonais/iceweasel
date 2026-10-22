@@ -2292,11 +2292,6 @@ class AccessibilityTest : BaseSessionTest() {
         val firstListFirstItem = createNodeInfo(firstList.getChildId(0))
         assertThat("Item has collectionItemInfo", firstListFirstItem.collectionItemInfo, notNullValue())
         assertThat("Item has correct rowIndex", firstListFirstItem.collectionItemInfo.rowIndex, equalTo(0))
-        assertThat(
-            "List item has a role description",
-            firstListFirstItem.extras.getCharSequence("AccessibilityNodeInfo.roleDescription")!!.toString(),
-            equalTo("list item"),
-        )
 
         val secondList = createNodeInfo(rootNode.getChildId(1))
         assertThat("Second list has 1 child", secondList.childCount, equalTo(1))
@@ -3018,6 +3013,50 @@ class AccessibilityTest : BaseSessionTest() {
                 // back and fourth.
                 @AssertCalled(count = 0) override fun onAccessibilityFocused(event: AccessibilityEvent) {}
             }
+        )
+    }
+
+    @Test
+    fun testGenericFocusable() {
+        var nodeId = AccessibilityNodeProvider.HOST_VIEW_ID
+        mainSession.loadUri(
+            "data:text/html;charset=utf-8,<span tabindex='0' aria-label='i am generic'>a generic focusable node.</span>"
+        )
+        waitForInitialFocus(true)
+
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onAccessibilityFocused(event: AccessibilityEvent) {
+                    nodeId = getSourceId(event)
+                    val node = createNodeInfo(nodeId)
+                    assertThat(
+                        "Accessibility focus on generic node",
+                        node.text.toString(),
+                        startsWith("i am generic"),
+                    )
+                }
+            }
+        )
+    }
+
+    @Test
+    fun testRoleDescription() {
+        var nodeId = AccessibilityNodeProvider.HOST_VIEW_ID
+        mainSession.loadUri("data:text/html,<div role='menu'><div role='menuitemcheckbox'>hi</div></div>")
+        waitForInitialFocus()
+
+        val rootNode = createNodeInfo(View.NO_ID)
+        assertThat("Document has 1 child", rootNode.childCount, equalTo(1))
+
+        val menuNode = createNodeInfo(rootNode.getChildId(0))
+        assertThat("menu has 1 child", menuNode.childCount, equalTo(1))
+
+        val itemNode = createNodeInfo(menuNode.getChildId(0))
+        assertThat(
+            "menu item has correct role",
+            itemNode.extras.getCharSequence("AccessibilityNodeInfo.roleDescription")!!.toString(),
+            equalTo("check menu item"),
         )
     }
 }

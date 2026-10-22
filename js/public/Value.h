@@ -112,8 +112,10 @@ class JS_PUBLIC_API Value;
 // Tag values are carefully ordered to support a set of micro-optimizations. In
 // particular:
 //
-// 1. Object is the highest tag, to simplify isPrimitive checks. (See
-//    ValueUpperExclPrimitiveTag)
+// 1. The shifted String, Symbol and Object tags are each a contiguous run of
+//    set bits, which AArch64 encodes as a logical immediate, so boxing,
+//    unboxing and tag tests for these GC things need no instruction to
+//    materialize the tag.
 // 2. Numbers (Double and Int32) are the lowest tags, to simplify isNumber
 //    checks. (See ValueUpperInclNumberTag)
 // 3. Non-GC tags are ordered before GC-tags, to simplify isGCThing checks. (See
@@ -137,6 +139,9 @@ class JS_PUBLIC_API Value;
 //    left to allocate new tags.)
 //
 //    * But see JS_NONCANONICAL_HARDWARE_NAN below.
+// 6. The low two bits of the String, Object and BigInt tags are their
+//    JS::TraceKind, and the PrivateGCThing and Symbol tags are adjacent, so
+//    Value::traceKind needs a single branch. (See Value::traceKind)
 //
 // [1]:
 // https://wingolog.org/archives/2011/05/18/value-representation-in-javascript-implementations#969f63bbe4eb912778c9da85feb0f5763e7a7862
@@ -162,11 +167,11 @@ enum JSValueType : uint8_t {
   JSVAL_TYPE_UNDEFINED = 0x03,
   JSVAL_TYPE_NULL = 0x04,
   JSVAL_TYPE_MAGIC = 0x05,
-  JSVAL_TYPE_STRING = 0x06,
-  JSVAL_TYPE_SYMBOL = 0x07,
-  JSVAL_TYPE_PRIVATE_GCTHING = 0x08,
+  JSVAL_TYPE_PRIVATE_GCTHING = 0x07,
+  JSVAL_TYPE_SYMBOL = 0x08,
   JSVAL_TYPE_BIGINT = 0x09,
   JSVAL_TYPE_OBJECT = 0x0c,
+  JSVAL_TYPE_STRING = 0x0e,
 
   // This type never appears in a Value; it's only an out-of-band value.
   JSVAL_TYPE_UNKNOWN = 0x20
@@ -268,9 +273,8 @@ constexpr bool ValueIsDouble(uint64_t bits) {
   return uint32_t(bits >> JSVAL_TAG_SHIFT) <= uint32_t(JSVAL_TAG_CLEAR);
 }
 
-constexpr JSValueTag ValueUpperExclPrimitiveTag = JSVAL_TAG_OBJECT;
 constexpr JSValueTag ValueUpperInclNumberTag = JSVAL_TAG_INT32;
-constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_STRING;
+constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_PRIVATE_GCTHING;
 
 #elif defined(JS_PUNBOX64)
 
@@ -298,13 +302,12 @@ constexpr uint64_t ValueTypeToShiftedTag(JSValueType type) {
 #  define JSVAL_TYPE_TO_SHIFTED_TAG(type) \
     (JS::detail::ValueTypeToShiftedTag(type))
 
-constexpr JSValueTag ValueUpperExclPrimitiveTag = JSVAL_TAG_OBJECT;
 constexpr JSValueTag ValueUpperInclNumberTag = JSVAL_TAG_INT32;
-constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_STRING;
+constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_PRIVATE_GCTHING;
 
-constexpr uint64_t ValueUpperExclShiftedPrimitiveTag = JSVAL_SHIFTED_TAG_OBJECT;
 constexpr uint64_t ValueUpperExclShiftedNumberTag = JSVAL_SHIFTED_TAG_BOOLEAN;
-constexpr uint64_t ValueLowerInclShiftedGCThingTag = JSVAL_SHIFTED_TAG_STRING;
+constexpr uint64_t ValueLowerInclShiftedGCThingTag =
+    JSVAL_SHIFTED_TAG_PRIVATE_GCTHING;
 
 // JSVAL_TYPE_OBJECT and JSVAL_TYPE_NULL differ by one bit. We can use this to
 // implement toObjectOrNull more efficiently.
@@ -837,22 +840,9 @@ class Value {
 
   bool isBigInt() const { return toTag() == JSVAL_TAG_BIGINT; }
 
-  bool isObject() const {
-#if defined(JS_NUNBOX32)
-    return toTag() == JSVAL_TAG_OBJECT;
-#elif defined(JS_PUNBOX64)
-    MOZ_ASSERT((asBits_ >> JSVAL_TAG_SHIFT) <= JSVAL_TAG_OBJECT);
-    return asBits_ >= JSVAL_SHIFTED_TAG_OBJECT;
-#endif
-  }
+  bool isObject() const { return toTag() == JSVAL_TAG_OBJECT; }
 
-  bool isPrimitive() const {
-#if defined(JS_NUNBOX32)
-    return uint32_t(toTag()) < uint32_t(detail::ValueUpperExclPrimitiveTag);
-#elif defined(JS_PUNBOX64)
-    return asBits_ < detail::ValueUpperExclShiftedPrimitiveTag;
-#endif
-  }
+  bool isPrimitive() const { return !isObject(); }
 
   bool isObjectOrNull() const { return isObject() || isNull(); }
 
@@ -905,7 +895,7 @@ class Value {
                   "Value type tags must correspond with JS::TraceKinds.");
     static_assert((JSVAL_TAG_BIGINT & 0x03) == size_t(JS::TraceKind::BigInt),
                   "Value type tags must correspond with JS::TraceKinds.");
-    static_assert(JSVAL_TAG_SYMBOL + 1 == JSVAL_TAG_PRIVATE_GCTHING,
+    static_assert(JSVAL_TAG_PRIVATE_GCTHING + 1 == JSVAL_TAG_SYMBOL,
                   "Symbol and PrivateGCThing tags should be adjacent to allow "
                   "checking for them with a single branch");
     JSValueTag tag = toTag();
@@ -1022,7 +1012,7 @@ class Value {
     }
 
     JSValueType type = extractNonDoubleType();
-    MOZ_ASSERT(type <= JSVAL_TYPE_OBJECT);
+    MOZ_ASSERT(type <= JSVAL_TYPE_STRING);
     return JS::ValueType(type);
   }
 

@@ -327,7 +327,9 @@ void AccessibleWrap::GetRoleDescription(role aRole, AccAttributes* aAttributes,
   }
 
   GetAccService()->GetStringRole(aRole, aGeckoRole);
-  LocalizeString(aGeckoRole, aRoleDescription);
+  nsAutoString stringRoleToken(aGeckoRole);
+  stringRoleToken.StripWhitespace();
+  LocalizeString(stringRoleToken, aRoleDescription);
 }
 
 int32_t AccessibleWrap::AndroidClass(Accessible* aAccessible) {

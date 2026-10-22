@@ -7,7 +7,7 @@ import { WindowGlobalBiDiModule } from "chrome://remote/content/webdriver-bidi/m
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  addDebuggerToGlobal: "resource://gre/modules/jsdebugger.sys.mjs",
+  addDebuggerToGlobal: "moz-src:///devtools/platform/jsdebugger.sys.mjs",
 
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",

@@ -99,7 +99,7 @@ bug.
 
 Because of the public visibility, pushing to Try has all the same concerns
 as committing the patch. Please heed the concerns in the
-{ref}`landing-your-patch` section.  If necessary, you can fold your changes
+{ref}`landing-your-patch` section. If necessary, you can fold your changes
 into another working patch and send them to try together, not referencing
 the security fixes in the commit or comments.
 
@@ -142,7 +142,7 @@ information about the security vulnerability unnecessarily. Specifically:
 2. Consider separating out tests into a separate commit.
    While previously we did not land tests with the patch ever, the advent of
    AI tools has frequently made this precaution not worth the extra effort
-   for the developer.  Instead **consider with your experience if the
+   for the developer. Instead **consider with your experience if the
    vulnerability is unusually difficult to determine from the patch,
    or unusually difficult to trigger** - this is when it is appropriate to
    separate the test into a separate commit.
@@ -163,24 +163,24 @@ information about the security vulnerability unnecessarily. Specifically:
    - There are two main techniques for remembering to check in the
      tests later:
 
-   > 1. clone the sec bug into a separate "task" bug **that is also
-   >    in a security-sensitive group to ensure it's not publicly visible**
-   >    called something like "land tests for bug xxxxx" and assign to
-   >    yourself. It should get a "sec-other" keyword rating.
-   >
-   >    Tip: In phabricator, you can change the bug linked to
-   >    a commit with tests if the tests were already separate, while keeping
-   >    the previously granted review, meaning you can just land the patch
-   >    when ready, rather than having your reviewer and you have to remember
-   >    what this was about a month or two down the line.
-   >
-   > 2. Or, set the "in-testsuite" flag to "?" and add a whiteboard tag of the
-   >    form [reminder-test 2026-11-30]. Bugbot will needinfo the bug assignee
-   >    on that date. When the tests get checked in, change the "in-testsuite"
-   >    flag to "+".
-   >
-   >    If the tests are revealing enough to separate this way, the reminder
-   >    date should be 4 weeks after the release containing the fix.
+     1. clone the sec bug into a separate "task" bug **that is also
+        in a security-sensitive group to ensure it's not publicly visible**
+        called something like "land tests for bug xxxxx" and assign to
+        yourself. It should get a "sec-other" keyword rating.
+
+        Tip: In phabricator, you can change the bug linked to
+        a commit with tests if the tests were already separate, while keeping
+        the previously granted review, meaning you can just land the patch
+        when ready, rather than having your reviewer and you have to remember
+        what this was about a month or two down the line.
+
+     2. Or, set the "in-testsuite" flag to "?" and add a whiteboard tag of the
+        form [reminder-test 2026-11-30]. Bugbot will needinfo the bug assignee
+        on that date. When the tests get checked in, change the "in-testsuite"
+        flag to "+".
+
+        If the tests are revealing enough to separate this way, the reminder
+        date should be 4 weeks after the release containing the fix.
 
 ### Landing tests
 

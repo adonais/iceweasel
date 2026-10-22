@@ -51,6 +51,14 @@ inline bool IsVideoCodec(AVCodecID aCodecID) {
   }
 }
 
+inline int64_t GetFramePts(const AVFrame* aFrame) {
+#if LIBAVCODEC_VERSION_MAJOR > 57
+  return aFrame->pts;
+#else
+  return aFrame->pkt_pts;
+#endif
+}
+
 // Access the correct location for the channel count, based on ffmpeg version.
 template <typename T>
 inline int& ChannelCount(T* aObject) {

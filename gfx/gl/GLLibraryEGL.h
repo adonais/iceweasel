@@ -154,6 +154,7 @@ class GLLibraryEGL final {
   PRLibrary* mGLLibrary = nullptr;
   bool mIsANGLE = false;
   bool mIsD3DANGLE = false;
+  bool mIsMetalANGLE = false;
   std::bitset<UnderlyingValue(EGLLibExtension::Max)> mAvailableExtensions;
   std::weak_ptr<EglDisplay> mDefaultDisplay;
   std::unordered_map<EGLDisplay, std::weak_ptr<EglDisplay>> mActiveDisplays;
@@ -195,6 +196,7 @@ class GLLibraryEGL final {
 
   bool IsANGLE() const { return mIsANGLE; }
   bool IsD3DANGLE() const { return mIsD3DANGLE; }
+  bool IsMetalANGLE() const { return mIsMetalANGLE; }
 
   // -
   // PFN wrappers

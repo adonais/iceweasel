@@ -1144,6 +1144,98 @@ TEST(H264, CheckBoundaryPicHeight)
   EXPECT_FALSE(H264::DecodeSPS(tooTall, spsdata));
 }
 
+static RefPtr<MediaByteBuffer> BuildAVCCWithReorder(
+    bool aWriteVui, bool aHasRestriction, uint32_t aNumReorder,
+    uint32_t aMaxDecBuffering, uint8_t aProfileIdc, uint8_t aConstraints) {
+  RefPtr<MediaByteBuffer> sps = new MediaByteBuffer();
+  BitWriter bw(sps);
+  bw.WriteU8(aProfileIdc);   // profile_idc
+  bw.WriteU8(aConstraints);  // constraint_set flags + reserved
+  bw.WriteU8(0x1E);          // level_idc
+  bw.WriteUE(0);             // seq_parameter_set_id
+  if (aProfileIdc == 100 || aProfileIdc == 110 || aProfileIdc == 122 ||
+      aProfileIdc == 244 || aProfileIdc == 44 || aProfileIdc == 83 ||
+      aProfileIdc == 86 || aProfileIdc == 118 || aProfileIdc == 128 ||
+      aProfileIdc == 138 || aProfileIdc == 139 || aProfileIdc == 134) {
+    bw.WriteUE(1);       // chroma_format_idc (4:2:0)
+    bw.WriteUE(0);       // bit_depth_luma_minus8
+    bw.WriteUE(0);       // bit_depth_chroma_minus8
+    bw.WriteBit(false);  // qpprime_y_zero_transform_bypass_flag
+    bw.WriteBit(false);  // seq_scaling_matrix_present_flag
+  }
+  bw.WriteUE(0);           // log2_max_frame_num_minus4
+  bw.WriteUE(0);           // pic_order_cnt_type
+  bw.WriteUE(0);           // log2_max_pic_order_cnt_lsb_minus4
+  bw.WriteUE(0);           // max_num_ref_frames
+  bw.WriteBit(false);      // gaps_in_frame_num_value_allowed_flag
+  bw.WriteUE(79);          // pic_width_in_mbs_minus1
+  bw.WriteUE(44);          // pic_height_in_map_units_minus1
+  bw.WriteBit(true);       // frame_mbs_only_flag
+  bw.WriteBit(true);       // direct_8x8_inference_flag
+  bw.WriteBit(false);      // frame_cropping_flag
+  bw.WriteBit(aWriteVui);  // vui_parameters_present_flag
+  if (aWriteVui) {
+    bw.WriteBit(false);            // aspect_ratio_info_present_flag
+    bw.WriteBit(false);            // overscan_info_present_flag
+    bw.WriteBit(false);            // video_signal_type_present_flag
+    bw.WriteBit(false);            // chroma_loc_info_present_flag
+    bw.WriteBit(false);            // timing_info_present_flag
+    bw.WriteBit(false);            // nal_hrd_parameters_present_flag
+    bw.WriteBit(false);            // vcl_hrd_parameters_present_flag
+    bw.WriteBit(false);            // pic_struct_present_flag
+    bw.WriteBit(aHasRestriction);  // bitstream_restriction_flag
+    if (aHasRestriction) {
+      bw.WriteBit(true);             // motion_vectors_over_pic_boundaries_flag
+      bw.WriteUE(0);                 // max_bytes_per_pic_denom
+      bw.WriteUE(0);                 // max_bits_per_mb_denom
+      bw.WriteUE(0);                 // log2_max_mv_length_horizontal
+      bw.WriteUE(0);                 // log2_max_mv_length_vertical
+      bw.WriteUE(aNumReorder);       // max_num_reorder_frames
+      bw.WriteUE(aMaxDecBuffering);  // max_dec_frame_buffering
+    }
+  }
+  bw.CloseWithRbspTrailing();
+  static const uint8_t pps[] = {0x00};
+  RefPtr<MediaByteBuffer> extraData = new MediaByteBuffer();
+  H264::WriteExtraData(extraData.get(), aProfileIdc, aConstraints, 0x1E,
+                       Span<const uint8_t>{sps->Elements(), sps->Length()},
+                       Span<const uint8_t>{pps, std::size(pps)});
+  return extraData.forget();
+}
+
+TEST(H264, ComputeMaxNumReorderFrames)
+{
+  // VUI bitstream-restriction parameters carrying max_num_reorder_frames
+  // == 2: decode order can differ from presentation order (B-frames).
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(
+                BuildAVCCWithReorder(true, true, 2, 2, 0x42, 0x00).get()),
+            2u);
+  // max_num_reorder_frames above max_dec_frame_buffering is invalid.
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(
+                BuildAVCCWithReorder(true, true, 5, 2, 0x42, 0x00).get()),
+            0u);
+  // Without restriction parameters the value is inferred: baseline can
+  // reorder, so MaxDpbFrames (2 for this 80x45 level 3.0 picture).
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(
+                BuildAVCCWithReorder(true, false, 0, 0, 0x42, 0x00).get()),
+            2u);
+  // ... while an intra-only profile (High Intra) infers 0.
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(
+                BuildAVCCWithReorder(true, false, 0, 0, 100, 0x10).get()),
+            0u);
+  // Without VUI at all the count stays at its default 0.
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(
+                BuildAVCCWithReorder(false, false, 0, 0, 0x42, 0x00).get()),
+            0u);
+  // Unparseable extradata signals no reordering rather than guessing.
+  auto empty = MakeRefPtr<MediaByteBuffer>();
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(empty.get()), 0u);
+  static const uint8_t junk[] = {0x01, 0x02, 0x03, 0x04};
+  auto garbage = MakeRefPtr<MediaByteBuffer>();
+  garbage->AppendElements(junk, std::size(junk));
+  EXPECT_EQ(H264::ComputeMaxNumReorderFrames(garbage.get()), 0u);
+}
+
 TEST(H265, HVCCParsingSuccess)
 {
   {
@@ -1653,6 +1745,24 @@ TEST(H265, SPSIteratorAndCreateNewExtraData)
   auto hvcc2 = rv3.unwrap();
   EXPECT_EQ(hvcc.mNALUs.Length(), hvcc2.mNALUs.Length());
   EXPECT_EQ(hvcc.NumSPS(), hvcc2.NumSPS());
+}
+
+TEST(H265, ComputeMaxReorderPics)
+{
+  // sSps carries sps_max_num_reorder_pics[0] == 2 (see
+  // DecodeSPSFromSPSNALU above), so the reorder count comes straight out of
+  // the SPS.
+  RefPtr<MediaRawData> rawData{GetHVCCSample(sSps, std::size(sSps))};
+  RefPtr<MediaByteBuffer> extradata = H265::ExtractHVCCExtraData(rawData);
+  ASSERT_TRUE(extradata);
+  EXPECT_EQ(H265::ComputeMaxReorderPics(extradata.get()), 2u);
+  // Unparseable extradata signals no reordering rather than guessing.
+  auto empty = MakeRefPtr<MediaByteBuffer>();
+  EXPECT_EQ(H265::ComputeMaxReorderPics(empty.get()), 0u);
+  static const uint8_t junk[] = {0x01, 0x02, 0x03, 0x04};
+  auto garbage = MakeRefPtr<MediaByteBuffer>();
+  garbage->AppendElements(junk, std::size(junk));
+  EXPECT_EQ(H265::ComputeMaxReorderPics(garbage.get()), 0u);
 }
 
 TEST(H265, ConfWindowTest)

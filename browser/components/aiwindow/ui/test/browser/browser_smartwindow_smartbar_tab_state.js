@@ -17,6 +17,10 @@ const { ChatStore, MESSAGE_ROLE } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
 );
 
+const { AgentUI } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AgentUI.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -239,6 +243,23 @@ describe("Smartbar tab state input tracking", () => {
         await getSidebarInputValue(win),
         "",
         "Input should be empty after chat submission"
+      );
+    });
+
+    it("should clear input after an agent command submission", async () => {
+      // Simulate an agent command (e.g. /watch) being handled: the commit
+      // returns early before submitChatMessage runs, so the stored draft must
+      // still be cleared by the commit handler itself.
+      sandbox.stub(AgentUI, "tryHandleCommand").returns(true);
+
+      await typeInSmartbar(sidebarBrowser, "watch this");
+      await submitSmartbar(sidebarBrowser);
+
+      await switchAwayAndBack(win, tab);
+      Assert.equal(
+        await getSidebarInputValue(win),
+        "",
+        "Input should be empty after an agent command submission"
       );
     });
 

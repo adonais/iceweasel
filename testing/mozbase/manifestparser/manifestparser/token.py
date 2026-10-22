@@ -194,6 +194,7 @@ class ManifestTokens:
         _a11y_checks: Token = self.add(Token(t_type=t_variant, value="a11y_checks"))
         _condprof: Token = self.add(Token(t_type=t_variant, value="condprof"))
         _e10s: Token = self.add(Token(t_type=t_variant, value="e10s"))
+        _emesigned: Token = self.add(Token(t_type=t_variant, value="emesigned"))
         _emewmf: Token = self.add(Token(t_type=t_variant, value="emewmf"))
         _fission: Token = self.add(Token(t_type=t_variant, value="fission"))
         # fission-high-value -- not used in any manifests

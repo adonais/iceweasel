@@ -70,6 +70,7 @@ private val ContextMenuWidth =
  * @param isInLandscapeMode Whether the device is in landscape mode.
  */
 @Suppress("LongMethod")
+@Deprecated("Use Dropdown2 instead", ReplaceWith("Dropdown2", "mozilla.components.compose.base.Dropdown2"))
 @Composable
 fun Dropdown(
     label: String,
@@ -224,6 +225,7 @@ private fun getSelectedDropdownItems(): List<MenuItem.CheckableItem> =
 
 @FlexibleWindowLightDarkPreview
 @Composable
+@Suppress("Deprecation")
 private fun DropdownPreview() {
     AcornTheme {
         Surface {

@@ -3,8 +3,8 @@ set -x -e -v
 
 export TARGET_TRIPLE="x86_64-apple-darwin"
 
-MACOS_SYSROOT=$(ls -d $MOZ_FETCHES_DIR/MacOSX*.sdk)
-CLANGDIR="${MOZ_FETCHES_DIR}/clang"
+MACOS_TARGET=$TARGET_TRIPLE
+. $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
 
 # Deploy the wrench dependencies
 mv ${MOZ_FETCHES_DIR}/wrench-deps/{vendor,.cargo} "${GECKO_PATH}/gfx/wr/"
@@ -22,8 +22,8 @@ pushd "${MOZ_FETCHES_DIR}/clang/bin"
 cat > ${TARGET_TRIPLE}-pkg-config <<END_PKGCONFIG_WRAPPER
 #!/bin/sh
 export PKG_CONFIG_DIR=
-export PKG_CONFIG_LIBDIR=${MACOS_SYSROOT}/usr/lib/pkgconfig:${MACOS_SYSROOT}/usr/share/pkgconfig
-export PKG_CONFIG_SYSROOT_DIR=${MACOS_SYSROOT}
+export PKG_CONFIG_LIBDIR=${MACOS_SDK}/usr/lib/pkgconfig:${MACOS_SDK}/usr/share/pkgconfig
+export PKG_CONFIG_SYSROOT_DIR=${MACOS_SDK}
 exec pkg-config "\$@"
 END_PKGCONFIG_WRAPPER
 chmod +x "${TARGET_TRIPLE}-pkg-config"
@@ -34,22 +34,22 @@ popd
 ${MOZ_FETCHES_DIR}/clang/bin/llvm-config "\$@" | sed 's,${MOZ_FETCHES_DIR}/clang,${MOZ_FETCHES_DIR}/clang-mac/clang,g;s,-lLLVM-[0-9]\+,-lLLVM,g'
 EOF_LLVM_CONFIG
 
-export PATH="${MOZ_FETCHES_DIR}/rustc/bin:${MOZ_FETCHES_DIR}/clang/bin:${MOZ_FETCHES_DIR}/wrench-deps/meson:${PATH}"
+export PATH="${MOZ_FETCHES_DIR}/rustc/bin:${MOZ_FETCHES_DIR}/wrench-deps/meson:${PATH}"
 
 # Tell the configure script where to find zlib, because otherwise it tries
 # to use pkg-config to find it, which fails (no .pc file in the macos SDK).
-export ZLIB_CFLAGS="-I${MACOS_SYSROOT}/usr/include"
-export ZLIB_LIBS="-L${MACOS_SYSROOT}/usr/lib -lz"
+export ZLIB_CFLAGS="-I${MACOS_SDK}/usr/include"
+export ZLIB_LIBS="-L${MACOS_SDK}/usr/lib -lz"
 
 # Set up compiler and flags for cross-compile. Careful to only export the
 # target-specific CFLAGS/CXXFLAGS variables, to not break any host builds.
-export CC="${CLANGDIR}/bin/clang"
-TARGET_CFLAGS="-fuse-ld=lld -target ${TARGET_TRIPLE} -mmacosx-version-min=10.15 --rtlib=compiler-rt --sysroot ${MACOS_SYSROOT} -Qunused-arguments"
+export CC="${MACOS_CC}"
+TARGET_CFLAGS="${MACOS_CFLAGS} --rtlib=compiler-rt"
 export CFLAGS_${TARGET_TRIPLE//-/_}="${TARGET_CFLAGS}"
-export CXX="${CLANGDIR}/bin/clang++"
-TARGET_CXXFLAGS="-fuse-ld=lld -target ${TARGET_TRIPLE} -mmacosx-version-min=10.15 --rtlib=compiler-rt --sysroot ${MACOS_SYSROOT} -stdlib=libc++ -Qunused-arguments"
+export CXX="${MACOS_CXX}"
+TARGET_CXXFLAGS="${MACOS_CFLAGS} --rtlib=compiler-rt -stdlib=libc++"
 export CXXFLAGS_${TARGET_TRIPLE//-/_}="${TARGET_CXXFLAGS}"
-export AR="${CLANGDIR}/bin/llvm-ar"
+export AR="${MACOS_AR}"
 
 # See documentation in cargo-linker for why we need this. TL;DR is that passing
 # the right arguments to the linker when invoked by cargo is nigh impossible
@@ -61,4 +61,4 @@ export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${GECKO_PATH}/build/cargo-linker
 
 # Ensure that any dependencies which use bindgen pass the correct
 # sysroot. Specificlly, this is needed to compile mozangle.
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot ${MACOS_SYSROOT}"
+export BINDGEN_EXTRA_CLANG_ARGS="--sysroot ${MACOS_SDK}"

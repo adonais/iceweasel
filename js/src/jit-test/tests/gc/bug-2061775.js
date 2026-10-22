@@ -4,11 +4,9 @@ let W = newGlobal({newCompartment: true});
 W.eval(`var wm = new WeakMap; var key = {};`);
 
 var wm2 = new WeakMap;
-let idx = -1;
 
 function setup() {
   let sym = Symbol('s');
-  idx = getAtomMarkIndex(sym);
   W.sym = sym;
   W.eval(`wm.set(key, sym); sym = null;`);
   let O = {victim: true};
@@ -29,14 +27,16 @@ clobber(500);
 W.eval(`grayRoot().push(key); key = null;`);
 gc();
 gc();
+let marks = getMarks();
+assertEq(marks[0], "gray");
 
 W.eval(`key = grayRoot()[0];`);
 gc();
-let marks = getMarks();
-assertEq(marks[0] == "black" && getAtomMarkColor(W, idx) == "gray", false);
+marks = getMarks();
+assertEq(marks[0], "black");
 
 schedulezone(this);
 schedulezone('atoms');
 gc('zone');
 marks = getMarks();
-assertEq(marks[0] == "gray" && marks[1] == "gray", false);
+assertEq(marks[0], "black");

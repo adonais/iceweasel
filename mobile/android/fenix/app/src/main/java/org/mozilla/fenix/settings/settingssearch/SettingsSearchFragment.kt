@@ -62,7 +62,10 @@ open class SettingsSearchFragment : Fragment(), SystemInsetsPaddedFragment {
         val recentSettingsSearchesRepository =
             FenixRecentSettingsSearchesRepository(
                 dataStore = requireContext().recentSearchesDataStore,
-                preferenceFileInformationList = defaultPreferenceFileInformationList,
+                preferenceFileInformationList =
+                    defaultPreferenceFileInformationList(
+                        includeAutofillPreferences = requireContext().components.settings.isAutofillSupported
+                    ),
             )
 
         return storeProvider.get { restoredState ->

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
-import MozSelect from "chrome://global/content/elements/moz-select.mjs";
+import { MozSelect } from "chrome://global/content/elements/moz-select.mjs";
 
 const lazy = {};
 

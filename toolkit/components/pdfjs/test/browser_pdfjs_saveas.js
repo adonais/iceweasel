@@ -220,7 +220,27 @@ add_task(async function () {
   );
 });
 
-/** Check that an edited local PDF defaults to its source directory. */
+async function setLastSaveDirectory(url, id) {
+  const lastDir = createTemporarySaveDirectory(id);
+  const downloadLastDir = new DownloadLastDir(null);
+  downloadLastDir.setFile(url, lastDir);
+  await TestUtils.waitForTick();
+  registerCleanupFunction(() => {
+    downloadLastDir.setFile(url, null);
+    lastDir.remove(true);
+  });
+  return lastDir;
+}
+
+async function fillFormField(browser) {
+  await SpecialPowers.spawn(browser, [], async function () {
+    const formInput = content.document.querySelector("#viewerContainer input");
+    formInput.value = "test";
+    formInput.dispatchEvent(new content.window.Event("input"));
+  });
+}
+
+/** Edited PDFs outside the temporary directory use their source directory. */
 add_task(async function test_pdf_saveas_local_file() {
   const sourceFile = getChromeDir(getResolvedURI(gTestPath));
   sourceFile.append("file_pdfjs_form.pdf");
@@ -229,27 +249,13 @@ add_task(async function test_pdf_saveas_local_file() {
   sourceFile.normalize();
   const sourceDir = sourceFile.parent;
   const url = Services.io.newFileURI(sourceFile).spec;
-
-  const lastDir = createTemporarySaveDirectory("lastdir");
-  const downloadLastDir = new DownloadLastDir(null);
-  downloadLastDir.setFile(url, lastDir);
-  await TestUtils.waitForTick();
-  registerCleanupFunction(() => {
-    downloadLastDir.setFile(url, null);
-    lastDir.remove(true);
-  });
+  await setLastSaveDirectory(url, "lastdir");
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (browser) {
       await waitForPdfJSAnnotationLayer(browser, url);
-      await SpecialPowers.spawn(browser, [], async function () {
-        const formInput = content.document.querySelector(
-          "#viewerContainer input"
-        );
-        formInput.value = "test";
-        formInput.dispatchEvent(new content.window.Event("input"));
-      });
+      await fillFormField(browser);
 
       const displayDirectoryPromise = promiseFilePickerDisplayDirectory();
       saveBrowser(browser);
@@ -263,33 +269,52 @@ add_task(async function test_pdf_saveas_local_file() {
   );
 });
 
-/** Check that a PDF in the temporary directory defaults to the last-used one. */
+/** Unmodified local PDFs default to the last-used directory. */
+add_task(async function test_pdf_saveas_unmodified_local_file() {
+  const sourceFile = getChromeDir(getResolvedURI(gTestPath));
+  sourceFile.append("file_pdfjs_form.pdf");
+  const url = Services.io.newFileURI(sourceFile).spec;
+  const lastDir = await setLastSaveDirectory(url, "unmodifiedlastdir");
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function (browser) {
+      await waitForPdfJS(browser, url);
+
+      const displayDirectoryPromise = promiseFilePickerDisplayDirectory();
+      saveBrowser(browser);
+      is(
+        await displayDirectoryPromise,
+        lastDir.path,
+        "Proposed directory must be the last used one, not the PDF's own"
+      );
+      await waitForPdfJSClose(browser);
+    }
+  );
+});
+
+/** Edited PDFs under the temporary directory use the last-used directory. */
 add_task(async function test_pdf_saveas_temporary_file() {
   const sourceDir = createTemporarySaveDirectory("tempsource");
   const sourceFile = sourceDir.clone();
-  sourceFile.append("file_pdfjs_test.pdf");
+  sourceFile.append("file_pdfjs_form.pdf");
   if (sourceFile.exists()) {
     sourceFile.remove(false);
   }
   const testFile = getChromeDir(getResolvedURI(gTestPath));
-  testFile.append("file_pdfjs_test.pdf");
+  testFile.append("file_pdfjs_form.pdf");
   testFile.copyTo(sourceDir, "");
   const url = Services.io.newFileURI(sourceFile).spec;
-
-  const lastDir = createTemporarySaveDirectory("templastdir");
-  const downloadLastDir = new DownloadLastDir(null);
-  downloadLastDir.setFile(url, lastDir);
-  await TestUtils.waitForTick();
+  const lastDir = await setLastSaveDirectory(url, "templastdir");
   registerCleanupFunction(() => {
-    downloadLastDir.setFile(url, null);
-    lastDir.remove(true);
     sourceDir.remove(true);
   });
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (browser) {
-      await waitForPdfJS(browser, url);
+      await waitForPdfJSAnnotationLayer(browser, url);
+      await fillFormField(browser);
 
       const displayDirectoryPromise = promiseFilePickerDisplayDirectory();
       saveBrowser(browser);

@@ -132,22 +132,13 @@ skip-if = [
 ]
 
 ["test_bug386782.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1912735
-]
 
 ["test_bug430624.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3",
-]
 
 ["test_bug430723.html"]
 skip-if = [
   "http2",
   "http3",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 874423
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 874423
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 874423
 ]
 
 ["test_bug1300461.html"]

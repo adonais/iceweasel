@@ -9,6 +9,8 @@ prefs = [
   "media.seamless-looping-video=false",
   # Bug 2021606
   "privacy.baselineFingerprintingProtection=false",
+  # Bug 2077709
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 support-files = [
@@ -49,18 +51,10 @@ fail-if = [
 ]
 
 ["test_2_conformance2__attribs__gl-vertex-attrib-i-render.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance2__attribs__gl-vertex-attrib-normalized-int.html"]
 
 ["test_2_conformance2__attribs__gl-vertex-attrib.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance2__attribs__gl-vertexattribipointer-offsets.html"]
 
@@ -87,10 +81,6 @@ skip-if = [
 ["test_2_conformance2__buffers__get-buffer-sub-data-validity.html"]
 
 ["test_2_conformance2__buffers__get-buffer-sub-data.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
-]
 
 ["test_2_conformance2__buffers__one-large-uniform-buffer.html"]
 
@@ -145,13 +135,6 @@ skip-if = [
 ["test_2_conformance2__extensions__ext-texture-norm16.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'", #Bug 1658801
-]
-fail-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && !nightly_build",
 ]
 
 ["test_2_conformance2__extensions__nv-shader-noperspective-interpolation.html"]
@@ -233,7 +216,6 @@ fail-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_2_conformance2__misc__getextension-while-pbo-bound-stability.html"]
@@ -248,8 +230,6 @@ skip-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
 ]
 
 ["test_2_conformance2__misc__views-with-offsets.html"]
@@ -400,8 +380,6 @@ fail-if = [
 ["test_2_conformance2__rendering__draw-buffers-sparse-output-locations.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100'",
-  "os == 'win' && os_version == '11.26200'",
 ]
 
 ["test_2_conformance2__rendering__draw-buffers.html"]
@@ -443,7 +421,6 @@ fail-if = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_2_conformance2__rendering__framebuffer-to-texture.html"]
@@ -536,7 +513,6 @@ fail-if = [
 ["test_2_conformance2__textures__misc__copy-texture-cube-map-bug.html"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_2_conformance2__textures__misc__copy-texture-image-luma-format.html"]
@@ -574,7 +550,6 @@ fail-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
 ["test_2_conformance2__textures__misc__integer-cubemap-specification-order-bug.html"]
@@ -705,7 +680,6 @@ skip-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
 
 ["test_2_conformance2__transform_feedback__two-unreferenced-varyings.html"]

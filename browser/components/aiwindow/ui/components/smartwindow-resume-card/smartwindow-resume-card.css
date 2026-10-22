@@ -25,6 +25,7 @@
   border: var(--border-width) solid var(--resume-card-border-color);
   border-radius: var(--border-radius-large);
   background-color: var(--background-color-box);
+  cursor: pointer;
 
   &:hover,
   &:focus-within {
@@ -41,7 +42,7 @@
 .resume-card-dismiss {
   position: absolute;
   top: var(--space-large);
-  inset-inline-end: var(--space-small);
+  inset-inline-end: var(--space-large);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,13 +143,29 @@
 .resume-card-action-button {
   --button-border-radius: var(--border-radius-circle);
   --button-background-color: transparent;
-  --button-background-color-hover: color-mix(in srgb, var(--color-violet-50) 15%, transparent);
+  --button-background-color-hover: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 15%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 25%, transparent)
+  );
   /* moz-button has no default active-state background outside Nova. */
-  --button-background-color-active: color-mix(in srgb, var(--color-violet-50) 25%, transparent);
-  --button-border-color: var(--resume-card-border-color);
+  --button-background-color-active: light-dark(
+    color-mix(in srgb, var(--color-violet-50) 25%, transparent),
+    color-mix(in srgb, var(--color-violet-40) 35%, transparent)
+  );
+  /* Nova's tokens supply a visible default border; without Nova, moz-button's
+   * border shorthand falls back to a transparent border color, so it must be
+   * set directly rather than through --button-border-color alone. */
+  --button-border: var(--border-width) solid var(--resume-card-border-color);
+  --button-border-color-hover: var(--resume-card-border-color);
+  --button-border-color-active: var(--resume-card-border-color);
+  --button-border-color-selected: var(--resume-card-border-color);
   --button-text-color: var(--text-color);
 }
 
+panel-list {
+  --panel-padding-block: var(--space-small);
+}
+
 panel-item {
-  --panel-item-button-padding-inline-start: var(--space-xsmall);
+  --panel-item-button-padding-inline-start: var(--space-small);
 }

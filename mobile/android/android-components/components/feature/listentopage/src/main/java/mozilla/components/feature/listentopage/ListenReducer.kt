@@ -16,9 +16,22 @@ fun listenReducer(state: ListenState, action: ListenAction): ListenState =
         is ListenAction.Session -> reduceSession(state, action)
         is ListenAction.Content -> reduceContent(state, action)
         is ListenAction.Voices -> reduceVoices(state, action)
+        is ListenAction.Controls -> reduceControls(state, action)
         is ListenAction.Playback -> reducePlayback(state, action)
         is ListenAction.Synthesis -> reduceSynthesis(state, action)
+        is ListenAction.ModeChanged -> state.copy(mode = action.mode)
         ListenAction.ErrorDismissed -> state.copy(error = null)
+    }
+
+private fun reduceControls(state: ListenState, action: ListenAction.Controls): ListenState =
+    when (action) {
+        is ListenAction.Controls.PlaybackSpeedSelected ->
+            state.copy(playbackState = state.playbackState.copy(speed = action.playbackSpeed))
+
+        ListenAction.Controls.PlayPauseClicked,
+        ListenAction.Controls.RewindClicked,
+        ListenAction.Controls.ForwardClicked,
+        ListenAction.Controls.VoicesClicked -> state
     }
 
 private fun reduceSession(state: ListenState, action: ListenAction.Session): ListenState =
@@ -39,12 +52,14 @@ private fun reduceSession(state: ListenState, action: ListenAction.Session): Lis
 
 private fun reduceContent(state: ListenState, action: ListenAction.Content): ListenState =
     when (action) {
-        is ListenAction.Content.ContentReady ->
+        is ListenAction.Content.ContentReady -> {
+            val described = state.copy(title = action.title, site = action.site)
             if (action.languageTag == state.languageTag) {
-                state
+                described
             } else {
-                state.copy(languageTag = action.languageTag, voiceState = VoiceState())
+                described.copy(languageTag = action.languageTag, voiceState = VoiceState())
             }
+        }
 
         ListenAction.Content.ContentUnavailable -> state.copy(error = ListenError.ContentUnavailable)
     }
@@ -64,7 +79,11 @@ private fun reducePlayback(state: ListenState, action: ListenAction.Playback): L
             )
 
         ListenAction.Playback.PlaybackWaiting ->
-            state.copy(playbackState = state.playbackState.copy(phase = PlaybackPhase.Buffering))
+            if (state.playbackState.phase == PlaybackPhase.Paused) {
+                state
+            } else {
+                state.copy(playbackState = state.playbackState.copy(phase = PlaybackPhase.Buffering))
+            }
 
         ListenAction.Playback.PlaybackEnded ->
             state.copy(playbackState = state.playbackState.copy(phase = PlaybackPhase.Ended))
@@ -75,7 +94,6 @@ private fun reducePlayback(state: ListenState, action: ListenAction.Playback): L
                 error = ListenError.PlaybackFailed,
             )
         is ListenAction.Playback.SeekRequested -> state
-
         is ListenAction.Playback.ArticleProgressChanged -> {
             val durationMs = action.durationMs.coerceAtLeast(0)
             state.copy(

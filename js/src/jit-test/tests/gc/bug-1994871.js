@@ -5,11 +5,11 @@
 gczeal(0);
 
 // We'll track the state of a symbol in two zones, |this| and |other|.
-let s = Symbol();
+let s = Symbol.for("foo");
 addMarkObservers([s]);
 let other = newGlobal({newCompartment: true});
 
-// Iniitally we expect the symbol to be marked black in |this| and not marked
+// Initially we expect the symbol to be marked black in |this| and not marked
 // in |other|.
 gc();
 let index = getAtomMarkIndex(s);
@@ -22,14 +22,14 @@ other.s = s;
 assertEq(getAtomMarkColor(other, index), 'black');
 
 // Replace existing references with a gray reference from |this| and remove
-// the reference from |other|. We now expect the mark color to be gray in
-// *both* zones.
+// the reference from |other|. We now expect the mark color to still be
+// black in both zones.
 grayRoot().push(s);
 other.s = undefined;
 s = undefined;
 gc();
-assertEq(getAtomMarkColor(this, index), 'gray');
-assertEq(getAtomMarkColor(other, index), 'gray'); 
+assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomMarkColor(other, index), 'black'); 
 assertEq(getMarks()[0], 'gray');
 
 // Removing the final reference results in the mark color going to white.

@@ -4,6 +4,8 @@
 
 #include "SMILInterval.h"
 
+#include <ranges>
+
 #include "mozilla/DebugOnly.h"
 
 namespace mozilla {
@@ -34,11 +36,11 @@ SMILInterval::~SMILInterval() {
 }
 
 void SMILInterval::Unlink(bool aFiltered) {
-  for (int32_t i = mDependentTimes.Length() - 1; i >= 0; --i) {
+  for (auto& dependentTime : std::views::reverse(mDependentTimes)) {
     if (aFiltered) {
-      mDependentTimes[i]->HandleFilteredInterval();
+      dependentTime->HandleFilteredInterval();
     } else {
-      mDependentTimes[i]->HandleDeletedInterval();
+      dependentTime->HandleDeletedInterval();
     }
   }
   mDependentTimes.Clear();

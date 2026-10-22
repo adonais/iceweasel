@@ -101,6 +101,8 @@ from mozlog import commandline
 from mozprofile import Profile
 from mozprofile.cli import parse_key_value, parse_preferences
 from mozrunner.utils import get_stack_fixer_function
+from moztest.assertions import AssertionFailureParser
+from moztest.ubsan import UBSanErrorParser
 
 # --------------------------------------------------------------
 
@@ -204,6 +206,8 @@ class XPCShellTestThread(Thread):
         self.pStderr = kwargs.get("pStderr")
         self.keep_going = kwargs.get("keep_going")
         self.log = kwargs.get("log")
+        self.assertion_parser = AssertionFailureParser(self.log)
+        self.ubsan_parser = UBSanErrorParser(self.log)
         self.app_dir_key = kwargs.get("app_dir_key")
         self.interactive = kwargs.get("interactive")
         self.rootPrefsFile = kwargs.get("rootPrefsFile")
@@ -547,7 +551,10 @@ class XPCShellTestThread(Thread):
                 "",
                 "FAIL",
                 expected="FAIL" if (self.retry or self.timeoutAsPass) else expected,
-                message=f"Test timed out; profile uploaded in {profile_name}",
+                message=(
+                    "Test timed out; profile uploaded in "
+                    f"{self.timeout_profile_artifact_name}"
+                ),
             )
 
         if self.retry:
@@ -657,6 +664,17 @@ class XPCShellTestThread(Thread):
         self.env["XPCSHELL_TEST_TEMP_DIR"] = tempDir
         if self.interactive:
             self.log.info("temp dir is %s" % tempDir)
+
+        if "MOZ_APP_DATA" not in os.environ:
+            appdata_dir = os.path.join(tempDir, "moz-appdata")
+            os.makedirs(appdata_dir, exist_ok=True)
+            self.env["MOZ_APP_DATA"] = os.path.normpath(
+                os.path.join(appdata_dir, "AppData", "Roaming")
+            )
+            self.env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
+                os.path.join(appdata_dir, "Local")
+            )
+
         return tempDir
 
     def setupProfileDir(self):
@@ -815,6 +833,8 @@ class XPCShellTestThread(Thread):
         read. Sets self.has_failure_output in case of evidence of a failure"""
         for line_string in output.splitlines():
             self.process_line(line_string)
+        self.assertion_parser.flush()
+        self.ubsan_parser.flush()
 
         if self.saw_proc_start and not self.saw_proc_end:
             self.has_failure_output = True
@@ -836,6 +856,12 @@ class XPCShellTestThread(Thread):
             kwargs = {"command": self.command, "test": self.test_object["id"]}
             if time is not None:
                 kwargs["time"] = time
+            self.assertion_parser.log(
+                line, pid=self.proc_ident, test=self.test_object["id"], time=time
+            )
+            self.ubsan_parser.log(
+                line, pid=self.proc_ident, test=self.test_object["id"], time=time
+            )
             self.log.process_output(self.proc_ident, line, **kwargs)
         else:
             if "message" in line:
@@ -872,6 +898,7 @@ class XPCShellTestThread(Thread):
                     if line.get("action") == "test_status" and "expected" in line:
                         # Ensure the 'expected' field matches the 'status' to avoid failing the job
                         line["expected"] = line.get("status")
+                        line.setdefault("extra", {})["will_retry"] = True
                     elif line.get("action") == "log" and line.get("level") == "ERROR":
                         # Convert ERROR log to test_status so it gets colored
                         # properly without causing a test failure.
@@ -894,6 +921,8 @@ class XPCShellTestThread(Thread):
                 self.log_line(line, time=timestamp)
         self.log.info(f"<<<<<<< End of {log_message}")
         self.log.group_end("replaying " + log_message)
+        self.assertion_parser.flush()
+        self.ubsan_parser.flush()
         self.output_lines = []
 
     def report_message(self, message):
@@ -1077,6 +1106,7 @@ class XPCShellTestThread(Thread):
         testTimeoutInterval = self.harness_timeout * self.timeout_factor
 
         self.timeout_profile_name = None
+        self.timeout_profile_artifact_name = None
         if not self.interactive and not self.debuggerInfo and not self.jsDebuggerInfo:
             # When the profiler runs by default, have it dump a profile from its
             # sampler thread once this timeout is reached (armed by head.js), so
@@ -1085,8 +1115,8 @@ class XPCShellTestThread(Thread):
             # so the retry of a test that timed out doesn't overwrite the initial
             # run's profile: the retry gets a "_retry" suffix, and a numeric
             # counter is only added on an actual name collision (the same test
-            # listed in two manifests). The suffixes go before the test extension
-            # so the name still ends in e.g. ".js.json" as Treeherder expects.
+            # listed in two manifests). The suffixes go before the test
+            # extension, so the profile is still named after the test.
             # testTimeout reports this name.
             upload_dir = self.env.get("MOZ_UPLOAD_DIR")
             timeout_dump_armed = (
@@ -1104,6 +1134,9 @@ class XPCShellTestThread(Thread):
                     filename = f"profile_{root}-{i}{ext}.json"
                     i += 1
                 self.timeout_profile_name = filename
+                # Symbolication gzips every uploaded profile and renames it
+                # accordingly, so the surviving artifact is the ".json.gz" one.
+                self.timeout_profile_artifact_name = filename + ".gz"
                 self.env["MOZ_TEST_TIMEOUT_PROFILE_PATH"] = os.path.join(
                     upload_dir, filename
                 )
@@ -1352,7 +1385,9 @@ class XPCShellTestThread(Thread):
         finally:
             self.postCheck(proc)
             if self.profiler and self.singleFile:
-                symbolicate_profile_json(profile_path, self.symbolsPath)
+                # Symbolication gzips the profile, which moves it, so open the
+                # path it returns.
+                profile_path = symbolicate_profile_json(profile_path, self.symbolsPath)
                 view_gecko_profile(profile_path)
             self.clean_temp_dirs(path)
 
@@ -1939,6 +1974,9 @@ class XPCShellTests:
 
         # we default to false for e10s on xpcshell
         self.mozInfo["e10s"] = self.mozInfo.get("e10s", False)
+
+        # isolated_process is used in manifest but this is Android only
+        self.mozInfo["isolated_process"] = options.get("isolated_process", False)
 
         mozinfo.update(self.mozInfo)
         return True
@@ -2859,7 +2897,7 @@ def main():
     result = xpcsh.runTests(options)
 
     if "MOZ_AUTOMATION" in os.environ:
-        symbolicate_profiles()
+        symbolicate_profiles(symbol_dir=options.symbolsPath)
 
     if result == TBPL_RETRY:
         sys.exit(4)

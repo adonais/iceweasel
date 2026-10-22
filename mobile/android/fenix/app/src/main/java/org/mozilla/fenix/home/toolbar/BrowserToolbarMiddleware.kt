@@ -216,7 +216,12 @@ class BrowserToolbarMiddleware(
             is MenuClicked -> {
                 navController.nav(
                     R.id.homeFragment,
-                    HomeFragmentDirections.actionGlobalMenuDialogFragment(accesspoint = MenuAccessPoint.Home),
+                    when (settings.isMenuCustomizationEnabled) {
+                        true ->
+                            HomeFragmentDirections.actionHomeFragmentToMenuFragment(accessPoint = MenuAccessPoint.Home)
+                        else ->
+                            HomeFragmentDirections.actionGlobalMenuDialogFragment(accesspoint = MenuAccessPoint.Home)
+                    },
                 )
                 removeMenuButtonHighlight()
                 next(action)

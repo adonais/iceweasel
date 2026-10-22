@@ -2294,9 +2294,10 @@ void Navigation::CreateNavigationActivationFrom(
 // https://html.spec.whatwg.org/#dom-navigationprecommitcontroller-redirect
 void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
     nsIStructuredCloneContainer* aSerializedState) {
-  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
   // This is step 10.3 of NavigationPrecommitController.redirect()
-  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  }
 }
 
 }  // namespace mozilla::dom

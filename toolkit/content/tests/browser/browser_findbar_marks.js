@@ -3,6 +3,7 @@
 // This test verifies that the find scrollbar marks are triggered in the right locations.
 // Reftests in layout/xul/reftest are used to verify their appearance.
 
+// Exercise quirks mode root element scrolling.
 const TEST_PAGE_URI =
   "data:text/html,<body style='font-size: 20px; margin: 0;'><p style='margin: 0; block-size: 30px;'>This is some fun text.</p><p style='margin-block-start: 2000px; block-size: 30px;'>This is some tex to find.</p><p style='margin-block-start: 500px; block-size: 30px;'>This is some text to find.</p></body>";
 
@@ -75,7 +76,7 @@ add_task(async function test_findmarks() {
       let adjustments = [
         () => {},
         () => {
-          document.documentElement.style.position = "absolute;";
+          document.documentElement.style.position = "absolute";
         },
         () => {
           document.documentElement.style.position = "";
@@ -164,12 +165,8 @@ add_task(async function test_findmarks_vertical() {
     const marks = await getMarks(browser, true, true);
     Assert.equal(marks.length, 3, `marks count with text "tex"`);
     for (const markPos of marks) {
-      // This test is bogus; `0 <= -1 <= 9` as a JS expression returns true,
-      // but that doesn't match the intent of the test. Caught by the linter,
-      // tracked in bug 1973910.
-      // eslint-disable-next-line mozilla/no-comparison-or-assignment-inside-ok
       Assert.ok(
-        0 <= markPos <= maxMarkPos,
+        0 <= markPos && markPos <= maxMarkPos,
         `mark position ${markPos} should be in the range 0 ~ ${maxMarkPos}`
       );
     }
@@ -177,6 +174,100 @@ add_task(async function test_findmarks_vertical() {
 
   endFn();
   gBrowser.removeTab(tab);
+});
+
+// Exercise standards mode
+add_task(async function test_findmarks_root_scrollable_area() {
+  for (let writingMode of ["horizontal-tb", "vertical-rl"]) {
+    // Cover both a zero-sized body (bug 1695183) and a nonzero body whose
+    // extent excludes absolutely positioned root content (bug 1970969).
+    for (let bodySize of ["100%", "0px"]) {
+      let onHorizontalScrollbar = writingMode == "vertical-rl";
+      let html = `<!doctype html>
+        <style>
+          html {
+            writing-mode: ${writingMode};
+            block-size: 100%;
+            overflow: auto;
+          }
+          body {
+            margin: 0;
+            block-size: ${bodySize};
+            overflow: hidden;
+          }
+          article {
+            position: absolute;
+            inset-block-start: 0;
+            inset-inline-start: 0;
+            block-size: 4000px;
+            inline-size: 200%;
+          }
+          p {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            font: 20px/1 sans-serif;
+          }
+        </style>
+        <article><p>needle</p></article>`;
+
+      await BrowserTestUtils.withNewTab(
+        { gBrowser, url: "data:text/html," + encodeURIComponent(html) },
+        async browser => {
+          await promiseFindFinished(gBrowser, "needle");
+          let scrollRange = await SpecialPowers.spawn(
+            browser,
+            [onHorizontalScrollbar, bodySize],
+            (horizontal, size) => {
+              let { body, documentElement } = content.document;
+              let bodyExtent = horizontal
+                ? body.scrollWidth
+                : body.scrollHeight;
+              let rootExtent = horizontal
+                ? documentElement.scrollWidth
+                : documentElement.scrollHeight;
+              Assert.equal(rootExtent, 4000, "The root includes the article");
+              if (size == "0px") {
+                Assert.equal(
+                  bodyExtent,
+                  0,
+                  "The body has no scrollable extent"
+                );
+              } else {
+                Assert.greater(bodyExtent, 0, "The body has a nonzero extent");
+                Assert.less(
+                  bodyExtent,
+                  rootExtent,
+                  "The body excludes the article"
+                );
+              }
+              return horizontal
+                ? content.scrollMaxX - content.scrollMinX
+                : content.scrollMaxY - content.scrollMinY;
+            }
+          );
+          Assert.greater(scrollRange, 0, "The page is scrollable");
+
+          let endFn = initForBrowser(browser);
+          try {
+            await promiseFindFinished(gBrowser, "needle", true);
+            let marks = await getMarks(browser, true, onHorizontalScrollbar);
+            Assert.equal(marks.length, 1, "There is one match in the article");
+            isfuzzy(
+              marks[0],
+              Math.round(scrollRange / 2),
+              5,
+              `The mark is halfway along the scrollbar (${writingMode}, body ${bodySize})`
+            );
+          } finally {
+            endFn();
+          }
+        }
+      );
+    }
+  }
 });
 
 // This test verifies what happens when scroll marks are visible and the window is resized.

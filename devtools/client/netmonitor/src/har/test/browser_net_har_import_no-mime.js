@@ -64,10 +64,7 @@ add_task(async () => {
   );
 
   // Open the response details panel
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelector(".request-list-item")
-  );
+  clickOnRequestRow(document.querySelector(".request-list-item"));
   clickOnSidebarTab(document, "response");
 
   await waitForResponsePanelOpen;

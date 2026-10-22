@@ -39,13 +39,9 @@ add_task(async function () {
 
 async function doTest(enableVariable, enablePref, otherVariables) {
   info(`Testing ${enableVariable}`);
-  let reset = await UrlbarTestUtils.initNimbusFeature(
-    {
-      // Empty for sanity check.
-    },
-    "urlbar",
-    "config"
-  );
+  let reset = await UrlbarTestUtils.initNimbusFeature({
+    // Empty for sanity check.
+  });
   Assert.ok(!Services.prefs.prefHasUserValue(enablePref));
   Assert.ok(!Services.prefs.getBoolPref(enablePref, false));
   for (let pref of Object.values(otherVariables)) {
@@ -53,13 +49,9 @@ async function doTest(enableVariable, enablePref, otherVariables) {
   }
   await reset();
 
-  reset = await UrlbarTestUtils.initNimbusFeature(
-    {
-      [enableVariable]: true,
-    },
-    "urlbar",
-    "config"
-  );
+  reset = await UrlbarTestUtils.initNimbusFeature({
+    [enableVariable]: true,
+  });
   Assert.ok(Services.prefs.prefHasUserValue(enablePref));
   Assert.equal(Services.prefs.getBoolPref(enablePref), true);
   for (let pref of Object.values(otherVariables)) {
@@ -74,7 +66,7 @@ async function doTest(enableVariable, enablePref, otherVariables) {
   for (let variable of Object.keys(otherVariables)) {
     config[variable] = FAKE_VALUE;
   }
-  reset = await UrlbarTestUtils.initNimbusFeature(config, "urlbar", "config");
+  reset = await UrlbarTestUtils.initNimbusFeature(config);
   Assert.ok(Services.prefs.prefHasUserValue(enablePref));
   Assert.equal(Services.prefs.getBoolPref(enablePref), true);
   for (let pref of Object.values(otherVariables)) {

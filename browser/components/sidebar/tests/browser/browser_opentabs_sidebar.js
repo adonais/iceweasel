@@ -481,7 +481,7 @@ add_task(async function test_window_close_drops_pref_entry() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, "{}"]] });
 
   const secondWin = await BrowserTestUtils.openNewBrowserWindow();
-  const secondWindowId = secondWin.__SSi;
+  const secondWindowId = SessionStore.getWindowId(secondWin);
   Assert.ok(secondWindowId, "Second window has a SessionStore id.");
 
   // Collapse the second window via the module and confirm the pref records it.

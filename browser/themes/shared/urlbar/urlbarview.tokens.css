@@ -10,15 +10,16 @@
 :root,
 :host {
   @layer tokens-foundation {
-    --urlbarview-action-button-background-color: color-mix(in srgb, var(--urlbarview-background-color-hover) 50%, transparent);
-    --urlbarview-action-button-background-color-hover: var(--urlbarview-background-color-hover);
-    --urlbarview-background-color-hover: var(--background-color-dimmed);
+    --urlbarview-action-button-background-color: color-mix(in srgb, currentColor 8.5%, transparent);
+    --urlbarview-action-button-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
+    --urlbarview-background-color-hover: var(--background-color-list-item-hover);
     --urlbarview-background-color-selected: SelectedItem;
     --urlbarview-border-radius: calc(var(--button-border-radius) + 2px);
     --urlbarview-favicon-size: var(--icon-size);
     --urlbarview-row-min-height: var(--size-item-large);
     --urlbarview-row-padding-block: var(--space-small);
     --urlbarview-separator-color: color-mix(in srgb, currentColor 14%, transparent);
+    --urlbarview-text-color-hover: currentColor;
     --urlbarview-text-color-action: LinkText;
     --urlbarview-text-color-secondary: color-mix(in srgb, currentColor 73%, transparent);
     --urlbarview-text-color-selected: SelectedItemText;
@@ -26,7 +27,10 @@
 
   @layer tokens-prefers-contrast {
     @media (prefers-contrast) {
+      --urlbarview-background-color-hover: color-mix(in srgb, currentColor 20%, transparent);
+      --urlbarview-background-color-selected: var(--background-color-list-item-hover);
       --urlbarview-separator-color: color-mix(in srgb, currentColor 86%, transparent);
+      --urlbarview-text-color-selected: var(--text-color-list-item-hover);
     }
   }
 
@@ -40,7 +44,7 @@
     @layer tokens-foundation-nova {
       --urlbarview-action-button-background-color: var(--urlbar-box-background-color);
       --urlbarview-action-button-background-color-hover: var(--urlbar-box-background-color-hover);
-      --urlbarview-background-color-hover: var(--background-color-dimmed);
+      --urlbarview-background-color-hover: var(--button-background-color-ghost-hover);
       --urlbarview-background-color-selected: SelectedItem;
       --urlbarview-border-radius: var(--urlbar-border-radius);
       --urlbarview-separator-color: color-mix(in srgb, currentColor 14%, transparent);
@@ -62,7 +66,12 @@
 :host {
   @layer tokens-browser-theme {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--background-color-dimmed));
+      --urlbarview-action-button-background-color: light-dark(
+        color-mix(in srgb, var(--color-gray-20) 50%, transparent),
+        color-mix(in srgb, currentColor 8.5%, transparent)
+      );
+      --urlbarview-action-button-background-color-hover: light-dark(var(--color-gray-20), color-mix(in srgb, currentColor 17%, transparent));
+      --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--background-color-list-item-hover));
       --urlbarview-background-color-selected: light-dark(#e0e0e6, rgb(43, 42, 51));
       --urlbarview-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
       --urlbarview-text-color-action: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
@@ -74,12 +83,15 @@
   @media -moz-pref("browser.nova.enabled") {
     @layer tokens-browser-theme-nova {
       @media not ((forced-colors) or (-moz-native-theme)) {
-        --urlbarview-background-color-hover: var(--toolbarbutton-background-color-hover);
-        --urlbarview-background-color-selected: var(--toolbarbutton-background-color-active);
+        --urlbarview-background-color-hover: light-dark(color-mix(in srgb, currentColor 17%, transparent), color-mix(in srgb, currentColor 20%, transparent));
+        --urlbarview-background-color-selected: light-dark(
+          color-mix(in srgb, currentColor 27%, transparent),
+          color-mix(in srgb, currentColor 32%, transparent)
+        );
         --urlbarview-separator-color: light-dark(var(--color-gray-20), var(--color-gray-60));
         --urlbarview-text-color-action: var(--toolbar-field-text-color-focus);
         --urlbarview-text-color-secondary: light-dark(#3e315f, #e7e1f8);
-        --urlbarview-text-color-selected: var(--toolbar-field-text-color-focus);
+        --urlbarview-text-color-selected: currentColor;
       }
     }
   }

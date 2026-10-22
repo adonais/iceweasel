@@ -366,6 +366,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
   bool SetDisplayList(const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
                       ipc::ByteBuf&& aSpatialTreeDL,
+                      ipc::ByteBuf&& aInternerDelta,
                       const wr::BuiltDisplayListDescriptor& aDLDesc,
                       const nsTArray<OpUpdateResource>& aResourceUpdates,
                       const nsTArray<RefCountedShmem>& aSmallShmems,

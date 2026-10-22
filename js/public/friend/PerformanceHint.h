@@ -7,7 +7,7 @@
 
 #include "jstypes.h"  // JS_PUBLIC_API
 
-#include "js/TypeDecls.h"  // JSContext
+#include "js/TypeDecls.h"  // JSContext, JSObject
 
 namespace js {
 namespace gc {
@@ -23,6 +23,12 @@ extern JS_PUBLIC_API void SetPerformanceHint(JSContext* cx,
                                              PerformanceHint hint);
 
 } /* namespace gc */
+
+// Hint to the engine that |global|'s realm is dying, for example because the
+// browser navigated away from it. The GC uses this to discard JIT code more
+// aggressively.
+extern JS_PUBLIC_API void SetRealmIsDyingHint(JSObject* global);
+
 } /* namespace js */
 
 #endif  // js_friend_PerformanceHint_h

@@ -4,6 +4,8 @@
 
 #include "FilterSupport.h"
 
+#include <cmath>
+
 #include "FilterDescription.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
@@ -456,9 +458,12 @@ bool ComputeColorMatrix(const ColorMatrixAttributes& aMatrixAttributes,
         return false;
       }
 
-      PodCopy(aOutMatrix, identityMatrix, 20);
-
       float hueRotateValue = aMatrixAttributes.mValues[0];
+      if (std::fmod(hueRotateValue, 360.f) == 0.f) {
+        return false;
+      }
+
+      PodCopy(aOutMatrix, identityMatrix, 20);
 
       float c = static_cast<float>(cos(hueRotateValue * kRadPerDegree));
       float s = static_cast<float>(sin(hueRotateValue * kRadPerDegree));

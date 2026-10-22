@@ -7,6 +7,9 @@ add_task(async function () {
     set: [
       ["browser.search.separatePrivateDefault.enabled", true],
       ["browser.search.separatePrivateDefault.featureGate", true],
+      // Right-clicking text selects the word under the cursor on macOS, which
+      // would add a selection to the cases here that expect none.
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 

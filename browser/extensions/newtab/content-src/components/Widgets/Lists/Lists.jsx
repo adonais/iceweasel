@@ -15,6 +15,7 @@ import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
 import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 
@@ -102,7 +103,7 @@ const renderListSwitcherOrTitle = ({
     return (
       <div className="lists-switcher">
         <span
-          className="lists-title"
+          className="newtab-widget-title lists-title"
           {...(selectedLabel
             ? {}
             : {
@@ -142,7 +143,7 @@ const renderListSwitcherOrTitle = ({
 
   return (
     <span
-      className="lists-title"
+      className="newtab-widget-title lists-title"
       {...(selectedLabel
         ? {}
         : {
@@ -847,12 +848,10 @@ function Lists({
               />
             </button>
           )}
-        <moz-button
+        <WidgetMenuButton
           className="lists-panel-button"
-          data-l10n-id="newtab-widget-lists-menu-button"
-          iconSrc="chrome://global/skin/icons/more.svg"
           menuId="lists-panel"
-          type="ghost"
+          l10nId="newtab-widget-lists-open-menu-button"
         />
         <panel-list className="panel-list-no-icons" id="lists-panel">
           <panel-item

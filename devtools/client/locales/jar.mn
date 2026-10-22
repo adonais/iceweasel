@@ -5,6 +5,7 @@
 
 [localization] @AB_CD@.jar:
     devtools/client (%*.ftl)
+    devtools/preview/settings.ftl (../locales-preview/settings.ftl)
 
 @AB_CD@.jar:
 %   locale devtools @AB_CD@ %locale/@AB_CD@/devtools/client/

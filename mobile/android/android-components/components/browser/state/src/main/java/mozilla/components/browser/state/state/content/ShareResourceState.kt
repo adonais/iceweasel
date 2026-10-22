@@ -44,4 +44,18 @@ sealed class ShareResourceState(
         override val url: String,
         override val contentType: String? = null,
     ) : ShareResourceState(url, contentType)
+
+    /**
+     * Value type that represents a resource whose bytes are already available as a [Response], so its data can be
+     * shared without a separate fetch.
+     *
+     * @property url The full url to the content that should be shared.
+     * @property contentType Content type (MIME type) to indicate the media type of the resource.
+     * @property response The response carrying the resource bytes to share.
+     */
+    data class DirectResource(
+        override val url: String,
+        override val contentType: String? = null,
+        val response: Response,
+    ) : ShareResourceState(url, contentType)
 }

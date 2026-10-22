@@ -138,6 +138,7 @@ export class FormHistoryAutoCompleteResult {
           "autocomplete-delete-form-history-entry2",
           { entry: this.getLabelAt(index) }
         ),
+        tooltip: lazy.l10n.formatValueSync("autocomplete-delete-entry"),
         fillMessageName: "FormHistory:RemoveEntry",
         fillMessageData: this.#removeEntryData(index),
       },

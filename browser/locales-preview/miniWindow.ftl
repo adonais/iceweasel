@@ -60,3 +60,16 @@ main-context-menu-use-mini-window =
 move-to-mini-window =
     .label = Move to Mini Window
     .accesskey = M
+
+## These strings label the Screenshots overlay while it is being used to pick
+## what to move into a Mini Window.
+
+mini-window-overlay-header = Select part of the page to keep visible
+mini-window-overlay-instructions = Drag or click to select an area to move to a Mini Window. It’ll stay on top while you browse.
+
+## These strings label the panel that asks what the user wants to move into a
+## Mini Window, shown alongside the Screenshots selection overlay.
+
+mini-window-panel-header = Choose what to move to a Mini Window
+mini-window-panel-move-selection = Move selection
+mini-window-panel-move-full-tab = Move full tab

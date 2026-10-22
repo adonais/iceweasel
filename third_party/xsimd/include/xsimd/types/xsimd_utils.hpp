@@ -131,7 +131,7 @@ namespace xsimd
 
     template <class T>
     struct flipped_sign_type
-        : detail::flipped_sign_type_impl<T, std::is_signed<T>::value>
+        : detail::flipped_sign_type_impl<T, std::is_signed_v<T>>
     {
     };
 
@@ -190,9 +190,8 @@ namespace xsimd
     inline To bit_cast(From val) noexcept
     {
         static_assert(sizeof(From) == sizeof(To), "casting between compatible layout");
-        // FIXME: Some old version of GCC don't support that trait
-        // static_assert(std::is_trivially_copyable<From>::value, "input type is trivially copyable");
-        // static_assert(std::is_trivially_copyable<To>::value, "output type is trivially copyable");
+        static_assert(std::is_trivially_copyable_v<From>, "input type is trivially copyable");
+        static_assert(std::is_trivially_copyable_v<To>, "output type is trivially copyable");
         To res;
         std::memcpy(&res, &val, sizeof(val));
         return res;
@@ -207,38 +206,38 @@ namespace xsimd
              **************************************/
 
             template <class T>
-            using enable_arithmetic_t = std::enable_if_t<std::is_arithmetic<T>::value, int>;
+            using enable_arithmetic_t = std::enable_if_t<std::is_arithmetic_v<T>, int>;
 
             /// Enable signed integral or floating point
             template <class T>
-            using enable_signed_numeral_t = std::enable_if_t<std::is_signed<T>::value, int>;
+            using enable_signed_numeral_t = std::enable_if_t<std::is_signed_v<T>, int>;
 
             template <class T>
-            using enable_floating_point_t = std::enable_if_t<std::is_floating_point<T>::value, int>;
+            using enable_floating_point_t = std::enable_if_t<std::is_floating_point_v<T>, int>;
 
             template <class T>
-            using enable_integral_t = std::enable_if_t<std::is_integral<T>::value, int>;
+            using enable_integral_t = std::enable_if_t<std::is_integral_v<T>, int>;
 
             template <class T>
-            using enable_signed_integral_t = std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, int>;
+            using enable_signed_integral_t = std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int>;
 
             template <class T>
-            using enable_unsigned_integral_t = std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, int>;
+            using enable_unsigned_integral_t = std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int>;
 
             template <class T, size_t S>
-            using enable_sized_signed_t = std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value && sizeof(T) == S, int>;
+            using enable_sized_signed_t = std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T> && sizeof(T) == S, int>;
 
             template <class T, size_t S>
-            using enable_sized_unsigned_t = std::enable_if_t<std::is_integral<T>::value && !std::is_signed<T>::value && sizeof(T) == S, int>;
+            using enable_sized_unsigned_t = std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T> && sizeof(T) == S, int>;
 
             template <class T, size_t S>
-            using enable_sized_integral_t = std::enable_if_t<std::is_integral<T>::value && sizeof(T) == S, int>;
+            using enable_sized_integral_t = std::enable_if_t<std::is_integral_v<T> && sizeof(T) == S, int>;
 
             template <class T, size_t S>
             using enable_sized_t = std::enable_if_t<sizeof(T) == S, int>;
 
             template <class T, size_t S>
-            using enable_max_sized_integral_t = std::enable_if_t<std::is_integral<T>::value && sizeof(T) <= S, int>;
+            using enable_max_sized_integral_t = std::enable_if_t<std::is_integral_v<T> && sizeof(T) <= S, int>;
 
             /********************************
              * Matching & mismatching sizes *
@@ -251,23 +250,17 @@ namespace xsimd
             using sizes_mismatch_t = std::enable_if_t<sizeof(T) != sizeof(U), B>;
 
             template <class T, class U, class B = int>
-            using stride_match_t = std::enable_if_t<!std::is_same<T, U>::value && sizeof(T) == sizeof(U), B>;
+            using stride_match_t = std::enable_if_t<!std::is_same_v<T, U> && sizeof(T) == sizeof(U), B>;
         } // namespace detail
     } // namespace kernel
 
-    /*****************************************
-     * Backport of index_sequence from c++14 *
-     *****************************************/
+    /*******************************************
+     * int_sequence and make_sequence_as_batch *
+     *******************************************/
 
     // TODO: Remove this once we drop C++11 support
     namespace detail
     {
-        template <typename T>
-        struct identity
-        {
-            using type = T;
-        };
-
         template <int... Is>
         using int_sequence = std::integer_sequence<int, Is...>;
 
@@ -289,38 +282,6 @@ namespace xsimd
         {
             return indexes_from<P>(std::make_index_sequence<P::size>());
         }
-    }
-
-    /*********************************
-     * Backport of void_t from C++17 *
-     *********************************/
-
-    namespace detail
-    {
-        template <class... T>
-        struct make_void
-        {
-            using type = void;
-        };
-
-        template <class... T>
-        using void_t = typename make_void<T...>::type;
-    }
-
-    /**************************************************
-     * Equivalent of void_t but with size_t parameter *
-     **************************************************/
-
-    namespace detail
-    {
-        template <std::size_t>
-        struct check_size
-        {
-            using type = void;
-        };
-
-        template <std::size_t S>
-        using check_size_t = typename check_size<S>::type;
     }
 
     /*****************************************
@@ -368,24 +329,14 @@ namespace xsimd
 
     namespace detail
     {
-        template <bool...>
-        struct bool_pack;
-
-        template <bool... bs>
-        using all_true = std::is_same<
-            bool_pack<bs..., true>, bool_pack<true, bs...>>;
-
         template <typename T, typename... Args>
-        using is_all_convertible = all_true<std::is_convertible<Args, T>::value...>;
-
-        template <typename T, std::size_t N, typename... Args>
-        using is_array_initializer = std::enable_if<
-            (sizeof...(Args) == N) && is_all_convertible<T, Args...>::value>;
+        inline constexpr bool is_all_convertible_v = std::conjunction_v<std::is_convertible<Args, T>...>;
 
         // Check that a variadic argument pack is a list of N values of type T,
         // as usable for instantiating a value of type std::array<T, N>.
         template <typename T, std::size_t N, typename... Args>
-        using is_array_initializer_t = typename is_array_initializer<T, N, Args...>::type;
+        using is_array_initializer_t = std::enable_if_t<
+            (sizeof...(Args) == N) && is_all_convertible_v<T, Args...>>;
     }
 
     /**************
@@ -416,6 +367,9 @@ namespace xsimd
         {
         };
 #endif
+
+        template <class T>
+        inline constexpr bool is_complex_v = is_complex<T>::value;
     }
 
     /*******************

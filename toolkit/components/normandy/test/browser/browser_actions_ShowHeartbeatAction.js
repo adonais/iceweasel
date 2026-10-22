@@ -342,11 +342,6 @@ decorate_task(
     Assert.equal(await ShowHeartbeatAction._getLastInteraction("recipe2"), 4);
     Assert.equal(await ShowHeartbeatAction._getLastInteraction(), 4);
 
-    // Check that clearing the old storage doesn't remove data.
-    await Storage.clearAllStorage();
-    Assert.equal(await ShowHeartbeatAction._getLastShown(), 2);
-    Assert.equal(await ShowHeartbeatAction._getLastInteraction(), 4);
-
     // Check that clearing the storage removes data from multiple prefixes.
     await ShowHeartbeatAction._clearAllStorage();
     Assert.equal(await ShowHeartbeatAction._getLastShown("recipe1"), null);

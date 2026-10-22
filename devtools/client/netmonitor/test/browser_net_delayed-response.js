@@ -88,7 +88,7 @@ add_task(async function () {
   info("Open the headers panel and check that the panel is not empty");
   let waitForHeadersPanel = waitForDOM(document, "#headers-panel");
   store.dispatch(Actions.toggleNetworkDetails());
-  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
+  clickOnRequestRow(request);
   await waitForHeadersPanel;
 
   info("Assert that the status is not yet in the column");

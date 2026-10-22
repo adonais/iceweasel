@@ -5,23 +5,14 @@
 package org.mozilla.fenix.settings.account
 
 import android.content.Context
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.RoundedBitmapDrawable
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.sync.Profile
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.support.ktx.android.content.pixelSizeFor
-import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.bitmapForUrl
 import org.mozilla.fenix.settings.requirePreference
 
 class AccountUiView(
@@ -37,8 +28,12 @@ class AccountUiView(
         fragment.requirePreference<AccountAuthErrorPreference>(R.string.pref_key_account_auth_error)
     private val accountPreferenceCategory =
         fragment.requirePreference<PreferenceCategory>(R.string.pref_key_account_category)
-
-    private var avatarJob: Job? = null
+    private val accountPreferenceUpdater =
+        AccountPreferenceUpdater(
+            preference = preferenceFirefoxAccount,
+            scope = scope,
+            httpClient = httpClient,
+        )
 
     /**
      * Updates the UI to reflect current account state. Possible conditions are logged-in without problems, logged-out,
@@ -51,25 +46,12 @@ class AccountUiView(
         if (account != null && !accountManager.accountNeedsReauth()) {
             preferenceSignIn.isVisible = false
 
-            avatarJob?.cancel()
-            val avatarUrl = profile?.avatar?.url
-            if (avatarUrl != null) {
-                avatarJob = scope.launch {
-                    val roundedAvatarDrawable = toRoundedDrawable(avatarUrl, context)
-                    preferenceFirefoxAccount.icon = roundedAvatarDrawable ?: genericAvatar(context)
-                }
-            } else {
-                avatarJob = null
-                preferenceFirefoxAccount.icon = genericAvatar(context)
-            }
+            accountPreferenceUpdater.update(context, profile)
 
             preferenceSignIn.onPreferenceClickListener = null
             preferenceFirefoxAccountAuthError.isVisible = false
             preferenceFirefoxAccount.isVisible = true
             accountPreferenceCategory.isVisible = true
-
-            preferenceFirefoxAccount.displayName = profile?.displayName
-            preferenceFirefoxAccount.email = profile?.email
 
             // Signed-in, need to re-authenticate.
         } else if (account != null && accountManager.accountNeedsReauth()) {
@@ -93,24 +75,6 @@ class AccountUiView(
 
     /** Cancel any running coroutine jobs for loading account images. */
     fun cancel() {
-        scope.cancel()
-    }
-
-    /** Returns generic avatar for accounts. */
-    private fun genericAvatar(context: Context) =
-        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_avatar_circle_24)
-
-    /** Gets a rounded drawable from a URL if possible, else null. */
-    private suspend fun toRoundedDrawable(
-        url: String,
-        context: Context,
-    ): RoundedBitmapDrawable? {
-        val size = context.pixelSizeFor(R.dimen.preference_icon_drawable_size)
-        return httpClient.bitmapForUrl(url, targetWidth = size, targetHeight = size)?.let { bitmap ->
-            RoundedBitmapDrawableFactory.create(context.resources, bitmap).apply {
-                isCircular = true
-                setAntiAlias(true)
-            }
-        }
+        accountPreferenceUpdater.cancel()
     }
 }

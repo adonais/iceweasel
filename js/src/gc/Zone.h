@@ -68,6 +68,18 @@ struct UniqueIdGCPolicy {
 using UniqueIdMap = GCHashMap<Cell*, uint64_t, PointerHasher<Cell*>,
                               SystemAllocPolicy, UniqueIdGCPolicy>;
 
+// For unique symbols, a map from shared symbols in the atoms zone to their
+// corresponding local symbol. Owned by a zone. The keys are weak and entries
+// are removed if the zone's local symbol dies. Local symbols hold the shared
+// symbol alive through its header pointer.
+//
+// This is used to get the existing local symbol when a unique symbol is wrapped
+// into a zone. For non-unique symbols the atom reference bitmap is used to
+// track zones' references to shared symbols.
+using LocalSymbolMap =
+    GCHashMap<HeapPtr<JS::Symbol*>, HeapPtr<JS::Symbol*>,
+              DefaultHasher<HeapPtr<JS::Symbol*>>, ZoneAllocPolicy>;
+
 template <typename T>
 class ZoneAllCellIter;
 
@@ -535,6 +547,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // Set of atoms recently used by this Zone. Purged on GC.
   js::MainThreadOrGCTaskData<js::UniquePtr<js::AtomCacheHashTable>> atomCache_;
 
+  // Set of local symbols used by this Zone.
+  js::MainThreadOrGCTaskData<js::gc::LocalSymbolMap> localSymbolMap_;
+
   // Cache storing allocated external strings. Purged on GC.
   js::MainThreadOrGCTaskData<js::ExternalStringCache> externalStringCache_;
 
@@ -865,6 +880,14 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   void dropStringWrappersOnGC();
+
+  js::gc::LocalSymbolMap& localSymbolMap() { return localSymbolMap_.ref(); }
+  void traceIncomingSymbolEdgesForZoneGC(JSTracer* trc,
+                                         js::gc::EdgeSelector whichEdges);
+  void traceWeakLocalSymbolEdges(JSTracer* trc);
+#ifdef DEBUG
+  bool hasLocalSymbol(JS::Symbol* symbol);
+#endif
 
   void traceWeakCCWEdges(JSTracer* trc);
   static void fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);

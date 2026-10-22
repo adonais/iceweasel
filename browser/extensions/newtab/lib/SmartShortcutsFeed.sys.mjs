@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -31,6 +33,9 @@ function timeMSToSeconds(timeMS) {
  * A feature that periodically generates an interest vector for personalized shortcuts.
  */
 export class SmartShortcutsFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
   }

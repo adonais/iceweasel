@@ -23,7 +23,7 @@
 namespace mozilla {
 
 namespace detail {
-template <typename T, bool IsPod = std::is_trivial<T>::value>
+template <typename T, bool IsPod = std::is_trivial_v<T>>
 struct MemoryOperations {
   /**
    * This allows zeroing (using memset) or default-constructing a number of

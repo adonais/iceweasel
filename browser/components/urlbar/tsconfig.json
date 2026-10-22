@@ -2,8 +2,6 @@
   "include": ["**/*.mjs", "types/*.ts"],
   "exclude": [
     "content/SmartbarInput.mjs",
-    "content/UrlbarInputBase.mjs",
-    "content/UrlbarView.mjs",
     "UrlbarProviderGlobalActions.sys.mjs",
     "private/SuggestBackendRust.sys.mjs",
     "tests/NewtabSearchbarTestUtils.sys.mjs",

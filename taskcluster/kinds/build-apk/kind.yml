@@ -34,6 +34,7 @@ tasks:
             gradle-build-type: debug
             gradle-build-name: focusDebug
             gradle-build: focus
+            track-build-times: true
         source-project-name: "focus-android"
         treeherder:
             symbol: focus-debug(Bf)
@@ -65,6 +66,7 @@ tasks:
             gradle-extra-options:
                 - -PdisableLeakCanary
             track-apk-size: true
+            track-build-times: true
         source-project-name: "fenix"
         treeherder:
             symbol: fenix-debug(Bf)
@@ -91,6 +93,7 @@ tasks:
             gradle-build-type: release
             gradle-build-name: focusRelease
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         shipping-phase: promote
         source-project-name: "focus-android"
@@ -139,6 +142,7 @@ tasks:
             gradle-build-name: release
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         shipping-phase: promote
@@ -165,6 +169,7 @@ tasks:
             gradle-build-type: nightly
             gradle-build-name: focusNightly
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         source-project-name: "focus-android"
         treeherder:
@@ -189,6 +194,7 @@ tasks:
             gradle-build-name: nightly
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         treeherder:
@@ -213,6 +219,7 @@ tasks:
             gradle-build-name: nightly
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
         run-on-projects: []
         treeherder:
             symbol: fenix-nightly-nobp(B)
@@ -239,6 +246,7 @@ tasks:
             gradle-build-type: beta
             gradle-build-name: focusBeta
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         shipping-phase: promote
         source-project-name: "focus-android"
@@ -266,6 +274,7 @@ tasks:
             gradle-build-name: beta
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         shipping-phase: promote
@@ -532,6 +541,35 @@ tasks:
         source-project-name: "fenix"
         treeherder:
             symbol: fenix-nightlySim(B)
+            platform: fenix-android-all/opt
+
+    # This task builds Fenix Nightly with the nightly-as-release GeckoView
+    # fat AAR. android nightly as release Browsertime use this APK. Analagous
+    # to fenix-nightly-simulation config.
+    fenix-nightlyasrelease-simulation:
+        description: 'Fenix Nightly-As-Release Simulation'
+        dependencies:
+            build-fat-aar: build-fat-aar-android-geckoview-fat-aar-nightlyasrelease/opt
+            baseline-profile: generate-baseline-profile-firebase-fenix
+        fetches:
+            baseline-profile:
+                - artifact: baselineProfile.tar.zst
+                  dest: baselineProfiles
+        attributes:
+            nightly: false
+        include-nightly-version: true
+        # Use dummy secrets on all levels. No secret exists for this task
+        # name, and this perf-only APK does not need real tokens.
+        include-shippable-secrets: false
+        run-on-projects: []
+        run:
+            gradle-build-type: nightly
+            gradle-build-name: nightly
+            gradle-build: fenix
+            baseline-profile-path: /builds/worker/fetches/baselineProfiles
+        source-project-name: "fenix"
+        treeherder:
+            symbol: fenix-nightlyAsReleaseSim(B)
             platform: fenix-android-all/opt
 
     fenix-beta-mozillaonline:

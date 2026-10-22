@@ -140,14 +140,17 @@ function getNodeInfo(node, elementStyle) {
     type = VIEW_NODE_INACTIVE_CSS;
     value = declaration.getInactiveCssData();
   } else if (
-    node.classList.contains("css-explainers-function-name") &&
-    node.closest("[data-function-expression")
+    (node.classList.contains("css-explainers-function-name") &&
+      node.closest("[data-function-expression")) ||
+    node.hasAttribute("data-length-expression")
   ) {
     type = VIEW_NODE_CSS_EXPLAINERS;
     value = {
-      expression: node
-        .closest("[data-function-expression")
-        .getAttribute("data-function-expression"),
+      expression: node.hasAttribute("data-length-expression")
+        ? node.getAttribute("data-length-expression")
+        : node
+            .closest("[data-function-expression")
+            .getAttribute("data-function-expression"),
       property: getPropertyNameAndValue(node).name,
       pseudoElement: rule.pseudoElement,
       rule,

@@ -4,12 +4,13 @@
 
 package org.mozilla.focus.activity
 
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
-import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import mozilla.components.support.locale.LocaleAwareAppCompatActivity
@@ -26,7 +27,13 @@ open class EdgeToEdgeActivity : LocaleAwareAppCompatActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            enableEdgeToEdge()
+            WindowCompat.enableEdgeToEdge(window)
+            val isLight =
+                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
+            WindowCompat.getInsetsController(window, window.decorView).run {
+                isAppearanceLightStatusBars = isLight
+                isAppearanceLightNavigationBars = isLight
+            }
             setupPersistentInsets()
         } else {
             @Suppress("DEPRECATION")

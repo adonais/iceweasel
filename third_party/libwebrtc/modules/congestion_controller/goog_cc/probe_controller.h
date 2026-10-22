@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -179,7 +180,7 @@ class ProbeController {
   InitiateExponentialProbing(Timestamp at_time);
   ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> InitiateProbing(
       Timestamp now,
-      std::vector<DataRate> bitrates_to_probe,
+      std::span<const DataRate> bitrates_to_probe,
       bool probe_further);
   bool TimeForAlrProbe(Timestamp at_time) const;
   bool TimeForNetworkStateProbe(Timestamp at_time) const;

@@ -2,148 +2,87 @@
 
 ## Overview
 
-Our unit tests in Activity Stream are written with mocha, chai, and sinon, and run
-with karma. They include unit tests for both content code (React components, etc.)
-and `.sys.mjs`s.
+Our unit tests are written with [Jest](https://jestjs.io) and, for React
+components, [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
+They run in Node with a simulated DOM (jsdom), so they do not need a Firefox
+build. They cover both content code (React components, etc.) and `.sys.mjs`s.
 
-You can find unit tests in `tests/unit`.
+You can find unit tests in `test/jest`.
 
 ## Execution
 
-To run the unit tests once, execute `npm test`.
+To run lint and the unit tests once, execute `npm test`. To run only the unit
+tests, use `npm run testmc:jest`, and add `-- path/to/file.test.jsx` to run a
+single file.
 
-To run unit tests continuously (i.e. in "test-driven development" mode), you can
-run `npm run tddmc`.
+To run unit tests continuously (i.e. in "test-driven development" mode), run
+`npm run tdd`.
 
-## Debugging
-
-To debug tests, you should run them in continuous mode with `npm run tddmc`.
-In the Firefox window that is opened (it should say "Karma... - connected"),
-click the "debug" button and open your console to see test output, set
-breakpoints, etc.
-
-Unfortunately, source maps for tests do not currently work in Firefox. If you need
-to see line numbers, you can run the tests with Chrome by running
-`npm install --save-dev karma-chrome-launcher && npm run tddmc -- --browsers Chrome`
+To generate a coverage report in `logs/coverage`, run
+`npm run testmc:jest:coverage`, then `npm run debugcoverage` to open it.
 
 ## Where to put new tests
 
-If you are creating a new test, add it to a subdirectory of the `tests/unit`
-that corresponds to the file you are testing. Tests should end with `.test.js` or
-`.test.jsx` if the test includes any jsx.
+Add new tests to the subdirectory of `test/jest` that corresponds to the file
+you are testing. Tests should end with `.test.js`, or `.test.jsx` if the test
+includes any JSX.
 
-For example, if the file you are testing is `lib/Foo.sys.mjs`, the test
-file should be `test/unit/lib/Foo.test.js`
+For example, if the file you are testing is `lib/Foo.sys.mjs`, the test file
+should be `test/jest/lib/Foo.test.js`.
 
-## Mocha tests
+## Writing tests
 
-All our unit tests are written with [mocha](https://mochajs.org), which injects
-globals like `describe`, `it`, `beforeEach`, and others. It can be used to write
-synchronous or asynchronous tests:
+Jest provides `describe`, `it`, `beforeEach`, `expect`, and the rest as globals.
+Use `jest.fn()` and `jest.spyOn()` for stubs and spies, and `jest.useFakeTimers()`
+for timers.
 
 ```js
 describe("FooModule", () => {
-  // A synchronous test
-  it("should create an instance", () => {
-    assert.instanceOf(new FooModule(), FooModule);
-  });
-  describe("#meaningOfLife", () => {
-    // An asynchronous test
-    it("should eventually get the meaning of life", async () => {
-      const foo = new FooModule();
-      const result = await foo.meaningOfLife();
-      assert.equal(result, 42);
-    });
+  it("should eventually get the meaning of life", async () => {
+    const foo = new FooModule();
+    expect(await foo.meaningOfLife()).toBe(42);
   });
 });
-```
-
-## Assertions
-
-To write assertions, use the globally available `assert` object (this is provided
-by karma-chai, so you do not need to `require` it).
-
-For example:
-
-```js
-assert.equal(foo, 3);
-assert.propertyVal(someObj, "foo", 3);
-assert.calledOnce(someStub);
-```
-
-You can use any of the assertions from:
-
-- [`chai`](http://chaijs.com/api/assert/).
-- [`sinon-chai`](https://github.com/domenic/sinon-chai#assertions)
-
-### Custom assertions
-
-We have some custom assertions for checking various types of actions:
-
-#### `.isUserEventAction(action)`
-
-Asserts that a given `action` is a valid User Event, i.e. that it contains only
-expected/valid properties for User Events in Activity Stream.
-
-```js
-// This will pass
-assert.isUserEventAction(ac.UserEvent({event: "CLICK"}));
-
-// This will fail
-assert.isUserEventAction({type: "FOO"});
-
-// This will fail because BLOOP is not a valid event type
-assert.isUserEventAction(ac.UserEvent({event: "BLOOP"}));
 ```
 
 ## Overriding globals in `.sys.mjs`s
 
-Most `.sys.mjs`s you will be testing use `Cu.import` or `XPCOMUtils` to inject globals.
-In order to add mocks/stubs/fakes for these globals, you should use the `GlobalOverrider`
-utility in `test/unit/utils`:
+Most `.sys.mjs`s read globals such as `Services` or lazily imported modules. To
+replace them for a test, use `stubGlobals` from `test/jest/test-utils`. It
+returns a function that restores the originals:
 
 ```js
-const {GlobalOverrider} = require("test/unit/utils");
+import { stubGlobals } from "test/jest/test-utils";
+
 describe("MyModule", () => {
-  let globals;
-  let sandbox;
+  let restoreGlobals;
   beforeEach(() => {
-    globals = new GlobalOverrider();
-    sandbox = globals.sandbox; // this is a sinon sandbox
-    // This will inject a "AboutNewTab" global before each test
-    globals.set("AboutNewTab", {override: sandbox.stub()});
+    restoreGlobals = stubGlobals({ AboutNewTab: { override: jest.fn() } });
   });
-  // globals.restore() clears any globals you added as well as the sinon sandbox
-  afterEach(() => globals.restore());
+  afterEach(() => restoreGlobals());
 });
 ```
+
+`mockServices(["obs", "prefs"])` builds a `Services`-shaped object of stubs to
+pass to `stubGlobals`.
 
 ## Testing React components
 
-You should use the [enzyme](https://github.com/airbnb/enzyme) suite of test utilities
-to test React Components for Activity Stream.
+Render components with React Testing Library and query them the way a user
+would find them. Wrap connected components in `WrapWithProvider` from
+`test/jest/test-utils`, which supplies a Redux store built from
+`INITIAL_STATE` (or a `state` you pass in):
 
-Where possible, use the [shallow rendering method](https://github.com/airbnb/enzyme/blob/master/docs/api/shallow.md) (this will avoid unnecessarily
-rendering child components):
+```jsx
+import { render, screen } from "@testing-library/react";
+import { WrapWithProvider } from "test/jest/test-utils";
 
-```js
-const React = require("react");
-const {shallow} = require("enzyme");
-
-describe("<Foo>", () => {
-  it("should be hidden by default", () => {
-    const wrapper = shallow(<Foo />);
-    assert.isTrue(wrapper.find(".wrapper").props().hidden);
-  });
+it("should render the heading", () => {
+  render(
+    <WrapWithProvider>
+      <Foo />
+    </WrapWithProvider>
+  );
+  expect(screen.getByRole("heading")).toBeInTheDocument();
 });
-```
-
-If you need to, you can also do [Full DOM rendering](https://github.com/airbnb/enzyme/blob/master/docs/api/mount.md)
-with enzyme's `mount` utility.
-
-```js
-const React = require("react");
-const {mount} = require("enzyme");
-...
-const wrapper = mount(<Foo />);
 ```

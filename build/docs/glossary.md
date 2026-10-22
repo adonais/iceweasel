@@ -43,5 +43,5 @@ incremental build
 
 mozinfo
   An API for accessing a common and limited subset of the build and
-  run-time configuration. See {ref}`mozinfo`.
+  run-time configuration. See {doc}`mozinfo`.
 :::

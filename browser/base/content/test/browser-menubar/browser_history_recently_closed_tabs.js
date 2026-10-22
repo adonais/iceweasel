@@ -198,12 +198,12 @@ add_task(async function test_recently_closed_tabs_mixed_private() {
 
   await SessionStoreTestUtils.closeTab(privateWin.gBrowser.selectedTab);
   is(
-    SessionStore.getClosedTabCount(privateWin),
+    SessionStore.getClosedTabCount({ sourceWindow: privateWin }),
     1,
     "Expect closed tab count of 1 for private windows"
   );
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Expect closed tab count of 0 for non-private windows"
   );
@@ -222,7 +222,7 @@ add_task(async function test_recently_closed_tabs_mixed_private() {
   info("closing tab in non-private window");
   await SessionStoreTestUtils.closeTab(window.gBrowser.selectedTab);
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     1,
     "Expect 1 closed tab count after closing the a tab in the non-private window"
   );
@@ -282,12 +282,12 @@ add_task(async function test_recently_closed_tabs_mixed_private_pref_off() {
   await SimpleTest.promiseFocus(privateWin);
   await SessionStoreTestUtils.closeTab(privateWin.gBrowser.selectedTab);
   is(
-    SessionStore.getClosedTabCount(privateWin),
+    SessionStore.getClosedTabCount({ sourceWindow: privateWin }),
     1,
     "Expect closed tab count of 1 for private windows"
   );
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Expect closed tab count of 0 for non-private windows"
   );
@@ -302,12 +302,12 @@ add_task(async function test_recently_closed_tabs_mixed_private_pref_off() {
 
   await resetClosedTabsAndWindows();
   is(
-    SessionStore.getClosedTabCount(privateWin),
+    SessionStore.getClosedTabCount({ sourceWindow: privateWin }),
     0,
     "Expect 0 closed tab count after reset"
   );
   is(
-    SessionStore.getClosedTabCount(window),
+    SessionStore.getClosedTabCount({ sourceWindow: window }),
     0,
     "Expect 0 closed tab count after reset"
   );

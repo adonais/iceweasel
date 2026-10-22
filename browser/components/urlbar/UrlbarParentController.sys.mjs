@@ -12,7 +12,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs"
  * @import {SearchEngineInfo} from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
- * @import {UrlbarLoadRequest} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ * @import {UrlbarLoadRequest, LoadURLParams} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  * @import {UrlbarChildControllerProxy, UrlbarInputProxy, UrlbarViewProxy} from "moz-src:///browser/components/urlbar/actors/UrlbarParent.sys.mjs"
  */
 
@@ -1011,10 +1011,12 @@ export class UrlbarParentController {
    *   What to load.
    * @param {string} loadData.where
    *   Where to open, per `openTrustedLinkIn`.
-   * @param {object} loadData.params
+   * @param {LoadURLParams} loadData.params
    *   The serializable `openTrustedLinkIn` params.
    * @param {number} [loadData.browserId]
-   *   The target browser's id; defaults to the selected browser.
+   *   The target browser's id; defaults to the selected browser. A content
+   *   sender always targets its own tab. A `current` load is dropped if its
+   *   target browser has gone away.
    * @param {string} [loadData.userTypedValue]
    *   The value to record as the browser's typed value, for a `current` load.
    * @returns {{reverted: boolean, browserId: number}}
@@ -1026,9 +1028,16 @@ export class UrlbarParentController {
    *   content-process input can't resolve the selected browser itself.
    */
   loadURL({ loadRequest, where, params, browserId, userTypedValue }) {
-    let browser =
-      this.resolveTargetBrowser(browserId) ||
-      this.browserWindow.gBrowser.selectedBrowser;
+    // TODO(bug 2076823): Simplify how the target browser is picked.
+    let browser = this.resolveTargetBrowser(browserId);
+    if (!browser) {
+      // The tab was closed before the load got here; don't hand its load to
+      // whichever tab is selected now.
+      if ((browserId || this.rendersInContentProcess) && where == "current") {
+        return { reverted: false, browserId };
+      }
+      browser = this.browserWindow.gBrowser.selectedBrowser;
+    }
 
     let { url, postData } = lazy.UrlbarUtils.loadRequestToUrl(loadRequest);
     if (!url) {
@@ -1202,7 +1211,7 @@ export class UrlbarParentController {
    *   The URL being loaded.
    * @param {string} loadData.where
    *   Where to open, per `openTrustedLinkIn`.
-   * @param {object} loadData.params
+   * @param {LoadURLParams} loadData.params
    *   The `openTrustedLinkIn` params.
    * @param {string} [loadData.userTypedValue]
    *   The value to record as the browser's typed value, for a `current` load.

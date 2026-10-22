@@ -877,11 +877,11 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test2=yes"));
   GetACookieNoHttp(cookieService, "http://cookiemgr.test/foo/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test2=yes"));
-  // check CountCookiesFromHostNative()
-  uint32_t hostCookies = 0;
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
-      "cookiemgr.test"_ns, &attrs, &hostCookies)));
-  EXPECT_EQ(hostCookies, 2u);
+  // check GetCookiesFromHostNative()
+  nsTArray<RefPtr<nsICookie>> hostCookies;
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->GetCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, false, hostCookies)));
+  EXPECT_EQ(hostCookies.Length(), 2u);
   // check CookieExistsNative() using the third cookie
   bool found;
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
@@ -890,14 +890,20 @@ TEST(TestCookie, TestCookieMain)
 
   // sleep four seconds, to make sure the second cookie has expired
   PR_Sleep(4 * PR_TicksPerSecond());
-  // check that both CountCookiesFromHostNative() and CookieExistsNative() count
-  // the expired cookie
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
-      "cookiemgr.test"_ns, &attrs, &hostCookies)));
-  EXPECT_EQ(hostCookies, 2u);
+  // check that the expired cookie is not exposed by the cookie manager
+  hostCookies.Clear();
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->GetCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, false, hostCookies)));
+  EXPECT_EQ(hostCookies.Length(), 1u);
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
       "cookiemgr.test"_ns, "/foo"_ns, "test2"_ns, &attrs, &found)));
-  EXPECT_TRUE(found);
+  EXPECT_FALSE(found);
+  cookies.SetLength(0);
+  EXPECT_NS_SUCCEEDED(cookieMgr->GetCookies(cookies));
+  EXPECT_EQ(cookies.Length(), 2ul);
+  cookies.SetLength(0);
+  EXPECT_NS_SUCCEEDED(cookieMgr->GetSessionCookies(cookies));
+  EXPECT_EQ(cookies.Length(), 2ul);
   // double-check RemoveAll() using the enumerator
   EXPECT_NS_SUCCEEDED(cookieMgr->RemoveAll());
   cookies.SetLength(0);
@@ -1348,24 +1354,6 @@ TEST(TestCookie, RemoveOlderCookiesByBytesEntryFreed)
   EXPECT_FALSE(storage->mHostTable.GetEntry(key));
 }
 
-static bool HasCookiesForSite(CookieStorage* aStorage,
-                              const nsACString& aBaseDomain,
-                              const OriginAttributesPattern& aPattern) {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  bool hasCookies = false;
-
-  aStorage->ForEachCookie(aBaseDomain, aPattern, [&](Cookie* aCookie) {
-    if (aCookie->IsExpired(currentTimeInMSec)) {
-      return true;
-    }
-
-    hasCookies = true;
-    return false;
-  });
-
-  return hasCookies;
-}
-
 // Regression test for Bug 2041131: HasCookiesForSite must find cookies stored
 // under any OriginAttributes matching the pattern (containers, partitionKey,
 // …), not just the default-OA bucket.
@@ -1405,16 +1393,16 @@ TEST(TestCookie, HasCookiesForSite)
   nonPbPattern.mPrivateBrowsingId.Construct(0);
 
   // No cookies at all → false.
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
-  EXPECT_FALSE(HasCookiesForSite(storage, "other.test"_ns, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies("other.test"_ns, nonPbPattern));
 
   // Cookie in the default-OA bucket → true.
   OriginAttributes defaultAttrs;
   addCookie(defaultAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   // Different base domain still gets false.
-  EXPECT_FALSE(HasCookiesForSite(storage, "other.test"_ns, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies("other.test"_ns, nonPbPattern));
 
   // Cookie only in a container (userContextId != 0) → true. This is the
   // direct regression case from Bug 2041131.
@@ -1423,7 +1411,7 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes containerAttrs;
   containerAttrs.mUserContextId = 1;
   addCookie(containerAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   // PB-only cookie must NOT be visible to a non-PB pattern.
   RefPtr<TestableCookieStorage> pbOnly = TestableCookieStorage::Create();
@@ -1431,11 +1419,11 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes pbAttrs;
   pbAttrs.mPrivateBrowsingId = 1;
   addCookie(pbAttrs, kFuture);
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
   // And IS visible to a PB-matching pattern.
   OriginAttributesPattern pbPattern;
   pbPattern.mPrivateBrowsingId.Construct(1);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, pbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, pbPattern));
 
   // Partitioned-only cookie (non-default partitionKey) → true under
   // privateBrowsingId=0 pattern.
@@ -1445,17 +1433,17 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes partAttrs;
   partAttrs.mPartitionKey = u"(http,other.test)"_ns;
   addCookie(partAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   RefPtr<TestableCookieStorage> expiredOnly = TestableCookieStorage::Create();
   storage = expiredOnly;
   addCookie(defaultAttrs, kPast);
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
 
   OriginAttributes otherAttrs;
   otherAttrs.mUserContextId = 2;
   addCookie(otherAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 }
 
 namespace mozilla::net {

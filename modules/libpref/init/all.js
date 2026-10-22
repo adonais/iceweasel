@@ -382,12 +382,6 @@ pref("gfx.downloadable_fonts.enabled", true);
 pref("gfx.downloadable_fonts.fallback_delay", 3000);
 pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
-#ifdef XP_WIN
-  // Bug 2011408 will remove this pref and the code that uses it completely if
-  // we don't see any performance issues.
-  pref("gfx.font_rendering.directwrite.use_gdi_table_loading", false);
-#endif
-
 // comma separated list of backends to use in order of preference
 // e.g., pref("gfx.canvas.azure.backends", "direct2d,skia");
 pref("gfx.canvas.azure.backends", "skia");
@@ -3663,6 +3657,8 @@ pref("browser.ml.modelHubUrlTemplate", "{model}/{revision}");
 pref("browser.ml.modelCacheMaxSize", 4);
 // Model cache timeout in ms
 pref("browser.ml.modelCacheTimeout", 120000);
+// Route llama.cpp inference to the HWInference utility process
+pref("browser.ml.llama.hwInference", true);
 // Minimal Physical RAM required in GiB
 pref("browser.ml.minimumPhysicalMemory", 3);
 // Check for memory before running
@@ -4168,6 +4164,14 @@ pref("extensions.formautofill.creditCards.cvv.supported", "off");
 // FormAutofill.isAutofillCreditCardCVVEnabled.
 pref("extensions.formautofill.creditCards.cvv.enabled", true);
 
+// Leave a field whose autocomplete attribute is present but cannot be parsed
+// into a known field name, e.g. autocomplete="shopify checkout", out of
+// autofill entirely: it is offered no dropdown of its own, and it is not
+// filled when autofill is triggered from another field in the same form.
+// Treated as a signal that the site provides its own suggestion UI. A field
+// with no autocomplete attribute, or with "off"/"on", is unaffected.
+pref("extensions.formautofill.suppressUnrecognizedAutocomplete.enabled", false);
+
 // Supported countries need to follow ISO 3166-1 to align with "browser.search.region"
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES,AT,BE,PL");
 
@@ -4243,4 +4247,15 @@ pref("general.smoothScroll", true, sticky);
 // Trigger FOG's Artifact Build support on artifact builds.
 #ifdef MOZ_ARTIFACT_BUILDS
   pref("telemetry.fog.artifact_build", true);
+#endif
+
+// For artifact builds, launch child process executables using the executable
+// names in their respective Info.plist files rather than the compile-time
+// branding macros. Artifact build branding doesn't always match the local
+// repo branding configuration leading to mismatches because some macOS
+// executable filenames are derived from the branding. The plist files could
+// always be used, but reading the executable names from the plist requires
+// extra library calls so by default we'll use compile-time brand macros.
+#if defined(MOZ_ARTIFACT_BUILDS) && defined(XP_MACOSX)
+  pref("dom.ipc.processLaunch.useMacPlists", true);
 #endif

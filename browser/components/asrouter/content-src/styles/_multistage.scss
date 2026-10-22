@@ -862,7 +862,7 @@ html {
       @media (not (prefers-contrast)) and (-moz-pref('browser.privateWindowRedesign.enabled')) {
         &.PRIVATE_WINDOW_BASICS_SCREEN {
           // Reduced backdrop opacity
-          background-color: rgba(0, 0, 0, 40%);
+          background-color: rgba(0, 0, 0, 20%);
 
           // Private window redesign gradient border
           &.zap-border {
@@ -1147,19 +1147,75 @@ html {
       }
     }
 
+    // The card-stack's width comes from the newtab column it renders in, which
+    // depends on the newtab layout rather than the viewport, so for breakpoints
+    // we query the card's own width instead of the viewport's width
+    $card-stack-narrow-width: 640px;
+    $card-stack-stacked-width: 520px;
+
+    @at-root .onboardingContainer:has(> .screen[pos='card-stack']) {
+      container: card-stack / inline-size;
+    }
+
     // Base layout for the HNT card stack
     &[pos='card-stack'] {
-      --card-stack-color-1: light-dark(var(--color-violet-0), var(--color-violet-90));
-      --card-stack-color-2: light-dark(var(--color-violet-10), var(--color-violet-70));
-      --card-stack-color-3: light-dark(var(--color-violet-20), var(--color-violet-80));
-      --card-stack-flare: light-dark(var(--color-violet-20), var(--color-violet-70));
+      @mixin card-stack-theme($hue, $dark-front: 90, $dark-mid: 70, $dark-back: 80) {
+        --card-stack-color-1: light-dark(var(--color-#{$hue}-0), var(--color-#{$hue}-#{$dark-front}));
+        --card-stack-color-2: light-dark(var(--color-#{$hue}-10), var(--color-#{$hue}-#{$dark-mid}));
+        --card-stack-color-3: light-dark(var(--color-#{$hue}-20), var(--color-#{$hue}-#{$dark-back}));
+        --card-stack-flare: light-dark(var(--color-#{$hue}-10), var(--color-#{$hue}-#{$dark-mid}));
+      }
+
+      @include card-stack-theme(violet);
+
+      $card-stack-theme-hues: (
+        'nova-sun@mozilla.org': yellow,
+        'nova-spark@mozilla.org': orange,
+        'nova-flame@mozilla.org': red,
+        'nova-flare@mozilla.org': pink,
+        'nova-lavender@mozilla.org': purple,
+        'nova-lagoon@mozilla.org': blue,
+        'nova-pine@mozilla.org': green,
+        'nova-tide@mozilla.org': cyan,
+      );
+
+      @each $theme-id, $hue in $card-stack-theme-hues {
+        &[data-theme='#{$theme-id}'] {
+          @include card-stack-theme($hue);
+        }
+      }
+
+      &[data-theme='nova-ash@mozilla.org'] {
+        @include card-stack-theme(gray, 60, 70, 80);
+      }
+
+      &[data-theme='nova-smoke@mozilla.org'] {
+        --card-stack-color-1: light-dark(#FFF9F6, #3B3532); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        --card-stack-color-2: light-dark(#FBF4EE, #2F2926); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        --card-stack-color-3: light-dark(#E3DBD7, #201B18); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        --card-stack-flare: light-dark(#E3DBD7, #3B3532); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      }
+
       --card-stack-secondary-width: 318px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       --card-stack-secondary-height: 150px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 2);
       --card-stack-border: 1px solid var(--card-border-color); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      // Resting offsets of the two cards drawn behind the front one.
+      --card-stack-layer-1-offset: 8px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      --card-stack-layer-2-offset: 16px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      // Keep in sync with CARD_STACK_TRANSITION_OUT_TIME in MultiStageAboutWelcome.jsx.
+      --card-stack-duration: 400ms;
+      // Distances go through --translate so that prefers-reduced-motion,
+      // which zeroes it, collapses the motion to an opacity change.
+      --card-stack-fly-block: calc(2 * var(--translate));
+      --card-stack-slot-shift: var(--card-stack-layer-1-offset);
+
+      @media (prefers-reduced-motion: reduce) {
+        --card-stack-slot-shift: 0px;
+      }
 
       background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
-      background-image: radial-gradient(circle 100px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+      background-image: radial-gradient(circle 125px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       background-repeat: no-repeat;
       border: var(--card-stack-border);
       border-radius: var(--border-radius-medium);
@@ -1170,14 +1226,14 @@ html {
       overflow: visible;
 
       &:dir(rtl) {
-        background-image: radial-gradient(circle 100px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        background-image: radial-gradient(circle 125px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       }
 
-      @media only screen and (width <= 960px) {
+      @container card-stack (width <= #{$card-stack-narrow-width}) {
         --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 3)
       }
 
-      @media only screen and (width <= 890px) {
+      @container card-stack (width <= #{$card-stack-stacked-width}) {
         background-position-y: calc(var(--card-stack-secondary-height) / -2);
         background-image: radial-gradient(circle 100px at center, var(--card-stack-flare) 0%, transparent 100%);
       }
@@ -1197,32 +1253,32 @@ html {
       &::before {
         inset-inline: 18px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: var(--card-stack-color-2);
-        transform: translateY(8px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        translate: 0 var(--card-stack-layer-1-offset);
       }
 
       &::after {
         inset-inline: 42px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: var(--card-stack-color-3);
-        transform: translateY(16px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        translate: 0 var(--card-stack-layer-2-offset);
         z-index: -2;
       }
 
       @media (prefers-reduced-motion: no-preference) {
         &::before,
         &::after {
-          transition: transform 150ms ease;
+          transition: translate 150ms ease;
         }
       }
 
       &:hover::before {
-        transform: translateY(12px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        translate: 0 12px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       }
 
       &:hover::after {
-        transform: translateY(24px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        translate: 0 24px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       }
 
-      @media only screen and (width <= 890px) {
+      @container card-stack (width <= #{$card-stack-stacked-width}) {
         height: auto;
         flex-flow: column;
       }
@@ -1245,12 +1301,12 @@ html {
         border-end-end-radius: 0;
         overflow: hidden;
 
-        @media only screen and (width < 960px) {
+        @container card-stack (width <= #{$card-stack-narrow-width}) {
           width: 180px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
           margin-inline-start: 12px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
         }
 
-        @media only screen and (width <= 890px) {
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
           height: var(--card-stack-secondary-height);
           margin-block: 12px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
           margin-inline: auto;
@@ -1263,7 +1319,7 @@ html {
         display: block;
         margin: 0;
 
-        @media only screen and (width <= 890px) {
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
           width: 100%;
         }
 
@@ -1286,7 +1342,7 @@ html {
           .main-content-inner {
             justify-content: center;
 
-            @media only screen and (width <= 890px) {
+            @container card-stack (width <= #{$card-stack-stacked-width}) {
               align-items: center;
             }
           }
@@ -1299,7 +1355,7 @@ html {
         margin: 0;
         gap: var(--space-small);
 
-        @media only screen and (width <= 890px) {
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
           align-items: unset;
           text-align: unset;
         }
@@ -1338,6 +1394,176 @@ html {
           font-weight: var(--font-weight-semibold);
           line-height: 1;
         }
+      }
+
+      &[layout='last-card'] {
+        --card-stack-flare-x: 50%;
+        --last-card-image-width: 120px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        --last-card-image-height: 120px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        --last-card-image-margin-inline: var(--space-xlarge);
+        --last-card-image-margin-block: 0 var(--space-medium);
+        --last-card-split-delay: 500ms;
+        --last-card-split-duration: 500ms;
+
+        // The card is too narrow to split the text around the image, so the
+        // image sits above the stacked title and subtitle instead
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
+          height: 300px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+          background-position-y: center;
+        }
+
+        .section-secondary {
+          display: none;
+        }
+
+        .section-main .main-content {
+          border-radius: var(--border-radius-medium);
+        }
+
+        .welcome-text {
+          flex-direction: row;
+          align-items: center;
+          align-self: stretch;
+          gap: var(--space-xsmall);
+
+          h1,
+          h2 {
+            flex: 1;
+            font-size: var(--font-size-heading-medium);
+            font-weight: var(--font-weight-semibold);
+          }
+
+          h1 {
+            text-align: end;
+          }
+
+          h2 {
+            text-align: start;
+          }
+
+          @container card-stack (width <= #{$card-stack-stacked-width}) {
+            flex-direction: column;
+            gap: var(--space-small);
+
+            h1,
+            h2 {
+              flex: 0 0 auto;
+              text-align: center;
+            }
+          }
+        }
+
+        .last-card-image {
+          flex: 0 0 auto;
+          width: var(--last-card-image-width);
+          height: var(--last-card-image-height);
+          margin-inline: var(--last-card-image-margin-inline);
+
+          @container card-stack (width <= #{$card-stack-stacked-width}) {
+            order: -1;
+            margin-inline: 0;
+            margin-block: var(--last-card-image-margin-block);
+          }
+
+          .center-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            margin-block: var(--last-card-picture-margin-block, 0);
+            margin-inline: var(--last-card-picture-margin-inline, 0);
+
+            @container card-stack (width <= #{$card-stack-stacked-width}) {
+              margin: 0;
+            }
+
+            .brand-logo {
+              display: block;
+              width: 100%;
+              height: 100%;
+              margin: 0;
+              object-fit: contain;
+            }
+          }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          // Splits apart the title and subtitle
+          .last-card-image {
+            animation: last-card-split var(--last-card-split-duration) ease var(--last-card-split-delay) both;
+
+            @container card-stack (width <= #{$card-stack-stacked-width}) {
+              animation-name: last-card-split-vertical;
+            }
+
+            // Displays the image when the text split animation is finished
+            .center-image {
+              animation: last-card-image-appear var(--last-card-split-duration) steps(1, jump-end) var(--last-card-split-delay) both;
+            }
+          }
+        }
+      }
+
+      @keyframes card-stack-exit {
+        to {
+          opacity: 0;
+          translate: 0 var(--card-stack-fly-block);
+        }
+      }
+
+      @keyframes card-stack-enter {
+        from {
+          opacity: 0;
+          translate: 0 var(--card-stack-slot-shift);
+        }
+      }
+
+      // Each backing card advances one slot; played in reverse on entry.
+      @keyframes card-stack-layer-1 {
+        to {
+          translate: 0 calc(var(--card-stack-layer-1-offset) - var(--card-stack-slot-shift));
+        }
+      }
+
+      @keyframes card-stack-layer-2 {
+        to {
+          translate: 0 calc(var(--card-stack-layer-2-offset) - var(--card-stack-slot-shift));
+        }
+      }
+    }
+
+    @keyframes last-card-split {
+      from {
+        width: 0;
+        margin-inline: 0;
+      }
+
+      to {
+        width: var(--last-card-image-width);
+        margin-inline: var(--last-card-image-margin-inline);
+      }
+    }
+
+    @keyframes last-card-split-vertical {
+      from {
+        height: 0;
+        margin-block: 0;
+      }
+
+      to {
+        height: var(--last-card-image-height);
+        margin-block: var(--last-card-image-margin-block);
+      }
+    }
+
+    // Using visibility instead of opacity here to prevent the
+    // animation from starting before it is actually visible
+    @keyframes last-card-image-appear {
+      from {
+        visibility: hidden;
+      }
+
+      to {
+        visibility: visible;
       }
     }
 
@@ -1996,10 +2222,12 @@ html {
 
                     &:hover {
                       background-color: var(--button-background-color-hover);
+                      color: var(--button-text-color-hover);
                     }
 
                     &:active {
                       background-color: var(--button-background-color-active);
+                      color: var(--button-text-color-active);
                     }
                   }
                 }
@@ -2085,6 +2313,16 @@ html {
             flex-grow: 1;
             margin: 0;
             display: flex;
+            flex-direction: column;
+            background-color: var(--background-color-canvas);
+
+            > .secondary-buttons-top-container,
+            > .secondary-cta.top {
+              position: static;
+              align-self: flex-end;
+              padding-block: var(--space-small) 0;
+              padding-inline-end: var(--space-small);
+            }
 
             &[hide-secondary-section='responsive'] {
               height: 100%;
@@ -2650,6 +2888,24 @@ html {
     margin: 10px auto;
   }
 
+  .carousel-nav {
+    display: flex;
+    justify-content: center;
+    max-width: 100%;
+    margin-block-end: var(--space-medium);
+
+    @media (forced-colors: none) and (prefers-contrast: no-preference) {
+      moz-segmented-control {
+        --segmented-control-border-color: light-dark(#C7C6CB, #515054);
+      }
+    }
+
+    @media (forced-colors: active) {
+      --button-background-color-primary: ButtonText;
+      --button-text-color-primary: ButtonFace;
+    }
+  }
+
   .sr-only {
     opacity: 0;
     overflow: hidden;
@@ -3208,7 +3464,7 @@ html {
       user-select: none;
       cursor: default;
       text-align: start;
-      border-radius: var(--input-text-border-radius);
+      border-radius: var(--input-border-radius);
     }
   }
 
@@ -4215,6 +4471,23 @@ html {
     }
   }
 
+  @mixin card-stack-moves-as-one-piece {
+    .screen[pos='card-stack'] {
+      .section-main,
+      .main-content,
+      .welcome-text,
+      .primary,
+      .secondary,
+      .secondary-cta:not(.top),
+      .cta-link,
+      .additional-cta {
+        opacity: 1;
+        translate: none;
+        transition-delay: 0s;
+      }
+    }
+  }
+
   &.transition-in {
     .noodle {
       opacity: 0;
@@ -4291,6 +4564,8 @@ html {
         }
       }
     }
+
+    @include card-stack-moves-as-one-piece;
   }
 
   .system-prompt-spotlight {
@@ -4464,6 +4739,20 @@ html {
       .corner-image:not(.entrance-none) {
         opacity: 0;
         transition-delay: 0s;
+      }
+    }
+
+    @include card-stack-moves-as-one-piece;
+
+    .screen[pos='card-stack'] {
+      animation: card-stack-exit var(--card-stack-duration) ease-in forwards;
+
+      &::before {
+        animation: card-stack-layer-1 var(--card-stack-duration) ease-in forwards;
+      }
+
+      &::after {
+        animation: card-stack-layer-2 var(--card-stack-duration) ease-in forwards;
       }
     }
   }

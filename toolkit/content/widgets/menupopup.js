@@ -12,6 +12,7 @@
   );
   const lazy = {};
   ChromeUtils.defineESModuleGetters(lazy, {
+    assignAutoAccessKeys: "chrome://global/content/elements/auto-accesskey.mjs",
     checkAccessKeys: "chrome://global/content/elements/accesskey-check.mjs",
   });
 
@@ -34,19 +35,22 @@
   document.addEventListener(
     "popupshowing",
     function (e) {
-      if (
-        e.target.nodeName == "menupopup" &&
-        e.target.getAttribute("needsgutter") != "always"
-      ) {
-        e.target.toggleAttribute(
+      let menupopup = e.target;
+      if (menupopup.nodeName != "menupopup") {
+        return;
+      }
+      if (menupopup.getAttribute("needsgutter") != "always") {
+        menupopup.toggleAttribute(
           "needsgutter",
-          !!e.target.querySelector(GUTTER_SELECTOR)
+          !!menupopup.querySelector(GUTTER_SELECTOR)
         );
       }
+      lazy.assignAutoAccessKeys(menupopup);
     },
     // we use a system bubbling event listener to ensure we run *after* the
     // "normal" popupshowing listeners, so (visibility) changes they make to
-    // their items take effect first, before we check for checkable menuitems.
+    // their items take effect first, before we check for checkable menuitems,
+    // and items they add get their accesskeys.
     { mozSystemGroup: true }
   );
 

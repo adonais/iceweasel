@@ -109,8 +109,8 @@ struct SysFreeStringDeleter {
 };
 using BStrPtr = mozilla::UniquePtr<OLECHAR, SysFreeStringDeleter>;
 
-NS_IMPL_ISUPPORTS(nsWindowsShellService, nsIToolkitShellService,
-                  nsIShellService, nsIWindowsShellService)
+NS_IMPL_ISUPPORTS_INHERITED(nsWindowsShellService, nsShellService,
+                            nsIShellService, nsIWindowsShellService)
 
 /* Enable logging by setting MOZ_LOG to "nsWindowsShellService:5" for debugging
  * purposes. */
@@ -276,6 +276,13 @@ nsWindowsShellService::IsDefaultBrowser(bool aForAllTypes,
     *aIsDefaultBrowser = IsPathDefaultForClass(pAAR, exePath, htmlClass);
   }
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::IsDefaultBrowserAsync(bool aForAllTypes,
+                                             JSContext* aContext,
+                                             mozilla::dom::Promise** _retval) {
+  return nsShellService::IsDefaultBrowserAsync(aForAllTypes, aContext, _retval);
 }
 
 NS_IMETHODIMP

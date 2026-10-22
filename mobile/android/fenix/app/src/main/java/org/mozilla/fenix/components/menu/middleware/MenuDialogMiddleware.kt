@@ -112,7 +112,7 @@ class MenuDialogMiddleware(
             is MenuAction.RemoveShortcut -> removeShortcut(store)
             is MenuAction.DeleteBrowsingDataAndQuit -> deleteBrowsingDataAndQuit(store)
             is MenuAction.FindInPage -> launchFindInPage(store)
-            is MenuAction.DismissMenuBanner -> dismissMenuBanner()
+            is MenuAction.DefaultBrowserMenuBannerDismissed -> dismissMenuBanner()
             is MenuAction.OpenInApp -> openInApp(store)
             is MenuAction.OpenInFirefox -> openInFirefox(store)
             is MenuAction.InstallAddon -> installAddon(store, action.addon)

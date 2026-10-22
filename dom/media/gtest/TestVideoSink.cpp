@@ -6,6 +6,7 @@
 #include "AudioSink.h"
 #include "AudioSinkWrapper.h"
 #include "ImageContainer.h"
+#include "MediaSinkTestUtils.h"
 #include "MockCubeb.h"
 #include "MockMediaDecoderOwner.h"
 #include "TimeUnits.h"
@@ -159,4 +160,111 @@ TEST(TestVideoSink, FrameThrottling)
   EXPECT_EQ(frameStatistics->GetDroppedSinkFrames(), 1u);
   videoSink->Stop();
   videoSink->Shutdown();
+}
+
+class TestVideoSinkPause : public testing::Test {
+ protected:
+  void SetUp() override {
+    MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+    CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+    mInfo.EnableAudio();  // to control the advance of time through MockCubeb
+    mInfo.EnableVideo();
+
+    auto audioSinkCreator = [&]() {
+      return UniquePtr<AudioSink>{
+          new AudioSink(AbstractThread::GetCurrent(), mAudioQueue, mInfo.mAudio,
+                        /*resistFingerprinting*/ false)};
+    };
+    RefPtr wrapper = new AudioSinkWrapper(
+        AbstractThread::GetCurrent(), mAudioQueue, std::move(audioSinkCreator),
+        /*initialVolume*/ 1.0, /*playbackRate*/ 1.0, /*preservesPitch*/ true,
+        /*sinkDevice*/ nullptr);
+
+    mContainer = new VideoFrameContainer(
+        mOwner.get(),
+        MakeAndAddRef<ImageContainer>(ImageUsageType::VideoFrameContainer,
+#ifdef MOZ_WIDGET_ANDROID
+                                      // Work around bug 1922144
+                                      ImageContainer::SYNCHRONOUS
+#else
+                                      ImageContainer::ASYNCHRONOUS
+#endif
+                                      ));
+    mVideoSink = new VideoSink(AbstractThread::GetCurrent(), wrapper,
+                               mVideoQueue, mContainer, *mFrameStatistics,
+                               /*aVQueueSentToCompositerSize*/ 9999);
+    auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+    mVideoSink->Start(TimeUnit::Zero(), mInfo);
+    std::tie(mStream) = WaitFor(initPromise).unwrap()[0];
+    mAudioRate = mStream->SampleRate();
+    mNextFrameTime = TimeUnit(0, mAudioRate);
+
+    // Enough audio data that it does not underrun, which would stop the clock.
+    size_t audioFrameCount = 1000 * mInfo.mAudio.mRate / mAudioRate;
+    AlignedAudioBuffer samples(audioFrameCount * mInfo.mAudio.mChannels);
+    RefPtr audioData = new AudioData(
+        /*aOffset*/ 0, /*aTime*/ TimeUnit(0, mInfo.mAudio.mRate),
+        std::move(samples), mInfo.mAudio.mChannels, mInfo.mAudio.mRate);
+    mAudioQueue.Push(audioData);
+
+    mImage = MakeSinkTest1x1Image(mContainer->GetImageContainer());
+  }
+
+  void TearDown() override {
+    mVideoSink->Stop();
+    mVideoSink->Shutdown();
+  }
+
+  void PushVideoFrame(const gfx::IntSize& aSize, const TimeUnit& aDuration) {
+    RefPtr frame = VideoData::CreateFromImage(
+        aSize, /*aOffset*/ 0, /*aTime*/ mNextFrameTime, aDuration, mImage,
+        /*aKeyframe*/ mVideoQueue.GetSize() == 0,
+        /*aTimecode*/ mNextFrameTime);
+    frame->mFrameID = mContainer->NewFrameID();
+    mVideoQueue.Push(frame);
+    mNextFrameTime = frame->GetEndTime();
+  }
+
+  // Pushes three frames, waits for the first to be rendered, and advances the
+  // clock to aTicks without letting the sink update the rendered frames.
+  void PlayUntil(uint32_t aTicks) {
+    PushVideoFrame(kSize1, TimeUnit(10, mAudioRate));
+    PushVideoFrame(kSize2, TimeUnit(10, mAudioRate));
+    PushVideoFrame(kSize3, TimeUnit(10, mAudioRate));
+    SpinEventLoopUntil("the intrinsic size receives an initial value"_ns, [&] {
+      return mContainer->CurrentIntrinsicSize().isSome();
+    });
+    EXPECT_EQ(mContainer->CurrentIntrinsicSize().value(), kSize1);
+    mStream->ManualDataCallback(aTicks);
+  }
+
+  const gfx::IntSize kSize1{1, 1};
+  const gfx::IntSize kSize2{1, 2};
+  const gfx::IntSize kSize3{1, 3};
+  MediaInfo mInfo;
+  MediaQueue<AudioData> mAudioQueue;
+  MediaQueue<VideoData> mVideoQueue;
+  const std::unique_ptr<MockMediaDecoderOwner> mOwner =
+      std::make_unique<MockMediaDecoderOwner>();
+  const RefPtr<FrameStatistics> mFrameStatistics = new FrameStatistics();
+  RefPtr<VideoFrameContainer> mContainer;
+  RefPtr<VideoSink> mVideoSink;
+  RefPtr<SmartMockCubebStream> mStream;
+  RefPtr<Image> mImage;
+  uint32_t mAudioRate = 0;
+  TimeUnit mNextFrameTime;
+};
+
+TEST_F(TestVideoSinkPause, RendersFrameAtClock) {
+  // Frame 1 has expired but is still at the front of the queue.
+  PlayUntil(15);
+  mVideoSink->SetPlaying(false);
+  EXPECT_EQ(mContainer->CurrentIntrinsicSize().value(), kSize2);
+}
+
+TEST_F(TestVideoSinkPause, RendersLastFrameWhenAllExpired) {
+  PlayUntil(35);
+  mVideoSink->SetPlaying(false);
+  EXPECT_EQ(mContainer->CurrentIntrinsicSize().value(), kSize3);
 }

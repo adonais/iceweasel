@@ -909,6 +909,16 @@ nsresult nsSocketTransport::InitWithConnectedSocket(PRFileDesc* fd,
   opt.value.non_blocking = true;
   PR_SetSocketOption(fd, &opt);
 
+  // disable the nagle algorithm like InitiateSocket() does for outgoing
+  // connections - otherwise the second of two small writes in a row (e.g. a
+  // WebSocket event followed by a response) is held back until the peer's
+  // delayed ACK arrives, which costs 40ms per pair on Linux
+  if (addr->raw.family == AF_INET || addr->raw.family == AF_INET6) {
+    opt.option = PR_SockOpt_NoDelay;
+    opt.value.no_delay = true;
+    PR_SetSocketOption(fd, &opt);
+  }
+
   SOCKET_LOG(
       ("nsSocketTransport::InitWithConnectedSocket [this=%p addr=%s:%hu]\n",
        this, mHost.get(), mPort));
@@ -1284,6 +1294,44 @@ static bool ShouldBlockAddress(const NetAddr& aAddr, const nsCString& aHost) {
   return true;
 }
 
+static bool IsBlockedLocalPort(const NetAddr& aAddr) {
+  uint16_t port;
+  if (NS_FAILED(aAddr.GetPort(&port))) {
+    return false;
+  }
+  return gIOService->IsLocalPortBlocked(port);
+}
+
+// Connecting to one of this machine's own non-loopback addresses makes the OS
+// use that same address as the source, which is how such connections are
+// detected once established.
+bool nsSocketTransport::IsConnectedToBlockedLocalPort(PRFileDesc* aFd) {
+  if (!IsBlockedLocalPort(mNetAddr)) {
+    return false;
+  }
+
+  PRNetAddr prAddr;
+  memset(&prAddr, 0, sizeof(prAddr));
+  if (PR_GetSockName(aFd, &prAddr) != PR_SUCCESS) {
+    return true;
+  }
+  // Only the IPs are compared, so give selfAddr the peer's port.
+  NetAddr selfAddr(&prAddr);
+  if (selfAddr.raw.family == AF_INET && mNetAddr.raw.family == AF_INET) {
+    selfAddr.inet.port = mNetAddr.inet.port;
+  } else if (selfAddr.raw.family == AF_INET6 &&
+             mNetAddr.raw.family == AF_INET6) {
+    selfAddr.inet6.port = mNetAddr.inet6.port;
+  }
+  if (!(selfAddr == mNetAddr)) {
+    return false;
+  }
+
+  SOCKET_LOG(("nsSocketTransport::IsConnectedToBlockedLocalPort [this=%p] %s\n",
+              this, mNetAddr.ToString().get()));
+  return true;
+}
+
 nsresult nsSocketTransport::InitiateSocket() {
   SOCKET_LOG(("nsSocketTransport::InitiateSocket [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1294,6 +1342,13 @@ nsresult nsSocketTransport::InitiateSocket() {
 
   if (gIOService->IsNetTearingDown()) {
     return NS_ERROR_ABORT;
+  }
+
+  if ((mNetAddr.IsLoopbackAddr() || mNetAddr.IsIPAddrAny()) &&
+      IsBlockedLocalPort(mNetAddr)) {
+    SOCKET_LOG(("nsSocketTransport::InitiateSocket blocked local port %s\n",
+                mNetAddr.ToString().get()));
+    return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
   }
 
   // Since https://github.com/whatwg/fetch/pull/1763,
@@ -1629,6 +1684,9 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 
   if (status == PR_SUCCESS) {
+    if (IsConnectedToBlockedLocalPort(fd)) {
+      return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+    }
     //
     // we are connected!
     //
@@ -1646,6 +1704,9 @@ nsresult nsSocketTransport::InitiateSocket() {
       // If the socket is already connected, then return success...
       //
     } else if (PR_IS_CONNECTED_ERROR == code) {
+      if (IsConnectedToBlockedLocalPort(fd)) {
+        return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+      }
       //
       // we are connected!
       //
@@ -2233,7 +2294,9 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
 
     PRStatus status = PR_ConnectContinue(fd, outFlags);
 
-    if (status == PR_SUCCESS) {
+    if (status == PR_SUCCESS && IsConnectedToBlockedLocalPort(fd)) {
+      mCondition = NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+    } else if (status == PR_SUCCESS) {
       //
       // we are connected!
       //

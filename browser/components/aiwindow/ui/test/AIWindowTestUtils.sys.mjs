@@ -6,6 +6,7 @@
  * @import { MockLLMEngine, MockedResponse } from "../../../../toolkit/components/ml/tests/MLTestUtils.sys.mjs"
  * @import { ModelFeature } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
  * @import { HttpServer } from "resource://testing-common/httpd.sys.mjs"
+ * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
  */
 
 /* global content, ContentTaskUtils */
@@ -22,10 +23,26 @@ import { embeddingsGeneratorFactory } from "chrome://global/content/ml/Embedding
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  ChatConversation:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
+
+/**
+ * A bare chat conversation, as a tool call receives one.
+ *
+ * @returns {ChatConversation}
+ */
+export function newConversation() {
+  return new lazy.ChatConversation({
+    title: "",
+    description: "",
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+}
 
 const testContext = {};
 

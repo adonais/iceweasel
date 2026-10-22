@@ -967,24 +967,24 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
     return;
   }
 
-  LocalAccessible* accessible = GetAccessible(aElement);
+  LocalAccessible* accessible = GetAccessibleOrDocument(aElement);
   if (!accessible) {
-    if (mContent == aElement) {
-      // The attribute change occurred on the root content of this
-      // DocAccessible, so handle it as an attribute change on this.
-      accessible = this;
-    } else {
-      if (aModType == AttrModType::Addition &&
-          aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
-        // The element doesn't have an Accessible, but a global ARIA attribute
-        // was just added, which means we should probably create an Accessible.
-        ContentInserted(aElement, aElement->GetNextSibling());
-        return;
-      }
-      // The element doesn't have an Accessible, so ignore the attribute
-      // change.
+    if (aModType == AttrModType::Addition &&
+        aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
+      // The element doesn't have an Accessible, but a global ARIA attribute
+      // was just added, which means we should probably create an Accessible.
+      ContentInserted(aElement, aElement->GetNextSibling());
       return;
     }
+    if (aAttribute == nsGkAtoms::contenteditable) {
+      // This element might have become editable, but it currently has no
+      // Accessible. Create one if appropriate.
+      ContentInserted(aElement, aElement->GetNextSibling());
+      return;
+    }
+    // The element doesn't have an Accessible, so ignore the attribute
+    // change.
+    return;
   }
 
   MOZ_ASSERT(accessible->IsBoundToParent() || accessible->IsDoc(),
@@ -2627,6 +2627,15 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
                     aChild, nullptr);
 #endif
 
+  if (aChild->IsRelocated()) {
+    nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(parent);
+    MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
+    owned->RemoveElement(aChild);
+    if (owned->Length() == 0) {
+      mARIAOwnsHash.Remove(parent);
+    }
+  }
+
   // XXX: event coalescence may kill us
   RefPtr<LocalAccessible> kungFuDeathGripChild(aChild);
 
@@ -2639,17 +2648,7 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Alive but unparented #1");
-
-  if (aChild->IsRelocated()) {
-    nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(parent);
-    MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
-    owned->RemoveElement(aChild);
-    if (owned->Length() == 0) {
-      mARIAOwnsHash.Remove(parent);
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Unparented #2");
+  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Alive but unparented");
   UncacheChildrenInSubtree(aChild);
   parent->RemoveChild(aChild);
 
@@ -3263,13 +3262,8 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
 }
 
 bool DocAccessible::IsRootContent(nsINode* aNode) const {
-  // The root element can be replaced or removed while the document is live.
-  // This means until mContent is re-synced by UpdateRootElement, it can
-  // still be the detached, former root.
-  MOZ_ASSERT(!mContent || !mContent->IsInComposedDoc() ||
-                 mDocumentNode->GetRootElement() == mContent,
-             "The doc acc should be bound to the root element");
-  return mContent == aNode;
+  return mContent && mDocumentNode->GetRootElement() == mContent &&
+         mContent == aNode;
 }
 
 bool DocAccessible::IsBodyElement(const nsINode* aNode) const {

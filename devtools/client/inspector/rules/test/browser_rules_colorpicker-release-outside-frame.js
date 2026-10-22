@@ -43,9 +43,14 @@ add_task(async function () {
     is(newValue, value, "Value changed on mousemove without a button pressed.");
   });
 
-  // Releasing the button pressed by mousedown above on top of a different frame
-  // does not make sense in this test as EventUtils doesn't preserve the context
-  // i.e. the buttons that were pressed down between events.
+  info("Releasing the mouse button outside of the color picker frame.");
+  EventUtils.synthesizeMouse(
+    view.element,
+    10,
+    10,
+    { type: "mouseup" },
+    view.styleWindow
+  );
 
   info("Moving mouse over color picker without any buttons pressed.");
 

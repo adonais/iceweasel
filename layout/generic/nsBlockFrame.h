@@ -557,7 +557,9 @@ class nsBlockFrame : public nsContainerFrame {
 
   /** Returns the effective align-content of this frame */
   mozilla::StyleAlignFlags EffectiveAlignContent() const {
-    if (!mozilla::StaticPrefs::
+    auto alignContent = StylePosition()->mAlignContent.primary;
+    if (alignContent == mozilla::StyleAlignFlags::NORMAL ||
+        !mozilla::StaticPrefs::
             layout_forms_button_input_align_content_block_enabled()) {
       if (IsButtonLike()) {
         return mozilla::StyleAlignFlags::CENTER;
@@ -567,7 +569,7 @@ class nsBlockFrame : public nsContainerFrame {
                mozilla::StyleAlignFlags::UNSAFE;
       }
     }
-    return StylePosition()->mAlignContent.primary;
+    return alignContent;
   }
 
   bool IsContentAligned() const {
@@ -756,11 +758,7 @@ class nsBlockFrame : public nsContainerFrame {
       if (aThisFrame != aRootFrame) {
         return false;
       }
-      if (clampedBSize == 0) {
-        MOZ_ASSERT(targetFrame == nullptr && targetLine == nullptr);
-        return true;
-      }
-      return false;
+      return !clampedBSize && !targetFrame && !targetLine;
     }
   };
   nsBlockFrame* GetLineClampRoot() const;

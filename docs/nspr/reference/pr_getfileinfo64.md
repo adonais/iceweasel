@@ -23,8 +23,8 @@ The function has the following parameters:
 
 `info`
 
-: A pointer to a 64-bit file information object (see {ref}`PRFileInfo64`).
-  On output, {ref}`PR_GetFileInfo64` writes information about the given
+: A pointer to a 64-bit file information object (see {doc}`prfileinfo64`).
+  On output, {doc}`pr_getfileinfo64` writes information about the given
   file to the file information object.
 
 ### Returns
@@ -36,12 +36,12 @@ One of the following values:
 
 ## Description
 
-{ref}`PR_GetFileInfo64` stores information about the file with the
-specified pathname in the {ref}`PRFileInfo64` structure pointed to by
+{doc}`pr_getfileinfo64` stores information about the file with the
+specified pathname in the {doc}`prfileinfo64` structure pointed to by
 `info`. The file size is returned as an unsigned 64-bit integer.
 
 ## See Also
 
-For the 32-bit version of this function, see {ref}`PR_GetFileInfo`. To get
+For the 32-bit version of this function, see {doc}`pr_getfileinfo`. To get
 equivalent information on a file that's already open, use
-{ref}`PR_GetOpenFileInfo64`.
+{doc}`pr_getopenfileinfo64`.

@@ -159,7 +159,7 @@ class APZCPinchLockingTester : public APZCPinchTester {
  private:
   ScreenIntPoint mFocus;
   float mSpan;
-  int mPinchLockBufferMaxAge;
+  uint32_t mPinchLockBufferMaxAge;
 
  public:
   APZCPinchLockingTester()

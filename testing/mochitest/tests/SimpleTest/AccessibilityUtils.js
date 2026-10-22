@@ -1306,6 +1306,15 @@ this.AccessibilityUtils = (function () {
    */
   const AccessibilityUtils = {
     assertCanBeClicked(node) {
+      if (node.frameLoader?.isRemoteFrame) {
+        // The click landed in a document of another process, which is what
+        // the user clicks, not the frame element itself. Remote documents
+        // aren't supported by these checks.
+        a11yWarn("Unable to perform a11y checks in a remote document", {
+          DOMNode: node,
+        });
+        return;
+      }
       // Click events might fire on an inaccessible or non-interactive
       // descendant, even if the test author targeted them at an interactive
       // element. For example, if there's a button with an image inside it,

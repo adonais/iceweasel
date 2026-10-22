@@ -513,6 +513,27 @@ add_task(async function test_PollPromise_timeout() {
   equal(err.message, "PollingFailed after 100 ms");
 });
 
+add_task(async function test_PollPromise_timeoutStopsPolling() {
+  for (const timeout of [0, 100]) {
+    let nevals = 0;
+
+    await Assert.rejects(
+      new PollPromise(
+        (resolve, reject) => {
+          ++nevals;
+          reject();
+        },
+        { timeout }
+      ),
+      /TimeoutError/
+    );
+
+    const nevalsAfterTimeout = nevals;
+    await Sleep(100);
+    equal(nevals, nevalsAfterTimeout);
+  }
+});
+
 add_task(async function test_PollPromise_interval() {
   let nevals = 0;
   await new PollPromise(

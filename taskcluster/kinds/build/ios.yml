@@ -12,6 +12,8 @@ task-defaults:
         max-run-time: 7200
     run-on-projects: ['trunk']
     run-on-repo-type: [hg]
+    mozconfig:
+        app: mobile/ios
     run:
         clone-with: hg
         using: mozharness
@@ -21,7 +23,6 @@ task-defaults:
         config:
             - builds/releng_base_firefox.py
         extra-config:
-            app_name: mobile/ios
             disable_package_metrics: true
             upload_env: {"UPLOAD_PATH": "/builds/worker/artifacts"}
     use-sccache: true
@@ -48,25 +49,25 @@ ios/debug:
     treeherder:
         platform: ios/debug
         symbol: B
-    run:
-        extra-config:
-            mozconfig_platform: ios
-        mozconfig-variant: debug
+    mozconfig:
+        variant: debug
+        platform: ios
     fetches:
         toolchain:
             - ios-sdk
 
 ios/opt:
     description: "ios opt"
+    attributes:
+        code-review-build-test: true
     index:
         job-name: ios-opt
     treeherder:
         platform: ios/opt
         symbol: B
-    run:
-        extra-config:
-            mozconfig_platform: ios
-        mozconfig-variant: opt
+    mozconfig:
+        variant: opt
+        platform: ios
     fetches:
         toolchain:
             - ios-sdk
@@ -83,12 +84,9 @@ ios-non-unified/plain:
         env:
             PERFHERDER_EXTRA_OPTIONS: non-unified
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
-    run:
-        extra-config:
-            mozconfig_platform: ios
-            extra_mozconfig_content:
-                - ac_add_options --disable-unified-build
-        mozconfig-variant: opt
+    mozconfig:
+        variant: non-unified
+        platform: ios
     run-on-projects: ['integration']
     fetches:
         toolchain:
@@ -104,10 +102,9 @@ ios-sim/debug:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: ios-sim
-    run:
-        extra-config:
-            mozconfig_platform: ios-sim
-        mozconfig-variant: debug
+    mozconfig:
+        variant: debug
+        platform: ios-sim
     fetches:
         toolchain:
             - ios-sim-sdk
@@ -122,10 +119,9 @@ ios-sim/opt:
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: ios-sim
-    run:
-        extra-config:
-            mozconfig_platform: ios-sim
-        mozconfig-variant: opt
+    mozconfig:
+        variant: opt
+        platform: ios-sim
     fetches:
         toolchain:
             - ios-sim-sdk

@@ -36,6 +36,7 @@ from .data import (
     FinalTargetFiles,
     FinalTargetPreprocessedFiles,
     GeneratedFile,
+    Headers,
     HostDefines,
     HostLibrary,
     HostProgram,
@@ -1100,7 +1101,6 @@ class TreeMetadataEmitter(LoggingMixin):
             deps = list(extra_link_deps)
             for linkable in link_targets:
                 linkable.extra_link_deps = deps
-
         # Only emit sources if we have linkables defined in the same context.
         # Note the linkables are not emitted in this function, but much later,
         # after aggregation (because of e.g. USE_LIBS processing).
@@ -1121,7 +1121,13 @@ class TreeMetadataEmitter(LoggingMixin):
         sources = defaultdict(list)
         gen_sources = defaultdict(list)
         all_flags = {}
-        for symbol in ("SOURCES", "HOST_SOURCES", "UNIFIED_SOURCES", "WASM_SOURCES"):
+        for symbol in (
+            "SOURCES",
+            "HOST_SOURCES",
+            "UNIFIED_SOURCES",
+            "WASM_SOURCES",
+            "SOURCE_HEADERS",
+        ):
             srcs = sources[symbol]
             gen_srcs = gen_sources[symbol]
             context_srcs = context.get(symbol, [])
@@ -1194,6 +1200,7 @@ class TreeMetadataEmitter(LoggingMixin):
             ".c": set(),
             ".m": set(),
             ".mm": set(),
+            ".h": set([".h", ".H", ".hh", ".hpp"]),
             ".cpp": set([".cc", ".cxx"]),
             ".S": set(),
         }
@@ -1207,9 +1214,10 @@ class TreeMetadataEmitter(LoggingMixin):
 
         # A map from moz.build variables to the canonical suffixes of file
         # kinds that can be listed therein.
-        all_suffixes = list(suffix_map.keys())
+        source_suffixes = [s for s in suffix_map.keys() if s != ".h"]
         varmap = dict(
-            SOURCES=(Sources, all_suffixes),
+            SOURCES=(Sources, source_suffixes),
+            SOURCE_HEADERS=(Headers, [".h"]),
             HOST_SOURCES=(HostSources, [".c", ".cpp"]),
             UNIFIED_SOURCES=(UnifiedSources, [".c", ".mm", ".m", ".cpp"]),
         )
@@ -1829,6 +1837,9 @@ class TreeMetadataEmitter(LoggingMixin):
                     "File %s from XPIDL_SOURCES does not exist" % idl.full_path,
                     context,
                 )
+
+        if not context.config.substs.get("COMPILE_ENVIRONMENT"):
+            return
 
         yield XPIDLModule(context, xpidl_module, context["XPIDL_SOURCES"])
 

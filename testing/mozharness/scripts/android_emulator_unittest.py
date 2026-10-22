@@ -158,6 +158,15 @@ class AndroidEmulatorTest(
                 },
             ],
             [
+                ["--enable-isolated-process"],
+                {
+                    "action": "store_true",
+                    "dest": "isolated_process",
+                    "default": False,
+                    "help": "Run the tests with content service isolated process enabled.",
+                },
+            ],
+            [
                 ["--repeat"],
                 {
                     "action": "store",
@@ -239,6 +248,7 @@ class AndroidEmulatorTest(
         self.enable_isolated_zygote_process = c.get("enable_isolated_zygote_process")
         self.extra_prefs = c.get("extra_prefs")
         self.test_tags = c.get("test_tags")
+        self.isolated_process = c.get("isolated_process")
 
     def query_abs_dirs(self):
         if self.abs_dirs:
@@ -388,6 +398,9 @@ class AndroidEmulatorTest(
                 % c["web_content_isolation_strategy"]
             )
         cmd.extend([f"--setpref={p}" for p in self.extra_prefs])
+
+        if c["isolated_process"]:
+            cmd.append("--enable-isolated-process")
 
         if not (self.verify_enabled or self.per_test_coverage):
             if user_paths or self.test_tags:

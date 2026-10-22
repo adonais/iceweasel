@@ -5,7 +5,7 @@ if (typeof enableExecutionTracing == "undefined") {
 // Compacting GC breaks shape ids recorded by the execution tracer.
 gczeal(0);
 
-const VALUE_SUMMARY_VERSION = 2;
+const VALUE_SUMMARY_VERSION = 3;
 
 const JSVAL_TYPE_DOUBLE = 0x00;
 const JSVAL_TYPE_INT32 = 0x01;
@@ -13,10 +13,10 @@ const JSVAL_TYPE_BOOLEAN = 0x02;
 const JSVAL_TYPE_UNDEFINED = 0x03;
 const JSVAL_TYPE_NULL = 0x04;
 const JSVAL_TYPE_MAGIC = 0x05;
-const JSVAL_TYPE_STRING = 0x06;
-const JSVAL_TYPE_SYMBOL = 0x07;
+const JSVAL_TYPE_SYMBOL = 0x08;
 const JSVAL_TYPE_BIGINT = 0x09;
 const JSVAL_TYPE_OBJECT = 0x0c;
+const JSVAL_TYPE_STRING = 0x0e;
 
 const GETTER_SETTER_MAGIC = 0x0f;
 

@@ -12,5 +12,5 @@ PRThreadScope PR_GetThreadScope(void);
 
 ### Returns
 
-A value of type {ref}`PRThreadScope` indicating whether the thread is local
+A value of type {doc}`prthreadscope` indicating whether the thread is local
 or global.

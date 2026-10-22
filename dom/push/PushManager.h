@@ -73,9 +73,14 @@ class PushManager final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  static already_AddRefed<PushManager> Constructor(GlobalObject& aGlobal,
-                                                   const nsAString& aScope,
-                                                   ErrorResult& aRv);
+  static already_AddRefed<PushManager> Create(GlobalObject& aGlobal,
+                                              const nsAString& aScope,
+                                              ErrorResult& aRv);
+
+  // Constructor for window.pushManager
+  static already_AddRefed<PushManager> Create(JSContext* aCx,
+                                              nsGlobalWindowInner* aWindow,
+                                              ErrorResult& aRv);
 
   static bool IsEnabled(JSContext* aCx, JSObject* aGlobal);
 

@@ -244,8 +244,8 @@ bool VoipCore::UpdateAudioTransportWithSenders() {
     MutexLock lock(&lock_);
     // Reserve to prevent run time vector re-allocation.
     audio_senders.reserve(channels_.size());
-    for (auto kv : channels_) {
-      scoped_refptr<AudioChannel>& channel = kv.second;
+    for (const auto& kv : channels_) {
+      const scoped_refptr<AudioChannel>& channel = kv.second;
       if (channel->IsSendingMedia()) {
         auto encoder_format = channel->GetEncoderFormat();
         if (!encoder_format) {

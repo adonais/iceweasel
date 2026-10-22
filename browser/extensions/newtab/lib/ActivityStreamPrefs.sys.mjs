@@ -17,9 +17,17 @@ const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
 
+// Preferences is its own prototype, so tsc sees its methods only as statics
+// unless cast to a constructor. _branchStr is @private in Preferences but is
+// read by PrefsFeed.
+const PreferencesBase =
+  /** @type {new (args?: object) => Omit<typeof Preferences, "_branchStr"> & { _branchStr: string }} */ (
+    /** @type {unknown} */ (Preferences)
+  );
+
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 
-export class Prefs extends Preferences {
+export class Prefs extends PreferencesBase {
   /**
    * Prefs - A wrapper around Preferences that always sets the branch to
    *         ACTIVITY_STREAM_PREF_BRANCH
@@ -44,14 +52,14 @@ export class Prefs extends Preferences {
   }
 }
 
-export class DefaultPrefs extends Preferences {
+export class DefaultPrefs extends PreferencesBase {
   /**
    * DefaultPrefs - A helper for setting and resetting default prefs for the add-on
    *
    * @param  {Map} config A Map with {string} key of the pref name and {object}
    *                      value with the following pref properties:
    *         {string} .title (optional) A description of the pref
-   *         {bool|string|number} .value The default value for the pref
+   *         {boolean|string|number} .value The default value for the pref
    * @param  {string} branch (optional) The pref branch (defaults to ACTIVITY_STREAM_PREF_BRANCH)
    */
   constructor(config, branch = ACTIVITY_STREAM_PREF_BRANCH) {

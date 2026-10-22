@@ -137,16 +137,16 @@ skip-if = [
 run-if = [
   "os != 'android'", # wheel events not supported on mobile
 ]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
-]
 
 ["test_group_overscroll.html"]
 run-if = [
   "os != 'android'", # wheel events not supported on mobile
 ]
+
+["test_group_overscroll_behavior.html"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
+  "os == 'android'", # getPanHandler() doesn't support Android
+  "os == 'linux'", # SpecialPowers.isHeadless is broken on Linux (bug 1889039)
 ]
 
 ["test_group_overscroll_handoff.html"]
@@ -164,7 +164,6 @@ skip-if = [
 
 ["test_group_pointerevents.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1776964
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1977133
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1404836
   "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1404836
@@ -226,7 +225,6 @@ skip-if = [
 ["test_group_touchevents-6.html"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && verify-standalone",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1915078
 ]
 
 ["test_group_touchevents-7.html"]
@@ -256,9 +254,6 @@ skip-if = [
 support-files = [
   "!/layout/base/tests/Ahem.ttf",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1776973
-]
 
 ["test_interrupted_reflow.html"]
 
@@ -269,7 +264,6 @@ run-if = [
 skip-if = [
   "standalone", # Bug 2026600
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && fission && headless", # Bug 1722907
 ]
 
 ["test_relative_update.html"]

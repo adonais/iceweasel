@@ -15,10 +15,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/edac9d01a9ac7594f
  3 files changed, 24 insertions(+)
 
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 63e0f09d0f..00a02efbe4 100644
+index 82f1954d8a..4bedf11f67 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1218,6 +1218,16 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
+@@ -1340,6 +1340,16 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
    return std::nullopt;
  }
  
@@ -36,10 +36,10 @@ index 63e0f09d0f..00a02efbe4 100644
  RtpVideoStreamReceiver2::GetSenderReportStats() const {
    RTC_DCHECK_RUN_ON(worker_queue_);
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index c9d8824620..5ae3a00fa1 100644
+index 7b133968cf..b7fa03a961 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
-@@ -257,6 +257,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -259,6 +259,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                                         const RtpPacketReceived& rtp_packet,
                                         const RTPVideoHeader& video);
  
@@ -53,10 +53,10 @@ index c9d8824620..5ae3a00fa1 100644
    // Implements RtpVideoFrameReceiver.
    void ManageFrame(std::unique_ptr<RtpFrameObject> frame) override;
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 9fc22388af..d012730a37 100644
+index cc3bf3f6b9..c3ef646982 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -725,6 +725,14 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+@@ -728,6 +728,14 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
          non_sender_rtt_stats->round_trip_time_measurements;
      stats.total_round_trip_time = non_sender_rtt_stats->total_round_trip_time;
    }

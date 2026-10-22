@@ -10,6 +10,7 @@ import mozilla.components.lib.crash.store.crashReducer
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.blockedtrackers.BlockedTrackersStateReducer
 import org.mozilla.fenix.components.appstate.lens.LensReducer
+import org.mozilla.fenix.components.appstate.powersavingmode.PowerSavingModeReducer
 import org.mozilla.fenix.components.appstate.privatebrowsinglock.PrivateBrowsingLockReducer
 import org.mozilla.fenix.components.appstate.qrScanner.QrScannerReducer
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewStateReducer
@@ -105,6 +106,10 @@ internal object AppStoreReducer {
                             else -> state.recentSyncedTabState
                         }
                 )
+            // Removing the top site updates the top sites storage, which the [DefaultTopSitesPresenter] observes and
+            // dispatches TopSitesChange action with the new top site list.
+            is AppAction.RemoveTopSite -> state
+
             is AppAction.DisbandSearchGroupAction ->
                 state.copy(
                     recentHistory =
@@ -195,6 +200,7 @@ internal object AppStoreReducer {
             is AppAction.ShareAction -> ShareActionReducer.reduce(state, action)
             is AppAction.FindInPageAction -> FindInPageStateReducer.reduce(state, action)
             is AppAction.ReaderViewAction -> ReaderViewStateReducer.reduce(state, action)
+            is AppAction.PowerSavingModeAction -> PowerSavingModeReducer.reduce(state, action)
             is AppAction.ShortcutAction -> ShortcutStateReducer.reduce(state, action)
             is AppAction.CrashActionWrapper -> {
                 val newSnackbarState =

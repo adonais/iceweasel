@@ -37,7 +37,6 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_layers_allocation.h"
 #include "api/video/video_source_interface.h"
@@ -171,8 +170,6 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
       VideoEncoderConfig::ContentType content_type,
       int min_transmit_bitrate_bps) override;
 
-  void OnBitrateAllocationUpdated(
-      const VideoBitrateAllocation& allocation) override;
   void OnVideoLayersAllocationUpdated(
       VideoLayersAllocation allocation) override;
 
@@ -244,16 +241,6 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
   double encoder_bitrate_priority_ RTC_GUARDED_BY(thread_checker_);
 
   ScopedTaskSafety worker_queue_safety_;
-
-  // Context for the most recent and last sent video bitrate allocation. Used to
-  // throttle sending of similar bitrate allocations.
-  struct VbaSendContext {
-    VideoBitrateAllocation last_sent_allocation;
-    std::optional<VideoBitrateAllocation> throttled_allocation;
-    int64_t last_send_time_ms;
-  };
-  std::optional<VbaSendContext> video_bitrate_allocation_context_
-      RTC_GUARDED_BY(thread_checker_);
 };
 }  // namespace internal
 }  // namespace webrtc

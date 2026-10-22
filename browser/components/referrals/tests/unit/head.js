@@ -4,7 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+  Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
 });
 
 const REFERRAL_CODE_PREF = "browser.referrals.code";

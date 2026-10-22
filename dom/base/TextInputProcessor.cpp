@@ -398,7 +398,8 @@ nsresult TextInputProcessor::BeginInputTransactionInternal(
   // And also if another instance is composing with the new dispatcher or
   // dispatching an event, it'll fail to steal its ownership.  Then, we should
   // not throw an exception, just return false.
-  if (dispatcher->IsComposing() || dispatcher->IsDispatchingEvent()) {
+  if (NS_WARN_IF(dispatcher->IsComposing()) ||
+      NS_WARN_IF(dispatcher->IsDispatchingEvent())) {
     return NS_OK;
   }
 
@@ -1856,6 +1857,24 @@ uint32_t TextInputProcessor::GuessKeyCodeOfPrintableKeyInUSEnglishLayout(
     default:
       return 0;
   }
+}
+
+NS_IMETHODIMP TextInputProcessor::BeginTextEventDispatcherBatchForTests() {
+  MOZ_RELEASE_ASSERT(nsContentUtils::IsCallerChrome());
+  if (NS_WARN_IF(!mDispatcher) || NS_WARN_IF(!mForTests)) {
+    return NS_ERROR_FAILURE;
+  }
+  mDispatcher->BeginBatch();
+  return NS_OK;
+}
+
+NS_IMETHODIMP TextInputProcessor::EndTextEventDispatcherBatchForTests() {
+  MOZ_RELEASE_ASSERT(nsContentUtils::IsCallerChrome());
+  if (NS_WARN_IF(!mDispatcher) || NS_WARN_IF(!mForTests)) {
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<TextEventDispatcher> dispatcher = mDispatcher;
+  return dispatcher->EndBatch();
 }
 
 /******************************************************************************

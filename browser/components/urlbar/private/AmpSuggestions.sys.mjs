@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AmpMatchingStrategy:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   rawSuggestionUrlMatches:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
@@ -389,6 +390,7 @@ export class AmpSuggestions extends SuggestProvider {
     // concurrent calls can race at the async ContextId.request() and submit
     // their pings out of order.
     let submission = this.#lastPingSubmission.then(async () => {
+      let nimbusEnrollment = lazy.NimbusFeatures.urlbar.getEnrollmentMetadata();
       let allPingData = {
         pingType,
         // Suggest initialization awaits `Region.init()`, so safe to assume
@@ -409,6 +411,8 @@ export class AmpSuggestions extends SuggestProvider {
         requestId: result.payload.requestId,
         suggestionId: result.payload.suggestionId,
         source: result.payload.source,
+        experimentName: nimbusEnrollment?.slug,
+        experimentBranch: nimbusEnrollment?.branch,
         contextId: await lazy.ContextId.request(),
       };
 

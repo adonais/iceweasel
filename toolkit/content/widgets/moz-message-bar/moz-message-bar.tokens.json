@@ -283,7 +283,18 @@
   },
   "text": {
     "color": {
-      "value": "{text.color.@base}"
+      "@base": {
+        "value": "{text.color.@base}"
+      },
+      "warning": {
+        "value": "{text.color.@base}"
+      },
+      "success": {
+        "value": "{text.color.@base}"
+      },
+      "critical": {
+        "value": "{text.color.@base}"
+      }
     },
     "container": {
       "gap": {

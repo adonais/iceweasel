@@ -16,7 +16,7 @@ import org.mozilla.geckoview.GeckoRuntime
 internal class GeckoActivityDelegate(private val delegateRef: WeakReference<ActivityDelegate>) :
     GeckoRuntime.ActivityDelegate {
 
-    private val logger = Logger(GeckoActivityDelegate::javaClass.name)
+    private val logger = Logger("GeckoActivityDelegate")
 
     override fun onStartActivityForResult(intent: PendingIntent): GeckoResult<Intent> {
         val result: GeckoResult<Intent> = GeckoResult()

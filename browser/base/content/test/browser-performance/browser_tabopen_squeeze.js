@@ -21,7 +21,9 @@ const EXPECTED_REFLOWS = [
  */
 add_task(async function () {
   // Force-enable tab animations
-  gReduceMotionOverride = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
 
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();

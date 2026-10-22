@@ -4,6 +4,7 @@
 
 import textwrap
 
+from marionette_driver.wait import Wait
 from telemetry_harness.fog_ping_filters import FOG_DELETION_REQUEST_PING
 from telemetry_harness.fog_testcase import FOGTestCase
 
@@ -44,6 +45,13 @@ class TestDeletionRequestPing(FOGTestCase):
 
         self.enable_telemetry()
         self.restart_browser()
+
+        # bug 2071391 - Ensure FOG's initialized before we set the tag.
+        with self.marionette.using_context(self.marionette.CONTEXT_CHROME):
+            Wait(self.marionette, timeout=60).until(
+                lambda m: m.execute_script("return Services.fog.initialized;"),
+                message="FOG wasn't initialized",
+            )
 
         debug_tag = "my-test-tag"
         tagging_script = f"""\

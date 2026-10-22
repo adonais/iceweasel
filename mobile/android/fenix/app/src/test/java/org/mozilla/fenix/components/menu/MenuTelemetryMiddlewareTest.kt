@@ -388,7 +388,7 @@ class MenuTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
 
-        store.dispatch(MenuAction.MenuBanner)
+        store.dispatch(MenuAction.DefaultBrowserMenuBannerClicked)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "menu_banner")
     }
@@ -398,7 +398,7 @@ class MenuTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
 
-        store.dispatch(MenuAction.DismissMenuBanner)
+        store.dispatch(MenuAction.DefaultBrowserMenuBannerDismissed)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "dismiss_menu_banner")
     }

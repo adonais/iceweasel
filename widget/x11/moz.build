@@ -4,6 +4,7 @@
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Widget: Gtk")
+    SCHEDULES.exclusive = ["linux"]
 
 SOURCES += [
     "keysym2ucs.c",

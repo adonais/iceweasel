@@ -1,6 +1,7 @@
 [DEFAULT]
 prefs = [
   "apz.zoom-to-focused-input.enabled=false",
+  # Bug 2077709
   "dom.navigation.navigationRateLimit.count=0",
   "test.ime_content_observer.assert_invalid_cache=true",
   "ui.dragThresholdX=4", # Bug 1873142
@@ -492,7 +493,7 @@ skip-if = [
 
 ["test_execCommandPaste_noTarget.html"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1935188
+  "os == 'linux' && display == 'wayland'", # Bug 2005351
 ]
 
 ["test_focus_caret_navigation_between_nested_editors.html"]
@@ -547,14 +548,12 @@ skip-if = [
 ["test_middle_click_paste.html"]
 skip-if = [
   "headless",
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 1870753
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1870753
+  "os == 'linux' && display == 'wayland'", # Bug 2005351
 ]
 
 ["test_native_key_bindings_in_shadow.html"]
 skip-if = [
   "os == 'android'", # Depends on NativeKeyBindings used only on Linux and macOS
-  "os == 'win'", # Depends on NativeKeyBindings used only on Linux and macOS
 ]
 
 ["test_nested_editor.html"]
@@ -653,6 +652,8 @@ skip-if = [
 ["test_pasteImgFromTransferable.html"]
 
 ["test_pasteImgTextarea.html"]
+
+["test_pasteTransferable_data_in_paste_event.html"]
 
 ["test_pasteURLFromTransferable.html"]
 

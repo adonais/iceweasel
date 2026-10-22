@@ -5,6 +5,8 @@
 #ifndef nsCategoryManagerUtils_h_
 #define nsCategoryManagerUtils_h_
 
+class nsISupports;
+
 void NS_CreateServicesFromCategory(const char* aCategory, nsISupports* aOrigin,
                                    const char* aObserverTopic,
                                    const char16_t* aObserverData = nullptr);

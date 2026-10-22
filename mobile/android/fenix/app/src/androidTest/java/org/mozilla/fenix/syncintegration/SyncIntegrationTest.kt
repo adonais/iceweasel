@@ -72,12 +72,12 @@ class SyncIntegrationTest {
         // Then select/unselect each one and verify again that its status is correct
         // See issue #6544
         accountSettings {
-            verifyBookmarksCheckbox()
-            verifyHistoryCheckbox()
-            verifySignOutButton()
-            verifyDeviceName()
-        }
-            .disconnectAccount {
+                verifyBookmarksCheckbox()
+                verifyHistoryCheckbox()
+                verifySignOutButton()
+                verifyDeviceName()
+            }
+            .disconnectAccount(composeTestRule) {
                 TestHelper.mDevice.waitNotNull(Until.findObjects(By.text("Settings")), TestAssetHelper.waitingTime)
                 verifySettingsView()
             }

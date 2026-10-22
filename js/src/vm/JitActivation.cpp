@@ -48,7 +48,8 @@ js::jit::JitActivation::~JitActivation() {
   }
   cx_->jitActivation = prevJitActivation_;
 
-  // All reocvered value are taken from activation during the bailout.
+  // Recover instruction results must have been removed by either the bailout
+  // code or the exception handler.
   MOZ_ASSERT(ionRecovery_.empty());
 
   // The BailoutFrameInfo should have unregistered itself from the
@@ -287,6 +288,7 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   wasmTrapData_->resumePC = resumePC;
   wasmTrapData_->unwoundPC = pc;
   wasmTrapData_->trap = trap;
+  wasmTrapData_->unwoundFrame = unwound;
   // If the frame was unwound, the source location must be recovered from the
   // callsite so that it is accurate.
   if (unwound) {

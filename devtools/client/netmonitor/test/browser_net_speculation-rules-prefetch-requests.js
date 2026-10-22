@@ -30,6 +30,12 @@ add_task(async function () {
   is(
     requestItems[1].querySelector(".requests-list-file").innerText,
     "html_speculation-rules_subpage.html",
-    "The second request should be a prefetch request of the subpage."
+    "The second request should be the prefetch request of the subpage."
+  );
+
+  is(
+    requestItems[1].querySelector(".requests-list-initiator").innerText,
+    "prefetch",
+    "The initiator column correctly indicates that this is a prefetch request."
   );
 });

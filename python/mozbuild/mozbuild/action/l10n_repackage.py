@@ -49,7 +49,6 @@ _NON_CHROME = frozenset((
 def l10n_repackage(
     locale: str,
     mach: Path,
-    make: Path,
     l10n_stage: Path,
     unpack_distdir: Path,
     en_us_package: Path,
@@ -95,15 +94,9 @@ def l10n_repackage(
     if is_winnt:
         if installer_dir is None:
             raise ValueError("--installer-dir is required on WINNT")
-        if buildconfig.substs.get("MOZ_USE_MAKEFILE_INSTALLER_BUILD"):
-            result = _build_helper_exe(
-                make, installer_dir, locale, real_locale_mergedir, stagedist
-            )
-        else:
-            result = _build_uninstaller(
-                installer_dir, locale, real_locale_mergedir, stagedist
-            )
-        if result:
+        if result := _build_uninstaller(
+            installer_dir, locale, real_locale_mergedir, stagedist
+        ):
             return result
 
     suffix = action_package.FORMAT_SUFFIX.get(pkg_format)
@@ -239,40 +232,6 @@ def _maybe_rename_lproj(
     return None
 
 
-def _build_helper_exe(
-    make: Path,
-    installer_dir: Path,
-    locale: str,
-    real_locale_mergedir: Path,
-    stagedist: Path,
-) -> int:
-    # NSIS compilation isn't ported to Python yet, so shell out to make
-    # for now. Porting it will move this to a py_action in a follow-up.
-    # AB_CD has to arrive as a command line variable: `config.mk` assigns it, and
-    # a makefile assignment overrides the environment while a command line one
-    # wins.
-    result = subprocess.run(
-        [
-            make,
-            "-C",
-            installer_dir,
-            "CONFIG_DIR=l10ngen",
-            f"AB_CD={locale}",
-            f"REAL_LOCALE_MERGEDIR={real_locale_mergedir}",
-            "IS_LANGUAGE_REPACK=1",
-            "l10ngen/helper.exe",
-        ],
-        check=False,
-    )
-    if result.returncode:
-        return result.returncode
-    helper_src = installer_dir / "l10ngen" / "helper.exe"
-    helper_dst = stagedist / "uninstall" / "helper.exe"
-    helper_dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(helper_src, helper_dst)
-    return 0
-
-
 def _build_uninstaller(
     installer_dir: Path,
     locale: str,
@@ -309,13 +268,6 @@ def main(argv: list[str]) -> int:
         required=True,
         type=Path,
         help="Path to the topsrcdir mach executable",
-    )
-    parser.add_argument(
-        "--make",
-        required=True,
-        type=Path,
-        help="Path to the configured make binary (mozmake.exe on Windows). "
-        "Used by the inner make invocation that builds NSIS helper.exe.",
     )
     parser.add_argument(
         "--l10n-stage",
@@ -369,13 +321,13 @@ def main(argv: list[str]) -> int:
         "--installer-dir",
         type=Path,
         default=None,
-        help="WINNT-only: directory of the inner installer make",
+        help="WINNT-only: the installer directory in the object directory",
     )
     parser.add_argument(
         "--real-locale-mergedir",
         type=Path,
         default=None,
-        help="WINNT-only: REAL_LOCALE_MERGEDIR for the inner make",
+        help="WINNT-only: the merged locale directory the uninstaller is staged from",
     )
     parser.add_argument(
         "--extra-l10n",
@@ -408,7 +360,6 @@ def main(argv: list[str]) -> int:
     return l10n_repackage(
         locale=args.locale,
         mach=args.mach,
-        make=args.make,
         l10n_stage=args.l10n_stage,
         unpack_distdir=args.unpack_distdir,
         en_us_package=args.en_us_package,

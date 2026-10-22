@@ -38,7 +38,8 @@ add_task(async function doTest() {
   );
 
   for (let milestone of milestones) {
-    Services.telemetry.clearEvents();
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
     // Trigger the milestone feature.
     Services.prefs.setIntPref(
       "browser.contentblocking.cfr-milestone.milestone-achieved",
@@ -93,7 +94,12 @@ add_task(async function doTest() {
       "Milestones section should no longer be visible in the panel."
     );
 
-    checkClickTelemetry("milestone_message");
+    is(
+      Glean.securityUiProtectionspopup.clickMilestoneMessage.testGetValue()
+        .length,
+      1,
+      "recorded milestone_message telemetry event"
+    );
 
     await closeProtectionsPanel();
   }

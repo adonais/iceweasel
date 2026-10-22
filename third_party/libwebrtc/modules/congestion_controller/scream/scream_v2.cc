@@ -57,7 +57,7 @@ void ScreamV2::OnPacketSent(DataSize data_in_flight) {
 }
 
 void ScreamV2::OnTransportPacketsFeedback(const TransportPacketsFeedback& msg) {
-  ScreamFeedback feedback = ParseScreamFeedback(msg);
+  ScreamFeedback feedback = ParseScreamFeedback(msg, params_);
   if (feedback.num_received_packets == 0) {
     RTC_LOG(LS_INFO) << "No received packets in feedback, ignoring.";
     return;
@@ -72,10 +72,12 @@ void ScreamV2::OnTransportPacketsFeedback(const TransportPacketsFeedback& msg) {
         received_rate_ < params_.alr_threshold.Get() * target_rate_;
   }
 
-  delay_based_congestion_control_.Update(feedback, is_application_limited_);
+  if (feedback.delay_metrics.has_value()) {
+    delay_based_congestion_control_.Update(feedback, is_application_limited_);
 
-  if (!is_application_limited_) {
-    UpdateFeedbackHoldTime(feedback);
+    if (!is_application_limited_) {
+      UpdateFeedbackHoldTime(feedback.delay_metrics->feedback_hold_time);
+    }
   }
 
   if (!first_feedback_processed_) {
@@ -311,13 +313,13 @@ DataSize ScreamV2::max_allowed_ref_window() const {
       params_.min_ref_window.Get());
 }
 
-void ScreamV2::UpdateFeedbackHoldTime(const ScreamFeedback& parsed) {
+void ScreamV2::UpdateFeedbackHoldTime(TimeDelta feedback_hold_time) {
   if (feedback_hold_time_.IsZero() &&
       params_.feedback_hold_time_avg_g.Get() > 0.0) {
-    feedback_hold_time_ = parsed.feedback_hold_time;
+    feedback_hold_time_ = feedback_hold_time;
   }
   feedback_hold_time_ =
-      parsed.feedback_hold_time * params_.feedback_hold_time_avg_g.Get() +
+      feedback_hold_time * params_.feedback_hold_time_avg_g.Get() +
       (1.0 - params_.feedback_hold_time_avg_g.Get()) * feedback_hold_time_;
 }
 
@@ -368,24 +370,26 @@ void ScreamV2::UpdateTargetRate(const ScreamFeedback& parsed) {
 }
 
 void ScreamV2::UpdateReceiveRate(const ScreamFeedback& feedback) {
-  if (feedback.last_packet_receive_time.IsInfinite()) {
+  accumulated_received_bytes_ += feedback.received;
+  if (!feedback.delay_metrics.has_value()) {
     return;
   }
-  accumulated_received_bytes_ += feedback.received;
+  const Timestamp last_packet_receive_time =
+      feedback.delay_metrics->last_packet_receive_time;
+  RTC_DCHECK(last_packet_receive_time.IsFinite());
 
   if (last_window_receive_time_.IsInfinite()) {
     // At the first feedback, set the received rate to infinite to ensure ALR
     // can not be entered until a valid receive rate estimate exists.
-    last_window_receive_time_ = feedback.last_packet_receive_time;
+    last_window_receive_time_ = last_packet_receive_time;
     received_rate_ = DataRate::PlusInfinity();
     accumulated_received_bytes_ = DataSize::Zero();
-  } else if (feedback.last_packet_receive_time - last_window_receive_time_ >=
+  } else if (last_packet_receive_time - last_window_receive_time_ >=
              params_.received_rate_window.Get()) {
-    TimeDelta duration =
-        feedback.last_packet_receive_time - last_window_receive_time_;
+    TimeDelta duration = last_packet_receive_time - last_window_receive_time_;
     received_rate_ = accumulated_received_bytes_ / duration;
     accumulated_received_bytes_ = DataSize::Zero();
-    last_window_receive_time_ = feedback.last_packet_receive_time;
+    last_window_receive_time_ = last_packet_receive_time;
   }
 }
 

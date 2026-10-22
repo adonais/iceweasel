@@ -209,7 +209,8 @@ function checkThemePreviewSize(preview, label) {
   );
 
   let cardEl = preview.closest(".card.addon");
-  let cardWidth = cardEl.getBoundingClientRect().width;
+  let cardBorderWidth = 1;
+  let cardWidth = cardEl.getBoundingClientRect().width - 2 * cardBorderWidth;
   Assert.equal(
     preview.width,
     cardWidth,

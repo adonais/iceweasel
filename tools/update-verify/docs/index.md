@@ -6,7 +6,7 @@ Note that the object under test here is the update MAR files that are prepared a
 
 - The state of update rules in [Balrog](https://mozilla-balrog.readthedocs.io/en/latest/index.html)
 - The `updater` binary itself
-- The {ref}`Application Update <Application Update>` component
+- The {doc}`Application Update </toolkit/mozapps/update/docs/index>` component
 
 Both Balrog and the Linux updater binary are currently used as part of running update verify tests, but there are no guarantees they will continue to be in the future.
 

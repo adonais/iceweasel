@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import {Store} from "resource://newtab/lib/Store.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
@@ -113,6 +115,9 @@ export function computeAverageCTRFromTopics(
  * A feature that periodically generates a interest vector for inferred personalization.
  */
 export class InferredPersonalizationFeed {
+  /** @type {Store} */
+  store = null;
+
   constructor() {
     this.loaded = false;
     this.cache = this.PersistentCache(CACHE_KEY, true);
@@ -501,7 +506,7 @@ export class InferredPersonalizationFeed {
   /**
    * Deletes older data from a table
    *
-   * @param {int} preserveAgeDays Number of days to preserve
+   * @param {number} preserveAgeDays Number of days to preserve
    * @param {*} table Table to clear
    */
   async clearOldDataOfTable(
@@ -526,7 +531,7 @@ export class InferredPersonalizationFeed {
   /**
    * Deletes older data from impression and click tables
    *
-   * @param {int} preserveAgeDays Number of days to preserve (defaults to 6 months)
+   * @param {number} preserveAgeDays Number of days to preserve (defaults to 6 months)
    */
   async clearOldData(preserveAgeDays) {
     await this.clearOldDataOfTable(preserveAgeDays, IMPRESSION_TABLE);

@@ -411,3 +411,46 @@ add_task(
     Assert.equal(24 * 1024 * 1024, data.sum, "Sum is in bytes for MB unit");
   }
 );
+
+/**
+ * Labeled timing distribution metric registration Verifies that extraArgs
+ * (time_unit and ordered_labels) reach the runtime registration.
+ */
+add_task(
+  async function test_registerMetricIfNeeded_labeledTimingDistributionMetrics() {
+    const optionsWithExtra = {
+      name: "labeledtimingdist1",
+      category: "test_category",
+      type: "labeled_timing_distribution",
+      pings: ["metrics"],
+      lifetime: "ping",
+      disabled: false,
+      extraArgs: {
+        time_unit: "millisecond",
+        ordered_labels: ["first_label", "second_label"],
+      },
+    };
+
+    NewTabGleanUtils.registerMetricIfNeeded(optionsWithExtra);
+
+    Assert.ok(
+      Glean.newtab.metricRegistered.labeledtimingdist1.testGetValue(),
+      "Glean metricRegistered telemetry sent with value as true"
+    );
+
+    Glean.testCategory.labeledtimingdist1.first_label.accumulateSingleSample(3);
+
+    // Read through the built-in metrics ping, which is what
+    // newtab.opened_page_dwell_time relies on a runtime registration being
+    // allowed to name.
+    let data =
+      Glean.testCategory.labeledtimingdist1.first_label.testGetValue("metrics");
+    Assert.equal(1, data.count, "Recorded sample count");
+    Assert.equal(3 * 1000000, data.sum, "Sum is in nanoseconds for ms unit");
+    Assert.equal(
+      null,
+      Glean.testCategory.labeledtimingdist1.second_label.testGetValue(),
+      "The other label was registered and is empty"
+    );
+  }
+);

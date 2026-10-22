@@ -162,9 +162,6 @@ export const INITIAL_STATE = {
     uploadResult: null,
     // The images someone has saved, newest first. Shown as "Your images".
     customWallpapers: [],
-    // Picker thumbnails, one { filename, file } per saved image. The library
-    // is not reachable by URL, so the bytes come over when the picker opens.
-    customWallpaperThumbnails: [],
   },
   SectionsLayout: {
     configs: {},
@@ -257,39 +254,6 @@ export const INITIAL_STATE = {
   },
   ExternalComponents: {
     components: [],
-  },
-  SportsWidget: {
-    data: null,
-    initialized: false,
-    widgetState: "sports-intro",
-    selectedTeams: [],
-    matchesTab: "upcoming",
-    // Per-tab "Only followed teams" filter toggle. Defaults to on so users
-    // who follow teams see the filtered list right away.
-    followedOnly: { results: true, upcoming: true },
-    watchLive: {
-      loaded: false,
-      data: null,
-    },
-    // Timestamp (ms since epoch) of the last successful live update.
-    // Kept at root so it survives WIDGETS_SPORTS_WIDGET_SET wholesale-replaces
-    // of `data` (e.g. post-match resync).
-    lastLiveUpdated: null,
-    // Index into the live matches list for the Now tab's single-card pager.
-    liveIndex: 0,
-    // End-of-match celebration bookkeeping (set by the feed): `endedAt` maps a
-    // just-ended match's global_event_id to the ms timestamp it left /live;
-    // `celebrated` lists ids that have already triggered a celebration.
-    celebrations: { endedAt: {}, celebrated: [] },
-    // Session-only state for infinite-scroll load-more on the Upcoming and
-    // Results expanded "View all" lists. Each direction tracks its own
-    // in-flight flag, end-of-data flag, and the most recently requested
-    // date. Fetched windows are NOT persisted — they re-fetch on next
-    // session start.
-    loadMore: {
-      upcoming: { loading: false, exhausted: false, lastFetchedDate: null },
-      results: { loading: false, exhausted: false, lastFetchedDate: null },
-    },
   },
   PrivacyWidget: {
     initialized: false,
@@ -1145,8 +1109,6 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
       return { ...prevState, uploadedWallpaper: action.data };
     case at.WALLPAPERS_CUSTOM_LIBRARY_SET:
       return { ...prevState, customWallpapers: action.data };
-    case at.WALLPAPERS_CUSTOM_THUMBNAILS_SET:
-      return { ...prevState, customWallpaperThumbnails: action.data };
     case at.WALLPAPER_UPLOAD_RESULT:
       return { ...prevState, uploadResult: action.data };
     default:
@@ -1496,117 +1458,6 @@ function ExternalComponents(
   }
 }
 
-function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
-  switch (action.type) {
-    case at.WIDGETS_SPORTS_SET_WIDGET_STATE:
-      return { ...prevState, widgetState: action.data };
-    case at.WIDGETS_SPORTS_SET_SELECTED_TEAMS:
-      return { ...prevState, selectedTeams: action.data };
-    case at.WIDGETS_SPORTS_SET_MATCHES_TAB:
-      return { ...prevState, matchesTab: action.data };
-    case at.WIDGETS_SPORTS_SET_FOLLOWED_ONLY:
-      return {
-        ...prevState,
-        followedOnly: { ...prevState.followedOnly, ...action.data },
-      };
-    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST: {
-      // Preserve any previously-fetched payload so a re-request (e.g. the modal
-      // refreshing links on open) doesn't drop the data the "Watch live" entry
-      // point is gated on. Only show the loading state when nothing is cached.
-      const existingWatchLiveData = prevState.watchLive?.data ?? null;
-      return {
-        ...prevState,
-        watchLive: {
-          loaded: !!existingWatchLiveData,
-          data: existingWatchLiveData,
-        },
-      };
-    }
-    case at.WIDGETS_SPORTS_WATCH_LIVE_SET:
-      return {
-        ...prevState,
-        watchLive: { loaded: true, data: action.data },
-      };
-    case at.WIDGETS_SPORTS_LIVE_UPDATE: {
-      return {
-        ...prevState,
-        lastLiveUpdated: action.data?.lastLiveUpdated ?? null,
-        data: {
-          ...prevState.data,
-          live: action.data?.live ?? [],
-        },
-      };
-    }
-    case at.WIDGETS_SPORTS_SET_LIVE_INDEX:
-      return { ...prevState, liveIndex: action.data };
-    case at.WIDGETS_SPORTS_SET_CELEBRATIONS:
-      return { ...prevState, celebrations: action.data };
-    case at.WIDGETS_SPORTS_SET_LOAD_MORE: {
-      const {
-        direction,
-        matches: newMatches,
-        ...loadMoreUpdates
-      } = action.data || {};
-      if (direction !== "upcoming" && direction !== "results") {
-        return prevState;
-      }
-      // Upcoming appends to data.matches.next; results appends to
-      // data.matches.previous. The key used to skip duplicates is the same
-      // in both cases.
-      const targetField = direction === "upcoming" ? "next" : "previous";
-      const nextState = {
-        ...prevState,
-        loadMore: {
-          ...prevState.loadMore,
-          [direction]: {
-            ...prevState.loadMore[direction],
-            ...loadMoreUpdates,
-          },
-        },
-      };
-      if (Array.isArray(newMatches) && newMatches.length && prevState.data) {
-        const existing = prevState.data.matches?.[targetField] ?? [];
-        // Build a stable key for each match so we can skip ones already in
-        // the list. Prefer global_event_id; fall back to a composite that
-        // mirrors the React row key used in the list view.
-        const matchKey = match =>
-          match?.global_event_id ??
-          `${match?.home_team?.key}-${match?.away_team?.key}-${match?.date}`;
-        const existingKeys = new Set(existing.map(matchKey));
-        const additions = newMatches.filter(
-          m => !existingKeys.has(matchKey(m))
-        );
-        if (additions.length) {
-          nextState.data = {
-            ...prevState.data,
-            matches: {
-              ...(prevState.data.matches || {
-                previous: [],
-                current: [],
-                next: [],
-              }),
-              [targetField]: [...existing, ...additions],
-            },
-          };
-        }
-      }
-      return nextState;
-    }
-    case at.WIDGETS_SPORTS_WIDGET_SET:
-      // A wholesale-replace of `data` (initial load / post-match resync) also
-      // resets the session-only load-more state so we don't keep stale
-      // lastFetchedDate / exhausted flags from a previous fetch round.
-      return {
-        ...prevState,
-        data: action.data,
-        initialized: true,
-        loadMore: { ...INITIAL_STATE.SportsWidget.loadMore },
-      };
-    default:
-      return prevState;
-  }
-}
-
 export const reducers = {
   TopSites,
   App,
@@ -1628,7 +1479,6 @@ export const reducers = {
   Weather,
   Stocks,
   ExternalComponents,
-  SportsWidget,
   PrivacyWidget,
   PictureOfTheDay,
   RecentSearches,

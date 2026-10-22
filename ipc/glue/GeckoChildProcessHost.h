@@ -356,6 +356,19 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
 nsCOMPtr<nsISerialEventTarget> GetIPCLauncher();
 
+#ifdef MOZ_WIDGET_COCOA
+enum class MacOSChildProcessBundleType { EME, GPU, PKCS11, Default, Count };
+
+nsLiteralCString GetChildProcessBundleNameForTesting(
+    MacOSChildProcessBundleType aBundleType);
+
+// In order to catch cases during testing where the plist path resolution fails,
+// this function resolves the executable by reading the bundle's Info.plist
+// without falling back to the branding macros.
+bool ResolveChildProcessPathFromPlistForTesting(
+    MacOSChildProcessBundleType aBundleType, nsACString& aExecutablePath);
+#endif  // MOZ_WIDGET_COCOA
+
 } /* namespace ipc */
 } /* namespace mozilla */
 

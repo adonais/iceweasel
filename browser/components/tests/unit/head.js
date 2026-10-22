@@ -6,3 +6,12 @@ var { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 var gProfD = do_get_profile().QueryInterface(Ci.nsIFile);
+
+function ensureDistributionDir() {
+  let dir = gProfD.clone();
+  dir.append("distribution");
+  if (!dir.exists()) {
+    dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+  }
+  return dir;
+}

@@ -402,19 +402,13 @@ EglDrmDevice::~EglDrmDevice() {
     close(drm_fd_);
   }
 
-  if (fbo_) {
-    GlDeleteFramebuffers(1, &fbo_);
-  }
-
-  if (texture_) {
-    GlDeleteTextures(1, &texture_);
-  }
-
   if (egl_.display != EGL_NO_DISPLAY) {
     EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE,
                    EGL_NO_CONTEXT);
   }
 
+  // Destroying the EGL context automatically frees all associated GL resources
+  // (textures, framebuffers) created within it.
   if (egl_.context != EGL_NO_CONTEXT) {
     EglDestroyContext(egl_.display, egl_.context);
   }
@@ -707,7 +701,12 @@ bool EglDrmDevice::ImageFromDmaBuf(const DesktopSize& size,
   attribs[atti++] = EGL_NONE;
 
   // bind context to render thread
-  EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_.context);
+  if (EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                     egl_.context) == EGL_FALSE) {
+    RTC_LOG(LS_ERROR) << "Failed to make EGL context current: "
+                      << FormatEGLError(EglGetError());
+    return false;
+  }
 
   // create EGL image from attribute list
   EGLImageKHR image = EglCreateImageKHR(
@@ -716,6 +715,8 @@ bool EglDrmDevice::ImageFromDmaBuf(const DesktopSize& size,
   if (image == EGL_NO_IMAGE) {
     RTC_LOG(LS_ERROR) << "Failed to record frame: Error creating EGLImage - "
                       << FormatEGLError(EglGetError());
+    EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                   EGL_NO_CONTEXT);
     return false;
   }
 
@@ -740,6 +741,8 @@ bool EglDrmDevice::ImageFromDmaBuf(const DesktopSize& size,
   if (GlCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
     RTC_LOG(LS_ERROR) << "Failed to bind DMA buf framebuffer";
     EglDestroyImageKHR(egl_.display, image);
+    EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                   EGL_NO_CONTEXT);
     return false;
   }
 
@@ -768,6 +771,7 @@ bool EglDrmDevice::ImageFromDmaBuf(const DesktopSize& size,
   }
 
   EglDestroyImageKHR(egl_.display, image);
+  EglMakeCurrent(egl_.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
   return !error;
 }

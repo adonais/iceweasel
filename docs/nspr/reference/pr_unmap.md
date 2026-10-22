@@ -30,10 +30,10 @@ The function returns one of the following values:
 
 - If the memory region is successfully unmapped, `PR_SUCCESS`.
 - If the memory region is not successfully unmapped, `PR_FAILURE`.
-  The error code can be retrieved via {ref}`PR_GetError`.
+  The error code can be retrieved via {doc}`pr_geterror`.
 
 ## Description
 
-{ref}`PR_MemUnmap` removes the file mapping for the memory region
+{doc}`pr_unmap` removes the file mapping for the memory region
 (`addr`, `addr + len`). The parameter `addr` is the return value
-of an earlier call to {ref}`PR_MemMap`.
+of an earlier call to {doc}`pr_memmap`.

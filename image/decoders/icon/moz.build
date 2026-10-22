@@ -35,3 +35,15 @@ if CONFIG["OS_TARGET"] == "Android":
 
 if platform:
     LOCAL_INCLUDES += [platform]
+
+with Files("gtk/**"):
+    SCHEDULES.exclusive = ["linux"]
+
+with Files("win/**"):
+    SCHEDULES.exclusive = ["windows"]
+
+with Files("mac/**"):
+    SCHEDULES.exclusive = ["macosx"]
+
+with Files("android/**"):
+    SCHEDULES.exclusive = ["android"]

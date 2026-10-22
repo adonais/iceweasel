@@ -278,9 +278,8 @@ nsresult SVGMotionSMILAnimationFunction::GenerateValuesForPathAndPoints(
   if (!std::isfinite(distanceMultiplier)) {
     return NS_ERROR_FAILURE;
   }
-  const uint32_t numPoints = aPointDistances.Length();
-  for (uint32_t i = 0; i < numPoints; ++i) {
-    double curDist = aPointDistances[i] * distanceMultiplier;
+  for (const auto& pointDistance : aPointDistances) {
+    double curDist = pointDistance * distanceMultiplier;
     if (!std::isfinite(curDist)) {
       return NS_ERROR_FAILURE;
     }

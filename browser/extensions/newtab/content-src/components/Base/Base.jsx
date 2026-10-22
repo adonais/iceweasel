@@ -43,6 +43,7 @@ import {
   isSideBySideActive,
   isSpaceOverridden,
   isSpacesActive,
+  isSpacesArrowsAssigned,
   SPACE_IDS,
   sideBySideBandClasses,
   spacesBandClasses,
@@ -1148,6 +1149,7 @@ export class BaseContent extends React.PureComponent {
       const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
       // Recent activity is then alone in the band, and the logo leaves the sidebar.
       const noFeedOrContentWidgets = !pocketEnabled && !hasContentWidgets;
+      const spacesActive = isSpacesActive(prefs, props.DiscoveryStream);
       // Gated here rather than in CSS, so the stylesheet never has to infer
       // whether widgets or stories exist. The lead class alone means the
       // experiment is assigned, which is enough to frame a lone section; the
@@ -1162,9 +1164,7 @@ export class BaseContent extends React.PureComponent {
         // The feed state too, or the thematic variant can class the band for
         // spaces while DiscoveryStreamBase, which drops a space with no
         // sections, has fallen back to the flat layout.
-        ...(isSpacesActive(prefs, props.DiscoveryStream)
-          ? spacesBandClasses(prefs)
-          : []),
+        ...(spacesActive ? spacesBandClasses(prefs) : []),
         noFeedOrContentWidgets && "highlights-only",
       ]
         .filter(Boolean)
@@ -1356,6 +1356,11 @@ export class BaseContent extends React.PureComponent {
                   this.renderWallpaperAttribution()}
               </main>
             </div>
+            {/* The floating arrows panel runs to the bottom of the page, past
+            the band. See _Spaces.scss. */}
+            {spacesActive && isSpacesArrowsAssigned(prefs) && (
+              <div className="spaces-panel-backdrop" />
+            )}
             <ConfirmDialog />
             <menu className="personalizeButtonWrapper nova-enabled">
               <CustomizeMenu

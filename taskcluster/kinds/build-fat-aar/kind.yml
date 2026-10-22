@@ -13,6 +13,7 @@ transforms:
     - gecko_taskgraph.transforms.build_attrs:transforms
     - gecko_taskgraph.transforms.build_schedules:transforms
     - gecko_taskgraph.transforms.build_lints:transforms
+    - gecko_taskgraph.transforms.mozconfig:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.artifact:transforms
     - gecko_taskgraph.transforms.task:transforms
@@ -68,17 +69,19 @@ task-defaults:
             - name: public/reports
               path: /builds/worker/workspace/obj-build/gradle/build/reports
               type: directory
-    run:
-        clone-with: hg
-        using: mozharness
-        script: "mozharness/scripts/fx_desktop_build.py"
-        secrets: true
-        mozconfig-variant:
+    mozconfig:
+        variant:
             by-release-type:
                 beta: beta-fat-aar
                 release: release-fat-aar
                 esr.*: release-fat-aar
                 default: nightly-fat-aar
+        platform: android-arm
+    run:
+        clone-with: hg
+        using: mozharness
+        script: "mozharness/scripts/fx_desktop_build.py"
+        secrets: true
         tooltool-downloads: internal
         # Note: These settings are only honored by nightly (i.e. shipping) builds
         update-channel:
@@ -191,6 +194,8 @@ tasks:
             env:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly-lite
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
+        mozconfig:
+            platform: android-arm-lite
         run:
             actions: [get-secrets, build, multi-l10n]
             config:
@@ -202,6 +207,48 @@ tasks:
                 - android-gradle-dependencies
         optimization:
             skip-unless-backstop: null
+
+    android-geckoview-fat-aar-nightlyasrelease/opt:
+        description: "Android GeckoView multi-architecture fat AAR Nightly-As-Release"
+        # shippable:true makes build-apk set MOZ_UPDATE_CHANNEL to
+        # nightly-{project}. This matches the geckoview-nightly-{project}-omni
+        # maven artifact that this task makes. Without it, the Fenix build
+        # looks for geckoview-default-omni and fails.
+        # This currently only makes GeckoView for the APK that performance
+        # tests will use.
+        attributes:
+            shippable: true
+            enable-full-crashsymbols: true
+            disable-push-apk: true
+            maven_packages:
+                - geckoview
+        index:
+            job-name: android-geckoview-fat-aar-nightlyasrelease-opt
+        treeherder:
+            platform: android-5-0-geckoview-fat-aar-nightlyasrelease/opt
+            symbol: Bnar
+        run-on-projects: []
+        dependencies:
+            x86_64: build-android-x86_64-nightlyasrelease/opt
+            armeabi-v7a: build-android-arm-nightlyasrelease/opt
+            arm64-v8a: build-android-aarch64-nightlyasrelease/opt
+        worker-type: b-linux-docker-xlarge-amd
+        worker:
+            env:
+                PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightlyasrelease
+                MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
+        mozconfig:
+            platform: android-arm
+            variant: nightly-fat-aar-as-release
+        run:
+            actions: [get-secrets, build]
+            config:
+                - builds/releng_base_android_64_builds.py
+                - taskcluster_nightly.py
+            custom-build-variant-cfg: arm
+        fetches:
+            toolchain:
+                - android-gradle-dependencies
 
     android-geckoview-fat-aar/opt:
         description: "Android GeckoView multi-architecture fat AAR Opt"
@@ -230,3 +277,53 @@ tasks:
             toolchain:
                 - linux64-sccache
                 - android-gradle-dependencies
+
+    android-geckoview-fat-aar-appservices/opt:
+        description: "Android GeckoView multi-architecture fat AAR Opt with an in-tree app-services"
+        attributes:
+            maven_packages:
+                - geckoview
+        index:
+            job-name: android-geckoview-fat-aar-appservices-opt
+        treeherder:
+            platform: android-5-0-geckoview-fat-aar/opt
+            symbol: B-as
+            tier: 3
+        run-on-projects: []
+        dependencies:
+            x86_64: build-android-x86_64-appservices/opt
+            armeabi-v7a: build-android-arm-appservices/opt
+            arm64-v8a: build-android-aarch64-appservices/opt
+            linux-x86-64: build-linux64-appservices/opt
+            darwin-x86-64: build-macosx64-appservices/opt
+            win32-x86-64: build-win64-appservices/opt
+        worker:
+            env:
+                PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-appservices
+                USE_ARTIFACT: '1'
+                MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
+                MOZ_APPSERVICES_IN_TREE: "1"
+                MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES: "linux-x86-64,darwin-x86-64,win32-x86-64"
+                MOZ_ANDROID_FAT_AAR_DESKTOP_LINUX_X86_64: "/builds/worker/fetches/linux-x86-64/target.libmegazord_so_artifacts.zip"
+                MOZ_ANDROID_FAT_AAR_DESKTOP_DARWIN_X86_64: "/builds/worker/fetches/darwin-x86-64/target.libmegazord_so_artifacts.zip"
+                MOZ_ANDROID_FAT_AAR_DESKTOP_WIN32_X86_64: "/builds/worker/fetches/win32-x86-64/target.libmegazord_so_artifacts.zip"
+        run:
+            actions: [get-secrets, build]
+            config: ["builds/releng_base_android_64_builds.py"]
+            custom-build-variant-cfg: arm
+        fetches:
+            toolchain:
+                - linux64-sccache
+                - android-gradle-dependencies-appservices
+            linux-x86-64:
+                - artifact: target.libmegazord_so_artifacts.zip
+                  dest: linux-x86-64
+                  extract: false
+            darwin-x86-64:
+                - artifact: target.libmegazord_so_artifacts.zip
+                  dest: darwin-x86-64
+                  extract: false
+            win32-x86-64:
+                - artifact: target.libmegazord_so_artifacts.zip
+                  dest: win32-x86-64
+                  extract: false

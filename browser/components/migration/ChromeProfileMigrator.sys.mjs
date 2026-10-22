@@ -9,17 +9,19 @@ const AUTH_TYPE = {
 };
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
-import { MigratorBase } from "resource:///modules/MigratorBase.sys.mjs";
+import { MigrationUtils } from "moz-src:///browser/components/migration/MigrationUtils.sys.mjs";
+import { MigratorBase } from "moz-src:///browser/components/migration/MigratorBase.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.sys.mjs",
+  ChromeMigrationUtils:
+    "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  Qihoo360seMigrationUtils: "resource:///modules/360seMigrationUtils.sys.mjs",
+  Qihoo360seMigrationUtils:
+    "moz-src:///browser/components/migration/360seMigrationUtils.sys.mjs",
   MigrationWizardConstants:
     "chrome://browser/content/migration/migration-wizard-constants.mjs",
 });
@@ -281,13 +283,16 @@ export class ChromeProfileMigrator extends MigratorBase {
     }
     let datePromises = sourceProfiles.map(async profile => {
       let basePath = PathUtils.join(chromeUserDataPath, profile.id);
-      let fileDatePromises = ["Bookmarks", "History", "Cookies"].map(
-        async leafName => {
-          let path = PathUtils.join(basePath, leafName);
-          let info = await IOUtils.stat(path).catch(() => null);
-          return info ? info.lastModified : 0;
-        }
-      );
+      let fileDatePromises = [
+        "AccountBookmarks",
+        "Bookmarks",
+        "Cookies",
+        "History",
+      ].map(async leafName => {
+        let path = PathUtils.join(basePath, leafName);
+        let info = await IOUtils.stat(path).catch(() => null);
+        return info ? info.lastModified : 0;
+      });
       let dates = await Promise.all(fileDatePromises);
       return Math.max(...dates);
     });
@@ -432,14 +437,14 @@ export class ChromeProfileMigrator extends MigratorBase {
         try {
           if (AppConstants.platform == "win") {
             let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeWindowsLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeWindowsLoginCrypto(
               _chromeUserDataPathSuffix
             );
           } else if (AppConstants.platform == "macosx") {
             let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeMacOSLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeMacOSLoginCrypto(
               _keychainServiceName,
@@ -602,14 +607,14 @@ export class ChromeProfileMigrator extends MigratorBase {
         try {
           if (AppConstants.platform == "win") {
             let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeWindowsLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeWindowsLoginCrypto(
               _chromeUserDataPathSuffix
             );
           } else if (AppConstants.platform == "macosx") {
             let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
-              "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
+              "moz-src:///browser/components/migration/ChromeMacOSLoginCrypto.sys.mjs"
             );
             loginCrypto = new ChromeMacOSLoginCrypto(
               _keychainServiceName,
@@ -658,7 +663,9 @@ export class ChromeProfileMigrator extends MigratorBase {
 }
 
 async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
+  // Bookmarks can be in "Bookmarks" and/or "AccountBookmarks" depending on sign-in state.
   let bookmarksPath = PathUtils.join(aProfileFolder, "Bookmarks");
+  let accountBookmarksPath = PathUtils.join(aProfileFolder, "AccountBookmarks");
   let faviconsPath = PathUtils.join(aProfileFolder, "Favicons");
 
   if (aBrowserKey === "chromium-360se") {
@@ -681,7 +688,28 @@ async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
     bookmarksPath = alternativeBookmarks.path;
   }
 
-  if (!(await IOUtils.exists(bookmarksPath))) {
+  // Parse the Chrome bookmark files (JSON format) and keep the ones that
+  // actually contain bookmarks. If none do, there's nothing to import.
+  let bookmarkJSONs = [];
+  for (let path of [bookmarksPath, accountBookmarksPath]) {
+    let bookmarkJSON;
+    try {
+      bookmarkJSON = await IOUtils.readJSON(path);
+    } catch {
+      // The file may not exist (e.g. only one of the two files is present).
+      continue;
+    }
+    let roots = bookmarkJSON.roots;
+    if (
+      roots?.other?.children?.length ||
+      roots?.bookmark_bar?.children?.length ||
+      roots?.synced?.children?.length
+    ) {
+      bookmarkJSONs.push(bookmarkJSON);
+    }
+  }
+
+  if (!bookmarkJSONs.length) {
     return null;
   }
 
@@ -695,16 +723,6 @@ async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
     faviconsPath = tempFilePath;
   }
 
-  // check to read JSON bookmarks structure and see if any bookmarks exist else return null
-  // Parse Chrome bookmark file that is JSON format
-  let bookmarkJSON = await IOUtils.readJSON(bookmarksPath);
-  let other = bookmarkJSON.roots.other.children.length;
-  let bookmarkBar = bookmarkJSON.roots.bookmark_bar.children.length;
-  let synced = bookmarkJSON.roots.synced.children.length;
-
-  if (!other && !bookmarkBar && !synced) {
-    return null;
-  }
   return {
     type: MigrationUtils.resourceTypes.BOOKMARKS,
 
@@ -750,45 +768,35 @@ async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
           }
         }
 
-        let roots = bookmarkJSON.roots;
         let bookmarkURLAccumulator = new Set();
 
-        // Importing bookmark bar items
-        if (roots.bookmark_bar.children && roots.bookmark_bar.children.length) {
-          // Toolbar
-          let parentGuid = lazy.PlacesUtils.bookmarks.toolbarGuid;
-          let bookmarks = convertBookmarks(
-            roots.bookmark_bar.children,
-            bookmarkURLAccumulator,
-            errorGatherer
-          );
-          await MigrationUtils.insertManyBookmarksWrapper(
-            bookmarks,
-            parentGuid
-          );
-        }
+        // Merge the roots of all bookmark files so that, for example, a
+        // subfolder present in both the "Bookmarks" and "AccountBookmarks"
+        // files becomes a single folder holding the items from both, rather
+        // than a duplicate folder per file.
+        let mergedRoots = {
+          bookmark_bar: lazy.ChromeMigrationUtils.mergeBookmarkChildren(
+            bookmarkJSONs.map(json => json.roots.bookmark_bar?.children)
+          ),
+          other: lazy.ChromeMigrationUtils.mergeBookmarkChildren(
+            bookmarkJSONs.map(json => json.roots.other?.children)
+          ),
+          synced: lazy.ChromeMigrationUtils.mergeBookmarkChildren(
+            bookmarkJSONs.map(json => json.roots.synced?.children)
+          ),
+        };
 
-        // Importing Other Bookmarks items
-        if (roots.other.children && roots.other.children.length) {
-          // Other Bookmarks
-          let parentGuid = lazy.PlacesUtils.bookmarks.unfiledGuid;
+        // Import each Chrome bookmark root into its corresponding Gecko folder.
+        for (let [rootName, parentGuid] of [
+          ["bookmark_bar", lazy.PlacesUtils.bookmarks.toolbarGuid],
+          ["other", lazy.PlacesUtils.bookmarks.unfiledGuid],
+          ["synced", lazy.PlacesUtils.bookmarks.unfiledGuid],
+        ]) {
+          if (!mergedRoots[rootName].length) {
+            continue;
+          }
           let bookmarks = convertBookmarks(
-            roots.other.children,
-            bookmarkURLAccumulator,
-            errorGatherer
-          );
-          await MigrationUtils.insertManyBookmarksWrapper(
-            bookmarks,
-            parentGuid
-          );
-        }
-
-        // Importing synced Bookmarks items
-        if (roots.synced.children && roots.synced.children.length) {
-          // Synced  Bookmarks
-          let parentGuid = lazy.PlacesUtils.bookmarks.unfiledGuid;
-          let bookmarks = convertBookmarks(
-            roots.synced.children,
+            mergedRoots[rootName],
             bookmarkURLAccumulator,
             errorGatherer
           );

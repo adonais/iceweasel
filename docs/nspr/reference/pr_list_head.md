@@ -22,4 +22,4 @@ A pointer to a list element.
 
 ## Description
 
-{ref}`PR_LIST_HEAD` returns the head of the specified circular list.
+{doc}`pr_list_head` returns the head of the specified circular list.

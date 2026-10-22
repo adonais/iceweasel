@@ -53,8 +53,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   ipc::IPCResult RecvCreateExternalTextureSource(
       RawId aDeviceId, RawId aQueueId, RawId aExternalTextureSourceId,
       const ExternalTextureSourceDescriptor& aDesc);
-  void QueueSubmit(RawId aQueueId, RawId aDeviceId,
-                   Span<const RawId> aCommandBuffers,
+  void QueueSubmit(RawId aQueueId, Span<const RawId> aCommandBuffers,
                    Span<const RawId> aTextureIds,
                    Span<const RawId> aExternalTextureSourceIds);
   void DeviceCreateSwapChain(RawId aDeviceId, RawId aQueueId,

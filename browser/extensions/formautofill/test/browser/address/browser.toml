@@ -26,8 +26,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1890182
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1890182
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1890182
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1890182
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1890182
 ]
 
 ["browser_address_doorhanger_display.js"]
@@ -62,10 +60,6 @@ skip-if = [
 ["browser_address_street_lookup.js"]
 
 ["browser_address_telemetry.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1809709
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1809709
-]
 
 ["browser_address_unsupported_country.js"]
 

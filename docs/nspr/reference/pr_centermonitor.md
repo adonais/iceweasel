@@ -24,14 +24,14 @@ The function has the following parameter:
 
 The function returns one of the following values:
 
-- If successful, the function returns a pointer to the {ref}`PRMonitor`
+- If successful, the function returns a pointer to the {doc}`prmonitor`
   associated with the value specified in the `address` parameter.
 - If unsuccessful (the monitor cache needs to be expanded and the
   system is out of memory), the function returns `NULL`.
 
 ## Description
 
-{ref}`PR_CEnterMonitor` uses the value specified in the `address`
+{doc}`pr_centermonitor` uses the value specified in the `address`
 parameter to find a monitor in the monitor cache, then enters the lock
 associated with the monitor. If no match is found, an available monitor
 is associated with the address and the monitor's entry count is
@@ -43,7 +43,7 @@ the latter case, the calling thread is likely to find the monitor locked
 by another thread and waits for that thread to exit before continuing.
 
 :::{note}
-{ref}`PR_CEnterMonitor` and {ref}`PR_CExitMonitor` must be
+{doc}`pr_centermonitor` and {doc}`pr_cexitmonitor` must be
 paired--that is, there must be an exit for every entry--or the object
 will never become available for any other thread.
 :::

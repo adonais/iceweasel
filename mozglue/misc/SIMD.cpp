@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/LSX.h"
 #include "mozilla/SSE.h"
 
 #ifdef MOZILLA_PRESUME_SSE2
@@ -929,6 +930,86 @@ const char* SIMD::memchr2x8(const char* ptr, char v1, char v2, size_t length) {
 const char16_t* SIMD::memchr2x16(const char16_t* ptr, char16_t v1, char16_t v2,
                                  size_t length) {
   return FindTwoInBuffer<char16_t>(ptr, v1, v2, length);
+}
+
+#elif defined(__loongarch__)
+
+// On loongarch64 platforms, libc implementations of memchr are generally very
+// well optimized. Defer to the standard library's memchr here.
+const char* SIMD::memchr8(const char* ptr, char value, size_t length) {
+  const void* result = ::memchr(reinterpret_cast<const void*>(ptr),
+                                static_cast<int>(value), length);
+  return reinterpret_cast<const char*>(result);
+}
+
+const char* SIMD::memchr8SSE2(const char* ptr, char value, size_t length) {
+  return memchr8(ptr, value, length);
+}
+
+const char16_t* SIMD::memchr16(const char16_t* ptr, char16_t value,
+                               size_t length) {
+  if (supports_lsx()) {
+    return memchr16LSX(ptr, value, length);
+  }
+  return FindInBufferNaive<char16_t>(ptr, value, length);
+}
+
+const char16_t* SIMD::memchr16SSE2(const char16_t* ptr, char16_t value,
+                                   size_t length) {
+  return memchr16(ptr, value, length);
+}
+
+const uint32_t* SIMD::memchr32(const uint32_t* ptr, uint32_t value,
+                               size_t length) {
+  if (supports_lsx()) {
+    return memchr32LSX(ptr, value, length);
+  }
+  return FindInBufferNaive<uint32_t>(ptr, value, length);
+}
+
+const uint64_t* SIMD::memchr64(const uint64_t* ptr, uint64_t value,
+                               size_t length) {
+  if (supports_lsx()) {
+    return memchr64LSX(ptr, value, length);
+  }
+  return FindInBufferNaive<uint64_t>(ptr, value, length);
+}
+
+const char* SIMD::memchr2x8(const char* ptr, char v1, char v2, size_t length) {
+  if (supports_lsx()) {
+    return memchr2x8LSX(ptr, v1, v2, length);
+  }
+  const char* end = ptr + length - 1;
+  while (ptr < end) {
+    ptr = memchr8(ptr, v1, end - ptr);
+    if (!ptr) {
+      return nullptr;
+    }
+    if (ptr[1] == v2) {
+      return ptr;
+    }
+    ptr++;
+  }
+  return nullptr;
+}
+
+const char16_t* SIMD::memchr2x16(const char16_t* ptr, char16_t v1, char16_t v2,
+                                 size_t length) {
+  if (supports_lsx()) {
+    return memchr2x16LSX(ptr, v1, v2, length);
+  }
+  const char16_t* end = ptr + length - 1;
+  while (ptr < end) {
+    ptr = memchr16(ptr, v1, end - ptr);
+    if (!ptr) {
+      return nullptr;
+    }
+    if (ptr[1] == v2) {
+      return ptr;
+    }
+    ptr++;
+  }
+  return nullptr;
 }
 
 #else

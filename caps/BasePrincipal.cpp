@@ -388,7 +388,7 @@ nsresult BasePrincipal::WriteJSONProperties(JSONWriter& aWriter) {
   return NS_OK;
 }
 
-nsresult BasePrincipal::WriteJSONInnerProperties(JSONWriter& aWriter) {
+nsresult BasePrincipal::WriteJSONInnerProperties(JSONWriter& /*aWriter*/) {
   return NS_OK;
 }
 
@@ -1631,7 +1631,7 @@ NS_INTERFACE_MAP_BEGIN(BasePrincipal::Deserializer)
 NS_INTERFACE_MAP_END
 
 NS_IMETHODIMP
-BasePrincipal::Deserializer::Write(nsIObjectOutputStream* aStream) {
+BasePrincipal::Deserializer::Write(nsIObjectOutputStream* /*aStream*/) {
   // Read is used still for legacy principals
   MOZ_RELEASE_ASSERT(false, "Old style serialization is removed");
   return NS_OK;

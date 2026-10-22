@@ -28,9 +28,7 @@ async function executeResolveHookWithSideEffect(hud) {
   // NOTE: This test is not compatible with verify mode, given it depends on the
   //       initial state of the Services object and the module.
   is(
-    Cu.isESModuleLoaded(
-      "resource://gre/modules/ContentAreaDropListener.sys.mjs"
-    ),
+    Cu.isESModuleLoaded("moz-src:///dom/base/ContentAreaDropListener.sys.mjs"),
     false
   );
 
@@ -51,9 +49,7 @@ async function executeResolveHookWithSideEffect(hud) {
   );
 
   is(
-    Cu.isESModuleLoaded(
-      "resource://gre/modules/ContentAreaDropListener.sys.mjs"
-    ),
+    Cu.isESModuleLoaded("moz-src:///dom/base/ContentAreaDropListener.sys.mjs"),
     true
   );
 

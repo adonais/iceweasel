@@ -11,6 +11,7 @@ import {
   DSSource,
   PlaceholderDSCard,
 } from "content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
+import { SafeAnchor } from "content-src/components/DiscoveryStreamComponents/SafeAnchor/SafeAnchor";
 import { actionCreators as ac } from "common/Actions.mjs";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import React from "react";
@@ -73,6 +74,26 @@ describe("<DSCard>", () => {
     const anchor = container.querySelector("a.ds-card-link");
     expect(anchor).toBeInTheDocument();
     expect(anchor).toHaveAttribute("href", "https://foo.com");
+  });
+
+  it("should label an organic card link for dwell time", () => {
+    const renderSpy = jest.spyOn(SafeAnchor.prototype, "render");
+    act(() => cardRef.current.forceUpdate());
+    expect(renderSpy.mock.contexts.at(-1).props).toHaveProperty(
+      "dwellLabel",
+      "story_organic"
+    );
+    renderSpy.mockRestore();
+  });
+
+  it("should label a sponsored card link for dwell time", () => {
+    const renderSpy = jest.spyOn(SafeAnchor.prototype, "render");
+    setProps({ flightId: "12345" });
+    expect(renderSpy.mock.contexts.at(-1).props).toHaveProperty(
+      "dwellLabel",
+      "story_sponsored"
+    );
+    renderSpy.mockRestore();
   });
 
   it("should pass onLinkClick prop", () => {
@@ -264,7 +285,7 @@ describe("<DSCard>", () => {
 
       cardRef.current.onLinkClick();
 
-      expect(dispatch).toHaveBeenCalledTimes(2);
+      expect(dispatch).toHaveBeenCalledTimes(1);
       expect(dispatch).toHaveBeenCalledWith(
         ac.DiscoveryStreamUserEvent({
           event: "CLICK",
@@ -288,25 +309,6 @@ describe("<DSCard>", () => {
           },
         })
       );
-      expect(dispatch).toHaveBeenCalledWith(
-        ac.ImpressionStats({
-          click: 0,
-          source: "FOO",
-          tiles: [
-            {
-              id: "fooidx",
-              pos: 1,
-              type: "organic",
-              recommendation_id: undefined,
-              topic: undefined,
-              selected_topics: undefined,
-              format: "medium-card",
-            },
-          ],
-          window_inner_width: 1000,
-          window_inner_height: 900,
-        })
-      );
     });
 
     it("should set the right card_type on spocs", () => {
@@ -322,7 +324,7 @@ describe("<DSCard>", () => {
         .mockReturnValue(undefined);
       cardRef.current.onLinkClick();
 
-      expect(dispatch).toHaveBeenCalledTimes(2);
+      expect(dispatch).toHaveBeenCalledTimes(1);
       expect(dispatch).toHaveBeenCalledWith(
         ac.DiscoveryStreamUserEvent({
           event: "CLICK",
@@ -346,25 +348,6 @@ describe("<DSCard>", () => {
           },
         })
       );
-      expect(dispatch).toHaveBeenCalledWith(
-        ac.ImpressionStats({
-          click: 0,
-          source: "FOO",
-          tiles: [
-            {
-              id: "fooidx",
-              pos: 1,
-              type: "spoc",
-              recommendation_id: undefined,
-              topic: undefined,
-              selected_topics: undefined,
-              format: "spoc",
-            },
-          ],
-          window_inner_width: 1000,
-          window_inner_height: 900,
-        })
-      );
     });
 
     it("should call dispatch with a shim", () => {
@@ -382,7 +365,7 @@ describe("<DSCard>", () => {
         .mockReturnValue(undefined);
       cardRef.current.onLinkClick();
 
-      expect(dispatch).toHaveBeenCalledTimes(2);
+      expect(dispatch).toHaveBeenCalledTimes(1);
       expect(dispatch).toHaveBeenCalledWith(
         ac.DiscoveryStreamUserEvent({
           event: "CLICK",
@@ -405,26 +388,6 @@ describe("<DSCard>", () => {
             attribution: undefined,
             format: "medium-card",
           },
-        })
-      );
-      expect(dispatch).toHaveBeenCalledWith(
-        ac.ImpressionStats({
-          click: 0,
-          source: "FOO",
-          tiles: [
-            {
-              id: "fooidx",
-              pos: 1,
-              shim: "click shim",
-              type: "organic",
-              recommendation_id: undefined,
-              topic: undefined,
-              selected_topics: undefined,
-              format: "medium-card",
-            },
-          ],
-          window_inner_width: 1000,
-          window_inner_height: 900,
         })
       );
     });

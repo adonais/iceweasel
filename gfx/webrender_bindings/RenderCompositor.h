@@ -144,7 +144,6 @@ class RenderCompositor {
   }
   virtual void UnmapTile() {}
   virtual void CreateSurface(wr::NativeSurfaceId aId,
-                             wr::DeviceIntPoint aVirtualOffset,
                              wr::DeviceIntSize aTileSize, bool aIsOpaque) {}
   virtual void CreateSwapChainSurface(wr::NativeSurfaceId aId,
                                       wr::DeviceIntSize aSize, bool aIsOpaque,

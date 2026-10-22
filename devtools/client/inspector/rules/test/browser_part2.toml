@@ -342,10 +342,6 @@ fail-if = [
 ["browser_rules_selector_highlight.js"]
 
 ["browser_rules_selector_warnings.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1945519, perma failing on windows.
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1945519, perma failing on windows.
-]
 
 ["browser_rules_shadowdom_slot_rules.js"]
 

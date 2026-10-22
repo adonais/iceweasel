@@ -39,17 +39,17 @@ flags
 
 mode
 
-: Same as passed to {ref}`PR_Open`.
+: Same as passed to {doc}`pr_open`.
 
 ### Returns
 
 Pointer to opaque structure `PRSharedMemory`, or `NULL` if an error
-occurs. Retrieve the reason for the failure by calling {ref}`PR_GetError`
-and {ref}`PR_GetOSError`.
+occurs. Retrieve the reason for the failure by calling {doc}`pr_geterror`
+and {doc}`pr_getoserror`.
 
 ## Description
 
-{ref}`PR_OpenSharedMemory` creates a new shared memory segment or
+{doc}`pr_opensharedmemory` creates a new shared memory segment or
 associates a previously created memory segment with the specified name.
 When parameter `create` is (`PR_SHM_EXCL` | `PR_SHM_CREATE`) and
 the shared memory already exists, the function returns `NULL` with the

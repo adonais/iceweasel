@@ -165,8 +165,9 @@ class RecentlyClosedTabsInView extends ViewPage {
   }
 
   updateRecentlyClosedTabs() {
-    let recentlyClosedTabsData =
-      lazy.SessionStore.getClosedTabData(getWindow());
+    let recentlyClosedTabsData = lazy.SessionStore.getClosedTabData({
+      sourceWindow: getWindow(),
+    });
     if (Services.prefs.getBoolPref(INCLUDE_CLOSED_TABS_FROM_CLOSED_WINDOWS)) {
       recentlyClosedTabsData.push(
         ...lazy.SessionStore.getClosedTabDataFromClosedWindows()

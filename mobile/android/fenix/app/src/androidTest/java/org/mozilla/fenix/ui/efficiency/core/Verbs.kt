@@ -21,13 +21,14 @@ import org.mozilla.fenix.ui.efficiency.logging.TimedReporter
  * what effpretty renders and what effverify grades, so the shape of what is emitted here is a consumed interface, not
  * an implementation detail.
  *
- * Seven shapes:
+ * Eight shapes:
  *
  * - [require] one element must satisfy something; then act on it
  * - [requireAbsent] one element must not be there, now or for a while
  * - [requireAll] something must hold across every match for a selector
  * - [driveUntil] repeat an action until the screen changes the way you want
  * - [groupPresent] are all of a group's selectors on screen? answered, not thrown
+ * - [groupAbsent] are none of a group's selectors on screen? answered, not thrown
  * - [requireState] poll a condition that has no selector behind it
  * - [reportAround] put the reporting around a call that throws on its own
  *
@@ -530,6 +531,88 @@ fun VerbHost.groupPresent(
     return here
 }
 
+/**
+ * Are none of [selectors] on screen? The inverse of [groupPresent]: reports each one, answers rather than throwing. One
+ * command in the report however long the wait, not one per tick.
+ *
+ * @return true when every selector is absent before the policy expires
+ */
+fun VerbHost.groupAbsent(
+    verb: String,
+    label: String,
+    selectors: List<Selector>,
+    policy: WaitPolicy = WaitPolicy.Immediate,
+    applyPreconditions: Boolean = false,
+    whenAbsent: String = "'$label' absent",
+): Boolean {
+    val cmd = cmd(verb, label, "Checking '$label' is absent...")
+    if (selectors.isEmpty()) {
+        cmd.fail(
+            "'$label' has no selectors",
+            facts = verbFacts(verb, failure = Failure.EMPTY_SELECTOR_GROUP, extra = mapOf("group" to label)),
+        )
+        return false
+    }
+
+    fun observeGroup(): GroupAbsenceObservation {
+        var lastRetryableProblem: Pair<Selector, LookupProblem>? = null
+        var allAbsent = true
+        selectors.forEach { sel ->
+            val observation =
+                observe(
+                    sel,
+                    applyPreconditions,
+                    "_in_$label",
+                    predicate = { ElementState.probe(it, ElementState.Trait.DISPLAYED) },
+                )
+            observation.problem(sel)?.let { problem ->
+                lastRetryableProblem = sel to problem
+            }
+            if (observation.matched != null) allAbsent = false
+        }
+        return GroupAbsenceObservation(allAbsent, lastRetryableProblem)
+    }
+
+    val wait =
+        waitFor(
+            policy = policy,
+            probe = ::observeGroup,
+            satisfied = { it.absent },
+            terminal = { it.retryableProblem?.second?.retryable == false },
+            recover = { observation, stage ->
+                when (stage) {
+                    RecoveryStage.BEFORE_POLLING -> observation.retryableProblem != null && dismissOverlays()
+                    RecoveryStage.AFTER_POLLING -> dismissOverlays()
+                }
+            },
+        )
+    val absent = wait.satisfied
+    if (!absent && (policy is WaitPolicy.Poll || wait.terminal)) {
+        wait.lastObservation.retryableProblem?.let { (selector, problem) ->
+            failLookup(
+                cmd,
+                verb,
+                selector,
+                "absent",
+                dumpOnFailure = false,
+                problem,
+                wait.facts(policy, wait.lastObservation.summary()),
+            )
+        }
+    }
+
+    cmd.done(
+        absent,
+        if (absent) whenAbsent else "'$label' still present",
+        verbFacts(
+            verb,
+            failure = if (absent) null else Failure.STILL_PRESENT,
+            extra = mapOf("group" to label) + wait.facts(policy, wait.lastObservation.summary()),
+        ),
+    )
+    return absent
+}
+
 fun VerbHost.pageReady(
     contract: PageReadinessContract,
     context: PageReadinessContext,
@@ -721,6 +804,18 @@ private data class GroupObservation(
             present -> "present"
             retryableProblem != null -> retryableProblem.second.observation
             else -> "missing_selectors"
+        }
+}
+
+private data class GroupAbsenceObservation(
+    val absent: Boolean,
+    val retryableProblem: Pair<Selector, LookupProblem>?,
+) {
+    fun summary(): String =
+        when {
+            absent -> "absent"
+            retryableProblem != null -> retryableProblem.second.observation
+            else -> "still_present"
         }
 }
 

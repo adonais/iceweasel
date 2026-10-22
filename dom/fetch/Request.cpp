@@ -667,6 +667,27 @@ SafeRefPtr<Request> Request::Clone(JSContext* aCx, ErrorResult& aRv) {
   return clone;
 }
 
+already_AddRefed<nsIInputStream> Request::TakeBodyForServiceWorker(
+    JSContext* aCx, ErrorResult& aRv) {
+  MOZ_ASSERT(HasStreamBody());
+  MOZ_ASSERT(!IsBodyUnusable());
+  RefPtr<ReadableStream> body = FetchBody<Request>::GetBody(aCx, aRv);
+  if (aRv.Failed() || NS_WARN_IF(!body)) {
+    return nullptr;
+  }
+  nsCOMPtr<nsIInputStream> stream;
+  GetBody(getter_AddRefs(stream));
+  // Close the worker's JS body without cancelling the stream returned to Necko:
+  // NonAsyncInputToReadableStreamAlgorithms::ReleaseObjects() only closes its
+  // mInput, so detaching the input stream first leaves ours open. The
+  // !mAsyncAlgorithms assertion in SetInputStreamIfUnread() holds because a
+  // pull would have disturbed the stream and failed IsBodyUnusable() above.
+  body->SetInputStreamIfUnread(nullptr);
+  SetBody(nullptr, 0);
+  CancelBody(aCx, aRv);
+  return stream.forget();
+}
+
 void Request::FollowBodySignal() {
   if (!mSignal) {
     return;

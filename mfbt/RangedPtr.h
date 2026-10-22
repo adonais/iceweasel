@@ -264,7 +264,6 @@ class RangedPtr {
     return PointerRangeSize(aOther.mPtr, mPtr);
   }
 
- private:
   RangedPtr() = delete;
 };
 

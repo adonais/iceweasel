@@ -45,6 +45,9 @@ const SEC_ASN1Template nsslowkey_PrivateKeyInfoTemplate[] = {
     { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED | SEC_ASN1_CONTEXT_SPECIFIC | 0,
       offsetof(NSSLOWKEYPrivateKeyInfo, attributes),
       nsslowkey_SetOfAttributeTemplate },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONTEXT_SPECIFIC | SEC_ASN1_XTRN | 1,
+      offsetof(NSSLOWKEYPrivateKeyInfo, publicKey),
+      SEC_ASN1_SUB(SEC_BitStringTemplate) },
     { 0 }
 };
 
@@ -401,6 +404,8 @@ nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privk)
             }
             break;
         case NSSLOWKEYECKey:
+        case NSSLOWKEYECEdwardsKey:
+        case NSSLOWKEYECMontgomeryKey:
             pubk = (NSSLOWKEYPublicKey *)PORT_ArenaZAlloc(arena,
                                                           sizeof(NSSLOWKEYPublicKey));
             if (pubk != NULL) {
@@ -633,6 +638,8 @@ nsslowkey_CopyPrivateKey(NSSLOWKEYPrivateKey *privKey)
                 break;
             break;
         case NSSLOWKEYECKey:
+        case NSSLOWKEYECEdwardsKey:
+        case NSSLOWKEYECMontgomeryKey:
             rv = SECITEM_CopyItem(poolp, &(returnKey->u.ec.version),
                                   &(privKey->u.ec.version));
             if (rv != SECSuccess)

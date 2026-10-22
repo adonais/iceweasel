@@ -64,10 +64,14 @@
 
 .grouped-chips__favicon {
   border-radius: var(--border-radius-xsmall);
-  height: var(--size-item-small);
+  height: var(--icon-size);
+  width: var(--icon-size);
+}
+
+.grouped-chips__favicon,
+.grouped-chips__stacked-icon {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: calc(-1 * var(--space-xxsmall));
-  width: var(--size-item-small);
 
   @media not (prefers-reduced-motion) {
     transition: margin-inline-end 0.3s ease-in-out;

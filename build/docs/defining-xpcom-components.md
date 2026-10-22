@@ -3,7 +3,7 @@
 # Defining XPCOM Components
 
 This document explains how to write a {code}`components.conf` file. For
-documentation on the idl format see {ref}`XPIDL`. For a tutorial on writing
+documentation on the idl format see {doc}`/xpcom/xpidl`. For a tutorial on writing
 a new XPCOM interface, see
 {ref}`writing-xpcom-interface`.
 

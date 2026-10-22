@@ -12,7 +12,7 @@ PRStatus PR_SetThreadPrivate(PRUintn index, void *priv);
 
 ### Parameters
 
-{ref}`PR_SetThreadPrivate` has the following parameters:
+{doc}`pr_setthreadprivate` has the following parameters:
 
 `index`
 
@@ -43,7 +43,7 @@ destructor is called with the runtime holding no locks. Synchronization
 is the client's responsibility.
 
 The only way to eliminate thread private data at an index prior to the
-thread's termination is to call {ref}`PR_SetThreadPrivate` with a `NULL`
+thread's termination is to call {doc}`pr_setthreadprivate` with a `NULL`
 argument. This causes the index's destructor function to be called, and
 afterwards assigns a `NULL` in the table. A client must not delete the
 referent object of a non-`NULL` private data without first eliminating

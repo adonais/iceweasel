@@ -1026,33 +1026,13 @@ var dataProviders = {
       return;
     }
 
-    const { PreferenceExperiments: NormandyPreferenceStudies } =
-      ChromeUtils.importESModule(
-        "resource://normandy/lib/PreferenceExperiments.sys.mjs"
-      );
-    const { AddonStudies: NormandyAddonStudies } = ChromeUtils.importESModule(
-      "resource://normandy/lib/AddonStudies.sys.mjs"
-    );
-    const { PreferenceRollouts: NormandyPreferenceRollouts } =
-      ChromeUtils.importESModule(
-        "resource://normandy/lib/PreferenceRollouts.sys.mjs"
-      );
     const { ExperimentAPI } = ChromeUtils.importESModule(
       "resource://nimbus/ExperimentAPI.sys.mjs"
     );
 
     // Get Normandy data in parallel, and sort each group by slug.
-    const [
-      addonStudies,
-      prefRollouts,
-      prefStudies,
-      nimbusExperiments,
-      nimbusRollouts,
-    ] = await Promise.all(
+    const [nimbusExperiments, nimbusRollouts] = await Promise.all(
       [
-        NormandyAddonStudies.getAllActive(),
-        NormandyPreferenceRollouts.getAllActive(),
-        NormandyPreferenceStudies.getAllActive(),
         ExperimentAPI.manager.store
           .ready()
           .then(() => ExperimentAPI.manager.store.getAllActiveExperiments()),
@@ -1070,9 +1050,6 @@ var dataProviders = {
     );
 
     done({
-      addonStudies,
-      prefRollouts,
-      prefStudies,
       nimbusExperiments,
       nimbusRollouts,
     });

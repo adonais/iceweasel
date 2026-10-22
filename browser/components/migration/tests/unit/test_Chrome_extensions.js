@@ -10,10 +10,10 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const { ChromeMigrationUtils } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeMigrationUtils.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs"
 );
 const { ChromeProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/ChromeProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/ChromeProfileMigrator.sys.mjs"
 );
 
 AddonTestUtils.init(this);

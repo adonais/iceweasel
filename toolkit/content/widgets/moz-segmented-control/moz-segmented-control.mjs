@@ -2,12 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/// <reference path="./moz-segmented-control.tagmap.d.ts" />
+
 import { html } from "../vendor/lit.all.mjs";
 import {
   SelectControlBaseElement,
   SelectControlItemMixin,
 } from "../lit-select-control.mjs";
-import MozButton from "chrome://global/content/elements/moz-button.mjs";
+import { MozButton } from "chrome://global/content/elements/moz-button.mjs";
 
 /**
  * A segmented control component that can function as either a tab switcher or

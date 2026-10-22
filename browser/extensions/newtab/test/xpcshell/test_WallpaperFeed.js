@@ -12,8 +12,6 @@ ChromeUtils.defineESModuleGetters(this, {
   buildSavedWallpaperFilename:
     "resource://newtab/lib/Wallpapers/WallpaperFileNames.mjs",
   getDetailsFilename: "resource://newtab/lib/Wallpapers/WallpaperFileNames.mjs",
-  getThumbnailFilename:
-    "resource://newtab/lib/Wallpapers/WallpaperFileNames.mjs",
   parseWallpaperFilename:
     "resource://newtab/lib/Wallpapers/WallpaperFileNames.mjs",
   reducers: "resource://newtab/common/Reducers.sys.mjs",
@@ -242,7 +240,6 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
       {
         name: "A picture of a bird",
         publishedDate: "2026-08-28",
-        thumbnail: undefined,
       },
       "port-1"
     ),
@@ -542,8 +539,16 @@ add_task(async function test_Wallpaper_protocolURI() {
     "Should dispatch WALLPAPERS_CUSTOM_SET with moz-newtab-wallpaper:// URI"
   );
 
-  // Verify the protocol URI uses the correct scheme and gets stored in state
-  const [action] = feed.store.dispatch.getCall(0).args;
+  // Verify the protocol URI uses the correct scheme and gets stored in state.
+  // Found rather than taken by position: an upload tells the page to drop the
+  // previous URL first, so the first of these carries null.
+  const action = feed.store.dispatch
+    .getCalls()
+    .map(call => call.args[0])
+    .findLast(
+      candidate =>
+        candidate.type === actionTypes.WALLPAPERS_CUSTOM_SET && candidate.data
+    );
   const wallpaperURI = action.data;
 
   Assert.ok(
@@ -685,9 +690,6 @@ const wallpaperDirForTest = () =>
 const libraryDirForTest = () =>
   PathUtils.join(wallpaperDirForTest(), "library");
 
-const appliedCopyForTest = libraryPath =>
-  PathUtils.join(wallpaperDirForTest(), PathUtils.filename(libraryPath));
-
 const clearWallpaperDirForTest = async () => {
   await IOUtils.remove(wallpaperDirForTest(), {
     recursive: true,
@@ -726,7 +728,7 @@ add_task(async function test_upload_sweeps_before_writing() {
 
   Assert.deepEqual(
     (await IOUtils.getChildren(dir)).sort(),
-    [unknown, libraryDirForTest(), appliedCopyForTest(written)].sort(),
+    [unknown, libraryDirForTest()].sort(),
     "Orphans and leftover .tmp files are gone, unrecognized names are left"
   );
   Assert.deepEqual(
@@ -762,12 +764,12 @@ add_task(async function test_upload_sweep_keeps_directories() {
   const children = await IOUtils.getChildren(dir);
   Assert.ok(children.includes(nested), "A directory is left alone");
   Assert.ok(
-    children.includes(appliedCopyForTest(written)),
-    "The new upload is applied"
+    (await IOUtils.getChildren(libraryDirForTest())).includes(written),
+    "The new upload is saved"
   );
   Assert.equal(
     children.length,
-    3,
+    2,
     "Both orphaned files are removed, the library folder stays"
   );
 
@@ -792,9 +794,9 @@ add_task(async function test_concurrent_uploads_are_serialized() {
     "Both uploads are in the library"
   );
   Assert.deepEqual(
-    (await IOUtils.getChildren(wallpaperDirForTest())).sort(),
-    [libraryDirForTest(), appliedCopyForTest(second)].sort(),
-    "Only the applied one is copied up where the page can load it"
+    await IOUtils.getChildren(wallpaperDirForTest()),
+    [libraryDirForTest()],
+    "Neither is copied up, the page loads them where they are"
   );
   Assert.equal(
     Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
@@ -974,7 +976,7 @@ add_task(async function test_migrateLegacyWallpaper() {
   Services.prefs.setStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_THEME, "dark");
 
   // A page open during migration is told the new name the moment the pref
-  // changes, so both copies have to exist by then.
+  // changes, so the library file has to be there by then.
   let copiesAtPrefChange = null;
   const observer = () => {
     const name = Services.prefs.getStringPref(
@@ -1000,8 +1002,8 @@ add_task(async function test_migrateLegacyWallpaper() {
 
   Assert.deepEqual(
     copiesAtPrefChange,
-    { top: true, library: true },
-    "Both copies exist by the time the pref names the new file"
+    { top: false, library: true },
+    "The library holds the image by the time the pref names it"
   );
 
   const migrated = `v1-custom-dark-center-1-${LEGACY_UUID}`;
@@ -1021,8 +1023,8 @@ add_task(async function test_migrateLegacyWallpaper() {
     (await IOUtils.getChildren(dir))
       .map(path => PathUtils.filename(path))
       .sort(),
-    ["library", migrated].sort(),
-    "A copy stays up top so the page can still load it, the orphan is gone"
+    ["library"],
+    "Nothing is left up top, the orphan is gone"
   );
 
   info("Running it again should do nothing");
@@ -1032,18 +1034,14 @@ add_task(async function test_migrateLegacyWallpaper() {
     migrated,
     "The applied wallpaper is left where it is"
   );
-  // The applied image lives in both places on purpose. A second run must not
-  // treat the copy up top as a stray and move it back down.
   Assert.deepEqual(
-    (await IOUtils.getChildren(dir))
-      .map(path => PathUtils.filename(path))
-      .sort(),
-    ["library", migrated].sort(),
-    "The copy up top is still there after a second run"
+    (await IOUtils.getChildren(dir)).map(path => PathUtils.filename(path)),
+    ["library"],
+    "A second run leaves the folder as it was"
   );
   Assert.ok(
     await IOUtils.exists(PathUtils.join(dir, "library", migrated)),
-    "And the library still has the original"
+    "And the library still has the image"
   );
 
   Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_THEME);
@@ -1075,11 +1073,9 @@ add_task(async function test_migrate_moves_a_flat_library() {
     "Every saved image and its credit is in the library"
   );
   Assert.deepEqual(
-    (await IOUtils.getChildren(dir))
-      .map(path => PathUtils.filename(path))
-      .sort(),
-    ["library", applied].sort(),
-    "Only the applied image is left where older New Tab versions look"
+    (await IOUtils.getChildren(dir)).map(path => PathUtils.filename(path)),
+    ["library"],
+    "Nothing is left up top"
   );
 
   await clearWallpaperDirForTest();
@@ -1180,9 +1176,9 @@ add_task(async function test_wallpaperUpload_failed_write_keeps_previous() {
     "Nothing new is left behind by the failed write"
   );
   Assert.deepEqual(
-    (await IOUtils.getChildren(wallpaperDirForTest())).sort(),
-    [libraryDirForTest(), appliedCopyForTest(first)].sort(),
-    "The applied copy is still the previous wallpaper"
+    await IOUtils.getChildren(wallpaperDirForTest()),
+    [libraryDirForTest()],
+    "The failed write leaves nothing up top either"
   );
 
   await clearWallpaperDirForTest();
@@ -1307,7 +1303,7 @@ add_task(async function test_picking_a_saved_wallpaper_updates_content() {
     feed.store.dispatch.calledWith(
       actionCreators.BroadcastToContent({
         type: actionTypes.WALLPAPERS_CUSTOM_SET,
-        data: `moz-newtab-wallpaper://${saved}`,
+        data: `moz-newtab-wallpaper://library/${saved}`,
       })
     ),
     "Content is told to show the image that was picked"
@@ -1381,11 +1377,9 @@ add_task(async function test_cleanWallpaperDirectory() {
   await feed.cleanWallpaperDirectory();
 
   Assert.deepEqual(
-    (await IOUtils.getChildren(dir))
-      .map(path => PathUtils.filename(path))
-      .sort(),
-    ["library", saved].sort(),
-    "Only the applied copy is left beside the library"
+    (await IOUtils.getChildren(dir)).map(path => PathUtils.filename(path)),
+    ["library"],
+    "The copies older versions kept are gone, the library folder stays"
   );
   Assert.deepEqual(
     (await IOUtils.getChildren(libraryDir)).map(path =>
@@ -1412,14 +1406,7 @@ add_task(
       "potd",
       { name: "A grey heron at dawn", publishedDate: "2026-08-28" }
     );
-    const appliedCopy = PathUtils.join(
-      wallpaperDirForTest(),
-      PathUtils.filename(picture)
-    );
-    Assert.ok(
-      await IOUtils.exists(appliedCopy),
-      "The picture is the wallpaper"
-    );
+    Assert.ok(await IOUtils.exists(picture), "The picture is the wallpaper");
 
     // Exactly what picking a shipped wallpaper does: the selection changes and
     // the applied filename is left behind.
@@ -1439,15 +1426,8 @@ add_task(
       [PathUtils.filename(picture)],
       "So it is still one of the images the picker offers"
     );
-    // The copy beside the library stays while the applied name points at it,
-    // the same as an upload, so switching back does not have to copy again.
-    Assert.ok(
-      await IOUtils.exists(appliedCopy),
-      "Its copy is kept the way an upload's is"
-    );
-
-    // Setting tomorrow's picture moves the applied name, so yesterday's copy
-    // is swept while the picture itself stays saved.
+    // Setting tomorrow's picture moves the applied name, which is what used to
+    // sweep yesterday's. The picture itself stays saved either way.
     Services.prefs.setStringPref(PREF_SELECTED_WALLPAPER, "custom");
     await feed.wallpaperUpload(
       new Blob(["tomorrow"], { type: "image/png" }),
@@ -1456,12 +1436,13 @@ add_task(
       { name: "A fox in the snow", publishedDate: "2026-08-29" }
     );
     Assert.ok(
-      !(await IOUtils.exists(appliedCopy)),
-      "Yesterday's copy beside the library goes"
-    );
-    Assert.ok(
       await IOUtils.exists(picture),
       "Yesterday's picture is still saved"
+    );
+    Assert.deepEqual(
+      await IOUtils.getChildren(wallpaperDirForTest()),
+      [libraryDirForTest()],
+      "And nothing is left beside the library"
     );
 
     Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
@@ -1579,8 +1560,7 @@ add_task(async function test_upload_keeps_both_when_the_library_is_on() {
   await clearWallpaperDirForTest();
 });
 
-// A real 4x4 PNG. The other tests upload text, which never decodes, so nothing
-// else here exercises thumbnail generation at all.
+// A real 4x4 PNG. The other tests upload text, which never decodes.
 const PNG_BYTES = () =>
   Uint8Array.from(
     atob(
@@ -1627,56 +1607,6 @@ add_task(async function test_upload_clears_a_stale_crop() {
   }
 
   Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_POSITION);
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_upload_stores_the_thumbnail_it_is_given() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info(
-    "Scaling happens in content, so the parent stores those bytes as they are"
-  );
-
-  const thumbnailBytes = new Uint8Array([0xff, 0xd8, 0xff, 0x01, 0x02]);
-  const written = await feed.wallpaperUpload(
-    new Blob([PNG_BYTES()], { type: "image/png" }),
-    "light",
-    undefined,
-    { thumbnail: new Blob([thumbnailBytes]) }
-  );
-
-  const thumbnailPath = `${written}.thumb`;
-  Assert.ok(await IOUtils.exists(thumbnailPath), "The thumbnail is written");
-  Assert.deepEqual(
-    Array.from(await IOUtils.read(thumbnailPath)),
-    Array.from(thumbnailBytes),
-    "Byte for byte what content sent, unaltered"
-  );
-
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_upload_without_a_thumbnail_still_saves() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info(
-    "A save the parent starts has no page to scale for it, and must not fail"
-  );
-
-  const written = await feed.wallpaperUpload(
-    new Blob([PNG_BYTES()], { type: "image/png" }),
-    "light"
-  );
-
-  Assert.ok(written, "The image is saved");
-  Assert.ok(await IOUtils.exists(written), "And it is on disk");
-  Assert.ok(
-    !(await IOUtils.exists(`${written}.thumb`)),
-    "With no thumbnail beside it yet"
-  );
-
   await clearWallpaperDirForTest();
 });
 
@@ -1773,82 +1703,6 @@ add_task(async function test_an_upload_keeps_nothing_of_the_persons_file() {
   await clearWallpaperDirForTest();
 });
 
-add_task(async function test_an_unscaled_image_is_sent_for_content_to_scale() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info(
-    "The parent cannot scale, so an image with no thumbnail goes over whole"
-  );
-
-  const libraryDir = libraryDirForTest();
-  await IOUtils.makeDirectory(libraryDir, { ignoreExisting: true });
-  const filename = `v1-custom-light-center-1-${LEGACY_UUID}`;
-  await IOUtils.write(PathUtils.join(libraryDir, filename), PNG_BYTES());
-
-  await feed.sendLibraryThumbnails("port-1");
-
-  const sent = feed.store.dispatch
-    .getCalls()
-    .map(call => call.args[0])
-    .find(
-      action => action.type === actionTypes.WALLPAPERS_CUSTOM_THUMBNAILS_SET
-    )
-    ?.data?.find(entry => entry.filename === filename);
-
-  Assert.ok(sent, "The image is in the reply");
-  Assert.ok(sent.needsThumbnail, "Marked so the picker knows to scale it");
-
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_storeThumbnail_keeps_what_content_scaled() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info("What comes back from the picker is written beside its image");
-
-  const libraryDir = libraryDirForTest();
-  await IOUtils.makeDirectory(libraryDir, { ignoreExisting: true });
-  const filename = `v1-custom-light-center-1-${LEGACY_UUID}`;
-  await IOUtils.write(PathUtils.join(libraryDir, filename), PNG_BYTES());
-
-  const scaled = new Uint8Array([0xff, 0xd8, 0xff, 0x09]);
-  await feed.storeThumbnail(filename, new Blob([scaled]));
-
-  Assert.deepEqual(
-    Array.from(
-      await IOUtils.read(PathUtils.join(libraryDir, `${filename}.thumb`))
-    ),
-    Array.from(scaled),
-    "Stored byte for byte"
-  );
-
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_storeThumbnail_refuses_a_name_it_cannot_read() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info("The filename comes from content, so it has to be one of ours");
-
-  const libraryDir = libraryDirForTest();
-  await IOUtils.makeDirectory(libraryDir, { ignoreExisting: true });
-
-  await feed.storeThumbnail(
-    "../../../etc/passwd",
-    new Blob([new Uint8Array([1, 2, 3])])
-  );
-
-  const children = await IOUtils.getChildren(libraryDir, {
-    ignoreAbsent: true,
-  });
-  Assert.equal(children.length, 0, "Nothing was written");
-
-  await clearWallpaperDirForTest();
-});
-
 add_task(async function test_a_number_is_given_with_the_library_off() {
   let feed = getWallpaperFeedForTest();
   await clearWallpaperDirForTest();
@@ -1925,7 +1779,7 @@ add_task(async function test_migration_leaves_the_applied_copy_alone() {
   );
   Assert.ok(
     await IOUtils.exists(PathUtils.join(dir, filename)),
-    "And the copy up top is still where the page can load it"
+    "And the copy up top is left for the sweep to take"
   );
 
   await clearWallpaperDirForTest();
@@ -1962,7 +1816,7 @@ add_task(async function test_startup_sends_the_applied_wallpaper() {
 
   Assert.equal(
     sent?.data,
-    `moz-newtab-wallpaper://${filename}`,
+    `moz-newtab-wallpaper://library/${filename}`,
     "Startup tells the page which file to load"
   );
 
@@ -2053,66 +1907,7 @@ add_task(async function test_startup_sends_nothing_when_no_custom_is_chosen() {
   await clearWallpaperDirForTest();
 });
 
-add_task(async function test_storing_a_thumbnail_waits_for_the_file_lock() {
-  let sandbox = sinon.createSandbox();
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info("A thumbnail coming back from the picker waits its turn to be written");
-
-  const libraryDir = libraryDirForTest();
-  await IOUtils.makeDirectory(libraryDir, { ignoreExisting: true });
-  const filename = `v1-custom-light-center-1-${LEGACY_UUID}`;
-  const imagePath = PathUtils.join(libraryDir, filename);
-  await IOUtils.write(imagePath, PNG_BYTES());
-  const markerPath = `${imagePath}.marker`;
-
-  // Order of writes, rather than a moment in time. The holder below sits on
-  // the lock for many turns, so an unlocked writer gets in ahead of it.
-  const order = [];
-  const realWriteFile = feed.writeFile.bind(feed);
-  sandbox.stub(feed, "writeFile").callsFake(async (path, ...rest) => {
-    order.push(path.endsWith(".thumb") ? "thumbnail" : "marker");
-    return realWriteFile(path, ...rest);
-  });
-
-  let release;
-  const held = new Promise(resolve => {
-    release = resolve;
-  });
-
-  const holder = locks.request(WALLPAPER_FILE_LOCK_FOR_TEST, async () => {
-    for (let i = 0; i < 200; i++) {
-      await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
-    }
-    await feed.writeFile(markerPath, new Uint8Array([1]), {
-      tmpPath: `${markerPath}.tmp`,
-    });
-    await held;
-  });
-
-  const storing = feed.storeThumbnail(
-    filename,
-    new Blob([new Uint8Array([0xff, 0xd8, 0xff])])
-  );
-  release();
-  await Promise.all([holder, storing]);
-
-  Assert.deepEqual(
-    order,
-    ["marker", "thumbnail"],
-    "The picker's write lands after the writer that already held the lock"
-  );
-  Assert.ok(
-    await IOUtils.exists(`${imagePath}.thumb`),
-    "The thumbnail is written once the lock is free"
-  );
-
-  sandbox.restore();
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_thumbnail_reply_carries_the_library() {
+add_task(async function test_a_page_that_asks_gets_its_own_reply() {
   let feed = getWallpaperFeedForTest();
   await clearWallpaperDirForTest();
 
@@ -2128,14 +1923,14 @@ add_task(async function test_thumbnail_reply_carries_the_library() {
   );
   feed.store.dispatch.resetHistory();
 
-  await feed.sendLibraryThumbnails("port-7");
+  await feed.broadcastWallpaperLibrary(false, "port-7");
 
   const library = feed.store.dispatch
     .getCalls()
     .map(c => c.args[0])
     .find(a => a.type === actionTypes.WALLPAPERS_CUSTOM_LIBRARY_SET);
 
-  Assert.ok(library, "The library goes out with the thumbnails");
+  Assert.ok(library, "The library goes out");
   Assert.equal(library.data.length, 2, "Both saved images are in it");
   Assert.equal(
     library.meta.toTarget,
@@ -2146,62 +1941,11 @@ add_task(async function test_thumbnail_reply_carries_the_library() {
   await clearWallpaperDirForTest();
 });
 
-add_task(async function test_thumbnails_stay_out_of_the_parent_state() {
+add_task(async function test_a_reply_is_one_locked_snapshot() {
   let feed = getWallpaperFeedForTest();
   await clearWallpaperDirForTest();
 
-  info("The parent should not keep thumbnail bytes it never renders");
-
-  const saved = await feed.wallpaperUpload(
-    new Blob(["image"], { type: "image/png" }),
-    "light"
-  );
-  // A fake blob cannot be decoded, so no thumbnail is made for it. Write one
-  // by hand: this test is about where the bytes end up, not how they are made.
-  await IOUtils.writeUTF8(
-    PathUtils.join(
-      libraryDirForTest(),
-      getThumbnailFilename(PathUtils.filename(saved))
-    ),
-    "thumbnail bytes"
-  );
-  feed.store.dispatch.resetHistory();
-
-  await feed.sendLibraryThumbnails("port-1");
-
-  const sent = feed.store.dispatch
-    .getCalls()
-    .map(call => call.args[0])
-    .filter(
-      action => action.type === actionTypes.WALLPAPERS_CUSTOM_THUMBNAILS_SET
-    );
-
-  Assert.equal(
-    sent.length,
-    2,
-    "Content is sent the bytes, the parent is reset"
-  );
-  Assert.equal(sent[0].meta.toTarget, "port-1", "The asking tab gets them");
-  Assert.equal(sent[0].data.length, 1, "The tab is sent one thumbnail");
-  Assert.deepEqual(
-    sent[1].data,
-    [],
-    "The parent clears its own copy, so the startup cache carries no bytes"
-  );
-  Assert.strictEqual(
-    sent[1].meta,
-    undefined,
-    "That reset stays in the parent rather than reaching content"
-  );
-
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_thumbnails_are_one_locked_snapshot() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info("A thumbnail reply must not broadcast a library older than an upload");
+  info("A reply must not carry a library older than an upload in flight");
 
   const first = await feed.wallpaperUpload(
     new Blob(["first"], { type: "image/png" }),
@@ -2221,7 +1965,9 @@ add_task(async function test_thumbnails_are_one_locked_snapshot() {
     new Blob(["second"], { type: "image/png" }),
     "dark"
   );
-  const reply = feed.sendLibraryThumbnails();
+  const reply = feed.onAction({
+    type: actionTypes.WALLPAPERS_CUSTOM_LIBRARY_REQUEST,
+  });
 
   release();
   await holder;
@@ -2238,41 +1984,6 @@ add_task(async function test_thumbnails_are_one_locked_snapshot() {
     "The reply carries both images, not the list from before the upload"
   );
   Assert.ok(uploaded && first, "Both uploads wrote a file");
-
-  await clearWallpaperDirForTest();
-});
-
-add_task(async function test_a_full_image_never_goes_to_every_tab() {
-  let feed = getWallpaperFeedForTest();
-  await clearWallpaperDirForTest();
-
-  info("An unscaled image goes to the page that asked, never to all of them");
-
-  const libraryDir = libraryDirForTest();
-  await IOUtils.makeDirectory(libraryDir, { ignoreExisting: true });
-  const filename = `v1-custom-light-center-1-${LEGACY_UUID}`;
-  await IOUtils.write(PathUtils.join(libraryDir, filename), PNG_BYTES());
-
-  const entriesFrom = () =>
-    feed.store.dispatch
-      .getCalls()
-      .map(call => call.args[0])
-      .find(
-        action => action.type === actionTypes.WALLPAPERS_CUSTOM_THUMBNAILS_SET
-      )?.data ?? [];
-
-  feed.store.dispatch.resetHistory();
-  await feed.sendLibraryThumbnails();
-  Assert.equal(
-    entriesFrom().length,
-    0,
-    "With nobody to reply to, the image stays where it is"
-  );
-
-  feed.store.dispatch.resetHistory();
-  await feed.sendLibraryThumbnails("port-1");
-  const [entry] = entriesFrom();
-  Assert.ok(entry?.needsThumbnail, "The page that asked gets it, marked");
 
   await clearWallpaperDirForTest();
 });
@@ -2342,6 +2053,21 @@ add_task(async function test_apply_tells_content_once() {
   Assert.ok(
     sent[0].args[0].data.endsWith(filename),
     "And it is told about the image that was picked"
+  );
+  const actions = spy.getCalls().map(call => call.args[0]);
+  const sentAt = actions.findIndex(
+    action => action.type === actionTypes.WALLPAPERS_CUSTOM_SET
+  );
+  const enabledAt = actions.findIndex(
+    action =>
+      action.type === actionTypes.SET_PREF &&
+      action.data.name === "newtabWallpapers.user.enabled"
+  );
+  Assert.greater(sentAt, -1, "The URL message is found");
+  Assert.greater(
+    enabledAt,
+    sentAt,
+    "Before wallpapers are turned back on, so the old URL is never painted"
   );
 
   Services.prefs.removeObserver(
@@ -3143,6 +2869,13 @@ add_task(async function test_potd_is_saved_again_when_the_kept_copy_fails() {
 
   info("A kept copy that cannot be applied is replaced by a fresh save");
 
+  // Only the compatibility path copies, so the failure is only reachable with
+  // the library off.
+  Services.prefs.setBoolPref(
+    PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+    false
+  );
+
   const first = await feed.wallpaperUpload(
     new Blob(["today"], { type: "image/png" }),
     "light",
@@ -3168,7 +2901,139 @@ add_task(async function test_potd_is_saved_again_when_the_kept_copy_fails() {
     "The fresh copy is the applied one"
   );
 
+  Services.prefs.setBoolPref(
+    PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+    true
+  );
   sandbox.restore();
+  await clearWallpaperDirForTest();
+});
+
+add_task(
+  async function test_the_library_off_still_copies_and_addresses_up_top() {
+    let feed = getWallpaperFeedForTest();
+    await clearWallpaperDirForTest();
+
+    info(
+      "An older handler resolves the host only, so the copy is the only way"
+    );
+
+    Services.prefs.setBoolPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+      false
+    );
+    Services.prefs.setStringPref(PREF_SELECTED_WALLPAPER, "custom");
+    feed.store.dispatch.resetHistory();
+
+    const written = await feed.wallpaperUpload(
+      new Blob(["upload"], { type: "image/png" }),
+      "light"
+    );
+    const filename = PathUtils.filename(written);
+
+    Assert.ok(
+      await IOUtils.exists(PathUtils.join(wallpaperDirForTest(), filename)),
+      "The copy is written at the top of the wallpaper folder"
+    );
+
+    const sent = feed.store.dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .findLast(
+        action =>
+          action.type === actionTypes.WALLPAPERS_CUSTOM_SET && action.data
+      );
+    Assert.equal(
+      sent?.data,
+      `moz-newtab-wallpaper://${filename}`,
+      "And the page is sent the host-only address, not the nested one"
+    );
+
+    await feed.cleanWallpaperDirectory();
+    Assert.ok(
+      await IOUtils.exists(PathUtils.join(wallpaperDirForTest(), filename)),
+      "Cleanup leaves the copy alone while the library is off"
+    );
+
+    Services.prefs.setBoolPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+      true
+    );
+    Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+    await clearWallpaperDirForTest();
+  }
+);
+
+add_task(
+  async function test_migration_puts_the_copy_back_when_the_library_is_off() {
+    let feed = getWallpaperFeedForTest();
+    await clearWallpaperDirForTest();
+
+    info("Migrating on an older host has to leave the page something to load");
+
+    Services.prefs.setBoolPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+      false
+    );
+
+    const dir = wallpaperDirForTest();
+    await IOUtils.makeDirectory(dir, { ignoreExisting: true });
+    await IOUtils.writeUTF8(PathUtils.join(dir, LEGACY_UUID), "applied");
+    Services.prefs.setStringPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
+      LEGACY_UUID
+    );
+
+    await feed.migrateWallpaperLibrary();
+
+    const migrated = Services.prefs.getStringPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID
+    );
+    Assert.notEqual(
+      migrated,
+      LEGACY_UUID,
+      "The image is renamed into the library"
+    );
+    Assert.ok(
+      await IOUtils.exists(PathUtils.join(dir, migrated)),
+      "A copy is put back up top under the new name"
+    );
+
+    Services.prefs.setBoolPref(
+      PREF_WALLPAPERS_CUSTOM_WALLPAPER_LIBRARY_ENABLED,
+      true
+    );
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+    await clearWallpaperDirForTest();
+  }
+);
+
+add_task(async function test_cleanup_takes_thumbnails_saved_before() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("The picker loads the image itself now, so old thumbnails are dead");
+
+  const libraryDir = libraryDirForTest();
+  await IOUtils.makeDirectory(libraryDir, { createAncestors: true });
+  const filename = `v1-custom-light-center-1-${LEGACY_UUID}`;
+  await IOUtils.writeUTF8(PathUtils.join(libraryDir, filename), "image");
+  await IOUtils.writeUTF8(
+    PathUtils.join(libraryDir, `${filename}.thumb`),
+    "an old thumbnail"
+  );
+
+  await feed.cleanWallpaperDirectory();
+
+  Assert.deepEqual(
+    (await IOUtils.getChildren(libraryDir)).map(path =>
+      PathUtils.filename(path)
+    ),
+    [filename],
+    "The thumbnail is gone and the image it belonged to is kept"
+  );
+
   await clearWallpaperDirForTest();
 });
 
@@ -3375,3 +3240,279 @@ add_task(async function test_removal_reports_where_the_image_came_from() {
 
   await clearWallpaperDirForTest();
 });
+
+// Bug 2072941: the picker tells the page to show "custom" before the write has
+// produced a URL, so the upload has to drop the old one or the page paints the
+// picture being replaced.
+const test_wallpaperUpload_clears_the_previous_url = async () => {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  let clearedBeforeWrite = null;
+  sandbox.stub(feed, "writeFile").callsFake(() => {
+    clearedBeforeWrite ??= feed.store.dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(action => action.type === actionTypes.WALLPAPERS_CUSTOM_SET);
+    throw new Error("write failed");
+  });
+  sandbox.stub(feed, "broadcastAppliedWallpaper");
+
+  const saved = await feed.wallpaperUpload(
+    new Blob(["image"], { type: "image/png" }),
+    "light"
+  );
+
+  Assert.equal(saved, null, "The upload failed");
+  Assert.ok(
+    clearedBeforeWrite,
+    "The page is told to drop the applied URL before the write starts"
+  );
+  Assert.equal(
+    clearedBeforeWrite.data,
+    null,
+    "It is cleared rather than pointed at the picture being replaced"
+  );
+  Assert.ok(
+    feed.broadcastAppliedWallpaper.calledOnce,
+    "A failed upload puts back the URL of whatever is still applied"
+  );
+
+  sandbox.restore();
+  await clearWallpaperDirForTest();
+};
+add_task(test_wallpaperUpload_clears_the_previous_url);
+
+// A file the picker refuses never reaches the write, so the page should not be
+// told to drop the wallpaper it is showing.
+const test_wallpaperUpload_rejected_file_leaves_the_page_alone = async () => {
+  let feed = getWallpaperFeedForTest();
+
+  const saved = await feed.wallpaperUpload({ notABlob: true }, "light");
+
+  Assert.equal(saved, null, "The upload was refused");
+  Assert.ok(
+    !feed.store.dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .some(action => action.type === actionTypes.WALLPAPERS_CUSTOM_SET),
+    "Nothing was sent to the page"
+  );
+};
+add_task(test_wallpaperUpload_rejected_file_leaves_the_page_alone);
+
+// Bug 2072941: going from a built-in wallpaper to an upload, the picker sets
+// newtabWallpapers.wallpaper to "custom" while the uuid pref still names the
+// previous picture, so answering that pref change would send the page the URL
+// of the picture being replaced.
+const test_wallpaperUpload_ignores_the_pref_it_causes = async () => {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  sandbox.stub(feed, "broadcastAppliedWallpaper");
+  sandbox.stub(feed, "cleanWallpaperDirectory").resolves();
+
+  let broadcastsDuringWrite = null;
+  sandbox.stub(feed, "writeFile").callsFake(async (...args) => {
+    await IOUtils.write(...args);
+    if (broadcastsDuringWrite === null) {
+      await feed.onAction({
+        type: actionTypes.PREF_CHANGED,
+        data: { name: "newtabWallpapers.wallpaper", value: "custom" },
+      });
+      broadcastsDuringWrite = feed.broadcastAppliedWallpaper.callCount;
+    }
+  });
+
+  const saved = await feed.wallpaperUpload(
+    new Blob(["image"], { type: "image/png" }),
+    "light"
+  );
+
+  Assert.ok(saved, "The upload saved");
+  Assert.equal(
+    broadcastsDuringWrite,
+    0,
+    "The wallpaper pref moving to custom mid-write tells the page nothing"
+  );
+  Assert.equal(
+    feed.applyingWallpaper,
+    0,
+    "The hold is released once the write is done"
+  );
+
+  sandbox.restore();
+  await clearWallpaperDirForTest();
+};
+add_task(test_wallpaperUpload_ignores_the_pref_it_causes);
+
+// Two uploads can be in flight at once, one waiting on the file lock. The first
+// one failing must not put back the URL of the picture the second is still
+// busy replacing.
+const test_wallpaperUpload_overlapping = async () => {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  sandbox.stub(feed, "broadcastAppliedWallpaper");
+
+  let writes = 0;
+  sandbox.stub(feed, "writeFile").callsFake(async (...args) => {
+    if (++writes === 1) {
+      throw new Error("write failed");
+    }
+    await IOUtils.write(...args);
+  });
+
+  const blob = () => new Blob(["image"], { type: "image/png" });
+  const first = feed.wallpaperUpload(blob(), "light");
+  const second = feed.wallpaperUpload(blob(), "dark");
+  Assert.equal(feed.applyingWallpaper, 2, "Both uploads hold the broadcast");
+
+  Assert.equal(await first, null, "The first upload failed");
+  Assert.ok(
+    feed.broadcastAppliedWallpaper.notCalled,
+    "The failed upload says nothing while the other one is still writing"
+  );
+
+  Assert.ok(await second, "The second upload saved");
+  Assert.equal(feed.applyingWallpaper, 0, "Both holds are released");
+  Assert.ok(
+    feed.broadcastAppliedWallpaper.notCalled,
+    "The upload that saved sends its own URL, so nothing is put back"
+  );
+
+  sandbox.restore();
+  await clearWallpaperDirForTest();
+};
+add_task(test_wallpaperUpload_overlapping);
+
+// A settings sync can land while an upload is writing. Answering it would send
+// the page the URL of the picture the upload is replacing.
+const test_updateWallpapers_says_nothing_during_an_upload = async () => {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  feed.wallpaperClient = {
+    async get() {
+      return [];
+    },
+  };
+  sandbox.stub(feed, "broadcastAppliedWallpaper");
+  // Resolves true so the second guard is reached rather than short-circuited.
+  sandbox.stub(feed, "migrateWallpaperLibrary").resolves(true);
+
+  let released;
+  const paused = new Promise(resolve => {
+    released = resolve;
+  });
+  let refreshedDuringWrite = null;
+  sandbox.stub(feed, "writeFile").callsFake(async (...args) => {
+    await IOUtils.write(...args);
+    if (refreshedDuringWrite === null) {
+      await feed.updateWallpapers();
+      refreshedDuringWrite = feed.broadcastAppliedWallpaper.callCount;
+      released();
+    }
+  });
+
+  const upload = feed.wallpaperUpload(
+    new Blob(["image"], { type: "image/png" }),
+    "light"
+  );
+  await paused;
+  Assert.equal(
+    refreshedDuringWrite,
+    0,
+    "A refresh mid-write leaves the page on what it is showing"
+  );
+
+  Assert.ok(await upload, "The upload saved");
+  await feed.updateWallpapers();
+  Assert.equal(
+    feed.broadcastAppliedWallpaper.callCount,
+    2,
+    "Once the write is done both refresh points send the applied URL again"
+  );
+
+  sandbox.restore();
+  await clearWallpaperDirForTest();
+};
+add_task(test_updateWallpapers_says_nothing_during_an_upload);
+
+// A plain upload never selects for itself, so a wallpaper picked during the
+// write still wins. The same-day Picture of the Day path applies on purpose.
+const test_wallpaperUpload_does_not_select_for_itself = async () => {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  Assert.ok(
+    await feed.wallpaperUpload(
+      new Blob(["image"], { type: "image/png" }),
+      "light"
+    ),
+    "The upload saved"
+  );
+
+  const selections = feed.store.dispatch
+    .getCalls()
+    .map(call => call.args[0])
+    .filter(
+      action =>
+        action.type === actionTypes.SET_PREF &&
+        [
+          "newtabWallpapers.wallpaper",
+          "newtabWallpapers.user.enabled",
+        ].includes(action.data?.name)
+    );
+  Assert.deepEqual(
+    selections,
+    [],
+    "A finished upload neither selects nor enables, so a later pick stands"
+  );
+
+  await clearWallpaperDirForTest();
+};
+add_task(test_wallpaperUpload_does_not_select_for_itself);
+
+// The same-day path applies the copy already kept instead of saving again, and
+// that apply runs inside the upload's hold. Its broadcast has to get through.
+const test_potd_same_day_still_tells_the_page = async () => {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  const press = () =>
+    feed.wallpaperUpload(
+      new Blob(["today"], { type: "image/png" }),
+      "light",
+      "potd",
+      {
+        name: "Today's picture",
+        publishedDate: "2026-07-02",
+      }
+    );
+
+  await press();
+  // The picker sets this, and here the store is a spy so its SetPref never
+  // reaches the real pref. broadcastAppliedWallpaper reads it.
+  Services.prefs.setStringPref(PREF_SELECTED_WALLPAPER, "custom");
+  feed.store.dispatch.resetHistory();
+  Assert.ok(await press(), "The second press applied the kept copy");
+
+  const sent = feed.store.dispatch
+    .getCalls()
+    .map(call => call.args[0])
+    .filter(action => action.type === actionTypes.WALLPAPERS_CUSTOM_SET);
+  Assert.ok(sent.length, "The page was told about the wallpaper");
+  Assert.ok(
+    sent.at(-1).data?.startsWith("moz-newtab-wallpaper://"),
+    "And the last thing it heard was a real URL, not the clear"
+  );
+
+  Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
+  await clearWallpaperDirForTest();
+};
+add_task(test_potd_same_day_still_tells_the_page);

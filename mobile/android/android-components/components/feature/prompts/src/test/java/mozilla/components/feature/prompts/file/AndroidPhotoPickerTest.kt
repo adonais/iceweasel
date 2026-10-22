@@ -5,19 +5,21 @@
 package mozilla.components.feature.prompts.file
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.activity.result.ActivityResult
+import android.net.Uri
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.fragment.app.Fragment
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import mozilla.components.feature.prompts.PromptFeature
+import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertFalse
@@ -25,7 +27,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
@@ -53,7 +54,7 @@ class AndroidPhotoPickerTest {
         packageManager = mock()
         whenever(
                 packageManager.resolveActivity(
-                    any(Intent::class.java),
+                    any(),
                     anyInt(),
                 )
             )
@@ -61,7 +62,7 @@ class AndroidPhotoPickerTest {
 
         whenever(
                 fragment.registerForActivityResult(
-                    any<ActivityResultContracts.PickVisualMedia>(),
+                    any<PickVisualMedia>(),
                     any(),
                 )
             )
@@ -87,8 +88,8 @@ class AndroidPhotoPickerTest {
     fun `singleMediaPicker uses a proper ActivityResultContract`() {
         AndroidPhotoPicker.singleMediaPicker({ fragment }, { promptFeature })
 
-        val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
-        val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
+        val contractCaptor = argumentCaptor<ActivityResultContract<PickVisualMediaRequest, Uri?>>()
+        val callbackCaptor = argumentCaptor<ActivityResultCallback<Uri?>>()
 
         verify(fragment)
             .registerForActivityResult(
@@ -104,8 +105,8 @@ class AndroidPhotoPickerTest {
     fun `multipleMediaPicker uses a proper ActivityResultContract`() {
         AndroidPhotoPicker.multipleMediaPicker({ fragment }, { promptFeature })
 
-        val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
-        val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
+        val contractCaptor = argumentCaptor<ActivityResultContract<PickVisualMediaRequest, List<Uri>>>()
+        val callbackCaptor = argumentCaptor<ActivityResultCallback<List<Uri>>>()
 
         verify(fragment)
             .registerForActivityResult(
@@ -137,5 +138,21 @@ class AndroidPhotoPickerTest {
             )
 
         assertNotNull(launcher)
+    }
+
+    @Test
+    fun `mediaCapabilities is stored correctly`() {
+        val capabilities = mock(PickVisualMedia.MediaCapabilities::class.java)
+        val picker = AndroidPhotoPicker(context, singleMediaPicker, multipleMediaPicker, capabilities)
+        assertEquals(capabilities, picker.mediaCapabilities)
+    }
+
+    @Test
+    fun `allHdrCapabilities returns common HDR types`() {
+        val capabilities = AndroidPhotoPicker.allHdrCapabilities()
+        assertTrue(capabilities.supportedHdrTypes.contains(PickVisualMedia.MediaCapabilities.TYPE_HLG10))
+        assertTrue(capabilities.supportedHdrTypes.contains(PickVisualMedia.MediaCapabilities.TYPE_HDR10))
+        assertTrue(capabilities.supportedHdrTypes.contains(PickVisualMedia.MediaCapabilities.TYPE_HDR10_PLUS))
+        assertTrue(capabilities.supportedHdrTypes.contains(PickVisualMedia.MediaCapabilities.TYPE_DOLBY_VISION))
     }
 }

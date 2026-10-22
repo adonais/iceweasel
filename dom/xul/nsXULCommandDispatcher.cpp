@@ -43,6 +43,14 @@ nsXULCommandDispatcher::nsXULCommandDispatcher(Document* aDocument)
 
 nsXULCommandDispatcher::~nsXULCommandDispatcher() { Disconnect(); }
 
+nsXULCommandDispatcher::Updater::Updater(Element* aElement,
+                                         const nsAString& aEvents,
+                                         const nsAString& aTargets)
+    : mElement(aElement),
+      mEvents(aEvents),
+      mTargets(aTargets),
+      mNext(nullptr) {}
+
 // QueryInterface implementation for nsXULCommandDispatcher
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsXULCommandDispatcher)

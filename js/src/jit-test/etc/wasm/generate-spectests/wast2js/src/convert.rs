@@ -410,9 +410,73 @@ fn convert_directive(
         Wait { span: _, thread } => {
             writejs!("${}.wait();", thread.name())?;
         }
+
+        AssertInvalidCustom {
+            span: _,
+            module,
+            message,
+        } => {
+            writejs!(
+                "{};",
+                assert_bad_custom_to_js("assert_invalid_custom", module, message, wast)?
+            )?;
+        }
+        AssertMalformedCustom {
+            span: _,
+            module,
+            message,
+        } => {
+            writejs!(
+                "{};",
+                assert_bad_custom_to_js("assert_malformed_custom", module, message, wast)?
+            )?;
+        }
     }
 
     Ok(())
+}
+
+/// Custom section tests can be "bad" in three ways: the text format can be
+/// malformed, a custom section can be structurally invalid, or a custom
+/// section can be well-formed but be semantically wrong (e.g. referencing
+/// functions that don't exist.) None of this really matters from a harness
+/// point of view except for knowing whether or not the WAT will parse, so we
+/// lump them together.
+fn assert_bad_custom_to_js(
+    directive: &str,
+    module: wast::QuoteWat,
+    message: &str,
+    wast: &str,
+) -> Result<String> {
+    let (text, text_is_malformed) = match module {
+        wast::QuoteWat::Wat(wast::Wat::Module(m)) => (module_to_js_string(&m, wast)?, false),
+        wast::QuoteWat::QuoteModule(_, source) => {
+            let text = quote_text(source)?;
+            let parses = match wast::parser::ParseBuffer::new(&text) {
+                Ok(buf) => wast::parser::parse::<wast::Wat>(&buf).is_ok(),
+                Err(_) => false,
+            };
+            (escape_template_module_string(&text), !parses)
+        }
+        other => bail!("unsupported {:?} in {}", other, directive),
+    };
+    let name = if text_is_malformed {
+        // If we can't even parse the WAT, we use the general assert_malformed
+        // directive instead of anything about custom sections. This is sort of
+        // a bug in the upstream tests if we're being honest.
+        "assert_malformed"
+    } else {
+        directive
+    };
+    Ok(JSNode::Assert {
+        name: name.to_string(),
+        exec: Box::new(JSNode::Raw(format!("module(`{}`)", text))),
+        expected: Box::new(JSNode::Raw(format!(
+            "`{}`",
+            escape_template_name_string(message)
+        ))),
+    }
+    .output(0))
 }
 
 fn escape_template_string(text: &str, escape_ascii_lf_tab: bool) -> String {
@@ -503,24 +567,28 @@ fn module_to_js_string(module: &wast::core::Module, wast: &str) -> Result<String
     )))
 }
 
-fn quote_module_to_js_string(quotes: Vec<(wast::token::Span, &[u8])>) -> Result<String> {
+fn quote_text(quotes: Vec<(wast::token::Span, &[u8])>) -> Result<String> {
     let mut text = String::new();
     for (_, src) in quotes {
         text.push_str(str::from_utf8(src)?);
         text.push_str(" ");
     }
-    let escaped = escape_template_module_string(&text);
-    Ok(escaped)
+    Ok(text)
+}
+
+fn quote_module_to_js_string(quotes: Vec<(wast::token::Span, &[u8])>) -> Result<String> {
+    Ok(escape_template_module_string(&quote_text(quotes)?))
 }
 
 fn module_definition_to_js_string(module: &wast::core::Module, wast: &str) -> Result<String> {
     let offset = span_to_offset(module.span, wast)?;
     let opened_module = &wast[offset..];
 
-    // strip "module definition $M" down to just "module"
-    let pattern = r"^module definition (?:\$[a-zA-Z_$][a-zA-Z0-9_$]* )?(.*)";
+    // strip "module definition $M" down to just "module", keeping whatever
+    // whitespace follows
+    let pattern = r"^module\s+definition(\s+\$[a-zA-Z_$][a-zA-Z0-9_$]*)?";
     let re = Regex::new(pattern).expect("Invalid regex pattern");
-    let without_definition = re.replace(opened_module, "module $1");
+    let without_definition = re.replace(opened_module, "module");
 
     Ok(escape_template_module_string(&format!(
         "({}",

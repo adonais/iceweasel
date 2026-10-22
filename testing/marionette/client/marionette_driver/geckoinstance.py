@@ -685,6 +685,8 @@ class DesktopInstance(GeckoInstance):
         "browser.ml.enable": False,
         # Do not initialize any activitystream features
         "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds": False,
+        # Do not render or load any New Tab widget
+        "browser.newtabpage.activity-stream.widgets.enabled": False,
         # Background thumbnails in particular cause grief, and disabling thumbnails
         # in general can"t hurt - we re-enable them when tests need them
         "browser.pagethumbnails.capturing_disabled": True,

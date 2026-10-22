@@ -2,7 +2,7 @@
 
 function run_test() {
   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
-    "resource://gre/modules/jsdebugger.sys.mjs"
+    "moz-src:///devtools/platform/jsdebugger.sys.mjs"
   );
 
   Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);

@@ -29,6 +29,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.components.feature.listentopage.ChunkState
 import mozilla.components.feature.listentopage.PlaybackPhase
+import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.support.ktx.android.content.appName
 
@@ -84,6 +85,9 @@ interface PlaybackController {
     /** Drops what is queued and starts again on [file] at [positionMs]. */
     suspend fun restartAt(file: File, positionMs: Long)
 
+    /** Reads the rest of the article out at [speed]. */
+    suspend fun setSpeed(speed: PlaybackSpeed)
+
     /** Gives up the playback, which takes the notification away. A later call starts it again. */
     suspend fun release()
 
@@ -137,7 +141,11 @@ class ListenPlaybackController(
     override suspend fun play(file: File, articleDisplayData: ArticleDisplayData) = onController {
         // Published before the command, so that a report the previous session left behind cannot be read as this
         // session's in the time it takes the player to report for itself.
-        _status.value = PlaybackState(phase = PlaybackPhase.Buffering)
+        _status.value =
+            PlaybackState(
+                phase = PlaybackPhase.Buffering,
+                speed = PlaybackSpeed.nearest(it.playbackParameters.speed),
+            )
 
         val displayDataWithAppNameIfUntitled = articleDisplayData.withAppNameIfUntitled(appName)
         displayData = displayDataWithAppNameIfUntitled
@@ -171,6 +179,8 @@ class ListenPlaybackController(
         it.prepare()
     }
 
+    override suspend fun setSpeed(speed: PlaybackSpeed) = onController { it.setPlaybackSpeed(speed.multiplier) }
+
     override suspend fun release() {
         withContext(Dispatchers.Main) {
             val released = connection ?: return@withContext
@@ -181,6 +191,7 @@ class ListenPlaybackController(
             val controller = runCatching { released.await() }.getOrNull() ?: return@withContext
 
             controller.stop()
+            controller.clearMediaItems()
             controller.release()
         }
     }
@@ -306,6 +317,7 @@ private fun Player.toPlaybackState() =
         phase = toPlaybackPhase(),
         chunk = ChunkState(index = currentMediaItemIndex, durationMs = duration.takeIf { it != C.TIME_UNSET }),
         positionMs = currentPosition,
+        speed = PlaybackSpeed.nearest(playbackParameters.speed),
     )
 
 /** The phase the player is in. */

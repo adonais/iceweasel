@@ -247,12 +247,15 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
 
 void SpeculationRules::AddLink(Element* aElement) {
   mLinks.Insert(aElement);
-  ConsiderLoads();
+  if (!mRuleSetsFromScript.IsEmpty()) {
+    ConsiderLoads();
+  }
 }
 
 void SpeculationRules::RemoveLink(Element* aElement) {
   mLinks.Remove(aElement);
-  if (mDocument && mDocument->IsFullyActive()) {
+  if (!mRuleSetsFromScript.IsEmpty() && mDocument &&
+      mDocument->IsFullyActive()) {
     // Link elements are removed when a document is being cycle-collected; we
     // shouldn't bother firing the microtask in that case.
     ConsiderLoads();

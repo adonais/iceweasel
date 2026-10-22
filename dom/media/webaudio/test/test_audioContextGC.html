@@ -37,6 +37,7 @@ let tests = [{
     // Await state change notification before collection.
     return new Promise((resolve) => {
       ac.onstatechange = () => {
+        ac.onstatechange = null;
         is(ac.state, "running", "ac.state");
         resolve();
       };
@@ -51,12 +52,18 @@ let tests = [{
     source.start();
     source.stop();
     // Await ended notification before collection.
-    return new Promise((resolve) => {
-      source.onended = () => {
-        is(ac.state, "running", "ac.state");
-        resolve();
-      };
-    });
+    return Promise.all([
+      new Promise((resolve) => {
+        ac.onstatechange = () => {
+          ac.onstatechange = null;
+          is(ac.state, "running", "ac.state");
+          resolve();
+        };
+      }),
+      new Promise((resolve) => {
+        source.onended = resolve;
+      }),
+    ]);
   }
 }, {
   name: "OfflineAudioContext not started", setup: () => {

@@ -1,6 +1,11 @@
 {
-  "include": ["*.sys.mjs", "types/*.ts", "../tabbrowser/types/elements.ts"],
-  "exclude": ["SessionStore.sys.mjs"],
+  "include": [
+    "*.mjs",
+    "content/*.js",
+    "content/*.mjs",
+    "types/*.ts",
+    "../tabbrowser/types/elements.ts"
+  ],
   "extends": "../../../tools/@types/tsconfig.json",
 
   "compilerOptions": {

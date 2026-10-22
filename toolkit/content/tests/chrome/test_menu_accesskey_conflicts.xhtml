@@ -44,6 +44,13 @@
     <menuitem label="Three" accesskey="o" disabled="true"/>
     <menuitem label="Note" disabled="true" role="note"/>
   </menupopup>
+  <menupopup id="unlabeled">
+    <menugroup>
+      <menuitem aria-label="Back"/>
+      <menuitem aria-label="Forward" accesskey="f"/>
+    </menugroup>
+    <menuitem label="Full Screen" accesskey="f"/>
+  </menupopup>
   <menupopup id="tracked" accesskey-conflicts-bug="2073885">
     <menuitem label="One" accesskey="o"/>
     <menuitem label="Two" accesskey="o"/>
@@ -58,16 +65,48 @@
     <menuitem label="One" accesskey="o"/>
     <menuitem label="Two" accesskey="o" intended-duplicate-accesskey="true"/>
   </menupopup>
-  <menupopup id="extension">
+  <menupopup id="auto">
+    <menuitem label="Copy" accesskey="c"/>
+    <menuitem label="correct" auto-accesskey=""/>
+    <menugroup>
+      <menuitem label="&quot;Quoted&quot; title" auto-accesskey=""/>
+    </menugroup>
+    <menuitem label="🦊 Fox" auto-accesskey=""/>
+    <menuitem label="翻译 English" auto-accesskey=""/>
+    <menuitem label="⁴ʰ fourth" auto-accesskey=""/>
+    <menu label="Submenu" auto-accesskey="">
+      <menupopup/>
+    </menu>
+  </menupopup>
+  <menupopup id="auto-others-unkeyed">
+    <menuitem label="Manage"/>
+    <menuitem label="Move" auto-accesskey="" accesskey="m"/>
+  </menupopup>
+  <menupopup id="auto-translated">
+    <menuitem id="auto-translated-item"/>
+    <menuitem label="Run" auto-accesskey=""/>
+  </menupopup>
+  <menupopup id="translated">
+    <menuitem label="Undo" accesskey="u"/>
+    <menuitem id="translated-item"/>
+  </menupopup>
+  <menupopup id="retranslated">
     <menuitem label="One" accesskey="o"/>
-    <menuitem label="Two" accesskey="o" class="webextension-menuitem"/>
-    <menuitem label="Three" accesskey="t" class="webextension-menuitem"/>
-    <menuitem label="Four" accesskey="t" class="webextension-menuitem"/>
+    <menuitem id="retranslated-item" label="Two" accesskey="o"/>
+  </menupopup>
+  <menupopup id="auto-digits">
+    <menuitem label="One" accesskey="1"/>
+    <menuitem label="翻译" auto-accesskey=""/>
+    <menuitem label="2 columns" auto-accesskey=""/>
+    <menuitem label="🦊" auto-accesskey=""/>
   </menupopup>
 
   <script class="testbody" type="application/javascript">
   <![CDATA[
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { Assert } = ChromeUtils.importESModule(
   "resource://testing-common/Assert.sys.mjs"
 );
@@ -75,7 +114,7 @@ const assert = new Assert((err, message) =>
   ok(!err, err ? err.message : message)
 );
 
-async function openAndCollectErrors(id) {
+async function openAndCollectErrors(id, onShown) {
   let errors = [];
   let sentinel = new Promise(resolve => {
     SpecialPowers.registerConsoleListener(msg => {
@@ -88,10 +127,24 @@ async function openAndCollectErrors(id) {
   });
   let popup = document.getElementById(id);
   let shown = new Promise(resolve =>
-    popup.addEventListener("popupshown", resolve, { once: true })
+    popup.addEventListener(
+      "popupshown",
+      () => {
+        onShown?.();
+        resolve();
+      },
+      { once: true }
+    )
   );
   popup.openPopup(document.getElementById("anchor"), "after_start");
   await shown;
+  if (document.hasPendingL10nMutations) {
+    await new Promise(resolve =>
+      document.addEventListener("L10nMutationsFinished", resolve, {
+        once: true,
+      })
+    );
+  }
   // The check runs in a system-group listener, after this one.
   await new Promise(resolve => SimpleTest.executeSoon(resolve));
   let hidden = new Promise(resolve =>
@@ -103,6 +156,42 @@ async function openAndCollectErrors(id) {
   await sentinel;
   return errors;
 }
+
+add_setup(async function setup() {
+  // The check skips native menus, so open the test menus as XUL popups on
+  // macOS. testNativeMenuSkipped opens a native one.
+  await SpecialPowers.pushPrefEnv({
+    set: [["widget.macos.native-anchored-menus", false]],
+  });
+  L10nRegistry.getInstance().registerSources([
+    L10nFileSource.createMock(
+      "accesskey-test",
+      "app",
+      ["en-US"],
+      "/localization/{locale}/",
+      [
+        {
+          path: "/localization/en-US/accesskey-test.ftl",
+          source: `
+undo =
+  .label = Undo
+  .accesskey = u
+redo =
+  .label = Redo
+  .accesskey = r
+`,
+        },
+      ]
+    ),
+  ]);
+  SimpleTest.registerCleanupFunction(() =>
+    L10nRegistry.getInstance().removeSources(["accesskey-test"])
+  );
+  let link = document.createElementNS("http://www.w3.org/1999/xhtml", "link");
+  link.rel = "localization";
+  link.href = "accesskey-test.ftl";
+  document.documentElement.append(link);
+});
 
 add_task(async function testDistinctAccessKeys() {
   is(
@@ -193,12 +282,101 @@ add_task(async function testTrackedMenuSkipped() {
   );
 });
 
-add_task(async function testExtensionItemsSkipped() {
+add_task(async function testAutoAccessKeys() {
+  let items = [...document.querySelectorAll("#auto [auto-accesskey]")];
   is(
-    (await openAndCollectErrors("extension")).length,
+    (await openAndCollectErrors("auto")).length,
     0,
-    "A WebExtension's items don't count, whatever their accesskeys"
+    "An item with auto-accesskey may share its accesskey"
   );
+  assert.deepEqual(
+    items.map(item => item.getAttribute("accesskey")),
+    ["c", "Q", "F", "E", "f", "S"],
+    "Each item gets its label's first typeable letter, skipping punctuation, emoji, IME scripts, superscript digits and modifier letters"
+  );
+  items[0].setAttribute("label", "Paste");
+  await openAndCollectErrors("auto");
+  is(
+    items[0].getAttribute("accesskey"),
+    "P",
+    "The accesskey follows a changed label when the popup opens again"
+  );
+});
+
+add_task(async function testAutoAccessKeysOthersUnkeyed() {
+  let item = document.querySelector("#auto-others-unkeyed [auto-accesskey]");
+  is(
+    (await openAndCollectErrors("auto-others-unkeyed")).length,
+    0,
+    "A menu without accesskeys gets none for its auto-accesskey items"
+  );
+  ok(
+    !item.hasAttribute("accesskey"),
+    "The item doesn't take the first letter of another item's label"
+  );
+});
+
+add_task(async function testAutoAccessKeysAfterTranslation() {
+  let popup = document.getElementById("auto-translated");
+  popup.addEventListener(
+    "popupshowing",
+    () => {
+      document.l10n.setAttributes(
+        document.getElementById("auto-translated-item"),
+        "redo"
+      );
+    },
+    { once: true }
+  );
+  is(
+    (await openAndCollectErrors("auto-translated")).length,
+    0,
+    "The auto-accesskey item may share the translated item's accesskey"
+  );
+  is(
+    popup.querySelector("[auto-accesskey]").getAttribute("accesskey"),
+    "R",
+    "The item gets an accesskey once the other items' translations arrive"
+  );
+});
+
+add_task(async function testAutoAccessKeyDigits() {
+  let items = [...document.querySelectorAll("#auto-digits [auto-accesskey]")];
+  is(
+    (await openAndCollectErrors("auto-digits")).length,
+    0,
+    "Items without a typeable letter get accesskeys"
+  );
+  assert.deepEqual(
+    items.map(item => item.getAttribute("accesskey")),
+    ["3", "2", "4"],
+    "Each item without a typeable letter or digit gets the lowest unused digit"
+  );
+});
+
+add_task(async function testNativeMenuSkipped() {
+  if (AppConstants.platform != "macosx") {
+    ok(true, "Only macOS shows menus natively");
+    return;
+  }
+  if (Services.env.get("MOZ_HEADLESS")) {
+    ok(true, "Menus aren't native in headless mode");
+    return;
+  }
+  await SpecialPowers.pushPrefEnv({
+    set: [["widget.macos.native-anchored-menus", true]],
+  });
+  let popup = document.getElementById("duplicate");
+  // Opening the popup with native menus off marked it nonnative, which would
+  // keep it non-native.
+  popup.removeAttribute("nonnative");
+  let isNative;
+  let errors = await openAndCollectErrors("duplicate", () => {
+    isNative = popup.isNativeMenu;
+  });
+  await SpecialPowers.popPrefEnv();
+  ok(isNative, "The menu opens natively");
+  is(errors.length, 0, "A native menu is skipped");
 });
 
 add_task(async function testDisabledItems() {
@@ -215,6 +393,49 @@ add_task(async function testDisabledItems() {
     "A disabled item counts for a missing accesskey"
   );
   ok(!errors[0].includes("Note"), "A disabled note counts for neither");
+});
+
+add_task(async function testUnlabeledItems() {
+  let errors = await openAndCollectErrors("unlabeled");
+  is(errors.length, 1, "Items without a label are checked for shared accesskeys");
+  assert.stringContains(
+    errors[0],
+    `accesskey "f" is shared by "Forward", "Full Screen"`,
+    "An item without a label counts for a shared accesskey"
+  );
+  ok(
+    !errors[0].includes("Back"),
+    "An item without a label doesn't count for a missing accesskey"
+  );
+});
+
+add_task(async function testPendingTranslation() {
+  let item = document.getElementById("translated-item");
+  let errors = await openAndCollectErrors("translated", () => {
+    document.l10n.setAttributes(item, "undo");
+    ok(document.hasPendingL10nMutations, "Translation is pending at popupshown");
+  });
+  is(item.getAttribute("label"), "Undo", "The item got its translation");
+  is(errors.length, 1, "The check waits for the pending translation");
+  assert.stringContains(
+    errors[0],
+    `accesskey "u" is shared by "Undo", "Undo"`,
+    "The translated item is compared"
+  );
+});
+
+add_task(async function testPendingRetranslation() {
+  let item = document.getElementById("retranslated-item");
+  let errors = await openAndCollectErrors("retranslated", () => {
+    document.l10n.setAttributes(item, "redo");
+    ok(document.hasPendingL10nMutations, "Translation is pending at popupshown");
+  });
+  is(item.getAttribute("label"), "Redo", "The item got its translation");
+  is(
+    errors.length,
+    0,
+    "The check compares the translation, not the label it replaces"
+  );
 });
 
   ]]>

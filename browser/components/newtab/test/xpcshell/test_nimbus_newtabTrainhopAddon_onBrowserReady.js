@@ -43,7 +43,7 @@ add_task(
     await asyncAssertNoPendingInstalls();
 
     // Verify that calls to updateTrainhopAddonState triggered while the client isn't
-    // enrolled in the newtabTrainhopAddon Nimbus feature don't log any warning for
+    // enrolled in the newtabTrainhopAddonDeployment Nimbus feature don't log any warning for
     // incomplete Nimbus feature variables, and that we do not call _installTrainhopAddon.
     const loggerWarnSpy = sandbox.spy(
       AboutNewTabResourceMapping.logger,

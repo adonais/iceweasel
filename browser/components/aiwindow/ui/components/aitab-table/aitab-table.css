@@ -1,0 +1,94 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Heading type and the deemphasized text colour come from aitab-base.css and
+   its --aitab-text-color-deemphasized token (bug 2068782) once that lands;
+   until then the heading keeps the UA default and platform tokens stand in. */
+
+:host {
+  display: block;
+}
+
+.aitab-table-heading {
+  margin: 0;
+}
+
+.aitab-table-description {
+  margin-block: var(--space-xsmall) 0;
+  color: var(--text-color-deemphasized);
+}
+
+table {
+  width: 100%;
+  margin-block-start: var(--space-xlarge);
+  border-collapse: collapse;
+  /* Fixed layout keeps the column widths below stable however long the model's
+     text gets; long values wrap inside their cell instead. */
+  table-layout: fixed;
+}
+
+/* The name column takes two shares, every detail column one. */
+table[data-details="1"] .aitab-table-name-col {
+  width: 66.67%;
+}
+
+table[data-details="2"] .aitab-table-name-col {
+  width: 50%;
+}
+
+table[data-details="3"] .aitab-table-name-col {
+  width: 40%;
+}
+
+table[data-details="4"] .aitab-table-name-col {
+  width: 33.33%;
+}
+
+table[data-details="5"] .aitab-table-name-col {
+  width: 28.57%;
+}
+
+th,
+td {
+  padding-inline: var(--space-small);
+  text-align: start;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+thead th {
+  padding-block: 0 var(--space-medium);
+  border-block-end: 1px solid var(--border-color);
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-root);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+}
+
+tbody th,
+tbody td {
+  padding-block: var(--space-xlarge);
+  font-size: var(--font-size-large);
+  font-weight: normal;
+}
+
+tbody tr + tr {
+  border-block-start: 1px solid var(--border-color-deemphasized);
+}
+
+.aitab-table-name-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-small);
+}
+
+.aitab-table-name {
+  font-weight: var(--font-weight-bold);
+}
+
+.aitab-table-subtitle {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+}

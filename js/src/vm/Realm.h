@@ -429,6 +429,9 @@ class JS::Realm : public JS::shadow::Realm {
   // happens.
   bool isTracingExecution_ = false;
 
+  // Set when the embedder hinted that this realm is dying.
+  bool isDyingHint_ = false;
+
   js::UniquePtr<js::coverage::LCovRealm> lcovRealm_ = nullptr;
 
  public:
@@ -863,6 +866,9 @@ class JS::Realm : public JS::shadow::Realm {
   js::UniquePtr<js::DebugEnvironments>& debugEnvsRef() { return debugEnvs_; }
 
   js::SavedStacks& savedStacks() { return savedStacks_; }
+
+  void setIsDyingHint() { isDyingHint_ = true; }
+  bool isDyingHint() const { return isDyingHint_; }
 
   // Recompute the probability with which this realm should record
   // profiling data (stack traces, allocations log, etc.) about each

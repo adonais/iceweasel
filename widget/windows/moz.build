@@ -211,7 +211,7 @@ OS_LIBS += [
     "winmm",
 ]
 
-# mingw is missing Windows toast notification definitions.
+# mingw-w64 is missing the WRL headers the toast notification code uses.
 if CONFIG["CC_TYPE"] == "clang-cl":
     SOURCES += [
         "ToastNotification.cpp",

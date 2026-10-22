@@ -10,6 +10,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RandomNum.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCErrorBinding.h"
 #include "transport/runnable_utils.h"
@@ -269,6 +270,11 @@ void DataChannelConnectionDcSctp::HandleTimeout(TimeoutID aId) {
   if (mDcSctp) {
     mDcSctp->HandleTimeout(aId);
   }
+}
+
+webrtc::Timestamp DataChannelConnectionDcSctp::Now() {
+  return webrtc::Timestamp::Micros(static_cast<int64_t>(
+      (TimeStamp::Now() - TimeStamp::ProcessCreation()).ToMicroseconds()));
 }
 
 uint32_t DataChannelConnectionDcSctp::GetRandomInt(uint32_t aLow,

@@ -561,7 +561,14 @@ class PermissionPrompt {
                 promptAction.action,
                 scope
               );
-            } else {
+            } else if (this.browser.contentPrincipal.equals(this.principal)) {
+              // Browser-scoped permissions are only ever keyed to a tab's
+              // top-level document. A delegated request from a cross-origin
+              // subframe carries that subframe's own principal, and an entry
+              // stored under it would outlive the frame, be readable under a
+              // different first party, and be invisible to every path that
+              // lists or revokes permissions. Grant the request in flight and
+              // store nothing, so the next one prompts again.
               lazy.SitePermissions.setForPrincipal(
                 this.principal,
                 this.permissionKey,

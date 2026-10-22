@@ -14,12 +14,15 @@
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "av1/common/mvref_common.h"
 #include "av1/common/reconinter.h"
 #include "av1/common/reconintra.h"
 
 #include "av1/encoder/encodemv.h"
 #include "av1/encoder/intra_mode_search.h"
+#include "av1/encoder/mcomp.h"
 #include "av1/encoder/model_rd.h"
 #include "av1/encoder/motion_search_facade.h"
 #include "av1/encoder/nonrd_opt.h"
@@ -1630,12 +1633,12 @@ static void av1_search_intrabc_nonrd(AV1_COMP *cpi, MACROBLOCK *x,
   FULLPEL_MOTION_SEARCH_PARAMS fullms_params;
   const SEARCH_METHODS search_method =
       av1_get_default_mv_search_method(x, &cpi->sf.mv_sf, bsize);
-  const search_site_config *lookahead_search_sites =
-      cpi->mv_search_params.search_site_cfg[SS_CFG_LOOKAHEAD];
+  const search_site_config *src_search_sites =
+      av1_get_search_site_config(cpi, x, search_method);
   const FULLPEL_MV start_mv = get_fullmv_from_mv(&dv_ref.as_mv);
   av1_make_default_fullpel_ms_params(&fullms_params, cpi, x, bsize,
-                                     &dv_ref.as_mv, start_mv,
-                                     lookahead_search_sites, search_method,
+                                     &dv_ref.as_mv, start_mv, src_search_sites,
+                                     search_method,
                                      /*fine_search_interval=*/0);
   av1_set_ms_to_intra_mode(&fullms_params, x->dv_costs);
   fullms_params.mv_limits.col_min = (xd->tile.mi_col_start - mi_col) * MI_SIZE;
@@ -1651,10 +1654,71 @@ static void av1_search_intrabc_nonrd(AV1_COMP *cpi, MACROBLOCK *x,
         cpi, xd, &fullms_params, &x->intrabc_hash_info, &best_mv.as_fullmv);
   }
   if (bestsme == INT_MAX) {
-    FULLPEL_MV_STATS best_mv_stats;
-    bestsme = av1_full_pixel_search(start_mv, &fullms_params,
-                                    cpi->mv_search_params.mv_step_param, NULL,
-                                    &best_mv.as_fullmv, &best_mv_stats, NULL);
+    const int miss_mode = cpi->sf.rt_sf.rt_intrabc_miss_mode;
+    if (miss_mode == 0) {
+      FULLPEL_MV_STATS best_mv_stats;
+      bestsme = av1_full_pixel_search(start_mv, &fullms_params,
+                                      cpi->mv_search_params.mv_step_param, NULL,
+                                      &best_mv.as_fullmv, &best_mv_stats, NULL);
+    } else if (miss_mode == 1 || miss_mode == 2) {
+      // Evaluate start_mv (BVP candidate)
+      FULLPEL_MV cand_mv = start_mv;
+      if (cand_mv.col >= fullms_params.mv_limits.col_min &&
+          cand_mv.col <= fullms_params.mv_limits.col_max &&
+          cand_mv.row >= fullms_params.mv_limits.row_min &&
+          cand_mv.row <= fullms_params.mv_limits.row_max) {
+        MV dv = get_mv_from_fullmv(&cand_mv);
+        if (av1_is_dv_valid(dv, cm, xd, mi_row, mi_col, bsize,
+                            cm->seq_params->mib_size_log2)) {
+          const struct buf_2d *src = fullms_params.ms_buffers.src;
+          const struct buf_2d *ref = fullms_params.ms_buffers.ref;
+          unsigned int sad = fullms_params.vfp->sdf(
+              src->buf, src->stride, get_buf_from_fullmv(ref, &cand_mv),
+              ref->stride);
+          unsigned int rate =
+              av1_mv_bit_cost(&dv, &dv_ref.as_mv, x->dv_costs->joint_mv,
+                              x->dv_costs->dv_costs, MV_COST_WEIGHT);
+          best_mv.as_fullmv = cand_mv;
+          bestsme = (int)(sad + rate);
+        }
+      }
+
+      // If miss_mode == 2, do a one-shot 12-point offset probe around start_mv
+      if (miss_mode == 2) {
+        const int row_offsets[12] = { -1, 1, 0, 0, -2, 2, 0, 0, -1, -1, 1, 1 };
+        const int col_offsets[12] = { 0, 0, -1, 1, 0, 0, -2, 2, -1, 1, -1, 1 };
+        for (int k = 0; k < 12; ++k) {
+          FULLPEL_MV probe_mv;
+          probe_mv.row = start_mv.row + row_offsets[k];
+          probe_mv.col = start_mv.col + col_offsets[k];
+          if (probe_mv.col >= fullms_params.mv_limits.col_min &&
+              probe_mv.col <= fullms_params.mv_limits.col_max &&
+              probe_mv.row >= fullms_params.mv_limits.row_min &&
+              probe_mv.row <= fullms_params.mv_limits.row_max) {
+            MV dv = get_mv_from_fullmv(&probe_mv);
+            if (av1_is_dv_valid(dv, cm, xd, mi_row, mi_col, bsize,
+                                cm->seq_params->mib_size_log2)) {
+              const struct buf_2d *src = fullms_params.ms_buffers.src;
+              const struct buf_2d *ref = fullms_params.ms_buffers.ref;
+              unsigned int sad = fullms_params.vfp->sdf(
+                  src->buf, src->stride, get_buf_from_fullmv(ref, &probe_mv),
+                  ref->stride);
+              unsigned int rate =
+                  av1_mv_bit_cost(&dv, &dv_ref.as_mv, x->dv_costs->joint_mv,
+                                  x->dv_costs->dv_costs, MV_COST_WEIGHT);
+              int cost = (int)(sad + rate);
+              if (cost < bestsme) {
+                bestsme = cost;
+                best_mv.as_fullmv = probe_mv;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // miss_mode == 3: skip entirely (hash-only)
+      bestsme = INT_MAX;
+    }
   }
   if (bestsme != INT_MAX) {
     MV dv = get_mv_from_fullmv(&best_mv.as_fullmv);
@@ -1762,6 +1826,7 @@ void av1_nonrd_pick_intra_mode(AV1_COMP *cpi, MACROBLOCK *x, RD_STATS *rd_cost,
   mi->mv[0].as_int = mi->mv[1].as_int = INVALID_MV;
 
   bool allow_skip_nondc = true;
+  bool palette_selected = false;
   // Change the limit of this loop to add other intra prediction
   // mode tests.
   for (int mode_index = 0; mode_index < RTC_INTRA_MODES; ++mode_index) {
@@ -1853,6 +1918,7 @@ void av1_nonrd_pick_intra_mode(AV1_COMP *cpi, MACROBLOCK *x, RD_STATS *rd_cost,
                                  &this_rdc, best_rdc.rdcost);
     // Update best mode data.
     if (this_rdc.rdcost < best_rdc.rdcost) {
+      palette_selected = true;
       best_mode = DC_PRED;
       mi->mv[0].as_int = INVALID_MV;
       mi->mv[1].as_int = INVALID_MV;
@@ -1866,8 +1932,10 @@ void av1_nonrd_pick_intra_mode(AV1_COMP *cpi, MACROBLOCK *x, RD_STATS *rd_cost,
     }
   }
 
-  bool try_intrabc = cpi->sf.rt_sf.rt_use_intrabc && av1_allow_intrabc(cm) &&
-                     bsize <= BLOCK_16X16;
+  bool try_intrabc =
+      cpi->sf.rt_sf.rt_use_intrabc && av1_allow_intrabc(cm) &&
+      bsize <= BLOCK_16X16 &&
+      (!cpi->sf.rt_sf.rt_prune_intrabc_nonrd || palette_selected);
 
   if (try_intrabc) {
     int_mv best_dv;

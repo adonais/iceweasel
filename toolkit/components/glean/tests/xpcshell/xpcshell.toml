@@ -19,6 +19,11 @@ run-if = [
   "os != 'android'", # FOG isn't responsible for monitoring prefs and controlling upload on Android
 ]
 
+["test_FOGStoredSubmittedPings.js"]
+run-if = [
+  "os != 'android'", # Glean stored submitted pings is not set up for Android
+]
+
 ["test_GIFFT.js"]
 
 ["test_GIFFTIPC.js"]

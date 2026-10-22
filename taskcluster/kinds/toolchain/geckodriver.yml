@@ -62,7 +62,6 @@ macosx64-geckodriver:
         build_platform: macosx64-geckodriver
     fetches:
         toolchain:
-            - linux64-cctools-port
             - linux64-clang-toolchain
             - linux64-rust-macos
             - macosx64-sdk-toolchain

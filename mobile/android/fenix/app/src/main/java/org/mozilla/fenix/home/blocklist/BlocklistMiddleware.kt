@@ -76,6 +76,14 @@ class BlocklistMiddleware(private val blocklistHandler: BlocklistHandler) : Midd
                     addUrlToBlocklist(action.syncedTab.url)
                     state.toActionFilteringAllState(this)
                 }
+                is AppAction.RemoveTopSite -> {
+                    if (action.shouldBlock) {
+                        addUrlToBlocklist(action.topSite.url)
+                        state.toActionFilteringAllState(this)
+                    } else {
+                        action
+                    }
+                }
                 else -> action
             }
         }

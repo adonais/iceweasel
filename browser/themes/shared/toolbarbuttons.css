@@ -33,6 +33,7 @@
   }
   &:where([mini-window]) {
     --toolbarbutton-padding-inner: var(--toolbarbutton-padding-inner-compact);
+    --toolbarbutton-padding-outer: 3px;
   }
 
   /* Smart window properties */

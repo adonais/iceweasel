@@ -190,6 +190,9 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
     // Note: For progress-based timeline, it's possible to have a zero active
     // duration with active phase.
     result.mPhase = ComputedTiming::AnimationPhase::Active;
+    // FIXME: Bug 2075002. An overflow may happen if delay is -inf. This causes
+    // an unexpected |mActiveTime| and incorrect AnimationEvent::elapsedTime for
+    // the animation cancel event.
     result.mActiveTime = localTime - aTiming.Delay();
   }
 

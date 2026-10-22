@@ -63,6 +63,7 @@ void AomAV1RateControlRtcConfigInitDefault(AomAV1RateControlRtcConfig *config) {
   config->min_quantizers[0] = config->min_quantizer;
   config->scaling_factor_num[0] = 1;
   config->scaling_factor_den[0] = 1;
+  config->bit_depth = 8;
 }
 
 }  // namespace
@@ -156,8 +157,10 @@ bool AV1RateControlRTC::InitRateControl(const AV1RateControlRtcConfig &rc_cfg) {
   AV1_COMMON *cm = &cpi_->common;
   AV1EncoderConfig *oxcf = &cpi_->oxcf;
   RATE_CONTROL *const rc = &cpi_->rc;
-  cm->seq_params->profile = PROFILE_0;
-  cm->seq_params->bit_depth = AOM_BITS_8;
+  const int bit_depth = rc_cfg.bit_depth == 0 ? 8 : rc_cfg.bit_depth;
+  if (bit_depth != 8 && bit_depth != 10 && bit_depth != 12) return false;
+  cm->seq_params->profile = (bit_depth == 12) ? PROFILE_2 : PROFILE_0;
+  cm->seq_params->bit_depth = static_cast<aom_bit_depth_t>(bit_depth);
   cm->show_frame = 1;
   oxcf->profile = cm->seq_params->profile;
   oxcf->mode = REALTIME;
@@ -171,7 +174,7 @@ bool AV1RateControlRTC::InitRateControl(const AV1RateControlRtcConfig &rc_cfg) {
         ceil(cpi_->framerate * rc_cfg.max_consec_drop_ms / 1000));
   }
   cpi_->svc.framedrop_mode = AOM_FULL_SUPERFRAME_DROP;
-  oxcf->tool_cfg.bit_depth = AOM_BITS_8;
+  oxcf->tool_cfg.bit_depth = cm->seq_params->bit_depth;
   oxcf->tool_cfg.superblock_size = AOM_SUPERBLOCK_SIZE_DYNAMIC;
   oxcf->algo_cfg.loopfilter_control = LOOPFILTER_ALL;
   cm->current_frame.frame_number = 0;
@@ -204,6 +207,12 @@ bool AV1RateControlRTC::UpdateRateControl(
       rc_cfg.ss_number_layers > AOM_MAX_SS_LAYERS ||
       rc_cfg.ts_number_layers < 1 ||
       rc_cfg.ts_number_layers > AOM_MAX_TS_LAYERS) {
+    rc_is_valid_ = false;
+    return false;
+  }
+  if (rc_cfg.bit_depth != 0 &&
+      rc_cfg.bit_depth !=
+          static_cast<int>(cpi_->common.seq_params->bit_depth)) {
     rc_is_valid_ = false;
     return false;
   }

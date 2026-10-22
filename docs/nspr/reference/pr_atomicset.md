@@ -30,7 +30,7 @@ The function returns the prior value of the referenced variable.
 
 ## Description
 
-{ref}`PR_AtomicSet` first reads the value of var, then updates it with the
+{doc}`pr_atomicset` first reads the value of var, then updates it with the
 supplied value. The returned value is the value that was read*before*
 memory was updated. The memory modification is unconditional--that is,
 it isn't a test and set operation.

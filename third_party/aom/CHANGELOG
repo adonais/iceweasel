@@ -1,3 +1,78 @@
+2026-09-21 v3.15.1
+  This release is ABI compatible with the last release. See
+  https://aomedia.googlesource.com/aom/+log/v3.15.0..v3.15.1 for all the
+  commits in this release.
+
+  - Bug Fixes
+    * b:558679217: Tune VMAF mode regression
+
+2026-08-25 v3.15.0
+  This release is ABI compatible with the last release.
+
+  This release includes the fixes for all the security issues found by
+  AI tools recently.
+
+  Important build system change: The cmake option ENABLE_APPS was added
+  to build aomdec and aomenc without building the example programs. The
+  cmake option ENABLE_EXAMPLES was redefined to build only the example
+  programs.
+
+  - New Features
+    * Test only: New codec control AV1E_SET_MODE_REF_DELTA_ENABLED for
+      the encoder to toggle loopfilter mode_ref_delta_enabled.
+    * New codec option “force-max-q” for the encoder to force the use
+      of max Q in VBR mode.
+    * Completed low-complexity decode mode development for VOD video,
+      and supported HDres (i.e. 720p to 1080p) encoding.
+    * IntraBC for RTC screen: improvements to allow and speed up this
+      tool for realtime mode.
+
+  - Compression Efficiency Improvements
+    * Improved the rate allocation among hierarchical layers and luma
+      and chroma planes.
+
+  - Perceptual Quality Improvements
+    * Improved VMAF metric while maintaining PSNR performance.
+
+  - Speedups
+    * Continued the speed 0 to 3 encoder speed optimizations.
+    * Improvements to Arm optimizations for convolve and variance
+      functions.
+
+  - Bug Fixes
+    * Bug 541725398: aom_img_flip: fix chroma height calculation
+    * Bug 437872594: CONFIG_SHARED=1 produces an .a(rchive) file for
+      static linking
+    * Bug 503326506: SEGV in encoder_destroy via failed encoder
+      initialization
+    * Bug 538651949: Bounds-check bypass in AV1E_SET_SVC_LAYER_ID:
+      ppi/svc layer-count desync re-enables OOB layer_context[]
+      read/write (incomplete fix for issue 503993985 / CVE-2026-56209)
+    * Bug 525452409: The math and Threads::Threads library dependencies
+      should not be part of the link interface of the aom shared library
+    * Bug 524353636: AOM_EXTRA_C_FLAGS/-DSANITIZE= flags not propagated
+      w/CMAKE_BUILD_TYPE=Debug
+    * Bug 513342555: Potential heap double-free in libaom AV1 MT
+      encoding via aliased macroblock data
+    * Bug 520656240: Copy on write: libaom AV1 wedge/interintra mask
+      buffers could be precomputed
+    * Bug 514696186: aomdec fails with "Failed to decode tile data" on
+      stream encoded by aomenc
+    * Bug 382465458: Chessboard pattern on flat gray video encoded with
+      libaom AV1
+    * oss-fuzz:514006304: Increase ctx->cx_data_sz to 2.5x uncomp frame
+      size
+    * Bug 514816767: aomenc fails assertion check mi->bsize == bsize
+    * Bug 504613867: Potential heap OOB read in
+      av1_int_pro_motion_estimation due to stale stride (CVE-2026-13906)
+    * Bug 503810640: Undefined behavior: NaN-to-int conversion in
+      aom_noise_model_get_grain_parameters
+    * Bug 503171639: Heap-buffer-overflow in
+      av1_update_and_record_txb_context via SVC encoding with mismatched
+      TXB buffer size
+    * Bug 505976409: SIGFPE (integer divide-by-zero) in libaom AV1 SVC
+      encoder
+
 2026-05-22 v3.14.1
   This release is ABI compatible with the last release. See
   https://aomedia.googlesource.com/aom/+log/v3.14.0..v3.14.1 for all the

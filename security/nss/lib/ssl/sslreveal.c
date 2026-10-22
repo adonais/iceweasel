@@ -21,11 +21,14 @@ SSL_RevealCert(PRFileDesc *fd)
 
     sslsocket = ssl_FindSocket(fd);
 
-    /* CERT_DupCertificate increases reference count and returns pointer to
-     * the same cert
+    /* The handshake only keeps the peer's certificate as DER, so instantiate
+     * a certificate for the caller here.
      */
-    if (sslsocket && sslsocket->sec.peerCert)
-        cert = CERT_DupCertificate(sslsocket->sec.peerCert);
+    if (sslsocket && sslsocket->sec.peerCertDER.data) {
+        cert = CERT_NewTempCertificate(sslsocket->dbHandle,
+                                       &sslsocket->sec.peerCertDER,
+                                       NULL, PR_FALSE, PR_TRUE);
+    }
 
     return cert;
 }

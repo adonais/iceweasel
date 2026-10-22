@@ -1163,18 +1163,9 @@ namespace {
 
 class ChannelStatsGatherer {
  public:
-  static std::vector<
-      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
-  GetReceiversSnapshot(RtpTransceiver* transceiver) {
-    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
-    return transceiver->receivers();
-    RTC_ALLOW_PLAN_B_DEPRECATION_END()
-  }
-
   explicit ChannelStatsGatherer(RtpTransceiver* absl_nonnull transceiver)
       : mid(transceiver->mid().value_or("")),
         transport_name(transceiver->transport_name().value_or("")),
-        receivers_(GetReceiversSnapshot(transceiver)),
         transceiver_(transceiver) {
     RTC_DCHECK(transceiver_);
   }
@@ -1185,12 +1176,6 @@ class ChannelStatsGatherer {
   virtual void ExtractStats(LegacyStatsCollector* collector) const = 0;
 
   virtual bool HasRemoteAudio() const = 0;
-
-  const std::vector<
-      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>&
-  receivers() const {
-    return receivers_;
-  }
 
   const std::string mid;
   const std::string transport_name;
@@ -1214,9 +1199,6 @@ class ChannelStatsGatherer {
   RtpTransceiver* transceiver() { return transceiver_; }
 
  private:
-  const std::vector<
-      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
-      receivers_;
   RtpTransceiver* const transceiver_;
 };
 
@@ -1329,11 +1311,12 @@ void LegacyStatsCollector::ExtractMediaInfo(
         gatherer->sender_track_id_by_ssrc.insert(
             std::make_pair(sender->ssrc(), track_id));
       }
+      for (const auto& receiver : transceiver->internal()->receivers()) {
+        gatherer->receiver_track_id_by_ssrc.insert(
+            std::make_pair(receiver->internal()->ssrc_s().value_or(0),
+                           receiver->track()->id()));
+      }
       RTC_ALLOW_PLAN_B_DEPRECATION_END()
-
-      // Populating `receiver_track_id_by_ssrc` will be done on the worker
-      // thread as the `ssrc` property of the receiver needs to be accessed
-      // there.
 
       gatherers.push_back(std::move(gatherer));
     }
@@ -1341,16 +1324,6 @@ void LegacyStatsCollector::ExtractMediaInfo(
 
   pc_->worker_thread()->BlockingCall([&] {
     Thread::ScopedDisallowBlockingCalls no_blocking_calls;
-    // Populate `receiver_track_id_by_ssrc` for the gatherers.
-    for (const std::unique_ptr<ChannelStatsGatherer>& gatherer : gatherers) {
-      RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
-      for (const auto& receiver : gatherer->receivers()) {
-        gatherer->receiver_track_id_by_ssrc.insert(std::make_pair(
-            receiver->internal()->ssrc().value_or(0), receiver->track()->id()));
-      }
-      RTC_ALLOW_PLAN_B_DEPRECATION_END()
-    }
-
     for (auto it = gatherers.begin(); it != gatherers.end();
          /* incremented manually */) {
       ChannelStatsGatherer* gatherer = it->get();

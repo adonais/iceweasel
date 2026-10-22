@@ -123,6 +123,25 @@ class TestToolkitMozConfigure(BaseConfigureTest):
                 m = self.get_milestone([f"--as-milestone={as_milestone}"])
                 self.assertIsNone(m.is_early_beta_or_earlier, as_milestone)
 
+    def test_wasm_flags(self):
+        def get_values(environ={}):
+            sandbox = self.get_sandbox({}, {}, [], environ)
+            return (
+                sandbox._value_for(sandbox["wasm_cflags"]),
+                sandbox._value_for(sandbox["wasm_cxxflags"]),
+            )
+
+        defaults = ["-fno-exceptions", "-fno-strict-aliasing"]
+        self.assertEqual(get_values(), (defaults, defaults))
+        self.assertEqual(
+            get_values({"WASM_CFLAGS": "-fcolor-diagnostics -DFOO"}),
+            (defaults + ["-fcolor-diagnostics", "-DFOO"], defaults),
+        )
+        self.assertEqual(
+            get_values({"WASM_CXXFLAGS": "-fcolor-diagnostics '-DBAR=a b'"}),
+            (defaults, defaults + ["-fcolor-diagnostics", "-DBAR=a b"]),
+        )
+
     def test_elfhack(self):
         class ReadElf:
             def __init__(self, with_relr):

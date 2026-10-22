@@ -75,16 +75,6 @@ import org.robolectric.annotation.Config
 class QrFragmentTest {
 
     @Test
-    fun `initialize QR fragment`() {
-        val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
-        val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
-
-        qrFragment.scanCompleteListener?.onScanComplete("result")
-        shadowOf(getMainLooper()).idle()
-        verify(scanCompleteListener).onScanComplete("result")
-    }
-
-    @Test
     fun `onPause closes camera, stops background thread, and shuts down executor service`() {
         val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
@@ -211,6 +201,24 @@ class QrFragmentTest {
 
         verify(listener).onScanComplete(eq("qrcode-result"))
         assertEquals(QrFragment.STATE_QRCODE_EXIST, QrFragment.qrState)
+    }
+
+    @Test
+    fun `GIVEN the listener is cleared after a qr code is decoded WHEN the result is delivered THEN it is dropped`() {
+        val listener = mock<QrFragment.OnScanCompleteListener>()
+        val reader = mock<MultiFormatReader>()
+        val qrFragment = spy(QrFragment.newInstance(listener))
+        val source = mock<PlanarYUVLuminanceSource>()
+        val result = com.google.zxing.Result("qrcode-result", ByteArray(0), emptyArray(), BarcodeFormat.ITF)
+        whenever(reader.decodeWithState(any())).thenReturn(result)
+        qrFragment.multiFormatReader = reader
+        QrFragment.qrState = QrFragment.STATE_DECODE_PROGRESS
+
+        qrFragment.tryScanningSource(source)
+        qrFragment.scanCompleteListener = null
+        shadowOf(getMainLooper()).idle()
+
+        verify(listener, never()).onScanComplete(any())
     }
 
     @Test

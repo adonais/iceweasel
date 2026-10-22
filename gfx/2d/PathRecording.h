@@ -64,8 +64,10 @@ class PathOps {
 
   template <typename T>
   void AppendPathOp(const OpType& aOpType, const T& aOpParams) {
-    AppendPathOp(aOpType);
-    AppendPathOp(aOpParams);
+    MOZ_RELEASE_ASSERT(mPathData.reserve(mPathData.length() + sizeof(aOpType) +
+                                         sizeof(aOpParams)));
+    mPathData.infallibleAppend((const uint8_t*)&aOpType, sizeof(aOpType));
+    mPathData.infallibleAppend((const uint8_t*)&aOpParams, sizeof(aOpParams));
   }
 
   struct TwoPoints {

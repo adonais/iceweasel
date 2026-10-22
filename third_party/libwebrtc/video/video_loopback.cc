@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -20,11 +21,13 @@
 #include "api/test/video_quality_test_fixture.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/string_encode.h"
 #include "test/gtest.h"
 #include "test/run_test.h"
 #include "video/video_quality_test.h"
@@ -204,9 +207,65 @@ ABSL_FLAG(std::string,
           "Name of the clip to show. If empty, using chroma generator.");
 
 ABSL_FLAG(std::string,
+          clips,
+          "",
+          "Comma-separated list of clips to switch between using "
+          "SwitchingFrameReader.");
+
+ABSL_FLAG(int,
+          camera_switching_interval_ms,
+          0,
+          "Interval in ms between camera switches when using "
+          "SwitchingFrameReader (defaults to 2000 ms if multiple clips are "
+          "provided).");
+
+ABSL_FLAG(std::string,
           scalability_mode,
           "",
           "Scalability mode to use (e.g. 'L1T3').");
+
+ABSL_FLAG(bool,
+          synthetic_pendulum,
+          false,
+          "Use synthetic chaotic zoom/pan frame generator with double pendulum "
+          "physics.");
+
+ABSL_FLAG(std::string,
+          pendulum_image,
+          "",
+          "Path to YUV420 static image for synthetic pendulum capturer. If "
+          "empty, uses resources/difficult_photo_1850_1110.yuv.");
+
+ABSL_FLAG(int,
+          pendulum_image_width,
+          1850,
+          "Width of source image for synthetic pendulum capturer.");
+
+ABSL_FLAG(int,
+          pendulum_image_height,
+          1110,
+          "Height of source image for synthetic pendulum capturer.");
+
+ABSL_FLAG(double,
+          pendulum_min_zoom,
+          1.2,
+          "Minimum zoom factor for synthetic pendulum capturer (>= 1.0).");
+
+ABSL_FLAG(double,
+          pendulum_max_zoom,
+          3.0,
+          "Maximum zoom factor for synthetic pendulum capturer.");
+
+ABSL_FLAG(double,
+          pendulum_zoom_speed,
+          0.3,
+          "Zoom oscillation frequency in cycles/sec.");
+
+ABSL_FLAG(int,
+          pendulum_noise,
+          20,
+          "Luma white noise amplitude for synthetic pendulum capturer (0 to "
+          "disable).");
 
 namespace webrtc {
 namespace {
@@ -400,7 +459,39 @@ void Loopback() {
   params.video[0].ulpfec = absl::GetFlag(FLAGS_use_ulpfec);
   params.video[0].flexfec = absl::GetFlag(FLAGS_use_flexfec);
   params.video[0].automatic_scaling = NumStreams() < 2;
-  params.video[0].clip_path = Clip();
+
+  int interval_ms = absl::GetFlag(FLAGS_camera_switching_interval_ms);
+  std::string clips_flag = absl::GetFlag(FLAGS_clips);
+  std::vector<std::string> clips;
+  if (!clips_flag.empty()) {
+    tokenize(clips_flag, ',', &clips);
+  } else if (!Clip().empty()) {
+    std::vector<std::string> parsed;
+    tokenize(Clip(), ',', &parsed);
+    if (parsed.size() > 1 || interval_ms > 0) {
+      clips = std::move(parsed);
+    }
+  }
+
+  if (absl::GetFlag(FLAGS_synthetic_pendulum) || Clip() == "pendulum") {
+    params.video[0].pendulum = {
+        .image_path = absl::GetFlag(FLAGS_pendulum_image).empty()
+                          ? "resources/difficult_photo_1850_1110.yuv"
+                          : absl::GetFlag(FLAGS_pendulum_image),
+        .image_width = absl::GetFlag(FLAGS_pendulum_image_width),
+        .image_height = absl::GetFlag(FLAGS_pendulum_image_height),
+        .min_zoom = absl::GetFlag(FLAGS_pendulum_min_zoom),
+        .max_zoom = absl::GetFlag(FLAGS_pendulum_max_zoom),
+        .zoom_speed = absl::GetFlag(FLAGS_pendulum_zoom_speed),
+        .noise_level = absl::GetFlag(FLAGS_pendulum_noise),
+    };
+  } else if (!clips.empty()) {
+    params.video[0].clip_paths = std::move(clips);
+    params.video[0].camera_switching_interval =
+        TimeDelta::Millis(interval_ms > 0 ? interval_ms : 2000);
+  } else {
+    params.video[0].clip_path = Clip();
+  }
   params.video[0].capture_device_index = GetCaptureDevice();
   params.audio.enabled = absl::GetFlag(FLAGS_audio);
   params.audio.sync_video = absl::GetFlag(FLAGS_audio_video_sync);
@@ -454,8 +545,10 @@ int RunLoopbackTest(int argc, char* argv[]) {
   if (absl::GetFlag(FLAGS_logs)) {
     // Make sure log level is set, otherwise --logs does not work for release
     // builds.
-    LogMessage::LogToDebug(LoggingSeverity::LS_INFO);
-    LogMessage::SetLogToStderr(true);
+    LoggingConfig config;
+    config.set_min_severity(LoggingSeverity::LS_INFO);
+    config.set_debug_severity(LoggingSeverity::LS_INFO);
+    InitializeLogging(std::move(config));
   }
 
   test::RunTest(Loopback);

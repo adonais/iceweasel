@@ -90,11 +90,11 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
       },
       [`image_${index}`]: {
         attributes: {
-          src: UrlbarUtils.getRemoteIconUrl(
-            item.image_url,
-            lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
-            controller
-          ),
+          src: UrlbarUtils.getRemoteImageUrl({
+            controller,
+            url: item.image_url,
+            size: lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+          }),
         },
       },
       [`title_${index}`]: {

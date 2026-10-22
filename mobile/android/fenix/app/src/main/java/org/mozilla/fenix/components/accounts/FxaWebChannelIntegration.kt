@@ -49,7 +49,7 @@ class FxaWebChannelIntegration(
             store = store,
             accountManager = accountManager,
             serverConfig = serverConfig,
-            fxaCapabilities = setOf(FxaCapability.CHOOSE_WHAT_TO_SYNC, FxaCapability.PAIRING_V2),
+            fxaCapabilities = setOf(FxaCapability.ChooseWhatToSync, FxaCapability.PairingV2),
             onCommandExecuted = ::commandRouter,
         )
     }

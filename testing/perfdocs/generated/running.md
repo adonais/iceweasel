@@ -27,5 +27,5 @@ options, you can use `./mach perftest --help` to learn about them.
 
 :::{warning}
 If you are looking for how to run performance tests in CI and ended up here,
-you should check out {ref}`Mach Try Perf`.
+you should check out {doc}`mach-try-perf`.
 :::

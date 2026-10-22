@@ -12,5 +12,5 @@ void PR_Abort(void);
 
 ## Description
 
-{ref}`PR_Abort` results in a core file and a call to the debugger or
+{doc}`pr_abort` results in a core file and a call to the debugger or
 equivalent, in addition to causing the entire process to stop.

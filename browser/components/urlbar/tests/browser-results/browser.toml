@@ -8,7 +8,6 @@ support-files = [
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
   "browser.urlbar.trending.featureGate=false",
-  "layout.css.attr.enabled=true",
 ]
 
 ["browser_acknowledgeFeedbackAndDismissal.js"]
@@ -45,9 +44,6 @@ run-if = [
 support-files = [
   "../browser/searchSuggestionEngine.xml",
   "../browser/searchSuggestionEngine.sjs",
-]
-skip-if = [
-  "a11y_checks", # Test times out (bug 1854660)
 ]
 
 ["browser_result_explanations.js"]

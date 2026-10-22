@@ -165,6 +165,27 @@ object BrowserPageSelectors : SelectorContainer {
             description = "'$itemText' context menu item",
         )
 
+    // The link's target URL shown as the header of the web-content long-press context menu. Contains-match,
+    // like the legacy contextMenuLinkUrl (itemContainingText): the menu renders the full URL and nothing
+    // else on screen contains it, so a substring match is both sufficient and robust to how it's displayed.
+    @Suppress("ktlint:standard:function-naming", "FunctionName")
+    fun CONTEXT_MENU_LINK_URL(url: String = "") =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = url,
+            description = "Context menu link URL '$url'",
+        )
+
+    // A snackbar's message text (e.g. "New tab opened"), matched by substring like the legacy
+    // verifySnackBarText (itemContainingText).
+    @Suppress("ktlint:standard:function-naming", "FunctionName")
+    fun SNACKBAR_MESSAGE(text: String = "") =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = text,
+            description = "Snackbar message '$text'",
+        )
+
     val TRANSLATION_SHEET =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_RES,

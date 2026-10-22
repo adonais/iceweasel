@@ -19,7 +19,6 @@ class TestUtils {
   static already_AddRefed<Promise> Gc(const GlobalObject& aGlobal,
                                       ErrorResult& aRv);
 
- private:
   ~TestUtils() = delete;
 };
 

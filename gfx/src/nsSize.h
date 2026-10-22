@@ -5,6 +5,7 @@
 #ifndef NSSIZE_H
 #define NSSIZE_H
 
+#include "fmt/ostream.h"
 #include "mozilla/gfx/BaseSize.h"
 #include "mozilla/gfx/Point.h"
 #include "nsCoord.h"
@@ -54,5 +55,8 @@ inline nsSize IntSizeToAppUnits(mozilla::gfx::IntSize aSize,
   return nsSize(NSIntPixelsToAppUnits(aSize.width, aAppUnitsPerPixel),
                 NSIntPixelsToAppUnits(aSize.height, aAppUnitsPerPixel));
 }
+
+template <>
+struct fmt::formatter<nsSize> : fmt::ostream_formatter {};
 
 #endif /* NSSIZE_H */

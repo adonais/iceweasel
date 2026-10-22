@@ -902,7 +902,7 @@ with Files("tests/webdriver/tests/bidi/**"):
 with Files("tests/webgl/**"):
     BUG_COMPONENT = ("Core", "Graphics: CanvasWebGL")
 
-with Files("tests/webgl/**"):
+with Files("tests/webgpu/**"):
     BUG_COMPONENT = ("Core", "Graphics: WebGPU")
 
 with Files("tests/webidl/ecmascript-binding/**"):

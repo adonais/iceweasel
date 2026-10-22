@@ -124,6 +124,11 @@ The sub-command {subcommand} is not currently configured to be used with ./mach 
 To do so, add the corresponding file in <mozilla-root-dir>/build/cargo, following other examples in this directory"""
 
 
+def _substituted(args, subst):
+    """Expand the placeholders in each argument, one argument at a time."""
+    return [arg.format(**subst) for arg in args]
+
+
 def _cargo_config_yaml_schema():
     from voluptuous import All, Boolean, Required, Schema
 
@@ -137,8 +142,8 @@ def _cargo_config_yaml_schema():
         # The name of the command (not checked for now, but maybe
         #  later)
         Required("command"): All(str, starts_with_cargo),
-        # Whether `make` should stop immediately in case
-        # of error returned by the command. Default: False
+        # Whether to keep going with the remaining crates when the command
+        # fails for one. Default: False
         "continue_on_error": Boolean,
         # Whether this command requires pre_export and export build
         # targets to have run. Defaults to bool(cargo_build_flags).
@@ -158,7 +163,7 @@ def _cargo_config_yaml_schema():
         # * {directory}: Directory of the current crate within the source tree
         # * {features}: Rust features (for `--features`)
         # * {manifest}: full path of `Cargo.toml` file
-        # * {target}: `--lib` for library, `--bin CRATE` for executables
+        # * {target}: `--lib` for library, `--bin=CRATE` for executables
         # * {topsrcdir}: Top directory of sources
     })
 
@@ -246,11 +251,7 @@ def cargo(
     continue_on_error = continue_on_error or yaml_config["continue_on_error"] is True
 
     cargo_build_flags = yaml_config.get("cargo_build_flags")
-    if cargo_build_flags is not None:
-        cargo_build_flags = " ".join(cargo_build_flags)
     cargo_extra_flags = yaml_config.get("cargo_extra_flags")
-    if cargo_extra_flags is not None:
-        cargo_extra_flags = " ".join(cargo_extra_flags)
     requires_export = yaml_config.get("requires_export", bool(cargo_build_flags))
 
     ret = 0
@@ -289,9 +290,9 @@ def cargo(
 
     # XXX duplication with `mach vendor rust`
     crates_and_roots = {
-        "gkrust": {"directory": gkrust_path, "library": True},
-        "gkrust-gtest": {"directory": gtest_path, "library": True},
-        "geckodriver": {"directory": "testing/geckodriver", "library": False},
+        "gkrust": {"directory": gkrust_path, "kind": "library"},
+        "gkrust-gtest": {"directory": gtest_path, "kind": "library"},
+        "geckodriver": {"directory": "testing/geckodriver", "kind": "host-program"},
     }
 
     if all_crates:
@@ -301,76 +302,149 @@ def cargo(
     else:
         crates = ["gkrust"]
 
-    if subcommand_args:
-        subcommand_args = " ".join(subcommand_args)
+    jobs = command_context.resolve_num_jobs(jobs)
+    command_context.ensure_backend_current()
 
     for crate in crates:
         crate_info = crates_and_roots.get(crate, None)
-        package_arg = ""
+        package_args = []
         if not crate_info:
             # Not one of the top-level crates we know how to build directly, assume it's
             # other crate in the gkrust workspace and target it explicitly via `-p`.
             #
             # gkrust's features and lib/bin targets don't apply to an individual crate,
-            # so pass the target explicitly instead, and let the makefiles skip the
-            # automatically-computed arguments via CARGO_NO_AUTO_ARG below.
+            # so pass the target explicitly instead of the automatically-computed
+            # arguments.
             crate_info = crates_and_roots["gkrust"]
-            package_arg = f"-p {crate} --target={{arch}} "
+            package_args = ["-p", crate, "--target={arch}"]
 
-        targets = [
-            "force-cargo-library-%s" % cargo_command,
-            "force-cargo-host-library-%s" % cargo_command,
-            "force-cargo-program-%s" % cargo_command,
-            "force-cargo-host-program-%s" % cargo_command,
-        ]
-
-        directory = crate_info["directory"]
-        # you can use these variables in 'cargo_build_flags'
-        subst = {
-            "arch": '"$(RUST_TARGET)"',
-            "crate": crate,
-            "directory": directory,
-            "features": '"$(RUST_LIBRARY_FEATURES)"',
-            "manifest": str(Path(topsrcdir / directory / "Cargo.toml")),
-            "target": "--lib" if crate_info["library"] else "--bin " + crate,
-            "topsrcdir": str(topsrcdir),
-        }
-
-        extra_cli_flags = (
-            package_arg + subcommand_args if subcommand_args else package_arg
-        )
-        if extra_cli_flags:
-            targets = targets + [
-                "cargo_extra_cli_flags=%s" % (extra_cli_flags.format(**subst))
-            ]
-        if cargo_build_flags:
-            targets = targets + [
-                "cargo_build_flags=%s" % (cargo_build_flags.format(**subst))
-            ]
-
-        append_env = {}
-        if cargo_extra_flags:
-            append_env["CARGO_EXTRA_FLAGS"] = cargo_extra_flags.format(**subst)
-        if message_format_json:
-            append_env["USE_CARGO_JSON_MESSAGE_FORMAT"] = "1"
-        if continue_on_error:
-            append_env["CARGO_CONTINUE_ON_ERROR"] = "1"
-        if cargo_build_flags or package_arg:
-            append_env["CARGO_NO_AUTO_ARG"] = "1"
-
-        ret = command_context._run_make(
-            srcdir=False,
-            directory=directory,
-            ensure_exit_code=0,
-            silent=not verbose,
-            print_directory=False,
-            target=targets,
-            num_jobs=jobs,
-            append_env=append_env,
+        ret = _run_cargo_command(
+            command_context,
+            crate,
+            crate_info,
+            cargo_command,
+            package_args,
+            subcommand_args,
+            cargo_build_flags,
+            cargo_extra_flags,
+            message_format_json,
+            continue_on_error,
+            jobs,
+            verbose,
         )
         if ret != 0:
             return ret
 
+    return 0
+
+
+def _run_cargo_command(
+    command_context,
+    crate,
+    crate_info,
+    cargo_command,
+    package_args,
+    subcommand_args,
+    cargo_build_flags,
+    cargo_extra_flags,
+    message_format_json,
+    continue_on_error,
+    jobs,
+    verbose,
+):
+    import os
+    import subprocess
+    from dataclasses import replace
+
+    from mozfile import json
+    from mozshellutil import quote as shell_quote
+
+    from mozbuild.rust_commands import (
+        CARGO_SPEC_FILES,
+        CargoInvocation,
+        compose_env,
+        compose_mach_cargo_argv,
+        load_cargo_spec,
+    )
+
+    directory = crate_info["directory"]
+    kind = crate_info["kind"]
+    spec_path = Path(command_context.topobjdir) / directory / CARGO_SPEC_FILES[kind]
+    if not spec_path.exists():
+        print(
+            f"No cargo spec for {crate} at {spec_path}. "
+            "Run `./mach build-backend` first."
+        )
+        return 1
+    # Compose from the same snapshot the run_cargo action reads, so both paths
+    # produce the same command for one backend generation.
+    command, substs, topsrcdir, topobjdir = load_cargo_spec(
+        json.loads(spec_path.read_text(encoding="utf-8"))
+    )
+
+    subst = {
+        "arch": substs.get("RUST_TARGET", ""),
+        "crate": crate,
+        "directory": directory,
+        "features": ",".join(command.features),
+        "manifest": command.manifest_path,
+        "target": "--lib" if crate_info["kind"] == "library" else f"--bin={crate}",
+        "topsrcdir": topsrcdir,
+    }
+
+    extra_cli_flags = tuple(
+        _substituted([*package_args, *(subcommand_args or ())], subst)
+    )
+    build_flags_override = tuple(_substituted(cargo_build_flags or (), subst))
+    extra_flags = tuple(_substituted(cargo_extra_flags or (), subst))
+
+    invocation = CargoInvocation.from_environ(os.environ)
+    invocation = replace(
+        invocation,
+        verbose=invocation.verbose or verbose,
+        json_output=message_format_json,
+        cargo_extra_flags=extra_flags or invocation.cargo_extra_flags,
+    )
+
+    # Every target edge uses the LTO capable Rust flags, unless the caller
+    # replaced the build flags outright, in which case none of them do.
+    ltoable = not build_flags_override
+    env = compose_env(
+        command,
+        substs,
+        os.environ,
+        invocation,
+        topsrcdir,
+        topobjdir,
+        ltoable=ltoable,
+        subcommand=cargo_command,
+    )
+    if configured_path := command_context.substs.get("PATH"):
+        env["PATH"] = configured_path
+    argv = compose_mach_cargo_argv(
+        command,
+        substs,
+        invocation,
+        cargo_command,
+        build_flags_override=build_flags_override,
+        extra_cli_flags=extra_cli_flags,
+        jobs=jobs,
+        auto_args=not package_args,
+    )
+
+    if verbose:
+        print(shell_quote(*argv))
+
+    rc = subprocess.run(
+        argv, env=env, cwd=command.working_directory, check=False
+    ).returncode
+    if rc == 101:
+        print(
+            f"If cargo-{cargo_command} is not installed, install it using: "
+            f"cargo install cargo-{cargo_command}"
+        )
+    if rc != 0 and not continue_on_error:
+        return rc
     return 0
 
 
@@ -1503,10 +1577,16 @@ def source_package(command_context, output, upload):
                 )
                 return 1
 
-        command_context._run_make(
-            target="buildid.h",
-            ensure_exit_code=True,
+        rc = command_context._mach_context.commands.dispatch(
+            "build",
+            command_context._mach_context,
+            what=["buildid.h"],
+            directory=".",
+            priority="normal",
+            no_completion_messages=True,
         )
+        if rc != 0:
+            return rc
         with open(os.path.join(command_context.topobjdir, "buildid.h")) as fd:
             _, _, buildid = fd.read().split()
 

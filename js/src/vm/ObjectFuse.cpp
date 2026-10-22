@@ -174,6 +174,11 @@ void ObjectFuse::handleTeleportingProtoMutation(JSContext* cx) {
   invalidateAllDependentIonScripts(cx, "proto mutation");
 }
 
+void ObjectFuse::handleGlobalLexicalMutation(JSContext* cx) {
+  bumpGeneration();
+  invalidateAllDependentIonScripts(cx, "global lexical mutation");
+}
+
 void ObjectFuse::handleShadowedGlobalProperty(JSContext* cx,
                                               PropertyInfo prop) {
   if (isUntrackedProperty(prop)) {

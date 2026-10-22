@@ -42,7 +42,7 @@
     @layer tokens-foundation-nova {
       --page-nav-button-background-color-hover: var(--button-background-color-hover);
       --page-nav-button-background-color-active: var(--button-background-color-active);
-      --page-nav-button-background-color-selected: var(--color-accent-primary);
+      --page-nav-button-background-color-selected: var(--button-background-color-primary);
       --page-nav-button-border-color: var(--border-color-transparent);
       --page-nav-button-border-radius: var(--border-radius-circle);
       --page-nav-button-border-radius-focused: var(--border-radius-circle);
@@ -58,7 +58,9 @@
 
     @layer tokens-forced-colors-nova {
       @media (forced-colors) {
+        --page-nav-button-background-color-selected: var(--button-background-color-selected);
         --page-nav-button-border-color: ButtonText;
+        --page-nav-button-text-color-selected: var(--button-text-color-selected);
       }
     }
   }

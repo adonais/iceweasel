@@ -11,8 +11,8 @@ import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.components.share.ShareSheetChooserAction
 import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.share.ShareSource
-import org.mozilla.fenix.components.share.createPdfShareAction
 import org.mozilla.fenix.components.share.isSystemShareSheetSupported
+import org.mozilla.fenix.components.share.tryDispatchPdfShareAction
 import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.utils.Settings
 
@@ -54,13 +54,12 @@ class ShareUseCases(
         isCustomTab: Boolean = false,
         navigateToShareFragment: () -> Unit,
     ) {
-        val pdfShareAction = browserStore.createPdfShareAction(id, url)
+        // Determines if this is a PDF share case and will dispatch appropriately, if it is.
+        if (browserStore.tryDispatchPdfShareAction(id, url)) {
+            return
+        }
 
         when {
-            pdfShareAction != null -> {
-                browserStore.dispatch(pdfShareAction)
-            }
-
             settings.nativeShareSheetEnabled && isSystemShareSheetSupported && url != null -> {
                 NativeShareSheet.shown.record(NativeShareSheet.ShownExtra(source = source.value))
                 shareSheetLauncher.showSystemShareSheet(

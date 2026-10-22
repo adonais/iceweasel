@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_CSS_h_
 #define mozilla_dom_CSS_h_
 
+#include "js/TypeDecls.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
 #include "nsStringFwd.h"
 
@@ -26,6 +27,8 @@ struct PropertyDefinition;
 class CSS {
  public:
   CSS() = delete;
+
+  static bool IsEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj);
 
   static bool Supports(const GlobalObject&, const nsACString& aProperty,
                        const nsACString& aValue);

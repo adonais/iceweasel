@@ -57,6 +57,9 @@ void aom_blend_a64_vmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src
 void aom_blend_a64_vmask_neon(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h);
 #define aom_blend_a64_vmask aom_blend_a64_vmask_neon
 
+int64_t aom_calc_variance_stat_c(const uint8_t *src, int stride, int bw, int bh);
+#define aom_calc_variance_stat aom_calc_variance_stat_c
+
 void aom_comp_avg_pred_c(uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride);
 void aom_comp_avg_pred_neon(uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride);
 #define aom_comp_avg_pred aom_comp_avg_pred_neon
@@ -68,8 +71,8 @@ void aom_comp_mask_pred_neon(uint8_t *comp_pred, const uint8_t *pred, int width,
 double aom_compute_correlation_c(const unsigned char *frame1, int stride1, int x1, int y1, double mean1, double one_over_stddev1, const unsigned char *frame2, int stride2, int x2, int y2, double mean2, double one_over_stddev2);
 #define aom_compute_correlation aom_compute_correlation_c
 
-void aom_compute_flow_at_point_c(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
-void aom_compute_flow_at_point_neon(const uint8_t *src, const uint8_t *ref, int x, int y, int width, int height, int stride, double *u, double *v);
+void aom_compute_flow_at_point_c(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
+void aom_compute_flow_at_point_neon(const uint8_t *src, int src_stride, const uint8_t *ref, int ref_stride, int x, int y, int width, int height, double *u, double *v);
 #define aom_compute_flow_at_point aom_compute_flow_at_point_neon
 
 bool aom_compute_mean_stddev_c(const unsigned char *frame, int stride, int x, int y, double *mean, double *one_over_stddev);
@@ -2199,6 +2202,9 @@ void aom_highbd_blend_a64_mask_neon(uint8_t *dst, uint32_t dst_stride, const uin
 void aom_highbd_blend_a64_vmask_c(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
 void aom_highbd_blend_a64_vmask_neon(uint8_t *dst, uint32_t dst_stride, const uint8_t *src0, uint32_t src0_stride, const uint8_t *src1, uint32_t src1_stride, const uint8_t *mask, int w, int h, int bd);
 #define aom_highbd_blend_a64_vmask aom_highbd_blend_a64_vmask_neon
+
+int64_t aom_highbd_calc_variance_stat_c(const uint16_t *src, int stride, int bw, int bh);
+#define aom_highbd_calc_variance_stat aom_highbd_calc_variance_stat_c
 
 void aom_highbd_comp_avg_pred_c(uint8_t *comp_pred8, const uint8_t *pred8, int width, int height, const uint8_t *ref8, int ref_stride);
 void aom_highbd_comp_avg_pred_neon(uint8_t *comp_pred8, const uint8_t *pred8, int width, int height, const uint8_t *ref8, int ref_stride);

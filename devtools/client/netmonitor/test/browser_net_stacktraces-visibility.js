@@ -38,11 +38,10 @@ add_task(async function () {
   );
 
   // Select the request initiated by html_single-get-page.html
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
+  clickOnRequestRow(
     document.querySelector(
       `.request-list-item .requests-list-file[title="${REQUEST}"]`
-    )
+    ).parentNode
   );
 
   // Wait for the stack trace tab to show

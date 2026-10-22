@@ -70,3 +70,12 @@ SPHINX_TREES["/accessible"] = "docs"
 
 with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
+
+with Files("tests/browser/atk/**"):
+    SCHEDULES.exclusive = ["linux"]
+
+with Files("tests/browser/windows/**"):
+    SCHEDULES.exclusive = ["windows"]
+
+with Files("tests/browser/mac/**"):
+    SCHEDULES.exclusive = ["macosx"]

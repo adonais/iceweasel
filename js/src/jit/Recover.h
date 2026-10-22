@@ -62,6 +62,7 @@ namespace jit {
   _(Lsh)                          \
   _(Rsh)                          \
   _(Ursh)                         \
+  _(Rotate)                       \
   _(SignExtendInt32)              \
   _(Add)                          \
   _(Sub)                          \
@@ -301,6 +302,17 @@ class RRsh final : public RInstruction {
 class RUrsh final : public RInstruction {
  public:
   RINSTRUCTION_HEADER_NUM_OP_(Ursh, 2)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RRotate final : public RInstruction {
+ private:
+  bool isLeftRotate_;
+
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(Rotate, 2)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

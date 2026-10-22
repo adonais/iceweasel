@@ -23,6 +23,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/LoadInfo.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/PermissionManager.h"
@@ -78,7 +79,6 @@
 #include "nsIDocShell.h"
 #include "nsIEncodedChannel.h"
 #include "nsIHttpHeaderVisitor.h"
-#include "nsILoadGroupChild.h"
 #include "nsIMIMEInputStream.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsIMutableArray.h"
@@ -1141,9 +1141,23 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
 
   NS_WARNING("Upload Stream is being copied into StorageStream");
 
+  // nsStorageStream requires a power-of-two segment size.
+  static constexpr uint32_t kMinCopySegmentSize = 4 * 1024;
+  static constexpr uint32_t kMaxCopySegmentSize = 1u << 31;
+  const uint32_t maxCopySegmentSize = RoundUpPow2(
+      std::clamp(StaticPrefs::network_http_upload_copy_max_segment_size(),
+                 kMinCopySegmentSize, kMaxCopySegmentSize));
+  uint32_t segmentSize = maxCopySegmentSize;
+  int64_t length;
+  if (InputStreamLengthHelper::GetSyncLength(aUploadStream, &length) &&
+      length >= 0) {
+    segmentSize = RoundUpPow2(
+        std::clamp<int64_t>(length, kMinCopySegmentSize, maxCopySegmentSize));
+  }
+
   nsCOMPtr<nsIStorageStream> storageStream;
-  nsresult rv =
-      NS_NewStorageStream(4096, UINT32_MAX, getter_AddRefs(storageStream));
+  nsresult rv = NS_NewStorageStream(segmentSize, UINT32_MAX,
+                                    getter_AddRefs(storageStream));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIOutputStream> sink;
@@ -1160,7 +1174,7 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
   if (!NS_InputStreamIsBuffered(aUploadStream)) {
     nsCOMPtr<nsIInputStream> bufferedSource;
     rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedSource),
-                                   source.forget(), 4096);
+                                   source.forget(), segmentSize);
     NS_ENSURE_SUCCESS(rv, rv);
     source = bufferedSource.forget();
   }
@@ -1169,8 +1183,9 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
   nsCOMPtr<nsIEventTarget> target =
       do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   RefPtr<GenericPromise::Private> ready = new GenericPromise::Private(__func__);
-  rv = NS_AsyncCopy(source, sink, target, NS_ASYNCCOPY_VIA_READSEGMENTS, 4096,
-                    NormalizeCopyComplete, do_AddRef(ready).take());
+  rv =
+      NS_AsyncCopy(source, sink, target, NS_ASYNCCOPY_VIA_READSEGMENTS,
+                   segmentSize, NormalizeCopyComplete, do_AddRef(ready).take());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ready.get()->Release();
     return rv;
@@ -1200,7 +1215,7 @@ HttpBaseChannel::CloneUploadStream(int64_t* aContentLength,
   }
 
   // Teeing an async pipe would buffer an upload of unbounded size in memory,
-  // so report no clone; a service worker therefore sees a null request body.
+  // so report no clone.
   if (LoadUploadStreamIsStreaming()) {
     *aContentLength = -1;
     return NS_OK;
@@ -4175,16 +4190,6 @@ HttpBaseChannel::SetTlsFlags(uint32_t aTlsFlags) {
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::GetApiRedirectToURI(nsIURI** aResult) {
-  if (!mAPIRedirectTo) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = do_AddRef(mAPIRedirectTo->first()).take();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 HttpBaseChannel::GetResponseTimeoutEnabled(bool* aEnable) {
   if (NS_WARN_IF(!aEnable)) {
     return NS_ERROR_NULL_POINTER;
@@ -4481,6 +4486,27 @@ void HttpBaseChannel::ClearConsoleReports() {
 
 bool HttpBaseChannel::IsNavigation() {
   return LoadForceMainDocumentChannel() || (mLoadFlags & LOAD_DOCUMENT_URI);
+}
+
+nsIPrincipal* HttpBaseChannel::GetAltDataBindingPrincipal() {
+  if (!mLoadInfo) {
+    return nullptr;
+  }
+
+  nsIPrincipal* principal = mLoadInfo->GetLoadingPrincipal();
+  if (!principal) {
+    principal = mLoadInfo->TriggeringPrincipal();
+  }
+  return principal;
+}
+
+nsresult HttpBaseChannel::GetAltDataBindingOrigin(nsACString& aOrigin) {
+  aOrigin.Truncate();
+  nsIPrincipal* principal = GetAltDataBindingPrincipal();
+  if (!principal) {
+    return NS_ERROR_FAILURE;
+  }
+  return principal->GetOrigin(aOrigin);
 }
 
 bool HttpBaseChannel::BypassServiceWorker() const {
@@ -6268,13 +6294,12 @@ bool HttpBaseChannel::EnsureRequestContextID() {
   // Find the loadgroup at the end of the chain in order
   // to make sure all channels derived from the load group
   // use the same connection scope.
-  nsCOMPtr<nsILoadGroupChild> childLoadGroup = do_QueryInterface(mLoadGroup);
-  if (!childLoadGroup) {
+  if (!mLoadGroup) {
     return false;
   }
 
   nsCOMPtr<nsILoadGroup> rootLoadGroup;
-  childLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
+  mLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
   if (!rootLoadGroup) {
     return false;
   }
@@ -6803,7 +6828,7 @@ NS_IMETHODIMP HttpBaseChannel::GetDocumentCharacterSet(
 }
 
 void HttpBaseChannel::SetConnectionInfo(nsHttpConnectionInfo* aCI) {
-  mConnectionInfo = aCI ? aCI->Clone() : nullptr;
+  mConnectionInfo = aCI;
 }
 
 NS_IMETHODIMP

@@ -24,12 +24,10 @@ let ruleName = namespace("use-paired-color-tokens");
 let messages = ruleMessages(ruleName, {
   noTextColor: (background, text) =>
     `"${background}" should be used with a text color; add "color: var(${text})", or disable the rule with a comment saying where the text color comes from.`,
+  inheritedTextColor: (background, text, expected) =>
+    `"${background}" takes its text color from "${text}" on the rule this block nests in, which is not its counterpart; add "color: var(${expected})".`,
   notPaired: (background, text, expected) =>
     `"${background}" and "${text}" are not a semantic pair; use "${expected}" for the text color, or a background color that pairs with "${text}".`,
-  noPairedToken: (background, text, expected) =>
-    `"${background}" and "${text}" are different variants of the same tokens and there is no "${expected}"; file a bug for the missing token.`,
-  noPairedTokenUseBase: (background, text, expected, base) =>
-    `"${background}" and "${text}" are different variants of the same tokens and there is no "${expected}"; use "${base}" instead, or file a bug for the missing token.`,
 });
 let meta = {
   url: "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/stylelint-plugin-mozilla/rules/use-paired-color-tokens.html",
@@ -37,9 +35,8 @@ let meta = {
 };
 
 // A state variant usually restyles an element its base rule has already given a
-// text color, so state selectors are exempt. That base rule is generally a flat
-// sibling (`.foo:hover {}` beside `.foo {}`) rather than a nesting parent, which
-// is why this keys on the selector rather than walking up.
+// text color, so a state selector marks a block whose text color may live on a
+// rule this one cannot see.
 const STATE_PSEUDO_CLASS =
   /:(?:active|checked|current|default|disabled|enabled|focus|focus-visible|focus-within|hover|in-range|indeterminate|invalid|open|out-of-range|past|paused|placeholder-shown|playing|popover-open|read-only|read-write|target|user-invalid|user-valid|valid|visited|-moz-broken|-moz-drag-over|-moz-focusring|-moz-window-inactive)\b/;
 
@@ -114,6 +111,44 @@ let hasTextColor = block => {
 };
 
 /**
+ * The `color` declaration the element a block styles inherits from the rules
+ * the block nests in, or null where the nesting reaches none. A nested rule
+ * matches the outer rule's element or a descendant of it, so the nearest
+ * enclosing `color` is what the surface takes when the block declares none.
+ *
+ * @param {object} block - A PostCSS Rule or AtRule.
+ * @returns {?object} The PostCSS Declaration.
+ */
+let inheritedTextColor = block => {
+  let node = block;
+  while (node.type == "atrule") {
+    node = node.parent;
+  }
+  for (node = node.parent; node?.parent; node = node.parent) {
+    let { text } = findColorDeclarations(node);
+    if (text) {
+      return text;
+    }
+  }
+  return null;
+};
+
+/**
+ * Whether a text color token read by an inherited `color` claims a pairing
+ * that a given background token does not satisfy: it is the counterpart of
+ * some other background token, or a variant of the background's own family.
+ *
+ * @param {string} text - A custom property name the `color` reads.
+ * @param {string} background - The paired background token of the block.
+ * @returns {boolean}
+ */
+let claimsOtherPairing = (text, background) =>
+  textToBackground.has(text) ||
+  (isDesignToken(text) &&
+    parseColorTokenName(text)?.family ==
+      parseColorTokenName(background).family);
+
+/**
  * Whether a block gives the surface a text color through a custom property,
  * which is how a component rendering the text in its own shadow tree takes
  * one.
@@ -186,7 +221,7 @@ let replaceCustomProperty = (declaration, from, to) => {
  * @param {object} result - The PostCSS result to report to.
  */
 let checkTextColorPresent = (block, background, result) => {
-  if (hasTextColor(block) || definesTextColor(block) || isExempt(block)) {
+  if (hasTextColor(block) || definesTextColor(block)) {
     return;
   }
 
@@ -198,14 +233,45 @@ let checkTextColorPresent = (block, background, result) => {
   }
 
   let text = backgroundToText.get(paired);
+  let fix = hasTrailingComment(background)
+    ? undefined
+    : () => insertTextColor(background, text);
+
+  // A state variant usually restyles an element its base rule has already
+  // given a text color. Where that base rule is one the block nests in, the
+  // color it inherits is known and is held to the pairing check; where it is a
+  // flat sibling (`.foo:hover {}` beside `.foo {}`) nothing here can see it.
+  if (isExempt(block)) {
+    let inherited = inheritedTextColor(block);
+    if (!inherited) {
+      return;
+    }
+    let inheritedTokens = customPropertiesRead(inherited.value);
+    if (inheritedTokens.includes(text)) {
+      return;
+    }
+    let claim = inheritedTokens.find(token =>
+      claimsOtherPairing(token, paired)
+    );
+    if (!claim) {
+      return;
+    }
+    report({
+      message: messages.inheritedTextColor(paired, claim, text),
+      node: background,
+      result,
+      ruleName,
+      fix,
+    });
+    return;
+  }
+
   report({
     message: messages.noTextColor(paired, text),
     node: background,
     result,
     ruleName,
-    fix: hasTrailingComment(background)
-      ? undefined
-      : () => insertTextColor(background, text),
+    fix,
   });
 };
 
@@ -240,12 +306,12 @@ let checkPair = (backgroundDeclaration, textDeclaration, result) => {
     return;
   }
 
-  // The pair the author reached for may not exist as a token, but mixing two
-  // variants of the same component's tokens is a mistake either way. The global
-  // background-color/text-color tokens have no component prefix and are meant
-  // to combine freely, so they are not variants of each other, and a component
-  // whose variant has no text color of its own is meant to fall back to the
-  // family's base one.
+  // Mixing two variants of the same component's tokens is a mistake even where
+  // neither is paired. A component with any text color has one for every
+  // background variant (the design system's tests enforce it), so the
+  // counterpart exists. The global background-color/text-color tokens have no
+  // component prefix and are meant to combine freely, so they are not variants
+  // of each other.
   for (let background of backgroundTokens.filter(isDesignToken)) {
     let backgroundName = parseColorTokenName(background);
     if (!backgroundName?.family) {
@@ -261,23 +327,13 @@ let checkPair = (backgroundDeclaration, textDeclaration, result) => {
         continue;
       }
       let expected = `--${backgroundName.family}text-color${backgroundName.variant}`;
-      let base = `--${backgroundName.family}text-color`;
-      let message;
-      let fix;
-      if (isDesignToken(expected)) {
-        message = messages.notPaired(background, text, expected);
-        fix = () => replaceCustomProperty(textDeclaration, text, expected);
-      } else if (isDesignToken(base)) {
-        message = messages.noPairedTokenUseBase(
-          background,
-          text,
-          expected,
-          base
-        );
-      } else {
-        message = messages.noPairedToken(background, text, expected);
-      }
-      report({ message, node: textDeclaration, result, ruleName, fix });
+      report({
+        message: messages.notPaired(background, text, expected),
+        node: textDeclaration,
+        result,
+        ruleName,
+        fix: () => replaceCustomProperty(textDeclaration, text, expected),
+      });
       return;
     }
   }

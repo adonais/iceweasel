@@ -71,6 +71,13 @@ typedef struct MediaCodecDecContext {
     atomic_int serial;
 
     bool use_ndk_codec;
+
+    /* Codec specific channel layouts and the offsets to reorder them into
+     * the native order, indexed by channel count - 1, for 1 to 8 channels.
+     * Used when the output format has no channel mask. */
+    const AVChannelLayout *codec_ch_layouts;
+    const uint8_t (*codec_ch_offsets)[8];
+    const uint8_t *ch_offsets;
 } MediaCodecDecContext;
 
 int ff_mediacodec_dec_init(AVCodecContext *avctx,

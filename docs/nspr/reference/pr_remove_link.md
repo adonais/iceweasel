@@ -18,4 +18,4 @@ PR_REMOVE_LINK (PRCList *elemp);
 
 ## Description
 
-{ref}`PR_REMOVE_LINK` removes the specified element from its circular list.
+{doc}`pr_remove_link` removes the specified element from its circular list.

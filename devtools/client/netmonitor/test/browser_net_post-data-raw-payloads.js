@@ -30,10 +30,7 @@ add_task(async function () {
     document,
     "#request-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
-    document.querySelectorAll(".request-list-item")[0]
-  );
+  clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
   clickOnSidebarTab(document, "request");
   await wait;
 

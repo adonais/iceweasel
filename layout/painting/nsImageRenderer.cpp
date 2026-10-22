@@ -693,7 +693,7 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
       bool rasterizedForDest = false;
       gfx::IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              mImageContainer, mForFrame, destRect, clipRect, aSc,
+              mImageContainer, mForFrame, destRect, clipRect, aBuilder, aSc,
               containerFlags, svgContext, region, &rasterizedForDest);
 
       RefPtr<image::WebRenderImageProvider> provider;

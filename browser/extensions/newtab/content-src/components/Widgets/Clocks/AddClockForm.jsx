@@ -297,11 +297,6 @@ export function AddClockForm({
           }
         }
       }}
-      onBlur={e => {
-        if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) {
-          onCancel();
-        }
-      }}
     >
       {customMode ? (
         <>

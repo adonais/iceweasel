@@ -90,6 +90,7 @@ const TEST_URI = `https://example.org/document-builder.sjs?html=${encodeURICompo
 
 add_task(async function () {
   await pushPref("layout.css.properties-and-values.enabled", true);
+  await pushPref("layout.css.random.enabled", true);
   const tab = await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
   const doc = view.styleDocument;
@@ -629,6 +630,18 @@ add_task(async function iacvt() {
       initial-value: 10px;
     }
 
+    @property --angle-1 {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 10deg;
+    }
+
+    @property --angle-2 {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 10deg;
+    }
+
     :root {
       --local-not-a-color: 10px;
       --local-color: blue;
@@ -647,6 +660,11 @@ add_task(async function iacvt() {
       --color-5: attr(data-not-a-color type(<color>));
       --color-6: env(safe-area-inset-bottom);
       --length: env(safe-area-inset-bottom);
+    }
+    /* Use a different rule so we don't have the "Show X unused custom CSS properties" button */
+    :where(aside) {
+      --angle-1: random(90deg, 180deg);
+      --angle-2: random(10px, 20px);
     }
   </style>
   <aside data-not-a-color="10" data-color="gold">fries</aside>
@@ -715,6 +733,17 @@ add_task(async function iacvt() {
     ruleIndex: 1,
     declaration: { "--length": "env(safe-area-inset-bottom)" },
     invalid: false,
+  });
+  checkInvalidAtComputedValueTime(view, {
+    ruleIndex: 2,
+    declaration: { "--angle-1": "random(90deg, 180deg)" },
+    invalid: false,
+  });
+  checkInvalidAtComputedValueTime(view, {
+    ruleIndex: 2,
+    declaration: { "--angle-2": "random(10px, 20px)" },
+    invalid: true,
+    syntax: `<angle>`,
   });
 });
 

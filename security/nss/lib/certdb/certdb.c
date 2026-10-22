@@ -724,6 +724,14 @@ CERT_DecodeDERCertificate(SECItem *derSignedCert, PRBool copyDER,
     int rv;
     int len;
     char *tmpname;
+    PRErrorCode savedErr;
+
+    /* Several of the steps below look for an optional extension and carry on
+     * when it is absent, leaving SEC_ERROR_EXTENSION_NOT_FOUND set behind them.
+     * A successful decode should not disturb the caller's error code, so save
+     * it here and restore it on the success path.
+     */
+    savedErr = PORT_GetError();
 
     /* make a new arena */
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
@@ -829,6 +837,7 @@ CERT_DecodeDERCertificate(SECItem *derSignedCert, PRBool copyDER,
     cert->pkcs11ID = CK_INVALID_HANDLE;
     cert->dbnickname = NULL;
 
+    PORT_SetError(savedErr);
     return (cert);
 
 loser:
@@ -1835,100 +1844,6 @@ CERT_CompareCerts(const CERTCertificate *c1, const CERTCertificate *c2)
     }
 }
 
-static SECStatus
-StringsEqual(char *s1, char *s2)
-{
-    if ((s1 == NULL) || (s2 == NULL)) {
-        if (s1 != s2) { /* only one is null */
-            return (SECFailure);
-        }
-        return (SECSuccess); /* both are null */
-    }
-
-    if (PORT_Strcmp(s1, s2) != 0) {
-        return (SECFailure); /* not equal */
-    }
-
-    return (SECSuccess); /* strings are equal */
-}
-
-PRBool
-CERT_CompareCertsForRedirection(CERTCertificate *c1, CERTCertificate *c2)
-{
-    SECComparison comp;
-    char *c1str, *c2str;
-    SECStatus eq;
-
-    comp = SECITEM_CompareItem(&c1->derCert, &c2->derCert);
-    if (comp == SECEqual) { /* certs are the same */
-        return (PR_TRUE);
-    }
-
-    /* check if they are issued by the same CA */
-    comp = SECITEM_CompareItem(&c1->derIssuer, &c2->derIssuer);
-    if (comp != SECEqual) { /* different issuer */
-        return (PR_FALSE);
-    }
-
-    /* check country name */
-    c1str = CERT_GetCountryName(&c1->subject);
-    c2str = CERT_GetCountryName(&c2->subject);
-    eq = StringsEqual(c1str, c2str);
-    PORT_Free(c1str);
-    PORT_Free(c2str);
-    if (eq != SECSuccess) {
-        return (PR_FALSE);
-    }
-
-    /* check locality name */
-    c1str = CERT_GetLocalityName(&c1->subject);
-    c2str = CERT_GetLocalityName(&c2->subject);
-    eq = StringsEqual(c1str, c2str);
-    PORT_Free(c1str);
-    PORT_Free(c2str);
-    if (eq != SECSuccess) {
-        return (PR_FALSE);
-    }
-
-    /* check state name */
-    c1str = CERT_GetStateName(&c1->subject);
-    c2str = CERT_GetStateName(&c2->subject);
-    eq = StringsEqual(c1str, c2str);
-    PORT_Free(c1str);
-    PORT_Free(c2str);
-    if (eq != SECSuccess) {
-        return (PR_FALSE);
-    }
-
-    /* check org name */
-    c1str = CERT_GetOrgName(&c1->subject);
-    c2str = CERT_GetOrgName(&c2->subject);
-    eq = StringsEqual(c1str, c2str);
-    PORT_Free(c1str);
-    PORT_Free(c2str);
-    if (eq != SECSuccess) {
-        return (PR_FALSE);
-    }
-
-#ifdef NOTDEF
-    /* check orgUnit name */
-    /*
-     * We need to revisit this and decide which fields should be allowed to be
-     * different
-     */
-    c1str = CERT_GetOrgUnitName(&c1->subject);
-    c2str = CERT_GetOrgUnitName(&c2->subject);
-    eq = StringsEqual(c1str, c2str);
-    PORT_Free(c1str);
-    PORT_Free(c2str);
-    if (eq != SECSuccess) {
-        return (PR_FALSE);
-    }
-#endif
-
-    return (PR_TRUE); /* all fields but common name are the same */
-}
-
 /* CERT_CertChainFromCert and CERT_DestroyCertificateList moved
    to certhigh.c */
 
@@ -2387,56 +2302,6 @@ CERT_DecodeTrustString(CERTCertTrust *trust, const char *trusts)
     }
 
     return SECSuccess;
-}
-
-static void
-EncodeFlags(char *trusts, unsigned int flags)
-{
-    if (flags & CERTDB_VALID_CA)
-        if (!(flags & CERTDB_TRUSTED_CA) && !(flags & CERTDB_TRUSTED_CLIENT_CA))
-            PORT_Strcat(trusts, "c");
-    if (flags & CERTDB_TERMINAL_RECORD)
-        if (!(flags & CERTDB_TRUSTED))
-            PORT_Strcat(trusts, "p");
-    if (flags & CERTDB_TRUSTED_CA)
-        PORT_Strcat(trusts, "C");
-    if (flags & CERTDB_TRUSTED_CLIENT_CA)
-        PORT_Strcat(trusts, "T");
-    if (flags & CERTDB_TRUSTED)
-        PORT_Strcat(trusts, "P");
-    if (flags & CERTDB_USER)
-        PORT_Strcat(trusts, "u");
-    if (flags & CERTDB_SEND_WARN)
-        PORT_Strcat(trusts, "w");
-    if (flags & CERTDB_INVISIBLE_CA)
-        PORT_Strcat(trusts, "I");
-    if (flags & CERTDB_GOVT_APPROVED_CA)
-        PORT_Strcat(trusts, "G");
-    return;
-}
-
-char *
-CERT_EncodeTrustString(CERTCertTrust *trust)
-{
-    char tmpTrustSSL[32];
-    char tmpTrustEmail[32];
-    char tmpTrustSigning[32];
-    char *retstr = NULL;
-
-    if (trust) {
-        tmpTrustSSL[0] = '\0';
-        tmpTrustEmail[0] = '\0';
-        tmpTrustSigning[0] = '\0';
-
-        EncodeFlags(tmpTrustSSL, trust->sslFlags);
-        EncodeFlags(tmpTrustEmail, trust->emailFlags);
-        EncodeFlags(tmpTrustSigning, trust->objectSigningFlags);
-
-        retstr = PR_smprintf("%s,%s,%s", tmpTrustSSL, tmpTrustEmail,
-                             tmpTrustSigning);
-    }
-
-    return (retstr);
 }
 
 SECStatus
@@ -2952,33 +2817,6 @@ CERT_FilterCertListByNickname(CERTCertList *certList, char *nickname,
     return rv;
 }
 
-static PRLock *certRefCountLock = NULL;
-
-/*
- * Acquire the cert reference count lock
- * There is currently one global lock for all certs, but I'm putting a cert
- * arg here so that it will be easy to make it per-cert in the future if
- * that turns out to be necessary.
- */
-void
-CERT_LockCertRefCount(CERTCertificate *cert)
-{
-    PORT_Assert(certRefCountLock != NULL);
-    PR_Lock(certRefCountLock);
-    return;
-}
-
-/*
- * Free the cert reference count lock
- */
-void
-CERT_UnlockCertRefCount(CERTCertificate *cert)
-{
-    PORT_Assert(certRefCountLock != NULL);
-    PRStatus prstat = PR_Unlock(certRefCountLock);
-    PORT_AssertArg(prstat == PR_SUCCESS);
-}
-
 static PRLock *certTrustLock = NULL;
 
 /*
@@ -3020,20 +2858,10 @@ CERT_MaybeLockCertTempPerm(const CERTCertificate *cert)
 SECStatus
 cert_InitLocks(void)
 {
-    if (certRefCountLock == NULL) {
-        certRefCountLock = PR_NewLock();
-        PORT_Assert(certRefCountLock != NULL);
-        if (!certRefCountLock) {
-            return SECFailure;
-        }
-    }
-
     if (certTrustLock == NULL) {
         certTrustLock = PR_NewLock();
         PORT_Assert(certTrustLock != NULL);
         if (!certTrustLock) {
-            PR_DestroyLock(certRefCountLock);
-            certRefCountLock = NULL;
             return SECFailure;
         }
     }
@@ -3043,8 +2871,6 @@ cert_InitLocks(void)
         PORT_Assert(certTempPermCertLock != NULL);
         if (!certTempPermCertLock) {
             PR_DestroyLock(certTrustLock);
-            PR_DestroyLock(certRefCountLock);
-            certRefCountLock = NULL;
             certTrustLock = NULL;
             return SECFailure;
         }
@@ -3057,14 +2883,6 @@ SECStatus
 cert_DestroyLocks(void)
 {
     SECStatus rv = SECSuccess;
-
-    PORT_Assert(certRefCountLock != NULL);
-    if (certRefCountLock) {
-        PR_DestroyLock(certRefCountLock);
-        certRefCountLock = NULL;
-    } else {
-        rv = SECFailure;
-    }
 
     PORT_Assert(certTrustLock != NULL);
     if (certTrustLock) {

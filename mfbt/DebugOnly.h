@@ -94,7 +94,7 @@ class MOZ_STACK_CLASS DebugOnly {
    * generate "unused variable" warnings, exactly what it's intended
    * to avoid!
    */
-  ~DebugOnly() {}
+  ~DebugOnly() {}  // NOLINT(modernize-use-equals-default)
 };
 
 }  // namespace mozilla

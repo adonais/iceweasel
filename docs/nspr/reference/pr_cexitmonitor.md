@@ -17,7 +17,7 @@ The function has the following parameters:
 `address`
 
 : The address of the protected object--the same address previously
-  passed to {ref}`PR_CEnterMonitor`.
+  passed to {doc}`pr_centermonitor`.
 
 ### Returns
 
@@ -31,6 +31,6 @@ The function returns one of the following values:
 ## Description
 
 Using the value specified in the address parameter to find a monitor in
-the monitor cache, {ref}`PR_CExitMonitor` decrements the entry count
+the monitor cache, {doc}`pr_cexitmonitor` decrements the entry count
 associated with the monitor. If the decremented entry count is zero, the
 monitor is exited.

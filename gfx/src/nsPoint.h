@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+#include "fmt/ostream.h"
 #include "mozilla/gfx/BasePoint.h"
 #include "mozilla/gfx/Point.h"
 #include "nsCoord.h"
@@ -90,5 +91,8 @@ inline nsPoint ToAppUnits(const nsIntPoint& aPoint, nscoord aAppUnitsPerPixel) {
   return nsPoint(NSIntPixelsToAppUnits(aPoint.x, aAppUnitsPerPixel),
                  NSIntPixelsToAppUnits(aPoint.y, aAppUnitsPerPixel));
 }
+
+template <>
+struct fmt::formatter<nsPoint> : fmt::ostream_formatter {};
 
 #endif /* NSPOINT_H */

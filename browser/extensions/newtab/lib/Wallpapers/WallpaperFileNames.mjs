@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-// An image is v1-<type>-<theme>-<position>-<number>-<uuid>. Its details file
-// is <image>.txt and its picker thumbnail is <image>.thumb.
+// An image is v1-<type>-<theme>-<position>-<number>-<uuid> and its details
+// file is <image>.txt. A <image>.thumb from before the picker loaded images
+// by address still parses, so cleanup can recognize and remove it.
 
 // The library lives one level down, where the wallpaper cleanup in older New Tab
 // versions cannot reach it. That cleanup only removes files, never folders.
@@ -131,6 +132,24 @@ export const getDetailsFilename = imageFilename =>
 
 export const getThumbnailFilename = imageFilename =>
   `${imageFilename}${THUMBNAIL_FILE_EXTENSION}`;
+
+/**
+ * The address the page loads a saved image from. Both processes build it here
+ * so the folder layout is described once.
+ *
+ * @backward-compat { version 158 }
+ * An older handler resolves the host only, so with the library off the page
+ * reads the copy at the top of the wallpaper folder instead. Remove this
+ * branch and the argument once Firefox 158 reaches Release.
+ *
+ * @param {string} filename - The saved image.
+ * @param {boolean} libraryEnabled - Whether the library is on for this host.
+ * @returns {string} The address to load it from.
+ */
+export const getWallpaperURL = (filename, libraryEnabled) =>
+  libraryEnabled
+    ? `moz-newtab-wallpaper://${LIBRARY_DIRECTORY_NAME}/${filename}`
+    : `moz-newtab-wallpaper://${filename}`;
 
 const EXTRA_FILE_KINDS = [
   [DETAILS_FILE_EXTENSION, "details"],

@@ -17,8 +17,8 @@ The function has the following parameter:
 `sem`
 
 : A pointer to a `PRSem` structure returned from a call to
-  {ref}`PR_OpenSemaphore`.
+  {doc}`pr_opensemaphore`.
 
 ### Returns
 
-{ref}`PRStatus`
+{doc}`prstatus`

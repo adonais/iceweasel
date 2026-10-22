@@ -338,6 +338,43 @@ add_task(async function test_smartbar_telemetry_chat_submit_keyboard() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function test_smartbar_telemetry_chat_submit_tab_group() {
+  await resetTelemetry();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+  const group = await addTabsInNewGroup(
+    win,
+    ["https://example.com/one", "https://example.com/two"],
+    { label: "Group one", color: "blue" }
+  );
+
+  await SpecialPowers.spawn(browser, [group.id], async groupId => {
+    content.document
+      .querySelector("ai-window")
+      .shadowRoot.querySelector("#ai-window-smartbar")
+      .addContextMention({
+        type: "tabGroup",
+        groupId,
+        label: "Group one",
+        color: "blue",
+      });
+  });
+  await typeInSmartbar(browser, "summarize these");
+  await waitForSmartbarAction(browser, "chat");
+  await submitSmartbar(browser);
+
+  const events = Glean.smartWindow.chatSubmit.testGetValue();
+  Assert.equal(events.length, 1, "Should have one chat_submit event");
+  Assert.equal(
+    events[0].extra.tabs,
+    "1",
+    "chat_submit counts the mentioned tab group once"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(
   async function test_smartbar_telemetry_chat_submit_locked_over_guess() {
     await resetTelemetry();
@@ -687,12 +724,279 @@ add_task(async function test_smartbar_telemetry_mention_select_inline() {
     "mention_select has correct mentions_available"
   );
   Assert.equal(
+    extra.mention_type,
+    "tab",
+    "mention_select reports a tab selection"
+  );
+  Assert.equal(
     extra.message_seq,
     "0",
     "mention_select has correct message_seq"
   );
 
   await BrowserTestUtils.closeWindow(win);
+});
+
+/**
+ * Waits for the "/" command palette to render at least one command item.
+ *
+ * @param {MozBrowser} browser - The browser element
+ */
+async function waitForCommandPaletteOpen(browser) {
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindow = content.document.querySelector("ai-window");
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
+    );
+  });
+}
+
+add_task(async function test_smartbar_telemetry_agent_command_start() {
+  await resetTelemetry();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.agent.enabled", true],
+      ["browser.smartwindow.agent.supportedRegions", "US"],
+    ],
+  });
+  const originalRegion = Region.home;
+  Region._setHomeRegion("US", false);
+
+  const win = await openAIWindow();
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    // Type more than just "/" so we also cover that agent_command_start fires once
+    await typeInSmartbar(browser, "/watc");
+    await waitForCommandPaletteOpen(browser);
+
+    const events = Glean.smartWindow.agentCommandStart.testGetValue();
+    Assert.equal(
+      events.length,
+      1,
+      "agent_command_start fires once when '/' opens the palette"
+    );
+
+    const extra = events[0].extra;
+    Assert.ok(extra.chat_id, "agent_command_start has chat_id");
+    Assert.equal(
+      extra.location,
+      "fullpage",
+      "agent_command_start has correct location"
+    );
+    Assert.greater(
+      Number(extra.commands_available),
+      0,
+      "agent_command_start has commands_available"
+    );
+    Assert.equal(
+      extra.message_seq,
+      "0",
+      "agent_command_start has correct message_seq"
+    );
+    Assert.equal(
+      extra.source,
+      "manual",
+      "agent_command_start has manual source"
+    );
+  } finally {
+    Region._setHomeRegion(originalRegion, false);
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_smartbar_telemetry_agent_command_select() {
+  await resetTelemetry();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.agent.enabled", true],
+      ["browser.smartwindow.agent.supportedRegions", "US"],
+    ],
+  });
+  const originalRegion = Region.home;
+  Region._setHomeRegion("US", false);
+
+  const win = await openAIWindow();
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "/");
+    await waitForCommandPaletteOpen(browser);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      const panelList = smartbar.querySelector("smartwindow-panel-list");
+      const panel = panelList.shadowRoot.querySelector("panel-list");
+      const firstItem = panel.querySelector(
+        "panel-item:not(.panel-section-header)"
+      );
+      firstItem.click();
+    });
+
+    const events = Glean.smartWindow.agentCommandSelect.testGetValue();
+    Assert.equal(events.length, 1, "Should have agent_command_select events");
+
+    const extra = events[0].extra;
+    Assert.ok(extra.chat_id, "agent_command_select has chat_id");
+    Assert.equal(
+      extra.agent,
+      "watch",
+      "agent_command_select records the agent"
+    );
+    Assert.equal(
+      extra.source,
+      "manual",
+      "agent_command_select has manual source"
+    );
+    Assert.equal(
+      extra.location,
+      "fullpage",
+      "agent_command_select has correct location"
+    );
+    Assert.greater(
+      Number(extra.commands_available),
+      0,
+      "agent_command_select has commands_available"
+    );
+    Assert.equal(
+      extra.message_seq,
+      "0",
+      "agent_command_select has correct message_seq"
+    );
+  } finally {
+    Region._setHomeRegion(originalRegion, false);
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_smartbar_telemetry_agent_command_select_typed() {
+  await resetTelemetry();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.agent.enabled", true],
+      ["browser.smartwindow.agent.supportedRegions", "US"],
+    ],
+  });
+  const originalRegion = Region.home;
+  Region._setHomeRegion("US", false);
+
+  const win = await openAIWindow();
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "/watch check this page");
+    await submitSmartbar(browser);
+
+    const events = Glean.smartWindow.agentCommandSelect.testGetValue();
+    Assert.equal(
+      events.length,
+      1,
+      "Should have one agent_command_select event"
+    );
+
+    const extra = events[0].extra;
+    Assert.ok(extra.chat_id, "agent_command_select has chat_id");
+    Assert.equal(
+      extra.agent,
+      "watch",
+      "agent_command_select records the typed agent"
+    );
+    Assert.equal(
+      extra.source,
+      "manual",
+      "agent_command_select has manual source"
+    );
+    Assert.equal(
+      extra.location,
+      "fullpage",
+      "agent_command_select has correct location"
+    );
+    Assert.equal(
+      extra.message_seq,
+      "0",
+      "agent_command_select has correct message_seq"
+    );
+  } finally {
+    Region._setHomeRegion(originalRegion, false);
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_smartbar_telemetry_agent_command_remove() {
+  await resetTelemetry();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.agent.enabled", true],
+      ["browser.smartwindow.agent.supportedRegions", "US"],
+    ],
+  });
+  const originalRegion = Region.home;
+  Region._setHomeRegion("US", false);
+
+  const win = await openAIWindow();
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "/watch");
+    await waitForCommandPaletteOpen(browser);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      smartbar.inputField.focus();
+      // Backspace the leading command back out of the input.
+      for (let i = 0; i < "/watch".length; i++) {
+        EventUtils.synthesizeKey("KEY_Backspace", {}, content);
+      }
+      await ContentTaskUtils.waitForCondition(
+        () => !smartbar.untrimmedValue,
+        "Wait for the command to be cleared from the input"
+      );
+    });
+
+    const events = Glean.smartWindow.agentCommandRemove.testGetValue();
+    Assert.equal(
+      events.length,
+      1,
+      "Should have one agent_command_remove event"
+    );
+
+    const extra = events[0].extra;
+    Assert.ok(extra.chat_id, "agent_command_remove has chat_id");
+    Assert.equal(
+      extra.agent,
+      "watch",
+      "agent_command_remove records the removed agent"
+    );
+    Assert.equal(
+      extra.location,
+      "fullpage",
+      "agent_command_remove has correct location"
+    );
+    Assert.equal(
+      extra.message_seq,
+      "0",
+      "agent_command_remove has correct message_seq"
+    );
+    Assert.equal(
+      extra.source,
+      "manual",
+      "agent_command_remove has manual source"
+    );
+  } finally {
+    Region._setHomeRegion(originalRegion, false);
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 add_task(async function test_smartbar_telemetry_add_tabs_selection() {
@@ -755,6 +1059,11 @@ add_task(async function test_smartbar_telemetry_add_tabs_selection() {
     extra.tabs_selected,
     "1",
     "add_tabs_selection has correct tabs_selected"
+  );
+  Assert.equal(
+    extra.mention_type,
+    "tab",
+    "add_tabs_selection reports a tab selection"
   );
 
   await BrowserTestUtils.closeWindow(win);

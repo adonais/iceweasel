@@ -139,6 +139,114 @@ const CANDIDATE_MATCH_FIELDS = new Set([
   "timesUsed",
 ]);
 
+// The origins and domains for listCandidatesByOrigin() to return every login
+// LoginHelper.isOriginMatching() can accept for `origin` with `options`. The
+// result may hold more, which matchLogin() then drops.
+const originPrefilter = (origin, options) => {
+  const origins = [origin];
+  if (options.schemeUpgrades && origin.startsWith("https://")) {
+    origins.push("http://" + origin.slice("https://".length));
+  }
+  const domains = [];
+  if (options.acceptDifferentSubdomains) {
+    try {
+      domains.push(Services.eTLD.getBaseDomain(Services.io.newURI(origin)));
+    } catch {
+      // isOriginMatching() accepts no other subdomain for this origin either.
+    }
+    if (options.acceptRelatedRealms && options.relatedRealms) {
+      domains.push(...options.relatedRealms);
+    }
+  }
+  return [origins, domains];
+};
+
+// Whether aLoginItem, a LoginInfo or the result of candidateToMatchable(),
+// matches matchData under the options of LoginHelper.isOriginMatching().
+const matchLogin = (aLoginItem, matchData, aOptions) => {
+  for (const field in matchData) {
+    const wantedValue = matchData[field];
+
+    // Override the storage field name for some fields due to backwards
+    // compatibility with Sync/storage.
+    let storageFieldName = field;
+    switch (field) {
+      case "formActionOrigin": {
+        storageFieldName = "formSubmitURL";
+        break;
+      }
+      case "origin": {
+        storageFieldName = "hostname";
+        break;
+      }
+    }
+
+    switch (field) {
+      case "formActionOrigin":
+        if (wantedValue != null) {
+          // Historical compatibility requires this special case
+          if (
+            aLoginItem.formSubmitURL == "" ||
+            (wantedValue == "" && Object.keys(matchData).length != 1)
+          ) {
+            break;
+          }
+          if (
+            !lazy.LoginHelper.isOriginMatching(
+              aLoginItem[storageFieldName],
+              wantedValue,
+              aOptions
+            )
+          ) {
+            return false;
+          }
+          break;
+        }
+      // fall through
+      case "origin":
+        if (wantedValue != null) {
+          // needed for formActionOrigin fall through
+          if (
+            !lazy.LoginHelper.isOriginMatching(
+              aLoginItem[storageFieldName],
+              wantedValue,
+              aOptions
+            )
+          ) {
+            return false;
+          }
+          break;
+        }
+      // Normal cases.
+      // fall through
+      case "httpRealm":
+      case "id":
+      case "usernameField":
+      case "passwordField":
+      case "encryptedUsername":
+      case "encryptedPassword":
+      case "guid":
+      case "encType":
+      case "timeCreated":
+      case "timeLastUsed":
+      case "timePasswordChanged":
+      case "timesUsed":
+      case "syncCounter":
+      case "everSynced":
+        if (wantedValue == null && aLoginItem[storageFieldName]) {
+          return false;
+        } else if (aLoginItem[storageFieldName] != wantedValue) {
+          return false;
+        }
+        break;
+      // Fail if caller requests an unknown property.
+      default:
+        throw new Error("Unexpected field: " + field);
+    }
+  }
+  return true;
+};
+
 // Build a bare LoginInfo carrying only the given guid. Used to report the ids
 // of removed logins in "removeAllLogins" notifications, since the bulk deletion
 // APIs only return guids rather than full logins.
@@ -169,6 +277,10 @@ class RustLoginsStoreAdapter {
 
   async listCandidates() {
     return this.#store.listCandidates();
+  }
+
+  async listCandidatesByOrigin(origins, domains) {
+    return this.#store.listCandidatesByOrigin(origins, domains);
   }
 
   // getMany() returns the rows in whatever order the query gives it, so sort
@@ -892,6 +1004,24 @@ export class LoginManagerRustStorage {
     }
   }
 
+  /**
+   * The ids of the logins matching matchData, which may only name
+   * CANDIDATE_MATCH_FIELDS. Never needs the encryption key.
+   */
+  async #findCandidateIds(matchData, aOptions) {
+    const candidates =
+      typeof matchData.origin == "string" && matchData.origin
+        ? await this.#storageAdapter.listCandidatesByOrigin(
+            ...originPrefilter(matchData.origin, aOptions)
+          )
+        : await this.#storageAdapter.listCandidates();
+    return candidates
+      .filter(candidate =>
+        matchLogin(candidateToMatchable(candidate), matchData, aOptions)
+      )
+      .map(candidate => candidate.id);
+  }
+
   async #searchLogins(
     matchData,
     includeDeleted = false,
@@ -902,100 +1032,23 @@ export class LoginManagerRustStorage {
       relatedRealms: [],
     }
   ) {
-    function match(aLoginItem) {
-      for (const field in matchData) {
-        const wantedValue = matchData[field];
-
-        // Override the storage field name for some fields due to backwards
-        // compatibility with Sync/storage.
-        let storageFieldName = field;
-        switch (field) {
-          case "formActionOrigin": {
-            storageFieldName = "formSubmitURL";
-            break;
-          }
-          case "origin": {
-            storageFieldName = "hostname";
-            break;
-          }
-        }
-
-        switch (field) {
-          case "formActionOrigin":
-            if (wantedValue != null) {
-              // Historical compatibility requires this special case
-              if (
-                aLoginItem.formSubmitURL == "" ||
-                (wantedValue == "" && Object.keys(matchData).length != 1)
-              ) {
-                break;
-              }
-              if (
-                !lazy.LoginHelper.isOriginMatching(
-                  aLoginItem[storageFieldName],
-                  wantedValue,
-                  aOptions
-                )
-              ) {
-                return false;
-              }
-              break;
-            }
-          // fall through
-          case "origin":
-            if (wantedValue != null) {
-              // needed for formActionOrigin fall through
-              if (
-                !lazy.LoginHelper.isOriginMatching(
-                  aLoginItem[storageFieldName],
-                  wantedValue,
-                  aOptions
-                )
-              ) {
-                return false;
-              }
-              break;
-            }
-          // Normal cases.
-          // fall through
-          case "httpRealm":
-          case "id":
-          case "usernameField":
-          case "passwordField":
-          case "encryptedUsername":
-          case "encryptedPassword":
-          case "guid":
-          case "encType":
-          case "timeCreated":
-          case "timeLastUsed":
-          case "timePasswordChanged":
-          case "timesUsed":
-          case "syncCounter":
-          case "everSynced":
-            if (wantedValue == null && aLoginItem[storageFieldName]) {
-              return false;
-            } else if (aLoginItem[storageFieldName] != wantedValue) {
-              return false;
-            }
-            break;
-          // Fail if caller requests an unknown property.
-          default:
-            throw new Error("Unexpected field: " + field);
-        }
-      }
-      return true;
-    }
-
+    const fields = Object.keys(matchData);
     let candidateLogins;
     if (
-      Object.keys(matchData).every(field => CANDIDATE_MATCH_FIELDS.has(field))
+      fields.length == 1 &&
+      fields[0] == "guid" &&
+      typeof matchData.guid == "string"
     ) {
+      // searchLoginsAsync() drops every other field when given a guid, so a
+      // guid search arrives here alone. Other callers fall through, so that
+      // their other fields are matched before anything is decrypted.
+      // matchLogin() keeps a login on guid only on equality, and guid is unique.
+      candidateLogins = await this.#storageAdapter.getMany([matchData.guid]);
+    } else if (fields.every(field => CANDIDATE_MATCH_FIELDS.has(field))) {
       // Matching the cleartext fields first means that a search without a hit
       // never needs the encryption key, and so never prompts for the primary
       // password. Only the logins that are actually returned get decrypted.
-      const ids = (await this.#storageAdapter.listCandidates())
-        .filter(candidate => match(candidateToMatchable(candidate)))
-        .map(candidate => candidate.id);
+      const ids = await this.#findCandidateIds(matchData, aOptions);
       candidateLogins = ids.length
         ? await this.#storageAdapter.getMany(ids)
         : [];
@@ -1012,7 +1065,7 @@ export class LoginManagerRustStorage {
         continue; // skip deleted items
       }
 
-      if (match(login)) {
+      if (matchLogin(login, matchData, aOptions)) {
         foundLogins.push(login);
         foundIds.push(login.guid);
       }
@@ -1108,10 +1161,13 @@ export class LoginManagerRustStorage {
         matchData[field] = loginData[field];
       }
     }
-    const [logins] = await this.#searchLogins(matchData);
+    // Counting the matching candidates, rather than the logins #searchLogins
+    // returns, spares decrypting them, and so prompting for the primary
+    // password.
+    const ids = await this.#findCandidateIds(matchData, {});
 
-    this.log(`Counted ${logins.length} logins.`);
-    return logins.length;
+    this.log(`Counted ${ids.length} logins.`);
+    return ids.length;
   }
 
   async addPotentiallyVulnerablePassword(login) {

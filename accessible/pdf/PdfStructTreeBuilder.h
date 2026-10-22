@@ -105,12 +105,13 @@ class PdfStructTreeBuilder {
   nsTHashSet<uint64_t> mRequestedBrowserParentIds;
   RefPtr<ReadyPromise::Private> mReadyPromise;
   int mLastPdfId = 0;
+  // Whether BuildStructSubtree was called and succeeded.
+  bool mBuilt = false;
   // Maps {innerWindowId, accessibleId} to SkPDF id.
-  mozilla::HashMap<GlobalAccessibleId, int, PairHasher<uint64_t, uint64_t>>
-      mAccToPdf;
+  HashMap<GlobalAccessibleId, int, PairHasher<uint64_t, uint64_t>> mAccToPdf;
 
   // Needed so nsTArray::EmplaceBack can access our private constructor.
-  friend class nsTArrayElementTraits<mozilla::a11y::PdfStructTreeBuilder>;
+  friend class nsTArrayElementTraits<a11y::PdfStructTreeBuilder>;
 };
 
 }  // namespace a11y

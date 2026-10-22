@@ -29,7 +29,8 @@ class APZCTreeManagerTester : public APZCTesterBase {
     APZThreadUtils::SetThreadAssertionsEnabled(false);
     APZThreadUtils::SetControllerThread(NS_GetCurrentThread());
 
-    manager = new TestAPZCTreeManager(mcc, std::move(mHitTester));
+    manager = new TestAPZCTreeManager(mcc, CSSToLayoutDeviceScale{1},
+                                      std::move(mHitTester));
     updater = new APZUpdater(manager, false);
     sampler = new APZSampler(manager, false);
   }

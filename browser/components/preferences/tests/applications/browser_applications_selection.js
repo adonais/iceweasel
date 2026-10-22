@@ -1,5 +1,5 @@
-/** @import MozSelect, {MozOption} from "../../../../toolkit/content/widgets/moz-select/moz-select.mjs" */
-/** @import MozBoxItem from "../../../../toolkit/content/widgets/moz-box-item/moz-box-item.mjs";*/
+/** @import { MozSelect, MozOption } from "../../../../toolkit/content/widgets/moz-select/moz-select.mjs" */
+/** @import { MozBoxItem } from "../../../../toolkit/content/widgets/moz-box-item/moz-box-item.mjs";*/
 
 SimpleTest.requestCompleteLog();
 const { HandlerServiceTestUtils } = ChromeUtils.importESModule(

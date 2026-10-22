@@ -27,8 +27,8 @@ webrender_bindings = { path = "../../../../gfx/webrender_bindings" }
 cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "840f69c1b3f95accd582555e10abcef8ee67514b", optional = true }
 cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="88194f91c8778fa608a19af7b91306094525595d", optional = true, features=["pulse-dlopen"] }
 cubeb-sys = { version = "0.34", optional = true, features=["gecko-in-tree"] }
-audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "d3c9825", optional = true }
-audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "d3c9825", optional = true }
+audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "ef46a7bd05032d1577208ff048d444cc7412c7b8", optional = true }
+audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "ef46a7bd05032d1577208ff048d444cc7412c7b8", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
 locale_service_glue = { path = "../../../../intl/locale/rust/locale_service_glue" }
 app_collator_glue = { path = "../../../../intl/app_collator_glue" }
@@ -48,7 +48,7 @@ storage = { path = "../../../../storage/rust" }
 bookmark_sync = { path = "../../../components/places/bookmark_sync", optional = true }
 buildid_reader_ffi = { path = "../../buildid_reader/ffi" }
 chardetng_c = "1.0.0"
-audio_thread_priority = { version = "0.37", default-features = false }
+audio_thread_priority = { version = "0.38.0", default-features = false }
 mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", features = ["profiler"], optional = true }
 neqo_glue = { path = "../../../../netwerk/socket/neqo_glue" }
 wgpu_bindings = { path = "../../../../gfx/wgpu_bindings" }
@@ -140,6 +140,7 @@ osclientcerts = { path = "../../../../security/manager/ssl/osclientcerts" }
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 gkrust-uniffi-components = { path = "../../../components/uniffi-bindgen-gecko-js/components/", features = ["xpcom", "mozbuild"] }
+remotecerts = {  path = "../../../../security/manager/ssl/remotecerts" }
 uniffi-bindgen-gecko-js-test-fixtures = { path = "../../../components/uniffi-bindgen-gecko-js/test-fixtures/", optional = true }
 viaduct = "0.1"
 viaduct-necko = { path = "../../../../services/application-services/components/viaduct-necko" }

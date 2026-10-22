@@ -15,11 +15,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/algorithm/container.h"
 #include "api/rtp_packet_info.h"
 #include "api/rtp_packet_infos.h"
-#include "api/task_queue/pending_task_safety_flag.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
@@ -28,34 +26,33 @@
 
 namespace webrtc {
 
-SourceTracker::SourceTracker(Clock* clock)
-    : SourceTracker(clock, absl::AnyInvocable<void(bool, bool)>()) {}
-
-SourceTracker::SourceTracker(
-    Clock* clock,
-    absl::AnyInvocable<void(bool, bool)> on_source_changed)
-    : clock_(clock), on_source_changed_(std::move(on_source_changed)) {
+SourceTracker::SourceTracker(Clock* clock) : clock_(clock) {
   RTC_DCHECK(clock_);
 }
 
-void SourceTracker::OnFrameDelivered(const RtpPacketInfos& packet_infos,
-                                     Timestamp delivery_time) {
+SourceTracker::SourceChanged SourceTracker::OnFrameDelivered(
+    const RtpPacketInfos& packet_infos,
+    Timestamp delivery_time) {
   TRACE_EVENT0("webrtc", "SourceTracker::OnFrameDelivered");
   if (packet_infos.empty()) {
-    return;
+    return {};
   }
   if (delivery_time.IsInfinite()) {
     delivery_time = clock_->CurrentTime();
   }
 
   std::optional<uint32_t> prev_ssrc = last_received_ssrc_;
-  std::vector<uint32_t> prev_csrcs = std::move(last_received_csrcs_);
+  // Copy rather than move to preserve allocated capacity in
+  // `last_received_csrcs_` and avoid reallocations in the loop below.
+  std::vector<uint32_t> prev_csrcs = last_received_csrcs_;
   last_received_csrcs_.clear();
   for (const RtpPacketInfo& packet_info : packet_infos) {
     for (uint32_t csrc : packet_info.csrcs()) {
       SourceKey key(RtpSourceType::CSRC, csrc);
       SourceEntry& entry = UpdateEntry(key);
-      last_received_csrcs_.push_back(csrc);
+      if (!absl::c_linear_search(last_received_csrcs_, csrc)) {
+        last_received_csrcs_.push_back(csrc);
+      }
 
       const auto packet_time = packet_info.receive_time();
       entry.timestamp = packet_time.ms() ? packet_time : delivery_time;
@@ -77,34 +74,12 @@ void SourceTracker::OnFrameDelivered(const RtpPacketInfos& packet_infos,
     entry.rtp_timestamp = packet_info.rtp_timestamp();
   }
 
+  absl::c_sort(last_received_csrcs_);
+
   PruneEntries(delivery_time);
 
-  bool fire_ssrc_change = last_received_ssrc_ != prev_ssrc;
-  bool fire_csrc_change = last_received_csrcs_ != prev_csrcs;
-  if ((fire_ssrc_change || fire_csrc_change) && on_source_changed_) {
-    ShouldFireOnSoourceChangedCallback(fire_ssrc_change, fire_csrc_change);
-  }
-}
-
-void SourceTracker::SetOnSourceChangedCallback(
-    absl::AnyInvocable<void(bool, bool)> on_source_changed) {
-  on_source_changed_ = std::move(on_source_changed);
-  // Fire on set if a frame was received before the caller had a chance to add
-  // its callback.
-  if (last_received_ssrc_ || !last_received_csrcs_.empty()) {
-    ShouldFireOnSoourceChangedCallback(last_received_ssrc_.has_value(),
-                                       !last_received_csrcs_.empty());
-  }
-}
-
-void SourceTracker::ShouldFireOnSoourceChangedCallback(bool ssrc_changed,
-                                                       bool csrc_changed) {
-  TaskQueueBase::Current()->PostTask(
-      SafeTask(safety_.flag(), [this, ssrc_changed, csrc_changed] {
-        if (on_source_changed_) {
-          on_source_changed_(ssrc_changed, csrc_changed);
-        }
-      }));
+  return {.ssrc_changed = last_received_ssrc_ != prev_ssrc,
+          .csrc_changed = last_received_csrcs_ != prev_csrcs};
 }
 
 std::vector<RtpSource> SourceTracker::GetSources() const {

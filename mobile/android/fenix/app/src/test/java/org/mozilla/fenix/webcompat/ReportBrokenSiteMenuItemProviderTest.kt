@@ -4,9 +4,17 @@
 
 package org.mozilla.fenix.webcompat
 
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
@@ -18,9 +26,24 @@ import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.menu.MenuFragmentDirections
+import org.mozilla.fenix.components.menu.MenuTarget
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
+import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.utils.Settings
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReportBrokenSiteMenuItemProviderTest {
+    private val settings: Settings = mockk()
+    private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = mockk(relaxed = true)
+    private val appStore: AppStore = mockk { every { state } returns AppState() }
+    private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+    private val menu = FakeMenuHost()
+
     @Test
     fun `GIVEN a webpage is shown WHEN building the menu item THEN allow reporting it as broken`() = runTest {
         val provider = provider(browserStore(url = "https://mozilla.org"))
@@ -50,9 +73,83 @@ class ReportBrokenSiteMenuItemProviderTest {
         assertNull(provider.itemFlow.value)
     }
 
+    @Test
+    fun `GIVEN telemetry is allowed WHEN clicking the item THEN show the reporter for the current page instead`() =
+        runTest {
+            every { settings.isTelemetryEnabled } returns true
+            val provider = provider(browserStore(url = TEST_URL))
+
+            provider.onEvent(MenuAction.Navigate.WebCompatReporter, menu)
+
+            assertEquals(
+                MenuFragmentDirections.actionMenuFragmentToWebCompatReporterFragment(tabUrl = TEST_URL),
+                menu.directions,
+            )
+        }
+
+    @Test
+    fun `GIVEN telemetry is not allowed WHEN clicking the item THEN send the details and open webcompat`() = runTest {
+        every { settings.isTelemetryEnabled } returns false
+        val provider = provider(browserStore(url = TEST_URL))
+
+        provider.onEvent(MenuAction.Navigate.WebCompatReporter, menu)
+        runCurrent()
+
+        coVerify {
+            webCompatReporterMoreInfoSender.sendMoreWebCompatInfo(
+                reason = null,
+                problemDescription = null,
+                enteredUrl = null,
+                tabUrl = TEST_URL,
+                engineSession = null,
+            )
+        }
+        assertTrue(menu.isDismissed)
+        verify {
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "$WEB_COMPAT_REPORTER_URL$TEST_URL",
+                newTab = true,
+                private = false,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN no selected tab WHEN clicking the item THEN keep the menu open`() = runTest {
+        val provider = provider(BrowserStore())
+
+        provider.onEvent(MenuAction.Navigate.WebCompatReporter, menu)
+        runCurrent()
+
+        assertFalse(menu.isUsed)
+    }
+
+    @Test
+    fun `WHEN the page can be reported or not THEN handle all events the item can dispatch and no others`() = runTest {
+        listOf(TEST_URL, "about:config").forEach { url ->
+            val provider = provider(browserStore(url = url))
+
+            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+
+            assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
+            assertFalse(provider.handles(MenuAction.Navigate.Settings))
+        }
+    }
+
     // The item is kept up to date on a scope that runTest cancels at the end of each test.
-    private fun TestScope.provider(browserStore: BrowserStore) =
-        ReportBrokenSiteMenuItemProvider(browserStore = browserStore, scope = backgroundScope)
+    private fun TestScope.provider(
+        browserStore: BrowserStore,
+        target: MenuTarget = MenuTarget.BrowserTab,
+    ) =
+        ReportBrokenSiteMenuItemProvider(
+            browserStore = browserStore,
+            target = target,
+            settings = settings,
+            webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
+            appStore = appStore,
+            fenixBrowserUseCases = fenixBrowserUseCases,
+            scope = backgroundScope,
+        )
 
     private fun browserStore(url: String) =
         BrowserStore(
@@ -76,5 +173,6 @@ class ReportBrokenSiteMenuItemProviderTest {
 
     private companion object {
         const val TAB_ID = "tab1"
+        const val TEST_URL = "https://mozilla.org"
     }
 }

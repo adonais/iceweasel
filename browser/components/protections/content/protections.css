@@ -109,6 +109,7 @@ h2 {
   padding: 10px;
   text-align: center;
   line-height: initial;
+  min-height: initial;
 }
 
 #vpn-banner-link {
@@ -218,6 +219,9 @@ a.hidden,
 }
 
 .card {
+  --card-padding-inline: 0;
+  --card-padding-block: 0;
+
   display: grid;
   grid-template-columns: 100%;
   grid-template-rows: 20% auto;
@@ -232,6 +236,7 @@ a.hidden,
   grid-template-columns: 1fr 7fr;
   padding: var(--card-padding);
   grid-gap: var(--card-padding);
+  box-sizing: border-box;
 }
 
 .card .card-title {
@@ -439,7 +444,6 @@ a.hidden,
 .column-label {
   margin-block-start: 5px;
   font-size: 0.9em;
-  width: var(--column-width);
   grid-row: -1;
 }
 

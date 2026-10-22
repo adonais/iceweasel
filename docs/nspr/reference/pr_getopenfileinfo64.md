@@ -19,11 +19,11 @@ The function has the following parameters:
 
 `fd`
 
-: A pointer to a {ref}`PRFileDesc` object for an open file.
+: A pointer to a {doc}`prfiledesc` object for an open file.
 
 `info`
 
-: A pointer to a {ref}`PRFileInfo64` object. On output, information about
+: A pointer to a {doc}`prfileinfo64` object. On output, information about
   the given file is written into the file information object.
 
 ### Returns
@@ -35,14 +35,14 @@ The function returns one of the following values:
 
 ## Description
 
-{ref}`PR_GetOpenFileInfo64` is the 64-bit version of
-{ref}`PR_GetOpenFileInfo`. It obtains the file type (normal file,
+{doc}`pr_getopenfileinfo64` is the 64-bit version of
+{doc}`pr_getopenfileinfo`. It obtains the file type (normal file,
 directory, or other), file size (as a 64-bit integer), and the creation
 and modification times of the open file represented by the file
 descriptor.
 
 ## See Also
 
-For the 32-bit version of this function, see {ref}`PR_GetOpenFileInfo`. To
+For the 32-bit version of this function, see {doc}`pr_getopenfileinfo`. To
 get equivalent information on a file that's not already open, use
-{ref}`PR_GetFileInfo64`.
+{doc}`pr_getfileinfo64`.

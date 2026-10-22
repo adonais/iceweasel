@@ -9,9 +9,8 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDirection.h"
+#include "nsINode.h"
 #include "nsTArray.h"
-
-class nsINode;
 
 namespace mozilla {
 

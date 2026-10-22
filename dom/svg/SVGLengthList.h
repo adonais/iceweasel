@@ -62,7 +62,9 @@ class SVGLengthList {
     return mLengths[aIndex];
   }
 
-  bool operator==(const SVGLengthList& rhs) const;
+  bool operator==(const SVGLengthList& rhs) const {
+    return mLengths == rhs.mLengths;
+  }
 
   bool SetCapacity(uint32_t size) {
     return mLengths.SetCapacity(size, fallible);

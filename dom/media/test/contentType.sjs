@@ -19,6 +19,37 @@ function parseQuery(request, key) {
 
 function handleRequest(request, response) {
   try {
+    var body = parseQuery(request, "body");
+    if (body !== false) {
+      // Some media tests need an exact synthetic response, for example to
+      // serve a 206 with a custom Content-Range that does not correspond to a
+      // real file on disk. In this mode we return the requested status,
+      // headers, and body verbatim instead of using the normal file path.
+      let status = parseQuery(request, "status");
+      if (status !== false) {
+        response.setStatusLine(
+          request.httpVersion,
+          parseInt(status, 10),
+          status == "206" ? "Partial Content" : "OK"
+        );
+      }
+      let acceptRanges = parseQuery(request, "accept_ranges");
+      if (acceptRanges !== false) {
+        response.setHeader("Accept-Ranges", acceptRanges, false);
+      }
+      let contentRange = parseQuery(request, "content_range");
+      if (contentRange !== false) {
+        response.setHeader("Content-Range", contentRange, false);
+      }
+      let contentType = parseQuery(request, "type");
+      if (contentType !== false) {
+        response.setHeader("Content-Type", contentType, false);
+      }
+      response.setHeader("Content-Length", "" + body.length, false);
+      response.write(body, body.length);
+      return;
+    }
+
     // Get the filename to send back.
     var filename = parseQuery(request, "file");
 
@@ -68,7 +99,6 @@ function handleRequest(request, response) {
       response.setHeader("Content-Type", contentType, false);
     }
     response.setHeader("Content-Length", "" + bis.available(), false);
-
     var bytes = bis.readBytes(bis.available());
     response.write(bytes, bytes.length);
   } catch (e) {

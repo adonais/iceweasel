@@ -101,8 +101,8 @@ internal class SynthesisQueue(
     }
 
     /**
-     * The audio of chunk [index], making it now if the window has not got to it yet, or `null` when the article has no
-     * such chunk and so has ended.
+     * The audio of chunk [index], making it now if the window has not got to it yet or if the system has reclaimed what
+     * the window made, or `null` when the article has no such chunk and so has ended.
      *
      * @throws SpeechSynthesisException if the engine cannot make it.
      */
@@ -116,13 +116,15 @@ internal class SynthesisQueue(
      * Moves the window of chunks kept on disk to sit around [playingChunk], making what it is missing and throwing away
      * what has fallen outside it.
      *
+     * @param queuedThrough The last chunk already handed to the player. Chunks up to it are kept even past the window,
+     *   , and deleting what it leaves behind ahead of the player would stop playback when it reached the missing file.
      * @throws SpeechSynthesisException if the engine cannot make one of them. What was made before it stays, so
      *   playback carries on as far as it can, and the chunk it stopped on is made again by [audioFor] if playback ever
      *   reaches it.
      */
-    suspend fun moveWindowTo(playingChunk: Int) {
+    suspend fun moveWindowTo(playingChunk: Int, queuedThrough: Int = -1) {
         val window = audioWindow(playingChunk, chunks.size)
-        audio.keepOnly(window)
+        audio.keepOnly(window.first..maxOf(window.last, queuedThrough))
 
         for (index in window) {
             if (audio.fileFor(index) != null) continue
@@ -131,8 +133,13 @@ internal class SynthesisQueue(
         }
     }
 
-    /** The audio of chunk [index], or `null` when it has not been made or has been thrown away. */
-    fun fileFor(index: Int): File? = audio.fileFor(index)
+    /**
+     * The audio of chunk [index], or `null` when it has not been made, has been thrown away, or has been reclaimed by
+     * the system. Use [audioFor] if you want the chunk to be remade.
+     */
+    suspend fun fileFor(index: Int): File? = audio.fileFor(index)
+
+    suspend fun discard(index: Int) = audio.discard(index)
 
     /** Throws away every chunk's audio and forgets the article. */
     suspend fun clear() {

@@ -278,7 +278,8 @@ struct PromiseReactionRecordBuilder {
 // See the function definition in Promise.cpp for the observable contract.
 [[nodiscard]] bool SafeResolvePromise(JSContext* cx,
                                       JS::Handle<PromiseObject*> promise,
-                                      JS::Handle<JS::Value> resolution);
+                                      JS::Handle<JS::Value> resolution,
+                                      bool* deferred);
 
 [[nodiscard]] bool InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,

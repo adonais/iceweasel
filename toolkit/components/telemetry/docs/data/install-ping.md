@@ -221,7 +221,7 @@ funnelcake (stub)
 
 silent (full)
 
-: True if the install was silent (see {ref}`Full Installer Configuration`)
+: True if the install was silent (see {doc}`/browser/installer/windows/installer/FullConfig`)
 
 ### Exit code fields
 

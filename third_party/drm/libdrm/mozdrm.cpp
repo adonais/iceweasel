@@ -18,6 +18,8 @@
 
 static int (*drmGetDevices2_fn)(uint32_t flags, drmDevicePtr devices[], int max_devices);
 static void (*drmFreeDevices_fn)(drmDevicePtr devices[], int count);
+static int (*drmGetDevice_fn)(int fd, drmDevicePtr *device);
+static void (*drmFreeDevice_fn)(drmDevicePtr *device);
 
 bool IsDRMLibraryLoaded() {
   static bool isLoaded =
@@ -41,6 +43,8 @@ bool LoadDRMLibrary() {
 
     GET_FUNC(drmGetDevices2, drmLib);
     GET_FUNC(drmFreeDevices, drmLib);
+    GET_FUNC(drmGetDevice, drmLib);
+    GET_FUNC(drmFreeDevice, drmLib);
   }
 
   return IsDRMLibraryLoaded();
@@ -62,4 +66,22 @@ drmFreeDevices(drmDevicePtr devices[], int count)
     return;
   }
   return drmFreeDevices_fn(devices, count);
+}
+
+int
+drmGetDevice(int fd, drmDevicePtr *device)
+{
+  if (!LoadDRMLibrary() || !drmGetDevice_fn) {
+    return -1;
+  }
+  return drmGetDevice_fn(fd, device);
+}
+
+void
+drmFreeDevice(drmDevicePtr *device)
+{
+  if (!LoadDRMLibrary() || !drmFreeDevice_fn) {
+    return;
+  }
+  drmFreeDevice_fn(device);
 }

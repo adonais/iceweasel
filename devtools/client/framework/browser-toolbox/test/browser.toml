@@ -1,10 +1,6 @@
 [DEFAULT]
 tags = "devtools"
 subsuite = "devtools"
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1937225
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1937225, Bug 2028047
-]
 support-files = [
   "doc_browser_toolbox_fission_contentframe_inspector_frame.html",
   "doc_browser_toolbox_fission_contentframe_inspector_page.html",
@@ -31,9 +27,6 @@ skip-if = [
 ["browser_browser_toolbox_fission_contentframe_inspector.js"]
 
 ["browser_browser_toolbox_fission_inspector.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_browser_toolbox_fission_inspector_webextension.js"]
 

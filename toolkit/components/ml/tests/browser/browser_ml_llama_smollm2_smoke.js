@@ -114,7 +114,8 @@ function distinctTokenRatio(text) {
 }
 
 add_task(async function test_smollm2_survives_and_metrics_populated() {
-  info("test_smollm2_survives_and_metrics_populated: starting");
+  const process = usesHWInferenceProcess() ? "HWInference" : "inference";
+  info(`test_smollm2_survives_and_metrics_populated: starting in ${process}`);
   const { cleanup, engine } = await initializeEngine(SMOLLM2_OPTIONS);
   info("test_smollm2_survives_and_metrics_populated: engine ready");
   try {
@@ -135,17 +136,17 @@ add_task(async function test_smollm2_survives_and_metrics_populated() {
     // even with perfherder reporting disabled.
     const reported = [
       {
-        name: "smollm2-inputTokens",
+        name: `smollm2-inputTokens${hwInferenceSuffix()}`,
         values: [metrics.inputTokens],
         value: metrics.inputTokens,
       },
       {
-        name: "smollm2-outputTokens",
+        name: `smollm2-outputTokens${hwInferenceSuffix()}`,
         values: [metrics.outputTokens],
         value: metrics.outputTokens,
       },
       {
-        name: "smollm2-tokensPerSecond",
+        name: `smollm2-tokensPerSecond${hwInferenceSuffix()}`,
         values: [metrics.tokensPerSecond],
         value: metrics.tokensPerSecond,
       },

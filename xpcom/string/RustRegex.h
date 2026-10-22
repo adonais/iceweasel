@@ -615,6 +615,9 @@ class RustRegexSet final {
    * simultaneously.
    */
   template <typename Patterns>
+    requires requires {
+      std::string_view(*std::begin(std::declval<Patterns>()));
+    }
   explicit RustRegexSet(Patterns&& aPatterns,
                         const RustRegexOptions& aOptions = {}) {
 #ifdef DEBUG

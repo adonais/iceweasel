@@ -692,8 +692,9 @@ class JSONWriter;
 
 // This class collects all the information necessary to stream the JSON schema
 // that informs the front-end how to display a type of markers.
-// It will be created and populated in `MarkerTypeDisplay()` functions in each
-// marker type definition, see Add/Set functions.
+// It is created and populated by `BaseMarkerType::MarkerTypeDisplay()` from
+// the static members of each marker type definition, and by Rust marker types
+// through the Add/Set functions.
 class MarkerSchema {
  public:
   // This is used to describe a C++ type that is expected to be specified to

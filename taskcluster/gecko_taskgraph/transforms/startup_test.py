@@ -21,7 +21,7 @@ def add_command(config, jobs):
         if job["attributes"]["build_platform"].startswith("linux"):
             job["run"]["command"] = {
                 "artifact-reference": ". $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && "
-                + "python3 ./mach python testing/mozharness/scripts/does_it_crash.py "
+                + "python3 ./mach python taskcluster/scripts/tests/does_it_crash.py "
                 + "--run-for 30 --thing-url "
                 + package_to_test
                 + " --thing-to-run "
@@ -29,7 +29,7 @@ def add_command(config, jobs):
             }
         else:
             job["run"]["mach"] = {
-                "artifact-reference": "python testing/mozharness/scripts/does_it_crash.py "
+                "artifact-reference": "python taskcluster/scripts/tests/does_it_crash.py "
                 + "--run-for 30 --thing-url "
                 + package_to_test
                 + " --thing-to-run "

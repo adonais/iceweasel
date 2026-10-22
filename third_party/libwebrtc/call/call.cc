@@ -56,7 +56,6 @@
 #include "call/flexfec_receive_stream_impl.h"
 #include "call/packet_receiver.h"
 #include "call/receive_stream.h"
-#include "call/receive_time_calculator.h"
 #include "call/rtp_config.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
@@ -87,7 +86,6 @@
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
@@ -479,9 +477,6 @@ class Call final : public webrtc::Call,
   RepeatingTaskHandle receive_side_cc_periodic_task_;
   RepeatingTaskHandle elastic_bandwidth_allocation_task_;
 
-  const std::unique_ptr<ReceiveTimeCalculator> receive_time_calculator_
-      RTC_GUARDED_BY(network_thread_);
-
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
   const Timestamp start_of_call_;
 
@@ -705,8 +700,6 @@ Call::Call(CallConfig config,
                                         transport_send->packet_router()),
                        absl::bind_front(&PacketRouter::SendRemb,
                                         transport_send->packet_router())),
-      receive_time_calculator_(
-          ReceiveTimeCalculator::CreateFromFieldTrial(env_.field_trials())),
       video_send_delay_stats_(new SendDelayStats(&env_.clock())),
       start_of_call_(env_.clock().CurrentTime()),
       transport_send_(std::move(transport_send)) {
@@ -1397,15 +1390,6 @@ void Call::DeliverRtpPacket(MediaType media_type,
                             absl_nonnull OnUndemuxablePacketHandler
                                 undemuxable_packet_handler) {
   RTC_DCHECK_RUN_ON(network_thread_);
-
-  if (receive_time_calculator_) {
-    int64_t packet_time_us = packet.arrival_time().us();
-    // Repair packet_time_us for clock resets by comparing a new read of
-    // the same clock (TimeUTCMicros) to a monotonic clock reading.
-    packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
-        packet_time_us, TimeUTCMicros(), env_.clock().TimeInMicroseconds());
-    packet.set_arrival_time(Timestamp::Micros(packet_time_us));
-  }
 
   int length = static_cast<int>(packet.size());
   if (media_type == MediaType::AUDIO) {

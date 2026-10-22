@@ -38,9 +38,9 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZEventState.h"
-#include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/ChromeProcessController.h"
@@ -303,7 +303,6 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mIMEHasQuit(false),
       mIsFullyOccluded(false),
       mNeedFastSnaphot(false),
-      mCurrentPanGestureBelongsToSwipe(false),
       mPiPType(PiPType::NoPiP) {
 #ifdef NOISY_WIDGET_LEAKS
   gNumWidgets++;
@@ -607,7 +606,7 @@ float nsIWidget::GetDPI() {
 
 void nsIWidget::NotifyAPZOfDPIChange() {
   if (mAPZC) {
-    mAPZC->InputBridge()->SetDPI(GetDPI());
+    mAPZC->Bridge()->SetDPI(GetDPI());
   }
 }
 
@@ -1043,11 +1042,11 @@ void nsIWidget::ConfigureAPZCTreeManager() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mAPZC);
 
-  mAPZC->InputBridge()->SetDPI(GetDPI());
+  mAPZC->Bridge()->SetDPI(GetDPI());
 
   if (StaticPrefs::apz_keyboard_enabled_AtStartup()) {
     KeyboardMap map = RootWindowGlobalKeyListener::CollectKeyboardShortcuts();
-    mAPZC->InputBridge()->SetKeyboardMap(map);
+    mAPZC->Bridge()->SetKeyboardMap(map);
   }
 
   ContentReceivedInputBlockCallback callback(
@@ -1243,7 +1242,7 @@ class DispatchInputOnControllerThread : public Runnable {
         mAPZOnly(aAPZOnly) {}
 
   NS_IMETHOD Run() override {
-    APZEventResult result = mAPZC->InputBridge()->ReceiveInputEvent(mInput);
+    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(mInput);
     if (mAPZOnly == APZOnly::Yes ||
         result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       if (mInput.mCallbackId.isSome()) {
@@ -1275,7 +1274,7 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
 
-    APZEventResult result = mAPZC->InputBridge()->ReceiveInputEvent(aInput);
+    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return;
     }
@@ -1293,7 +1292,7 @@ void nsIWidget::DispatchPanGestureInput(PanGestureInput& aInput) {
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
 
-    APZEventResult result = mAPZC->InputBridge()->ReceiveInputEvent(aInput);
+    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return;
     }
@@ -1310,7 +1309,7 @@ void nsIWidget::DispatchPinchGestureInput(PinchGestureInput& aInput) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
-    APZEventResult result = mAPZC->InputBridge()->ReceiveInputEvent(aInput);
+    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
 
     if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
       return;
@@ -1330,7 +1329,7 @@ nsIWidget::ContentAndAPZEventStatus nsIWidget::DispatchInputEvent(
 
   if (mAPZC) {
     if (APZThreadUtils::IsControllerThread()) {
-      APZEventResult result = mAPZC->InputBridge()->ReceiveInputEvent(*aEvent);
+      APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(*aEvent);
       status.mApzStatus = result.GetStatus();
       if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
         return status;
@@ -1400,7 +1399,7 @@ void nsIWidget::DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mAPZC) {
     if (APZThreadUtils::IsControllerThread()) {
-      mAPZC->InputBridge()->ReceiveInputEvent(*aEvent);
+      mAPZC->Bridge()->ReceiveInputEvent(*aEvent);
       return;
     }
 
@@ -1577,7 +1576,7 @@ void nsIWidget::CreateCompositor(int aWidth, int aHeight) {
   }
 
   // The controller thread must be configured before the compositor
-  // session is created, so that the input bridge runs on the right
+  // session is created, so that the APZ bridge runs on the right
   // thread.
   ConfigureAPZControllerThread();
 
@@ -2107,13 +2106,13 @@ void nsIWidget::StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
                                      const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsParentProcess() && AsyncPanZoomEnabled());
 
-  mAPZC->InputBridge()->StartAutoscroll(aGuid, aAnchorLocation);
+  mAPZC->Bridge()->StartAutoscroll(aGuid, aAnchorLocation);
 }
 
 void nsIWidget::StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsParentProcess() && AsyncPanZoomEnabled());
 
-  mAPZC->InputBridge()->StopAutoscroll(aGuid);
+  mAPZC->Bridge()->StopAutoscroll(aGuid);
 }
 
 LayersId nsIWidget::GetRootLayerTreeId() {
@@ -2277,7 +2276,7 @@ void nsIWidget::ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {
       }
     } else if (mAPZC) {
       // If the event wasn't start swipe, we need to notify it to APZ.
-      mAPZC->InputBridge()->SetBrowserGestureResponse(
+      mAPZC->Bridge()->SetBrowserGestureResponse(
           aInputBlockId, BrowserGestureResponse::NotConsumed);
     }
     mSwipeEventQueue = nullptr;
@@ -2304,12 +2303,10 @@ void nsIWidget::TrackScrollEventAsSwipe(
       new SwipeTracker(*this, aSwipeStartEvent, aAllowedDirections, direction);
   mSwipeTracker->StartTracking(aSwipeStartEvent);
 
-  if (!mAPZC) {
-    mCurrentPanGestureBelongsToSwipe = true;
-  } else {
+  if (mAPZC) {
     // Now SwipeTracker has started consuming pan events, notify it to APZ so
     // that APZ can discard queued events.
-    mAPZC->InputBridge()->SetBrowserGestureResponse(
+    mAPZC->Bridge()->SetBrowserGestureResponse(
         aInputBlockId, BrowserGestureResponse::Consumed);
   }
 }
@@ -2340,8 +2337,8 @@ nsIWidget::SwipeInfo nsIWidget::SendMayStartSwipe(
   return result;
 }
 
-WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
-    const PanGestureInput& aPanInput, const APZEventResult& aApzResult) {
+WidgetWheelEvent nsIWidget::MayStartSwipe(const PanGestureInput& aPanInput,
+                                          const APZEventResult& aApzResult) {
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
 
   // Ignore swipe-to-navigation in PiP window.
@@ -2358,7 +2355,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
         // APZ has determined and that scrolling horizontally in the
         // requested direction is impossible, so it didn't do any
         // scrolling for the event.
-        // We know now that MayStartSwipe wants a swipe, so we can start
+        // We know now that SendMayStartSwipe wants a swipe, so we can start
         // the swipe now.
         TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections,
                                 aApzResult.mInputBlockId);
@@ -2377,7 +2374,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
       // Inform that the browser gesture didn't use the pan event (pan-start
       // precisely), so that APZ can now start using the event for
       // scrolling/overscrolling.
-      mAPZC->InputBridge()->SetBrowserGestureResponse(
+      mAPZC->Bridge()->SetBrowserGestureResponse(
           aApzResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
     }
   }
@@ -2388,61 +2385,6 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
   }
 
   return event;
-}
-
-bool nsIWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
-  // Ignore swipe-to-navigation in PiP window.
-  if (mPiPType != PiPType::NoPiP) {
-    return false;
-  }
-
-  if (aPanInput.mType == PanGestureInput::PANGESTURE_MAYSTART ||
-      aPanInput.mType == PanGestureInput::PANGESTURE_START) {
-    mCurrentPanGestureBelongsToSwipe = false;
-  }
-  if (mCurrentPanGestureBelongsToSwipe) {
-    // Ignore this event. It's a momentum event from a scroll gesture
-    // that was processed as a swipe, and the swipe animation has
-    // already finished (so mSwipeTracker is already null).
-    MOZ_ASSERT(aPanInput.IsMomentum(),
-               "If the fingers are still on the touchpad, we should still have "
-               "a SwipeTracker, "
-               "and it should have consumed this event.");
-    return true;
-  }
-
-  if (!aPanInput.MayTriggerSwipe()) {
-    return false;
-  }
-
-  SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
-
-  // We're in the non-APZ case here, but we still want to know whether
-  // the event was routed to a child process, so we use InputAPZContext
-  // to get that piece of information.
-  ScrollableLayerGuid guid;
-  uint64_t blockId = 0;
-  InputAPZContext context(guid, blockId, nsEventStatus_eIgnore);
-
-  WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
-  event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
-  DispatchEvent(&event);
-  if (swipeInfo.wantsSwipe) {
-    if (context.WasRoutedToChildProcess()) {
-      // We don't know whether this event can start a swipe, so we need
-      // to queue up events and wait for a call to ReportSwipeStarted.
-      mSwipeEventQueue =
-          MakeUnique<SwipeEventQueue>(swipeInfo.allowedDirections, blockId);
-    } else if (event.TriggersSwipe()) {
-      TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections, blockId);
-    }
-  }
-
-  if (mSwipeEventQueue && mSwipeEventQueue->inputBlockId == 0) {
-    mSwipeEventQueue->queuedEvents.AppendElement(aPanInput);
-  }
-
-  return true;
 }
 
 LayersId nsIWidget::GetLayersId() const {

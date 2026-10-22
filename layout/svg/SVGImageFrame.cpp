@@ -625,8 +625,8 @@ WebRenderCommandsResult SVGImageFrame::CreateWebRenderCommands(
   Maybe<ImageIntRegion> region;
   bool rasterizedForDest = false;
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
-      mImageContainer, this, destRect, clipRect, aSc, flags, svgContext, region,
-      &rasterizedForDest);
+      mImageContainer, this, destRect, clipRect, aBuilder, aSc, flags,
+      svgContext, region, &rasterizedForDest);
 
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
     Element* element = GetContent()->AsElement();

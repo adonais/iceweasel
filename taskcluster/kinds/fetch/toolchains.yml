@@ -44,20 +44,6 @@ gcc-8.5.0:
         strip-components: 1
         add-prefix: gcc-source/
 
-gcc-9.5.0:
-    description: GCC 9.5.0 source code
-    fetch:
-        type: static-url
-        url: https://ftp.gnu.org/gnu/gcc/gcc-9.5.0/gcc-9.5.0.tar.xz
-        sha256: 27769f64ef1d4cd5e2be8682c0c93f9887983e6cfd1a927ce5a0a2915a95cf8f
-        size: 72462752
-        gpg-signature:
-            sig-url: "{url}.sig"
-            key-path: build/unix/build-gcc/7F74F97C103468EE5D750B583AB00996FC26A641.key
-        artifact-name: gcc-source.tar.zst
-        strip-components: 1
-        add-prefix: gcc-source/
-
 gcc-11.5.0:
     description: GCC 11.5.0 source code
     fetch:
@@ -317,7 +303,7 @@ gn:
     fetch:
         type: git
         repo: https://gn.googlesource.com/gn
-        revision: 6f8c0328ee29c76e3566a216f2f0cf2992daa6ed
+        revision: 6b0190f746976a2e3b26ed529a9d487ae2587868
 
 grcov:
     description: grcov source code
@@ -357,13 +343,6 @@ mingw-w64-trunk:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
         branch: master
-
-llvm-mingw:
-    description: llvm-mingw source code
-    fetch:
-        type: git
-        repo: https://github.com/mstorsjo/llvm-mingw
-        revision: 9f8e5cebd6dbbb7546e8917e6c59284699a48d26
 
 android-ndk-rs:
     description: android-ndk-rs source code
@@ -913,7 +892,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: a04f7ea013f28042d203b2c2db3fc632506d2903
+        revision: 3f9a08b126dff1494286a500ec47cbc5496232c3
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 # We can't catch regressions from these updates in CI. Testing should focus on

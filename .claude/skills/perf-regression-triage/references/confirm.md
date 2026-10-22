@@ -22,7 +22,7 @@ what isolates it. That is the point: the alert blames a push, this push blames a
 Verify the task selection without submitting anything:
 
 ```
-./mach try perf --no-push --alert <ALERT_ID> --rebuild 10
+./mach try perf --no-push --alert <ALERT_ID> --rebuild 10 --no-artifact
 ```
 
 `--no-push` prints the calculated task selection and changes nothing. Keep it immediately
@@ -34,7 +34,8 @@ list and the command before asking to push.
 ## The push
 
 ```
-./mach try perf --alert <ALERT_ID> --rebuild 10 -m "Confirm bug <BUG> perf regression"
+./mach try perf --alert <ALERT_ID> --rebuild 10 --no-artifact \
+  -m "Confirm bug <BUG> perf regression"
 ```
 
 Do not submit base and new yourself. This one command pushes both sides for you.
@@ -51,12 +52,45 @@ Go higher — 12 to 15 — only for a sub-3% regression or a suite already known
 Do not go lower to save CI: a thin run routinely produces an ambiguous result, and the
 second round it forces costs far more than the retriggers you skipped.
 
-### Do not use `--non-pgo` here
+### Confirm on the configuration the alert fired on
 
 Alerts are almost always detected on shippable/pgo builds (`linux2404-64-shippable` in the
-alert table). `--non-pgo` builds faster but is a different optimization configuration, and
-a regression can appear or vanish across that boundary. Confirm on the same configuration
-the alert fired on. `--non-pgo` belongs in the iteration loop, not here.
+alert table). A regression can appear or vanish across the pgo boundary, so a confirmation
+run on a different optimization configuration does not answer the question. Two separate
+things will move you off that configuration, and only one of them is obvious.
+
+**`--non-pgo`.** Builds faster, but it is explicitly the opt/non-pgo configuration. It
+belongs in the iteration loop, not here.
+
+**Artifact mode, which you never asked for.** `mach try perf` inherits the shared
+`--artifact` / `--no-artifact` try config. When your local mozconfig is an artifact build —
+the common case for anyone who mostly works on front-end code — that config turns artifact
+mode on for the push *and sets `disable-pgo: true` with it*. So the push silently lands on
+a non-pgo build without `--non-pgo` appearing anywhere in your command, and the advice
+above is defeated by a setting in your mozconfig.
+
+Pass **`--no-artifact`** on the confirmation push to hold the configuration:
+
+```
+./mach try perf --alert <ALERT_ID> --rebuild 10 --no-artifact
+```
+
+It is harmless when your build is not an artifact build, so pass it unconditionally rather
+than working out whether you need it. `mach` does print `Artifact builds enabled, pass
+--no-artifact to disable` when the default kicks in, but it scrolls past among the task
+selection output and is easy to miss.
+
+Artifact mode and pgo are mutually exclusive, so `--no-artifact` means waiting on real
+builds — that is the cost of confirming against the right binary.
+
+**Android does not get you out of this.** Selecting android tasks turns artifact mode back
+off, printing `Disabling artifact mode due to android task selection`, but it leaves the
+`disable-pgo: true` that came with it in place. The push then builds from source *and*
+without pgo, the worst of both. The `WARNING: PGO builds are disabled as artifact mode is
+enabled by default from your mozconfig` that follows is literally true: it is the only
+sign that the confirmation is running on the wrong configuration. `--no-artifact` stops
+`disable-pgo` from being set in the first place, so it matters on android as much as on
+desktop.
 
 ### Narrowing
 
@@ -66,7 +100,8 @@ you want to know the true blast radius, and a fix that helps one test can hurt a
 Narrow only if the user is explicitly trading coverage for turnaround:
 
 ```
-./mach try perf --alert <ALERT_ID> --tests speedometer3 --platforms linux --rebuild 10
+./mach try perf --alert <ALERT_ID> --tests speedometer3 --platforms linux --rebuild 10 \
+  --no-artifact
 ```
 
 Say plainly which tests you dropped. Silent narrowing turns "confirmed" into a claim the
@@ -81,6 +116,9 @@ open it, or give it to the user. For the raw job state:
 treeherder-cli <try-revision> --perf
 treeherder-cli <try-revision> --watch --notify     # if it is still running
 ```
+
+Without `treeherder-cli` installed, the same job state is two requests away — see "Job
+state for a push" in `rest-api.md`.
 
 Judge it on three things, in order:
 

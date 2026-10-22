@@ -4,7 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  addDebuggerToGlobal: "resource://gre/modules/jsdebugger.sys.mjs",
+  addDebuggerToGlobal: "moz-src:///devtools/platform/jsdebugger.sys.mjs",
 
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
 });

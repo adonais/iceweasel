@@ -13,10 +13,10 @@ namespace mozilla {
 // However, the quality of the C runtime implementation varies wildly across
 // platforms, so these should at least ensure consistency.
 //
-// NOTE: these are currently only implemented with hand-written SIMD for x86,
-// AMD64, and arm64 platforms, and fallback to the C runtime or naive loops
-// on other architectures. Please consider this before switching an already
-// optimized loop to these helpers.
+// NOTE: these are currently implemented with hand-written SIMD for x86, AMD64,
+// arm64, and LoongArch64 platforms, and fallback to the C runtime or naive
+// loops on other architectures. Please consider this before switching an
+// already optimized loop to these helpers.
 class SIMD {
  public:
   // NOTE: for memchr we have a goofy void* signature just to be an easy drop
@@ -53,6 +53,10 @@ class SIMD {
   static MFBT_API const char16_t* memchr16AVX2(const char16_t* ptr,
                                                char16_t value, size_t length);
 
+  // This function just restricts our execution to the LSX path
+  static MFBT_API const char16_t* memchr16LSX(const char16_t* ptr,
+                                              char16_t value, size_t length);
+
   // Search through `ptr[0..length]` for the first occurrence of `value` and
   // return the pointer to it, or nullptr if it cannot be found.
   static MFBT_API const uint32_t* memchr32(const uint32_t* ptr, uint32_t value,
@@ -61,6 +65,10 @@ class SIMD {
   // This function just restricts our execution to the AVX2 path
   static MFBT_API const uint32_t* memchr32AVX2(const uint32_t* ptr,
                                                uint32_t value, size_t length);
+
+  // This function just restricts our execution to the LSX path
+  static MFBT_API const uint32_t* memchr32LSX(const uint32_t* ptr,
+                                              uint32_t value, size_t length);
 
   // Search through `ptr[0..length]` for the first occurrence of `value` and
   // return the pointer to it, or nullptr if it cannot be found.
@@ -71,17 +79,30 @@ class SIMD {
   static MFBT_API const uint64_t* memchr64AVX2(const uint64_t* ptr,
                                                uint64_t value, size_t length);
 
+  // This function just restricts our execution to the LSX path
+  static MFBT_API const uint64_t* memchr64LSX(const uint64_t* ptr,
+                                              uint64_t value, size_t length);
+
   // Search through `ptr[0..length]` for the first occurrence of `v1` which is
   // immediately followed by `v2` and return the pointer to the occurrence of
   // `v1`.
   static MFBT_API const char* memchr2x8(const char* ptr, char v1, char v2,
                                         size_t length);
 
+  // This function just restricts our execution to the LSX path
+  static MFBT_API const char* memchr2x8LSX(const char* ptr, char v1, char v2,
+                                           size_t length);
+
   // Search through `ptr[0..length]` for the first occurrence of `v1` which is
   // immediately followed by `v2` and return the pointer to the occurrence of
   // `v1`.
   static MFBT_API const char16_t* memchr2x16(const char16_t* ptr, char16_t v1,
                                              char16_t v2, size_t length);
+
+  // This function just restricts our execution to the LSX path
+  static MFBT_API const char16_t* memchr2x16LSX(const char16_t* ptr,
+                                                char16_t v1, char16_t v2,
+                                                size_t length);
 };
 
 }  // namespace mozilla

@@ -29,7 +29,7 @@ The function has the following parameter:
 ## Description
 
 Using the value specified in the `address` parameter to find a monitor
-in the monitor cache, {ref}`PR_CNotify` notifies single a thread waiting
+in the monitor cache, {doc}`pr_cnotify` notifies single a thread waiting
 for the monitor's state to change. If a thread is waiting on the monitor
-(having called {ref}`PR_CWait`), then that thread is made ready. As soon as
+(having called {doc}`pr_cwait`), then that thread is made ready. As soon as
 the thread is scheduled, it attempts to reenter the monitor.

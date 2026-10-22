@@ -17,7 +17,7 @@ The function has the following parameter:
 
 `mon`
 
-: A reference to an existing structure of type {ref}`PRMonitor`. The
+: A reference to an existing structure of type {doc}`prmonitor`. The
   monitor object referenced must be one for which the calling thread
   currently holds the lock.
 

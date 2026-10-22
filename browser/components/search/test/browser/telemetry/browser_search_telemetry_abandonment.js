@@ -68,6 +68,8 @@ add_task(async function test_tab_close_before_page_load() {
       impression: {
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -202,6 +204,8 @@ add_task(async function test_navigation_via_back_button() {
       impression: {
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.NAVIGATION,

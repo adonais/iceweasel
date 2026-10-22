@@ -22,12 +22,12 @@ The function has the following parameters:
 
 `networkSocket`
 
-: A pointer to a {ref}`PRFileDesc` object representing the connected
+: A pointer to a {doc}`prfiledesc` object representing the connected
   socket to send data over.
 
 `sourceFile`
 
-: A pointer to a {ref}`PRFileDesc` object representing the file to send.
+: A pointer to a {doc}`prfiledesc` object representing the file to send.
 
 `headers`
 
@@ -56,13 +56,13 @@ The function has the following parameters:
   including both the headers and the file.
 - The value -1 indicates a failure. If an error occurs while sending
   the file, the `PR_TRANSMITFILE_CLOSE_SOCKET` flag is ignored. The
-  reason for the failure can be obtained by calling {ref}`PR_GetError`.
+  reason for the failure can be obtained by calling {doc}`pr_geterror`.
 
 ## Description
 
-The {ref}`PR_TransmitFile` function sends a complete file (`sourceFile`)
+The {doc}`pr_transmitfile` function sends a complete file (`sourceFile`)
 across a connected socket (`networkSocket`). If `headers` is
-non-`NULL`, {ref}`PR_TransmitFile` sends the headers across the socket
+non-`NULL`, {doc}`pr_transmitfile` sends the headers across the socket
 before sending the file.
 
 The enumeration `PRTransmitFileFlags`, used in the `flags`

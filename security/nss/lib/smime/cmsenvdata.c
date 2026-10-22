@@ -68,6 +68,7 @@ NSS_CMSEnvelopedData_Destroy(NSSCMSEnvelopedData *edp)
     recipientinfos = edp->recipientInfos;
     while (recipientinfos && (ri = *recipientinfos++) != NULL)
         NSS_CMSRecipientInfo_Destroy(ri);
+    edp->recipientInfos = NULL;
 
     NSS_CMSContentInfo_Destroy(&(edp->contentInfo));
 }

@@ -32,7 +32,12 @@ static const Pkcs11SignatureTestParams kEddsaVectors[] = {
     {DataBuffer(kEd25519Pkcs8_3, sizeof(kEd25519Pkcs8_3)),
      DataBuffer(kEd25519Spki_3, sizeof(kEd25519Spki_3)),
      DataBuffer(kEd25519Message_3, sizeof(kEd25519Message_3)),
-     DataBuffer(kEd25519Signature_3, sizeof(kEd25519Signature_3))}};
+     DataBuffer(kEd25519Signature_3, sizeof(kEd25519Signature_3))},
+
+    {DataBuffer(kEd25519Pkcs8_4, sizeof(kEd25519Pkcs8_4)),
+     DataBuffer(kEd25519Spki_4, sizeof(kEd25519Spki_4)),
+     DataBuffer(kEd25519Message_4, sizeof(kEd25519Message_4)),
+     DataBuffer(kEd25519Signature_4, sizeof(kEd25519Signature_4))}};
 
 class Pkcs11EddsaTest
     : public Pk11SignatureTest,

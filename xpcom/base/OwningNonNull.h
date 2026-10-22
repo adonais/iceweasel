@@ -157,7 +157,7 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
  protected:
   template <typename U>
   void init(U&& aValue) {
-    mPtr = std::move(aValue);
+    mPtr = std::forward<U>(aValue);
     MOZ_ASSERT(mPtr);
 #ifdef DEBUG
     mInited = true;

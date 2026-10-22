@@ -107,6 +107,7 @@ extern JS::Handle<PropertyName*> ClassName(JSProtoKey key, JSContext* cx);
 #ifdef DEBUG
 
 bool ZoneHasRef(JS::Zone* zone, JSAtom* atom);
+bool ZoneHasRef(JS::Zone* zone, JS::Symbol* symbol);
 bool ZoneHasRef(JS::Zone* zone, jsid id);
 bool ZoneHasRef(JS::Zone* zone, const JS::Value& value);
 

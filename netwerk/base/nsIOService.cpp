@@ -206,8 +206,6 @@ int16_t gBadPortList[] = {
 
 static const char kProfileChangeNetTeardownTopic[] =
     "profile-change-net-teardown";
-static const char kProfileChangeNetRestoreTopic[] =
-    "profile-change-net-restore";
 static const char kProfileDoChange[] = "profile-do-change";
 
 // Necko buffer defaults
@@ -316,7 +314,6 @@ nsresult nsIOService::Init() {
   // Register for profile change notifications
   mObserverService = services::GetObserverService();
   MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetTeardownTopic, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetRestoreTopic, true));
   MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileDoChange, true));
   MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true));
   MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_NETWORK_LINK_TOPIC, true));
@@ -1582,6 +1579,43 @@ nsIOService::AllowPort(int32_t inPort, const char* scheme, bool* _retval) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsIOService::AddBlockedLocalPort(int32_t aPort) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (aPort <= 0 || aPort > std::numeric_limits<uint16_t>::max()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  AutoWriteLock lock(mLock);
+  if (!mBlockedLocalPorts.Contains(aPort)) {
+    mBlockedLocalPorts.AppendElement(aPort);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsIOService::RemoveBlockedLocalPort(int32_t aPort) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (aPort <= 0 || aPort > std::numeric_limits<uint16_t>::max()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  AutoWriteLock lock(mLock);
+  mBlockedLocalPorts.RemoveElement(aPort);
+  return NS_OK;
+}
+
+bool nsIOService::IsLocalPortBlocked(uint16_t aPort) {
+  AutoReadLock lock(mLock);
+  return mBlockedLocalPorts.Contains(aPort);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // static
@@ -1862,11 +1896,6 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
     if (!mOffline) {
       mOfflineForProfileChange = true;
       SetOfflineInternal(true, false);
-    }
-  } else if (!strcmp(topic, kProfileChangeNetRestoreTopic)) {
-    if (mOfflineForProfileChange) {
-      mOfflineForProfileChange = false;
-      SetOfflineInternal(false, false);
     }
   } else if (!strcmp(topic, kProfileDoChange)) {
     if (data && u"startup"_ns.Equals(data)) {

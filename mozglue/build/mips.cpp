@@ -6,6 +6,8 @@
 
 #include "mips.h"
 
+#include "mozilla/Attributes.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -36,6 +38,6 @@ static bool check_loongson3(void) {
 
 namespace mozilla {
 namespace mips_private {
-bool isLoongson3 = check_loongson3();
+MOZ_RUNINIT bool isLoongson3 = check_loongson3();
 }  // namespace mips_private
 }  // namespace mozilla

@@ -15,9 +15,9 @@ initialization, and shutdown of NSPR.
 
 ### Name and Version Constants
 
-> - {ref}`PR_NAME`
-> - {ref}`PR_VERSION`
-> - {ref}`PR_VersionCheck`
+> - {doc}`pr_name`
+> - {doc}`pr_version`
+> - {doc}`pr_versioncheck`
 
 (initialization-and-cleanup)=
 
@@ -32,27 +32,27 @@ necessary.
 Implicit initialization assumes that the initiator is the primordial
 thread and that the thread is a user thread of normal priority.
 
-> - {ref}`PR_Init`
-> - {ref}`PR_Initialize`
-> - {ref}`PR_Initialized`
-> - {ref}`PR_Cleanup`
-> - {ref}`PR_DisableClockInterrupts`
-> - {ref}`PR_BlockClockInterrupts`
-> - {ref}`PR_UnblockClockInterrupts`
-> - {ref}`PR_SetConcurrency`
-> - {ref}`PR_ProcessExit`
-> - {ref}`PR_Abort`
+> - {doc}`pr_init`
+> - {doc}`pr_initialize`
+> - {doc}`pr_initialized`
+> - {doc}`pr_cleanup`
+> - {doc}`pr_disableclockinterrupts`
+> - {doc}`pr_blockclockinterrupts`
+> - {doc}`pr_unblockclockinterrupts`
+> - {doc}`pr_setconcurrency`
+> - {doc}`pr_processexit`
+> - {doc}`pr_abort`
 
 (module-initialization)=
 
 ### Module Initialization
 
 Initialization can be tricky in a threaded environment, especially
-initialization that must happen exactly once. {ref}`PR_CallOnce` ensures
+initialization that must happen exactly once. {doc}`pr_callonce` ensures
 that such initialization code is called only once. This facility is
 recommended in situations where complicated global initialization is
 required.
 
-> - {ref}`PRCallOnceType`
-> - {ref}`PRCallOnceFN`
-> - {ref}`PR_CallOnce`
+> - {doc}`prcalloncetype`
+> - {doc}`prcalloncefn`
+> - {doc}`pr_callonce`

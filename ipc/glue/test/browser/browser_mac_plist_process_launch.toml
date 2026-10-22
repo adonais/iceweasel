@@ -1,0 +1,14 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+[DEFAULT]
+tags = "ipc"
+prefs = [
+  "dom.ipc.processLaunch.useMacPlists=true",
+  "layers.gpu-process.force-enabled=true",
+  "media.eme.enabled=true",
+]
+
+["browser_mac_plist_process_launch.js"]
+run-if = [
+  "os == 'mac'",
+]

@@ -44,4 +44,13 @@ object GoogleLensSelectors : SelectorContainer {
             value = getStringResource(R.string.content_description_gallery),
             description = "Google Lens gallery button",
         )
+
+    // Status on the loading screen that replaces the camera as soon as a photo picker image is accepted, before the
+    // live upload to Google settles.
+    val UPLOAD_LOADING_STATUS =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.lens_camera_loading_status),
+            description = "Google Lens upload loading screen status",
+        )
 }

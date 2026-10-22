@@ -1,7 +1,7 @@
 # PRErrorCode
 
-Type for error codes that can be retrieved with {ref}`PR_GetError`. You can
-also set your own errors using {ref}`PR_SetError`.
+Type for error codes that can be retrieved with {doc}`pr_geterror`. You can
+also set your own errors using {doc}`pr_seterror`.
 
 ## Syntax
 

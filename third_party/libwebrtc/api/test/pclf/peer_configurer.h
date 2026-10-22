@@ -84,10 +84,6 @@ class PeerConfigurer {
       std::unique_ptr<AudioProcessingBuilderInterface> audio_processing);
   PeerConfigurer* SetAudioMixer(scoped_refptr<webrtc::AudioMixer> audio_mixer);
 
-  // Forces the Peerconnection to use the network thread as the worker thread.
-  // Ie, worker thread and the network thread is the same thread.
-  PeerConfigurer* SetUseNetworkThreadAsWorkerThread();
-
   // The parameters of the following 4 methods will be passed to the
   // PeerConnectionInterface implementation that will be created for this
   // peer.

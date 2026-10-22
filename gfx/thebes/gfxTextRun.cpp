@@ -14,6 +14,7 @@
 #include "gfxHarfBuzzShaper.h"
 #include "gfxPlatformFontList.h"
 #include "gfxUserFontSet.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MruCache.h"
@@ -128,7 +129,9 @@ bool gfxTextRun::NeedsGlyphExtents() const {
 void* gfxTextRun::AllocateStorageForTextRun(size_t aSize, uint32_t aLength) {
   // Allocate the storage we need, returning nullptr on failure rather than
   // throwing an exception (because web content can create huge runs).
-  void* storage = malloc(aSize + aLength * sizeof(CompressedGlyph));
+  CheckedInt<size_t> storageSize =
+      CheckedInt<size_t>(aLength) * sizeof(CompressedGlyph) + aSize;
+  void* storage = storageSize.isValid() ? malloc(storageSize.value()) : nullptr;
   if (!storage) {
     NS_WARNING("failed to allocate storage for text run!");
     return nullptr;
@@ -136,7 +139,7 @@ void* gfxTextRun::AllocateStorageForTextRun(size_t aSize, uint32_t aLength) {
 
   // Initialize the glyph storage (beyond aSize) to zero
   memset(reinterpret_cast<char*>(storage) + aSize, 0,
-         aLength * sizeof(CompressedGlyph));
+         storageSize.value() - aSize);
 
   return storage;
 }
@@ -606,7 +609,7 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
 
   // Set up parameters that will be constant across all glyph runs we need
   // to draw, regardless of the font used.
-  TextRunDrawParams params(aParams.paletteCache);
+  TextRunDrawParams params(aParams.paletteValueSet);
   params.context = aParams.context;
   params.devPerApp = 1.0 / double(GetAppUnitsPerDevUnit());
   params.isVerticalRun = IsVertical();
@@ -706,14 +709,15 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
 }
 
 // This method is mostly parallel to Draw().
-void gfxTextRun::DrawEmphasisMarks(
-    gfxContext* aContext, gfxTextRun* aMark, gfxFloat aMarkAdvance,
-    gfx::Point aPt, Range aRange, const PropertyProvider* aProvider,
-    mozilla::gfx::PaletteCache& aPaletteCache,
-    mozilla::image::imgDrawingParams& aImgParams) const {
+void gfxTextRun::DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
+                                   gfxFloat aMarkAdvance, gfx::Point aPt,
+                                   Range aRange,
+                                   const PropertyProvider* aProvider,
+                                   gfx::FontPaletteValueSet* aPaletteValueSet,
+                                   image::imgDrawingParams& aImgParams) const {
   MOZ_ASSERT(aRange.end <= GetLength());
 
-  EmphasisMarkDrawParams params(aContext, aPaletteCache);
+  EmphasisMarkDrawParams params(aContext, aPaletteValueSet);
   params.mark = aMark;
   params.advance = aMarkAdvance;
   params.direction = GetDirection();

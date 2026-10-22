@@ -132,3 +132,15 @@ if CONFIG["MOZ_ENABLE_DBUS"]:
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+
+with Files("unix/**"):
+    SCHEDULES.exclusive = ["linux"]
+
+with Files("win/**"):
+    SCHEDULES.exclusive = ["windows"]
+
+with Files("mac/**"):
+    SCHEDULES.exclusive = ["macosx"]
+
+with Files("android/**"):
+    SCHEDULES.exclusive = ["android"]

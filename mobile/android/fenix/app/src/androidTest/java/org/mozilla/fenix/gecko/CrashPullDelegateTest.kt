@@ -4,35 +4,19 @@
 
 package org.mozilla.fenix.gecko
 
-import android.content.Context
-import io.mockk.mockk
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
-import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.storage.CreditCardsAddressesStorage
-import mozilla.components.concept.storage.LoginsStorage
-import org.junit.Before
+import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import org.junit.Test
 import org.mozilla.fenix.helpers.TestHelper
 
 class CrashPullDelegateTest {
-    private lateinit var context: Context
-    private lateinit var mockPolicy: EngineSession.TrackingProtectionPolicy
-    private lateinit var mockAutofill: Lazy<CreditCardsAddressesStorage>
-    private lateinit var mockLogin: Lazy<LoginsStorage>
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
-    @Before
-    fun setUp() {
-        context = TestHelper.appContext
-        mockPolicy = mockk<EngineSession.TrackingProtectionPolicy>()
-        mockAutofill = mockk<Lazy<CreditCardsAddressesStorage>>()
-        mockLogin = mockk<Lazy<LoginsStorage>>()
-    }
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
     @Test
     fun test_crash_pull_delegate_exists() {
@@ -45,7 +29,13 @@ class CrashPullDelegateTest {
             scope
                 .launch {
                     val runtime =
-                        GeckoProvider.getOrCreateRuntime(context, mockAutofill, mockLogin, mockPolicy, TestScope())
+                        GeckoProvider.getOrCreateRuntime(
+                            context = TestHelper.appContext,
+                            autofillStorage = lazy { throw UnsupportedOperationException() },
+                            loginStorage = lazy { throw UnsupportedOperationException() },
+                            trackingProtectionPolicy = TrackingProtectionPolicy.none(),
+                            applicationScope = TestScope(),
+                        )
                     assertNotNull(runtime.crashPullDelegate)
                     runtime.crashPullDelegate?.onCrashPull(arrayOf("1", "2"))
                 }

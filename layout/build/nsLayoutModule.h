@@ -23,7 +23,6 @@ nsresult CreateXMLContentSerializer(const nsID& aIID, void** aResult);
 nsresult CreateHTMLContentSerializer(const nsID& aIID, void** aResult);
 nsresult CreateXHTMLContentSerializer(const nsID& aIID, void** aResult);
 nsresult CreatePlainTextSerializer(const nsID& aIID, void** aResult);
-nsresult CreateContentPolicy(const nsID& aIID, void** aResult);
 nsresult CreateGlobalMessageManager(const nsID& aIID, void** aResult);
 nsresult CreateParentMessageManager(const nsID& aIID, void** aResult);
 nsresult CreateChildMessageManager(const nsID& aIID, void** aResult);

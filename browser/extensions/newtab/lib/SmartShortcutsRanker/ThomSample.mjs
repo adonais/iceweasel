@@ -115,13 +115,13 @@ export function sampleBeta(a, b) {
  * Utility function to sort items based on a Thompson Sampling draw
  *
  * @param {object} observationsPriors - An object containing counts and priors for clicks and impressions
- * @param {int[]} observationsPriors.key_array - Array of items to be ranked
- * @param {int[]} observationsPriors.obs_positive - Array of clicks
- * @param {int[]} observationsPriors.obs_negative - Array of impressions
- * @param {int[]} observationsPriors.prior_positive - Array of priors for clicks
- * @param {int[]} observationsPriors.prior_negative - Array of priors for impressions
+ * @param {number[]} observationsPriors.key_array - Array of items to be ranked
+ * @param {number[]} observationsPriors.obs_positive - Array of clicks
+ * @param {number[]} observationsPriors.obs_negative - Array of impressions
+ * @param {number[]} observationsPriors.prior_positive - Array of priors for clicks
+ * @param {number[]} observationsPriors.prior_negative - Array of priors for impressions
  * @param {boolean} observationsPriors.do_sort - Boolean flag for sorting scores and key_array
- * @returns {[accuracy: final_keys, kappa: final_thetas]} An object containing arrays of keys and scores
+ * @returns {Promise<Array>} An array containing the arrays of keys and scores
  */
 export async function thompsonSampleSort({
   key_array,

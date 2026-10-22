@@ -10,8 +10,6 @@
 #include "mozilla/MozPromise.h"
 #include "nsContentPermissionHelper.h"
 
-class nsPIDOMWindowInner;
-
 namespace mozilla::dom {
 
 class StorageAccessPermissionRequest final

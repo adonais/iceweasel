@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Panel Item shortcut attribute</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content">
+      <panel-list>
+        <panel-item shortcut="Ctrl+N" aria-keyshortcuts="Control+N"
+          >New</panel-item
+        >
+        <panel-item>Open</panel-item>
+      </panel-list>
+    </div>
+    <script class="testbody" type="application/javascript">
+      const getShortcut = item =>
+        item.shadowRoot.querySelector("[part=shortcut]");
+
+      add_task(async function testShortcutFromMarkup() {
+        let [item, plainItem] = document.querySelector("panel-list").children;
+
+        let shortcut = getShortcut(item);
+        is(shortcut.textContent, "Ctrl+N", "The shortcut text is shown");
+        is(
+          shortcut.getAttribute("aria-hidden"),
+          "true",
+          "The shortcut text is hidden from assistive technology"
+        );
+        is(
+          item.button.getAttribute("aria-keyshortcuts"),
+          "Control+N",
+          "aria-keyshortcuts is forwarded to the button"
+        );
+        is(
+          shortcut.previousElementSibling,
+          item.label,
+          "The shortcut follows the label"
+        );
+
+        ok(!getShortcut(plainItem), "No shortcut without the attribute");
+        ok(
+          !plainItem.button.hasAttribute("aria-keyshortcuts"),
+          "No aria-keyshortcuts without the attribute"
+        );
+      });
+
+      add_task(async function testShortcutUpdates() {
+        let [item] = document.querySelector("panel-list").children;
+
+        item.setAttribute("shortcut", "Ctrl+M");
+        is(getShortcut(item).textContent, "Ctrl+M", "The shortcut updates");
+
+        item.removeAttribute("shortcut");
+        item.removeAttribute("aria-keyshortcuts");
+        ok(!getShortcut(item), "The shortcut is removed");
+        ok(
+          !item.button.hasAttribute("aria-keyshortcuts"),
+          "aria-keyshortcuts is removed from the button"
+        );
+      });
+
+      add_task(async function testShortcutAndBadgeOrder() {
+        let [item] = document.querySelector("panel-list").children;
+        let getBadge = () => item.shadowRoot.querySelector("moz-badge");
+        let checkOrder = msg => {
+          is(getBadge().previousElementSibling, item.label, `${msg}: badge`);
+          is(
+            getShortcut(item).previousElementSibling,
+            getBadge(),
+            `${msg}: shortcut`
+          );
+        };
+
+        item.setAttribute("shortcut", "Ctrl+N");
+        item.setAttribute("badge-type", "new");
+        checkOrder("Badge set after shortcut");
+
+        item.removeAttribute("shortcut");
+        item.removeAttribute("badge-type");
+        item.setAttribute("badge-type", "new");
+        item.setAttribute("shortcut", "Ctrl+N");
+        checkOrder("Shortcut set after badge");
+
+        item.removeAttribute("shortcut");
+        item.removeAttribute("badge-type");
+      });
+    </script>
+  </body>
+</html>

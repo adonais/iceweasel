@@ -15,6 +15,7 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.tabgroups.storage.data.TabGroup
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DefaultTabGroupRepositoryTest {
 
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var database: TabGroupDatabase
     private lateinit var repository: DefaultTabGroupRepository
     private val dateTimeProvider: DateTimeProvider =
@@ -49,10 +51,12 @@ class DefaultTabGroupRepositoryTest {
                     context = ApplicationProvider.getApplicationContext(),
                     klass = TabGroupDatabase::class.java,
                 )
+                .allowMainThreadQueries()
                 .build()
         repository =
             DefaultTabGroupRepository(
                 database = database,
+                ioDispatcher = testDispatcher,
                 dateTimeProvider = dateTimeProvider,
             )
     }
@@ -590,26 +594,27 @@ class DefaultTabGroupRepositoryTest {
         }
 
     @Test
-    fun `WHEN all tab group data is deleted THEN the database is reset`() = runTest {
-        initializeDatabase(
-            initialTabGroups =
-                List(size = 20) {
-                    TabGroup(
-                        title = "title $it",
-                        theme = "theme",
-                        lastModified = 10L,
-                        tabIds = emptyList(),
-                    )
-                },
-            initialTabGroupAssignments = List(size = 20) { "$it" to "Group_1" },
-        )
+    fun `WHEN all tab group data is deleted THEN the database is reset`() =
+        runTest(testDispatcher) {
+            initializeDatabase(
+                initialTabGroups =
+                    List(size = 20) {
+                        TabGroup(
+                            title = "title $it",
+                            theme = "theme",
+                            lastModified = 10L,
+                            tabIds = emptyList(),
+                        )
+                    },
+                initialTabGroupAssignments = List(size = 20) { "$it" to "Group_1" },
+            )
 
-        repository.deleteAllTabGroupData()
+            repository.deleteAllTabGroupData()
 
-        advanceUntilIdle()
-        assertTrue(repository.tabGroupDataFlow.first().tabGroups.isEmpty())
-        assertTrue(repository.tabGroupDataFlow.first().tabGroupAssignments.isEmpty())
-    }
+            advanceUntilIdle()
+            assertTrue(repository.tabGroupDataFlow.first().tabGroups.isEmpty())
+            assertTrue(repository.tabGroupDataFlow.first().tabGroupAssignments.isEmpty())
+        }
 
     private suspend fun initializeDatabase(
         initialTabGroups: List<TabGroup> = emptyList(),

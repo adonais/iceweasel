@@ -4,9 +4,11 @@
 
 package org.mozilla.fenix.components.menu.compose
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -38,34 +40,83 @@ class IPProtectionMenuItemTest {
         get() = testContext.getString(R.string.ip_protection_navigate_settings)
 
     @Test
-    fun `WHEN IP protection is enabled THEN the toggle exposes the on state to screen readers`() {
+    fun `GIVEN IP protection is enabled WHEN the menu item is displayed THEN the toggle exposes the on state as a switch`() {
         setContent(IPProtectionMenuStatus.Enabled)
 
         composeTestRule
             .onNodeWithText(toggleLabel)
             .assert(hasStateDescription(testContext.getString(R.string.preferences_ip_protection_on)))
+            .assert(hasRole(Role.Switch))
     }
 
     @Test
-    fun `WHEN IP protection is disabled THEN the toggle exposes the off state to screen readers`() {
+    fun `GIVEN IP protection is enabled WHEN the menu item is displayed THEN the badge is not exposed separately`() {
+        setContent(IPProtectionMenuStatus.Enabled)
+
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.preferences_ip_protection_on))
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun `GIVEN IP protection is disabled WHEN the menu item is displayed THEN the toggle exposes the off state as a switch`() {
         setContent(IPProtectionMenuStatus.Disabled)
 
         composeTestRule
             .onNodeWithText(toggleLabel)
             .assert(hasStateDescription(testContext.getString(R.string.preferences_ip_protection_off)))
+            .assert(hasRole(Role.Switch))
     }
 
     @Test
-    fun `WHEN IP protection is connecting THEN the connecting state is exposed to screen readers`() {
+    fun `GIVEN IP protection is connecting WHEN the menu item is displayed THEN the toggle exposes the connecting state as a switch`() {
         setContent(IPProtectionMenuStatus.Activating)
 
         composeTestRule
             .onNodeWithText(toggleLabel)
             .assert(hasStateDescription(testContext.getString(R.string.ip_protection_menu_connecting)))
+            .assert(hasRole(Role.Switch))
     }
 
     @Test
-    fun `WHEN the chevron is clicked THEN only the navigate callback is invoked`() {
+    fun `GIVEN the data limit is reached WHEN the menu item is displayed THEN the toggle exposes the paused state as a switch`() {
+        setContent(IPProtectionMenuStatus.DataLimitReached)
+
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.ip_protection_menu_paused)))
+            .assert(hasRole(Role.Switch))
+    }
+
+    @Test
+    fun `GIVEN the connection failed WHEN the menu item is displayed THEN the toggle exposes the error state as a switch`() {
+        setContent(IPProtectionMenuStatus.ConnectionError)
+
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.ip_protection_menu_error)))
+            .assert(hasRole(Role.Switch))
+    }
+
+    @Test
+    fun `GIVEN authentication is required WHEN the menu item is displayed THEN the row exposes the try VPN action as a button`() {
+        setContent(IPProtectionMenuStatus.AuthRequired)
+
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.ip_protection_menu_try_vpn_cta)))
+            .assert(hasRole(Role.Button))
+    }
+
+    @Test
+    fun `GIVEN an IP protection menu item WHEN it is displayed THEN the navigation chevron is exposed as a clickable button`() {
+        setContent(IPProtectionMenuStatus.Disabled)
+
+        composeTestRule.onNodeWithContentDescription(navigateLabel).assert(hasRole(Role.Button)).assertHasClickAction()
+    }
+
+    @Test
+    fun `GIVEN an IP protection menu item WHEN the chevron is clicked THEN only the navigate callback is invoked`() {
         setContent(IPProtectionMenuStatus.Disabled)
 
         composeTestRule.onNodeWithContentDescription(navigateLabel).performClick()
@@ -75,7 +126,7 @@ class IPProtectionMenuItemTest {
     }
 
     @Test
-    fun `WHEN the label row is clicked THEN only the toggle callback is invoked`() {
+    fun `GIVEN IP protection is disabled WHEN the label row is clicked THEN only the toggle callback is invoked`() {
         setContent(IPProtectionMenuStatus.Disabled)
 
         composeTestRule.onNodeWithText(toggleLabel).performClick()
@@ -85,7 +136,7 @@ class IPProtectionMenuItemTest {
     }
 
     @Test
-    fun `WHEN the row is clicked twice rapidly THEN the toggle is debounced`() {
+    fun `GIVEN IP protection is disabled WHEN the row is clicked twice rapidly THEN the toggle is debounced`() {
         setContent(IPProtectionMenuStatus.Disabled)
 
         repeat(2) {
@@ -96,7 +147,7 @@ class IPProtectionMenuItemTest {
     }
 
     @Test
-    fun `WHEN the data limit is reached THEN the limit description is displayed`() {
+    fun `GIVEN the data limit is reached WHEN the menu item is displayed THEN the limit description is displayed`() {
         setContent(status = IPProtectionMenuStatus.DataLimitReached, dataLimitGb = 50)
 
         composeTestRule
@@ -106,6 +157,8 @@ class IPProtectionMenuItemTest {
 
     private fun hasStateDescription(value: String) =
         SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, value)
+
+    private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
 
     private fun setContent(status: IPProtectionMenuStatus, dataLimitGb: Int = -1) {
         composeTestRule.setContent {

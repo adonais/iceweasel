@@ -59,11 +59,28 @@ invalidName("trailing-", /ended unexpectedly/);
 // Annotations like [constructor] and [method] are only valid on function names
 // per the component model spec, so we use function imports to test this.
 
-// Note: These will have to be updated when we actually start validating
-// function signatures for annotations.
 function validFuncName(name) {
+  const [, attrs, label] = name.match(/^((?:\[[a-z]+\])*)(.*)$/);
+  const hasResource = /\[(constructor|method|static)\]/.test(attrs);
+  const maybeSelfParam = attrs.includes("[method]") ? `(param "self" (borrow $r))` : "";
+
+  let imports = "";
+  if (hasResource) {
+    imports += `(import "${label.split(".")[0]}" (type $r (sub resource)))`;
+  }
+  if (attrs.includes("[constructor]")) {
+    imports += `(import "${name}" (func (result (own $r))))`;
+  } else if (attrs.includes("[get]")) {
+    imports += `(import "${name}" (func ${maybeSelfParam} (result u32)))`;
+  } else if (attrs.includes("[set]")) {
+    imports += `(import "${name.replace("[set]", "[get]")}" (func ${maybeSelfParam} (result u32)))`;
+    imports += `(import "${name}" (func ${maybeSelfParam} (param "v" u32)))`;
+  } else {
+    imports += `(import "${name}" (func ${maybeSelfParam}))`;
+  }
+
   wasmValidateText(`(component
-    (import "${name}" (func))
+    ${imports}
   )`);
 }
 function invalidFuncName(name, err) {

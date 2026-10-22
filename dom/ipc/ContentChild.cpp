@@ -240,6 +240,7 @@
 
 #ifdef XP_WIN
 #  include <process.h>
+#  include <windows.h>
 #  define getpid _getpid
 #  include "mozilla/WinDllServices.h"
 #endif
@@ -2891,6 +2892,19 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
 
   ConfigureThreadPerformanceHints(aPriority);
 
+#ifdef XP_WIN
+  bool raiseMainThreadPriority =
+      aPriority >= hal::PROCESS_PRIORITY_FOREGROUND &&
+      StaticPrefs::
+          dom_ipc_processPriorityManager_foregroundRaisesMainThreadPriority();
+  if (raiseMainThreadPriority != mMainThreadPriorityRaised &&
+      ::SetThreadPriority(::GetCurrentThread(),
+                          raiseMainThreadPriority ? THREAD_PRIORITY_ABOVE_NORMAL
+                                                  : THREAD_PRIORITY_NORMAL)) {
+    mMainThreadPriorityRaised = raiseMainThreadPriority;
+  }
+#endif
+
   mProcessPriority = aPriority;
 
   os->NotifyObservers(static_cast<nsIPropertyBag2*>(props),
@@ -3221,24 +3235,6 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateWindow(
       false,
       "ContentChild::RecvUpdateWindow calls unexpected on this platform.");
   return IPC_FAIL_NO_REASON(this);
-}
-
-PContentPermissionRequestChild*
-ContentChild::AllocPContentPermissionRequestChild(
-    Span<const PermissionRequest> aRequests, nsIPrincipal* aPrincipal,
-    nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-    const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId,
-    const bool& aIgnoreAllowSitePermission) {
-  MOZ_CRASH("unused");
-  return nullptr;
-}
-
-bool ContentChild::DeallocPContentPermissionRequestChild(
-    PContentPermissionRequestChild* actor) {
-  nsContentPermissionUtils::NotifyRemoveContentPermissionRequestChild(actor);
-  auto child = static_cast<RemotePermissionRequest*>(actor);
-  child->IPDLRelease();
-  return true;
 }
 
 already_AddRefed<PWebBrowserPersistDocumentChild>

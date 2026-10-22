@@ -157,11 +157,6 @@ inline nsresult GetEncodedImageBuffer(gfx::DataSourceSurface* aSurface,
   return NS_OK;
 }
 
-inline bool IsValidImageUrl(const nsAString& aUrl) {
-  return StringBeginsWith(aUrl, u"http://"_ns) ||
-         StringBeginsWith(aUrl, u"https://"_ns);
-}
-
 inline uint32_t GetMediaKeyMask(mozilla::dom::MediaControlKey aKey) {
   return 1 << static_cast<uint8_t>(aKey);
 }

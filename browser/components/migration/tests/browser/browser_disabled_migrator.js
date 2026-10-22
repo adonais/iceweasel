@@ -4,7 +4,7 @@
 "use strict";
 
 const { MigratorBase } = ChromeUtils.importESModule(
-  "resource:///modules/MigratorBase.sys.mjs"
+  "moz-src:///browser/components/migration/MigratorBase.sys.mjs"
 );
 
 /**

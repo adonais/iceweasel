@@ -1081,6 +1081,68 @@ void MacroAssemblerCompat::compareSimd128Float(Assembler::Condition cond,
   }
 }
 
+void MacroAssemblerCompat::compareSimd128IntWithZero(Assembler::Condition cond,
+                                                     ARMFPRegister dest,
+                                                     ARMFPRegister lhs) {
+  switch (cond) {
+    case Assembler::Equal:
+    case Assembler::BelowOrEqual:
+      Cmeq(dest, lhs, 0);
+      break;
+    case Assembler::NotEqual:
+    case Assembler::Above:
+      Cmtst(dest, lhs, lhs);
+      break;
+    case Assembler::GreaterThan:
+      Cmgt(dest, lhs, 0);
+      break;
+    case Assembler::GreaterThanOrEqual:
+      Cmge(dest, lhs, 0);
+      break;
+    case Assembler::LessThan:
+      Cmlt(dest, lhs, 0);
+      break;
+    case Assembler::LessThanOrEqual:
+      Cmle(dest, lhs, 0);
+      break;
+    case Assembler::AboveOrEqual:
+      Movi(dest.V2D(), 0xffffffffffffffff);
+      break;
+    case Assembler::Below:
+      Movi(dest.V2D(), 0);
+      break;
+    default:
+      MOZ_CRASH("Unexpected SIMD integer condition");
+  }
+}
+
+void MacroAssemblerCompat::compareSimd128FloatWithZero(
+    Assembler::Condition cond, ARMFPRegister dest, ARMFPRegister lhs) {
+  switch (cond) {
+    case Assembler::Equal:
+      Fcmeq(dest, lhs, 0.0);
+      break;
+    case Assembler::NotEqual:
+      Fcmeq(dest, lhs, 0.0);
+      Mvn(dest, dest);
+      break;
+    case Assembler::GreaterThan:
+      Fcmgt(dest, lhs, 0.0);
+      break;
+    case Assembler::GreaterThanOrEqual:
+      Fcmge(dest, lhs, 0.0);
+      break;
+    case Assembler::LessThan:
+      Fcmlt(dest, lhs, 0.0);
+      break;
+    case Assembler::LessThanOrEqual:
+      Fcmle(dest, lhs, 0.0);
+      break;
+    default:
+      MOZ_CRASH("Unexpected SIMD floating-point condition");
+  }
+}
+
 void MacroAssemblerCompat::rightShiftInt8x16(FloatRegister lhs, Register rhs,
                                              FloatRegister dest,
                                              bool isUnsigned) {

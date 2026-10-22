@@ -6,6 +6,8 @@
 #define mozilla_dom_PushNotifier_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"
 #include "nsIPushNotifier.h"
@@ -61,6 +63,8 @@ class PushNotifier final : public nsIPushNotifier {
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushNotifier, nsIPushNotifier)
   NS_DECL_NSIPUSHNOTIFIER
 
+  static void NotifyPushMessageHandled(const nsAString& aMessageId);
+
  private:
   ~PushNotifier() = default;
 
@@ -112,15 +116,19 @@ class PushMessageDispatcher final : public PushDispatcher {
  public:
   PushMessageDispatcher(const nsACString& aScope, nsIPrincipal* aPrincipal,
                         const nsAString& aMessageId,
-                        const Maybe<nsTArray<uint8_t>>& aData);
+                        const Maybe<nsTArray<uint8_t>>& aData,
+                        Promise* aPromise);
   ~PushMessageDispatcher();
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
 
  private:
+  RefPtr<PushHandledPromise> SendPushEvent();
+
   const nsString mMessageId;
   const Maybe<nsTArray<uint8_t>> mData;
+  const RefPtr<Promise> mPromise;
 };
 
 class PushSubscriptionChangeDispatcher final : public PushDispatcher {

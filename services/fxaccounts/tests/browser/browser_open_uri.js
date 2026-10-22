@@ -33,7 +33,7 @@ function sendOpenUriNotification(uris) {
 
 add_setup(async function () {
   const { AccountsGlue } = ChromeUtils.importESModule(
-    "resource:///modules/AccountsGlue.sys.mjs"
+    "moz-src:///browser/components/AccountsGlue.sys.mjs"
   );
   gMockAlertsService = createMockAlertsService();
   const wrappedService = { wrappedJSObject: gMockAlertsService };

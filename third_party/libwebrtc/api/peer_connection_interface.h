@@ -738,6 +738,11 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     bool voice_activity_detection = true;
     bool ice_restart = false;
 
+    // JSEP allows generating an offer in any non-closed signaling state, but
+    // the WebRTC-PC createOffer() API only allows "stable" and
+    // "have-local-offer". Browser implementations should set this to true.
+    bool restrict_offer_to_stable_or_have_local_offer = false;
+
     // If true, will offer to BUNDLE audio/video/data together. Not to be
     // confused with RTCP mux (multiplexing RTP and RTCP together).
     bool use_rtp_mux = true;
@@ -1452,6 +1457,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
 
   // Optional dependencies
   Thread* network_thread = nullptr;
+  // Deprecated: Support for a worker thread that is distinct from the network
+  // thread is being removed. Applications must stop supplying a separate
+  // worker thread. See
+  // https://groups.google.com/g/discuss-webrtc/c/Fs_Hd5XNJh0
   Thread* worker_thread = nullptr;
   Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;

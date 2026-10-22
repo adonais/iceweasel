@@ -157,8 +157,8 @@ button.chip {
 }
 
 .chip-icon {
-  width: var(--size-item-small);
-  height: var(--size-item-small);
+  width: var(--icon-size);
+  height: var(--icon-size);
   border-radius: var(--border-radius-xsmall);
   flex-shrink: 0;
   -moz-context-properties: fill;
@@ -186,7 +186,8 @@ button.chip {
   }
 }
 
-:host([type="in-line"]) .chip-icon {
+:host([type="in-line"]) .chip-icon,
+:host([type="in-line"]) tab-group-icon {
   align-self: center;
   transition: opacity 120ms ease;
 }
@@ -362,8 +363,12 @@ button.chip {
 }
 
 :host([size="small"]) .chip-icon {
-  height: var(--size-item-xsmall);
-  width: var(--size-item-xsmall);
+  height: var(--icon-size-xsmall);
+  width: var(--icon-size-xsmall);
+}
+
+:host([size="small"]) tab-group-icon {
+  --tab-group-icon-size: var(--icon-size-xsmall);
 }
 
 :host([size="small"]) .chip-label {

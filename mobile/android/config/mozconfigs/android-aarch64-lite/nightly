@@ -1,0 +1,3 @@
+. "$topsrcdir/mobile/android/config/mozconfigs/android-aarch64/nightly"
+
+ac_add_options --enable-geckoview-lite

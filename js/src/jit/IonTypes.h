@@ -6,9 +6,12 @@
 #define jit_IonTypes_h
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/Maybe.h"
 
 #include <algorithm>
+#include <cstring>
 #include <stdint.h>
+#include <type_traits>
 
 #include "jstypes.h"
 #include "NamespaceImports.h"
@@ -468,6 +471,39 @@ class SimdConstant {
   bool isOneBits() const {
     MOZ_ASSERT(defined());
     return ~u.i64x2[0] == 0 && ~u.i64x2[1] == 0;
+  }
+
+  // Returns the common lane value if every |T|-typed lane holds the same bit
+  // pattern.
+  template <typename T>
+  mozilla::Maybe<T> splatIntValue() const {
+    static_assert(std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> ||
+                  std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>);
+
+    MOZ_ASSERT(defined());
+
+    constexpr auto allEqual = [](const auto& lanes) {
+      return std::all_of(std::begin(lanes), std::end(lanes),
+                         [&](const auto& lane) { return lane == lanes[0]; });
+    };
+
+    if constexpr (std::is_same_v<T, int8_t>) {
+      I8x16 lanes;
+      memcpy(&lanes, bytes(), sizeof(lanes));
+      return allEqual(lanes) ? mozilla::Some(lanes[0]) : mozilla::Nothing();
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+      I16x8 lanes;
+      memcpy(&lanes, bytes(), sizeof(lanes));
+      return allEqual(lanes) ? mozilla::Some(lanes[0]) : mozilla::Nothing();
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+      I32x4 lanes;
+      memcpy(&lanes, bytes(), sizeof(lanes));
+      return allEqual(lanes) ? mozilla::Some(lanes[0]) : mozilla::Nothing();
+    } else {
+      I64x2 lanes;
+      memcpy(&lanes, bytes(), sizeof(lanes));
+      return allEqual(lanes) ? mozilla::Some(lanes[0]) : mozilla::Nothing();
+    }
   }
 
   // SimdConstant is a HashPolicy.  Currently we discriminate by type, but it

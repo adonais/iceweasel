@@ -1,0 +1,267 @@
+diff --git a/media/ffvpx/libavcodec/allcodecs.c b/media/ffvpx/libavcodec/allcodecs.c
+index 47eded261f17..2e92fab6a3b0 100644
+--- a/media/ffvpx/libavcodec/allcodecs.c
++++ b/media/ffvpx/libavcodec/allcodecs.c
+@@ -843,6 +843,7 @@ extern const FFCodec ff_aac_mf_encoder;
+ extern const FFCodec ff_ac3_mf_encoder;
+ extern const FFCodec ff_amrnb_mediacodec_decoder;
+ extern const FFCodec ff_amrwb_mediacodec_decoder;
++extern const FFCodec ff_flac_mediacodec_decoder;
+ extern const FFCodec ff_h263_v4l2m2m_encoder;
+ extern const FFCodec ff_libaom_av1_decoder;
+ /* hwaccel hooks only, so prefer external decoders */
+@@ -904,8 +905,10 @@ extern const FFCodec ff_mpeg4_cuvid_decoder;
+ extern const FFCodec ff_mpeg4_mediacodec_decoder;
+ extern const FFCodec ff_mpeg4_mediacodec_encoder;
+ extern const FFCodec ff_mpeg4_v4l2m2m_encoder;
++extern const FFCodec ff_opus_mediacodec_decoder;
+ extern const FFCodec ff_prores_videotoolbox_encoder;
+ extern const FFCodec ff_vc1_cuvid_decoder;
++extern const FFCodec ff_vorbis_mediacodec_decoder;
+ extern const FFCodec ff_vp8_cuvid_decoder;
+ extern const FFCodec ff_vp8_mediacodec_decoder;
+ extern const FFCodec ff_vp8_mediacodec_encoder;
+diff --git a/media/ffvpx/libavcodec/mediacodecdec.c b/media/ffvpx/libavcodec/mediacodecdec.c
+index b9a76e806423..b2cb1c5da618 100644
+--- a/media/ffvpx/libavcodec/mediacodecdec.c
++++ b/media/ffvpx/libavcodec/mediacodecdec.c
+@@ -46,6 +46,15 @@
+ #include "hwconfig.h"
+ #include "internal.h"
+ #include "fffjni.h"
++#if CONFIG_VORBIS_MEDIACODEC_DECODER
++#include "xiph.h"
++#endif
++#if CONFIG_FLAC_MEDIACODEC_DECODER
++#include "flac.h"
++#endif
++#if CONFIG_OPUS_MEDIACODEC_DECODER || CONFIG_VORBIS_MEDIACODEC_DECODER
++#include "vorbis_data.h"
++#endif
+ #include "mediacodec_wrapper.h"
+ #include "mediacodecdec_common.h"
+ 
+@@ -325,6 +334,72 @@ static int common_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
+ }
+ #endif
+ 
++#if CONFIG_OPUS_MEDIACODEC_DECODER
++static int opus_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
++{
++    uint64_t zero = 0;
++
++    if (!avctx->extradata || avctx->extradata_size < 19) {
++        av_log(avctx, AV_LOG_ERROR, "Invalid Opus extradata\n");
++        return AVERROR_INVALIDDATA;
++    }
++
++    /* The codec delay and seek preroll are required, but pass zero for both
++     * so that the decoder does not discard any samples itself. The pre-skip
++     * is trimmed by the generic skip samples handling instead, and preroll
++     * after seeking is left to the caller as with the native decoder. */
++    ff_AMediaFormat_setBuffer(format, "csd-0", avctx->extradata, avctx->extradata_size);
++    ff_AMediaFormat_setBuffer(format, "csd-1", &zero, sizeof(zero));
++    ff_AMediaFormat_setBuffer(format, "csd-2", &zero, sizeof(zero));
++
++    return 0;
++}
++#endif
++
++#if CONFIG_VORBIS_MEDIACODEC_DECODER
++static int vorbis_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
++{
++    const uint8_t *header_start[3];
++    int header_len[3];
++
++    if (avpriv_split_xiph_headers(avctx->extradata, avctx->extradata_size, 30,
++                                  header_start, header_len) < 0) {
++        av_log(avctx, AV_LOG_ERROR, "Invalid Vorbis extradata\n");
++        return AVERROR_INVALIDDATA;
++    }
++
++    ff_AMediaFormat_setBuffer(format, "csd-0", (void *)header_start[0], header_len[0]);
++    ff_AMediaFormat_setBuffer(format, "csd-1", (void *)header_start[2], header_len[2]);
++
++    return 0;
++}
++#endif
++
++#if CONFIG_FLAC_MEDIACODEC_DECODER
++static int flac_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
++{
++    uint8_t buf[8 + FLAC_STREAMINFO_SIZE];
++
++    if (!avctx->extradata || avctx->extradata_size < FLAC_STREAMINFO_SIZE) {
++        av_log(avctx, AV_LOG_ERROR, "Invalid FLAC extradata\n");
++        return AVERROR_INVALIDDATA;
++    }
++
++    if (AV_RL32(avctx->extradata) == MKTAG('f','L','a','C')) {
++        ff_AMediaFormat_setBuffer(format, "csd-0", avctx->extradata, avctx->extradata_size);
++        return 0;
++    }
++
++    AV_WL32(buf, MKTAG('f','L','a','C'));
++    buf[4] = 0x80;
++    AV_WB24(buf + 5, FLAC_STREAMINFO_SIZE);
++    memcpy(buf + 8, avctx->extradata, FLAC_STREAMINFO_SIZE);
++    ff_AMediaFormat_setBuffer(format, "csd-0", buf, sizeof(buf));
++
++    return 0;
++}
++#endif
++
+ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+ {
+     int ret;
+@@ -448,6 +523,33 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+         if (ret < 0)
+             goto done;
+         break;
++#endif
++#if CONFIG_OPUS_MEDIACODEC_DECODER
++    case AV_CODEC_ID_OPUS:
++        codec_mime = "audio/opus";
++
++        ret = opus_set_extradata(avctx, format);
++        if (ret < 0)
++            goto done;
++        break;
++#endif
++#if CONFIG_VORBIS_MEDIACODEC_DECODER
++    case AV_CODEC_ID_VORBIS:
++        codec_mime = "audio/vorbis";
++
++        ret = vorbis_set_extradata(avctx, format);
++        if (ret < 0)
++            goto done;
++        break;
++#endif
++#if CONFIG_FLAC_MEDIACODEC_DECODER
++    case AV_CODEC_ID_FLAC:
++        codec_mime = "audio/flac";
++
++        ret = flac_set_extradata(avctx, format);
++        if (ret < 0)
++            goto done;
++        break;
+ #endif
+     default:
+         av_assert0(0);
+@@ -478,6 +580,16 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+     s->ctx->delay_flush = s->delay_flush;
+     s->ctx->use_ndk_codec = s->use_ndk_codec;
+ 
++#if CONFIG_OPUS_MEDIACODEC_DECODER || CONFIG_VORBIS_MEDIACODEC_DECODER
++    /* Android outputs Vorbis and Opus channel mapping family 1 in the Vorbis
++     * channel order. */
++    if (avctx->codec_id == AV_CODEC_ID_VORBIS ||
++        (avctx->codec_id == AV_CODEC_ID_OPUS && avctx->extradata[18] == 1)) {
++        s->ctx->codec_ch_layouts = ff_vorbis_ch_layouts;
++        s->ctx->codec_ch_offsets = ff_vorbis_channel_layout_offsets;
++    }
++#endif
++
+     if ((ret = ff_mediacodec_dec_init(avctx, s->ctx, codec_mime, format)) < 0) {
+         s->ctx = NULL;
+         goto done;
+@@ -591,6 +703,15 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+         } else if (ret < 0) {
+             return ret;
+         }
++
++        if (CONFIG_VORBIS_MEDIACODEC_DECODER && avctx->codec_id == AV_CODEC_ID_VORBIS) {
++            /* Android's Vorbis decoder expects each packet to be followed by
++             * the number of samples left on the page, or -1 if unknown. */
++            ret = av_grow_packet(&s->buffered_pkt, 4);
++            if (ret < 0)
++                return ret;
++            AV_WN32(s->buffered_pkt.data + s->buffered_pkt.size - 4, -1);
++        }
+     }
+ 
+     return AVERROR(EAGAIN);
+@@ -738,6 +859,18 @@ DECLARE_MEDIACODEC_ADEC(amrwb, "AMR-WB", AV_CODEC_ID_AMR_WB, NULL)
+ DECLARE_MEDIACODEC_ADEC(mp3, "MP3", AV_CODEC_ID_MP3, NULL)
+ #endif
+ 
++#if CONFIG_OPUS_MEDIACODEC_DECODER
++DECLARE_MEDIACODEC_ADEC(opus, "Opus", AV_CODEC_ID_OPUS, NULL)
++#endif
++
++#if CONFIG_VORBIS_MEDIACODEC_DECODER
++DECLARE_MEDIACODEC_ADEC(vorbis, "Vorbis", AV_CODEC_ID_VORBIS, NULL)
++#endif
++
++#if CONFIG_FLAC_MEDIACODEC_DECODER
++DECLARE_MEDIACODEC_ADEC(flac, "FLAC", AV_CODEC_ID_FLAC, NULL)
++#endif
++
+ int moz_avcodec_mediacodec_is_eos(AVCodecContext* avctx) {
+   // Note that MediaCodecH264DecContext is used by all codec types.
+   MediaCodecH264DecContext *s = avctx->priv_data;
+diff --git a/media/ffvpx/libavcodec/mediacodecdec_common.c b/media/ffvpx/libavcodec/mediacodecdec_common.c
+index a0122f8fae61..d170810ffed6 100644
+--- a/media/ffvpx/libavcodec/mediacodecdec_common.c
++++ b/media/ffvpx/libavcodec/mediacodecdec_common.c
+@@ -428,7 +428,20 @@ static int mediacodec_wrap_sw_audio_buffer(AVCodecContext *avctx,
+            "Frame: format=%d channels=%d sample_rate=%d nb_samples=%d",
+            avctx->sample_fmt, avctx->ch_layout.nb_channels, avctx->sample_rate, frame->nb_samples);
+ 
+-    memcpy(frame->data[0], data, info->size);
++    if (s->ch_offsets) {
++        const int channels = avctx->ch_layout.nb_channels;
++        const int stride = channels * sample_size;
++
++        for (int i = 0; i < frame->nb_samples; i++) {
++            const uint8_t *src = data + i * stride;
++            uint8_t *dst = frame->data[0] + i * stride;
++
++            for (int ch = 0; ch < channels; ch++)
++                memcpy(dst + ch * sample_size, src + s->ch_offsets[ch] * sample_size, sample_size);
++        }
++    } else {
++        memcpy(frame->data[0], data, info->size);
++    }
+ 
+     ret = 0;
+ done:
+@@ -692,11 +705,18 @@ static int mediacodec_dec_parse_audio_format(AVCodecContext *avctx, MediaCodecDe
+ 
+     avctx->sample_rate = sample_rate;
+ 
++    s->ch_offsets = NULL;
+     AMEDIAFORMAT_GET_INT32(channel_mask, "channel-mask", 0);
+-    if (channel_mask)
++    if (channel_mask) {
+         av_channel_layout_from_mask(&avctx->ch_layout, mcdec_map_channel_mask(avctx, channel_mask));
+-    else
++    } else if (s->codec_ch_layouts && channel_count > 2 && channel_count <= 8) {
++        ret = av_channel_layout_copy(&avctx->ch_layout, &s->codec_ch_layouts[channel_count - 1]);
++        if (ret < 0)
++            goto fail;
++        s->ch_offsets = s->codec_ch_offsets[channel_count - 1];
++    } else {
+         av_channel_layout_default(&avctx->ch_layout, channel_count);
++    }
+ 
+     av_log(avctx, AV_LOG_INFO,
+         "Output parameters channel-count=%d channel-layout=%x sample-rate=%d\n",
+diff --git a/media/ffvpx/libavcodec/mediacodecdec_common.h b/media/ffvpx/libavcodec/mediacodecdec_common.h
+index 0ab29036bd43..3d675508ce25 100644
+--- a/media/ffvpx/libavcodec/mediacodecdec_common.h
++++ b/media/ffvpx/libavcodec/mediacodecdec_common.h
+@@ -71,6 +71,13 @@ typedef struct MediaCodecDecContext {
+     atomic_int serial;
+ 
+     bool use_ndk_codec;
++
++    /* Codec specific channel layouts and the offsets to reorder them into
++     * the native order, indexed by channel count - 1, for 1 to 8 channels.
++     * Used when the output format has no channel mask. */
++    const AVChannelLayout *codec_ch_layouts;
++    const uint8_t (*codec_ch_offsets)[8];
++    const uint8_t *ch_offsets;
+ } MediaCodecDecContext;
+ 
+ int ff_mediacodec_dec_init(AVCodecContext *avctx,

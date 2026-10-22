@@ -26,6 +26,7 @@ task-defaults:
     run:
         clone-with: hg
         gradle-package-command: bundle
+        track-build-times: true
 
 tasks:
     focus-debug:

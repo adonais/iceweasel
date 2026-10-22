@@ -51,6 +51,8 @@ fail-if = [
 
 ["ensure-exts/test_EXT_texture_filter_anisotropic.html"]
 
+["ensure-exts/test_EXT_texture_norm16.html"]
+
 ["ensure-exts/test_OES_draw_buffers_indexed.html"]
 
 ["ensure-exts/test_OES_fbo_render_mipmap.html"]
@@ -153,9 +155,6 @@ skip-if = [
 ["test_canvas_size.html"]
 
 ["test_capture.html"]
-skip-if = [
-  "os == 'win' && debug", # Bug 1388624
-]
 support-files = ["../captureStream_common.js"]
 # Even though we use ../ here, in the test HTML, we need to omit this. Sub-CWD relative
 # paths are fine, but they locate the file and dump it in the current directory.
@@ -301,6 +300,8 @@ skip-if = [
 skip-if = [
   "os == 'android'", # bug 865443- seperate suite - the non_conf* tests pass except for one on armv6 tests
 ]
+
+["test_webgl_vendor_family_fpp.html"]
 
 ["test_webgl_vendor_randomize_fpp.html"]
 

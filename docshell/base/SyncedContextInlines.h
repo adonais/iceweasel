@@ -171,6 +171,78 @@ mozilla::ipc::IPCResult Transaction<Context>::CommitFromIPC(
 }
 
 template <typename Context>
+void Transaction<Context>::SendCorrection(Context* aOwner,
+                                          ContentParent* aTarget) {
+  if (mModified.isEmpty()) {
+    return;
+  }
+  MOZ_LOG(
+      Context::GetSyncLog(), LogLevel::Debug,
+      ("Transaction::SendCorrection(#%" PRIx64 ", childid %d): %s",
+       aOwner->Id(), aTarget->OtherChildID(),
+       StringJoin(", "_ns, mModified, [](nsACString& dest, const auto& idx) {
+         dest.Append(Context::FieldIndexToName(idx));
+       }).get()));
+  aOwner->SendCommitTransaction(aTarget, *this,
+                                aTarget->GetBrowsingContextFieldEpoch());
+}
+
+template <typename Context>
+void Transaction<Context>::ReconcileInitialFields(
+    Context* aOwner, typename Context::FieldValues&& aRequested,
+    ContentParent* aSource, Transaction<Context>& aCorrection) {
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(aSource);
+
+  Transaction<Context> accepted;
+  EachIndex([&](auto idx) {
+    if (!(aRequested.Get(idx) == aOwner->mFields.mValues.Get(idx))) {
+      accepted.mValues.Get(idx) = std::move(aRequested.Get(idx));
+      accepted.mModified += idx;
+    }
+  });
+
+  MOZ_LOG(Context::GetSyncLog(), LogLevel::Debug,
+          ("Transaction::ReconcileInitialFields(#%" PRIx64 ", childid %d): %s",
+           aOwner->Id(), aSource->OtherChildID(),
+           FormatTransaction<Context>(accepted.mModified,
+                                      aOwner->mFields.mValues, accepted.mValues)
+               .get()));
+
+  // Not `Validate`: it sends reverts to `aSource` immediately, and `aOwner`
+  // cannot be serialized before it is attached.
+  EachIndex([&](auto idx) {
+    if (!accepted.mModified.contains(idx)) {
+      return;
+    }
+    if (accepted.ValidateOne(idx, aOwner, aSource) == CanSetResult::Allow) {
+      return;
+    }
+    aCorrection.mValues.Get(idx) = aOwner->mFields.mValues.Get(idx);
+    aCorrection.mModified += idx;
+    accepted.mModified -= idx;
+  });
+
+  if (!aCorrection.mModified.isEmpty()) {
+    MOZ_LOG(Context::GetSyncLog(), LogLevel::Warning,
+            ("Transaction::ReconcileInitialFields(#%" PRIx64
+             ", childid %d): refused %s",
+             aOwner->Id(), aSource->OtherChildID(),
+             StringJoin(", "_ns, aCorrection.mModified,
+                        [](nsACString& dest, const auto& idx) {
+                          dest.Append(Context::FieldIndexToName(idx));
+                        })
+                 .get()));
+  }
+
+  // Not `Apply`: `DidSet` must not run on a context which is still being
+  // constructed, and did not run for the values it was constructed with either.
+  if (!accepted.mModified.isEmpty()) {
+    accepted.CommitWithoutSyncing(aOwner);
+  }
+}
+
+template <typename Context>
 mozilla::ipc::IPCResult Transaction<Context>::CommitFromIPC(
     const MaybeDiscarded<Context>& aOwner, uint64_t aEpoch,
     ContentChild* aSource) {
@@ -257,7 +329,7 @@ typename Transaction<Context>::IndexSet Transaction<Context>::Validate(
       return;
     }
 
-    switch (AsCanSetResult(aOwner->CanSet(idx, mValues.Get(idx), aSource))) {
+    switch (ValidateOne(idx, aOwner, aSource)) {
       case CanSetResult::Allow:
         break;
       case CanSetResult::Deny:
@@ -292,6 +364,43 @@ typename Transaction<Context>::IndexSet Transaction<Context>::Validate(
     }
   }
   return failedFields;
+}
+
+template <typename Context>
+template <size_t I>
+CanSetResult Transaction<Context>::ValidateOne(Index<I>, Context* aOwner,
+                                               ContentParent* aSource) {
+  constexpr FieldInfo info = Context::FieldIndexToInfo(Index<I>{});
+  if constexpr (info.mTopOnly) {
+    if (!aOwner->IsTop()) {
+      return CanSetResult::Deny;
+    }
+  }
+
+  if constexpr (info.mCanSet == CanSet::ParentOnly) {
+    return AsCanSetResult(aOwner->CheckOnlyParentProcessCanSet(aSource));
+  } else if constexpr (info.mCanSet == CanSet::EmbedderOnly) {
+    // NOTE: This member is only on BrowsingContext.
+    return AsCanSetResult(aOwner->CheckOnlyEmbedderCanSet(aSource));
+  } else if constexpr (info.mCanSet == CanSet::EmbedderOrParentOnly) {
+    // NOTE: This member is only on BrowsingContext.
+    return AsCanSetResult(aOwner->CheckOnlyParentProcessCanSet(aSource) ||
+                          aOwner->CheckOnlyEmbedderCanSet(aSource));
+  } else if constexpr (info.mCanSet == CanSet::OwnerOnly) {
+    // NOTE: This member is only on WindowContext.
+    return AsCanSetResult(aOwner->CheckOnlyOwningProcessCanSet(aSource));
+  } else if constexpr (info.mCanSet == CanSet::OwnerOrParentOnly) {
+    // NOTE: This member is only on WindowContext.
+    return AsCanSetResult(aOwner->CheckOnlyParentProcessCanSet(aSource) ||
+                          aOwner->CheckOnlyOwningProcessCanSet(aSource));
+  } else if constexpr (info.mCanSet == CanSet::Unrestricted) {
+    return CanSetResult::Allow;
+  } else {
+    static_assert(info.mCanSet == CanSet::Custom,
+                  "Field has unknown mCanSetValue for ValidateOne");
+    return AsCanSetResult(
+        aOwner->CanSet(Index<I>{}, mValues.Get(Index<I>{}), aSource));
+  }
 }
 
 template <typename Context>

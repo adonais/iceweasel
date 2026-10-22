@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.Intent.EXTRA_INITIAL_INTENTS
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore.EXTRA_OUTPUT
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -305,10 +306,18 @@ internal class FilePicker(
     }
 
     private fun launchAndroidPhotoPicker() {
+        val builder = PickVisualMediaRequest.Builder().setMediaType(getVisualMediaType(currentRequest))
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            builder.setMediaCapabilitiesForTranscoding(androidPhotoPicker?.mediaCapabilities)
+        }
+
+        val request = builder.build()
+
         if ((currentRequest as File).isMultipleFilesSelection) {
-            androidPhotoPicker?.multipleMediaPicker?.launch(PickVisualMediaRequest(getVisualMediaType(currentRequest)))
+            androidPhotoPicker?.multipleMediaPicker?.launch(request)
         } else {
-            androidPhotoPicker?.singleMediaPicker?.launch(PickVisualMediaRequest(getVisualMediaType(currentRequest)))
+            androidPhotoPicker?.singleMediaPicker?.launch(request)
         }
     }
 

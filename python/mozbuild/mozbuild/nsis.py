@@ -36,12 +36,15 @@ _INSTALLER_BASE_FILES = (
 NSIS_BRANDING_FILES = (
     "branding.nsi",
     "firefox64.ico",
-    "stubinstaller/bgstub.jpg",
-    "stubinstaller/installing_page.css",
-    "stubinstaller/profile_cleanup_page.css",
     "wizHeader.bmp",
     "wizHeaderRTL.bmp",
     "wizWatermark.bmp",
+)
+
+NSIS_STUB_BRANDING_FILES = (
+    "stubinstaller/bgstub.jpg",
+    "stubinstaller/installing_page.css",
+    "stubinstaller/profile_cleanup_page.css",
 )
 
 NSIS_TOOLKIT_FILES = (

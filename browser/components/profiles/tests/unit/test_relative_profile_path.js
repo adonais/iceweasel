@@ -62,9 +62,14 @@ add_task(async function test_create_profile() {
   await db.close();
 
   Assert.equal(rows.length, 1, "There should be one row for the profile");
-  Assert.equal(
-    rows[0].getResultByName("path"),
-    `..${PATH_SEPARATOR}absoluteProfile`,
+  Assert.ok(
+    rows[0].getResultByName("path").startsWith(`..${PATH_SEPARATOR}`),
+    "The profile path in the database should be relative"
+  );
+  Assert.ok(
+    rows[0]
+      .getResultByName("path")
+      .endsWith(`${PATH_SEPARATOR}absoluteProfile`),
     "The profile path in the database should be relative"
   );
 });

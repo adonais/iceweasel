@@ -47,7 +47,7 @@ add_task(async function () {
   );
 
   // Select the script request initiated by another script.
-  EventUtils.sendMouseEvent({ type: "mousedown" }, file);
+  clickOnRequestRow(file.parentNode);
 
   // Wait for the stack trace tab to show
   await waitUntil(() =>

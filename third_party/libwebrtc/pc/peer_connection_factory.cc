@@ -101,7 +101,7 @@ PeerConnectionFactory::PeerConnectionFactory(
     : env_(env),
       context_(context ? context
                        : ConnectionContext::Create(env_, dependencies)),
-      codec_vendor_(media_engine(), context_->use_rtx(), env_.field_trials()),
+      codec_vendor_(media_engine(), /*rtx_enabled=*/true, env_.field_trials()),
       event_log_factory_(std::move(dependencies->event_log_factory)),
       fec_controller_factory_(std::move(dependencies->fec_controller_factory)),
       network_state_predictor_factory_(

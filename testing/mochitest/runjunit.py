@@ -275,6 +275,8 @@ class JUnitTestRunner(MochitestDesktop):
             env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"] = "1"
         else:
             env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"] = "0"
+        if self.options.isolated_process:
+            env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS"] = "1"
 
         # Add additional env variables
         for [key, value] in [p.split("=", 1) for p in self.options.add_env]:
@@ -626,6 +628,13 @@ class JunitArgumentParser(argparse.ArgumentParser):
             dest="web_content_isolation_strategy",
             help="Strategy used to determine whether or not a particular site should load into "
             "a webIsolated content process, see fission.webContentIsolationStrategy.",
+        )
+        self.add_argument(
+            "--enable-isolated-process",
+            action="store_true",
+            dest="isolated_process",
+            default=False,
+            help="Run the tests with content service isolated process enabled.",
         )
         self.add_argument(
             "--repeat",

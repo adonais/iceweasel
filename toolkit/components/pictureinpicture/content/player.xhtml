@@ -83,7 +83,7 @@
           <input id="audio-scrubber" class="control-item" min="0" max="1" step=".001" type="range" hidden="true"/>
           <button id="playbackRate" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-playback-rate-btn" data-l10n-attrs="tooltip"></button>
           <div id="playbackRateSettings" class="hide panel">
-            <fieldset class="box panel-fieldset">
+            <fieldset class="panel-controls-box">
               <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-playback-rate-panel-accessible"></legend>
               <div class="playback-rate-header">
                 <span data-l10n-id="pictureinpicture-playback-rate-label"></span>
@@ -102,31 +102,26 @@
           </div>
           <button id="closed-caption" class="control-item control-button tooltip-over-controls center-tooltip closed-caption" hidden="true" disabled="true" data-l10n-id="pictureinpicture-subtitles-btn" data-l10n-attrs="tooltip"></button>
           <div id="settings" class="hide panel">
-            <fieldset class="box panel-fieldset">
+            <fieldset class="panel-controls-box">
               <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-subtitles-panel-accessible"></legend>
-              <div class="subtitle-grid">
-                <label id="subtitles-toggle-label" data-l10n-id="pictureinpicture-subtitles-label" class="bold" for="subtitles-toggle"></label>
-                <label class="switch">
-                  <input id="subtitles-toggle" type="checkbox" checked=""/>
-                  <span class="slider" role="presentation"></span>
-                </label>
-              </div>
+              <moz-toggle id="subtitles-toggle" pressed=""
+                          inputlayout="inline-end"
+                          data-l10n-id="pictureinpicture-subtitles-toggle"
+                          data-l10n-attrs="label"></moz-toggle>
               <div class="grey-line"></div>
-              <fieldset class="font-size-selection panel-fieldset">
-                <legend data-l10n-id="pictureinpicture-font-size-label" class="bold panel-legend"></legend>
-                <div id="font-size-selection-radio-small" class="font-size-selection-radio">
-                  <input id="small" type="radio" name="cc-size"/>
-                  <label data-l10n-id="pictureinpicture-font-size-small" for="small"></label>
-                </div>
-                <div id="font-size-selection-radio-medium" class="font-size-selection-radio">
-                  <input id="medium" type="radio" name="cc-size"/>
-                  <label data-l10n-id="pictureinpicture-font-size-medium" for="medium"></label>
-                </div>
-                <div id="font-size-selection-radio-large" class="font-size-selection-radio">
-                  <input id="large" type="radio" name="cc-size"/>
-                  <label data-l10n-id="pictureinpicture-font-size-large" for="large"></label>
-                </div>
-              </fieldset>
+              <moz-radio-group class="font-size-selection" name="cc-size"
+                               data-l10n-id="pictureinpicture-font-size-group"
+                               data-l10n-attrs="label">
+                <moz-radio id="small" value="small"
+                           data-l10n-id="pictureinpicture-font-size-small-radio"
+                           data-l10n-attrs="label"></moz-radio>
+                <moz-radio id="medium" value="medium"
+                           data-l10n-id="pictureinpicture-font-size-medium-radio"
+                           data-l10n-attrs="label"></moz-radio>
+                <moz-radio id="large" value="large"
+                           data-l10n-id="pictureinpicture-font-size-large-radio"
+                           data-l10n-attrs="label"></moz-radio>
+              </moz-radio-group>
             </fieldset>
             <div class="arrow"></div>
           </div>

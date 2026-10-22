@@ -30,7 +30,7 @@ addAccessibleTask(
   `
   <div id="dependant1">label</div>
   <div id="dependant2">label2</div>
-  <div role="checkbox" id="host"></div>`,
+  <div role="checkbox" id="host" aria-invalid="true"></div>`,
   async function (browser, accDoc) {
     for (let spec of attrRelationsSpec) {
       await testRelated(browser, accDoc, ...spec);
@@ -346,4 +346,54 @@ addAccessibleTask(
     await testCachedRelation(leg, RELATION_LABEL_FOR, fs);
   },
   { chrome: true, iframe: true, remoteIframe: true }
+);
+
+/**
+ * Test relation caching for ERRORMSG with respect to explicit aria-invalid.
+ */
+addAccessibleTask(
+  `
+  <input id="target" aria-errormessage="error" aria-invalid="true">
+  <div id="error">error</div>
+  `,
+  async function testErrorMessageAriaInvalid(browser, docAcc) {
+    const target = findAccessibleChildByID(docAcc, "target");
+    const error = findAccessibleChildByID(docAcc, "error");
+
+    await testCachedRelation(target, RELATION_ERRORMSG, error);
+
+    await invokeSetAttribute(browser, "target", "aria-invalid", "false");
+    await testCachedRelation(target, RELATION_ERRORMSG, []);
+
+    await invokeSetAttribute(browser, "target", "aria-invalid", "true");
+    await testCachedRelation(target, RELATION_ERRORMSG, error);
+  },
+  { topLevel: true, chrome: true }
+);
+
+/**
+ * Test relation caching for ERRORMSG with respect to implicit aria-invalid.
+ */
+addAccessibleTask(
+  `
+  <input id="target" aria-errormessage="error" pattern="[a-z]" value="A">
+  <div id="error">error</div>
+  `,
+  async function testErrorMessageAriaInvalidImplicit(browser, docAcc) {
+    const target = findAccessibleChildByID(docAcc, "target");
+    const error = findAccessibleChildByID(docAcc, "error");
+
+    await testCachedRelation(target, RELATION_ERRORMSG, error);
+
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("target").value = "a";
+    });
+    await testCachedRelation(target, RELATION_ERRORMSG, []);
+
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("target").value = "A";
+    });
+    await testCachedRelation(target, RELATION_ERRORMSG, error);
+  },
+  { topLevel: true, chrome: true }
 );

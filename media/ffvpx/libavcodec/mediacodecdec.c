@@ -46,6 +46,15 @@
 #include "hwconfig.h"
 #include "internal.h"
 #include "fffjni.h"
+#if CONFIG_VORBIS_MEDIACODEC_DECODER
+#include "xiph.h"
+#endif
+#if CONFIG_FLAC_MEDIACODEC_DECODER
+#include "flac.h"
+#endif
+#if CONFIG_OPUS_MEDIACODEC_DECODER || CONFIG_VORBIS_MEDIACODEC_DECODER
+#include "vorbis_data.h"
+#endif
 #include "mediacodec_wrapper.h"
 #include "mediacodecdec_common.h"
 
@@ -325,6 +334,72 @@ static int common_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
 }
 #endif
 
+#if CONFIG_OPUS_MEDIACODEC_DECODER
+static int opus_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
+{
+    uint64_t zero = 0;
+
+    if (!avctx->extradata || avctx->extradata_size < 19) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid Opus extradata\n");
+        return AVERROR_INVALIDDATA;
+    }
+
+    /* The codec delay and seek preroll are required, but pass zero for both
+     * so that the decoder does not discard any samples itself. The pre-skip
+     * is trimmed by the generic skip samples handling instead, and preroll
+     * after seeking is left to the caller as with the native decoder. */
+    ff_AMediaFormat_setBuffer(format, "csd-0", avctx->extradata, avctx->extradata_size);
+    ff_AMediaFormat_setBuffer(format, "csd-1", &zero, sizeof(zero));
+    ff_AMediaFormat_setBuffer(format, "csd-2", &zero, sizeof(zero));
+
+    return 0;
+}
+#endif
+
+#if CONFIG_VORBIS_MEDIACODEC_DECODER
+static int vorbis_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
+{
+    const uint8_t *header_start[3];
+    int header_len[3];
+
+    if (avpriv_split_xiph_headers(avctx->extradata, avctx->extradata_size, 30,
+                                  header_start, header_len) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid Vorbis extradata\n");
+        return AVERROR_INVALIDDATA;
+    }
+
+    ff_AMediaFormat_setBuffer(format, "csd-0", (void *)header_start[0], header_len[0]);
+    ff_AMediaFormat_setBuffer(format, "csd-1", (void *)header_start[2], header_len[2]);
+
+    return 0;
+}
+#endif
+
+#if CONFIG_FLAC_MEDIACODEC_DECODER
+static int flac_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
+{
+    uint8_t buf[8 + FLAC_STREAMINFO_SIZE];
+
+    if (!avctx->extradata || avctx->extradata_size < FLAC_STREAMINFO_SIZE) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid FLAC extradata\n");
+        return AVERROR_INVALIDDATA;
+    }
+
+    if (AV_RL32(avctx->extradata) == MKTAG('f','L','a','C')) {
+        ff_AMediaFormat_setBuffer(format, "csd-0", avctx->extradata, avctx->extradata_size);
+        return 0;
+    }
+
+    AV_WL32(buf, MKTAG('f','L','a','C'));
+    buf[4] = 0x80;
+    AV_WB24(buf + 5, FLAC_STREAMINFO_SIZE);
+    memcpy(buf + 8, avctx->extradata, FLAC_STREAMINFO_SIZE);
+    ff_AMediaFormat_setBuffer(format, "csd-0", buf, sizeof(buf));
+
+    return 0;
+}
+#endif
+
 static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
 {
     int ret;
@@ -449,6 +524,33 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
             goto done;
         break;
 #endif
+#if CONFIG_OPUS_MEDIACODEC_DECODER
+    case AV_CODEC_ID_OPUS:
+        codec_mime = "audio/opus";
+
+        ret = opus_set_extradata(avctx, format);
+        if (ret < 0)
+            goto done;
+        break;
+#endif
+#if CONFIG_VORBIS_MEDIACODEC_DECODER
+    case AV_CODEC_ID_VORBIS:
+        codec_mime = "audio/vorbis";
+
+        ret = vorbis_set_extradata(avctx, format);
+        if (ret < 0)
+            goto done;
+        break;
+#endif
+#if CONFIG_FLAC_MEDIACODEC_DECODER
+    case AV_CODEC_ID_FLAC:
+        codec_mime = "audio/flac";
+
+        ret = flac_set_extradata(avctx, format);
+        if (ret < 0)
+            goto done;
+        break;
+#endif
     default:
         av_assert0(0);
     }
@@ -477,6 +579,16 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
 
     s->ctx->delay_flush = s->delay_flush;
     s->ctx->use_ndk_codec = s->use_ndk_codec;
+
+#if CONFIG_OPUS_MEDIACODEC_DECODER || CONFIG_VORBIS_MEDIACODEC_DECODER
+    /* Android outputs Vorbis and Opus channel mapping family 1 in the Vorbis
+     * channel order. */
+    if (avctx->codec_id == AV_CODEC_ID_VORBIS ||
+        (avctx->codec_id == AV_CODEC_ID_OPUS && avctx->extradata[18] == 1)) {
+        s->ctx->codec_ch_layouts = ff_vorbis_ch_layouts;
+        s->ctx->codec_ch_offsets = ff_vorbis_channel_layout_offsets;
+    }
+#endif
 
     if ((ret = ff_mediacodec_dec_init(avctx, s->ctx, codec_mime, format)) < 0) {
         s->ctx = NULL;
@@ -590,6 +702,15 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
             return ff_mediacodec_dec_receive(avctx, s->ctx, frame, true);
         } else if (ret < 0) {
             return ret;
+        }
+
+        if (CONFIG_VORBIS_MEDIACODEC_DECODER && avctx->codec_id == AV_CODEC_ID_VORBIS) {
+            /* Android's Vorbis decoder expects each packet to be followed by
+             * the number of samples left on the page, or -1 if unknown. */
+            ret = av_grow_packet(&s->buffered_pkt, 4);
+            if (ret < 0)
+                return ret;
+            AV_WN32(s->buffered_pkt.data + s->buffered_pkt.size - 4, -1);
         }
     }
 
@@ -736,6 +857,18 @@ DECLARE_MEDIACODEC_ADEC(amrwb, "AMR-WB", AV_CODEC_ID_AMR_WB, NULL)
 
 #if CONFIG_MP3_MEDIACODEC_DECODER
 DECLARE_MEDIACODEC_ADEC(mp3, "MP3", AV_CODEC_ID_MP3, NULL)
+#endif
+
+#if CONFIG_OPUS_MEDIACODEC_DECODER
+DECLARE_MEDIACODEC_ADEC(opus, "Opus", AV_CODEC_ID_OPUS, NULL)
+#endif
+
+#if CONFIG_VORBIS_MEDIACODEC_DECODER
+DECLARE_MEDIACODEC_ADEC(vorbis, "Vorbis", AV_CODEC_ID_VORBIS, NULL)
+#endif
+
+#if CONFIG_FLAC_MEDIACODEC_DECODER
+DECLARE_MEDIACODEC_ADEC(flac, "FLAC", AV_CODEC_ID_FLAC, NULL)
 #endif
 
 int moz_avcodec_mediacodec_is_eos(AVCodecContext* avctx) {

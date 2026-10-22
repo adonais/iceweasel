@@ -127,7 +127,7 @@ int DoCallback(const char* path) {
  * Epoch 3 is for the application traffic secrets.
  */
 void SecretCallbackFailZeroRtt(PRFileDesc* fd, PRUint16 epoch,
-                               SSLSecretDirection dir, PK11SymKey* secret,
+                               SSLSecretDirection dir, PK11SymKey* /*secret*/,
                                void* arg) {
   fprintf(stderr, "0RTT handler epoch=%d dir=%d\n", epoch, (uint32_t)dir);
   FaultyServerHost* host = static_cast<FaultyServerHost*>(arg);
@@ -173,15 +173,16 @@ void SecretCallbackFailZeroRtt(PRFileDesc* fd, PRUint16 epoch,
   }
 }
 
-SECStatus FailingWriteCallback(PRFileDesc* fd, PRUint16 epoch,
-                               SSLContentType contentType, const PRUint8* data,
-                               unsigned int len, void* arg) {
+SECStatus FailingWriteCallback(PRFileDesc* /*fd*/, PRUint16 /*epoch*/,
+                               SSLContentType /*contentType*/,
+                               const PRUint8* /*data*/, unsigned int /*len*/,
+                               void* /*arg*/) {
   return SECFailure;
 }
 
 void SecretCallbackFailMlkem768x25519(PRFileDesc* fd, PRUint16 epoch,
                                       SSLSecretDirection dir,
-                                      PK11SymKey* secret, void* arg) {
+                                      PK11SymKey* /*secret*/, void* arg) {
   fprintf(stderr, "Mlkem768x25519 handler epoch=%d dir=%d\n", epoch,
           (uint32_t)dir);
   FaultyServerHost* host = static_cast<FaultyServerHost*>(arg);
@@ -220,7 +221,7 @@ void SecretCallbackFailMlkem768x25519(PRFileDesc* fd, PRUint16 epoch,
 }
 
 int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
-                          uint32_t aSrvNameArrSize, void* aArg) {
+                          uint32_t aSrvNameArrSize, void* /*aArg*/) {
   const FaultyServerHost* host =
       GetHostForSNI(aSrvNameArr, aSrvNameArrSize, sFaultyServerHosts);
   if (!host || host->mFaultType == UnknownSNI) {
@@ -266,7 +267,7 @@ int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
   return 0;
 }
 
-SECStatus ConfigureServer(PRFileDesc* aFd) { return SECSuccess; }
+SECStatus ConfigureServer(PRFileDesc* /*aFd*/) { return SECSuccess; }
 
 int main(int argc, char* argv[]) {
   int rv = StartServer(argc, argv, DoSNISocketConfig, nullptr, ConfigureServer);

@@ -52,6 +52,9 @@ class BytecodeAnalysis {
   bool disableIon_ = false;
   bool disableInlining_ = false;
 
+  // The last op found to be reachable.
+  const jsbytecode* lastReachablePC_ = nullptr;
+
   void disableIon() { disableIon_ = true; }
   bool ionDisabled() const { return disableIon_; }
   void disableInlining() { disableInlining_ = true; }
@@ -76,6 +79,8 @@ class BytecodeAnalysis {
   }
 
   void checkWarpSupport(JSOp op);
+
+  const jsbytecode* lastReachablePC() const { return lastReachablePC_; }
 
   bool isIonDisabled() const { return disableIon_; }
   bool isInliningDisabled() const { return disableInlining_; }

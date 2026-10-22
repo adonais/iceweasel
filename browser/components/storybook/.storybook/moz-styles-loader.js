@@ -230,7 +230,7 @@ async function rewriteCssUris(source) {
     // the CSS file e.g. __chrome_styles_loader__moztoggleStyles.
     let cssImport = `__chrome_styles_loader__${path
       .basename(localPath, ".css")
-      .replaceAll("-", "")}Styles`;
+      .replaceAll(/[-.]/g, "")}Styles`;
 
     // Handle special cases where we don't use a template.
     if (

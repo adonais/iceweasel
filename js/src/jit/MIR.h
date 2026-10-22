@@ -655,9 +655,29 @@ class MDefinition : public MNode {
   BailoutKind bailoutKind() const { return bailoutKind_; }
   void setBailoutKind(BailoutKind kind) { bailoutKind_ = kind; }
 
-  // Return the range of this value, *before* any bailout checks. Contrast
-  // this with the type() method, and the Range constructor which takes an
-  // MDefinition*, which describe the value *after* any bailout checks.
+  // Return the range of this value, as computed by range analysis. For
+  // instructions that can bail out, this is the range *before* any bailout
+  // checks.
+  //
+  // WARNING: If you're adding a new consumer of range analysis data, this is
+  // probably not the function you want. Code that reasons about the values
+  // an operand can have should use the Range(MDefinition*) constructor
+  // instead. That constructor adjusts Int32 and Boolean ranges so that they
+  // cover every value a consumer could see, taking into account both bailouts
+  // and truncation. Only use this function when you need the range *before*
+  // those adjustments: for example, to decide whether an instruction can
+  // overflow and needs a bailout check in the first place.
+  //
+  // For example, given an Int32 MMul with operand ranges I[0,10000] and
+  // I[1<<29,1<<29], `mul->range()` is `I[0, ?] (< pow(2, 43+1))`, which shows
+  // that the multiplication can overflow. `Range(mul)` is instead
+  // I[INT32_MIN,INT32_MAX]. The upper bound has been reduced to INT32_MAX,
+  // because values above that would have bailed out. Less obviously, the lower
+  // bound is now INT32_MIN. If all consumers of `mul` can ignore overflow
+  // (eg `(x * y) | 0`), then we might truncate the multiplication, eliminating
+  // the bailout. The post-truncation range would include INT32_MIN. Because
+  // we don't recompute ranges after truncation, `Range(mul)` needs to cover
+  // both cases.
   //
   // Warning: Range analysis is removing the bit-operations such as '| 0' at
   // the end of the transformations. Using this function to analyse any
@@ -3824,11 +3844,12 @@ class MToBigInt : public MUnaryInstruction, public ToBigIntPolicy::Data {
 class MToInt64 : public MUnaryInstruction, public ToInt64Policy::Data {
   explicit MToInt64(MDefinition* def) : MUnaryInstruction(classOpcode, def) {
     setResultType(MIRType::Int64);
-    setMovable();
 
-    // Guard unless the conversion is known to be non-effectful & non-throwing.
-    if (!def->typeIsOneOf(
-            {MIRType::Boolean, MIRType::BigInt, MIRType::Int64})) {
+    // Conversions that are known to be non-effectful & non-throwing can move.
+    // All other conversions are guards.
+    if (def->typeIsOneOf({MIRType::Boolean, MIRType::BigInt, MIRType::Int64})) {
+      setMovable();
+    } else {
       setGuard();
     }
   }
@@ -4085,6 +4106,7 @@ class MBitOr : public MBinaryBitwiseInstruction {
   INSTRUCTION_HEADER(BitOr)
   TRIVIAL_NEW_WRAPPERS
 
+  MDefinition* foldsTo(TempAllocator& alloc) override;
   MDefinition* foldIfZero(size_t operand) override {
     return getOperand(1 -
                       operand);  // 0 | x => x, so if ith is 0, return (1-i)th
@@ -9487,9 +9509,6 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
         isLeftRotate_(isLeftRotate) {
     setMovable();
     setResultType(type);
-    // Prevent reordering.  Although there's no problem eliding call result
-    // definitions, there's also no need, as they cause no codegen.
-    setGuard();
   }
 
  public:
@@ -9504,6 +9523,10 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
   }
 
   bool isLeftRotate() const { return isLeftRotate_; }
+
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+  bool canRecoverOnBailout() const override { return type() == MIRType::Int32; }
 
   ALLOW_CLONE(MRotate)
 };

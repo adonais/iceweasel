@@ -744,6 +744,7 @@ bool OpusState::Init(void) {
   opusData.mHeadersBinaryBlob->AppendElements(mHeaders.PeekFront()->packet,
                                               mHeaders.PeekFront()->bytes);
   mInfo.mCodecSpecificConfig = AudioCodecSpecificVariant{std::move(opusData)};
+  SetOpusOutputChannels(mInfo);
 
   mHeaders.Erase();
   LOG(LogLevel::Debug, ("Opus decoder init"));

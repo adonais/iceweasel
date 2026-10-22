@@ -65,6 +65,24 @@ session restore — also exempts the site it is leaving. This matches how the sp
 attributes user activation, which already uses the top level traversable's active
 document.
 
+#### Bounce candidate of a navigation without user activation
+
+For a navigation without transient activation, *process navigation start* adds
+the host of the navigation's initiator origin to the bounce set. For an ordinary
+client redirect the initiator is the document being navigated away from, but it
+can also sit outside the context being navigated: a script in another tab, or a
+cross-site frame allowed to navigate the top level without a gesture (e.g.
+`sandbox="allow-top-navigation"`). Such an initiator was credited with a bounce
+it never performed and could be classified and purged for it
+([Bug 2061167](https://bugzilla.mozilla.org/show_bug.cgi?id=2061167)).
+
+Gecko instead adds the site of the document currently committed in the context
+being navigated, the same site the initial host derivation above starts from. It
+deliberately does not fall back to the opener for a context which has nothing
+committed yet, since that would name the initiating tab again; such a navigation
+adds no candidate. A frame initiated top level navigation is therefore credited
+to the page hosting the frame, which is the site actually being left.
+
 #### Comparison with Chromium
 
 Chromium's implementation starts a redirect chain the same way. In
@@ -74,7 +92,9 @@ committed URL and only consults the navigation's initiator when the tab has noth
 committed. `BtmServiceImpl::HandleRedirects` in
 [`btm_service_impl.cc`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/btm/btm_service_impl.cc)
 then skips a redirector whose site equals the chain's initial or final site, which is
-what `RecordStatefulBounces` does with the initial and final host.
+what `RecordStatefulBounces` does with the initial and final host. A client redirect
+is likewise recorded with the tab's last committed URL as the redirector, never the
+navigation's initiator, and only once the tab has committed something.
 
 Gecko is stricter in one case. Chromium's fallback is the initiator's origin as-is,
 so for a context opened by a cross-site frame it resolves to the frame's own site and

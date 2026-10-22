@@ -19,6 +19,7 @@ from mozbuild.frontend.data import (
     Exports,
     FinalTargetPreprocessedFiles,
     GeneratedFile,
+    Headers,
     HostProgram,
     HostRustLibrary,
     HostRustProgram,
@@ -2056,6 +2057,21 @@ class TestEmitterBasic(unittest.TestCase):
             set(["-DFOO", '-DBAZ="abcd"', "-UQUX", "-DBAR=7", "-DVALUE=xyz"]),
         )
 
+    def test_source_headers(self):
+        reader = self.reader("reader-source-headers")
+        objs = self.read_topsrcdir(reader)
+        headers = [
+            header for obj in objs if isinstance(obj, Headers) for header in obj.files
+        ]
+        self.assertEqual(
+            headers,
+            [
+                mozpath.join(reader.config.topsrcdir, "exported.h"),
+                mozpath.join(reader.config.topsrcdir, "header.h"),
+                mozpath.join(reader.config.topsrcdir, "installed.h"),
+            ],
+        )
+
     def test_licenses(self):
         reader = self.reader("licenses")
         objs = self.read_topsrcdir(reader)
@@ -2074,6 +2090,8 @@ class TestEmitterBasic(unittest.TestCase):
         mylib = notices["mylib"]
         self.assertEqual(mylib.notice, "Copyright 2026 Somebody.")
         self.assertEqual(mylib.paths, ["extra/path"])
+        self.assertEqual(mylib.acknowledgement, "Portions are copyright Somebody.")
+        self.assertIsNone(mit.acknowledgement)
 
         self.assertEqual([o.id for o in coverage], ["MIT"])
         self.assertEqual(coverage[0].relsrcdir, "lib")

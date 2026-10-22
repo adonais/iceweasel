@@ -25,7 +25,9 @@ task-defaults:
             - release-level
         substitution-fields:
             - run.config
-            - run.extra-config
+            - run.bouncer-prefix
+            - run.locales
+            - run.cdn-urls
     run-on-projects: []  # to make sure this never runs as part of CI
     shipping-phase: push
     worker-type: b-linux
@@ -34,18 +36,26 @@ task-defaults:
         docker-image: {in-tree: "update-verify"}
     run:
         clone-with: hg
-        sparse-profile: mozharness
-        extra-config:
+        sparse-profile: mach
+        bouncer-prefix:
             by-release-level:
-                production:
-                    bouncer_prefix: "https://download.mozilla.org/"
+                production: "https://download.mozilla.org/"
+                staging: "https://dev.bouncer.nonprod.webservices.mozgcp.net/"
+        locales:
+            by-release-level:
+                production: []
                 staging:
                     # This is the list on-change locales, excluding ja/ja-JP-mac
                     # which bouncer_check doesn't support.
-                    locales: ['en-US', 'en-CA', 'he', 'it']
-                    bouncer_prefix: "https://dev.bouncer.nonprod.webservices.mozgcp.net/"
-                    cdn_urls:
-                        - ftp.stage.mozaws.net
+                    - en-US
+                    - en-CA
+                    - he
+                    - it
+        cdn-urls:
+            by-release-level:
+                production: []
+                staging:
+                    - ftp.stage.mozaws.net
 
     attributes:
         build_platform: linux64
@@ -64,14 +74,10 @@ tasks:
         run:
             config:
                 by-release-type:
-                    beta:
-                        - releases/bouncer_firefox_beta.py
-                    release:
-                        - releases/bouncer_firefox_release.py
-                    esr.*:
-                        - releases/bouncer_firefox_esr.py
-                    default:
-                        - releases/bouncer_firefox_beta.py
+                    beta: python/mozrelease/mozrelease/bouncer/firefox_beta.yml
+                    release: python/mozrelease/mozrelease/bouncer/firefox_release.yml
+                    esr.*: python/mozrelease/mozrelease/bouncer/firefox_esr.yml
+                    default: python/mozrelease/mozrelease/bouncer/firefox_beta.yml
         treeherder:
             platform: firefox-release/opt
 
@@ -81,7 +87,6 @@ tasks:
             product: devedition
             job-name: devedition-release-bouncer-check
         run:
-            config:
-                - releases/bouncer_firefox_devedition.py
+            config: python/mozrelease/mozrelease/bouncer/firefox_devedition.yml
         treeherder:
             platform: devedition-release/opt

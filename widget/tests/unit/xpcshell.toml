@@ -8,11 +8,6 @@ run-if = [
 ]
 support-files = ["favicon.ico"]
 
-["test_macsharingservice.js"]
-run-if = [
-  "os == 'mac'",
-]
-
 ["test_macwebapputils.js"]
 run-if = [
   "os == 'mac'",

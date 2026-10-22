@@ -116,6 +116,7 @@
     <command id="History:UndoCloseWindow" />
     <command id="History:RestoreLastClosedTabOrWindowOrSession" />
     <command id="History:SearchHistory" />
+    <command id="Browser:SearchTabs" />
 
     <!-- The keys for these commands are registered dynamically by gGfxUtils
          when gfx.webrender.debug.enable-capture is set. -->
@@ -184,7 +185,7 @@
          modifiers="accel"
 #endif
          command="Tools:Downloads"/>
-    <key id="key_openAddons" data-l10n-id="addons-shortcut" command="Tools:Addons" modifiers="accel,shift"/>
+    <key id="key_openAddons" data-l10n-id="addons-shortcut-2" command="Tools:Addons" modifiers="accel,shift"/>
     <key id="openFileKb" data-l10n-id="file-open-shortcut" command="Browser:OpenFile"  modifiers="accel"/>
     <key id="key_savePage" data-l10n-id="save-page-shortcut" command="Browser:SavePage" modifiers="accel"/>
     <key id="printKb" data-l10n-id="print-shortcut" command="cmd_print"  modifiers="accel"/>
@@ -350,6 +351,7 @@
     <key id="key_privatebrowsing" command="Tools:PrivateBrowsing" data-l10n-id="private-browsing-shortcut"
          modifiers="accel,shift" reserved="true"/>
     <key id="key_screenshot" data-l10n-id="screenshot-shortcut" command="Browser:Screenshot" modifiers="accel,shift"/>
+    <key id="key_searchTabs" data-l10n-id="search-tabs-shortcut" command="Browser:SearchTabs" modifiers="accel,shift"/>
     <key id="key_sanitize" command="Tools:Sanitize" keycode="VK_DELETE" modifiers="accel,shift"/>
 #ifdef XP_MACOSX
     <key id="key_sanitize_mac" command="Tools:Sanitize" keycode="VK_BACK" modifiers="accel,shift"/>

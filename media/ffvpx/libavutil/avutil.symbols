@@ -343,10 +343,12 @@ av_vk_get_optional_instance_extensions
 av_vkfmt_from_pixfmt
 ff_vk_alloc_mem
 ff_vk_create_imageview
-ff_vk_exec_add_dep_buf
 ff_vk_exec_add_dep_frame
+ff_vk_exec_add_dep_refstruct
+ff_vk_exec_discard
 ff_vk_exec_get
 ff_vk_exec_mirror_sem_value
+ff_vk_exec_move_dep_refstruct
 ff_vk_exec_pool_free
 ff_vk_exec_pool_init
 ff_vk_exec_start
@@ -354,6 +356,9 @@ ff_vk_exec_submit
 ff_vk_exec_update_frame
 ff_vk_exec_wait
 ff_vk_get_pooled_buffer
+ff_vk_image_create
+ff_vk_image_free
+ff_vk_imageviews_alloc
 ff_vk_init
 ff_vk_qf_find
 ff_vk_ret2str

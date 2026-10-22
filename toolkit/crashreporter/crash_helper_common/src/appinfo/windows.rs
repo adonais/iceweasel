@@ -140,10 +140,6 @@ mod tests {
         System::Threading::{GetCurrentThread, OpenThreadToken},
     };
 
-    // Ensure linking against the necessary Windows DLLs.
-    #[link(name = "advapi32")]
-    extern "C" {}
-
     #[test]
     /// Simple sanity check.
     fn test_get_user_id() {

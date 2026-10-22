@@ -38,17 +38,13 @@ case "$TARGET" in
     ;;
 *-apple-darwin)
     # Cross-compiling for Mac on Linux.
-    if test "$TARGET" = "aarch64-apple-darwin"; then
-        export MACOSX_DEPLOYMENT_TARGET=11.0
-    else
-        export MACOSX_DEPLOYMENT_TARGET=10.15
-    fi
-    MACOS_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.5.sdk
-    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MACOS_SYSROOT -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET $rust_lto_flags"
-    export CC="$MOZ_FETCHES_DIR/clang/bin/clang"
-    export CXX="$MOZ_FETCHES_DIR/clang/bin/clang++"
-    export TARGET_CFLAGS="-isysroot $MACOS_SYSROOT -fuse-ld=lld -Wno-unused-command-line-argument"
-    export TARGET_CXXFLAGS="-isysroot $MACOS_SYSROOT -fuse-ld=lld -Wno-unused-command-line-argument -stdlib=libc++"
+    MACOS_TARGET=$TARGET
+    . $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
+    export RUSTFLAGS="$MACOS_RUSTFLAGS $rust_lto_flags"
+    export CC=$MACOS_CC
+    export CXX=$MACOS_CXX
+    export TARGET_CFLAGS="$MACOS_CFLAGS"
+    export TARGET_CXXFLAGS="$MACOS_CFLAGS -stdlib=libc++"
     ;;
 *-pc-windows-msvc)
     # Cross-compiling for Windows on Linux.

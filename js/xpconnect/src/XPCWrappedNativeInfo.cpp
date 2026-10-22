@@ -7,6 +7,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SourceLocation.h"
 
+#include "jsapi.h"
 #include "nsIScriptError.h"
 #include "nsPointerHashKeys.h"
 #include "nsPrintfCString.h"
@@ -84,8 +85,10 @@ bool XPCNativeMember::Resolve(XPCCallContext& ccx, XPCNativeInterface* iface,
     callback = XPC_WN_GetterSetter;
   }
 
-  jsid name = GetName();
-  JS_MarkCrossZoneId(ccx, name);
+  RootedId name(ccx, GetName());
+  if (!JS_WrapId(ccx, &name)) {
+    return false;
+  }
 
   JSFunction* fun;
   if (name.isString()) {

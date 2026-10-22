@@ -2429,13 +2429,14 @@ networking:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2048455
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2072828
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 160
+    expires: 166
     labels:
       - private_to_local_http
       - private_to_local_https
@@ -2456,13 +2457,14 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048459
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072832
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
       - smayya@mozilla.com
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 160
+    expires: 166
     labels:
       - localhost
       - local_network
@@ -2475,13 +2477,14 @@ networking:
       Counts the number of times the channel was blocked because it's a LNA load triggered by a tracker
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1973500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072834
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1973500
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
-    expires: 160
+    expires: 166
 
   local_network_access_connection:
     type: event
@@ -2491,6 +2494,7 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010465
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048457
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072830
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
     data_sensitivity:
@@ -2501,7 +2505,7 @@ networking:
       - necko@mozilla.com
     send_in_pings:
       - local-network-access
-    expires: 160
+    expires: 166
     extra_keys:
       top_level_site:
         description: The base domain (eTLD+1) of the top-level document/main window.

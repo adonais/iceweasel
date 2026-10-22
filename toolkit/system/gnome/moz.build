@@ -4,6 +4,7 @@
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Shell Integration")
+    SCHEDULES.exclusive = ["linux"]
 
 SOURCES += [
     "nsAlertsIconListener.cpp",

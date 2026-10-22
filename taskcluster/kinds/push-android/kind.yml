@@ -149,3 +149,31 @@ tasks:
                     default: focus-android
         treeherder:
             symbol: push-huawei
+
+    vivo:
+        description: Publish the Fenix universal APK to the vivo App Store
+        label: "push-android-vivo-{name}"
+        attributes:
+            target-store: vivo
+        only-archs:
+            - universal
+        from-deps:
+            kinds: [signing-apk]
+            with-attributes:
+                build-type:
+                    - fenix-release
+        worker:
+            target-store: vivo
+            commit:
+                by-level:
+                    '3': true
+                    default: false
+            channel:
+                by-build-type:
+                    fenix-release: fenix-release
+            product:
+                by-build-type:
+                    fenix-.*: fenix
+                    default: focus-android
+        treeherder:
+            symbol: push-vivo

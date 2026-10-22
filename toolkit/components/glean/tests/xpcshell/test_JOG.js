@@ -27,6 +27,34 @@ add_task(
   }
 );
 
+add_task(
+  {
+    skip_if: () =>
+      !Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
+  },
+  function test_jog_object_does_not_validate_schema() {
+    // Bug 2050219: document the limitation until runtime schema validation exists.
+    // See https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/instrumentation_tests.html#tests-and-artifact-builds
+    const balloons = [{ colour: "red", diameter: 5 }];
+    Glean.testOnly.balloons.set(balloons);
+    Assert.deepEqual(balloons, Glean.testOnly.balloons.testGetValue());
+
+    const invalidValues = [
+      [{ color: "red" }],
+      [{ colour: "red", diameter: "small" }],
+      [{ colour: "red", diameter: 5, extra: "field" }],
+    ];
+    for (const value of invalidValues) {
+      Glean.testOnly.balloons.set(value);
+      Assert.deepEqual(
+        value,
+        Glean.testOnly.balloons.testGetValue(),
+        "Artifact builds currently store schema-invalid objects without an invalid_value error"
+      );
+    }
+  }
+);
+
 add_task(function test_jog_counter_works() {
   Services.fog.testRegisterRuntimeMetric(
     "counter",

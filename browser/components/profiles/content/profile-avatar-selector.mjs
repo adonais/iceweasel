@@ -293,6 +293,7 @@ export class ProfileAvatarSelector extends MozLitElement {
   iconTabContentTemplate() {
     return html`<moz-visual-picker
       type="listbox"
+      data-l10n-id="avatar-selector-icon-list"
       value=${this.value}
       name="avatar"
       id="avatars"

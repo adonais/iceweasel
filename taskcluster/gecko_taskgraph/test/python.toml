@@ -7,6 +7,8 @@ subsuite = "taskgraph"
 
 ["test_actions_util.py"]
 
+["test_android_taskgraph.py"]
+
 ["test_decision.py"]
 
 ["test_files_changed.py"]
@@ -31,7 +33,11 @@ subsuite = "taskgraph"
 
 ["test_transforms_job_common.py"]
 
+["test_transforms_mozconfig.py"]
+
 ["test_transforms_perftest.py"]
+
+["test_transforms_source_test.py"]
 
 ["test_transforms_task.py"]
 

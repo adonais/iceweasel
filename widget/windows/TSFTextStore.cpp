@@ -284,6 +284,7 @@ void TSFTextStore::DidLockGranted() {
   if (mDestroyed || !mWidget || mWidget->Destroyed()) {
     mPendingSelectionChangeData.reset();
     mHasReturnedNoLayoutError = false;
+    mNeedsToNotifyTSFOfLayoutChange = false;
   }
 }
 
@@ -300,6 +301,7 @@ void TSFTextStore::FlushPendingActions() {
     }
     mPendingSelectionChangeData.reset();
     mHasReturnedNoLayoutError = false;
+    mNeedsToNotifyTSFOfLayoutChange = false;
     return;
   }
 
@@ -670,7 +672,7 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
     }
   }
 
-  if (mHasReturnedNoLayoutError) {
+  if (mHasReturnedNoLayoutError || mNeedsToNotifyTSFOfLayoutChange) {
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
              "calling TSFTextStore::NotifyTSFOfLayoutChange()...",
@@ -3501,21 +3503,15 @@ nsresult TSFTextStore::OnLayoutChangeInternal() {
 
   nsresult rv = NS_OK;
 
-  // We need to notify TSF of layout change even if the document is locked.
-  // So, don't use MaybeFlushPendingNotifications() for flushing pending
-  // layout change.
-  MOZ_LOG(gIMELog, LogLevel::Info,
-          ("0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
-           "NotifyTSFOfLayoutChange()...",
-           this));
-  if (NS_WARN_IF(!NotifyTSFOfLayoutChange())) {
-    rv = NS_ERROR_FAILURE;
-  }
-
+  // In the parent process, we may receive layout change notification of the
+  // content during a document lock because dispatched events are handled
+  // synchronously. Let's notify the layout change when the document is
+  // unlocked.
   MOZ_LOG(gIMELog, LogLevel::Debug,
           ("0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
            "MaybeFlushPendingNotifications()...",
            this));
+  mNeedsToNotifyTSFOfLayoutChange = true;
   MaybeFlushPendingNotifications();
 
   return rv;
@@ -3532,8 +3528,10 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
   mWaitingQueryLayout = returnedNoLayoutError;
 
   // For avoiding to call this method again at unlocking the document during
-  // calls of OnLayoutChange(), reset mHasReturnedNoLayoutError.
+  // calls of OnLayoutChange(), reset mHasReturnedNoLayoutError and
+  // mNeedsToNotifyTSFOfLayoutChange.
   mHasReturnedNoLayoutError = false;
+  mNeedsToNotifyTSFOfLayoutChange = false;
 
   // Now, layout has been computed.  We should notify mContentForTSF for
   // making GetTextExt() and GetACPFromPoint() not return TS_E_NOLAYOUT.

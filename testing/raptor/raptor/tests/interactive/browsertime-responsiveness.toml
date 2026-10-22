@@ -37,30 +37,6 @@ test_cmds = [
 ]
 test_url = "https://www.cnn.com/"
 
-[facebook-nav]
-browser_cycles = 10 # used with --cold
-page_timeout = 90000
-playback_pageset_manifest = "mitm11-windows-firefox-facebook-nav.manifest"
-test_cmds = [
-    ['measure.start', 'landing'],
-    ['navigate', 'https://www.facebook.com/'],
-    ['wait.byTime', '5000'],
-    ['measure.stop', ''],
-    ['measure.start', 'marketplace'],
-    ['navigate', 'https://www.facebook.com/marketplace'],
-    ['wait.byTime', '5000'],
-    ['measure.stop', ''],
-    ['measure.start', 'groups'],
-    ['navigate', 'https://www.facebook.com/groups/discover/'],
-    ['wait.byTime', '5000'],
-    ['measure.stop', ''],
-    ['measure.start', 'friends'],
-    ['navigate', 'https://www.facebook.com/friends/'],
-    ['wait.byTime', '5000'],
-    ['measure.stop', ''],
-]
-test_url = "https://www.facebook.com"
-
 [reddit-billgates-ama]
 page_timeout = 240000 # at most 4 minutes required per browser cycle
 browser_cycles = 10 # used with --cold

@@ -192,6 +192,8 @@ open class FocusApplication : Application(), Provider {
      * @param dispatcher The [CoroutineDispatcher] on which the initialization will occur. Defaults to [ioDispatcher].
      */
     private suspend fun initializeEmojiCompat(dispatcher: CoroutineDispatcher = ioDispatcher) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) return
+
         withContext(dispatcher) {
             // If the device has no compatible provider (e.g. no Play Services), config will be null.
             val config = DefaultEmojiCompatConfig.create(applicationContext) ?: return@withContext

@@ -53,15 +53,6 @@ CERT_FindNSCertTypeExtension(CERTCertificate *cert, SECItem *retItem)
 }
 
 /*
- * get the value of a string type extension
- */
-char *
-CERT_FindNSStringExtension(CERTCertificate *cert, int oidtag)
-{
-    return NULL;
-}
-
-/*
  * get the value of the X.509 v3 Key Usage Extension
  */
 SECStatus

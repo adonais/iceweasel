@@ -7,8 +7,8 @@
 # result matches what is committed.
 #
 # Every vendored moz.yaml (one with a `vendoring:` section, non-rust) must
-# appear in exactly one group's `members` -- the `coverage` task turns the tree
-# orange for any that don't. Which group a library is in only decides which task
+# appear in a group's `members` -- the `coverage` task turns the tree orange
+# for any that are missing. Which group a library is in only decides which task
 # verifies it, so put a new one with related libraries.
 #
 # Libraries that do not re-vendor cleanly yet are annotated in
@@ -59,6 +59,8 @@ algorithms:
         - modules/fdlibm/moz.yaml
         - modules/xz-embedded/moz.yaml
         - modules/zlib/moz.yaml
+        - mozglue/static/lz4/moz.yaml
+        - mozglue/static/xxhash/moz.yaml
         - nsprpub/moz.yaml
         - other-licenses/snappy/moz.yaml
         - security/nss/moz.yaml

@@ -117,6 +117,15 @@ add_task(async function popup_mousedown_test() {
       server,
       connectionNumber + 1
     );
+
+    info("Releasing the mouse button loads the result");
+    let loaded = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      completeValue
+    );
+    EventUtils.synthesizeMouseAtCenter(listitem, { type: "mouseup" }, window);
+    await loaded;
   });
 });
 

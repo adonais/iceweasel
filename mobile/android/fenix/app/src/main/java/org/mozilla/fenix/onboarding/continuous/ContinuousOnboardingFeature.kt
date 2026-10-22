@@ -55,8 +55,9 @@ class IPProtectionOnboardingConfig(
  * Based on the user's current onboarding stage and device capabilities, this feature may:
  * - on day 2 or day 3, request the default browser role, followed by a notification-permission onboarding card if
  *   available, skipping either step if already satisfied,
- * - on day 5, show a Firefox Sync sign-in card, or skip it if already signed in, or
- * - on day 7, show the IP Protection onboarding prompt, or skip it if already satisfied.
+ * - on day 5, show a Firefox Sync sign-in card, or skip it if already signed in,
+ * - on day 7, show the IP Protection onboarding prompt, or skip it if already satisfied or the user is not eligible for
+ *   IP Protection.
  */
 class ContinuousOnboardingFeature(
     private val activity: Activity,
@@ -69,7 +70,7 @@ class ContinuousOnboardingFeature(
     private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
     ipProtectionMainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
-    private val logger = Logger("ContinuousOnboardingFeatureDefault")
+    private val logger = Logger("ContinuousOnboardingFeature")
 
     @VisibleForTesting internal var pendingStage: ContinuousOnboardingStage = ContinuousOnboardingStage.NONE
 
@@ -80,20 +81,55 @@ class ContinuousOnboardingFeature(
     private val ipProtectionBinding =
         IPProtectionOnboardingPrompt(
             repository = ipProtectionOnboardingConfig.promptRepository,
-            timeProvider = dateTimeProvider,
             mainDispatcher = ipProtectionMainDispatcher,
             store = ipProtectionOnboardingConfig.store,
             onShowOnboarding = {
                 logger.info("Showing IP Protection onboarding prompt.")
                 ipProtectionOnboardingConfig.navigateToIpProtection()
-                markStageCompleted(ContinuousOnboardingStage.DAY_7)
+                completeDaySeven()
+            },
+            onIneligible = {
+                logger.info("User is not eligible for IP Protection.")
+                telemetryRecorder.onOnboardingComplete(
+                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
+                    sequencePosition = "0",
+                    dismissedMethod = DismissedMethod.SKIPPED,
+                )
+                completeDaySeven()
+            },
+            onAlreadySatisfied = {
+                logger.info("IP Protection onboarding prompt is no longer allowed to be shown.")
+                telemetryRecorder.onOnboardingComplete(
+                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
+                    sequencePosition = "0",
+                )
+                completeDaySeven()
             },
         )
 
-    override fun start() {
-        if (!shouldShowContinuousOnboarding()) return
+    /**
+     * Marks the day-7 stage complete exactly once, then stops observing the IP Protection store so later state
+     * emissions in the same session cannot complete the stage a second time.
+     */
+    private fun completeDaySeven() {
+        if (settings.seventhDayOnboardingCompletedTimestamp != -1L) {
+            logger.info("Day 7 stage already completed.")
+            return
+        }
+        markStageCompleted(ContinuousOnboardingStage.DAY_7)
+        ipProtectionBinding.stop()
+    }
 
-        if (isContinuousOnboardingInProgress()) return
+    override fun start() {
+        val enabled = settings.continuousOnboardingFeatureEnabled
+        logger.info("continuousOnboardingFeatureEnabled: $enabled")
+        if (!enabled) return
+
+        val completed = settings.continuousOnboardingCompleted
+        logger.info("continuousOnboardingCompleted: $completed")
+        if (completed) return
+
+        if (isStageUIShowing()) return
 
         when (val stage = stageProvider.getContinuousOnboardingStage()) {
             ContinuousOnboardingStage.DAY_2,
@@ -126,15 +162,15 @@ class ContinuousOnboardingFeature(
     }
 
     /**
-     * Returns whether the continuous onboarding flow is already active.
+     * Returns whether a continuous onboarding stage's UI is currently displayed.
      *
      * `pendingStage` tracks the period while the Android system role-request Activity is in progress, and
      * `isContinuousOnboardingDialogShowing()` tracks the follow-up onboarding dialog shown afterward. Together they
      * prevent the DAY_2/DAY_3 onboarding flow from being started again if `start()` is invoked multiple times.
      */
-    private fun isContinuousOnboardingInProgress(): Boolean {
+    private fun isStageUIShowing(): Boolean {
         if (pendingStage != ContinuousOnboardingStage.NONE || isContinuousOnboardingDialogShowing()) {
-            logger.info("Continuous onboarding already in progress.")
+            logger.info("Continuous onboarding stage UI is already showing.")
             return true
         }
         return false
@@ -143,14 +179,6 @@ class ContinuousOnboardingFeature(
     private fun isContinuousOnboardingDialogShowing(): Boolean {
         val decorView = activity.window.decorView as? ViewGroup ?: return false
         return decorView.findViewWithTag<ComposeView>(CONTINUOUS_ONBOARDING_DIALOG_TAG) != null
-    }
-
-    @VisibleForTesting
-    internal fun shouldShowContinuousOnboarding(): Boolean {
-        val continuousOnboardingCompleted = settings.seventhDayOnboardingCompletedTimestamp != -1L
-        logger.info("continuousOnboardingCompleted: $continuousOnboardingCompleted")
-        logger.info("continuousOnboardingFeatureEnabled: ${settings.continuousOnboardingFeatureEnabled}")
-        return settings.continuousOnboardingFeatureEnabled && !continuousOnboardingCompleted
     }
 
     private fun maybeRequestDefaultBrowserRole(stage: ContinuousOnboardingStage) {
@@ -403,6 +431,7 @@ class ContinuousOnboardingFeature(
 
     companion object {
         private const val CONTINUOUS_ONBOARDING_DIALOG_TAG = "continuous_onboarding_dialog"
+        private const val IP_PROTECTION_SEQUENCE_ID = "ip_protection"
 
         /**
          * Convenience method to register [ContinuousOnboardingFeature] with a [Fragment]. Upon destruction of the

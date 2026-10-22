@@ -71,7 +71,7 @@ public class Environment {
   }
 
   public boolean isIsolatedProcess() {
-    return BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS;
+    return getEnvVar("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS").equals("1");
   }
 
   public boolean isAppZygoteProcess() {

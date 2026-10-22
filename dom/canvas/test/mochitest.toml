@@ -220,9 +220,6 @@ subsuite = "gpu"
 subsuite = "gpu"
 
 ["test_canvas_focusring.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
-]
 
 ["test_canvas_font_setter.html"]
 
@@ -237,7 +234,6 @@ support-files = ["captureStream_common.js"]
 support-files = ["captureStream_common.js"]
 skip-if = [
   "os == 'android'", # Bug 1752351
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019625
 ]
 
 ["test_drawImageIncomplete.html"]

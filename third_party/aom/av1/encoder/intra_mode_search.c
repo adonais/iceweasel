@@ -998,6 +998,19 @@ int64_t av1_rd_pick_intra_sbuv_mode(const AV1_COMP *const cpi, MACROBLOCK *x,
                 intra_mode_info_cost_uv(cpi, x, mbmi, bsize, mode_cost);
     this_rd = RDCOST(x->rdmult, this_rate, tokenonly_rd_stats.dist);
 
+#if CONFIG_AV1_HIGHBITDEPTH
+    if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+      const int is_smooth_uv_mode =
+          (uv_mode == UV_SMOOTH_PRED || uv_mode == UV_SMOOTH_V_PRED ||
+           uv_mode == UV_SMOOTH_H_PRED);
+      if (is_smooth_uv_mode) {
+        if (this_rd < INT64_MAX) {
+          this_rd += (this_rd >> 2);
+        }
+      }
+    }
+#endif
+
     if (this_rd < best_rd) {
       best_mbmi = *mbmi;
       best_rd = this_rd;

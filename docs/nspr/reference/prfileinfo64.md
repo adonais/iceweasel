@@ -1,7 +1,7 @@
 # PRFileInfo64
 
-File information structure used with {ref}`PR_GetFileInfo64` and
-{ref}`PR_GetOpenFileInfo64`.
+File information structure used with {doc}`pr_getfileinfo64` and
+{doc}`pr_getopenfileinfo64`.
 
 ## Syntax
 
@@ -24,7 +24,7 @@ The structure has the following fields:
 
 `type`
 
-: Type of file. See {ref}`PRFileType`.
+: Type of file. See {doc}`prfiletype`.
 
 `size`
 
@@ -32,16 +32,16 @@ The structure has the following fields:
 
 `creationTime`
 
-: Creation time per definition of {ref}`PRTime`. See
+: Creation time per definition of {doc}`prtime`. See
   {searchfox}`prtime.h <nsprpub/pr/include/prtime.h>`.
 
 `modifyTime`
 
-: Last modification time per definition of {ref}`PRTime`. See
+: Last modification time per definition of {doc}`prtime`. See
   {searchfox}`prtime.h <nsprpub/pr/include/prtime.h>`.
 
 ## Description
 
-The {ref}`PRFileInfo64` structure provides information about a file, a
+The {doc}`prfileinfo64` structure provides information about a file, a
 directory, or some other kind of file system object, as specified by the
 `type` field.

@@ -7,6 +7,11 @@ const PAGE =
   "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
 
 add_task(async function menuInShadowDOM() {
+  // Right-clicking text selects the word under the cursor on macOS, which
+  // would add a selection this test does not expect.
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
   Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("security.allow_eval_with_system_principal");

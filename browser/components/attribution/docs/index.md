@@ -19,7 +19,7 @@ The following information is supported by this system:
 - *msstoresignedin*
 - *msclkid*
 
-Descriptions of each of these can be found in {ref}`the Telemetry Environment documentation <environment>`.
+Descriptions of each of these can be found in {doc}`the Telemetry Environment documentation </toolkit/components/telemetry/data/environment>`.
 
 ## Firefox Windows Installers & macOS DMGs
 

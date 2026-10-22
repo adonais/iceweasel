@@ -3,6 +3,9 @@
 
 add_setup(async function init() {
   registerCleanupFunction(async function () {
+    Services.prefs.clearUserPref(
+      "browser.urlbar.resultMenu.keyboardAccessible"
+    );
     await PlacesUtils.history.clear();
     await UrlbarTestUtils.formHistory.clear();
   });
@@ -280,4 +283,85 @@ add_task(async function firefoxSuggest() {
 
   await UrlbarTestUtils.promisePopupClose(window);
   providersManager.unregisterProvider(provider);
+});
+
+add_task(async function test_toggle_keyboard_accessible() {
+  const TEST_URL = "https://example.com/toggle_keyboard_accessible/";
+  await PlacesTestUtils.addVisits(TEST_URL);
+
+  const resultIndex = 1;
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "toggle_keyboard_accessible",
+  });
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
+  Assert.equal(result.url, TEST_URL, "Found the expected result");
+
+  let menuButton = UrlbarTestUtils.getButtonForResultIndex(
+    window,
+    "result-menu",
+    resultIndex
+  );
+
+  let getItem = async () => {
+    let item = await UrlbarTestUtils.openResultMenuAndGetItem({
+      window,
+      command: "toggle-keyboard-accessible",
+      resultIndex,
+    });
+    Assert.equal(
+      item,
+      gURLBar.view.resultMenu.lastElementChild,
+      "The checkbox is the last item in the menu"
+    );
+    Assert.equal(
+      item.previousElementSibling.localName,
+      "hr",
+      "A separator sets the checkbox apart from the commands above it"
+    );
+    return item;
+  };
+
+  let item = await getItem();
+  Assert.ok(
+    !item.hasAttribute("checked"),
+    "The checkbox is unchecked while the menu button is keyboard-accessible"
+  );
+
+  info("Unchecking the pref through the checkbox");
+  let hidden = BrowserTestUtils.waitForEvent(gURLBar.view.resultMenu, "hidden");
+  item.click();
+  await hidden;
+  Assert.ok(
+    !UrlbarPrefs.get("resultMenu.keyboardAccessible"),
+    "Picking the checkbox turned the pref off"
+  );
+  Assert.ok(
+    menuButton.hasAttribute("keyboard-inaccessible"),
+    "The already-built row's menu button became keyboard-inaccessible"
+  );
+  Assert.ok(gURLBar.view.isOpen, "The view stays open");
+
+  item = await getItem();
+  Assert.ok(
+    item.hasAttribute("checked"),
+    "The checkbox is checked once the menu button is keyboard-inaccessible"
+  );
+
+  info("Restoring the pref through the checkbox");
+  hidden = BrowserTestUtils.waitForEvent(gURLBar.view.resultMenu, "hidden");
+  item.click();
+  await hidden;
+  Assert.ok(
+    UrlbarPrefs.get("resultMenu.keyboardAccessible"),
+    "Picking the checkbox again turned the pref back on"
+  );
+  Assert.ok(
+    !menuButton.hasAttribute("keyboard-inaccessible"),
+    "The already-built row's menu button became keyboard-accessible again"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  Services.prefs.clearUserPref("browser.urlbar.resultMenu.keyboardAccessible");
+  await PlacesUtils.history.clear();
 });

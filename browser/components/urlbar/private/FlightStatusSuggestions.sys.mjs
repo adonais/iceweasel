@@ -156,11 +156,11 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
 
     let iconUrl;
     if (item.airline.icon) {
-      iconUrl = UrlbarUtils.getRemoteIconUrl(
-        item.airline.icon,
-        lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
-        controller
-      );
+      iconUrl = UrlbarUtils.getRemoteImageUrl({
+        controller,
+        url: item.airline.icon,
+        size: lazy.UrlbarShared.TOP_PICK_ICON_SIZE,
+      });
     }
 
     if (status == "inflight") {

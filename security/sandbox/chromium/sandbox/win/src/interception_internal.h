@@ -87,6 +87,13 @@ struct PatchClientResultData {
 
 #pragma pack(pop)
 
+// Size required to hold the interception data for a dll with `num_functions`
+// interceptions.
+inline size_t GetDllInterceptionDataSize(size_t num_functions) {
+  return offsetof(DllInterceptionData, thunks) +
+         num_functions * sizeof(ThunkData);
+}
+
 }  // namespace sandbox
 
 #endif  // SANDBOX_WIN_SRC_INTERCEPTION_INTERNAL_H_

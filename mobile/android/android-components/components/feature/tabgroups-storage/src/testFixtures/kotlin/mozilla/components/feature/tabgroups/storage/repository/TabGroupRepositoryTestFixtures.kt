@@ -5,6 +5,7 @@
 package mozilla.components.feature.tabgroups.storage.repository
 
 import androidx.room.RoomDatabase
+import kotlinx.coroutines.CoroutineDispatcher
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 
@@ -16,5 +17,6 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
  */
 fun createTestTabGroupRepository(
     database: RoomDatabase,
+    ioDispatcher: CoroutineDispatcher,
     dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
-): DefaultTabGroupRepository = DefaultTabGroupRepository(database, dateTimeProvider)
+): DefaultTabGroupRepository = DefaultTabGroupRepository(database, ioDispatcher, dateTimeProvider)

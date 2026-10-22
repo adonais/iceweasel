@@ -27,7 +27,7 @@ task-defaults:
               type: file
     run:
         clone-with: hg
-        sparse-profile: mozharness
+        sparse-profile: mach
     treeherder:
         symbol: UVCnext
         kind: test

@@ -154,14 +154,14 @@ function* do_run_test() {
   do_load_profile();
 
   // 1) All unexpired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 20);
 
-  // 2) All expired, unique cookies exist.
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  // 2) Expired cookies are not exposed.
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
 
   // 3) Only one cookie remains, and it's the one with the highest expiration
   // time.
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
   let cookies = Services.cookies.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, (futureExpiry + 44) * 1000);
@@ -180,7 +180,7 @@ function* do_run_test() {
         "hai",
         "foo.com",
         "/",
-        futureExpiry,
+        futureExpiry * 1000,
         now,
         now + i,
         false,
@@ -196,7 +196,7 @@ function* do_run_test() {
         "hai",
         "cat.com",
         "/",
-        futureExpiry,
+        futureExpiry * 1000,
         now,
         now + i,
         false,
@@ -214,7 +214,7 @@ function* do_run_test() {
     "hai",
     "baz.com",
     "/",
-    futureExpiry,
+    futureExpiry * 1000,
     now,
     now + 100,
     false,
@@ -244,10 +244,10 @@ function* do_run_test() {
   yield;
 
   // Test the expected set of cookies.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;
@@ -260,10 +260,10 @@ function* do_run_test() {
   do_load_profile();
 
   // Test the expected set of cookies.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;
@@ -281,13 +281,13 @@ function* do_run_test() {
 
   // Load the database synchronously, in its entirety.
   do_load_profile();
-  Assert.equal(do_count_cookies(), 81);
+  Assert.equal(do_count_cookies(), 61);
 
   // Test the expected set of cookies.
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 40);
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost("cat.com", {}), 20);
+  Assert.equal(Services.cookies.getCookiesFromHost("foo.com", {}).length, 40);
+  Assert.equal(Services.cookies.getCookiesFromHost("bar.com", {}).length, 0);
+  Assert.equal(Services.cookies.getCookiesFromHost("baz.com", {}).length, 1);
+  Assert.equal(Services.cookies.getCookiesFromHost("cat.com", {}).length, 20);
 
   do_close_profile(test_generator);
   yield;

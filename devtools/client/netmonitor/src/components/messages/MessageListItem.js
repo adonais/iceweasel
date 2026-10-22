@@ -78,7 +78,7 @@ class MessageListItem extends Component {
       item: PropTypes.object.isRequired,
       index: PropTypes.number.isRequired,
       isSelected: PropTypes.bool.isRequired,
-      onMouseDown: PropTypes.func.isRequired,
+      onClick: PropTypes.func.isRequired,
       onContextMenu: PropTypes.func.isRequired,
       connector: PropTypes.object.isRequired,
       visibleColumns: PropTypes.array.isRequired,
@@ -90,7 +90,7 @@ class MessageListItem extends Component {
       item,
       index,
       isSelected,
-      onMouseDown,
+      onClick,
       onContextMenu,
       connector,
       visibleColumns,
@@ -109,7 +109,9 @@ class MessageListItem extends Component {
       {
         className: classList.join(" "),
         tabIndex: 0,
-        onMouseDown,
+        role: "option",
+        "aria-selected": isSelected,
+        onClick,
         onContextMenu,
       },
       visibleColumns.map(name => {

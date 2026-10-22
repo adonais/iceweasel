@@ -68,6 +68,8 @@ class nsFilePicker final : public nsBaseFilePicker {
 #endif
 
   void DoneCommon(ResultCode, nsCOMPtr<nsIFilePickerShownCallback>);
+  nsCOMArray<nsIFile> GetSelectedFilesOrFolder();
+  void ClearSelection();
 
   RefPtr<nsWindow> mParentWidget;
   nsCOMPtr<nsIFilePickerShownCallback> mCallback;

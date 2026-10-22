@@ -196,10 +196,10 @@ Within Firefox we allow the ability to enable/disable bits of code or entire fea
   release process
 - Control features which are experimental or not ready to be shown to a specific channel
   population (e.g. enabled for Beta but disabled for Release)
-- A/B testing via {ref}`telemetry <telemetry>` experiments
+- A/B testing via {doc}`telemetry </toolkit/components/telemetry/index>` experiments
 
 :::{note}
-{ref}`Nimbus <nimbus>` Pref Rollout is a feature that allows Mozilla to change the state of a
+{doc}`Nimbus </toolkit/components/nimbus/docs/index>` Pref Rollout is a feature that allows Mozilla to change the state of a
 preference for a targeted set of users, without deploying an update to Firefox. This is
 especially useful when conducting experiments or a gradual rollout of high risk features
 to our Release population.

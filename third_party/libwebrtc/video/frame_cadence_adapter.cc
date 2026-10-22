@@ -267,7 +267,7 @@ class VSyncEncodeAdapterMode : public AdapterMode {
                          FrameCadenceAdapterInterface::Callback* callback)
       : clock_(clock),
         queue_(queue),
-        queue_safety_flag_(queue_safety_flag),
+        queue_safety_flag_(std::move(queue_safety_flag)),
         callback_(callback),
         metronome_(metronome),
         worker_queue_(worker_queue) {

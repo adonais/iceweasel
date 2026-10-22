@@ -2,15 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/MemoryReporting.h"
-#if defined(HAVE_POSIX_MEMALIGN)
-#  include "gfxAlphaRecovery.h"
-#endif
+#include "gfxImageSurface.h"
+
 #include <algorithm>
 
 #include "cairo.h"
 #include "gfx2DGlue.h"
-#include "gfxImageSurface.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/HelpersCairo.h"
 
@@ -77,11 +75,8 @@ static void* TryAllocAlignedBytes(size_t aSize) {
   // Use fallible allocators here
 #if defined(HAVE_POSIX_MEMALIGN)
   void* ptr;
-  // Try to align for fast alpha recovery.  This should only help
-  // cairo too, can't hurt.
-  return posix_memalign(&ptr, 1 << gfxAlphaRecovery::GoodAlignmentLog2(), aSize)
-             ? nullptr
-             : ptr;
+  // Align to 16 bytes for SIMD code paths.
+  return posix_memalign(&ptr, 16, aSize) ? nullptr : ptr;
 #else
   // Oh well, hope that luck is with us in the allocator
   return malloc(aSize);

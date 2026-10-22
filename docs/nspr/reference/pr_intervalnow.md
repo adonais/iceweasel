@@ -12,7 +12,7 @@ PRIntervalTime PR_IntervalNow(void);
 
 ### Returns
 
-A {ref}`PRIntervalTime` object.
+A {doc}`printervaltime` object.
 
 ## Description
 

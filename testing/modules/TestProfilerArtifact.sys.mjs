@@ -34,13 +34,17 @@ export async function saveProfileToUploadDir(profileName) {
     // referenced from several manifests), reusing the same upload directory.
     // Don't overwrite an earlier profile: each run's log message points at the
     // file it wrote, and the failures may differ, so every one is worth keeping.
+    // Either name can be taken, since the extension depends on which of the
+    // two dumps below wrote the profile.
     let filename = `profile_${basename}.json`;
     let path = PathUtils.join(uploadDir, filename);
-    for (let i = 2; await IOUtils.exists(path); ++i) {
-      // Insert the counter before the file extension (so a ".js" test's profile
-      // still ends in ".js.json", which Treeherder requires) or append it when
-      // there is no extension. The extension must be optional: an extension-less
-      // name (e.g. a shutdown profile) would otherwise be left unchanged, so the
+    let taken = async () =>
+      (await IOUtils.exists(path)) || (await IOUtils.exists(`${path}.gz`));
+    for (let i = 2; await taken(); ++i) {
+      // Insert the counter before the test's own extension, so a ".js" test's
+      // profile is still named after the test, or append it when there is no
+      // extension. The extension must be optional: an extension-less name
+      // (e.g. a shutdown profile) would otherwise be left unchanged, so the
       // path would never differ and this loop would spin forever.
       filename = `profile_${basename.replace(/(\.\w+)?$/, (m, ext = "") => `-${i}${ext}`)}.json`;
       path = PathUtils.join(uploadDir, filename);
@@ -53,9 +57,15 @@ export async function saveProfileToUploadDir(profileName) {
     } else {
       const { profile } =
         await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+      filename += ".gz";
+      path += ".gz";
       await IOUtils.write(path, new Uint8Array(profile));
     }
-    return `profile uploaded in ${filename}`;
+    // Symbolication rewrites every uploaded profile as gzip and renames it
+    // accordingly (see symbolicate_profile_json), so report the name the
+    // artifact ends up with rather than the one just written.
+    let artifact = filename.endsWith(".gz") ? filename : `${filename}.gz`;
+    return `profile uploaded in ${artifact}`;
   } catch (e) {
     // If the profile is large, we may encounter out of memory errors.
     return `failed to upload profile: ${e}`;

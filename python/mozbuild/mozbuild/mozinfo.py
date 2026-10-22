@@ -95,9 +95,6 @@ def build_dict(config, env=os.environ):
     d["artifact"] = substs.get("MOZ_ARTIFACT_BUILDS") == "1"
     d["ccov"] = substs.get("MOZ_CODE_COVERAGE") == "1"
     d["cc_type"] = substs.get("CC_TYPE")
-    d["isolated_process"] = (
-        substs.get("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS") == "1"
-    )
     d["automation"] = substs.get("MOZ_AUTOMATION") == "1"
     d["dbus_enabled"] = bool(substs.get("MOZ_ENABLE_DBUS"))
     d["enterprise"] = substs.get("MOZ_ENTERPRISE") == "1"

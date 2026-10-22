@@ -17,7 +17,7 @@ The function has the following parameter:
 
 `mon`
 
-: A reference to an existing structure of type {ref}`PRMonitor`. The
+: A reference to an existing structure of type {doc}`prmonitor`. The
   monitor object referenced must be one for which the calling thread
   currently holds the lock.
 
@@ -31,6 +31,6 @@ The function returns one of the following values:
 
 ## Description
 
-If the decremented entry count is zero, {ref}`PR_ExitMonitor` releases the
+If the decremented entry count is zero, {doc}`pr_exitmonitor` releases the
 monitor's lock. Threads that were blocked trying to enter the monitor
 will be rescheduled.

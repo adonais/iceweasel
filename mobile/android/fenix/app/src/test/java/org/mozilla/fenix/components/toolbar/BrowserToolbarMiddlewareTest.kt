@@ -567,6 +567,25 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN menu customization is enabled WHEN clicking the menu button THEN open the customizable menu`() {
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+        settings.isMenuCustomizationEnabled = true
+
+        val middleware = buildMiddleware()
+        val toolbarStore = buildStore(middleware)
+        val menuButton = toolbarStore.state.displayState.browserActionsEnd[2] as ActionButtonRes
+
+        toolbarStore.dispatch(menuButton.onClick as BrowserToolbarEvent)
+
+        verify {
+            navController.navigate(
+                BrowserFragmentDirections.actionBrowserFragmentToMenuFragment(accessPoint = MenuAccessPoint.Browser),
+                null,
+            )
+        }
+    }
+
+    @Test
     fun `GIVEN browsing in normal mode WHEN clicking the tab counter button THEN open the tabs tray in normal mode`() {
         every { navController.currentDestination?.id } returns R.id.browserFragment
         val browsingModeManager = SimpleBrowsingModeManager(Normal)
@@ -1380,6 +1399,7 @@ class BrowserToolbarMiddlewareTest {
             settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
             val browserScreenStore = buildBrowserScreenStore()
             val captureMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+            // A content:// tab is only treated as PDF-shareable once `content.isPdf` is set.
             val currentTab = createTab("content://test", private = false)
             val browserStore =
                 BrowserStore(
@@ -1390,11 +1410,12 @@ class BrowserToolbarMiddlewareTest {
                         ),
                     middleware = listOf(captureMiddleware),
                 )
+            val shareSheetLauncher = mockk<ShareSheetLauncher>(relaxed = true)
             val middleware =
                 buildMiddleware(
                     browserScreenStore = browserScreenStore,
                     browserStore = browserStore,
-                    shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
+                    shareUseCases = ShareUseCases(browserStore, shareSheetLauncher, settings),
                     isWideScreen = { true },
                 )
             val toolbarStore = buildStore(middleware)
@@ -1405,9 +1426,15 @@ class BrowserToolbarMiddlewareTest {
 
             toolbarStore.dispatch(shareButton.onClick as BrowserToolbarEvent)
             testDispatcher.scheduler.advanceUntilIdle()
-            captureMiddleware.assertLastAction(ShareResourceAction.AddShareAction::class) {
-                assertEquals(currentTab.id, it.tabId)
-                assertEquals(ShareResourceState.LocalResource(currentTab.content.url, INTENT_TYPE_PDF), it.resource)
+            captureMiddleware.assertNotDispatched(ShareResourceAction.AddShareAction::class)
+            verify {
+                shareSheetLauncher.showSystemShareSheet(
+                    id = currentTab.id,
+                    url = currentTab.content.url,
+                    title = currentTab.content.title,
+                    isPrivate = currentTab.content.private,
+                    isCustomTab = false,
+                )
             }
         }
 
@@ -3035,11 +3062,32 @@ class BrowserToolbarMiddlewareTest {
             }
 
         every { browserScreenState.readerModeStatus } returns readerModeStatus
+        settings.listenToPageFeatureFlagEnabled = false
         val middleware = buildMiddleware()
 
         val result = middleware.buildAction(toolbarAction = ToolbarAction.ReaderMode) as ActionButtonRes
 
         assertEquals(iconsR.drawable.mozac_ic_reader_view_24, result.drawableResId)
+        assertEquals(R.string.browser_menu_read, result.contentDescription)
+        assertEquals(ActionButton.State.DEFAULT, result.state)
+        assertEquals(ReaderModeClicked(false), result.onClick)
+    }
+
+    @Test
+    fun `GIVEN listen to page enabled WHEN building inactive ReaderMode action THEN uses the audio icon`() {
+        val readerModeStatus: ReaderModeStatus =
+            mockk(relaxed = true) {
+                every { isAvailable } returns true
+                every { isActive } returns false
+            }
+
+        every { browserScreenState.readerModeStatus } returns readerModeStatus
+        settings.listenToPageFeatureFlagEnabled = true
+        val middleware = buildMiddleware()
+
+        val result = middleware.buildAction(toolbarAction = ToolbarAction.ReaderMode) as ActionButtonRes
+
+        assertEquals(iconsR.drawable.mozac_ic_reader_view_audio_24, result.drawableResId)
         assertEquals(R.string.browser_menu_read, result.contentDescription)
         assertEquals(ActionButton.State.DEFAULT, result.state)
         assertEquals(ReaderModeClicked(false), result.onClick)
@@ -3054,11 +3102,32 @@ class BrowserToolbarMiddlewareTest {
             }
 
         every { browserScreenState.readerModeStatus } returns readerModeStatus
+        settings.listenToPageFeatureFlagEnabled = false
         val middleware = buildMiddleware()
 
         val result = middleware.buildAction(toolbarAction = ToolbarAction.ReaderMode) as ActionButtonRes
 
         assertEquals(iconsR.drawable.mozac_ic_reader_view_fill_24, result.drawableResId)
+        assertEquals(R.string.browser_menu_read_close, result.contentDescription)
+        assertEquals(ActionButton.State.ACTIVE, result.state)
+        assertEquals(ReaderModeClicked(true), result.onClick)
+    }
+
+    @Test
+    fun `GIVEN listen to page enabled WHEN building active ReaderMode action THEN uses the audio icon`() {
+        val readerModeStatus: ReaderModeStatus =
+            mockk(relaxed = true) {
+                every { isAvailable } returns true
+                every { isActive } returns true
+            }
+
+        every { browserScreenState.readerModeStatus } returns readerModeStatus
+        settings.listenToPageFeatureFlagEnabled = true
+        val middleware = buildMiddleware()
+
+        val result = middleware.buildAction(toolbarAction = ToolbarAction.ReaderMode) as ActionButtonRes
+
+        assertEquals(iconsR.drawable.mozac_ic_reader_view_audio_fill_24, result.drawableResId)
         assertEquals(R.string.browser_menu_read_close, result.contentDescription)
         assertEquals(ActionButton.State.ACTIVE, result.state)
         assertEquals(ReaderModeClicked(true), result.onClick)

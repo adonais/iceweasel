@@ -66,12 +66,12 @@ function getCardTemplate() {
   return getTemplate(
     "shortcut-card-template",
     `<template>
-      <div class="card card-no-hover shortcut">
+      <moz-card class="shortcut">
         <div class="card-heading">
           <img class="card-heading-icon addon-icon" />
           <h2 class="addon-name"></h2>
         </div>
-      </div>
+      </moz-card>
     </template>`
   );
 }
@@ -419,7 +419,7 @@ function clearWarnings(warningHolder) {
     let row = input.closest(".shortcut-row");
     if (row.hasAttribute("hide-before-expand")) {
       row
-        .closest(".card")
+        .closest("moz-card")
         .querySelector(".expand-button")
         .removeAttribute("warning");
     }
@@ -449,7 +449,7 @@ function markDuplicates(shortcut) {
     let row = input.closest(".shortcut-row");
     if (row.hasAttribute("hide-before-expand")) {
       row
-        .closest(".card")
+        .closest("moz-card")
         .querySelector(".expand-button")
         .setAttribute("warning", "shortcuts-duplicate");
     }
@@ -541,11 +541,11 @@ function onShortcutRemove(e) {
 }
 
 function assignShortcutToInput(input, shortcutString) {
-  let addonId = input.closest(".card").getAttribute("addon-id");
+  let addonId = input.closest("moz-card").getAttribute("addon-id");
   let extension = extensionForAddonId(addonId);
 
   let oldShortcut = input.getAttribute("shortcut");
-  let addonName = input.closest(".card").getAttribute("addon-name");
+  let addonName = input.closest("moz-card").getAttribute("addon-name");
   let commandName = input.getAttribute("name");
 
   removeShortcut(oldShortcut, addonName, commandName);
@@ -715,7 +715,7 @@ async function renderAddons(addons, focusedExtensionId) {
 // interfere with gViewController.scrollOffsets.restore() in view-controller.mjs.
 function focusExtension() {
   document
-    .querySelector(".shortcut.card.focused-extension")
+    .querySelector("moz-card.shortcut.focused-extension")
     ?.scrollIntoView({ block: "center" });
 }
 

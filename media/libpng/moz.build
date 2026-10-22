@@ -76,7 +76,7 @@ if CONFIG['HAVE_ALTIVEC']:
 
 if CONFIG['TARGET_CPU'] == 'loongarch64':
     DEFINES['MOZ_PNG_USE_LOONGARCH_LSX'] = True
-    CFLAGS += ['-mlsx']
+    CFLAGS += CONFIG['LSX_FLAGS']
     SOURCES += [
         'loongarch/filter_lsx_intrinsics.c',
         'loongarch/loongarch_lsx_init.c',

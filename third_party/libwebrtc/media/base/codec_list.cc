@@ -12,7 +12,7 @@
 
 #include <cstddef>
 #include <map>
-#include <vector>
+#include <span>
 
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
@@ -27,7 +27,7 @@ namespace webrtc {
 
 namespace {
 
-RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
+RTCError CheckInputConsistency(std::span<const Codec> codecs) {
   std::map<int, int> pt_to_index;
   // Create a map of payload type to index, and ensure
   // that there are no duplicates.
@@ -110,7 +110,7 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
 }  // namespace
 
 // static
-RTCErrorOr<CodecList> CodecList::Create(const std::vector<Codec>& codecs) {
+RTCErrorOr<CodecList> CodecList::Create(std::span<const Codec> codecs) {
   RTCError error = CheckInputConsistency(codecs);
   if (!error.ok()) {
     return error;

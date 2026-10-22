@@ -48,7 +48,8 @@ ModuleLoadRequest::ModuleLoadRequest(
     ModuleType aModuleType, const mozilla::dom::SRIMetadata& aIntegrity,
     nsIURI* aReferrer, LoadContextBase* aContext, Kind aKind,
     ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule)
-    : ScriptLoadRequest(ScriptKind::eModule, aIntegrity, aReferrer, aContext),
+    : ScriptLoadRequest(ScriptKind::eModule, aIntegrity, aReferrer, aContext,
+                        nullptr),
       mKind(aKind),
       mModuleType(aModuleType),
       mIsDynamicImport(aKind == Kind::DynamicImport),

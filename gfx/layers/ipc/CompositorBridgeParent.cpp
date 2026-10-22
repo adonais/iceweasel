@@ -167,7 +167,7 @@ bool CompositorBridgeParentBase::OwnsPipelineId(
 
 CompositorBridgeParent::LayerTreeState::LayerTreeState()
     : mApzcTreeManagerParent(nullptr),
-      mApzInputBridgeParent(nullptr),
+      mApzBridgeParent(nullptr),
       mParent(nullptr),
       mContentCompositorBridgeParent(nullptr) {}
 
@@ -616,16 +616,15 @@ CompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& aLayersId) {
   return treeManager.forget();
 }
 
-void CompositorBridgeParent::SetAPZInputBridgeParent(
-    const LayersId& aLayersId,
-    RefPtr<APZInputBridgeParent>&& aInputBridgeParent) {
+void CompositorBridgeParent::SetAPZBridgeParent(
+    const LayersId& aLayersId, RefPtr<APZBridgeParent>&& aApzBridgeParent) {
   MOZ_RELEASE_ASSERT(XRE_IsGPUProcess());
   MOZ_ASSERT(NS_IsMainThread());
   StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
       EnsureLayerTreeStateUnderLock(aLayersId, lock);
-  MOZ_ASSERT(!state.mApzInputBridgeParent);
-  state.mApzInputBridgeParent = std::move(aInputBridgeParent);
+  MOZ_ASSERT(!state.mApzBridgeParent);
+  state.mApzBridgeParent = std::move(aApzBridgeParent);
 }
 
 already_AddRefed<APZCTreeManagerParent>
@@ -1810,13 +1809,12 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
 }
 
 /* static */
-RefPtr<APZInputBridgeParent>
-CompositorBridgeParent::GetApzInputBridgeParentForRoot(
+RefPtr<APZBridgeParent> CompositorBridgeParent::GetApzBridgeParentForRoot(
     LayersId aContentLayersId) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState* state =
       GetStateForRoot(aContentLayersId, lock);
-  return state ? state->mApzInputBridgeParent : nullptr;
+  return state ? state->mApzBridgeParent : nullptr;
 }
 
 /* static */

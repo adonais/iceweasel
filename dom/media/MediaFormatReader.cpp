@@ -2895,7 +2895,7 @@ nsresult MediaFormatReader::ResetDecode(const TrackSet& aTracks) {
 
   if (HasAudio() && aTracks.contains(TrackInfo::kAudioTrack)) {
     mAudio.ResetDemuxer();
-    mVideo.mFirstFrameTime = Some(media::TimeUnit::Zero());
+    mAudio.mFirstFrameTime = Some(media::TimeUnit::Zero());
     Reset(TrackInfo::kAudioTrack);
     if (mAudio.HasPromise()) {
       mAudio.RejectPromise(NS_ERROR_DOM_MEDIA_CANCELED, __func__);

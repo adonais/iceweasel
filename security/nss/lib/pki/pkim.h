@@ -478,14 +478,6 @@ nssTrustDomain_GetCertForIssuerAndSNFromCache(
     NSSDER *issuer,
     NSSDER *serialNum);
 
-/*
- * Look for a specific cert in the cache.
- */
-NSS_EXTERN NSSCertificate *
-nssTrustDomain_GetCertByDERFromCache(
-    NSSTrustDomain *td,
-    NSSDER *der);
-
 /* Get all certs from the cache */
 /* XXX this is being included to make some old-style calls word, not to
  *     say we should keep it

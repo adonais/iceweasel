@@ -183,6 +183,10 @@ template <typename T>
 
 template <typename T>
 /* static */ bool StableCellHasher<T>::match(const Key& k, const Lookup& l) {
+  // Barriered types are handled by the specializations in gc/Barrier.h which
+  // are implemented in terms of this.
+  static_assert(!IsBarriered<Key>::value);
+
   if (k == l) {
     return true;
   }
@@ -198,11 +202,9 @@ template <typename T>
   // Incremental table sweeping means that existing table entries may no
   // longer have unique IDs. We fail the match in that case and the entry is
   // removed from the table later on.
-  if (!gc::HasUniqueId(k)) {
-    Key key = k;
-    MOZ_ASSERT(key->zoneFromAnyThread()->needsMarkingBarrier() &&
-               !key->isMarkedAny());
-  }
+  MOZ_ASSERT_IF(!gc::HasUniqueId(k),
+                k->isTenured() && k->zoneFromAnyThread()->isGCSweeping() &&
+                    !k->isMarkedAny());
   MOZ_ASSERT(gc::HasUniqueId(l));
 #endif
 

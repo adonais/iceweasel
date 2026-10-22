@@ -737,7 +737,7 @@ inline ColorSpace2 ToColorSpace2(const YUVColorSpace in) {
     case YUVColorSpace::Identity:
       return ColorSpace2::SRGB;
   }
-  MOZ_ASSERT_UNREACHABLE();
+  MOZ_CRASH("bad YUVColorSpace");
 }
 
 inline YUVColorSpace ToYUVColorSpace(const ColorSpace2 in) {
@@ -755,7 +755,7 @@ inline YUVColorSpace ToYUVColorSpace(const ColorSpace2 in) {
     case ColorSpace2::DISPLAY_P3:
       MOZ_CRASH("Bad ColorSpace2 for ToYUVColorSpace");
   }
-  MOZ_ASSERT_UNREACHABLE();
+  MOZ_CRASH("bad ColorSpace2");
 }
 
 struct FromYUVRangedColorSpaceT final {
@@ -948,13 +948,19 @@ std::ostream& operator<<(std::ostream& aOut,
 
 template <typename T>
 static inline T ChromaSize(const T& aYSize, ChromaSubsampling aSubsampling) {
+  MOZ_ASSERT(aYSize.width >= 0 && aYSize.height >= 0);
+  // Equivalent to (aDimension + 1) / 2 for non-negative dimensions without
+  // overflowing at the maximum value.
+  const auto halfCeil = [](auto aDimension) {
+    return aDimension - aDimension / 2;
+  };
   switch (aSubsampling) {
     case ChromaSubsampling::FULL:
       return aYSize;
     case ChromaSubsampling::HALF_WIDTH:
-      return T((aYSize.width + 1) / 2, aYSize.height);
+      return T(halfCeil(aYSize.width), aYSize.height);
     case ChromaSubsampling::HALF_WIDTH_AND_HEIGHT:
-      return T((aYSize.width + 1) / 2, (aYSize.height + 1) / 2);
+      return T(halfCeil(aYSize.width), halfCeil(aYSize.height));
   }
   MOZ_CRASH("bad ChromaSubsampling");
 }

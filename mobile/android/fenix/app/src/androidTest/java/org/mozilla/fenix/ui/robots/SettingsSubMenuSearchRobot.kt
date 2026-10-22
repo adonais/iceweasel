@@ -10,10 +10,13 @@ import android.util.Log
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.preference.R as preferenceR
@@ -47,8 +50,6 @@ import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import org.hamcrest.CoreMatchers
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.endsWith
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
@@ -69,6 +70,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isChecked
 import org.mozilla.fenix.helpers.isEnabled
+import org.mozilla.fenix.settings.search.SearchEngineShortcutsTestTag
 
 /** Implementation of Robot Pattern for the settings search sub menu. */
 class SettingsSubMenuSearchRobot {
@@ -214,35 +216,19 @@ class SettingsSubMenuSearchRobot {
     }
 
     /** Method that verifies the selected engines inside the Manage search shortcuts list. */
-    fun verifySearchShortcutChecked(vararg engineShortcut: EngineShortcut) {
+    fun verifySearchShortcutChecked(testRule: ComposeTestRule, vararg engineShortcut: EngineShortcut) {
         engineShortcut.forEach {
-            val shortcutIsChecked =
-                mDevice
-                    .findObject(UiSelector().text(it.name))
-                    .getFromParent(UiSelector().index(it.checkboxIndex))
-                    .isChecked
-
+            Log.i(
+                TAG,
+                "verifySearchShortcutChecked: Trying to verify ${it.name}'s check box is checked: ${it.isChecked}",
+            )
+            val checkbox = testRule.onNodeWithTag(SearchEngineShortcutsTestTag.checkbox(it.name))
             if (it.isChecked) {
-                Log.i(
-                    TAG,
-                    "verifySearchShortcutChecked: Trying to verify that ${it.name}'s alternative search engine check box is checked",
-                )
-                assertTrue("$TAG: ${it.name} alternative search engine check box is not checked", shortcutIsChecked)
-                Log.i(
-                    TAG,
-                    "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is checked",
-                )
+                checkbox.assertIsOn()
             } else {
-                Log.i(
-                    TAG,
-                    "verifySearchShortcutChecked: Trying to verify that the ${it.name}'s alternative search engine check box is not checked",
-                )
-                assertFalse("$TAG: ${it.name} alternative search engine check box is checked", shortcutIsChecked)
-                Log.i(
-                    TAG,
-                    "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is not checked",
-                )
+                checkbox.assertIsOff()
             }
+            Log.i(TAG, "verifySearchShortcutChecked: Verified ${it.name}'s check box is checked: ${it.isChecked}")
         }
     }
 
@@ -419,12 +405,9 @@ class SettingsSubMenuSearchRobot {
         }
     }
 
-    fun selectSearchShortcut(shortcut: EngineShortcut) {
+    fun selectSearchShortcut(testRule: ComposeTestRule, shortcut: EngineShortcut) {
         Log.i(TAG, "selectSearchShortcut: Trying to click ${shortcut.name}'s alternative search engine check box")
-        mDevice
-            .findObject(UiSelector().text(shortcut.name))
-            .getFromParent(UiSelector().index(shortcut.checkboxIndex))
-            .click()
+        testRule.onNodeWithTag(SearchEngineShortcutsTestTag.checkbox(shortcut.name)).performClick()
         Log.i(TAG, "selectSearchShortcut: Clicked ${shortcut.name}'s alternative search engine check box")
     }
 
@@ -770,12 +753,10 @@ fun settingsSubMenuSearch(interact: SettingsSubMenuSearchRobot.() -> Unit): Sett
  * Matches search shortcut items inside the 'Manage search shortcuts' menu
  *
  * @property name, of type String, should be the name of the search engine.
- * @property checkboxIndex, of type Int, is the checkbox' index afferent to the search engine.
  * @property isChecked, of type Boolean, should show if the checkbox is expected to be checked.
  */
 class EngineShortcut(
     val name: String,
-    val checkboxIndex: Int,
     val isChecked: Boolean = true,
 )
 

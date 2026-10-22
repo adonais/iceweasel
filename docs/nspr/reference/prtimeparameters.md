@@ -17,7 +17,7 @@ typedef struct PRTimeParameters {
 
 Each geographic location has a standard time zone, and if Daylight
 Saving Time (DST) is practiced, a daylight time zone. The
-{ref}`PRTimeParameters` structure represents the local time zone
+{doc}`prtimeparameters` structure represents the local time zone
 information in terms of the offset (in seconds) from GMT. The overall
 offset is broken into two components:
 

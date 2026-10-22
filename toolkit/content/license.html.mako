@@ -41,7 +41,7 @@ ${app_license_block}\
     </p>
 
     <p>More specifically, most of the source code is available under the
-       <a href="about:license#mpl">Mozilla Public License 2.0</a> (MPL).
+       <a href="#mpl">Mozilla Public License 2.0</a> (MPL).
        The MPL has a
        <a href="https://www.mozilla.org/MPL/2.0/FAQ/">FAQ</a> to help
        you understand it. The remainder of the software which is not
@@ -53,10 +53,18 @@ ${app_license_block}\
        and version you choose.)
     </p>
 
-    <ul>
+    <ul class="license-index">
 % for license in licenses:
-      <li><a href="about:license#${license['id']}">${license['title']}</a></li>
+      <li><a href="#${license['id']}">${license['title']}</a></li>
 % endfor
+    </ul>
+
+    <ul>
+      <li><a href="#acknowledgements">Acknowledgements</a>
+      <li><a href="#trademarks">Trademarks</a>
+% if config.get("OS_ARCH") == "WINNT":
+      <li><a href="#proprietary-notices">Proprietary Operating System Components</a>
+% endif
     </ul>
 
 % if app_license_list_block:
@@ -73,27 +81,30 @@ ${app_license_list_block}\
 
     <hr>
 
-    <table>
+    <table class="licenses">
       <thead>
-        <th>Name</th>
-        <th>Paths</th>
-        <th>License</th>
+        <tr>
+          <th>Name</th>
+          <th>Paths</th>
+          <th>License</th>
+        </tr>
       </thead>
       <tbody>
 % for license in licenses:
         <tr>
           <td>
-            <h1><a id="${license['id']}"></a>${license['title']}</h1>
+            <h2><a id="${license['id']}"></a>${license['title']}</h2>
           </td>
           <td>
+            <div class="license-meta">
 % if license['notice']:
             ${license['notice']}
 % endif
-% if license['paths']:
+% if license['paths'] and not license['notice_names_paths']:
 % if not license['notice_leads_paths']:
             <p>This license applies to the following paths:</p>
 % endif
-            <ul>
+            <ul class="license-paths">
 % for path in license['paths']:
               <li><code>${path}</code></li>
 % endfor
@@ -102,14 +113,15 @@ ${app_license_list_block}\
 % if not license['notice'] and not license['paths']:
             <p>N/A</p>
 % endif
+            </div>
           </td>
-          <td>
+          <td class="license-text">
 % if license['html']:
 ${license['text']}\
 % else:
             <pre>
 ${license['text']}\
-            </pre>
+</pre>
 % endif
           </td>
         </tr>
@@ -119,30 +131,19 @@ ${license['text']}\
 
     <hr>
 
-    <h1><a id="other-notices"></a>Other Required Notices</h1>
+    <h2><a id="acknowledgements"></a>Acknowledgements</h2>
+
+    <p>Some licenses require, and others request, an acknowledgement of
+    their use in this product. We are very grateful to the following
+    people and projects for their contributions:</p>
 
     <ul>
       <li>This software is based in part on the work of the Independent
           JPEG Group.</li>
-      <li>Portions of the OS/2 and Android versions
-          of this software are copyright &copy;1996-2012
+      <li>Portions of the Android version of this software are copyright
+          &copy; 1996-2026
           <a href="https://www.freetype.org/">The FreeType Project</a>.
           All rights reserved.</li>
-      <li>Google Play and the Google Play logo are trademarks of Google LLC.</li>
-      <li>App Store® and the App Store® logo are trademarks of Apple, Inc.</li>
-    </ul>
-
-
-    <hr>
-
-    <h1><a id="optional-notices"></a>Optional Notices</h1>
-
-    <p>Some permissive software licenses request but do not require an
-    acknowledgement of the use of their software. We are very grateful
-    to the following people and projects for their contributions to
-    this product:</p>
-
-    <ul>
       <li>The <a href="https://www.zlib.net/">zlib</a> compression library
           (Jean-loup Gailly, Mark Adler and team)</li>
       <li>The <a href="http://www.libpng.org/pub/png/">libpng</a> graphics library
@@ -151,8 +152,18 @@ ${license['text']}\
           (D. Richard Hipp and team)</li>
       <li>The <a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a>
           (Amir Szekely and team)</li>
-      <li>The <a href="https://mattmccutchen.net/bigint/">C++ Big Integer Library</a>
-          (Matt McCutchen)</li>
+% for acknowledgement in acknowledgements:
+      <li>${acknowledgement}</li>
+% endfor
+    </ul>
+
+    <hr>
+
+    <h2><a id="trademarks"></a>Trademarks</h2>
+
+    <ul>
+      <li>Google Play and the Google Play logo are trademarks of Google LLC.</li>
+      <li>App Store® and the App Store® logo are trademarks of Apple, Inc.</li>
     </ul>
 
 
@@ -161,7 +172,7 @@ ${license['text']}\
 
     <hr>
 
-    <h1><a id="proprietary-notices"></a>Proprietary Operating System Components</h1>
+    <h2><a id="proprietary-notices"></a>Proprietary Operating System Components</h2>
 
     <p>Under some circumstances, under our
     <a href="https://www.mozilla.org/foundation/licensing/binary-components/">binary components policy</a>,
@@ -171,7 +182,7 @@ ${license['text']}\
     that specific operating system. The following license statements
     apply to such inclusions.</p>
 
-    <h2><a id="directx"></a>Microsoft Windows: Terms for 'Microsoft Distributable Code'</h2>
+    <h3><a id="directx"></a>Microsoft Windows: Terms for 'Microsoft Distributable Code'</h3>
 
     <p>These terms apply to the following files;
     they are referred to below as "Distributable Code":
@@ -210,7 +221,7 @@ ${app_license_body_block}\
 
       <hr>
 
-      <p><a href="about:license#top">Return to top</a>.</p>
+      <p><a href="#top">Return to top</a>.</p>
     </div>
   </body>
 </html>

@@ -22,7 +22,7 @@ place of UTC. Although UTC and GMT are not exactly the same in their
 precise definitions, they can generally be treated as if they were.
 
 :::{note}
-**Note:** Keep in mind that while {ref}`PRTime` stores times in
+**Note:** Keep in mind that while {doc}`prtime` stores times in
 microseconds since epoch, JavaScript date objects store times in
 milliseconds since epoch.
 :::

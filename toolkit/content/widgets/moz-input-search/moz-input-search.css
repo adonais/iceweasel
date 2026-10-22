@@ -1,0 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://global/content/elements/moz-input-text.css");
+
+#input[type="search"] {
+  --input-background-icon: url(chrome://global/skin/icons/search-textbox.svg);
+  border-radius: var(--input-search-border-radius);
+  padding-inline-end: var(--space-xxsmall);
+
+  &.with-icon {
+    background-size: var(--input-search-icon-size);
+    padding-inline-start: calc(2 * var(--space-medium) + var(--input-search-icon-size));
+  }
+
+  &::-moz-search-clear-button {
+    border-radius: var(--input-search-border-radius);
+  }
+}

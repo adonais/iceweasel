@@ -90,6 +90,7 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Components.h"
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
@@ -207,7 +208,7 @@
 #include "InputData.h"
 #include "mozilla/TaskController.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -892,7 +893,7 @@ void nsWindow::SendAnAPZEvent(InputData& aEvent) {
 
   APZEventResult result;
   if (mAPZC) {
-    result = mAPZC->InputBridge()->ReceiveInputEvent(aEvent);
+    result = mAPZC->Bridge()->ReceiveInputEvent(aEvent);
   }
   if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
     return;
@@ -904,12 +905,8 @@ void nsWindow::SendAnAPZEvent(InputData& aEvent) {
   if (aEvent.mInputType == PANGESTURE_INPUT) {
     PanGestureInput& panInput = aEvent.AsPanGestureInput();
     WidgetWheelEvent event = panInput.ToWidgetEvent(this);
-    if (!mAPZC) {
-      if (MayStartSwipeForNonAPZ(panInput)) {
-        return;
-      }
-    } else {
-      event = MayStartSwipeForAPZ(panInput, result);
+    if (mAPZC) {
+      event = MayStartSwipe(panInput, result);
     }
 
     ProcessUntransformedAPZEvent(&event, result);
@@ -6491,8 +6488,10 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
     }
   }
 
-  // Recompute tiled state.
-  SetIsTiled(mWnd && ::IsWindowArranged(mWnd));
+  // Recompute tiled state. IsWindowArranged is missing before Windows 10 1903.
+  static const StaticDynamicallyLinkedFunctionPtr<decltype(&::IsWindowArranged)>
+      pIsWindowArranged(L"user32.dll", "IsWindowArranged");
+  SetIsTiled(mWnd && pIsWindowArranged && pIsWindowArranged(mWnd));
 
   // Notify visibility change when window is activated.
   if (!(wp->flags & SWP_NOACTIVATE) && NeedsToTrackWindowOcclusionState()) {

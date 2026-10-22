@@ -312,8 +312,7 @@ if (rtc_include_tests) {
       }
     }
 
-    rtc_library("audio_buffer_unittest") {
-      testonly = true
+    rtc_cc_test("audio_buffer_unittest") {
       sources = [ "audio_buffer_unittest.cc" ]
       deps = [
         ":audio_buffer",
@@ -327,8 +326,7 @@ if (rtc_include_tests) {
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     }
 
-    rtc_library("audio_frame_view_unittest") {
-      testonly = true
+    rtc_cc_test("audio_frame_view_unittest") {
       sources = [ "audio_frame_view_unittest.cc" ]
       deps = [
         ":audio_buffer",
@@ -342,8 +340,7 @@ if (rtc_include_tests) {
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     }
 
-    rtc_library("gain_controller2_unittest") {
-      testonly = true
+    rtc_cc_test("gain_controller2_unittest") {
       sources = [ "gain_controller2_unittest.cc" ]
       deps = [
         ":audio_buffer",
@@ -359,10 +356,13 @@ if (rtc_include_tests) {
       ]
       configs += [ ":apm_debug_dump" ]
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
+      data_deps = [ "../../resources:audio_processing_unittests_data" ]
+      if (is_ios) {
+        deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+      }
     }
 
-    rtc_library("splitting_filter_unittest") {
-      testonly = true
+    rtc_cc_test("splitting_filter_unittest") {
       sources = [ "splitting_filter_unittest.cc" ]
       deps = [
         ":audio_buffer",
@@ -373,8 +373,7 @@ if (rtc_include_tests) {
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     }
 
-    rtc_library("echo_canceller3_config_json_unittest") {
-      testonly = true
+    rtc_cc_test("echo_canceller3_config_json_unittest") {
       sources = [ "test/echo_canceller3_config_json_unittest.cc" ]
       deps = [
         ":aec3_config_json",
@@ -385,8 +384,7 @@ if (rtc_include_tests) {
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     }
 
-    rtc_library("fake_recording_device_unittest") {
-      testonly = true
+    rtc_cc_test("fake_recording_device_unittest") {
       sources = [ "test/fake_recording_device_unittest.cc" ]
       deps = [
         ":analog_mic_simulation",
@@ -399,8 +397,7 @@ if (rtc_include_tests) {
       defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     }
 
-    rtc_library("circular_buffer_unittest") {
-      testonly = true
+    rtc_cc_test("circular_buffer_unittest") {
       sources = [ "echo_detector/circular_buffer_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -409,8 +406,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("mean_variance_estimator_unittest") {
-      testonly = true
+    rtc_cc_test("mean_variance_estimator_unittest") {
       sources = [ "echo_detector/mean_variance_estimator_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -419,8 +415,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("moving_max_unittest") {
-      testonly = true
+    rtc_cc_test("moving_max_unittest") {
       sources = [ "echo_detector/moving_max_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -429,8 +424,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("normalized_covariance_estimator_unittest") {
-      testonly = true
+    rtc_cc_test("normalized_covariance_estimator_unittest") {
       sources = [ "echo_detector/normalized_covariance_estimator_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -439,8 +433,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("gain_control_unittest") {
-      testonly = true
+    rtc_cc_test("gain_control_unittest") {
       sources = [ "gain_control_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -453,10 +446,13 @@ if (rtc_include_tests) {
         "../audio_coding:neteq_input_audio_tools",
         "agc:gain_control_interface",
       ]
+      data_deps = [ "../../resources:audio_processing_unittests_data" ]
+      if (is_ios) {
+        deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+      }
     }
 
-    rtc_library("high_pass_filter_unittest") {
-      testonly = true
+    rtc_cc_test("high_pass_filter_unittest") {
       sources = [ "high_pass_filter_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -466,10 +462,13 @@ if (rtc_include_tests) {
         "../../api/audio:audio_processing",
         "../../test:test_support",
       ]
+      data_deps = [ "../../resources:audio_processing_unittests_data" ]
+      if (is_ios) {
+        deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+      }
     }
 
-    rtc_library("post_filter_unittest") {
-      testonly = true
+    rtc_cc_test("post_filter_unittest") {
       sources = [ "post_filter_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -481,8 +480,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("residual_echo_detector_unittest") {
-      testonly = true
+    rtc_cc_test("residual_echo_detector_unittest") {
       sources = [ "residual_echo_detector_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -492,8 +490,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("rms_level_unittest") {
-      testonly = true
+    rtc_cc_test("rms_level_unittest") {
       sources = [ "rms_level_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -504,8 +501,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("echo_canceller_test_tools_unittest") {
-      testonly = true
+    rtc_cc_test("echo_canceller_test_tools_unittest") {
       sources = [ "test/echo_canceller_test_tools_unittest.cc" ]
       configs += [ ":apm_debug_dump" ]
       deps = [
@@ -526,8 +522,7 @@ if (rtc_include_tests) {
         ]
       }
 
-      rtc_library("audio_processing_impl_locking_unittest") {
-        testonly = true
+      rtc_cc_test("audio_processing_impl_locking_unittest") {
         sources = [ "audio_processing_impl_locking_unittest.cc" ]
         configs += [ ":apm_debug_dump" ]
         defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
@@ -569,8 +564,7 @@ if (rtc_include_tests) {
         ]
       }
 
-      rtc_library("audio_processing_impl_unittest") {
-        testonly = true
+      rtc_cc_test("audio_processing_impl_unittest") {
         sources = [ "audio_processing_impl_unittest.cc" ]
         configs += [ ":apm_debug_dump" ]
         defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
@@ -593,10 +587,13 @@ if (rtc_include_tests) {
           "../../test:test_support",
           "aec3/neural_residual_echo_estimator:neural_residual_echo_estimator_test_helper",
         ]
+        data_deps = [ "../../resources:audio_processing_unittests_data" ]
+        if (is_ios) {
+          deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+        }
       }
 
-      rtc_library("audio_processing_unittest") {
-        testonly = true
+      rtc_cc_test("audio_processing_unittest") {
         sources = [ "audio_processing_unittest.cc" ]
         configs += [ ":apm_debug_dump" ]
         defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
@@ -637,10 +634,13 @@ if (rtc_include_tests) {
           "//third_party/abseil-cpp/absl/flags:flag",
           "//third_party/abseil-cpp/absl/strings:string_view",
         ]
+        data_deps = [ "../../resources:audio_processing_unittests_data" ]
+        if (is_ios) {
+          deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+        }
       }
 
-      rtc_library("debug_dump_test") {
-        testonly = true
+      rtc_cc_test("debug_dump_test") {
         sources = [ "test/debug_dump_test.cc" ]
         configs += [ ":apm_debug_dump" ]
         defines = [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
@@ -661,16 +661,15 @@ if (rtc_include_tests) {
           "aec_dump",
           "//third_party/abseil-cpp/absl/strings:string_view",
         ]
+        data_deps = [ "../../resources:audio_processing_unittests_data" ]
+        if (is_ios) {
+          deps += [ "../../resources:audio_processing_unittests_bundle_data" ]
+        }
       }
     }
 
-    rtc_library("audio_processing_unittests") {
-      testonly = true
-
-      configs += [ ":apm_debug_dump" ]
-      sources = []
-
-      deps = [
+    rtc_test_suite("audio_processing_unittests") {
+      tests = [
         ":audio_buffer_unittest",
         ":audio_frame_view_unittest",
         ":circular_buffer_unittest",
@@ -687,32 +686,116 @@ if (rtc_include_tests) {
         ":residual_echo_detector_unittest",
         ":rms_level_unittest",
         ":splitting_filter_unittest",
-        "agc:agc_unittests",
+        "aec3:adaptive_fir_filter_erl_unittest",
+        "aec3:adaptive_fir_filter_unittest",
+        "aec3:aec3_fft_unittest",
+        "aec3:aec_state_unittest",
+        "aec3:alignment_mixer_unittest",
+        "aec3:api_call_jitter_metrics_unittest",
+        "aec3:block_delay_buffer_unittest",
+        "aec3:block_framer_unittest",
+        "aec3:block_processor_metrics_unittest",
+        "aec3:block_processor_unittest",
+        "aec3:clockdrift_detector_unittest",
+        "aec3:coarse_filter_update_gain_unittest",
+        "aec3:comfort_noise_generator_unittest",
+        "aec3:config_selector_unittest",
+        "aec3:decimator_unittest",
+        "aec3:echo_canceller3_unittest",
+        "aec3:echo_path_delay_estimator_unittest",
+        "aec3:echo_path_variability_unittest",
+        "aec3:echo_remover_metrics_unittest",
+        "aec3:echo_remover_unittest",
+        "aec3:erl_estimator_unittest",
+        "aec3:erle_estimator_unittest",
+        "aec3:fft_data_unittest",
+        "aec3:filter_analyzer_unittest",
+        "aec3:frame_blocker_unittest",
+        "aec3:matched_filter_lag_aggregator_unittest",
+        "aec3:matched_filter_unittest",
+        "aec3:moving_average_spectrum_unittest",
+        "aec3:multi_channel_content_detector_unittest",
+        "aec3:refined_filter_update_gain_unittest",
+        "aec3:render_buffer_unittest",
+        "aec3:render_delay_buffer_unittest",
+        "aec3:render_delay_controller_metrics_unittest",
+        "aec3:render_delay_controller_unittest",
+        "aec3:render_signal_analyzer_unittest",
+        "aec3:residual_echo_estimator_unittest",
+        "aec3:reverb_model_estimator_unittest",
+        "aec3:signal_dependent_erle_estimator_unittest",
+        "aec3:subtractor_unittest",
+        "aec3:suppression_filter_unittest",
+        "aec3:suppression_gain_unittest",
+        "aec3:vector_math_unittest",
+        "aec_dump:mock_aec_dump_unittests",
+        "agc:agc_manager_direct_unittest",
+        "agc:loudness_histogram_unittest",
         "agc2:adaptive_digital_gain_controller_unittest",
+        "agc2:agc2_testing_common_unittest",
         "agc2:biquad_filter_unittests",
-        "agc2:fixed_digital_unittests",
+        "agc2:clipping_predictor_level_buffer_unittest",
+        "agc2:clipping_predictor_unittest",
+        "agc2:fixed_digital_level_estimator_unittest",
         "agc2:gain_applier_unittest",
-        "agc2:input_volume_controller_unittests",
+        "agc2:input_volume_controller_unittest",
         "agc2:input_volume_stats_reporter_unittests",
+        "agc2:interpolated_gain_curve_unittest",
+        "agc2:limiter_db_gain_curve_unittest",
+        "agc2:limiter_unittest",
         "agc2:noise_estimator_unittests",
-        "agc2:saturation_protector_unittest",
-        "agc2:speech_level_estimator_unittest",
+        "agc2:saturation_protector_buffer_unittest",
+        "agc2:saturation_protector_unittest_test",
+        "agc2:speech_level_estimator_experimental_unittest",
+        "agc2:speech_level_estimator_unittest_test",
+        "agc2:speech_probability_buffer_unittest",
         "agc2:vad_wrapper_unittests",
-        "agc2/rnn_vad:unittests",
-        "capture_levels_adjuster:capture_levels_adjuster_unittests",
-        "capture_mixer:capture_mixer_unittests",
-        "test/conversational_speech:unittest",
+        "agc2/rnn_vad:auto_correlation_unittest",
+        "agc2/rnn_vad:features_extraction_unittest",
+        "agc2/rnn_vad:lp_residual_unittest",
+        "agc2/rnn_vad:pitch_search_internal_unittest",
+        "agc2/rnn_vad:pitch_search_unittest",
+        "agc2/rnn_vad:ring_buffer_unittest",
+        "agc2/rnn_vad:rnn_fc_unittest",
+        "agc2/rnn_vad:rnn_gru_unittest",
+        "agc2/rnn_vad:rnn_unittest",
+        "agc2/rnn_vad:rnn_vad_unittest",
+        "agc2/rnn_vad:sequence_buffer_unittest",
+        "agc2/rnn_vad:spectral_features_internal_unittest",
+        "agc2/rnn_vad:spectral_features_unittest",
+        "agc2/rnn_vad:symmetric_matrix_buffer_unittest",
+        "agc2/rnn_vad:rnn_vector_math_unittest",
+        "capture_levels_adjuster:audio_samples_scaler_unittest",
+        "capture_levels_adjuster:capture_levels_adjuster_unittest",
+        "capture_mixer:audio_content_analyzer_unittest",
+        "capture_mixer:capture_mixer_unittest",
+        "capture_mixer:channel_content_remixer_unittest",
+        "capture_mixer:dc_levels_estimator_unittest",
+        "capture_mixer:energy_estimator_unittest",
+        "capture_mixer:remixing_logic_unittest",
+        "capture_mixer:saturation_estimator_unittest",
+        "ns:noise_suppressor_unittest",
+        "test/conversational_speech:generator_unittest",
         "utility:cascaded_biquad_filter_unittest",
         "utility:pffft_wrapper_unittest",
-        "vad:vad_unittests",
+        "vad:gmm_unittest",
+        "vad:pitch_based_vad_unittest",
+        "vad:pitch_internal_unittest",
+        "vad:pole_zero_filter_unittest",
+        "vad:standalone_vad_unittest",
+        "vad:vad_audio_proc_unittest",
+        "vad:vad_circular_buffer_unittest",
+        "vad:voice_activity_detector_unittest",
       ]
 
       if (rtc_enable_protobuf) {
-        deps += [
+        tests += [
           ":audio_processing_impl_locking_unittest",
           ":audio_processing_impl_unittest",
           ":audio_processing_unittest",
           ":debug_dump_test",
+          "aec3/neural_residual_echo_estimator:neural_feature_extractor_unittest",
+          "aec3/neural_residual_echo_estimator:neural_residual_echo_estimator_impl_unittest",
           "aec_dump:aec_dump_unittests",
         ]
       }

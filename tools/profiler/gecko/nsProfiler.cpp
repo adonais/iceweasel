@@ -1117,8 +1117,7 @@ void nsProfiler::GatheredOOPProfile(
   if (!aProfile.IsEmpty()) {
     if (mWriter->ChunkedWriteFunc().Length() + aProfile.Length() <
         scLengthAccumulationThreshold) {
-      // TODO: Remove PromiseFlatCString, see bug 1657033.
-      mWriter->Splice(PromiseFlatCString(aProfile));
+      mWriter->Splice(aProfile);
     } else {
       LogEvent([&](Json::Value& aEvent) {
         aEvent.append(

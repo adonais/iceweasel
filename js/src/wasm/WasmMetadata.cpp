@@ -233,10 +233,13 @@ bool CodeMetadata::getFuncName(NameContext ctx, uint32_t funcIndex,
     }
   }
 
-  if (nameSection && funcIndex < nameSection->funcNames.length() &&
-      nameSection->funcNames[funcIndex].length != 0) {
-    return AppendName(nameSectionPayload->vector,
-                      nameSection->funcNames[funcIndex], name);
+  if (nameSection) {
+    if (auto funcName =
+            nameSection->funcNames.readonlyThreadsafeLookup(funcIndex)) {
+      if (funcName->value().length != 0) {
+        return AppendName(nameSectionPayload->vector, funcName->value(), name);
+      }
+    }
   }
 
   if (ctx == NameContext::BeforeLocation) {

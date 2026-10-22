@@ -59,6 +59,8 @@
   <string name="mozac_feature_prompts_deny">Red bike</string>
   <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
   <string name="mozac_feature_prompts_popup_dialog_title">Destûrê didî vê malperê ku vebe?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">Destûrê bide beralîkirina vê malperê?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">Bi rastî jî?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
@@ -67,6 +69,12 @@
   <string name="mozac_feature_prompts_before_unload_stay">Lê bimîne</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">Derkeve</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s dixwaze ji bo %2$s nifteya derbasbûnê çêke.</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s dixwaze ji bo %2$s nifteya derbasbûnê bi kar bîne.</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Bidomîne</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">Mehekê hilbijêre</string>
   <!-- January (short description), used on the month chooser dialog. -->
@@ -126,6 +134,14 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">Daneyan dîsa bişîne</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">Betal bike</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">Bila dosye bên barkirin?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Berî ku tu ji \"%1$s\"ê barkirinê bikî, pê ewle be ku baweriya te bi vê malperê heye.</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Lêbar bike</string>
+  <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">Betal bike</string>
   <!--
     Credit Card Autofill
 
@@ -156,6 +172,10 @@
   <string name="mozac_feature_prompts_collapse_address_content_description_2">Navnîşanên tomarkirî berteng bike</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">Navnîşanan bi rê ve bibe</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">Navnîşanê qeyd bike?</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">Navnîşanê nûve bike?</string>
   <!--
     Federated Credential Management prompts
 
@@ -174,4 +194,12 @@
   <string name="mozac_feature_prompts_identity_credentials_continue">Bidomîne</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_cancel">Betal bike</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">Maska e-maîlê bikar bîne</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">Nû! Niha li ser mobîlê %s maskên e-maîlê berdest in.</string>
 </resources>

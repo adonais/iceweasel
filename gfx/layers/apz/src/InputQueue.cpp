@@ -18,7 +18,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/ToString.h"
-#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 
 static mozilla::LazyLogModule sApzInpLog("apz.inputqueue");
@@ -435,7 +435,7 @@ static bool CanScrollTargetHorizontally(const PanGestureInput& aInitialEvent,
   horizontalComponent.mPanDisplacement.y = 0;
   ScrollDirections allowedScrollDirections;
   RefPtr<AsyncPanZoomController> horizontallyScrollableAPZC =
-      aBlock->GetOverscrollHandoffChain()->FindFirstScrollable(
+      aBlock->GetOverscrollHandoffChain()->FindScrollTarget(
           horizontalComponent, &allowedScrollDirections,
           OverscrollHandoffChain::IncludeOverscroll::No);
   return horizontallyScrollableAPZC &&
@@ -487,6 +487,23 @@ APZEventResult InputQueue::ReceivePanGestureInput(
       return result;
     }
     if (!startsNewBlock) {
+      // A zero-delta pan-end has nothing to scroll and the gesture it stands
+      // for is already over, so drop it rather than synthesizing a block whose
+      // OnPanBegin would cancel animations. Only do so while an animation is
+      // running though: that animation will relieve any overscroll when it
+      // ends, whereas otherwise the synthesized block is the only thing left
+      // that can snap back overscroll an interrupted gesture caused.
+      if (event.mType == PanGestureInput::PANGESTURE_END &&
+          event.mPanDisplacement == ScreenPoint{}) {
+        RefPtr<const OverscrollHandoffChain> handoffChain =
+            aTarget->BuildOverscrollHandoffChain();
+        if (handoffChain && handoffChain->HasAnimatingApzc()) {
+          INPQ_LOG(
+              "dropping a received zero-delta pan-end while an animation is "
+              "running\n");
+          return result;
+        }
+      }
       // Only PANGESTURE_MAYSTART or PANGESTURE_START events are allowed to
       // start a new pan gesture block, but we really want to start a new block
       // here, so we magically turn this input into a PANGESTURE_START.

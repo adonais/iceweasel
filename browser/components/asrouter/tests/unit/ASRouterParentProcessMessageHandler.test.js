@@ -398,5 +398,19 @@ describe("ASRouterParentProcessMessageHandler", () => {
         assert.calledWith(config.router.editState, "property", "value");
       });
     });
+    describe("AW_GET_ACTIVE_THEME_ID action", () => {
+      it("default returns the active theme id from prefs", async () => {
+        sandbox
+          .stub(global.Services.prefs, "getStringPref")
+          .returns("nova-flare@mozilla.org");
+        const result = await handler.handleMessage(msg.AW_GET_ACTIVE_THEME_ID);
+        assert.calledWith(
+          global.Services.prefs.getStringPref,
+          "extensions.activeThemeID",
+          ""
+        );
+        assert.equal(result, "nova-flare@mozilla.org");
+      });
+    });
   });
 });

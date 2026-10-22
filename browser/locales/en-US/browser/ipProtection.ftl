@@ -31,12 +31,6 @@ ipprotection-feature-introduction-title = Introducing VPN, now right inside your
 ipprotection-feature-introduction-title-1 = Try { -brand-product-name }’s built-in VPN
 ipprotection-feature-introduction-link-text-2 = Use our new <a data-l10n-name="learn-more-vpn">built-in VPN</a> to hide your location and protect your data.
 
-# Used for callout for users who expressed interest in privacy in onboarding
-ipprotection-feature-introduction-title-privacy = Add another layer of privacy
-ipprotection-feature-introduction-link-text-privacy-1 = <a data-l10n-name="learn-more-vpn">{ -brand-product-name }’s built-in VPN</a> helps protect your browsing. Choose from several locations to keep where you browse more private.
-ipprotection-feature-introduction-link-text-privacy-2 = <a data-l10n-name="learn-more-vpn">{ -brand-product-name }’s built-in VPN</a> helps protect your browsing. Choose from multiple locations to keep where you browse more private.
-ipprotection-feature-introduction-link-text-privacy-3 = Get <a data-l10n-name="learn-more-vpn">extra privacy</a> by choosing from multiple locations to hide where you browse.
-
 # Unlimited bandwidth summer promotion
 
 ipprotection-feature-introduction-text-summer-promo-1 = Turn it on to keep your browsing more private. <a data-l10n-name="summer-promo-link">Get unlimited bandwidth</a> and more locations to browse from. Now until August 31.
@@ -73,20 +67,33 @@ ipprotection-summer-promo-offramp-default-browser-incentive-description = Make {
 ipprotection-summer-promo-offramp-subscription-upsell-title = Level up with { -mozilla-vpn-brand-name }
 ipprotection-summer-promo-offramp-subscription-upsell-description = Keep unlimited bandwidth after August 31, with 300+ locations on 5 devices to make your browsing harder to trace back to you.
 
-# Summer promo offramp callout buttons
+## Summer promo offramp callout buttons
+
 ipprotection-summer-promo-offramp-open-vpn-primary-button = Open VPN
 ipprotection-summer-promo-offramp-set-to-default-primary-button = Set to default
 ipprotection-summer-promo-offramp-get-subscription-button = Get { -mozilla-vpn-brand-name }
 ipprotection-summer-promo-offramp-dismiss-secondary-button = Dismiss
 
-# Original strings for private browsing callout
+## Callout shown when the user opens a private browsing window
 
+ipprotection-feature-introduction-title-private-browsing = Maximize privacy with { -brand-product-name }’s built-in VPN
 ipprotection-feature-introduction-link-text-private-browsing-2 = Use our new <a data-l10n-name="learn-more-vpn">built-in VPN</a> to hide your location and protect your data, even when you’re in a Private Window.
 ipprotection-feature-introduction-description-private-browsing = Browse with extra protection by hiding your location, even when you’re in a Private Window.
+# Alternate version of the feature discovery callout copy used after we've released site inclusions for the VPN. Users have the option to turn the VPN on for specific sites only
+ipprotection-feature-introduction-description-private-browsing-1 = Help hide your location for <a data-l10n-name="learn-more-vpn">extra privacy</a> as you browse. Set rules to turn on the VPN for extra privacy or location-based browsing, and off where you don’t.
 
-# Used for callout shown on login to public wi-fi through a captive portal
+## Callout shown when the user logs in to a captive portal network
+
 ipprotection-feature-introduction-title-captive-portal = On public Wi-Fi? Try { -brand-product-name }’s built-in VPN.
 ipprotection-feature-introduction-description-captive-portal = Browse with extra protection by hiding your location, even on public Wi-Fi.
+
+## Callout shown to users who have expressed an interest in privacy and security
+
+ipprotection-feature-introduction-title-privacy = Add another layer of privacy
+ipprotection-feature-introduction-link-text-privacy-3 = Get <a data-l10n-name="learn-more-vpn">extra privacy</a> by choosing from multiple locations to hide where you browse.
+
+# Used for multiple discovery callouts after release of the site inclusions feature
+ipprotection-feature-introduction-description-inclusions = Help hide your location for <a data-l10n-name="learn-more-vpn">extra privacy</a> as you browse. Set the VPN on or off for certain sites.
 
 # Used for discovery callouts for both captive portal login and private browsing
 ipprotection-feature-introduction-link-text-captive-portal-1 = Get <a data-l10n-name="learn-more-vpn">extra privacy</a> by choosing from several locations to hide where you browse.
@@ -124,6 +131,16 @@ ipprotection-location-selection-callout-secondary-button = Dismiss
 ipprotection-android-promo-callout-title = Take built-in VPN with you on Android
 ipprotection-android-promo-callout-description = Scan the QR code to get { -brand-product-name } for Android and turn on built-in VPN for more privacy on the go. Coming soon to iOS.
 ipprotection-android-promo-callout-primary-button = Got it
+
+## Feature discovery callout message advertising a feature where the user can turn on the VPN for specific sites only
+
+# Here 'browse on' means continue browsing
+ipprotection-site-inclusions-callout-title-existing-users = Set built-in VPN rules, then browse on
+ipprotection-site-inclusions-callout-title-lapsed-users = Try built-in VPN, now site by site
+ipprotection-site-inclusions-callout-description = Turn it on when you want extra privacy or location-based browsing, and off where you don’t.
+ipprotection-site-inclusions-callout-primary-button = Set rules
+ipprotection-site-inclusions-callout-secondary-button-existing-users = Not now
+ipprotection-site-inclusions-callout-secondary-button-lapsed-users = Dismiss
 
 ## Panel
 

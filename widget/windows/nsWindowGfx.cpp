@@ -504,7 +504,7 @@ nsresult nsWindowGfx::CreateIcon(imgIContainer* aContainer,
       NS_ENSURE_TRUE(mappedOK, NS_ERROR_FAILURE);
 
       RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
-          BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride,
+          BackendType::SKIA, map.mData, dataSurface->GetSize(), map.mStride,
           SurfaceFormat::B8G8R8A8);
       if (!dt) {
         gfxWarning()

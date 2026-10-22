@@ -137,6 +137,8 @@ const CommandKeys = new Localization(
   true
 );
 
+const NEW_SETTINGS_PANEL_URL = "chrome://devtools/content/settings/index.html";
+
 var Tools = {};
 exports.Tools = Tools;
 
@@ -144,7 +146,14 @@ exports.Tools = Tools;
 Tools.options = {
   id: "options",
   ordinal: 0,
-  url: "chrome://devtools/content/framework/toolbox-options.html",
+  get url() {
+    if (
+      Services.prefs.getBoolPref("devtools.settings.redesign-enabled", false)
+    ) {
+      return NEW_SETTINGS_PANEL_URL;
+    }
+    return "chrome://devtools/content/framework/toolbox-options.html";
+  },
   icon: "chrome://devtools/skin/images/settings.svg",
   bgTheme: "theme-body",
   label: l10n("options.label"),
@@ -158,6 +167,12 @@ Tools.options = {
   },
 
   build(iframeWindow, toolbox, commands) {
+    if (this.url === NEW_SETTINGS_PANEL_URL) {
+      const {
+        SettingsPanel,
+      } = require("resource://devtools/client/settings/panel.js");
+      return new SettingsPanel();
+    }
     return new OptionsPanel(iframeWindow, toolbox, commands);
   },
 };

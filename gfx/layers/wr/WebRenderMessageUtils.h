@@ -59,7 +59,8 @@ struct ParamTraits<mozilla::wr::ImageDescriptor> {
     if (stride != 0) {
       int bpp = mozilla::gfx::BytesPerPixel(
           mozilla::wr::ImageFormatToSurfaceFormat(format));
-      if (bpp <= 0 || stride / bpp < width) {
+      // If stride specified, width must be > 0.
+      if (bpp <= 0 || width <= 0 || stride / bpp < width) {
         return {};
       }
     }
@@ -218,7 +219,7 @@ inline auto TiedFields<mozilla::wr::InternerSubReport>(
 template <>
 inline auto TiedFields<mozilla::wr::InterningMemoryReport>(
     mozilla::wr::InterningMemoryReport& a) {
-  return std::tie(a.interners, a.data_stores);
+  return std::tie(a.interners, a.data_stores, a.dl_stores);
 }
 
 template <>

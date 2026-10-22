@@ -87,22 +87,14 @@ class RenderCompositorANGLE final : public RenderCompositor {
   // Interface for wr::Compositor
   void CompositorBeginFrame() override;
   void CompositorEndFrame() override;
-  void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-            uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
-            wr::DeviceIntRect aValidRect) override;
-  void Unbind() override;
   void BindSwapChain(wr::NativeSurfaceId aId,
                      const wr::DeviceIntRect* aDirtyRects,
                      size_t aNumDirtyRects) override;
   void PresentSwapChain(wr::NativeSurfaceId aId,
                         const wr::DeviceIntRect* aDirtyRects,
                         size_t aNumDirtyRects) override;
-  void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntPoint aVirtualOffset,
-                     wr::DeviceIntSize aTileSize, bool aIsOpaque) override;
   void CreateExternalSurface(wr::NativeSurfaceId aId, bool aIsOpaque) override;
   void DestroySurface(NativeSurfaceId aId) override;
-  void CreateTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) override;
-  void DestroyTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) override;
   void AttachExternalImage(wr::NativeSurfaceId aId,
                            wr::ExternalImageId aExternalImage) override;
   void CreateSwapChainSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aSize,
@@ -117,7 +109,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
   bool EnableAsyncScreenshot() override;
-  void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
   void GetWindowProperties(WindowProperties* aProperties) override;
 
   // Interface for partial present
@@ -133,7 +124,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
                      bool* aNeedsYFlip) override;
 
  protected:
-  bool UseCompositor() const;
   bool RecreateNonNativeCompositorSwapChain();
   void InitializeUsePartialPresent();
   void InsertGraphicsCommandsFinishedWaitQuery(

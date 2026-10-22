@@ -1,0 +1,24 @@
+[DEFAULT]
+run-if = [
+  "os != 'android'",
+  "nightly_build",
+]
+head = "head_psm.js"
+tags = "psm"
+dupe-manifest = true
+support-files = [
+  "bad_certs/**",
+  "tlsserver/**",
+]
+prefs = [
+  "security.utility_pkcs11_module_process.enabled=true",
+]
+
+["test_pkcs11_module_client_auth.js"]
+run-sequentially = ["true"] # hardcoded ports
+skip-if = [
+  "msix", # Bug 1809477
+]
+prefs = [
+  "security.pki.certificate_transparency.mode=1",
+]

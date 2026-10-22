@@ -14,7 +14,7 @@ These are the currently implemented try selectors:
 - {doc}`release <release>`: Prepare a tree for doing a staging release.
 - {doc}`scriptworker <scriptworker>`: Run scriptworker tasks against a recent release.
 - {doc}`compare <compare>`: Push two identical try jobs, one on your current commit and another of your choice
-- {ref}`perf <Mach Try Perf>`: Select categories of performance tests to run, and produce a before/after compare view link.
+- {doc}`perf </testing/perfdocs/mach-try-perf>`: Select categories of performance tests to run, and produce a before/after compare view link.
 
 You can run them with:
 

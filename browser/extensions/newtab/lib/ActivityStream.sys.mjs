@@ -47,7 +47,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteRenderer: "resource://newtab/lib/RemoteRenderer.sys.mjs",
   SectionsFeed: "resource://newtab/lib/SectionsManager.sys.mjs",
   SectionsLayoutFeed: "resource://newtab/lib/SectionsLayoutFeed.sys.mjs",
-  SportsFeed: "resource://newtab/lib/Widgets/SportsFeed.sys.mjs",
   StocksFeed: "resource://newtab/lib/Widgets/StocksFeed.sys.mjs",
   PrivacyFeed: "resource://newtab/lib/Widgets/PrivacyFeed.sys.mjs",
   RecentSearchesFeed:
@@ -80,6 +79,7 @@ import {
   actionTypes as at,
 } from "resource://newtab/common/Actions.mjs";
 import { RegionLocaleMap } from "moz-src:///toolkit/modules/RegionLocaleMap.sys.mjs";
+import { WIDGET_REGISTRY } from "resource://newtab/common/WidgetsRegistry.mjs";
 
 const REGION_INFERRED_PERSONALIZATION_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.region-config";
@@ -166,6 +166,10 @@ const REGION_SECTIONS_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.region-content-config";
 const LOCALE_SECTIONS_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.locale-content-config";
+
+const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
+const PREF_MARKET_GATE_ENABLED = `${ACTIVITY_STREAM_PREF_BRANCH}widgets.marketGate.enabled`;
+const PREF_MARKET_GATE_ENFORCE_ON_NIGHTLY = `${ACTIVITY_STREAM_PREF_BRANCH}widgets.marketGate.enforceOnNightly`;
 
 const PREF_SHOULD_AS_INITIALIZE_FEEDS =
   "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds";
@@ -449,6 +453,144 @@ function showSectionLayout({ geo, locale }) {
   );
 }
 
+/**
+ * Whether a market passes one axis of a widget gate. An empty allow list means
+ * no restriction, so a widget that ships everywhere declares no prefs at all.
+ * The block list wins, matching discoverystream.region-stories-block.
+ *
+ * @param {string} allowPref - full name of the `-config` pref
+ * @param {string} blockPref - full name of the `-block` pref
+ * @param {string} value - the profile's region or locale
+ * @returns {boolean}
+ */
+/**
+ * @backward-compat { version 158 }
+ * Mirrors the widget market prefs in firefox.js. A train-hopped newtab on an
+ * older host has none of them, and a missing list means no restriction, which
+ * would make every widget available and on everywhere. Used only when the pref
+ * does not exist, so firefox.js and about:config still win. Remove once 158
+ * reaches Release, and keep in sync with firefox.js until then.
+ */
+export const MARKET_PREF_FALLBACKS = new Map(
+  Object.entries({
+    "widgets.system.region-block": "",
+    "widgets.system.lists.region-block": "PL",
+    "widgets.lists.region-block": "DE,FR,PL,US",
+    "widgets.system.focusTimer.region-block": "PL",
+    "widgets.focusTimer.region-block": "DE,FR,PL,US",
+    "widgets.system.clocks.region-block": "PL",
+    "widgets.clocks.region-block": "DE,FR,PL,US",
+    "widgets.system.pictureOfTheDay.region-block": "PL",
+    "widgets.pictureOfTheDay.region-block": "DE,FR,PL,US",
+    "widgets.system.crossword.locale-config": "en-CA,en-GB,en-US",
+    "widgets.system.crossword.region-block": "PL",
+  }).map(([name, value]) => [ACTIVITY_STREAM_PREF_BRANCH + name, value])
+);
+
+/**
+ * @backward-compat { version 158 }
+ * Once MARKET_PREF_FALLBACKS is removed, inline this as getStringPref(name, "").
+ */
+function marketPref(prefName) {
+  return (
+    Services.prefs.getStringPref(
+      prefName,
+      MARKET_PREF_FALLBACKS.get(prefName) ?? ""
+    ) || ""
+  );
+}
+
+function marketAllows(allowPref, blockPref, value) {
+  if (csvHasValue(marketPref(blockPref), value)) {
+    return false;
+  }
+  const allowed = marketPref(allowPref);
+  return !allowed.trim() || csvHasValue(allowed, value);
+}
+
+function prefIsSet(prefName) {
+  return Boolean(marketPref(prefName).trim());
+}
+
+/**
+ * Whether a widget opts out of being on everywhere in Nightly, declared as
+ * `skipNightlyDefault` on its WIDGET_REGISTRY entry. The container prefs match
+ * no entry and so never opt out.
+ *
+ * @param {string} prefKey - PREFS_CONFIG key, ending in ".enabled"
+ * @returns {boolean}
+ */
+function skipsNightlyDefault(prefKey) {
+  return WIDGET_REGISTRY.some(
+    widget =>
+      widget.skipNightlyDefault &&
+      (widget.enabledPref === prefKey || widget.systemEnabledPref === prefKey)
+  );
+}
+
+// These read their defaults from PREFS_CONFIG, which exists by the time they run.
+function marketGateEnabled() {
+  return Services.prefs.getBoolPref(
+    PREF_MARKET_GATE_ENABLED,
+    // eslint-disable-next-line no-use-before-define
+    PREFS_CONFIG.get("widgets.marketGate.enabled").value
+  );
+}
+
+function showsEveryWidgetOnNightly(prefKey) {
+  return (
+    AppConstants.NIGHTLY_BUILD &&
+    !skipsNightlyDefault(prefKey) &&
+    !Services.prefs.getBoolPref(
+      PREF_MARKET_GATE_ENFORCE_ON_NIGHTLY,
+      // eslint-disable-next-line no-use-before-define
+      PREFS_CONFIG.get("widgets.marketGate.enforceOnNightly").value
+    )
+  );
+}
+
+// Off by default once gating is on, except on Nightly, which shows every widget.
+function offByDefault(prefKey) {
+  return () => !marketGateEnabled() || showsEveryWidgetOnNightly(prefKey);
+}
+
+/**
+ * Gates a pref's default on the `.region-config`, `.region-block`,
+ * `.locale-config` and `.locale-block` prefs sitting alongside it, e.g.
+ * widgets.system.lists.enabled reads widgets.system.lists.region-block.
+ *
+ * @param {string} prefKey - PREFS_CONFIG key, ending in ".enabled"
+ * @returns {function({geo: string, locale: string}): boolean}
+ */
+function marketGate(prefKey) {
+  const base = ACTIVITY_STREAM_PREF_BRANCH + prefKey.replace(/\.enabled$/, "");
+  return ({ geo, locale }) => {
+    // Gating off restores the defaults from before it existed.
+    if (!marketGateEnabled()) {
+      return !prefKey.startsWith("widgets.system.");
+    }
+    // Nightly gets every widget in every market so the team sees the whole
+    // feature, which is why no widget pref carries an #ifdef in firefox.js.
+    if (showsEveryWidgetOnNightly(prefKey)) {
+      return true;
+    }
+    // With nothing restricting the region, geo cannot change the answer, so a
+    // profile whose region never resolves still gets the widget. Where a list
+    // does restrict it, wait for geo rather than showing the widget and then
+    // taking it away (see bug 2063361).
+    if (
+      !geo &&
+      (prefIsSet(`${base}.region-config`) || prefIsSet(`${base}.region-block`))
+    ) {
+      return false;
+    }
+    return (
+      marketAllows(`${base}.region-config`, `${base}.region-block`, geo) &&
+      marketAllows(`${base}.locale-config`, `${base}.locale-block`, locale)
+    );
+  };
+}
+
 // Configure default Activity Stream prefs with a plain `value` or a `getValue`
 // that computes a value. A `value_local_dev` is used for development defaults.
 // The thematic spaces layout's shipped default, used when no Nimbus recipe
@@ -533,14 +675,6 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Displays Top Sites on the New Tab Page",
       value: PREF_DEFAULT_VALUE_TOPSITES_ENABLED,
-    },
-  ],
-  [
-    "hideTopSitesTitle",
-    {
-      title:
-        "Hide the top sites section's title, including the section and collapse icons",
-      value: false,
     },
   ],
   [
@@ -703,13 +837,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.optIn-region-weather-config",
-    {
-      title: "Regions for weather opt-in.",
-      value: "DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT",
-    },
-  ],
-  [
     "weather.optInDisplayed",
     {
       title:
@@ -763,35 +890,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "sports.worldCup.teamsEndpoint",
-    {
-      title: "The Merino endpoint for fetching available World Cup teams data",
-      value: "https://merino.services.mozilla.com/api/v1/wcs/teams",
-    },
-  ],
-  [
-    "sports.worldCup.matchesEndpoint",
-    {
-      title: "The Merino endpoint for fetching World Cup match data",
-      value: "https://merino.services.mozilla.com/api/v1/wcs/matches",
-    },
-  ],
-  [
-    "sports.worldCup.liveEndpoint",
-    {
-      title: "The Merino endpoint for fetching live World Cup match data",
-      value: "https://merino.services.mozilla.com/api/v1/wcs/live",
-    },
-  ],
-  [
-    "sports.worldCup.watchLiveEndpoint",
-    {
-      title:
-        "The Merino endpoint for fetching World Cup watch-live broadcaster data",
-      value: "https://merino.services.mozilla.com/api/v1/wcs/watch-links",
-    },
-  ],
-  [
     "widgets.pictureOfTheDay.endpoint",
     {
       title: "The Merino endpoint for fetching the daily Picture of the day",
@@ -828,37 +926,6 @@ export const PREFS_CONFIG = new Map([
       title:
         "Boolean flag for determining if a user has interacted with the Picture of the day widget",
       value: false,
-    },
-  ],
-  [
-    "widgets.sportsWidget.pollIdleMs",
-    {
-      title:
-        "Sports widget: poll interval when no games are imminent (milliseconds)",
-      value: 21600000, // 6 hours
-    },
-  ],
-  [
-    "widgets.sportsWidget.pollMatchDayMs",
-    {
-      title:
-        "Sports widget: poll interval on a match day pre-kickoff (milliseconds)",
-      value: 1800000, // 30 minutes
-    },
-  ],
-  [
-    "widgets.sportsWidget.pollLiveMs",
-    {
-      title: "Sports widget: poll interval during live play (milliseconds)",
-      value: 180000, // 3 minutes
-    },
-  ],
-  [
-    "widgets.sportsWidget.pollPregameLeadMs",
-    {
-      title:
-        "Sports widget: how early to enter LIVE polling before kickoff (milliseconds)",
-      value: 600000, // 10 minutes
     },
   ],
   [
@@ -927,13 +994,6 @@ export const PREFS_CONFIG = new Map([
       title: "Enable system error and usage data collection",
       value: true,
       value_local_dev: false,
-    },
-  ],
-  [
-    "telemetry.structuredIngestion.endpoint",
-    {
-      title: "Structured Ingestion telemetry server endpoint",
-      value: "https://incoming.telemetry.mozilla.org/submit",
     },
   ],
   [
@@ -1493,24 +1553,42 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.marketGate.enabled",
+    {
+      title:
+        "Applies widget region and locale gating. When false, widgets keep the defaults from before gating",
+      value: true,
+    },
+  ],
+  [
+    "widgets.marketGate.enforceOnNightly",
+    {
+      title:
+        "Applies widget region and locale gating on Nightly, for debugging. Restart to apply",
+      value: false,
+    },
+  ],
+  [
     "widgets.system.enabled",
     {
-      title: "Enables visibility of all widgets and controls to enable them",
-      value: false,
+      title: "Makes widgets available: shows the controls that turn them on",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.enabled"),
     },
   ],
   [
     "widgets.enabled",
     {
       title: "Allows users to toggle all widgets on and off at once",
-      value: true,
+      // pref is dynamic
+      getValue: marketGate("widgets.enabled"),
     },
   ],
   [
     "widgets.lists.enabled",
     {
       title: "Enables the to-do lists widget",
-      value: true,
+      getValue: offByDefault("widgets.lists.enabled"),
     },
   ],
   [
@@ -1531,8 +1609,9 @@ export const PREFS_CONFIG = new Map([
   [
     "widgets.system.lists.enabled",
     {
-      title: "Enables the to-do lists widget experiment in Nimbus",
-      value: false,
+      title: "Makes the to-do lists widget available",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.lists.enabled"),
     },
   ],
   [
@@ -1593,14 +1672,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.focusTimer.enabled",
     {
       title: "Enables the focus timer widget",
-      value: true,
+      getValue: offByDefault("widgets.focusTimer.enabled"),
     },
   ],
   [
     "widgets.system.focusTimer.enabled",
     {
-      title: "Enables the focus timer widget experiment in Nimbus",
-      value: false,
+      title: "Makes the focus timer widget available",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.focusTimer.enabled"),
     },
   ],
   [
@@ -1665,14 +1745,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.clocks.enabled",
     {
       title: "Enables the clock widget",
-      value: true,
+      getValue: offByDefault("widgets.clocks.enabled"),
     },
   ],
   [
     "widgets.system.clocks.enabled",
     {
-      title: "Enables the clock widget experiment in Nimbus",
-      value: false,
+      title: "Makes the clock widget available",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.clocks.enabled"),
     },
   ],
   [
@@ -1694,66 +1775,6 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Size of the focus timer widget (medium or large)",
       value: "",
-    },
-  ],
-  [
-    "widgets.sportsWidget.enabled",
-    {
-      title: "Enables the sports widget",
-      value: true,
-    },
-  ],
-  [
-    "widgets.system.sportsWidget.enabled",
-    {
-      title: "Enables the sports widget experiment in Nimbus",
-      value: false,
-    },
-  ],
-  [
-    "widgets.sportsWidget.size",
-    {
-      title: "Size of the sports widget (medium or large)",
-      value: "",
-    },
-  ],
-  [
-    "widgets.sportsWidget.live.enabled",
-    {
-      title: "Enables live scores in the sports widget",
-      value: false,
-    },
-  ],
-  [
-    "widgets.sportsWidget.celebrations.enabled",
-    {
-      title:
-        "Enables end-of-match celebration animations in the sports widget. Off by default; can also be turned on via the dedicated trainhopConfig.sportsCelebrations.enabled namespace (canonical), or the trainhopConfig.widgets.sportsWidgetCelebrationsEnabled / legacy trainhopConfig.sports.celebrationsEnabled fallbacks.",
-      value: false,
-    },
-  ],
-  [
-    "widgets.sportsWidget.celebrations.windowMs",
-    {
-      title:
-        "How recently (in ms) a match must have ended to still trigger a celebration. Default 24h; can also be set via the dedicated trainhopConfig.sportsCelebrations.windowMs namespace (canonical), or the trainhopConfig.widgets.sportsWidgetCelebrationsWindowMs / legacy trainhopConfig.sports.celebrationsWindowMs fallbacks.",
-      value: 86400000,
-    },
-  ],
-  [
-    "widgets.sports.forceLiveDataTrustable",
-    {
-      title:
-        "Dev/QA only: bypass the pre-kickoff guard and treat /live data as trustable",
-      value: false,
-    },
-  ],
-  [
-    "widgets.sportsWidget.interaction",
-    {
-      title:
-        "Boolean flag for determining if a user has interacted with the sports widget",
-      value: false,
     },
   ],
   [
@@ -1790,14 +1811,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.privacy.enabled",
     {
       title: "Enables the privacy widget",
-      value: true,
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
     "widgets.crossword.enabled",
     {
       title: "Enables the crossword widget",
-      value: true,
+      getValue: offByDefault("widgets.crossword.enabled"),
     },
   ],
   [
@@ -1812,7 +1834,8 @@ export const PREFS_CONFIG = new Map([
     "widgets.stocks.enabled",
     {
       title: "Enables the stocks widget",
-      value: true,
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
@@ -1827,7 +1850,8 @@ export const PREFS_CONFIG = new Map([
     "widgets.recentSearches.enabled",
     {
       title: "Enables the recent searches widget",
-      value: true,
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
     },
   ],
   [
@@ -1842,27 +1866,30 @@ export const PREFS_CONFIG = new Map([
     "widgets.pictureOfTheDay.enabled",
     {
       title: "Enables the picture of the day widget",
-      value: true,
+      getValue: offByDefault("widgets.pictureOfTheDay.enabled"),
     },
   ],
   [
     "widgets.system.privacy.enabled",
     {
       title: "Enables the privacy widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
   ],
   [
     "widgets.system.crossword.enabled",
     {
-      title: "Enables the crossword widget experiment in Nimbus",
-      value: false,
+      title: "Makes the crossword widget available",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.crossword.enabled"),
     },
   ],
   [
     "widgets.system.recentSearches.enabled",
     {
       title: "Enables the recent searches widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
   ],
@@ -1870,14 +1897,16 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.stocks.enabled",
     {
       title: "Enables the stocks widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
   ],
   [
     "widgets.system.pictureOfTheDay.enabled",
     {
-      title: "Enables the picture of the day widget experiment in Nimbus",
-      value: false,
+      title: "Makes the picture of the day widget available",
+      // pref is dynamic
+      getValue: marketGate("widgets.system.pictureOfTheDay.enabled"),
     },
   ],
   [
@@ -2147,14 +2176,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.rec.impressions",
-    {
-      title: "Track rec impressions",
-      skipBroadcast: true,
-      value: "{}",
-    },
-  ],
-  [
     "discoverystream.topicSelection.enabled",
     {
       title: "Enables topic selection for discovery stream",
@@ -2384,7 +2405,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.variant",
     {
       title:
-        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, spaces-thematic-v1, auto-minimize-widgets, widgets-ad-large. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels; the buttons- ones differ only in where the segmented control sits, while spaces-thematic-v1 names its panels for interests and puts the side-by-side pair inside each one, configured by pageLayouts.spacesConfig. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. The widgets-ad-large variant puts a large sponsored card at the end of the first widget row. At one card column it sits second instead. Overridden by trainhopConfig.pageLayouts.variant.",
+        "Name of the active newtab page layout variant, for layout experimentation. See PAGE_LAYOUT_VARIANTS in common/PageLayoutVariants.mjs for the valid values. Overridden by trainhopConfig.pageLayouts.variant.",
       value: "nova-full-width",
     },
   ],
@@ -2396,6 +2417,14 @@ export const PREFS_CONFIG = new Map([
       value: JSON.stringify(DEFAULT_SPACES_CONFIG),
     },
   ],
+  [
+    "pageLayouts.spacesOrder",
+    {
+      title:
+        "Comma-separated order of the spaces in the spaces-buttons-top, spaces-buttons-bottom and spaces-floating-arrows layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
+      value: "",
+    },
+  ],
   // @experiment(remove) { bug 2066527 }
   [
     "pageLayouts.autoMinimizeDelayMs",
@@ -2403,6 +2432,15 @@ export const PREFS_CONFIG = new Map([
       title:
         "How long (in ms) the widgets section stays expanded before the auto-minimize-widgets layout variant collapses it. Overridden by trainhopConfig.pageLayouts.autoMinimizeDelayMs.",
       value: 3000,
+    },
+  ],
+  // @experiment(remove) { bug 2078816 }
+  [
+    "pageLayouts.widgetFirstContentSlot.widget",
+    {
+      title:
+        "Id of the widget the widget-first-content-slot layout variant puts in the first card slot of Popular Today. Overridden by trainhopConfig.pageLayouts.widgetFirstContentSlot.widget.",
+      value: "",
     },
   ],
   [
@@ -2595,13 +2633,6 @@ const FEEDS_DATA = [
     value: true,
   },
   {
-    name: "sportsfeed",
-    factory: () => new lazy.SportsFeed(),
-    title: "Handles persistent state for the Sports widget",
-    // Bug 2063657: the sports widget is retired; removed in bug 2063656.
-    value: false,
-  },
-  {
     name: "privacyfeed",
     factory: () => new lazy.PrivacyFeed(),
     title:
@@ -2695,6 +2726,7 @@ export class ActivityStream {
     this._defaultPrefs.init();
     Services.obs.addObserver(this, "intl:app-locales-changed");
     Services.prefs.addObserver(PREF_IMAGE_PROXY_ENABLED, this);
+    Services.prefs.addObserver(PREF_MARKET_GATE_ENABLED, this);
     lazy.NewTabActorRegistry.init();
 
     // Hook up the store and let all feeds and pages initialize
@@ -2872,6 +2904,7 @@ export class ActivityStream {
 
     Services.obs.removeObserver(this, "intl:app-locales-changed");
     Services.prefs.removeObserver(PREF_IMAGE_PROXY_ENABLED, this);
+    Services.prefs.removeObserver(PREF_MARKET_GATE_ENABLED, this);
 
     this.store.uninit();
     this.unregisterNetworkProxy();
@@ -2938,6 +2971,9 @@ export class ActivityStream {
         this._updateDynamicPrefs();
         break;
       case "nsPref:changed":
+        if (data === PREF_MARKET_GATE_ENABLED) {
+          this._updateDynamicPrefs();
+        }
         if (data === PREF_IMAGE_PROXY_ENABLED) {
           const enabled = Services.prefs.getBoolPref(
             PREF_IMAGE_PROXY_ENABLED,

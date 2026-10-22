@@ -1,6 +1,6 @@
 # PL_strfree
 
-Frees memory allocated by {ref}`PL_strdup`
+Frees memory allocated by {doc}`pl_strdup`
 
 ## Syntax
 

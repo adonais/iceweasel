@@ -212,3 +212,59 @@ add_task(async function test_click_subframe_link_in_new_window() {
   BrowserTestUtils.removeTab(tab);
   resetTelemetry();
 });
+
+add_task(
+  async function test_click_subframe_link_in_new_tab_no_parent_inspection() {
+    SearchSERPTelemetry.overrideSearchTelemetryForTests([
+      {
+        ...TEST_PROVIDER_INFO[0],
+        subframes: [
+          {
+            ...TEST_PROVIDER_INFO[0].subframes[0],
+            inspectRegexpInParent: false,
+          },
+        ],
+      },
+    ]);
+    await waitForIdle();
+
+    info("Load SERP in a new tab.");
+    let url = getSERPUrl(
+      "searchTelemetryAd_with_sponsored_subframe_visible.html"
+    );
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+
+    await assertSearchSourcesTelemetry(
+      {},
+      {
+        "browser.search.content.unknown": { "example:tagged:ff": 1 },
+        "browser.search.withads.unknown": { "example:tagged": 1 },
+      }
+    );
+
+    info("Click link in subframe to open in a new tab.");
+    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+    let pageLoadPromise = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      "https://example.com/"
+    );
+    await clickLinkInSubframe(true);
+    let newTab = await newTabPromise;
+    await pageLoadPromise;
+
+    BrowserTestUtils.removeTab(newTab);
+
+    await assertSearchSourcesTelemetry(
+      {},
+      {
+        "browser.search.content.unknown": { "example:tagged:ff": 1 },
+        "browser.search.withads.unknown": { "example:tagged": 1 },
+      }
+    );
+
+    BrowserTestUtils.removeTab(tab);
+    SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
+    await waitForIdle();
+    resetTelemetry();
+  }
+);

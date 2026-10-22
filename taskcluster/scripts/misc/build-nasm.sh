@@ -36,21 +36,24 @@ case "$1" in
         EXE=.exe
         ;;
     macosx64)
-        export MACOSX_DEPLOYMENT_TARGET=10.15
         TARGET=x86_64-apple-darwin
-        CC="clang -fuse-ld=lld --target=$TARGET -isysroot $MOZ_FETCHES_DIR/MacOSX26.5.sdk"
         EXE=
 	;;
     macosx64-aarch64)
-        export MACOSX_DEPLOYMENT_TARGET=11.0
         TARGET=aarch64-apple-darwin
-        CC="clang -fuse-ld=lld --target=$TARGET -isysroot $MOZ_FETCHES_DIR/MacOSX26.5.sdk"
         EXE=
 	;;
     *)
         CC="clang --sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu"
         EXE=
         ;;
+esac
+case "$TARGET" in
+*-apple-darwin)
+    MACOS_TARGET=$TARGET
+    . $GECKO_PATH/taskcluster/scripts/misc/macos-setup.sh
+    CC="$MACOS_CC $MACOS_CFLAGS"
+    ;;
 esac
 ./configure CC="$CC" AR=llvm-ar RANLIB=llvm-ranlib LDFLAGS=-fuse-ld=lld ${TARGET:+--host=$TARGET}
 make -j$(nproc)

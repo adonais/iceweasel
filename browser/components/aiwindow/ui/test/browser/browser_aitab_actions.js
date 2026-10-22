@@ -3,6 +3,12 @@
 
 "use strict";
 
+/* import-globals-from head_aitab.js */
+Services.scriptloader.loadSubScript(
+  getRootDirectory(gTestPath) + "head_aitab.js",
+  this
+);
+
 // Drives delete the way a reader does: click the trash button, confirm in the
 // dialog, and check that the page and its conversation are actually gone from
 // both databases and that the tab is sent home. The store-level tests in
@@ -34,16 +40,6 @@ const PAGE_URL = `about:smartpage?page=${SLUG}`;
 // failing task left behind.
 const gOpenedWindows = new Set();
 
-// The renderer still reads the legacy header/blocks/footer shape while the
-// store holds the newer `components` block list. Until that migration lands
-// the test
-// hands the component a page config directly so there is a header to click;
-// everything from the click onwards is the real path.
-const PAGE_CONFIG = {
-  header: { type: "header", title: "Delete me", subhead: "A page to remove" },
-  blocks: [],
-};
-
 /**
  * Recreates the stored page and its conversation from scratch. Leaving a
  * previous task's rows behind makes create() throw, which would turn one
@@ -55,7 +51,12 @@ async function seedPage() {
   await ConversationStore.updateConversation(
     new Conversation({ id: CONV_ID, feature: "aitab" })
   );
-  await AITabStore.create({ convId: CONV_ID, slug: SLUG, title: "Delete me" });
+  await AITabStore.create({
+    convId: "conv-delete-flow-chat",
+    toolConvId: CONV_ID,
+    slug: SLUG,
+    title: "Delete me",
+  });
 }
 
 /**

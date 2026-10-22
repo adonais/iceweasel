@@ -6,16 +6,30 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 import org.mozilla.fenix.ui.util.FRENCH_FOLLOW_DEVICE_LANGUAGE_OPTION
 import org.mozilla.fenix.ui.util.FRENCH_LANGUAGE_HEADER
 import org.mozilla.fenix.ui.util.ROMANIAN_LANGUAGE_HEADER
 
 class SettingsGeneralTest : BaseTest() {
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2092697
+    @Critical
+    @Test
+    fun verifyGeneralSettingsItemsTest() {
+        on.settings
+            .navigateToPage()
+            .mozVerifyElementsByGroup(SettingsSelectors.Group.GENERAL_SETTINGS_DEFAULT_VALUES)
+            .mozVerifyElementsByGroup(SettingsSelectors.Group.GENERAL_SETTINGS_SECTION)
+            .mozVerifyOptionSwitchIsNotChecked(SettingsSelectors.SET_AS_DEFAULT_BROWSER_BUTTON)
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/344213
     @SmokeTest
     @Test

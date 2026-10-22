@@ -211,7 +211,7 @@ const kTaskExpirationSeconds = 90 /*days*/ * kSecondsPerDay;
 export async function doTask(defaultAgent, force) {
   let secondsSinceAppRan;
   try {
-    secondsSinceAppRan = defaultAgent.SecondsSinceLastAppRun();
+    secondsSinceAppRan = defaultAgent.secondsSinceLastAppRun();
   } catch (err) {
     if (err.result == Cr.NS_ERROR_NOT_AVAILABLE) {
       // There was no registry value to read to determine when the last app run occurred

@@ -40,7 +40,6 @@ export class ActivityStreamMessageChannel {
    * @param  {string} options.pageURL The URL to which the channel is attached, such as about:newtab.
    * @param  {string} options.outgoingMessageName The name of the message sent to child processes
    * @param  {string} options.incomingMessageName The name of the message received from child processes
-   * @return {ActivityStreamMessageChannel}
    */
   constructor(options = {}) {
     Object.assign(this, DEFAULT_OPTIONS, options);
@@ -67,7 +66,6 @@ export class ActivityStreamMessageChannel {
    * middleware - Redux middleware that looks for AlsoToOneContent and BroadcastToContent type
    *              actions, and sends them out.
    *
-   * @param  {object} store A redux store
    * @return {function} Redux middleware
    */
   middleware() {
@@ -119,7 +117,7 @@ export class ActivityStreamMessageChannel {
   /**
    * send - Sends an action to a specific port
    *
-   * @param  {obj} action A redux action; it should contain a portID in the meta.toTarget property
+   * @param  {object} action A redux action; it should contain a portID in the meta.toTarget property
    */
   send(action) {
     const targetId = action.meta && action.meta.toTarget;
@@ -147,7 +145,7 @@ export class ActivityStreamMessageChannel {
    * getTargetById - Retrieve the message target by portID, if it exists
    *
    * @param  {string} id A portID
-   * @return {obj|null} The message target, if it exists.
+   * @return {object|null} The message target, if it exists.
    */
   getTargetById(id) {
     this.validatePortID(id);
@@ -163,7 +161,7 @@ export class ActivityStreamMessageChannel {
   /**
    * sendToPreloaded - Sends an action to each preloaded browser, if any
    *
-   * @param  {obj} action A redux action
+   * @param  {object} action A redux action
    */
   sendToPreloaded(action) {
     // We're trying to update the preloaded about:newtab, so signal
@@ -203,8 +201,8 @@ export class ActivityStreamMessageChannel {
    * isPreloadedBrowser - Returns true if the passed browser has been preloaded
    *                      for faster rendering of new tabs.
    *
-   * @param {<browser>} A <browser> to check.
-   * @return {bool} True if the browser is preloaded.
+   * @param {object} browser A <browser> element to check.
+   * @return {boolean} True if the browser is preloaded.
    *                      if there aren't any preloaded browsers
    */
   isPreloadedBrowser(browser) {
@@ -248,8 +246,8 @@ export class ActivityStreamMessageChannel {
    * onNewTabInit - Handler for special RemotePage:Init message fired
    * on initialization.
    *
-   * @param  {obj} msg The messsage from a page that was just initialized
-   * @param  {obj} tabDetails details about a loaded tab
+   * @param  {object} msg The messsage from a page that was just initialized
+   * @param  {object} tabDetails details about a loaded tab
    *
    * tabDetails contains:
    *   actor, browser, browsingContext, portID, url
@@ -267,8 +265,8 @@ export class ActivityStreamMessageChannel {
   /**
    * onNewTabLoad - Handler for special RemotePage:Load message fired on page load.
    *
-   * @param  {obj} msg The messsage from a page that was just loaded
-   * @param  {obj} tabDetails details about a loaded tab, similar to onNewTabInit
+   * @param  {object} msg The messsage from a page that was just loaded
+   * @param  {object} tabDetails details about a loaded tab, similar to onNewTabInit
    */
   onNewTabLoad(msg, tabDetails) {
     this.tabLoaded(tabDetails);
@@ -346,8 +344,8 @@ export class ActivityStreamMessageChannel {
    * onNewTabUnloadLoad - Handler for special RemotePage:Unload message fired
    * on page unload.
    *
-   * @param  {obj} msg The messsage from a page that was just unloaded
-   * @param  {obj} tabDetails details about a loaded tab, similar to onNewTabInit
+   * @param  {object} msg The messsage from a page that was just unloaded
+   * @param  {object} tabDetails details about a loaded tab, similar to onNewTabInit
    */
   onNewTabUnload(msg, tabDetails) {
     const { browser } = tabDetails;
@@ -366,17 +364,23 @@ export class ActivityStreamMessageChannel {
       this._renderLayersListeners.delete(browser);
     }
 
-    this.onActionFromContent({ type: at.NEW_TAB_UNLOAD }, tabDetails.portID);
+    this.onActionFromContent(
+      {
+        type: at.NEW_TAB_UNLOAD,
+        _target: { browser, window: browser.documentGlobal },
+      },
+      tabDetails.portID
+    );
   }
 
   /**
    * onMessage - Handles custom messages from content. It expects all messages to
    *             be formatted as Redux actions, and dispatches them to this.store
    *
-   * @param  {obj} msg A custom message from content
-   * @param  {obj} msg.action A Redux action (e.g. {type: "HELLO_WORLD"})
-   * @param  {obj} msg.target A message target
-   * @param  {obj} tabDetails details about a loaded tab, similar to onNewTabInit
+   * @param  {object} msg A custom message from content
+   * @param  {object} msg.action A Redux action (e.g. {type: "HELLO_WORLD"})
+   * @param  {object} msg.target A message target
+   * @param  {object} tabDetails details about a loaded tab, similar to onNewTabInit
    */
   onMessage(msg, tabDetails) {
     if (!msg.data || !msg.data.type) {

@@ -8,7 +8,7 @@ and performance.
 The implementation of a WebExtension API runs with
 {doc}`chrome privileges </dom/scriptSecurity/index>`.
 Browser internals are accessed using
-{ref}`XPCOM`
+{doc}`/xpcom/index`
 or {doc}`ChromeOnly WebIDL features </dom/webIdlBindings/index>`.
 
 The rest of this documentation covers how API implementations interact

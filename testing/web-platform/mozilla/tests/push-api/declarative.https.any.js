@@ -5,7 +5,7 @@
 // META: script=/notifications/resources/helpers.js
 // META: script=/_mozilla/notifications/resources/MockAlertsService.js
 
-import { encrypt } from "/push-api/resources/helpers.js"
+import { pushMessageAndWait } from "./resources/helpers.js"
 
 // Tests for Declarative Web Push
 // https://w3c.github.io/push-api/#declarative-push-message
@@ -22,62 +22,44 @@ promise_setup(async () => {
 });
 
 async function sendPush(t, message, actionToClick) {
-  await MockAlertsService.register(t);
-  await MockAlertsService.enableAutoClick(actionToClick);
-
   const {promise, resolve} = Promise.withResolvers();
   const signal = t.get_signal();
 
-  new BroadcastChannel("broadcast-when-opened").addEventListener("message", async e => {
-    const notifications = await MockAlertsService.getNotificationData();
-    assert_equals(notifications.length, 1,
-                  "Should have exactly one notification.");
-    const notificationData = notifications[0];
-    assert_equals(e.data, "opened");
-    const swrNotifications = await registration.getNotifications();
-    assert_equals(swrNotifications.length, 1,
-                  "ServiceWorkerRegistration.getNotifications() should return exactly 1 notification.");
-    const swrNotification = swrNotifications[0];
-    // (Not checking tag here since it's not exposed to nsIAlertNotification.
-    //  There's a separate test that tag does the expected thing below.)
-    for (let property of ["title", "dir", "lang", "silent", "requireInteraction", "body"]) {
-      let got = swrNotification[property];
-      let expected = notificationData[property];
-      assert_equals(got, expected,
-                    `${property} given in ServiceWorkerRegistration.getNotifications() should be consistent with alert data.`);
-    }
-    assert_object_equals(swrNotification.actions,
-                         Array.from(notificationData.actions).map(action => ({
-                           action: action.action,
-                           title: action.title,
-                           navigate: action.navigate,
-                         })),
-                         "Actions in ServiceWorkerRegistration.getNotifications() should be consistent with alert data.");
-    resolve({dwp: swrNotification});
-  }, {signal});
-  navigator.serviceWorker.addEventListener("message", e => {
-    if (e.data.data) {
-      resolve({swPush: true});
-    }
-  }, {signal});
+  const pushResult = await pushMessageAndWait(t, subscription, { message, actionToClick });
+  if (pushResult.swPush) {
+    return pushResult;
+  }
+  assert_true(pushResult.dwp, "pushMessageAndWait should return either swPush or dwp.");
 
-
-  const result = await encrypt(
-    message instanceof Uint8Array ? message : new TextEncoder().encode(message),
-    subscription.getKey("p256dh"),
-    subscription.getKey("auth")
-  );
-
-  await fetch(subscription.endpoint, {
-    method: "post",
-    ...result
-  });
-  return promise;
+  const notifications = await MockAlertsService.getNotificationData();
+  assert_equals(notifications.length, 1,
+                "Should have exactly one notification.");
+  const notificationData = notifications[0];
+  const swrNotifications = await registration.getNotifications();
+  assert_equals(swrNotifications.length, 1,
+                "ServiceWorkerRegistration.getNotifications() should return exactly 1 notification.");
+  const swrNotification = swrNotifications[0];
+  // (Not checking tag here since it's not exposed to nsIAlertNotification.
+  //  There's a separate test that tag does the expected thing below.)
+  for (let property of ["title", "dir", "lang", "silent", "requireInteraction", "body"]) {
+    let got = swrNotification[property];
+    let expected = notificationData[property];
+    assert_equals(got, expected,
+                  `${property} given in ServiceWorkerRegistration.getNotifications() should be consistent with alert data.`);
+  }
+  assert_object_equals(swrNotification.actions,
+                       Array.from(notificationData.actions).map(action => ({
+                         action: action.action,
+                         title: action.title,
+                         navigate: action.navigate,
+                       })),
+                       "Actions in ServiceWorkerRegistration.getNotifications() should be consistent with alert data.");
+  return { dwp: swrNotification };
 }
 
 async function testNonDWP(t, message) {
   const result = await sendPush(t, message);
-  assert_true(result.swPush, "Should receive a service worker push event.");
+  assert_true(!!result.swPush, "Should receive a service worker push event.");
 }
 
 // Array of [option name, expected default value, value for testing]

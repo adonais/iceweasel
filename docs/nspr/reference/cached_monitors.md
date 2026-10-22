@@ -23,13 +23,13 @@ capability is associated with the protected object only during the time
 it is required, allowing the monitor object to be reused. This
 additional flexibility comes at the cost of a small loss in performance.
 
-> - {ref}`PR_CEnterMonitor` enters the lock associated with a cached
+> - {doc}`pr_centermonitor` enters the lock associated with a cached
 >   monitor.
-> - {ref}`PR_CExitMonitor` decrements the entry count associated with a
+> - {doc}`pr_cexitmonitor` decrements the entry count associated with a
 >   cached monitor.
-> - {ref}`PR_CWait` waits for a notification that a monitor's state has
+> - {doc}`pr_cwait` waits for a notification that a monitor's state has
 >   changed.
-> - {ref}`PR_CNotify` notifies a thread waiting for a change in the state of
+> - {doc}`pr_cnotify` notifies a thread waiting for a change in the state of
 >   monitored data.
-> - {ref}`PR_CNotifyAll` notifies all the threads waiting for a change in
+> - {doc}`pr_cnotifyall` notifies all the threads waiting for a change in
 >   the state of monitored data.

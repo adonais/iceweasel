@@ -39,8 +39,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("mock_aec_dump_unittests") {
-    testonly = true
+  rtc_cc_test("mock_aec_dump_unittests") {
     configs += [ "..:apm_debug_dump" ]
     sources = [ "aec_dump_integration_test.cc" ]
 
@@ -90,11 +89,11 @@ if (rtc_enable_protobuf) {
   }
 
   if (rtc_include_tests) {
-    rtc_library("aec_dump_unittests") {
-      testonly = true
+    rtc_cc_test("aec_dump_unittests") {
       defines = []
       deps = [
         ":aec_dump",
+        ":aec_dump_impl",
         "..:aec_dump_interface",
         "../../../api/audio:audio_processing",
         "../../../rtc_base:task_queue_for_test",

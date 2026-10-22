@@ -489,21 +489,6 @@ extern CERTCertificate *CERT_FindCertByName(CERTCertDBHandle *handle,
                                             SECItem *name);
 
 /*
-** Find a certificate in the database by name
-**	"name" is the distinguished name to look up (in ascii)
-*/
-extern CERTCertificate *CERT_FindCertByNameString(CERTCertDBHandle *handle,
-                                                  char *name);
-
-/*
-** Find a certificate in the database by name and keyid
-**	"name" is the distinguished name to look up
-**	"keyID" is the value of the subjectKeyID to match
-*/
-extern CERTCertificate *CERT_FindCertByKeyID(CERTCertDBHandle *handle,
-                                             SECItem *name, SECItem *keyID);
-
-/*
 ** Generate a certificate key from the issuer and serialnumber, then look it
 ** up in the database.  Return the cert if found.
 **	"issuerAndSN" is the issuer and serial number to look for
@@ -781,6 +766,9 @@ extern char *CERT_GetCertUid(const CERTName *name);
 extern SECStatus CERT_GetCertTrust(const CERTCertificate *cert,
                                    CERTCertTrust *trust);
 
+extern SECStatus CERT_GetDERCertTrust(SECItem *derCert,
+                                      CERTCertTrust *trust);
+
 extern SECStatus CERT_ChangeCertTrust(CERTCertDBHandle *handle,
                                       CERTCertificate *cert,
                                       CERTCertTrust *trust);
@@ -926,8 +914,6 @@ extern SECStatus CERT_FindCertExtension(const CERTCertificate *cert, int tag,
 extern SECStatus CERT_FindNSCertTypeExtension(CERTCertificate *cert,
                                               SECItem *value);
 
-extern char *CERT_FindNSStringExtension(CERTCertificate *cert, int oidtag);
-
 extern SECStatus CERT_FindCertExtensionByOID(CERTCertificate *cert,
                                              SECItem *oid, SECItem *value);
 
@@ -979,13 +965,6 @@ extern SECStatus CERT_CheckCertUsage(CERTCertificate *cert,
  *
  ****************************************************************************/
 
-extern SECStatus CERT_FindCRLExtensionByOID(CERTCrl *crl, SECItem *oid,
-                                            SECItem *value);
-
-extern SECStatus CERT_FindCRLExtension(CERTCrl *crl, int tag, SECItem *value);
-
-extern SECStatus CERT_FindInvalidDateExten(CERTCrl *crl, PRTime *value);
-
 /*
 ** Set up a crl for adding X509v3 extensions.  Returns an opaque handle
 ** used by routines that take an exthandle (void*) argument .
@@ -1018,9 +997,6 @@ extern void CERT_FreeNicknames(CERTCertNicknames *nicknames);
 extern PRBool CERT_CompareCerts(const CERTCertificate *c1,
                                 const CERTCertificate *c2);
 
-extern PRBool CERT_CompareCertsForRedirection(CERTCertificate *c1,
-                                              CERTCertificate *c2);
-
 /*
 ** Generate an array of the Distinguished Names that the given cert database
 ** "trusts"
@@ -1031,12 +1007,6 @@ extern void CERT_FreeDistNames(CERTDistNames *names);
 
 /* Duplicate distinguished name array */
 extern CERTDistNames *CERT_DupDistNames(CERTDistNames *orig);
-
-/*
-** Generate an array of Distinguished names from an array of nicknames
-*/
-extern CERTDistNames *CERT_DistNamesFromNicknames(CERTCertDBHandle *handle,
-                                                  char **nicknames, int nnames);
 
 /*
 ** Generate an array of Distinguished names from a list of certs.
@@ -1076,9 +1046,6 @@ char *CERT_FixupEmailAddr(const char *emailAddr);
 
 /* decode string representation of trust flags into trust struct */
 SECStatus CERT_DecodeTrustString(CERTCertTrust *trust, const char *trusts);
-
-/* encode trust struct into string representation of trust flags */
-char *CERT_EncodeTrustString(CERTCertTrust *trust);
 
 /* find the next or prev cert in a subject list */
 CERTCertificate *CERT_PrevSubjectCert(CERTCertificate *cert);
@@ -1171,14 +1138,9 @@ CERTNameConstraint *CERT_GetPrevNameConstraint(CERTNameConstraint *current);
 
 void CERT_DestroyUserNotice(CERTUserNotice *userNotice);
 
-char *CERT_GetCertCommentString(CERTCertificate *cert);
-
 PRBool CERT_GovtApprovedBitSet(CERTCertificate *cert);
 
 SECStatus CERT_AddPermNickname(CERTCertificate *cert, char *nickname);
-
-CERTCertList *CERT_MatchUserCert(CERTCertDBHandle *handle, SECCertUsage usage,
-                                 int nCANames, char **caNames, void *proto_win);
 
 CERTCertList *CERT_NewCertList(void);
 
@@ -1339,21 +1301,6 @@ CERTCertNicknames *CERT_NicknameStringsFromCertList(CERTCertList *certList,
                                                     char *notYetGoodString);
 
 /*
- * Extract the nickname from a nickmake string that may have either
- * expiredString or notYetGoodString appended.
- *
- * Args:
- *	"namestring" - the string containing the nickname, and possibly
- *		one of the validity label strings
- *	"expiredString" - the expired validity label string
- *	"notYetGoodString" - the not yet good validity label string
- *
- * Returns the raw nickname
- */
-char *CERT_ExtractNicknameString(char *namestring, char *expiredString,
-                                 char *notYetGoodString);
-
-/*
  * Given a certificate, return a string containing the nickname, and possibly
  * one of the validity strings, based on the current validity state of the
  * certificate.
@@ -1376,21 +1323,6 @@ char *CERT_GetCertNicknameWithValidity(PLArenaPool *arena,
  * "dername" - The DER encoded name to convert
  */
 char *CERT_DerNameToAscii(SECItem *dername);
-
-/*
- * Supported usage values and types:
- *	certUsageSSLClient
- *	certUsageSSLServer
- *	certUsageSSLServerWithStepUp
- *	certUsageEmailSigner
- *	certUsageEmailRecipient
- *	certUsageObjectSigner
- */
-
-CERTCertificate *CERT_FindMatchingCert(CERTCertDBHandle *handle,
-                                       SECItem *derName, CERTCertOwner owner,
-                                       SECCertUsage usage, PRBool preferTrusted,
-                                       PRTime validTime, PRBool validOnly);
 
 /*
  * Acquire the global lock on the cert database.
@@ -1420,19 +1352,6 @@ CERTStatusConfig *CERT_GetStatusConfig(CERTCertDBHandle *handle);
  * the configuration object.
  */
 void CERT_SetStatusConfig(CERTCertDBHandle *handle, CERTStatusConfig *config);
-
-/*
- * Acquire the cert reference count lock
- * There is currently one global lock for all certs, but I'm putting a cert
- * arg here so that it will be easy to make it per-cert in the future if
- * that turns out to be necessary.
- */
-void CERT_LockCertRefCount(CERTCertificate *cert);
-
-/*
- * Release the cert reference count lock
- */
-void CERT_UnlockCertRefCount(CERTCertificate *cert);
 
 /*
  * Digest the cert's subject public key using the specified algorithm.

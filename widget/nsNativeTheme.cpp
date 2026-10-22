@@ -174,10 +174,10 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
     }
   }
 
-  return nsLayoutUtils::AuthorSpecifiedBorderBackgroundDisablesTheming(
+  return nsLayoutUtils::AuthorOrUserSpecifiedBorderBackgroundDisablesTheming(
              aAppearance) &&
          aFrame->GetContent()->IsHTMLElement() &&
-         aFrame->Style()->HasAuthorSpecifiedBorderOrBackground();
+         aFrame->Style()->HasAuthorOrUserSpecifiedBorderOrBackground();
 }
 
 /* static */

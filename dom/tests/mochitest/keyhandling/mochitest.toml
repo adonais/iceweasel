@@ -15,5 +15,4 @@ skip-if = [
 ["test_textarea.html"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'win' && asan", # Bug 1658513
 ]

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
-import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
+import { MozInputText } from "chrome://global/content/elements/moz-input-text.mjs";
 
 /**
  * Username input for the save/update password doorhanger. Wraps a XUL

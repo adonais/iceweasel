@@ -73,10 +73,6 @@ support-files = [
 ["browser_test_toplevel_data_navigations.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1403815
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1403815
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1403815
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1403815
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1403815
 ]
 support-files = [
   "file_toplevel_data_navigations.sjs",

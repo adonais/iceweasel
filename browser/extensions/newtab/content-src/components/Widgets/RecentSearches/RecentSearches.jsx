@@ -7,6 +7,7 @@ import React, { useCallback } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
@@ -213,7 +214,7 @@ function RecentSearches({
           )}
           <h2
             id="recent-searches-widget-label"
-            className="recent-searches-title"
+            className="newtab-widget-title recent-searches-title"
             data-l10n-id="newtab-search-widget-title"
             hidden={true}
           />
@@ -245,13 +246,10 @@ function RecentSearches({
           </div>
         </div>
         <div className="recent-searches-context-menu-wrapper">
-          <moz-button
+          <WidgetMenuButton
             className="recent-searches-context-menu-button"
-            iconSrc="chrome://global/skin/icons/more.svg"
             menuId="recent-searches-context-menu"
-            type="icon ghost"
-            size="small"
-            data-l10n-id="newtab-search-widget-menu-button"
+            l10nId="newtab-search-widget-open-menu-button"
           />
           <panel-list
             className="panel-list-no-icons"

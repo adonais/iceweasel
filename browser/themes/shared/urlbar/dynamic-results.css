@@ -55,7 +55,7 @@
 .urlbarView-dynamic-quickSuggestContextualOptIn-description {
   margin-block-start: 2px;
   color: var(--urlbarview-text-color-secondary);
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
 }
 
 .urlbarView-dynamic-quickSuggestContextualOptIn-learn_more {
@@ -73,6 +73,38 @@
   margin-top: 10px;
   padding-top: 5px;
   width: 100%;
+}
+
+/**
+ * Moved Add-ons Manager shortcut
+ */
+
+.urlbarView-row[dynamicType="addonsShortcutMoved"] {
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--urlbarview-separator-color);
+    border-radius: 0;
+    margin-bottom: 4px;
+  }
+
+  > .urlbarView-row-inner {
+    align-items: center;
+  }
+}
+
+.urlbarView-dynamic-addonsShortcutMoved-text-container {
+  display: flex;
+  flex-direction: column;
+  white-space: normal;
+}
+
+.urlbarView-dynamic-addonsShortcutMoved-title {
+  font-weight: var(--font-weight-heading);
+}
+
+.urlbarView-dynamic-addonsShortcutMoved-description {
+  margin-block-start: 2px;
+  color: var(--urlbarview-text-color-secondary);
+  font-size: var(--urlbarview-small-font-size);
 }
 
 /**
@@ -158,7 +190,7 @@
 
 .urlbarView-dynamic-calculator-action,
 .urlbarView-dynamic-unitConversion-action {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   font-weight: normal;
 
   .urlbarView-row:not(:hover, [selected]) & {
@@ -184,6 +216,8 @@
      cropped and the actions + outline are aligned with the
      rest of the results */
   padding-inline: 2px;
+  flex-wrap: wrap;
+  row-gap: var(--space-small);
 }
 
 .urlbarView-dynamic-actions-buttons {
@@ -192,7 +226,7 @@
 
 .urlbarView-press-tab-label {
   margin-inline-end: var(--space-medium);
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   color: var(--urlbarview-text-color-secondary);
   align-self: center;
 }
@@ -206,7 +240,7 @@
 }
 
 .urlbarView-dynamic-contextualSearch-description {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
 
   .urlbarView-row:not([selected]) & {
     color: var(--urlbarview-text-color-action);
@@ -222,7 +256,7 @@
 }
 
 .urlbarView-dynamic-weather-currentConditions {
-  color: var(--urlbar-box-text-color);
+  color: var(--urlbar-box-text-color-focus);
   background-color: var(--urlbar-box-background-color-focus);
   padding: 0.61em 0.61em 0.84em;
   margin-inline-end: 0.92em;
@@ -230,13 +264,13 @@
   text-align: center;
 
   .urlbarView-row[dynamicType="weather"]:is([selected], :hover) > .urlbarView-row-inner > & {
-    color: var(--urlbarView-result-button-selected-color);
-    background-color: var(--urlbarView-result-button-selected-background-color);
+    color: var(--urlbarview-result-button-selected-color);
+    background-color: var(--urlbarview-result-button-selected-background-color);
   }
 }
 
 .urlbarView-dynamic-weather-currently {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   margin-bottom: 0.53em;
 }
 
@@ -288,7 +322,7 @@
 }
 
 .urlbarView-dynamic-weather-middle {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -323,7 +357,7 @@
 }
 
 .urlbarView-dynamic-weather-bottom {
-  font-size: var(--urlbarView-small-font-size);
+  font-size: var(--urlbarview-small-font-size);
   margin-top: 0.4em;
 
   .urlbarView-row[dynamicType="weather"]:not([selected]) > .urlbarView-row-inner > .urlbarView-dynamic-weather-summary > & {

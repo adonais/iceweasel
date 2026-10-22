@@ -17,7 +17,7 @@ are raised by running
 
 ## Enabling JSDoc generation
 
-Here is a quick example, for the public AddonManager {ref}`API <AddonManager Reference>`
+Here is a quick example, for the public AddonManager {doc}`API </toolkit/mozapps/extensions/addon-manager/AddonManager>`
 
 To use it for your own code:
 

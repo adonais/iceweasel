@@ -671,6 +671,8 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "crashtest"))
         uniffiCheckContractApiVersion(this)
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_crashtest_checksum_func_trigger_rust_abort(
     ): Int
     external fun uniffi_crashtest_checksum_func_trigger_rust_error(
@@ -690,6 +692,8 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "crashtest"))
         
     }
+
+    internal fun ensureInitialized() = Unit
     external fun uniffi_crashtest_fn_func_trigger_rust_abort(uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_crashtest_fn_func_trigger_rust_error(uniffi_out_err: UniffiRustCallStatus, 
@@ -818,10 +822,10 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
  * @suppress
  */
 public fun uniffiEnsureInitialized() {
-    IntegrityCheckingUniffiLib
-    // UniffiLib() initialized as objects are used, but we still need to explicitly
-    // reference it so initialization across crates works as expected.
-    UniffiLib
+    // Call arbitrary methods on IntegrityCheckingUniffiLib and UniffiLib to ensure that
+    // their init blocks run. This ensures initialization across crates works as expected.
+    IntegrityCheckingUniffiLib.ensureInitialized()
+    UniffiLib.ensureInitialized()
 }
 
 // Async support

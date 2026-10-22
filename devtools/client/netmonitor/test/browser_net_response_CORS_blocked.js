@@ -41,7 +41,7 @@ add_task(async function testCORSNotificationPresent() {
 
   info("selecting preflight request at index 1");
   const firstItem = document.querySelectorAll(".request-list-item")[1];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstItem);
+  clickOnRequestRow(firstItem);
 
   const waitForRespPanel = waitForDOM(
     document,
@@ -98,7 +98,7 @@ add_task(async function testCORSNotificationNotPresent() {
 
   info("selecting preflight request at index 1");
   const firstItem = document.querySelectorAll(".request-list-item")[1];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstItem);
+  clickOnRequestRow(firstItem);
 
   const waitForRespPanel = waitForDOM(document, "#response-panel");
 

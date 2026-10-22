@@ -18,7 +18,6 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <vector>
 
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
@@ -32,7 +31,6 @@
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 // This can be removed after Bug 1768116 enables
@@ -114,7 +112,6 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   void SetNonSenderRttMeasurement(bool enabled) override;
   void SetFrameDecryptor(
       scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) override;
-
   webrtc::AudioReceiveStreamInterface::Stats GetStats(
       bool get_and_clear_legacy_stats) const override;
   void SetSink(AudioSinkInterface* sink) override;
@@ -123,7 +120,6 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   void SetJitterBufferFastAccelerate(bool fast_accelerate) override;
   bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
   int GetBaseMinimumPlayoutDelayMs() const override;
-  std::vector<webrtc::RtpSource> GetSources() const override;
   AudioMixer::Source* source() override { return this; }
 
   // AudioMixer::Source

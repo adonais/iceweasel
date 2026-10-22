@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/StaticPrefs_mathml.h"
 
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -248,10 +249,10 @@ static void ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback,
   //       just parse the raw attribute.  It might be nice if the content node
   //       implemented an interface that exposed an enumeration of nsIURIs.
 
-  // Make sure we are dealing with either an <A> or <AREA> element in the HTML
-  // or XHTML namespace, or an <a> element in the SVG namespace.
   if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area) &&
-      !aContent->IsSVGElement(nsGkAtoms::a)) {
+      !aContent->IsSVGElement(nsGkAtoms::a) &&
+      !(aContent->IsMathMLElement(nsGkAtoms::a) &&
+        StaticPrefs::mathml_a_element_enabled())) {
     return;
   }
 

@@ -42,13 +42,15 @@ static SandboxingKind FindUtilityProcessWithActor(
 
   for (size_t i = 0; i < SandboxingKind::COUNT; ++i) {
     auto sbKind = static_cast<SandboxingKind>(i);
-    if (!utilityProc->Process(sbKind)) {
+    RefPtr<UtilityProcessKeepAlive> keepAlive =
+        utilityProc->GetSharedKeepAlive(sbKind);
+    if (!keepAlive) {
       continue;
     }
     if (aActorName.isNothing()) {
       return sbKind;
     }
-    for (auto actor : utilityProc->GetActors(sbKind)) {
+    for (auto actor : utilityProc->GetActors(keepAlive->GetProcessParent())) {
       if (actor == aActorName.ref()) {
         return sbKind;
       }
@@ -130,8 +132,11 @@ UtilityProcessTest::StartProcess(const nsTArray<nsCString>& aActorsToRegister,
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [promise, utilityProc, actors = std::move(actors)] {
+            RefPtr<UtilityProcessKeepAlive> keepAlive =
+                utilityProc->GetSharedKeepAlive(
+                    SandboxingKind::GENERIC_UTILITY);
             RefPtr<UtilityProcessParent> utilityParent =
-                utilityProc->GetProcessParent(SandboxingKind::GENERIC_UTILITY);
+                keepAlive ? keepAlive->GetProcessParent() : nullptr;
             Maybe<int32_t> utilityPid =
                 utilityProc->ProcessPid(SandboxingKind::GENERIC_UTILITY);
             for (size_t i = 0; i < actors.Length(); ++i) {

@@ -32,7 +32,8 @@ extern JSContext* gCx;
 
 static bool gIsWasmSmith = false;
 extern "C" {
-size_t gluesmith(uint8_t* data, size_t size, uint8_t* out, size_t maxsize);
+bool gluesmith(const uint8_t* data, size_t size, uint8_t** out_bytes,
+               size_t* out_bytes_len);
 }
 
 // Filter and set only "always" preferences. "startup" preferences are
@@ -524,25 +525,21 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
 
 static int testWasmSmithFuzz(const uint8_t* buf, size_t size) {
   // Define maximum sizes for the input to wasm-smith as well
-  // as the resulting modules. The input to output size factor
-  // of wasm-smith is somewhat variable but a factor of 4 seems
-  // to roughly work out. The logic below also assumes that these
-  // are powers of 2.
+  // as the resulting modules. The logic below assumes that
+  // maxInputSize is a power of 2.
   const size_t maxInputSize = 1024;
   const size_t maxModuleSize = 4096;
 
-  size_t maxModules = size / maxInputSize + 1;
-
-  // We need 1 leading byte for options and 2 bytes for size per module
-  uint8_t* out =
-      new uint8_t[1 + maxModules * (maxModuleSize + sizeof(uint16_t))];
-
-  auto deleteGuard = mozilla::MakeScopeExit([&] { delete[] out; });
+  if (size == 0) {
+    return 0;
+  }
 
   // Copy the opt-byte.
-  out[0] = buf[0];
+  Bytes out;
+  if (!out.append(buf[0])) {
+    return 0;
+  }
 
-  size_t outIndex = 1;
   size_t currentIndex = 1;
 
   while (currentIndex < size) {
@@ -562,27 +559,34 @@ static int testWasmSmithFuzz(const uint8_t* buf, size_t size) {
     // Cap to remaining bytes.
     inSize = remaining >= inSize ? inSize : remaining;
 
-    size_t outSize =
-        gluesmith((uint8_t*)&buf[currentIndex], inSize,
-                  out + outIndex + sizeof(uint16_t), maxModuleSize);
+    uint8_t* moduleBytes = nullptr;
+    size_t moduleSize = 0;
+    if (!gluesmith(&buf[currentIndex], inSize, &moduleBytes, &moduleSize)) {
+      break;
+    }
+    UniquePtr<uint8_t[], JS::FreePolicy> moduleGuard(moduleBytes);
 
-    if (!outSize) {
+    if (moduleSize > maxModuleSize) {
       break;
     }
 
     currentIndex += inSize;
 
-    // Write the size of the resulting module to our output buffer.
-    *(uint16_t*)(&out[outIndex]) = (uint16_t)outSize;
-    outIndex += sizeof(uint16_t) + outSize;
+    // Write the size of the resulting module followed by the module itself.
+    uint16_t moduleSize16 = moduleSize;
+    if (!out.append(reinterpret_cast<uint8_t*>(&moduleSize16),
+                    sizeof(moduleSize16)) ||
+        !out.append(moduleBytes, moduleSize)) {
+      return 0;
+    }
   }
 
   // If we lack at least one module, don't do anything.
-  if (outIndex == 1) {
+  if (out.length() == 1) {
     return 0;
   }
 
-  return testWasmFuzz(out, outIndex);
+  return testWasmFuzz(out.begin(), out.length());
 }
 
 MOZ_FUZZING_INTERFACE_RAW(testWasmInit, testWasmFuzz, Wasm);

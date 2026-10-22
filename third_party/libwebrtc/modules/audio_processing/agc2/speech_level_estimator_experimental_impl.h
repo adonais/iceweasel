@@ -38,6 +38,8 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   float GetLevelDbfs() const override { return level_dbfs_; }
   // Returns true if the estimator is confident on its current estimate.
   bool IsConfident() const override { return is_confident_; }
+  // Returns true if the current speech is classified as a background speaker.
+  bool IsBackgroundSpeaker() const override { return is_background_speaker_; }
 
   void Reset() override;
 
@@ -63,6 +65,7 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   LevelEstimatorState reliable_state_;
   float level_dbfs_;
   bool is_confident_;
+  bool is_background_speaker_;
   int num_adjacent_speech_frames_;
   float tracking_level_dbfs_;
 };

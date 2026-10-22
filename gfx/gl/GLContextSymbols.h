@@ -291,6 +291,9 @@ struct GLContextSymbols final {
                                       GLsizei srcWidth, GLsizei srcHeight,
                                       GLsizei srcDepth);
 
+  // ARB_clip_control / OpenGL 4.5
+  void(GLAPIENTRY* fClipControl)(GLenum, GLenum);
+
   GLenum(GLAPIENTRY* fGetGraphicsResetStatus)();
 
   // ARB_sync

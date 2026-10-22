@@ -31,7 +31,16 @@ type UrlbarResultCommand = {
    * An l10n object for the command's label. Must be specified unless `name`
    * is "separator".
    */
-  l10n?: L10nIdArgs;
+  l10n?: { id: string; args?: L10nArgs };
+  /**
+   * The menu item's type. "checkbox" renders a checkmark whose state `checked`
+   * supplies.
+   */
+  type?: "checkbox";
+  /**
+   * Whether a "checkbox" command's menu item starts checked.
+   */
+  checked?: boolean;
   /**
    * Where the command opens the result, for the view's own commands. Passed to
    * `pickResult()` in place of a `name`, so that these picks are recorded as

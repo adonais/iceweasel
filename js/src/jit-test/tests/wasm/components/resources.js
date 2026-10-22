@@ -11,7 +11,7 @@ wasmValidateText(`(component
   (alias core export $i "dtor" (core func $dtor))
 
   (type $node1 (resource (rep i32)))
-  (type $node2 (resource (rep i32) (dtor (func $dtor))))
+  (type $node2 (resource (rep i32) (dtor (core func $dtor))))
 
   (type $node1func (func (param "n" (borrow $node1))))
   (type $node2func (func (param "n" (own $node2))))
@@ -24,7 +24,7 @@ wasmValidateText(`(component
 // Invalid destructor types
 
 wasmFailValidateText(`(component
-  (type $node (resource (rep i32) (dtor (func 99))))
+  (type $node (resource (rep i32) (dtor (core func 99))))
 )`, /invalid core func index/);
 
 wasmFailValidateText(`(component
@@ -33,7 +33,7 @@ wasmFailValidateText(`(component
   )
   (core instance $i (instantiate 0))
   (alias core export $i "dtor" (core func $dtor))
-  (type $node (resource (rep i32) (dtor (func $dtor))))
+  (type $node (resource (rep i32) (dtor (core func $dtor))))
 )`, /invalid signature/);
 
 wasmFailValidateText(`(component
@@ -42,7 +42,7 @@ wasmFailValidateText(`(component
   )
   (core instance $i (instantiate 0))
   (alias core export $i "dtor" (core func $dtor))
-  (type $node (resource (rep i32) (dtor (func $dtor))))
+  (type $node (resource (rep i32) (dtor (core func $dtor))))
 )`, /invalid signature/);
 
 wasmFailValidateText(`(component
@@ -53,7 +53,7 @@ wasmFailValidateText(`(component
   )
   (core instance $i (instantiate 0))
   (alias core export $i "dtor" (core func $dtor))
-  (type $node (resource (rep i32) (dtor (func $dtor))))
+  (type $node (resource (rep i32) (dtor (core func $dtor))))
 )`, /invalid signature/);
 
 // ----------------------------------------------------------------------------

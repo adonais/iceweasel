@@ -31,10 +31,15 @@ DelayBasedCongestionControl::DelayBasedCongestionControl(
 
 void DelayBasedCongestionControl::Update(const ScreamFeedback& feedback,
                                          bool alr) {
-  next_base_delay_ = std::min(next_base_delay_, feedback.min_one_way_delay);
-  UpdateSmoothedRtt(feedback.rtt_sample, alr);
+  RTC_DCHECK(feedback.delay_metrics.has_value());
+  const ScreamFeedback::DelayMetrics& delay = *feedback.delay_metrics;
+  RTC_DCHECK(delay.min_one_way_delay.IsFinite());
+  RTC_DCHECK(delay.max_one_way_delay.IsFinite());
+  RTC_DCHECK(delay.rtt_sample.IsFinite());
+  next_base_delay_ = std::min(next_base_delay_, delay.min_one_way_delay);
+  UpdateSmoothedRtt(delay.rtt_sample, alr);
 
-  TimeDelta min_queue_delay = feedback.min_one_way_delay - min_base_delay();
+  TimeDelta min_queue_delay = delay.min_one_way_delay - min_base_delay();
   if (min_queue_delay > params_.queue_delay_drain_threshold.Get()) {
     if (min_queue_delay_above_threshold_start_.IsInfinite()) {
       min_queue_delay_above_threshold_start_ = feedback.feedback_time;
@@ -45,10 +50,8 @@ void DelayBasedCongestionControl::Update(const ScreamFeedback& feedback,
   UpdateQueueDelayAverage(std::min(min_queue_delay, last_queue_delay_sample_));
   last_queue_delay_sample_ = min_queue_delay;
   UpdateQueueDelayMinAverage(min_queue_delay);
-  UpdateLatencyDifferenceAverage(feedback.min_one_way_delay.IsFinite()
-                                     ? feedback.max_one_way_delay -
-                                           feedback.min_one_way_delay
-                                     : TimeDelta::Zero());
+  UpdateLatencyDifferenceAverage(delay.max_one_way_delay -
+                                 delay.min_one_way_delay);
 
   if (feedback.feedback_time - last_base_delay_update_ >=
       params_.base_delay_history_update_interval.Get()) {

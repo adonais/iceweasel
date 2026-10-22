@@ -163,4 +163,36 @@ int main() {
   MOZ_RELEASE_ASSERT(!w5.get());
 
   delete c3;
+
+  // WeakPtr::StableOrdering orders by the weak reference, so the ordering of
+  // two WeakPtrs is unaffected by their referents being destroyed.
+  C* w6Referent = new C;
+  C* w7Referent = new C;
+  WeakPtr<C> w6 = w6Referent;
+  WeakPtr<C> w7 = w7Referent;
+  WeakPtr<C>::StableOrdering cmp;
+
+  // Two WeakPtrs to the same object share a weak reference.
+  MOZ_RELEASE_ASSERT(cmp.Equals(w6, WeakPtr<C>(w6Referent)));
+  MOZ_RELEASE_ASSERT(!cmp.Equals(w6, w7));
+  MOZ_RELEASE_ASSERT(cmp.LessThan(w6, w7) != cmp.LessThan(w7, w6));
+  const bool w6LessThanW7 = cmp.LessThan(w6, w7);
+
+  delete w7Referent;
+  MOZ_RELEASE_ASSERT(!w7);
+  MOZ_RELEASE_ASSERT(!cmp.Equals(w6, w7));
+  MOZ_RELEASE_ASSERT(cmp.LessThan(w6, w7) == w6LessThanW7);
+
+  // Both referents gone: the WeakPtrs now both get() as nullptr, but they
+  // remain distinct and ordered under StableOrdering.
+  delete w6Referent;
+  MOZ_RELEASE_ASSERT(!w6);
+  MOZ_RELEASE_ASSERT(w6.get() == w7.get());
+  MOZ_RELEASE_ASSERT(!cmp.Equals(w6, w7));
+  MOZ_RELEASE_ASSERT(cmp.LessThan(w6, w7) == w6LessThanW7);
+
+  // An empty WeakPtr holds no weak reference, so it is distinct from a
+  // WeakPtr whose referent merely went away.
+  MOZ_RELEASE_ASSERT(cmp.Equals(empty, WeakPtr<C>()));
+  MOZ_RELEASE_ASSERT(!cmp.Equals(empty, w6));
 }

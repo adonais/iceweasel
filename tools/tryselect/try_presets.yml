@@ -318,6 +318,19 @@ fpush-linux-android:
         - "'test-android-em 'debug"
         - "^build !-shippable !-signing !-asan !-fuzzing !-rusttests !-base-toolchain !-aar- !components !apk !bundle"
 
+freetype:
+    selector: fuzzy
+    description: >-
+        Android builds and the font-rendering tests (reftest, crashtest, WPT
+        reftest/crashtest, including on-device) used to validate FreeType
+        updates.
+    full: true
+    no_artifact: true
+    query:
+        - "'build-android !sym !docs !appservices !fenix"
+        - "'geckoview-reftest | 'geckoview-crashtest !swr !lite !shippable !ccov !ioi"
+        - "'geckoview-web-platform-tests-reftest-nofis | 'geckoview-web-platform-tests-crashtest-nofis !swr !lite !shippable !ccov !-cf"
+
 geckodriver:
     selector: fuzzy
     description: >-
@@ -568,6 +581,135 @@ webgl:
         - "'mochitest-webgl"
         - "source-test-mozlint-updatebot"
         - "source-test-clang-tidy"
+
+dom-workers-storage:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of Quota Manager, IndexedDB, Cache API,
+        Web Storage and Bucket File System code across all desktop platforms
+        and Android, including mochitests, xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &dom-workers-storage-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/cache/test/
+        - dom/fs/test/
+        - dom/indexedDB/test/
+        - dom/localstorage/test/
+        - dom/quota/test/
+        - dom/serviceworkers/test/
+        - dom/tests/browser/
+        - dom/tests/mochitest/localstorage/
+        - dom/tests/mochitest/sessionstorage/
+        - dom/tests/mochitest/storageevent/
+        - dom/workers/test/
+        - testing/web-platform/mozilla/tests/dom/fs/
+        - testing/web-platform/mozilla/tests/dom/indexedDB/
+        - testing/web-platform/mozilla/tests/dom/quota/
+        - testing/web-platform/tests/IndexedDB/
+        - testing/web-platform/tests/fs/
+        - testing/web-platform/tests/service-workers/
+        - testing/web-platform/tests/service-workers/cache-storage/
+        - testing/web-platform/tests/storage/
+        - testing/web-platform/tests/webstorage/
+        - testing/web-platform/tests/workers/
+    test_paths: *dom-workers-storage-paths
+    query: &dom-storage-query
+        - "!shippable !gpu !msix !trainhop !no-nv !uipc !-vt !canvas !webrtc !webgpu !webcodecs !eme"
+
+dom-storage:
+    selector: fuzzy
+    description: >-
+        Like dom-workers-storage but without Workers and Service Workers.
+        Covers Quota Manager, IndexedDB, Cache API, Web Storage and
+        Bucket File System across all desktop platforms and Android.
+        GeckoView JUnit tests are NOT run.
+    paths: &dom-storage-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/cache/test/
+        - dom/fs/test/
+        - dom/indexedDB/test/
+        - dom/localstorage/test/
+        - dom/quota/test/
+        - dom/tests/browser/
+        - dom/tests/mochitest/localstorage/
+        - dom/tests/mochitest/sessionstorage/
+        - dom/tests/mochitest/storageevent/
+        - testing/web-platform/mozilla/tests/dom/fs/
+        - testing/web-platform/mozilla/tests/dom/indexedDB/
+        - testing/web-platform/mozilla/tests/dom/quota/
+        - testing/web-platform/tests/IndexedDB/
+        - testing/web-platform/tests/fs/
+        - testing/web-platform/tests/service-workers/cache-storage/
+        - testing/web-platform/tests/storage/
+        - testing/web-platform/tests/webstorage/
+    test_paths: *dom-storage-paths
+    query: *dom-storage-query
+
+quota-manager:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of Quota Manager code across all desktop platforms
+        and Android, including mochitests, xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &quota-manager-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/quota/test/
+        - testing/web-platform/mozilla/tests/dom/quota/
+        - testing/web-platform/tests/storage/
+    test_paths: *quota-manager-paths
+    query: *dom-storage-query
+
+indexedDB:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of IndexedDB code across all desktop platforms
+        and Android, including mochitests, xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &indexedDB-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/indexedDB/test/
+        - testing/web-platform/mozilla/tests/dom/indexedDB/
+        - testing/web-platform/tests/IndexedDB/
+    test_paths: *indexedDB-paths
+    query: *dom-storage-query
+
+cache-api:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of Cache API code across all desktop platforms
+        and Android, including mochitests, xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &cache-api-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/cache/test/
+        - testing/web-platform/tests/service-workers/cache-storage/
+    test_paths: *cache-api-paths
+    query: *dom-storage-query
+
+web-storage:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of Web Storage (localStorage & sessionStorage)
+        code across all desktop platforms and Android, including mochitests,
+        xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &web-storage-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/localstorage/test/
+        - dom/tests/browser/
+        - dom/tests/mochitest/localstorage/
+        - dom/tests/mochitest/sessionstorage/
+        - dom/tests/mochitest/storageevent/
+        - testing/web-platform/tests/webstorage/
+    test_paths: *web-storage-paths
+    query: *dom-storage-query
+
+bucket-file-system:
+    selector: fuzzy
+    description: >-
+        Runs most of the tests of Bucket File System code across all desktop platforms
+        and Android, including mochitests, xpcshell and test-verify.
+        GeckoView JUnit tests are NOT run.
+    paths: &bucket-file-system-paths  # must be duplicate of test_paths, see bug 1556445
+        - dom/fs/test/
+        - testing/web-platform/mozilla/tests/dom/fs/
+        - testing/web-platform/tests/fs/
+    test_paths: *bucket-file-system-paths
+    query: *dom-storage-query
 
 webgpu:
     selector: fuzzy

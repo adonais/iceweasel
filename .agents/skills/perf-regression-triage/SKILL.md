@@ -17,6 +17,7 @@ allowed-tools:
   - Bash(./mach try perf --no-push:*)
   - Bash(treeherder-cli:*)
   - Bash(profiler-cli:*)
+  - Bash(curl -s 'https://treeherder.mozilla.org/api/:*)
   - Bash(git log:*)
   - Bash(git show:*)
   - Bash(git status:*)
@@ -47,6 +48,12 @@ no data in it.
 `profiler-analysis` owns the profiler-cli protocol (run `profiler-cli guide` first, stop
 the daemon when done). Hand profiles to that skill instead of reimplementing it here.
 
+Neither CLI is guaranteed to be present, and a missing one is not a reason to stop or to
+retreat to `WebFetch`. The same alert, push, and profile data is served as plain JSON by
+the Treeherder REST API, and a whole triage can be run through it. Read
+`references/rest-api.md` when you need that path — it also records two filters that look
+like they work and silently do not.
+
 The regression policy gives the patch author **3 business days** to acknowledge and start
 investigating before the patch may be backed out. Establish early whether that clock is
 running, and tell the user if it is close to expiring.
@@ -75,6 +82,9 @@ linked Phabricator revision). If the push has multiple candidate patches and it 
 obvious which is responsible, say so — the confirmation push below tests the user's patch
 specifically, which is what settles it.
 
+Every field above is also in the alert summary's JSON, which is worth fetching when the
+bug's table is ambiguous or `treeherder-cli` is missing: see `references/rest-api.md`.
+
 Summarize for the user: how big the regression is, which tests, which platform, and what
 the patch changed. Then move to confirmation.
 
@@ -87,12 +97,12 @@ the tests in the alert summary and compares your working revision against the ba
 your patch sits on, pushing both sides for you:
 
 ```
-./mach try perf --alert <ALERT_ID> --rebuild 10
+./mach try perf --alert <ALERT_ID> --rebuild 10 --no-artifact
 ```
 
 Read `references/confirm.md` before running it — it covers getting the local repo onto the
-right base revision, how many retriggers are actually needed, the pgo/shippable trap, and
-how to read the result.
+right base revision, how many retriggers are actually needed, why `--no-artifact` is in
+that command, the pgo/shippable trap, and how to read the result.
 
 **Never push to try without explicit approval from the user.** Show the exact command, say
 roughly what it will cost in CI, and wait.
@@ -123,8 +133,9 @@ and only re-run the full alert set for the final confirmation.
 
 ## Step 5: close out
 
-Read `references/close-out.md` for the possible resolutions, the bug fields to set, and
-who to talk to when the right answer is "this regression is acceptable."
+Read `references/close-out.md` for the possible resolutions, the bug fields to set, who to
+talk to when the right answer is "this regression is acceptable", and how to pass feedback
+on this skill back to the people who maintain it.
 
 ## Cost discipline
 

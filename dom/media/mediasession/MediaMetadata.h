@@ -5,12 +5,15 @@
 #ifndef mozilla_dom_MediaMetadata_h
 #define mozilla_dom_MediaMetadata_h
 
+#include <cstdint>
+
 #include "MediaEventSource.h"
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
@@ -31,8 +34,7 @@ class MediaImageData {
   nsString mSizes;
   nsString mSrc;
   nsString mType;
-  // Maybe null, only the first valid artwork is fetched by
-  // MediaMetadata::FetchArtwork.
+  // Maybe null. Set on the successfully fetched artwork.
   RefPtr<mozilla::gfx::DataSourceSurface> mDataSurface;
 };
 
@@ -54,6 +56,21 @@ class MediaMetadataBase {
 
 using MediaMetadataBasePromise =
     mozilla::MozPromise<MediaMetadataBase, nsresult, true>;
+
+constexpr int32_t kMaxArtworkDimension = 1024;
+constexpr int64_t kAnyArtworkArea = INT64_MAX;
+
+// Largest area parsed from an artwork sizes string ("any", "60x60", "60x60
+// 120x120"). Entries may be "any" (scalable/vector artwork, returning
+// kAnyArtworkArea) or
+// "<width>x<height>" with dimensions up to kMaxArtworkDimension.
+// Returns 0 for empty or unparseable input.
+int64_t GetMediaArtworkArea(const nsAString& aSizes);
+
+// Artwork indices ordered by preference: "any" first, followed by largest
+// area first, stable so equal areas and unknown sizes keep original page order.
+CopyableTArray<size_t> GetMediaArtworkFetchOrder(
+    const MediaMetadataBase& aMetadata);
 
 class MediaMetadata final : public nsISupports,
                             public nsWrapperCache,
@@ -114,7 +131,8 @@ class MediaMetadata final : public nsISupports,
                           ErrorResult& aRv);
 
   static RefPtr<MediaMetadataBasePromise> FetchArtwork(
-      const MediaMetadataBase& aMetadata, Document* aDoc, const size_t aIndex);
+      const MediaMetadataBase& aMetadata, Document* aDoc,
+      const nsTArray<size_t>& aOrder, size_t aPos);
 
   nsCOMPtr<nsIGlobalObject> mParent;
   MediaEventProducer<void> mMetadataChangeEvent;

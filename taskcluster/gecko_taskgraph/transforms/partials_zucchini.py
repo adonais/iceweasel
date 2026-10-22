@@ -103,9 +103,16 @@ def make_task_description(config, tasks):
                 "update_number": update_number,
                 "dest_mar": build,
             }
+            if "product" in builds[build]:
+                partial_info["product"] = builds[build]["product"]
             if "previousVersion" in builds[build]:
                 partial_info["previousVersion"] = builds[build]["previousVersion"]
+            if "previousBuildNumber" in builds[build]:
+                partial_info["previousBuildNumber"] = builds[build][
+                    "previousBuildNumber"
+                ]
             from_data.append(partial_info)
+            update_number += 1
         from_mars_json = json.dumps(from_data, separators=(",", ":"))
 
         extra_params = [

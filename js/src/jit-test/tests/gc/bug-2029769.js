@@ -1,3 +1,4 @@
+gczeal(0);
 var s = Symbol();
 var m = new Map();
 m.set(0, s);

@@ -105,7 +105,7 @@ int av1_lookahead_push(struct lookahead_ctx *ctx, const YV12_BUFFER_CONFIG *src,
   int uv_height = src->uv_crop_height;
   int subsampling_x = src->subsampling_x;
   int subsampling_y = src->subsampling_y;
-  int larger_dimensions, new_dimensions;
+  int new_dimensions;
 
   assert(ctx->read_ctxs[ENCODE_STAGE].valid == 1);
   if (ctx->read_ctxs[ENCODE_STAGE].sz + ctx->max_pre_frames > ctx->max_sz)
@@ -122,31 +122,13 @@ int av1_lookahead_push(struct lookahead_ctx *ctx, const YV12_BUFFER_CONFIG *src,
                    height != buf->img.y_crop_height ||
                    uv_width != buf->img.uv_crop_width ||
                    uv_height != buf->img.uv_crop_height;
-  larger_dimensions =
-      width > buf->img.y_crop_width || height > buf->img.y_crop_height ||
-      uv_width > buf->img.uv_crop_width || uv_height > buf->img.uv_crop_height;
-  assert(!larger_dimensions || new_dimensions);
 
-  if (larger_dimensions) {
-    YV12_BUFFER_CONFIG new_img;
-    memset(&new_img, 0, sizeof(new_img));
-    if (aom_alloc_frame_buffer(&new_img, width, height, subsampling_x,
-                               subsampling_y, use_highbitdepth,
-                               AOM_BORDER_IN_PIXELS, 0, alloc_pyramid, 0))
+  if (new_dimensions) {
+    if (aom_realloc_frame_buffer(&buf->img, width, height, subsampling_x,
+                                 subsampling_y, use_highbitdepth,
+                                 AOM_BORDER_IN_PIXELS, 0, NULL, NULL, NULL,
+                                 alloc_pyramid, 0))
       return 1;
-    aom_free_frame_buffer(&buf->img);
-    buf->img = new_img;
-  } else if (new_dimensions) {
-    buf->img.y_width = src->y_width;
-    buf->img.y_height = src->y_height;
-    buf->img.uv_width = src->uv_width;
-    buf->img.uv_height = src->uv_height;
-    buf->img.y_crop_width = src->y_crop_width;
-    buf->img.y_crop_height = src->y_crop_height;
-    buf->img.uv_crop_width = src->uv_crop_width;
-    buf->img.uv_crop_height = src->uv_crop_height;
-    buf->img.subsampling_x = src->subsampling_x;
-    buf->img.subsampling_y = src->subsampling_y;
   }
   av1_copy_and_extend_frame(src, &buf->img);
 
