@@ -107,7 +107,7 @@ internal fun MenuGridItem(
                 containerModifier
             },
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = if (title.value.isNotEmpty()) Arrangement.Top else Arrangement.Center,
     ) {
         MenuGridItemContent(title, icon, state)
     }
@@ -180,16 +180,18 @@ private fun MenuGridItemContent(
         tint = state.secondaryContentColor,
     )
 
-    Spacer(modifier = Modifier.height(AcornTheme.layout.space.static50))
+    if (title.value.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(AcornTheme.layout.space.static50))
 
-    Text(
-        text = title.value,
-        style = AcornTheme.typography.caption.copy(hyphens = Hyphens.Auto),
-        color = state.contentColor,
-        maxLines = 2,
-        softWrap = true,
-        textAlign = TextAlign.Center,
-    )
+        Text(
+            text = title.value,
+            style = AcornTheme.typography.caption.copy(hyphens = Hyphens.Auto),
+            color = state.contentColor,
+            maxLines = 2,
+            softWrap = true,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 @PreviewLightDark
