@@ -86,9 +86,9 @@ ac_add_options --enable-jemalloc
 
 # disable wasm libraries sandboxing
 if test "$ICEWEASEL_BITS" = "64"; then
-  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime-x86_64-windows-msvc"
 elif test "$ICEWEASEL_BITS" = "32"; then
-  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x86"
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime-i686-windows-msvc"
 fi
 ac_add_options --without-wasm-sandboxed-libraries
 
