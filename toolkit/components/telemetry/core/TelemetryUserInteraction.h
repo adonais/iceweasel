@@ -15,8 +15,6 @@ void DeInitializeGlobalState();
 bool CanRecord(const nsAString& aName);
 bool IsRecordingEnabled();
 
-bool IsRecordingEnabled();
-
 }  // namespace TelemetryUserInteraction
 
 #endif  // TelemetryUserInteraction_h_
