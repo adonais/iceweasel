@@ -96,5 +96,7 @@ bool TelemetryUserInteraction::CanRecord(const nsAString& aName) {
 }
 
 bool TelemetryUserInteraction::IsRecordingEnabled() {
-  return gTelemetryUserInteractionCanRecord;
+  // return gTelemetryUserInteractionCanRecord;
+  // Review testing
+  return true;
 }
