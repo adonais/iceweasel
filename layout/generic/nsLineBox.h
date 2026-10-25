@@ -742,10 +742,6 @@ class GenericLineListIterator {
     return rv;
   }
 
-  pointer peekNext(){
-    return static_cast<pointer>(mCurrent->_mNext);
-  }
-
   pointer get() {
     MOZ_ASSERT(mListLink);
     MOZ_ASSERT(mCurrent != mListLink, "running past end");
