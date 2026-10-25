@@ -200,7 +200,7 @@ Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
 #endif
      )
   {
-    return Some(ModuleTrustFlags::JitPI);
+    return Some(ModuleTrustFlags::MicrosoftWindowsSignature);
   }
 
   // The JIT profiling module doesn't really have any other practical way to
