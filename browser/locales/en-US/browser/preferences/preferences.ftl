@@ -2976,6 +2976,11 @@ iceweasel_addons_downloadupcheck_description = Downloader Integration
 iceweasel_addons_autoactivatetab_description = Mouse Over A Tab Activates That Tab
 iceweasel_addons_rightclickclosetab_description = Right-click Tab To Close The Current Tab
 
+iceweasel_script_requires_restart = Change scripts loading status, { -brand-short-name } must restart.
+iceweasel_script_restart_title = Restart { -brand-short-name }
+iceweasel_script_restart_now = Restart now
+iceweasel_script_restart_later = Restart later
+
 mouse_gestures_go_back = Go Back
 mouse_gestures_go_forward = Go Forward
 mouse_gestures_scroll_up = Scroll Up
