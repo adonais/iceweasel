@@ -91,7 +91,7 @@
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
   -->
-  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">Търсене с Focus</string>
+  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage,UnusedResources">Търсене с Focus</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Klar is hard coded since we can't use variables in this context.

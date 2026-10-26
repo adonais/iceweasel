@@ -23,6 +23,10 @@
     <item quantity="one">Përpara %1$d sekondë</item>
     <item quantity="other">Përpara %1$d sekonda</item>
   </plurals>
+  <!-- Error text shown on the Listen to Page media player when the player encounters an error partway through playing the audio. -->
+  <string name="mozac_feature_listentopage_error_could_not_finish_playing_audio">S’u përfundua luajtja e audios. Riprovoni.</string>
+  <!-- Error text shown on the Listen to Page media player when no voice options are available to play the audio. -->
+  <string name="mozac_feature_listentopage_error_voice_options_not_available">S’ka mundësi zëri</string>
   <!-- Listen to Page media player: content description for the button that closes the player. -->
   <string name="mozac_feature_listentopage_close">Mbylle</string>
   <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->

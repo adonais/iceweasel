@@ -77,7 +77,11 @@
   <string name="about_content" tools:ignore="BrandUsage">%1$s - Một sản phẩm của Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Những lầm tưởng phổ biến về duyệt web riêng tư</string>
-  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <!--
+    Private Browsing
+
+    Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active.
+  -->
   <string name="private_browsing_a11y_session_announcement">Phiên duyệt web riêng tư</string>
   <!--
     True Private Browsing Mode
@@ -178,11 +182,7 @@
   <string name="recently_visited_menu_item_remove">Xóa</string>
   <!-- Content description for the button which navigates the user to show all of their history. -->
   <string name="past_explorations_show_all_content_description_2">Hiện tất cả các khám phá trước đây</string>
-  <!--
-    Browser Fragment
-
-    Content description (not visible, for screen readers etc.): Navigate backward (browsing history)
-  -->
+  <!-- Content description (not visible, for screen readers etc.): Navigate backward (browsing history) -->
   <string name="browser_menu_back">Quay lại</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="browser_menu_forward">Tiến</string>
@@ -708,13 +708,25 @@
   <string name="search_widget_text_long">Tìm kiếm trên mạng</string>
   <!-- Content description (not visible, for screen readers etc.): Voice search -->
   <string name="search_widget_voice">Tìm kiếm bằng giọng nói</string>
+  <!-- Content description (not visible, for screen readers etc.): Button in the search widget that starts a search in a private tab -->
+  <string name="search_widget_private_search">Tìm kiếm riêng tư</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for private search and for voice search -->
+  <string name="search_bar_widget_description">Thanh tìm kiếm với tìm kiếm riêng tư và bằng giọng nói</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for image search, private search and voice search -->
+  <string name="search_bar_with_lens_widget_description">Thanh tìm kiếm với tìm kiếm riêng tư, hình ảnh và giọng nói</string>
+  <!-- Widget description in the widget picker screen for the compact search bar widget -->
+  <string name="compact_search_bar_widget_description">Thu gọn thanh tìm kiếm</string>
   <!--
     Preferences
 
     Title for the settings page
   -->
   <string name="settings">Cài đặt</string>
-  <!-- Preference category for general settings -->
+  <!--
+    Preferences
+
+    Preference category for general settings
+  -->
   <string name="preferences_category_general">Tổng quát</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Giới thiệu</string>

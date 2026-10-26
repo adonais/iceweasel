@@ -77,7 +77,11 @@
   <string name="about_content" tools:ignore="BrandUsage">O %1$s é produzido pela Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Lendas comuns sobre navegação privativa</string>
-  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <!--
+    Private Browsing
+
+    Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active.
+  -->
   <string name="private_browsing_a11y_session_announcement">Sessão de navegação privativa</string>
   <!--
     True Private Browsing Mode
@@ -181,8 +185,10 @@
   <!--
     Browser Fragment
 
-    Content description (not visible, for screen readers etc.): Navigate backward (browsing history)
+    Label for popup button that appears when long-pressing the main menu. Tapping it allows the user to customize the main menu layout.
   -->
+  <string name="customize_menu">Personalizar menu</string>
+  <!-- Content description (not visible, for screen readers etc.): Navigate backward (browsing history) -->
   <string name="browser_menu_back">Voltar</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="browser_menu_forward">Avançar</string>
@@ -709,13 +715,25 @@
   <string name="search_widget_text_long">Pesquisar na web</string>
   <!-- Content description (not visible, for screen readers etc.): Voice search -->
   <string name="search_widget_voice">Pesquisa por voz</string>
+  <!-- Content description (not visible, for screen readers etc.): Button in the search widget that starts a search in a private tab -->
+  <string name="search_widget_private_search">Pesquisa privativa</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for private search and for voice search -->
+  <string name="search_bar_widget_description">Barra de pesquisa com pesquisa privativa e por voz</string>
+  <!-- Widget description in the widget picker screen for the search bar widget that includes buttons for image search, private search and voice search -->
+  <string name="search_bar_with_lens_widget_description">Barra de pesquisa com pesquisa de imagem, privativa e por voz</string>
+  <!-- Widget description in the widget picker screen for the compact search bar widget -->
+  <string name="compact_search_bar_widget_description">Barra de pesquisa compacta</string>
   <!--
     Preferences
 
     Title for the settings page
   -->
   <string name="settings">Configurações</string>
-  <!-- Preference category for general settings -->
+  <!--
+    Preferences
+
+    Preference category for general settings
+  -->
   <string name="preferences_category_general">Geral</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Sobre</string>

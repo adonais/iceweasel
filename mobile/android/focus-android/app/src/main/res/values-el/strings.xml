@@ -11,7 +11,7 @@
   <string name="action_cancel">Ακύρωση</string>
   <string name="action_save">Αποθήκευση</string>
   <!-- This text is shown in the URL bar when it's empty -->
-  <string name="urlbar_hint">Αναζήτηση όρου ή εισαγωγή διεύθυνσης</string>
+  <string name="urlbar_hint">Αναζήτηση ή εισαγωγή διεύθυνσης</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Το ιστορικό περιήγησης διαγράφηκε</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
@@ -93,7 +93,7 @@
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
   -->
-  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">Αναζήτηση στο Focus</string>
+  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage,UnusedResources">Αναζήτηση στο Focus</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Klar is hard coded since we can't use variables in this context.
