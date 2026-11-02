@@ -1163,6 +1163,24 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
   // changed by the next time it is locked with the same owner.
   Atomic<const void*> mLastLockOwner;
 };
+
+class AutoLockSharedFTFace {
+ public:
+  explicit AutoLockSharedFTFace(SharedFTFace* aFace) : mFace(aFace) {
+    if (mFace) {
+      mFace->Lock();
+    }
+  }
+  ~AutoLockSharedFTFace() {
+    if (mFace) {
+      mFace->Unlock();
+    }
+  }
+
+ private:
+  SharedFTFace* mFace = nullptr;
+};
+
 #endif
 
 class UnscaledFont : public SupportsThreadSafeWeakPtr<UnscaledFont> {

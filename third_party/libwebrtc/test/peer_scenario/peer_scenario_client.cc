@@ -246,17 +246,12 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.network_thread = manager->network_thread();
   pcf_deps.signaling_thread = signaling_thread_;
   pcf_deps.worker_thread = worker_thread_.get();
-  pcf_deps.call_factory =
-      CreateTimeControllerBasedCallFactory(net->time_controller());
   pcf_deps.task_queue_factory =
       net->time_controller()->CreateTaskQueueFactory();
-  pcf_deps.event_log_factory =
-      std::make_unique<RtcEventLogFactory>(task_queue_factory_);
+  pcf_deps.event_log_factory = std::make_unique<RtcEventLogFactory>();
   pcf_deps.trials = std::make_unique<FieldTrialBasedConfig>();
 
-  cricket::MediaEngineDependencies media_deps;
-  media_deps.task_queue_factory = task_queue_factory_;
-  media_deps.adm = TestAudioDeviceModule::Create(
+  pcf_deps.adm = TestAudioDeviceModule::Create(
       task_queue_factory_,
       TestAudioDeviceModule::CreatePulsedNoiseCapturer(
           config.audio.pulsed_noise->amplitude *
@@ -264,28 +259,24 @@ PeerScenarioClient::PeerScenarioClient(
           config.audio.sample_rate, config.audio.channels),
       TestAudioDeviceModule::CreateDiscardRenderer(config.audio.sample_rate));
 
-  media_deps.audio_processing = AudioProcessingBuilder().Create();
   if (config.video.use_fake_codecs) {
-    media_deps.video_encoder_factory =
-        std::make_unique<FakeVideoEncoderFactory>(
-            net->time_controller()->GetClock());
-    media_deps.video_decoder_factory =
+    pcf_deps.video_encoder_factory = std::make_unique<FakeVideoEncoderFactory>(
+        net->time_controller()->GetClock());
+    pcf_deps.video_decoder_factory =
         std::make_unique<FakeVideoDecoderFactory>();
   } else {
-    media_deps.video_encoder_factory =
+    pcf_deps.video_encoder_factory =
         std::make_unique<VideoEncoderFactoryTemplate<
             LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
             OpenH264EncoderTemplateAdapter, LibaomAv1EncoderTemplateAdapter>>();
-    media_deps.video_decoder_factory =
+    pcf_deps.video_decoder_factory =
         std::make_unique<VideoDecoderFactoryTemplate<
             LibvpxVp8DecoderTemplateAdapter, LibvpxVp9DecoderTemplateAdapter,
             OpenH264DecoderTemplateAdapter, Dav1dDecoderTemplateAdapter>>();
   }
-  media_deps.audio_encoder_factory = CreateBuiltinAudioEncoderFactory();
-  media_deps.audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
-  media_deps.trials = pcf_deps.trials.get();
 
-  pcf_deps.media_engine = cricket::CreateMediaEngine(std::move(media_deps));
+  EnableMediaWithDefaultsAndTimeController(*net->time_controller(), pcf_deps);
+
   pcf_deps.fec_controller_factory = nullptr;
   pcf_deps.network_controller_factory = nullptr;
   pcf_deps.network_state_predictor_factory = nullptr;
@@ -379,10 +370,13 @@ void PeerScenarioClient::CreateAndSetSdp(
 
 void PeerScenarioClient::SetSdpOfferAndGetAnswer(
     std::string remote_offer,
+    std::function<void()> remote_description_set,
     std::function<void(std::string)> answer_handler) {
   if (!signaling_thread_->IsCurrent()) {
-    signaling_thread_->PostTask(
-        [=] { SetSdpOfferAndGetAnswer(remote_offer, answer_handler); });
+    signaling_thread_->PostTask([=] {
+      SetSdpOfferAndGetAnswer(remote_offer, remote_description_set,
+                              answer_handler);
+    });
     return;
   }
   RTC_DCHECK_RUN_ON(signaling_thread_);
@@ -390,6 +384,11 @@ void PeerScenarioClient::SetSdpOfferAndGetAnswer(
       CreateSessionDescription(SdpType::kOffer, remote_offer),
       rtc::make_ref_counted<LambdaSetRemoteDescriptionObserver>([=](RTCError) {
         RTC_DCHECK_RUN_ON(signaling_thread_);
+        if (remote_description_set) {
+          // Allow the caller to modify transceivers
+          // before creating the answer.
+          remote_description_set();
+        }
         peer_connection_->CreateAnswer(
             rtc::make_ref_counted<LambdaCreateSessionDescriptionObserver>(
                 [=](std::unique_ptr<SessionDescriptionInterface> answer) {

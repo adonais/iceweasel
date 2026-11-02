@@ -608,14 +608,6 @@ void WebrtcVideoConduit::OnControlConfigChange() {
 
         size_t streamCount = std::min(codecConfig->mEncodings.size(),
                                       (size_t)webrtc::kMaxSimulcastStreams);
-        size_t highestResolutionIndex = 0;
-        for (size_t i = 1; i < streamCount; ++i) {
-          if (codecConfig->mEncodings[i].constraints.scaleDownBy <
-              codecConfig->mEncodings[highestResolutionIndex]
-                  .constraints.scaleDownBy) {
-            highestResolutionIndex = i;
-          }
-        }
         MOZ_RELEASE_ASSERT(streamCount >= 1,
                            "streamCount should be at least one");
 
@@ -681,8 +673,20 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         // TODO this is for webrtc-priority, but needs plumbing bits
         mEncoderConfig.bitrate_priority = 1.0;
 
+        // Populate simulcast_layers with their config (not dimensions or
+        // dimensions-derived properties, as they're only known as a frame to
+        // be sent is known).
+        mEncoderConfig.simulcast_layers.clear();
+        for (size_t idx = 0; idx < streamCount; ++idx) {
+          webrtc::VideoStream video_stream;
+          auto& encoding = codecConfig->mEncodings[idx];
+          video_stream.active = encoding.active;
+          mEncoderConfig.simulcast_layers.push_back(video_stream);
+        }
+
         // Expected max number of encodings
-        mEncoderConfig.number_of_streams = streamCount;
+        mEncoderConfig.number_of_streams =
+            mEncoderConfig.simulcast_layers.size();
 
         // libwebrtc disables this by default.
         mSendStreamConfig.suspend_below_min_bitrate = false;
@@ -717,23 +721,14 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         newRtp.nack.rtp_history_ms =
             codecConfig->RtcpFbNackIsSet(kParamValueEmpty) ? 1000 : 0;
 
-        {
-          newRtp.rids.clear();
-          bool has_rid = false;
-          for (size_t idx = 0; idx < streamCount; idx++) {
-            const auto& encoding = codecConfig->mEncodings[idx];
-            if (encoding.rid[0]) {
-              has_rid = true;
-              break;
-            }
-          }
-          if (has_rid) {
-            for (size_t idx = streamCount; idx > 0; idx--) {
-              const auto& encoding = codecConfig->mEncodings[idx - 1];
-              newRtp.rids.push_back(encoding.rid);
-            }
+        newRtp.rids.clear();
+        if (!codecConfig->mEncodings.empty() &&
+            !codecConfig->mEncodings[0].rid.empty()) {
+          for (const auto& encoding : codecConfig->mEncodings) {
+            newRtp.rids.push_back(encoding.rid);
           }
         }
+
         if (mSendStreamConfig.rtp != newRtp) {
           mSendStreamConfig.rtp = newRtp;
           sendStreamRecreationNeeded = true;

@@ -73,8 +73,6 @@ constexpr TimeDelta kQuickTestModeRunDuration = TimeDelta::Millis(100);
 // Field trials to enable Flex FEC advertising and receiving.
 constexpr char kFlexFecEnabledFieldTrials[] =
     "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
-constexpr char kUseStandardsBytesStats[] =
-    "WebRTC-UseStandardBytesStats/Enabled/";
 
 class FixturePeerConnectionObserver : public MockPeerConnectionObserver {
  public:
@@ -277,7 +275,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
   TestPeerFactory test_peer_factory(
       signaling_thread.get(), time_controller_,
-      video_quality_analyzer_injection_helper_.get(), task_queue_.get());
+      video_quality_analyzer_injection_helper_.get(), task_queue_->Get());
   alice_ = test_peer_factory.CreateTestPeer(
       std::move(alice_configurer),
       std::make_unique<FixturePeerConnectionObserver>(
@@ -439,8 +437,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
 std::string PeerConnectionE2EQualityTest::GetFieldTrials(
     const RunParams& run_params) {
-  std::vector<absl::string_view> default_field_trials = {
-      kUseStandardsBytesStats};
+  std::vector<absl::string_view> default_field_trials = {};
   if (run_params.enable_flex_fec_support) {
     default_field_trials.push_back(kFlexFecEnabledFieldTrials);
   }

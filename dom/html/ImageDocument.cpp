@@ -120,10 +120,18 @@ ImageListener::OnStartRequest(nsIRequest* request) {
 
   if (!imgDoc->mObservingImageLoader) {
     NS_ENSURE_TRUE(imgDoc->mImageContent, NS_ERROR_UNEXPECTED);
-    imgDoc->mImageContent->AddNativeObserver(imgDoc);
     imgDoc->mObservingImageLoader = true;
-    imgDoc->mImageContent->LoadImageWithChannel(channel,
-                                                getter_AddRefs(mNextStream));
+    imgDoc->mImageContent->AddNativeObserver(imgDoc);
+    // Image status that may have gotten replayed, in AddNativeObserver may run
+    // script and destroy the document.
+    NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE(imgDoc->mImageContent, NS_ERROR_UNEXPECTED);
+    // If script adopted the image into another document, its adopting steps
+    // queued its own load there, so the channel isn't needed.
+    if (imgDoc->mImageContent->OwnerDoc() == imgDoc) {
+      imgDoc->mImageContent->LoadImageWithChannel(channel,
+                                                  getter_AddRefs(mNextStream));
+    }
   }
 
   return MediaDocumentStreamListener::OnStartRequest(request);

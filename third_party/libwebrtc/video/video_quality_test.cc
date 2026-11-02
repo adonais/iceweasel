@@ -294,15 +294,16 @@ void PressEnterToContinue(TaskQueueBase* /*task_queue*/) {
 }  // namespace
 
 std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
+    const Environment& env,
     const SdpVideoFormat& format) {
   std::unique_ptr<VideoDecoder> decoder;
   if (format.name == "multiplex") {
     decoder = std::make_unique<MultiplexDecoderAdapter>(
-        decoder_factory_.get(), SdpVideoFormat(cricket::kVp9CodecName));
+        env, decoder_factory_.get(), SdpVideoFormat(cricket::kVp9CodecName));
   } else if (format.name == "FakeCodec") {
     decoder = webrtc::FakeVideoDecoderFactory::CreateVideoDecoder();
   } else {
-    decoder = decoder_factory_->CreateVideoDecoder(format);
+    decoder = decoder_factory_->Create(env, format);
   }
   if (!params_.logging.encoded_frame_base_path.empty()) {
     rtc::StringBuilder str;
@@ -375,10 +376,10 @@ VideoQualityTest::VideoQualityTest(
     std::unique_ptr<InjectionComponents> injection_components)
     : clock_(Clock::GetRealTimeClock()),
       task_queue_factory_(CreateDefaultTaskQueueFactory()),
-      rtc_event_log_factory_(task_queue_factory_.get()),
-      video_decoder_factory_([this](const SdpVideoFormat& format) {
-        return this->CreateVideoDecoder(format);
-      }),
+      video_decoder_factory_(
+          [this](const Environment& env, const SdpVideoFormat& format) {
+            return this->CreateVideoDecoder(env, format);
+          }),
       video_encoder_factory_([this](const SdpVideoFormat& format) {
         return this->CreateVideoEncoder(format, nullptr);
       }),
@@ -1221,10 +1222,10 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   }
 
   if (!params.logging.rtc_event_log_name.empty()) {
-    send_event_log_ = rtc_event_log_factory_.CreateRtcEventLog(
-        RtcEventLog::EncodingType::NewFormat);
-    recv_event_log_ = rtc_event_log_factory_.CreateRtcEventLog(
-        RtcEventLog::EncodingType::NewFormat);
+    std::unique_ptr<RtcEventLog> send_event_log =
+        rtc_event_log_factory_.Create(env());
+    std::unique_ptr<RtcEventLog> recv_event_log =
+        rtc_event_log_factory_.Create(env());
     std::unique_ptr<RtcEventLogOutputFile> send_output(
         std::make_unique<RtcEventLogOutputFile>(
             params.logging.rtc_event_log_name + "_send",
@@ -1234,19 +1235,18 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
             params.logging.rtc_event_log_name + "_recv",
             RtcEventLog::kUnlimitedOutput));
     bool event_log_started =
-        send_event_log_->StartLogging(std::move(send_output),
-                                      RtcEventLog::kImmediateOutput) &&
-        recv_event_log_->StartLogging(std::move(recv_output),
-                                      RtcEventLog::kImmediateOutput);
+        send_event_log->StartLogging(std::move(send_output),
+                                     RtcEventLog::kImmediateOutput) &&
+        recv_event_log->StartLogging(std::move(recv_output),
+                                     RtcEventLog::kImmediateOutput);
     RTC_DCHECK(event_log_started);
-  } else {
-    send_event_log_ = std::make_unique<RtcEventLogNull>();
-    recv_event_log_ = std::make_unique<RtcEventLogNull>();
+    SetSendEventLog(std::move(send_event_log));
+    SetRecvEventLog(std::move(recv_event_log));
   }
 
   SendTask(task_queue(), [this, &params, &send_transport, &recv_transport]() {
-    CallConfig send_call_config(send_event_log_.get());
-    CallConfig recv_call_config(recv_event_log_.get());
+    CallConfig send_call_config = SendCallConfig();
+    CallConfig recv_call_config = RecvCallConfig();
     send_call_config.bitrate_config = params.call.call_bitrate_config;
     recv_call_config.bitrate_config = params.call.call_bitrate_config;
     if (params_.audio.enabled)
@@ -1444,10 +1444,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   std::vector<std::unique_ptr<test::VideoRenderer>> loopback_renderers;
 
   if (!params.logging.rtc_event_log_name.empty()) {
-    send_event_log_ = rtc_event_log_factory_.CreateRtcEventLog(
-        RtcEventLog::EncodingType::NewFormat);
-    recv_event_log_ = rtc_event_log_factory_.CreateRtcEventLog(
-        RtcEventLog::EncodingType::NewFormat);
+    std::unique_ptr<RtcEventLog> send_event_log =
+        rtc_event_log_factory_.Create(env());
+    std::unique_ptr<RtcEventLog> recv_event_log =
+        rtc_event_log_factory_.Create(env());
     std::unique_ptr<RtcEventLogOutputFile> send_output(
         std::make_unique<RtcEventLogOutputFile>(
             params.logging.rtc_event_log_name + "_send",
@@ -1457,14 +1457,13 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
             params.logging.rtc_event_log_name + "_recv",
             RtcEventLog::kUnlimitedOutput));
     bool event_log_started =
-        send_event_log_->StartLogging(std::move(send_output),
-                                      /*output_period_ms=*/5000) &&
-        recv_event_log_->StartLogging(std::move(recv_output),
-                                      /*output_period_ms=*/5000);
+        send_event_log->StartLogging(std::move(send_output),
+                                     /*output_period_ms=*/5000) &&
+        recv_event_log->StartLogging(std::move(recv_output),
+                                     /*output_period_ms=*/5000);
     RTC_DCHECK(event_log_started);
-  } else {
-    send_event_log_ = std::make_unique<RtcEventLogNull>();
-    recv_event_log_ = std::make_unique<RtcEventLogNull>();
+    SetSendEventLog(std::move(send_event_log));
+    SetRecvEventLog(std::move(recv_event_log));
   }
 
   SendTask(task_queue(), [&]() {
@@ -1473,9 +1472,9 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     // TODO(ivica): Remove bitrate_config and use the default CallConfig(), to
     // match the full stack tests.
-    CallConfig send_call_config(send_event_log_.get());
+    CallConfig send_call_config = SendCallConfig();
     send_call_config.bitrate_config = params_.call.call_bitrate_config;
-    CallConfig recv_call_config(recv_event_log_.get());
+    CallConfig recv_call_config = RecvCallConfig();
 
     if (params_.audio.enabled)
       InitializeAudioDevice(&send_call_config, &recv_call_config,

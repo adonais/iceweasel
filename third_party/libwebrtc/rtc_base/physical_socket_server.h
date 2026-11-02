@@ -41,8 +41,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rtc_base/async_resolver.h"
-#include "rtc_base/async_resolver_interface.h"
 #include "rtc_base/deprecated/recursive_critical_section.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -190,10 +188,12 @@ class PhysicalSocket : public Socket, public sigslot::has_slots<> {
              const SocketAddress& addr) override;
 
   int Recv(void* buffer, size_t length, int64_t* timestamp) override;
+  // TODO(webrtc:15368): Deprecate and remove.
   int RecvFrom(void* buffer,
                size_t length,
                SocketAddress* out_addr,
                int64_t* timestamp) override;
+  int RecvFrom(ReceiveBuffer& buffer) override;
 
   int Listen(int backlog) override;
   Socket* Accept(SocketAddress* out_addr) override;

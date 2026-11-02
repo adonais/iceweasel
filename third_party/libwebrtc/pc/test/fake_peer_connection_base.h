@@ -197,6 +197,9 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
 
+  void ReconfigureBandwidthEstimation(
+      const BandwidthEstimationSettings& settings) override {}
+
   void SetAudioPlayout(bool playout) override {}
 
   void SetAudioRecording(bool recording) override {}
@@ -363,7 +366,7 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
   const FieldTrialsView& trials() const override { return field_trials_; }
 
  protected:
-  webrtc::test::ScopedKeyValueConfig field_trials_;
+  test::ScopedKeyValueConfig field_trials_;
 };
 
 }  // namespace webrtc

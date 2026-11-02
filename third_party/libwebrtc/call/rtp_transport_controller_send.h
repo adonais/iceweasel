@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/environment/environment.h"
 #include "api/network_state_predictor.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
@@ -41,7 +42,6 @@
 #include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
-class Clock;
 class FrameEncryptorInterface;
 class RtcEventLog;
 
@@ -51,7 +51,7 @@ class RtpTransportControllerSend final
       public TransportFeedbackObserver,
       public NetworkStateEstimateObserver {
  public:
-  RtpTransportControllerSend(Clock* clock, const RtpTransportConfig& config);
+  explicit RtpTransportControllerSend(const RtpTransportConfig& config);
   ~RtpTransportControllerSend() override;
 
   RtpTransportControllerSend(const RtpTransportControllerSend&) = delete;
@@ -75,6 +75,8 @@ class RtpTransportControllerSend final
       RtpVideoSenderInterface* rtp_video_sender) override;
 
   // Implements RtpTransportControllerSendInterface
+  void RegisterSendingRtpStream(RtpRtcpInterface& rtp_module) override;
+  void DeRegisterSendingRtpStream(RtpRtcpInterface& rtp_module) override;
   PacketRouter* packet_router() override;
 
   NetworkStateEstimateObserver* network_state_estimate_observer() override;
@@ -82,6 +84,8 @@ class RtpTransportControllerSend final
   RtpPacketSender* packet_sender() override;
 
   void SetAllocatedSendBitrateLimits(BitrateAllocationLimits limits) override;
+  void ReconfigureBandwidthEstimation(
+      const BandwidthEstimationSettings& settings) override;
 
   void SetPacingFactor(float pacing_factor) override;
   void SetQueueTimeLimit(int limit_ms) override;
@@ -125,6 +129,7 @@ class RtpTransportControllerSend final
 
  private:
   void MaybeCreateControllers() RTC_RUN_ON(sequence_checker_);
+  void UpdateNetworkAvailability() RTC_RUN_ON(sequence_checker_);
   void UpdateInitialConstraints(TargetRateConstraints new_contraints)
       RTC_RUN_ON(sequence_checker_);
 
@@ -146,9 +151,7 @@ class RtpTransportControllerSend final
   void ProcessSentPacketUpdates(NetworkControlUpdate updates)
       RTC_RUN_ON(sequence_checker_);
 
-  Clock* const clock_;
-  RtcEventLog* const event_log_;
-  TaskQueueFactory* const task_queue_factory_;
+  const Environment env_;
   SequenceChecker sequence_checker_;
   TaskQueueBase* task_queue_;
   PacketRouter packet_router_;
@@ -157,6 +160,7 @@ class RtpTransportControllerSend final
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_
       RTC_GUARDED_BY(sequence_checker_);
+  BandwidthEstimationSettings bwe_settings_ RTC_GUARDED_BY(sequence_checker_);
   bool pacer_started_ RTC_GUARDED_BY(sequence_checker_);
   TaskQueuePacedSender pacer_;
 
@@ -207,8 +211,6 @@ class RtpTransportControllerSend final
   RateLimiter retransmission_rate_limiter_;
 
   ScopedTaskSafety safety_;
-
-  const FieldTrialsView& field_trials_;
 };
 
 }  // namespace webrtc

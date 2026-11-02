@@ -398,8 +398,10 @@ gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
     // InitializeVarFuncs must have been called in order for mMMVar to be
     // non-null here, so we don't need to do it again.
     if (sDoneVar) {
+      // Scaled fonts may still be using the shared face.
       auto* ftFace = GetFTFace();
       MOZ_ASSERT(ftFace, "How did mMMVar get set without a face?");
+      AutoLockSharedFTFace lock(ftFace);
       (*sDoneVar)(ftFace->GetFace()->glyph->library, mMMVar);
     } else {
       free(mMMVar);
@@ -1110,6 +1112,7 @@ FT_MM_Var* gfxFontconfigFontEntry::GetMMVar() {
   if (!ftFace) {
     return nullptr;
   }
+  AutoLockSharedFTFace faceLock(ftFace);
   if (FT_Err_Ok != (*sGetVar)(ftFace->GetFace(), &mMMVar)) {
     mMMVar = nullptr;
   }

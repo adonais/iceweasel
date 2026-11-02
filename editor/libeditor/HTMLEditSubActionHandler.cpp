@@ -9691,8 +9691,10 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
     return NS_OK;
   }
 
-  for (PendingStyleCache& styleCacheBeforeEdit :
-       Reversed(*TopLevelEditSubActionDataRef().mCachedPendingStyles)) {
+  const AutoPendingStyleCacheArray cachedPendingStyles{
+      TopLevelEditSubActionDataRef().mCachedPendingStyles->Clone()};
+  for (const PendingStyleCache& styleCacheBeforeEdit :
+       Reversed(cachedPendingStyles)) {
     bool isFirst = false, isAny = false, isAll = false;
     nsAutoString currentValue;
     const EditorInlineStyle inlineStyle = styleCacheBeforeEdit.ToInlineStyle();

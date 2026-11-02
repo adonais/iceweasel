@@ -94,7 +94,6 @@ using ::testing::Values;
 
 constexpr int kIceCandidatesTimeout = 10000;
 constexpr int64_t kWaitTimeout = 10000;
-constexpr uint64_t kTiebreakerDefault = 44444;
 
 class PeerConnectionWrapperForIceTest : public PeerConnectionWrapper {
  public:
@@ -342,7 +341,7 @@ class PeerConnectionIceTest
       public ::testing::WithParamInterface<SdpSemantics> {
  protected:
   PeerConnectionIceTest() : PeerConnectionIceBaseTest(GetParam()) {
-    webrtc::metrics::Reset();
+    metrics::Reset();
   }
 };
 
@@ -362,7 +361,7 @@ class PeerConnectionIceTest
                  << " != " << b.address().ToString();
   }
   if (a.type() != b.type()) {
-    failure_info << "\ntype: " << a.type() << " != " << b.type();
+    failure_info << "\ntype: " << a.type_name() << " != " << b.type_name();
   }
   std::string failure_info_str = failure_info.str();
   if (failure_info_str.empty()) {
@@ -514,7 +513,7 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
 
   EXPECT_FALSE(caller->pc()->AddIceCandidate(jsep_candidate.get()));
   EXPECT_METRIC_THAT(
-      webrtc::metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
+      metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
       ElementsAre(Pair(kAddIceCandidateFailNoRemoteDescription, 2)));
 }
 
@@ -1448,7 +1447,6 @@ class PeerConnectionIceConfigTest : public ::testing::Test {
                                        packet_socket_factory_.get(),
                                        &field_trials_));
     port_allocator_ = port_allocator.get();
-    port_allocator_->SetIceTiebreaker(kTiebreakerDefault);
     PeerConnectionDependencies pc_dependencies(&observer_);
     pc_dependencies.allocator = std::move(port_allocator);
     auto result = pc_factory_->CreatePeerConnectionOrError(
@@ -1457,7 +1455,7 @@ class PeerConnectionIceConfigTest : public ::testing::Test {
     pc_ = result.MoveValue();
   }
 
-  webrtc::test::ScopedKeyValueConfig field_trials_;
+  test::ScopedKeyValueConfig field_trials_;
   std::unique_ptr<rtc::SocketServer> socket_server_;
   rtc::AutoSocketServerThread main_thread_;
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_ = nullptr;

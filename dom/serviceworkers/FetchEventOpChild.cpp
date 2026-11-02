@@ -308,6 +308,10 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
     ParentToParentFetchEventRespondWithResult&& aResult) {
   AssertIsOnMainThread();
 
+  if (NS_WARN_IF(mInterceptedChannelHandled)) {
+    return IPC_OK();
+  }
+
   switch (aResult.type()) {
     case ParentToParentFetchEventRespondWithResult::
         TParentToParentSynthesizeResponseArgs:

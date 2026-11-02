@@ -11,6 +11,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 #include "nsIPrincipal.h"
+#include "nsTObserverArray.h"
 #include "MediaTrackConstraints.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RelativeTimeline.h"
@@ -236,7 +237,7 @@ class DOMMediaStream : public DOMEventTargetHelper,
   nsTArray<nsCOMPtr<nsISupports>> mConsumersToKeepAlive;
 
   // The track listeners subscribe to changes in this stream's track set.
-  nsTArray<TrackListener*> mTrackListeners;
+  nsTObserverArray<TrackListener*> mTrackListeners;
 
   // True if this stream has live tracks.
   bool mActive = false;

@@ -150,8 +150,6 @@ void Event::Serialize(void* buffer) const {
   SerializeData(header + 1);
 }
 
-ScopedEvent Event::Clone() const { return nullptr; }
-
 UserMessageEvent::~UserMessageEvent() = default;
 
 UserMessageEvent::UserMessageEvent(size_t num_ports)
@@ -303,12 +301,6 @@ void ObserveProxyEvent::SerializeData(void* buffer) const {
   data->proxy_target_port_name = proxy_target_port_name_;
 }
 
-ScopedEvent ObserveProxyEvent::Clone() const {
-  return mozilla::MakeUnique<ObserveProxyEvent>(
-      port_name(), proxy_node_name_, proxy_port_name_, proxy_target_node_name_,
-      proxy_target_port_name_);
-}
-
 ObserveProxyAckEvent::ObserveProxyAckEvent(const PortName& port_name,
                                            uint64_t last_sequence_num)
     : Event(Type::kObserveProxyAck, port_name),
@@ -338,11 +330,6 @@ void ObserveProxyAckEvent::SerializeData(void* buffer) const {
   data->last_sequence_num = last_sequence_num_;
 }
 
-ScopedEvent ObserveProxyAckEvent::Clone() const {
-  return mozilla::MakeUnique<ObserveProxyAckEvent>(port_name(),
-                                                   last_sequence_num_);
-}
-
 ObserveClosureEvent::ObserveClosureEvent(const PortName& port_name,
                                          uint64_t last_sequence_num)
     : Event(Type::kObserveClosure, port_name),
@@ -370,11 +357,6 @@ size_t ObserveClosureEvent::GetSerializedDataSize() const {
 void ObserveClosureEvent::SerializeData(void* buffer) const {
   auto* data = static_cast<ObserveClosureEventData*>(buffer);
   data->last_sequence_num = last_sequence_num_;
-}
-
-ScopedEvent ObserveClosureEvent::Clone() const {
-  return mozilla::MakeUnique<ObserveClosureEvent>(port_name(),
-                                                  last_sequence_num_);
 }
 
 MergePortEvent::MergePortEvent(const PortName& port_name,

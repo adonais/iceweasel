@@ -20,6 +20,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_udp_socket.h"
@@ -1092,11 +1093,11 @@ void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   int64_t send_time_1 = TimeMicros();
   socket->SendTo("foo", 3, address);
 
-  int64_t recv_timestamp_1;
   // Wait until data is available.
   EXPECT_TRUE_WAIT(sink.Check(socket.get(), SSE_READ), kTimeout);
-  char buffer[3];
-  ASSERT_GT(socket->RecvFrom(buffer, 3, nullptr, &recv_timestamp_1), 0);
+  rtc::Buffer buffer;
+  Socket::ReceiveBuffer receive_buffer_1(buffer);
+  ASSERT_GT(socket->RecvFrom(receive_buffer_1), 0);
 
   const int64_t kTimeBetweenPacketsMs = 100;
   Thread::SleepMs(kTimeBetweenPacketsMs);
@@ -1105,11 +1106,12 @@ void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   socket->SendTo("bar", 3, address);
   // Wait until data is available.
   EXPECT_TRUE_WAIT(sink.Check(socket.get(), SSE_READ), kTimeout);
-  int64_t recv_timestamp_2;
-  ASSERT_GT(socket->RecvFrom(buffer, 3, nullptr, &recv_timestamp_2), 0);
+  Socket::ReceiveBuffer receive_buffer_2(buffer);
+  ASSERT_GT(socket->RecvFrom(receive_buffer_2), 0);
 
   int64_t system_time_diff = send_time_2 - send_time_1;
-  int64_t recv_timestamp_diff = recv_timestamp_2 - recv_timestamp_1;
+  int64_t recv_timestamp_diff =
+      receive_buffer_2.arrival_time->us() - receive_buffer_1.arrival_time->us();
   // Compare against the system time at the point of sending, because
   // SleepMs may not sleep for exactly the requested time.
   EXPECT_NEAR(system_time_diff, recv_timestamp_diff, 10000);
@@ -1132,13 +1134,13 @@ void SocketTest::UdpSocketRecvTimestampUseRtcEpoch(const IPAddress& loopback) {
   client2->SendTo("foo", 3, address);
   std::unique_ptr<TestClient::Packet> packet_1 = client1->NextPacket(10000);
   ASSERT_TRUE(packet_1 != nullptr);
-  EXPECT_NEAR(packet_1->packet_time_us, rtc::TimeMicros(), 1000'000);
+  EXPECT_NEAR(packet_1->packet_time->us(), rtc::TimeMicros(), 1000'000);
 
   Thread::SleepMs(100);
   client2->SendTo("bar", 3, address);
   std::unique_ptr<TestClient::Packet> packet_2 = client1->NextPacket(10000);
   ASSERT_TRUE(packet_2 != nullptr);
-  EXPECT_GT(packet_2->packet_time_us, packet_1->packet_time_us);
-  EXPECT_NEAR(packet_2->packet_time_us, rtc::TimeMicros(), 1000'000);
+  EXPECT_GT(packet_2->packet_time->us(), packet_1->packet_time->us());
+  EXPECT_NEAR(packet_2->packet_time->us(), rtc::TimeMicros(), 1000'000);
 }
 }  // namespace rtc

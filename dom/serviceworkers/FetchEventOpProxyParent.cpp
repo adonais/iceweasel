@@ -195,6 +195,11 @@ mozilla::ipc::IPCResult FetchEventOpProxyParent::RecvRespondWith(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(mReal);
 
+  if (mRespondWithReceived) {
+    return IPC_FAIL(this, "Duplicate RespondWith");
+  }
+  mRespondWithReceived = true;
+
   auto manager = WrapNotNull(mReal->Manager());
   auto backgroundParent = WrapNotNull(manager->Manager());
   Unused << mReal->SendRespondWith(ToParentToParent(aResult, backgroundParent));

@@ -612,7 +612,7 @@ void MediaDecoder::SetStateMachineParameters() {
   mTimedMetadataListener = mDecoderStateMachine->TimedMetadataEvent().Connect(
       mAbstractMainThread, this, &MediaDecoder::OnMetadataUpdate);
   mMetadataLoadedListener = mDecoderStateMachine->MetadataLoadedEvent().Connect(
-      mAbstractMainThread, this, &MediaDecoder::MetadataLoaded);
+      mAbstractMainThread, this, &MediaDecoder::OnMetadataLoaded);
   mFirstFrameLoadedListener =
       mDecoderStateMachine->FirstFrameLoadedEvent().Connect(
           mAbstractMainThread, this, &MediaDecoder::FirstFrameLoaded);
@@ -750,11 +750,23 @@ double MediaDecoder::GetCurrentTime() {
   return mLogicalPosition;
 }
 
+void MediaDecoder::OnMetadataLoaded(
+    UniquePtr<MediaInfo> aInfo, UniquePtr<MetadataTags> aTags,
+    MediaDecoderEventVisibility aEventVisibility) {
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<MediaDecoder> kungFuDeathGrip = this;
+  MetadataLoaded(std::move(aInfo), std::move(aTags), aEventVisibility);
+}
+
 void MediaDecoder::OnMetadataUpdate(TimedMetadata&& aMetadata) {
   MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<MediaDecoder> kungFuDeathGrip = this;
   MetadataLoaded(MakeUnique<MediaInfo>(*aMetadata.mInfo),
                  UniquePtr<MetadataTags>(std::move(aMetadata.mTags)),
                  MediaDecoderEventVisibility::Observable);
+  if (IsShutdown()) {
+    return;
+  }
   FirstFrameLoaded(std::move(aMetadata.mInfo),
                    MediaDecoderEventVisibility::Observable);
 }
@@ -782,6 +794,9 @@ void MediaDecoder::MetadataLoaded(
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mFiredMetadataLoaded = true;
     GetOwner()->MetadataLoaded(mInfo.get(), std::move(aTags));
+    if (IsShutdown()) {
+      return;
+    }
   }
   // Invalidate() will end up calling GetOwner()->UpdateMediaSize with the last
   // dimensions retrieved from the video frame container. The video frame

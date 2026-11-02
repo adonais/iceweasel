@@ -429,12 +429,13 @@ nsresult nsHtml5TreeOperation::AddAttributes(nsIContent* aNode,
 }
 
 void nsHtml5TreeOperation::SetHTMLElementAttributes(
-    dom::Element* aElement, nsAtom* aName, nsHtml5HtmlAttributes* aAttributes) {
+    dom::Element* aElement, nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
+    bool aNotify) {
   int32_t len = aAttributes->getLength();
   for (int32_t i = 0; i < len; i++) {
     nsHtml5String val = aAttributes->getValueNoBoundsCheck(i);
     nsAtom* klass = val.MaybeAsAtom();
-    if (klass) {
+    if (klass && !aNotify) {
       aElement->SetSingleClassFromParser(klass);
     } else {
       nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
@@ -448,9 +449,9 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
         // Remove when fixing bug 582361
         NS_ConvertUTF16toUTF8 cname(value);
         NS_ConvertUTF8toUTF16 uv(nsUnescape(cname.BeginWriting()));
-        aElement->SetAttr(nsuri, localName, prefix, uv, false);
+        aElement->SetAttr(nsuri, localName, prefix, uv, aNotify);
       } else {
-        aElement->SetAttr(nsuri, localName, prefix, value, false);
+        aElement->SetAttr(nsuri, localName, prefix, value, aNotify);
       }
     }
   }
@@ -523,7 +524,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
       return newContent;
     }
 
-    SetHTMLElementAttributes(newContent, aName, aAttributes);
+    SetHTMLElementAttributes(newContent, aName, aAttributes, true);
   } else {
     nsCOMPtr<dom::Element> newElement;
 
@@ -549,7 +550,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
       return newContent;
     }
 
-    SetHTMLElementAttributes(newContent, aName, aAttributes);
+    SetHTMLElementAttributes(newContent, aName, aAttributes, false);
   }
 
   return newContent;

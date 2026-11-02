@@ -254,7 +254,7 @@ if (is_ios || is_mac) {
         visibility = [ "*" ]
         allow_poison = [
           "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-          "default_task_queue",
+          "environment_construction",
         ]
         sources = [
           "objc/components/renderer/opengl/RTCDisplayLinkTimer.h",
@@ -482,7 +482,7 @@ if (is_ios || is_mac) {
 
     rtc_library("audio_device_objc") {
       visibility = [ "*" ]
-      allow_poison = [ "default_task_queue" ]
+      allow_poison = [ "environment_construction" ]
       sources = [
         "objc/native/src/objc_audio_device.h",
         "objc/native/src/objc_audio_device.mm",
@@ -515,7 +515,7 @@ if (is_ios || is_mac) {
 
     rtc_library("objc_audio_device_module") {
       visibility = [ "*" ]
-      allow_poison = [ "default_task_queue" ]
+      allow_poison = [ "environment_construction" ]
       sources = [
         "objc/native/api/objc_audio_device_module.h",
         "objc/native/api/objc_audio_device_module.mm",
@@ -601,7 +601,7 @@ if (is_ios || is_mac) {
       visibility = [ "*" ]
       allow_poison = [
         "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "default_task_queue",
+        "environment_construction",
       ]
       sources = [
         "objc/components/renderer/metal/RTCMTLI420Renderer.h",
@@ -925,7 +925,7 @@ if (is_ios || is_mac) {
       visibility = [ "*" ]
       allow_poison = [
         "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "default_task_queue",
+        "environment_construction",
       ]
       configs += [ "..:no_global_constructors" ]
       sources = [
@@ -996,6 +996,12 @@ if (is_ios || is_mac) {
         "objc/api/peerconnection/RTCRtcpParameters+Private.h",
         "objc/api/peerconnection/RTCRtcpParameters.h",
         "objc/api/peerconnection/RTCRtcpParameters.mm",
+        "objc/api/peerconnection/RTCRtpCapabilities+Private.h",
+        "objc/api/peerconnection/RTCRtpCapabilities.h",
+        "objc/api/peerconnection/RTCRtpCapabilities.mm",
+        "objc/api/peerconnection/RTCRtpCodecCapability+Private.h",
+        "objc/api/peerconnection/RTCRtpCodecCapability.h",
+        "objc/api/peerconnection/RTCRtpCodecCapability.mm",
         "objc/api/peerconnection/RTCRtpCodecParameters+Private.h",
         "objc/api/peerconnection/RTCRtpCodecParameters.h",
         "objc/api/peerconnection/RTCRtpCodecParameters.mm",
@@ -1005,6 +1011,9 @@ if (is_ios || is_mac) {
         "objc/api/peerconnection/RTCRtpHeaderExtension+Private.h",
         "objc/api/peerconnection/RTCRtpHeaderExtension.h",
         "objc/api/peerconnection/RTCRtpHeaderExtension.mm",
+        "objc/api/peerconnection/RTCRtpHeaderExtensionCapability+Private.h",
+        "objc/api/peerconnection/RTCRtpHeaderExtensionCapability.h",
+        "objc/api/peerconnection/RTCRtpHeaderExtensionCapability.mm",
         "objc/api/peerconnection/RTCRtpParameters+Private.h",
         "objc/api/peerconnection/RTCRtpParameters.h",
         "objc/api/peerconnection/RTCRtpParameters.mm",
@@ -1056,6 +1065,7 @@ if (is_ios || is_mac) {
         ":videosource_objc",
         ":videotoolbox_objc",
         "../api:dtmf_sender_interface",
+        "../api:enable_media",
         "../api:libjingle_peerconnection_api",
         "../api:media_stream_interface",
         "../api:rtc_event_log_output_file",
@@ -1076,7 +1086,6 @@ if (is_ios || is_mac) {
         "../api/video_codecs:video_codecs_api",
         "../common_video",
         "../media:media_constants",
-        "../media:rtc_audio_video",
         "../media:rtc_media_base",
         "../modules/audio_device:audio_device_api",
         "../modules/audio_processing",
@@ -1314,9 +1323,12 @@ if (is_ios || is_mac) {
           "objc/api/peerconnection/RTCPeerConnectionFactory.h",
           "objc/api/peerconnection/RTCPeerConnectionFactoryOptions.h",
           "objc/api/peerconnection/RTCRtcpParameters.h",
+          "objc/api/peerconnection/RTCRtpCapabilities.h",
+          "objc/api/peerconnection/RTCRtpCodecCapability.h",
           "objc/api/peerconnection/RTCRtpCodecParameters.h",
           "objc/api/peerconnection/RTCRtpEncodingParameters.h",
           "objc/api/peerconnection/RTCRtpHeaderExtension.h",
+          "objc/api/peerconnection/RTCRtpHeaderExtensionCapability.h",
           "objc/api/peerconnection/RTCRtpParameters.h",
           "objc/api/peerconnection/RTCRtpReceiver.h",
           "objc/api/peerconnection/RTCRtpSender.h",
@@ -1428,9 +1440,12 @@ if (is_ios || is_mac) {
           "objc/api/peerconnection/RTCPeerConnectionFactory.h",
           "objc/api/peerconnection/RTCPeerConnectionFactoryOptions.h",
           "objc/api/peerconnection/RTCRtcpParameters.h",
+          "objc/api/peerconnection/RTCRtpCapabilities.h",
+          "objc/api/peerconnection/RTCRtpCodecCapability.h",
           "objc/api/peerconnection/RTCRtpCodecParameters.h",
           "objc/api/peerconnection/RTCRtpEncodingParameters.h",
           "objc/api/peerconnection/RTCRtpHeaderExtension.h",
+          "objc/api/peerconnection/RTCRtpHeaderExtensionCapability.h",
           "objc/api/peerconnection/RTCRtpParameters.h",
           "objc/api/peerconnection/RTCRtpReceiver.h",
           "objc/api/peerconnection/RTCRtpSender.h",

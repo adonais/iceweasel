@@ -658,9 +658,10 @@ NS_IMETHODIMP
 nsDocShell::SetCancelContentJSEpoch(int32_t aEpoch) {
   // Note: this gets called fairly early (before a pageload actually starts).
   // We could probably defer this even longer.
-  nsCOMPtr<nsIBrowserChild> browserChild = GetBrowserChild();
-  static_cast<BrowserChild*>(browserChild.get())
-      ->SetCancelContentJSEpoch(aEpoch);
+  if (nsCOMPtr<nsIBrowserChild> browserChild = GetBrowserChild()) {
+    static_cast<BrowserChild*>(browserChild.get())
+        ->SetCancelContentJSEpoch(aEpoch);
+  }
   return NS_OK;
 }
 

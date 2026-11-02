@@ -26,7 +26,6 @@ PLATFORM_EXT="tar.bz2"
 UNPACK_CMD="tar jxf"
 CLOSED_TREE=false
 DONTBUILD=false
-APPROVAL=false
 COMMIT_AUTHOR='ffxbld <ffxbld@mozilla.com>'
 REPODIR=''
 HGHOST="hg.mozilla.org"
@@ -435,8 +434,9 @@ function push_repo {
   then
     return 1
   fi
-  if ! ARC=$(command -v arc)
+  if ! command -v moz-phab
   then
+    echo moz-phab not found >&2
     return 1
   fi
   if [ -z "${REVIEWERS}" ]
@@ -444,16 +444,15 @@ function push_repo {
     return 1
   fi
   # Clean up older review requests
-  # Turn  Needs Review D624: No bug, Automated HSTS ...
-  # into D624
-  for diff in $($ARC list | grep "Needs Review" | grep -E "${BRANCH} repo-update" | awk 'match($0, /D[0-9]+[^: ]/) { print substr($0, RSTART, RLENGTH)  }')
+  # shellcheck disable=SC2016  # $branch is a jq variable, not shell
+  for diff in $(moz-phab list --status needs-review --format json | \
+    "${JQ}" --arg branch "${BRANCH}" '.[] | select(.title | test($branch + " repo-update")) | .id')
   do
-    echo "Removing old request $diff"
-    # There is no 'arc abandon', see bug 1452082
-    echo '{"transactions": [{"type":"abandon", "value": true}], "objectIdentifier": "'"${diff}"'"}' | $ARC call-conduit -- differential.revision.edit
+    echo "Removing old request D$diff"
+    moz-phab abandon --yes "D$diff"
   done
 
-  $ARC diff --verbatim --reviewers "${REVIEWERS}"
+  moz-phab submit --yes -s --reviewers "${REVIEWERS}" --no-bug
 }
 
 
@@ -469,7 +468,6 @@ while [ $# -gt 0 ]; do
     -n) DRY_RUN=true ;;
     -c) CLOSED_TREE=true ;;
     -d) DONTBUILD=true ;;
-    -a) APPROVAL=true ;;
     --pinset) DO_PRELOAD_PINSET=true ;;
     --hsts) DO_HSTS=true ;;
     --hpkp) DO_HPKP=true ;;
@@ -613,9 +611,6 @@ if [ ${DONTBUILD} == true ]; then
 fi
 if [ ${CLOSED_TREE} == true ]; then
   COMMIT_MESSAGE="${COMMIT_MESSAGE} - CLOSED TREE"
-fi
-if [ ${APPROVAL} == true ]; then
-  COMMIT_MESSAGE="${COMMIT_MESSAGE} - a=repo-update"
 fi
 
 

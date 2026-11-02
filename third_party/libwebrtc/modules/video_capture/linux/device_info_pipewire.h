@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 #include "modules/video_capture/device_info_impl.h"
-#include "modules/video_capture/linux/pipewire_session.h"
+#include "modules/video_capture/video_capture_options.h"
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -30,7 +30,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
                         uint32_t deviceUniqueIdUTF8Length,
                         char* productUniqueIdUTF8 = nullptr,
                         uint32_t productUniqueIdUTF8Length = 0,
-                        pid_t* pid = 0) override;
+                        pid_t* pid = 0,
+                        bool* deviceIsPlaceholder = 0) override;
   /*
    * Fills the membervariable _captureCapabilities with capabilites for the
    * given device name.

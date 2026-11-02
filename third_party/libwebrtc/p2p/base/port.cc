@@ -10,31 +10,34 @@
 
 #include "p2p/base/port.h"
 
-#include <math.h>
-
-#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "p2p/base/connection.h"
-#include "p2p/base/port_allocator.h"
+#include "api/array_view.h"
+#include "api/rtc_error.h"
+#include "api/units/time_delta.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/stun_request.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/mdns_responder_interface.h"
-#include "rtc_base/message_digest.h"
+#include "rtc_base/net_helper.h"
 #include "rtc_base/network.h"
-#include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/third_party/base64/base64.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
 namespace cricket {
@@ -66,13 +69,6 @@ rtc::PacketInfoProtocolType ConvertProtocolTypeToPacketInfoProtocolType(
 const int kPortTimeoutDelay = cricket::STUN_TOTAL_TIMEOUT + 5000;
 
 }  // namespace
-
-// TODO(ronghuawu): Use "local", "srflx", "prflx" and "relay". But this requires
-// the signaling part be updated correspondingly as well.
-const char LOCAL_PORT_TYPE[] = "local";
-const char STUN_PORT_TYPE[] = "stun";
-const char PRFLX_PORT_TYPE[] = "prflx";
-const char RELAY_PORT_TYPE[] = "relay";
 
 static const char* const PROTO_NAMES[] = {UDP_PROTOCOL_NAME, TCP_PROTOCOL_NAME,
                                           SSLTCP_PROTOCOL_NAME,
@@ -263,14 +259,18 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       absl::string_view url,
                       bool is_final) {
   RTC_DCHECK_RUN_ON(thread_);
-  if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
-    RTC_DCHECK(!tcptype.empty());
-  }
 
   std::string foundation =
       ComputeFoundation(type, protocol, relay_protocol, base_address);
   Candidate c(component_, protocol, address, 0U, username_fragment(), password_,
               type, generation_, foundation, network_->id(), network_cost_);
+
+#if RTC_DCHECK_IS_ON
+  if (protocol == TCP_PROTOCOL_NAME && c.is_local()) {
+    RTC_DCHECK(!tcptype.empty());
+  }
+#endif
+
   c.set_relay_protocol(relay_protocol);
   c.set_priority(
       c.GetPriority(type_preference, network_->preference(), relay_preference,
@@ -283,26 +283,24 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_url(url);
   c.set_related_address(related_address);
 
-  bool pending = MaybeObfuscateAddress(&c, type, is_final);
+  bool pending = MaybeObfuscateAddress(c, is_final);
 
   if (!pending) {
     FinishAddingAddress(c, is_final);
   }
 }
 
-bool Port::MaybeObfuscateAddress(Candidate* c,
-                                 absl::string_view type,
-                                 bool is_final) {
+bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
   // TODO(bugs.webrtc.org/9723): Use a config to control the feature of IP
   // handling with mDNS.
   if (network_->GetMdnsResponder() == nullptr) {
     return false;
   }
-  if (type != LOCAL_PORT_TYPE) {
+  if (!c.is_local()) {
     return false;
   }
 
-  auto copy = *c;
+  auto copy = c;
   auto weak_ptr = weak_factory_.GetWeakPtr();
   auto callback = [weak_ptr, copy, is_final](const rtc::IPAddress& addr,
                                              absl::string_view name) mutable {
@@ -359,10 +357,10 @@ void Port::AddOrReplaceConnection(Connection* conn) {
   }
 }
 
-void Port::OnReadPacket(const char* data,
-                        size_t size,
-                        const rtc::SocketAddress& addr,
-                        ProtocolType proto) {
+void Port::OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType proto) {
+  const char* data = reinterpret_cast<const char*>(packet.payload().data());
+  size_t size = packet.payload().size();
+  const rtc::SocketAddress& addr = packet.source_address();
   // If the user has enabled port packets, just hand this over.
   if (enable_port_packets_) {
     SignalReadPacket(this, data, size, addr);
@@ -452,7 +450,8 @@ bool Port::GetStunMessage(const char* data,
   // Parse the request message.  If the packet is not a complete and correct
   // STUN message, then ignore it.
   std::unique_ptr<IceMessage> stun_msg(new IceMessage());
-  rtc::ByteBufferReader buf(data, size);
+  rtc::ByteBufferReader buf(
+      rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), size));
   if (!stun_msg->Read(&buf) || (buf.Length() > 0)) {
     return false;
   }
@@ -725,10 +724,7 @@ std::string Port::CreateStunUsername(absl::string_view remote_username) const {
 }
 
 bool Port::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
-                                const char* data,
-                                size_t size,
-                                const rtc::SocketAddress& remote_addr,
-                                int64_t packet_time_us) {
+                                const rtc::ReceivedPacket& packet) {
   RTC_DCHECK_NOTREACHED();
   return false;
 }

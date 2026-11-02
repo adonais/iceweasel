@@ -2647,6 +2647,13 @@ BrowserGlue.prototype = {
       },
 
       {
+        name: "RemoteSecuritySettings.init",
+        task: () => {
+          lazy.RemoteSecuritySettings.init();
+        },
+      },
+
+      {
         name: "TabUnloader.init",
         task: () => {
           lazy.TabUnloader.init();
@@ -2936,10 +2943,6 @@ BrowserGlue.prototype = {
 
       function PublicSuffixListInit() {
         lazy.PublicSuffixList.init();
-      },
-
-      function RemoteSecuritySettingsInit() {
-        lazy.RemoteSecuritySettings.init();
       },
 
       function CorroborateInit() {

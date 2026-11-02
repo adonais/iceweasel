@@ -7,7 +7,6 @@ set -ve
 
 apt-get update -q
 apt-get install \
-    arcanist \
     curl \
     jq \
     libasound2 \
@@ -21,5 +20,20 @@ apt-get install \
     unzip \
     bzip2 \
     wget
+
+uv tool install MozPhab==2.19.0
+
+# turn off update checks
+cat >"$HOME"/.moz-phab-config<<EOF
+[updater]
+self_last_check = -1
+self_auto_update = False
+EOF
+
+# moz-phab requires some hg config even though it's not used
+cat >"$HOME"/.hgrc<<EOF
+[ui]
+username = hg user <user@example.com>
+EOF
 
 rm -rf /setup

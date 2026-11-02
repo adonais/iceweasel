@@ -487,6 +487,15 @@ int Node::LostConnectionToNode(const NodeName& node_name) {
   return OK;
 }
 
+int Node::CleanupDeadProxy(const NodeName& node_name,
+                           const PortName& port_name) {
+  DVLOG(1) << "Observing dead proxy in node " << name_ << " of peer "
+           << port_name << "@" << node_name;
+
+  DestroyAllPortsWithPeer(node_name, port_name);
+  return OK;
+}
+
 int Node::OnUserMessage(mozilla::UniquePtr<UserMessageEvent> message) {
   PortName port_name = message->port_name();
 
@@ -600,20 +609,6 @@ int Node::OnPortAccepted(mozilla::UniquePtr<PortAcceptedEvent> event) {
 }
 
 int Node::OnObserveProxy(mozilla::UniquePtr<ObserveProxyEvent> event) {
-  if (event->port_name() == kInvalidPortName) {
-    // An ObserveProxy with an invalid target port name is a broadcast used to
-    // inform ports when their peer (which was itself a proxy) has become
-    // defunct due to unexpected node disconnection.
-    //
-    // Receiving ports affected by this treat it as equivalent to peer closure.
-    // Proxies affected by this can be removed and will in turn broadcast their
-    // own death with a similar message.
-    DCHECK_EQ(event->proxy_target_node_name(), kInvalidNodeName);
-    DCHECK_EQ(event->proxy_target_port_name(), kInvalidPortName);
-    DestroyAllPortsWithPeer(event->proxy_node_name(), event->proxy_port_name());
-    return OK;
-  }
-
   // The port may have already been closed locally, in which case the
   // ObserveClosure message will contain the last_sequence_num field.
   // We can then silently ignore this message.
@@ -1603,16 +1598,14 @@ void Node::DestroyAllPortsWithPeer(const NodeName& node_name,
   }
 
   for (const auto& proxy_name : dead_proxies_to_broadcast) {
-    // Broadcast an event signifying that this proxy is no longer functioning.
-    delegate_->BroadcastEvent(mozilla::MakeUnique<ObserveProxyEvent>(
-        kInvalidPortName, name_, proxy_name, kInvalidNodeName,
-        kInvalidPortName));
+    // Broadcast that this proxy is no longer functioning.
+    delegate_->BroadcastDeadProxy(proxy_name);
 
     // Also process death locally since the port that points this closed one
     // could be on the current node.
     // Note: Although this is recursive, only a single port is involved which
     // limits the expected branching to 1.
-    DestroyAllPortsWithPeer(name_, proxy_name);
+    CleanupDeadProxy(name_, proxy_name);
   }
 
   // Close any ports referenced by undelivered messages.

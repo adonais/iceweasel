@@ -1021,7 +1021,7 @@ fuzzy(0-1,0-160000) == 424766-1.html 424766-1-ref.html
 == 425972-2.html 425972-2-ref.html
 != 425972-1.html 425972-2.html
 == 426629-1.html 426629-1-ref.html
-asserts(3) != 427017-1.xhtml about:blank # crash test (needs reftest-paged). existing assertions are bug 457400.
+asserts(1) != 427017-1.xhtml about:blank # crash test (needs reftest-paged). remaining assertion is fixed by bug 482886, not on ESR115.
 == 427129-scrollframe.html 427129-ref.html
 == 427129-table.html 427129-ref.html
 == 427129-image.html 427129-ref.html

@@ -107,8 +107,7 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   ~NodeController();
 
   UniquePtr<IPC::Message> SerializeEventMessage(
-      UniquePtr<Event> aEvent, const NodeName* aRelayTarget = nullptr,
-      uint32_t aType = EVENT_MESSAGE_TYPE);
+      UniquePtr<Event> aEvent, const NodeName* aRelayTarget = nullptr);
   UniquePtr<Event> DeserializeEventMessage(UniquePtr<IPC::Message> aMessage,
                                            NodeName* aRelayTarget = nullptr);
 
@@ -118,11 +117,15 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   // Stop communicating with this peer. Must be called on the IO thread.
   void DropPeer(NodeName aNodeName);
 
+  // Send a DeadProxy notification to all peers. May be called on any thread.
+  void BroadcastDeadProxyInternal(const NodeName& aProxyNode,
+                                  const PortName& aProxyPort);
+
   // Message Handlers
   void OnEventMessage(const NodeName& aFromNode,
                       UniquePtr<IPC::Message> aMessage) override;
-  void OnBroadcast(const NodeName& aFromNode,
-                   UniquePtr<IPC::Message> aMessage) override;
+  void OnDeadProxy(const NodeName& aFromNode, const NodeName& aProxyNode,
+                   const PortName& aProxyPort) override;
   void OnIntroduce(const NodeName& aFromNode,
                    NodeChannel::Introduction aIntroduction) override;
   void OnRequestIntroduction(const NodeName& aFromNode,
@@ -133,7 +136,7 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
 
   // NodeDelegate Implementation
   void ForwardEvent(const NodeName& aNode, UniquePtr<Event> aEvent) override;
-  void BroadcastEvent(UniquePtr<Event> aEvent) override;
+  void BroadcastDeadProxy(const PortName& aPort) override;
   void PortStatusChanged(const PortRef& aPortRef) override;
 
   const NodeName mName;

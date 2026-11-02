@@ -51,9 +51,7 @@ RTCError VerifyCodecPreferences(
   // transceiver.direction.
 
   if (!absl::c_any_of(codecs, [&recv_codecs](const RtpCodecCapability& codec) {
-        return codec.name != cricket::kRtxCodecName &&
-               codec.name != cricket::kRedCodecName &&
-               codec.name != cricket::kFlexfecCodecName &&
+        return codec.IsMediaCodec() &&
                absl::c_any_of(recv_codecs,
                               [&codec](const cricket::Codec& recv_codec) {
                                 return recv_codec.MatchesRtpCodec(codec);
@@ -65,9 +63,7 @@ RTCError VerifyCodecPreferences(
   }
 
   if (!absl::c_any_of(codecs, [&send_codecs](const RtpCodecCapability& codec) {
-        return codec.name != cricket::kRtxCodecName &&
-               codec.name != cricket::kRedCodecName &&
-               codec.name != cricket::kFlexfecCodecName &&
+        return codec.IsMediaCodec() &&
                absl::c_any_of(send_codecs,
                               [&codec](const cricket::Codec& send_codec) {
                                 return send_codec.MatchesRtpCodec(codec);
@@ -101,11 +97,9 @@ RTCError VerifyCodecPreferences(
     }
   }
 
-  // Check we have a real codec (not just rtx, red or fec)
+  // Check we have a real codec (not just rtx, red, fec or CN)
   if (absl::c_all_of(codecs, [](const RtpCodecCapability& codec) {
-        return codec.name == cricket::kRtxCodecName ||
-               codec.name == cricket::kRedCodecName ||
-               codec.name == cricket::kUlpfecCodecName;
+        return !codec.IsMediaCodec();
       })) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_MODIFICATION,
@@ -177,6 +171,35 @@ RtpTransceiver::RtpTransceiver(
           : media_engine()->voice().send_codecs());
   senders_.push_back(sender);
   receivers_.push_back(receiver);
+
+  // Set default header extensions depending on whether simulcast/SVC is used.
+  RtpParameters parameters = sender->internal()->GetParametersInternal();
+  bool uses_simulcast = parameters.encodings.size() > 1;
+  bool uses_svc = !parameters.encodings.empty() &&
+                  parameters.encodings[0].scalability_mode.has_value() &&
+                  parameters.encodings[0].scalability_mode !=
+                      ScalabilityModeToString(ScalabilityMode::kL1T1);
+  if (uses_simulcast || uses_svc) {
+    // Enable DD and VLA extensions, can be deactivated by the API.
+    // Skip this if the GFD extension was enabled via field trial
+    // for backward compability reasons.
+    bool uses_gfd =
+        absl::c_find_if(
+            header_extensions_to_negotiate_,
+            [](const RtpHeaderExtensionCapability& ext) {
+              return ext.uri == RtpExtension::kGenericFrameDescriptorUri00 &&
+                     ext.direction != webrtc::RtpTransceiverDirection::kStopped;
+            }) != header_extensions_to_negotiate_.end();
+    if (!uses_gfd) {
+      for (RtpHeaderExtensionCapability& ext :
+           header_extensions_to_negotiate_) {
+        if (ext.uri == RtpExtension::kVideoLayersAllocationUri ||
+            ext.uri == RtpExtension::kDependencyDescriptorUri) {
+          ext.direction = RtpTransceiverDirection::kSendRecv;
+        }
+      }
+    }
+  }
 }
 
 RtpTransceiver::~RtpTransceiver() {
@@ -542,7 +565,7 @@ bool RtpTransceiver::stopping() const {
 
 RtpTransceiverDirection RtpTransceiver::direction() const {
   if (unified_plan_ && stopping())
-    return webrtc::RtpTransceiverDirection::kStopped;
+    return RtpTransceiverDirection::kStopped;
 
   return direction_;
 }
@@ -570,7 +593,7 @@ RTCError RtpTransceiver::SetDirectionWithError(
 absl::optional<RtpTransceiverDirection> RtpTransceiver::current_direction()
     const {
   if (unified_plan_ && stopped())
-    return webrtc::RtpTransceiverDirection::kStopped;
+    return RtpTransceiverDirection::kStopped;
 
   return current_direction_;
 }
@@ -604,7 +627,7 @@ void RtpTransceiver::StopSendingAndReceiving() {
   });
 
   stopping_ = true;
-  direction_ = webrtc::RtpTransceiverDirection::kInactive;
+  direction_ = RtpTransceiverDirection::kInactive;
 }
 
 RTCError RtpTransceiver::StopStandard() {

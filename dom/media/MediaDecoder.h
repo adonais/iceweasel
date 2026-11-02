@@ -541,6 +541,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   // Called when the owner's activity changed.
   void NotifyCompositor();
 
+  void OnMetadataLoaded(UniquePtr<MediaInfo> aInfo,
+                        UniquePtr<MetadataTags> aTags,
+                        MediaDecoderEventVisibility aEventVisibility);
+
   void OnPlaybackErrorEvent(const MediaResult& aError);
 
   void OnDecoderDoctorEvent(DecoderDoctorEvent aEvent);

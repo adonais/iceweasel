@@ -62,10 +62,6 @@ struct Pointer {
    */
   bool IsNull() const { return mBlockAndOffset == kNullValue; }
 
-  uint32_t Block() const { return mBlockAndOffset >> kBlockShift; }
-
-  uint32_t Offset() const { return mBlockAndOffset & kOffsetMask; }
-
   /**
    * Convert a fontlist::Pointer to a standard C++ pointer. This requires the
    * FontList, which will know where the shared memory block is mapped in

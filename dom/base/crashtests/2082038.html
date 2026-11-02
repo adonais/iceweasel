@@ -1,0 +1,91 @@
+<html class="reftest-wait">
+<meta charset="utf-8">
+<title>Image status replay reentrancy</title>
+<body>
+<script>
+"use strict";
+const png = "iVBORw0KGgoAAAANSUhEUgAABkAAAAPoAQAAAACuAA8uAAAA2UlEQVR42u3BMQEAAADCoPVP7W8GoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgDcRVQABr+DkXQAAAABJRU5ErkJggg==";
+const cachedURL = "data:image/png;base64," + png;
+const rawURL = URL.createObjectURL(new Blob([
+  Uint8Array.from(atob(png), c => c.charCodeAt(0))
+], {type: "image/png"}));
+const preload = new Image();
+let imageDocument, nativeImage, fired = false;
+
+function finish() {
+  document.documentElement.classList.remove("reftest-wait");
+}
+
+function replayPayload() {
+  if (fired) return;
+  fired = true;
+  dump("Image replay payload\n");
+  nativeImage.removeAttribute("src");
+  // Spin the nested event loop until the canceled proxy's asynchronous
+  // RemoveFromLoadGroup runnable has released its last reference.
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", location.pathname + "?drain=" + Math.random(), false);
+  xhr.send();
+  imageDocument.body.append(imageDocument.adoptNode(nativeImage));
+  finish();
+}
+
+function armStyleFlush() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  const defs = document.createElementNS(ns, "defs");
+  const group = document.createElementNS(ns, "g");
+  group.id = "replay-source";
+  const script = document.createElementNS(ns, "script");
+  script.setAttribute("type", "application/json");
+  script.textContent = "replayPayload()";
+  group.append(script);
+  defs.append(group);
+  svg.append(defs);
+  document.body.append(svg);
+  script.setAttribute("type", "application/javascript");
+  const use = document.createElementNS(ns, "use");
+  use.setAttribute("href", "#replay-source");
+  svg.append(use);
+}
+
+window.addEventListener("load", async () => {
+  preload.src = cachedURL;
+  await preload.decode();
+
+  // With no PresShell, the hidden document cannot finish setting up editing.
+  // A later native attribute update retries it and flushes the parent style.
+  const helper = document.createElement("iframe");
+  helper.style.display = "none";
+  helper.src = "about:blank";
+  const ready = new Promise(resolve => helper.addEventListener("load", resolve, {once:true}));
+  document.body.append(helper);
+  await ready;
+  const hiddenDoc = helper.contentDocument;
+  const editable = hiddenDoc.createElement("div");
+  editable.contentEditable = "true";
+  hiddenDoc.body.append(editable);
+
+  const frame = document.createElement("iframe");
+  frame.style.cssText = "width:300px;height:200px";
+  frame.src = rawURL;
+  frame.addEventListener("load", finish, {once:true});
+  document.body.append(frame);
+  const target = frame.contentWindow;
+  // Do not access the initial document before registering this listener.
+  target.addEventListener("readystatechange", () => {
+    const d = target.document;
+    if (imageDocument || d.readyState !== "interactive" || d.contentType !== "image/png") return;
+    imageDocument = d;
+    nativeImage = d.querySelector("img");
+    hiddenDoc.body.append(hiddenDoc.adoptNode(nativeImage));
+    nativeImage.src = cachedURL;
+    armStyleFlush();
+    // SIZE_AVAILABLE replay calls the ordinary ShrinkToFit path. Its width
+    // mutation reenters replayPayload() through the hidden document's editor
+    // setup and the pending SVG use clone. LOAD_COMPLETE then causes reentrancy.
+  }, true);
+});
+</script>
+</body>
+</html>

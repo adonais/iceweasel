@@ -15,6 +15,7 @@
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/RequestBinding.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/LoadInfo.h"
@@ -34,6 +35,7 @@
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
 #include "nsIContentSecurityPolicy.h"
+#include "nsICookieJarSettings.h"
 #include "nsIHttpChannel.h"
 #include "nsIInputStream.h"
 #include "nsILoadInfo.h"
@@ -71,6 +73,18 @@ namespace {
 // This id uniquely identifies each early hint preloader in the
 // EarlyHintRegistrar. Must only be accessed from main thread.
 static uint64_t gEarlyHintPreloaderId{0};
+
+dom::RequestMode SecurityModeToRequestMode(uint32_t aSecurityMode) {
+  if (aSecurityMode ==
+          nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT ||
+      aSecurityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED) {
+    return dom::RequestMode::Same_origin;
+  }
+  if (aSecurityMode == nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
+    return dom::RequestMode::Cors;
+  }
+  return dom::RequestMode::No_cors;
+}
 }  // namespace
 
 //=============================================================================
@@ -218,6 +232,13 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
   if (as.GetEnumValue() == ASDestination::DESTINATION_INVALID) {
     // return early when it's definitly not an asset type we preload
     // would be caught later as well, e.g. when creating the PreloadHashKey
+    return;
+  }
+
+  // The image the document picks from imagesrcset can't be determined here,
+  // so it may differ from href.
+  if (destination == ASDestination::DESTINATION_IMAGE &&
+      !aLinkHeader.mSrcset.IsEmpty()) {
     return;
   }
 
@@ -384,6 +405,9 @@ nsresult EarlyHintPreloader::OpenChannel(
 
   NS_ENSURE_SUCCESS(rv, rv);
 
+  mURI = aURI;
+  mLoadInfo = mChannel->LoadInfo();
+
   RefPtr<nsHttpChannel> httpChannelObject = do_QueryObject(mChannel);
   if (!httpChannelObject) {
     mChannel = nullptr;
@@ -429,6 +453,70 @@ void EarlyHintPreloader::SetLinkHeader(const LinkHeader& aLinkHeader) {
 
 bool EarlyHintPreloader::IsFromContentParent(dom::ContentParentId aCpId) const {
   return aCpId == mCpId;
+}
+
+bool EarlyHintPreloader::MatchesRequest(nsIURI* aURI,
+                                        nsILoadInfo* aLoadInfo) const {
+  if (!mURI || !mLoadInfo || !aURI || !aLoadInfo) {
+    return false;
+  }
+
+  bool equals = false;
+  if (NS_FAILED(mURI->EqualsExceptRef(aURI, &equals))) {
+    return false;
+  }
+
+  if (!equals) {
+    return false;
+  }
+
+  if (mLoadInfo->GetExternalContentPolicyType() !=
+      aLoadInfo->GetExternalContentPolicyType()) {
+    return false;
+  }
+
+  if (SecurityModeToRequestMode(mLoadInfo->GetSecurityMode()) !=
+      SecurityModeToRequestMode(aLoadInfo->GetSecurityMode())) {
+    return false;
+  }
+
+  if (mLoadInfo->GetCookiePolicy() != aLoadInfo->GetCookiePolicy()) {
+    return false;
+  }
+
+  nsIPrincipal* loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
+  if (!loadingPrincipal) {
+    return false;
+  }
+
+  if (!mLoadInfo->GetLoadingPrincipal()->Equals(loadingPrincipal)) {
+    return false;
+  }
+
+  if (!mLoadInfo->TriggeringPrincipal()->Equals(
+          aLoadInfo->TriggeringPrincipal())) {
+    return false;
+  }
+
+  if (mLoadInfo->GetOriginAttributes() != aLoadInfo->GetOriginAttributes()) {
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cjs;
+  if (NS_FAILED(mLoadInfo->GetCookieJarSettings(getter_AddRefs(cjs)))) {
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> otherCjs;
+  if (NS_FAILED(aLoadInfo->GetCookieJarSettings(getter_AddRefs(otherCjs)))) {
+    return false;
+  }
+
+  nsAutoString partitionKey;
+  nsAutoString otherPartitionKey;
+  cjs->GetPartitionKey(partitionKey);
+  otherCjs->GetPartitionKey(otherPartitionKey);
+  return partitionKey == otherPartitionKey;
 }
 
 bool EarlyHintPreloader::Register(dom::ContentParentId aCpId,
