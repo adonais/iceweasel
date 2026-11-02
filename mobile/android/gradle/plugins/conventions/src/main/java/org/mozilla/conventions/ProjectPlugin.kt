@@ -77,7 +77,7 @@ class ProjectPlugin : Plugin<Project> {
         configureKtfmt(project, mozilla)
         configureDetekt(project, mozilla)
         configureAndroidComponentsLint(project, mozilla, topsrcdir)
-        configureTestOutputFormatting(project)
+        configureUnitTests(project)
         configurePackagingResourcesExcludes(project)
         registerPrintVariantsTask(project)
         configureNativeLibsForTests(project, substs)
@@ -583,17 +583,26 @@ class ProjectPlugin : Plugin<Project> {
         project.pluginManager.withPlugin("com.android.application", action)
     }
 
-    // Translates JUnit test events into Mozilla's TBPL-like textual format that Taskcluster
-    // log parsing expects. See also: testing/mozbase/mozlog/mozlog/formatters/tbplformatter.py
-    private fun configureTestOutputFormatting(project: Project) {
+    private fun configureUnitTests(project: Project) {
+        val automation = project.providers.environmentVariable("MOZ_AUTOMATION").isPresent
+        val fetches = project.providers.environmentVariable("MOZ_FETCHES_DIR")
         project.pluginManager.withPlugin("com.android.base") {
             project.tasks.withType(Test::class.java).configureEach {
                 systemProperty("robolectric.logging", "stdout")
                 systemProperty("logging.test-mode", "true")
                 systemProperty("javax.net.ssl.trustStoreType", "JKS")
+                if (automation) {
+                    systemProperty(
+                        "robolectric.dependency.dir",
+                        File(fetches.get(), "robolectric-android-all").path,
+                    )
+                }
 
                 testLogging.events = emptySet()
 
+                // Translates JUnit test events into Mozilla's TBPL-like textual format that
+                // Taskcluster log parsing expects.
+                // See also: testing/mozbase/mozlog/mozlog/formatters/tbplformatter.py
                 val listener = MozillaTestOutputListener(logger)
                 addTestListener(listener)
                 addTestOutputListener(listener)

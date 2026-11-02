@@ -5,11 +5,13 @@
 
 import copy
 import datetime
+from pathlib import Path
 
 from mozilla_version.mobile import GeckoVersion
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
+from .. import ANDROID_COMPONENTS_DIR
 from ..build_config import get_component_name, get_components, get_extensions, get_path
 
 fanout_components = TransformSequence()
@@ -62,6 +64,20 @@ def resolve_keys(config, tasks):
                 },
             )
 
+        yield task
+
+
+@transforms.add
+def add_robolectric_jars(config, tasks):
+    for task in tasks:
+        runs_unit_tests = any(t.endswith(":test") for t in task["run"]["gradlew"])
+        robolectric_properties = Path(
+            ANDROID_COMPONENTS_DIR,
+            get_path(task["attributes"]["component"]),
+            "src/test/resources/robolectric.properties",
+        )
+        if runs_unit_tests and robolectric_properties.exists():
+            task["fetches"]["toolchain"].append("android-robolectric-jars")
         yield task
 
 

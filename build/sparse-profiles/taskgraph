@@ -146,6 +146,7 @@ path:testing/webdriver
 
 # for firefox-android
 path:mobile/android/android-components/.buildconfig.yml
+glob:mobile/android/android-components/**/robolectric.properties
 path:mobile/android/focus-android/.buildconfig.yml
 path:mobile/android/fenix/.buildconfig.yml
 path:mobile/android/android-components/gradle/wrapper/gradle-wrapper.properties

@@ -29,6 +29,7 @@ task-defaults:
             - linux64-nimbus-fml
             - android-gradle-dependencies
             - linux64-jdk
+            - android-robolectric-jars
         build-fat-aar:
             - target.maven.zip
     run:

@@ -339,6 +339,17 @@ linux64-android-gradle-dependencies-appservices:
             - linux64-node
             - terser
 
+linux64-android-robolectric-jars:
+    description: "Robolectric android-all-instrumented jars repack toolchain build"
+    treeherder:
+        symbol: TL(robolectric-jars)
+    run:
+        script: android-robolectric-jars.sh
+        resources:
+            - 'gradle/libs.versions.toml'
+        toolchain-artifact: public/build/robolectric-android-all.tar.zst
+        toolchain-alias: android-robolectric-jars
+
 linux64-android-xmlstarlet:
     description: "Tool for finding xml paths on Android"
     treeherder:

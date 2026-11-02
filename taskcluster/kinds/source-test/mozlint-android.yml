@@ -72,6 +72,9 @@ task-defaults:
 lints:
     treeherder:
         symbol: android(lints)
+    fetches:
+        toolchain:
+            - linux64-android-robolectric-jars
     run:
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&

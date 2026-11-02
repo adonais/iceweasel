@@ -157,12 +157,6 @@ dependencies {
 
     debugImplementation libs.leakcanary
 
-    testImplementation libs.androidx.test.core
-    testImplementation libs.androidx.test.junit
-    testImplementation libs.kotlinx.coroutines.test
-    testImplementation libs.mockito
-    testImplementation libs.robolectric
-
     androidTestImplementation project(':components:support-android-test')
 
     androidTestImplementation libs.androidx.test.core
