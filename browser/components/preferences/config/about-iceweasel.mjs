@@ -577,6 +577,16 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "iceweasel-right-click-mousewheel",
+  get: e => {
+    return iniValue("tabs", "right_click_mousewheel");
+  },
+  onUserChange: () => {
+    optionLibportable(0x5240, !parseInt(iniRead("tabs", "right_click_mousewheel")));
+  },
+});
+
+Preferences.addSetting({
   id: "iceweasel-libportable-chrome-checkbox",
   get: e => {
     return optionUpcheck("-chrome-check");
@@ -741,6 +751,10 @@ SettingGroupManager.registerGroups({
           {
             id: "iceweasel-right-click-recover",
             l10nId: "iceweasel-right-click-recover2",
+          },
+          {
+            id: "iceweasel-right-click-mousewheel",
+            l10nId: "iceweasel-right-click-mousewheel2",
           },
         ],
       },
