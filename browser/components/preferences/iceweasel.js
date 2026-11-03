@@ -443,6 +443,7 @@ function setOntabSyncListeners(checkboxid) {
       let boxid5 = "iceweasel-mouse-hover-new";
       let boxid6 = "iceweasel-right-click-close";
       let boxid7 = "iceweasel-right-click-recover";
+      let boxid8 = "iceweasel-right-click-mousewheel";
       if (parseInt(value) > 0) {
         if (!element.checked) {
           element.checked = true;
@@ -454,6 +455,7 @@ function setOntabSyncListeners(checkboxid) {
         tabChildboxChk(boxid5, "mouse_hover_new", true);
         tabChildboxChk(boxid6, "right_click_close", true);
         tabChildboxChk(boxid7, "right_click_recover", true);
+        tabChildboxChk(boxid8, "right_click_mousewheel", true);
       } else {
         element.checked = false;
         document.getElementById(boxid1).disabled = true;
@@ -463,6 +465,7 @@ function setOntabSyncListeners(checkboxid) {
         document.getElementById(boxid5).disabled = true;
         document.getElementById(boxid6).disabled = true;
         document.getElementById(boxid7).disabled = true;
+        document.getElementById(boxid8).disabled = true;
       }
       element.addEventListener("click", onTabSyncListeners);
       setEventListener(boxid1, "click", onTabSyncid1);
@@ -472,6 +475,7 @@ function setOntabSyncListeners(checkboxid) {
       setEventListener(boxid5, "click", onTabSyncid5);
       setEventListener(boxid6, "click", onTabSyncid6);
       setEventListener(boxid7, "click", onTabSyncid7);
+      setEventListener(boxid8, "click", onTabSyncid8);
     }
   }
 }
@@ -615,6 +619,7 @@ function onTabSyncListeners() {
     let boxid5 = "iceweasel-mouse-hover-new";
     let boxid6 = "iceweasel-right-click-close";
     let boxid7 = "iceweasel-right-click-recover";
+    let boxid8 = "iceweasel-right-click-mousewheel";
     if (!value) {
       document.getElementById(boxid1).disabled = true;
       document.getElementById(boxid2).disabled = true;
@@ -623,6 +628,7 @@ function onTabSyncListeners() {
       document.getElementById(boxid5).disabled = true;
       document.getElementById(boxid6).disabled = true;
       document.getElementById(boxid7).disabled = true;
+      document.getElementById(boxid8).disabled = true;
     } else {
       document.getElementById(boxid1).disabled = false;
       document.getElementById(boxid2).disabled = false;
@@ -631,6 +637,7 @@ function onTabSyncListeners() {
       document.getElementById(boxid5).disabled = false;
       document.getElementById(boxid6).disabled = false;
       document.getElementById(boxid7).disabled = false;
+      document.getElementById(boxid8).disabled = false;
       tabChildboxChk(boxid1, "mouse_time", true);
       tabChildboxChk(boxid2, "double_click_close", true);
       tabChildboxChk(boxid3, "double_click_new", true);
@@ -638,6 +645,7 @@ function onTabSyncListeners() {
       tabChildboxChk(boxid5, "mouse_hover_new", true);
       tabChildboxChk(boxid6, "right_click_close", true);
       tabChildboxChk(boxid7, "right_click_recover", true);
+      tabChildboxChk(boxid8, "right_click_mousewheel", true);
     }
     optionlibportable(0x5222, value);
   }
@@ -669,6 +677,10 @@ function onTabSyncid6() {
 
 function onTabSyncid7() {
   optionlibportable(0x5229, !parseInt(iniRead("tabs", "right_click_recover")));
+}
+
+function onTabSyncid8() {
+  optionlibportable(0x5240, !parseInt(iniRead("tabs", "right_click_mousewheel")));
 }
 
 function makeMasterCheckboxesReactive(checkboxid, func) {
