@@ -424,7 +424,7 @@ this.storage = class extends ExtensionAPIPersistent {
             enforceNoTemporaryAddon(extension.id);
 
             const assetsBootstrapLocation = Services.prefs.getStringPref(
-              "librewolf.uBO.assetsBootstrapLocation",
+              "browser.uBO.assetsBootstrapLocation",
               undefined
             );
             if (extension.id == "uBlock0@raymondhill.net" && assetsBootstrapLocation) {
