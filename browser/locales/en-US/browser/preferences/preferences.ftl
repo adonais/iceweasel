@@ -2785,6 +2785,10 @@ iceweasel-header = Iceweasel Preferences
 iceweasel-warning-title = Warning!
 iceweasel-warning-description = We carefully choose default settings to focus on privacy and security. When changing these settings, read the descriptions to understand the implications of those changes.
 
+iceweasel-libportable-chrome-pop = userChrome environment installed successfully<br>Changes take effect after restarting the browser
+iceweasel-libportable-download-pop = Script installed successfully<br>Requires browser restart to take effect
+iceweasel-libportable-download-needed = Download failed or userChrome environment is not enabled
+
 iceweasel-header2 =
     .label = Iceweasel Preferences
 iceweasel-header3 =
